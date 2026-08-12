@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "77326abb7c069957"
 ---
 
 # Bans of Political Parties and the Case of Golden Dawn’s Right Wing Extremism in Greece

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ostergruse/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6102245b853d9015"
 ---
 
 # Anstelle eines Editorials

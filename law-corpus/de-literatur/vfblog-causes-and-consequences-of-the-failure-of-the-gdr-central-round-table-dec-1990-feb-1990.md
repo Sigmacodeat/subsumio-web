@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "befc1e9be3854467"
 ---
 
 # Causes and Consequences of the “Failure” of the GDR Central Round Table (Dec. 1989- Feb. 1990)

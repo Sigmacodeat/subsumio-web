@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e5f42ad59ed7fb12"
 ---
 
 # Strengthening Data Protection Resilience Against Geopolitical Threats

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-diciotti-affair-beyond-the-populist-f
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "625dc92ddc9f80c5"
 ---
 
 # The Diciotti Affair: beyond the Populist Farce

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ueber-die-wahrung-der-demokratischen-form
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5b1e7b6a2d954bff"
 ---
 
 # Über die Wahrung der demokratischen Form

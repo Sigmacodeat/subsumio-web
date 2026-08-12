@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aa786d1568d3cf90"
 ---
 
 # Inkonsistentes aus Luxemburg: die Schlussanträge des EuGH im Chefarzt-Fall

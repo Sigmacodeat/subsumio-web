@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "890cf5d6ee9f62c9"
 ---
 
 # NSU-Prozess: Versuch einer Antwort auf die Frage, wie man um Gottes Willen so blöd sein kann

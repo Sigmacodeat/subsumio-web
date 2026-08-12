@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zuverlassig-rechtsextrem/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "919bf28e67fc5eaa"
 ---
 
 # Zuverlässig rechtsextrem

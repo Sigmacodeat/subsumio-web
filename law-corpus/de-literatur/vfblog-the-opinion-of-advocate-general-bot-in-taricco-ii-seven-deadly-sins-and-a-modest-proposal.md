@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aca24b8bf9632d6d"
 ---
 
 # The Opinion of Advocate General Bot in Taricco II: Seven “Deadly” Sins and a Modest Proposal

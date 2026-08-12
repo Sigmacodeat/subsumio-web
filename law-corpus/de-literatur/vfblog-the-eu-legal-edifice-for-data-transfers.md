@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-eu-legal-edifice-for-data-transfers/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4d73a6e765747a4d"
 ---
 
 # Strengthening the EU Legal Edifice for Data Transfers

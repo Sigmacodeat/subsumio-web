@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/grundrechte-gegen-gebuehr/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6a7673e3703ee381"
 ---
 
 # Grundrechte gegen Gebühr

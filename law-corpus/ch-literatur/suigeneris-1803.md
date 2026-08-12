@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2017 Cedric Jenart, Stéphanie
   De Somer; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "a8b5cdab02d9acb4"
 ---
 
 # Non-statutory Rulemaking and the Rule of Law: towards a ‘Law of Rules’?

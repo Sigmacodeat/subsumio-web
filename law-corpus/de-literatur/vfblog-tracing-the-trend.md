@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/tracing-the-trend/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3e3f908842841ef1"
 ---
 
 # Tracing the Trend

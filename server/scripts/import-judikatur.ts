@@ -3,19 +3,19 @@
  * as pages, AND link each decision to the statute §§ it references.
  *
  * Supports eleven court sources via --source flag:
- *   ogh   (default) — server/law-corpus/at-judikatur/   → source law-at-judikatur
- *   vfgh             — server/law-corpus/at-judikatur-vfgh/ → source law-at-judikatur-vfgh
- *   vwgh             — server/law-corpus/at-judikatur-vwgh/ → source law-at-judikatur-vwgh
- *   bvwg             — server/law-corpus/at-judikatur-bvwg/ → source law-at-judikatur-bvwg
- *   lvwg             — server/law-corpus/at-judikatur-lvwg/ → source law-at-judikatur-lvwg
- *   asylgh           — server/law-corpus/at-judikatur-asylgh/ → source law-at-judikatur-asylgh
- *   uvs              — server/law-corpus/at-judikatur-uvs/ → source law-at-judikatur-uvs
- *   dsk              — server/law-corpus/at-judikatur-dsk/ → source law-at-judikatur-dsk
- *   gbk              — server/law-corpus/at-judikatur-gbk/ → source law-at-judikatur-gbk
- *   pvak             — server/law-corpus/at-judikatur-pvak/ → source law-at-judikatur-pvak
- *   dok              — server/law-corpus/at-judikatur-dok/ → source law-at-judikatur-dok
- *   ubas             — server/law-corpus/at-judikatur-ubas/ → source law-at-judikatur-ubas
- *   umse             — server/law-corpus/at-judikatur-umse/ → source law-at-judikatur-umse
+ *   ogh   (default) — law-corpus/at-judikatur/   → source law-at-judikatur
+ *   vfgh             — law-corpus/at-judikatur-vfgh/ → source law-at-judikatur-vfgh
+ *   vwgh             — law-corpus/at-judikatur-vwgh/ → source law-at-judikatur-vwgh
+ *   bvwg             — law-corpus/at-judikatur-bvwg/ → source law-at-judikatur-bvwg
+ *   lvwg             — law-corpus/at-judikatur-lvwg/ → source law-at-judikatur-lvwg
+ *   asylgh           — law-corpus/at-judikatur-asylgh/ → source law-at-judikatur-asylgh
+ *   uvs              — law-corpus/at-judikatur-uvs/ → source law-at-judikatur-uvs
+ *   dsk              — law-corpus/at-judikatur-dsk/ → source law-at-judikatur-dsk
+ *   gbk              — law-corpus/at-judikatur-gbk/ → source law-at-judikatur-gbk
+ *   pvak             — law-corpus/at-judikatur-pvak/ → source law-at-judikatur-pvak
+ *   dok              — law-corpus/at-judikatur-dok/ → source law-at-judikatur-dok
+ *   ubas             — law-corpus/at-judikatur-ubas/ → source law-at-judikatur-ubas
+ *   umse             — law-corpus/at-judikatur-umse/ → source law-at-judikatur-umse
  *
  * Two writes per decision:
  *   1. The decision itself as a page (`legal/judikatur/at/[court]/<file-slug>`),
@@ -27,7 +27,7 @@
  *      deliberately left unmapped — same principle as citation-graph.ts.
  *
  * Usage:
- *   bun run server/scripts/import-judikatur.ts [--source ogh|vfgh|vwgh|bvwg|lvwg|asylgh|uvs] [--all-sources] [--dry-run] [--no-embed] [--limit N]
+ *   bun run server/scripts/import-judikatur.ts [--source ogh|vfgh|vwgh|bvwg|lvwg|asylgh|uvs] [--all-sources] [--dry-run] [--no-embed] [--bulk] [--limit N]
  */
 
 import { readdirSync, readFileSync } from "fs";
@@ -40,6 +40,7 @@ const args = process.argv.slice(2);
 const DRY = args.includes("--dry-run");
 const NO_EMBED = args.includes("--no-embed");
 const ALL_SOURCES = args.includes("--all-sources");
+const BULK = args.includes("--bulk");
 const limitIdx = args.indexOf("--limit");
 const LIMIT = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : Infinity;
 const offsetIdx = args.indexOf("--offset");
@@ -266,25 +267,21 @@ interface ParsedDecision {
 }
 
 function loadDecisions(srcCfg: SourceConfig): ParsedDecision[] {
-  // Use LAW_CORPUS_ROOT if set, otherwise try both possible locations
+  // Single source of truth: LAW_CORPUS_ROOT env var or repo-root law-corpus/.
+  // The old server/law-corpus/ fallback was removed — it was a stale duplicate
+  // that caused ~30k orphaned DB pages with non-standard slugs.
   const corpusRoot = process.env.LAW_CORPUS_ROOT;
-  const dir1 = corpusRoot
+  const dir = corpusRoot
     ? join(corpusRoot, srcCfg.dir)
     : join(import.meta.dir, "..", "..", "law-corpus", srcCfg.dir);
-  const dir2 = join(import.meta.dir, "..", "law-corpus", srcCfg.dir);
-  let dir: string;
-  try {
-    const files1 = readdirSync(dir1).filter((f) => f.endsWith(".md"));
-    dir = files1.length > 0 ? dir1 : dir2;
-  } catch {
-    dir = dir2;
-  }
   const files = readdirSync(dir)
     .filter((f) => f.endsWith(".md"))
     .slice(OFFSET, OFFSET + LIMIT);
+  console.log(`  [${srcCfg.label}] ${files.length} Dateien gefunden, lade...`);
   const decisions: ParsedDecision[] = [];
   let skippedPlaceholders = 0;
-  for (const f of files) {
+  for (let fi = 0; fi < files.length; fi++) {
+    const f = files[fi];
     const content = readFileSync(join(dir, f), "utf-8");
     // Never import text-less stubs: a "Volltext nicht abrufbar" page in the
     // brain is retrieval noise AND blocks the content-hash update path from
@@ -312,7 +309,11 @@ function loadDecisions(srcCfg: SourceConfig): ParsedDecision[] {
       normRefs = extractMultiJurisdictionNormReferences(content, jurisdiction);
     }
     decisions.push({ slug, content, normRefs });
+    if ((fi + 1) % 500 === 0 || fi + 1 === files.length) {
+      process.stderr.write(`\r  [${srcCfg.label}] ${fi + 1}/${files.length} geladen (${decisions.length} gültig, ${skippedPlaceholders} Platzhalter)`);
+    }
   }
+  process.stderr.write(`\n`);
   if (skippedPlaceholders > 0) {
     console.log(
       `  [${srcCfg.label}] ${skippedPlaceholders} Platzhalter-Dateien übersprungen (kein Volltext)`
@@ -328,7 +329,7 @@ async function main() {
   );
   console.log("═══════════════════════════════════════════════════════════");
   console.log(
-    `Mode: ${DRY ? "DRY-RUN (kein DB-Write)" : NO_EMBED ? "import, no-embed" : "import + embed"}`
+    `Mode: ${DRY ? "DRY-RUN (kein DB-Write)" : NO_EMBED ? "import, no-embed" : "import + embed"}${BULK ? " + bulk" : ""}`
   );
   console.log(`Quellen: ${sourcesToRun.join(", ")}`);
   console.log("");
@@ -358,6 +359,8 @@ async function main() {
     return;
   }
 
+  console.log("");
+  console.log("  Verbinde mit Engine...");
   const { importFromContent } = await import("../src/core/import-file.ts");
   const { loadConfig, toEngineConfig } = await import("../src/core/config.ts");
   const { createEngine } = await import("../src/core/engine-factory.ts");
@@ -377,6 +380,8 @@ async function main() {
   } catch {
     // Non-fatal: pre-v39 brains may not have a usable config table.
   }
+  console.log("  Engine verbunden ✅");
+  console.log("");
 
   for (const { srcCfg } of allDecisions) {
     await engine.executeRaw(
@@ -385,7 +390,7 @@ async function main() {
     );
   }
 
-  const progress = createProgress({ mode: "auto" });
+  const progress = createProgress({ mode: (process.env.PROGRESS_MODE as any) || "human" });
   progress.start("judikatur-import", totalDecisions);
 
   let pagesOk = 0;
@@ -407,20 +412,32 @@ async function main() {
         to_source_id: string;
       }> = [];
 
-      for (const d of batch) {
+      const batchStart = bi;
+      for (let di = 0; di < batch.length; di++) {
+        const d = batch[di];
+        const globalIdx = batchStart + di + 1;
         try {
           const result = await importFromContent(engine, d.slug, d.content, {
             noEmbed: NO_EMBED,
             sourceId: srcCfg.sourceId,
+            ...(BULK
+              ? {
+                  skipVersions: true,
+                  skipCodeRefs: true,
+                  skipAliases: true,
+                  skipDedup: true,
+                  skipSanity: true,
+                }
+              : {}),
           });
           if (result.status === "imported" || result.status === "skipped") pagesOk++;
           else {
             pagesErr++;
-            console.error(`  ❌ ${d.slug}: ${result.error || result.status}`);
+            console.error(`\n  ❌ ${d.slug}: ${result.error || result.status}`);
           }
         } catch (e) {
           pagesErr++;
-          console.error(`  ❌ ${d.slug}: ${e instanceof Error ? e.message : String(e)}`);
+          console.error(`\n  ❌ ${d.slug}: ${e instanceof Error ? e.message : String(e)}`);
           progress.tick(1, `err`);
           continue;
         }
@@ -458,6 +475,10 @@ async function main() {
           });
         }
         progress.tick(1, `${srcCfg.label} ${pagesOk}`);
+        if (globalIdx % 10 === 0 || globalIdx === decisions.length) {
+          const pct = ((globalIdx / decisions.length) * 100).toFixed(1);
+          process.stderr.write(`\r  📊 ${srcCfg.label}: ${globalIdx}/${decisions.length} (${pct}%) | ✅ ${pagesOk} | ❌ ${pagesErr} | 🔗 ${linksWritten}          `);
+        }
       }
 
       if (batchLinks.length > 0) {

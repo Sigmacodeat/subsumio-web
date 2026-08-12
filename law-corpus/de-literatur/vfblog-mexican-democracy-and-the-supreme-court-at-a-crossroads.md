@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "069d7db83e4d674e"
 ---
 
 # Mexican Democracy (and the Supreme Court) at a Crossroads

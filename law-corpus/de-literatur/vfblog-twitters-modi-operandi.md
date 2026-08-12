@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/twitters-modi-operandi/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "76271a8e3e7fa49e"
 ---
 
 # Twitter’s Modi Operandi

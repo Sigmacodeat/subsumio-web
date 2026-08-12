@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "94590984ee93e99b"
 ---
 
 # Eine direkte Demokratie wird in der globalisierten Rechtsordnung erwachsen: Die Schweiz nach der Selbstbestimmungs&shy;initiative

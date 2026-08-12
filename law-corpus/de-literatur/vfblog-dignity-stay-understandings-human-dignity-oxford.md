@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/dignity-stay-understandings-human-dignity
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "db34c3d162af3bdd"
 ---
 
 # Dignity Is Here to Stay: Revisiting Understandings of Human Dignity at Oxford

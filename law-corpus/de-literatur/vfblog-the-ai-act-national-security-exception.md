@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-ai-act-national-security-exception/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7f99cf2f67962b4b"
 ---
 
 # The AI Act National Security Exception

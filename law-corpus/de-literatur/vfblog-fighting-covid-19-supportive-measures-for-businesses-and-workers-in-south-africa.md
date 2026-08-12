@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "65c4965ddcdb8a02"
 ---
 
 # Fighting COVID 19: Supportive Measures for Businesses and Workers in South Africa

@@ -20,6 +20,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2022 Monika Trajkovska,
   Evelyne Schmid; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "0adb8cd63f2de912"
 ---
 
 # Les droits de visite en détention et la santé mentale: Implications juridiques des études empiriques concernant les visites par les proches à la lumière de la Convention européenne des droits de l&#039;homme

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/how-to-set-aside-hungarian-cardinal-laws/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7d7fe5a6f33c85da"
 ---
 
 # How to Set Aside Hungarian Cardinal Laws

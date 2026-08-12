@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/reformbedarf-im-referendariat/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ca43d59225c63003"
 ---
 
 # Reformbedarf im Referendariat

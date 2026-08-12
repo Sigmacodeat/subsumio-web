@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a48c316f8bba7e4e"
 ---
 
 # Democratic Decay Resource (DEM-DEC): Global Research Update-March 2019

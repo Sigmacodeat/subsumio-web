@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/populism-and-the-courts/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7b7b9736bcbc4815"
 ---
 
 # Populism and the Courts

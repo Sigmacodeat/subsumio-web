@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/demnachst-in-karlsruhe-die-ezb-vor-gerich
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "99079e63de35c627"
 ---
 
 # Demnächst in Karlsruhe: die EZB vor Gericht

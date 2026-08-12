@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4e71d730b4fe17e5"
 ---
 
 # Koch-Steinbrück-Liste: Karlsruhe stoppt Geheimgesetzgebung

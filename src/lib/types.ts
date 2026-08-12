@@ -113,6 +113,14 @@ export interface RecentQuery {
   created_at: string;
 }
 
+export interface OnboardingProgress {
+  firm: boolean;
+  firstCase: boolean;
+  firstDeadline: boolean;
+  teamInvited: boolean;
+  firstQuery: boolean;
+}
+
 export interface ConflictMatch {
   slug: string;
   title: string;

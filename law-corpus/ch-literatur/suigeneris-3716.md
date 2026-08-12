@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2022 Yannick Reber;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "22071618e6978615"
 ---
 
 # Die Kennzeichnungskraft von Akronymen und eine potenzielle stillschweigende Praxisänderung bei der vollständigen Übernahme des älteren Zeichens in die neuere Marke: Besprechung des Urteils des Bundesverwaltungsgerichts B-1306/2021 vom 1. Februar 2022 – YT//EYT (fig.)

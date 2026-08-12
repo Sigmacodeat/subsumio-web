@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/uk-riots-racism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2d8104ce859cc28e"
 ---
 
 # Making the Unacceptable Acceptable

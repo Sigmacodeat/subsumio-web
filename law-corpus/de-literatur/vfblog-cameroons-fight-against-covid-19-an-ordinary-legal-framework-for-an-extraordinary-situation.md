@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e911b971b7d435ed"
 ---
 
 # Cameroon’s Fight Against COVID-19: An Ordinary Legal Framework for an Extraordinary Situation

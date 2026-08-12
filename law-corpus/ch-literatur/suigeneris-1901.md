@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2018 Benedikt Seiler, Daniel
   Seiler; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "074c984afe389616"
 ---
 
 # Sind Kryptowährungen wie Bitcoin (BTC), Ethereum (ETH) und Ripple (XRP) als Sachen im Sinne des ZGB zu behandeln?

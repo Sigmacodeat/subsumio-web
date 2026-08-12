@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/vorwarts-in-die-klimapolitische-vergangen
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "121166b3e24333a7"
 ---
 
 # Vorwärts in die klimapolitische Vergangenheit

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d21f8dc185e40d14"
 ---
 
 # A Comparative Analysis between the Corporate Sustainability Due Diligence Directive and the French and German Legislation

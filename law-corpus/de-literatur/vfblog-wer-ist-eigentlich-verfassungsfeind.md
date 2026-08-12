@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wer-ist-eigentlich-verfassungsfeind/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "556edd70d8ee4255"
 ---
 
 # Wer ist eigentlich Verfassungsfeind?

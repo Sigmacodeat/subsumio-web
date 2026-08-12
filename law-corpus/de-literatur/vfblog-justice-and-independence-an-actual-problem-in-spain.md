@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "05750b926f70a6eb"
 ---
 
 # Justice and Independence, an Actual Problem in Spain

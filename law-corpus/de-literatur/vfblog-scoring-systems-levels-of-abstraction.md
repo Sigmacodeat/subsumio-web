@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/scoring-systems-levels-of-abstraction/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2a836fba7b91e651"
 ---
 
 # Scoring Systems: Levels of Abstraction

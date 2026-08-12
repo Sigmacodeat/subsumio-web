@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/restoring-polish-judicial-independence/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "82988d12f6252be8"
 ---
 
 # Restoring Polish Judicial Independence

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/digital-id-eu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b9d20d59e340dd3e"
 ---
 
 # A Unique Identification Number for Every European Citizen

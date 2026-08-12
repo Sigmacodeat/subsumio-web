@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/studierendenproteste-im-versammlungsrecht
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7f38908736bba5d5"
 ---
 
 # Studierendenproteste im Versammlungsrecht

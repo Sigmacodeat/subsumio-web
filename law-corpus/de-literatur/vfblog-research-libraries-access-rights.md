@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/research-libraries-access-rights/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5d399c1f9199e3f4"
 ---
 
 # From Backwater to Battleground

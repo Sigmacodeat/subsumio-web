@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b236b71e35d6e93e"
 ---
 
 # Colombia, a Besieged Democracy with (New) Oligarchic Tendencies?

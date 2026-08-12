@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/constitutional-justices-feelings/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "99750beb4d7fa0de"
 ---
 
 # Constitutional Justices have feelings too, you know

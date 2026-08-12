@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-great-laugh/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c5d96b3771ca4040"
 ---
 
 # A Great Laugh

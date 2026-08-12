@@ -159,7 +159,7 @@ export default function CaseAssignmentPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={isEn ? "Case Assignment & Team View" : "Akten-Zuweisung & Team-Übersicht"}
         description={

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-reform-that-isnt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "07eb7ecf3758994d"
 ---
 
 # The Reform That Isn't

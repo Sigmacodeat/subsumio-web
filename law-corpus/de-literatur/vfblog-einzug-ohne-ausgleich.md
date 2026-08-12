@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/einzug-ohne-ausgleich/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "af85d2f7e5b8f94d"
 ---
 
 # Einzug ohne Ausgleich

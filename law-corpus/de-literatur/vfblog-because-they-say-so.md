@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/because-they-say-so/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ffba1e3a43bd2125"
 ---
 
 # Because they say so!

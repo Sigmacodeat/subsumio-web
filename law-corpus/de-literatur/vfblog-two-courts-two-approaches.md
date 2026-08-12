@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/two-courts-two-approaches/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "75857d6c446c405f"
 ---
 
 # Two Courts, Two Approaches

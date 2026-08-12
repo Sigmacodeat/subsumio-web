@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c562bf2dd88ac859"
 ---
 
 # Democratic Decay Resource (DEM-DEC): Seventh Monthly Bibliography Update – February 2019

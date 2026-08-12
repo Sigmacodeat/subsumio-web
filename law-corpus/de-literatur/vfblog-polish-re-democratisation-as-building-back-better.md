@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/polish-re-democratisation-as-building-bac
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "99cae9728ccd0372"
 ---
 
 # Polish Re-Democratisation as “Building Back Better”

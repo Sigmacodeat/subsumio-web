@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/the-role-in-retransition/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "85245a84ef044c6b"
 ---
 
 # On the Role and Legitimacy of Supranational Courts in a Member State’s Retransition

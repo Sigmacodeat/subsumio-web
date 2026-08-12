@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "860a62a32432298e"
 ---
 
 # Alle Jahre wieder – Die Debatte in Deutschland um ein Kopftuchverbot für Kinder

@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2017 Matthias Schwaibold;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "1e65a1dfce49b886"
 ---
 
 # Rezension: Beda Stähelin, Rechtsverfolgungskosten und unentgeltliche Rechtspflege im Lichte der Rechtsgleichheit

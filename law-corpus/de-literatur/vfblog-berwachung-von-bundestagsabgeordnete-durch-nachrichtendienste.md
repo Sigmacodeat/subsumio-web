@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fa9e7d630b38bc1b"
 ---
 
 # Überwachte Bundestagsabgeordnete

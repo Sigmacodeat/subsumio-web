@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/reinventing-the-european-union-through-ar
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4d0e3536c8f230a5"
 ---
 
 # Reinventing the European Union through Article 50?

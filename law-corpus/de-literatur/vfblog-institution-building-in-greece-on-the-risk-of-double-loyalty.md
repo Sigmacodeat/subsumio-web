@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "92d871da3ddc15fd"
 ---
 
 # Institution-Building in Greece. On the Risk of “Double Loyalty”

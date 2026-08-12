@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/freiheit-auf-bewaehrung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "32ed8b69583e8b28"
 ---
 
 # Freiheit auf Bewährung?

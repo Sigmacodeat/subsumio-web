@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/dsa-authoritarianism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a90a428e7e372a64"
 ---
 
 # Why the DSA could save us from the rise of authoritarian regimes

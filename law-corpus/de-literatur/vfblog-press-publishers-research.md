@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/press-publishers-research/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8f6f329581619c02"
 ---
 
 # News, Information, and Knowledge

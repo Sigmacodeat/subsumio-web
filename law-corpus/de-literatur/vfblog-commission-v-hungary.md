@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/commission-v-hungary/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "72c830904241ff8d"
 ---
 
 # Added value(s)?

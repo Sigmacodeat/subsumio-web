@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "721ab661fa8277ab"
 ---
 
 # Kunst ist mehr als nur Investition: zum Sampling-Urteil des BVerfG

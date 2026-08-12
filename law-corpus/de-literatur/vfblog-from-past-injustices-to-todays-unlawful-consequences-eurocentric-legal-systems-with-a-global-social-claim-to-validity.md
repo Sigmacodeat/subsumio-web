@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2899e26dc3c514d3"
 ---
 
 # From Past Injustices to Today’s Unlawful Consequences / Eurocentric legal systems with a global social claim to validity?

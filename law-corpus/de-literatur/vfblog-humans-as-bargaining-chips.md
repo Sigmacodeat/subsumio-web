@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/humans-as-bargaining-chips/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9a406de598987cb7"
 ---
 
 # Humans as “Bargaining Chips”

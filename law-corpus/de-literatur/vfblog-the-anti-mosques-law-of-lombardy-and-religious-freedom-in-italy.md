@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "37cb15df5c59a04c"
 ---
 
 # The “Anti-Mosques” Law of Lombardy and Religious Freedom in Italy

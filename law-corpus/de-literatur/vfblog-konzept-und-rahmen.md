@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/konzept-und-rahmen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "889a08bcf88bf305"
 ---
 
 # Konzept und Rahmen

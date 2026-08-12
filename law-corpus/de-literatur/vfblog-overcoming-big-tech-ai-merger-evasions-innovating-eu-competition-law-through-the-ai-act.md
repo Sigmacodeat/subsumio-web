@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ee535f7d2c2a6a86"
 ---
 
 # Overcoming Big Tech AI Merger Evasions: Innovating EU Competition Law through the AI Act

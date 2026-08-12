@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os7-laws-fate/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0f5fb7068fefb993"
 ---
 
 # Law’s Fate under the US “War on Terror”

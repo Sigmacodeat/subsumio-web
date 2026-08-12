@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/is-it-a-dance-or-is-it-chicken/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7758c9930a9a1c0a"
 ---
 
 # Is it a Dance or is it Chicken?

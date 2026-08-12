@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3bfe4db83eb2e73d"
 ---
 
 # Judicial Backlash Against the Rights of Nature in Ecuador

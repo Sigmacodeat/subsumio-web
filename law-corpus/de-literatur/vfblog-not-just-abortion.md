@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/not-just-abortion/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c34f8d9e9c7794f3"
 ---
 
 # Not Just Abortion

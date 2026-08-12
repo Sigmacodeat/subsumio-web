@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "13a738f0905e2a6d"
 ---
 
 # Die Voraussetzungen fördern oder „How Democracies Survive“

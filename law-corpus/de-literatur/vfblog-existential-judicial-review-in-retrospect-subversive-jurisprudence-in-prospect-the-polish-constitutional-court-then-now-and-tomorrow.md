@@ -16,6 +16,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "35827db305634422"
 ---
 
 # “Existential Judicial Review” in Retrospect, “Subversive Jurisprudence” in  Prospect. The Polish Constitutional Court Then, Now and … Tomorrow

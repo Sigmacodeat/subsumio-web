@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-lieferkettengesetz-wichtiger-denn-je/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "596e7d26d0b3556d"
 ---
 
 # Ein Lieferkettengesetz – wichtiger denn je

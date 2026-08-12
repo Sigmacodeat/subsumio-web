@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pitfalls-of-a-precious-opportunity/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0a2d55fb8a324041"
 ---
 
 # Pitfalls of a Precious Opportunity

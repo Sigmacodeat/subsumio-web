@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-case-against-an-autonomous-eu-rump-ci
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7c452a21633a9d7b"
 ---
 
 # The Case Against an Autonomous ‘EU Rump Citizenship’

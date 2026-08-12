@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/3%c2%bd-myths/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "65c984bc60e72cf4"
 ---
 
 # 3½ Myths about EU law on Citizenship for Sale

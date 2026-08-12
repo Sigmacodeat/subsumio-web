@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fighting-corruption-with-criminal-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ecee9fb05bcfae64"
 ---
 
 # Fighting Corruption with Criminal Law

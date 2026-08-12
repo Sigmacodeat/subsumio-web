@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/soccer-meets-geopolitics/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e724250a57309e0e"
 ---
 
 # Soccer Meets Geopolitics

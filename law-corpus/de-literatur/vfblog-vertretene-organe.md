@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/vertretene-organe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6bb51b31f5122283"
 ---
 
 # Vertretene Organe

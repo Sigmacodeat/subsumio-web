@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-tide-is-turning-elections-in-turkey/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ea8cb5506faff7ed"
 ---
 
 # The Tide is Turning: Elections in Turkey

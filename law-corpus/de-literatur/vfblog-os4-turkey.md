@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os4-turkey/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "38a62bc29bbfc367"
 ---
 
 # 9/11 on Turkish Shores

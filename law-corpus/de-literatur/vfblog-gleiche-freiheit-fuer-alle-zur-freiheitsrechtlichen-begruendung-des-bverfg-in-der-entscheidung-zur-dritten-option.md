@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a9d7a0a9ffaa9c0c"
 ---
 
 # Gleiche Freiheit für alle! Zur freiheitsrechtlichen Begründung des BVerfG in der Entscheidung zur Dritten Option

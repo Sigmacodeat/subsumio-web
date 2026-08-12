@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/big-b-v-uk/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "57934532026c4bdf"
 ---
 
 # Procedural Fetishism and Mass Surveillance under the ECHR

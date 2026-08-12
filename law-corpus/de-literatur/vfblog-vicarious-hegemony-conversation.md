@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/vicarious-hegemony-conversation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "38f5ae1e5c497c02"
 ---
 
 # Vicarious Hegemony and the Anti-hegemonic Thrust of European Law: a Conversation

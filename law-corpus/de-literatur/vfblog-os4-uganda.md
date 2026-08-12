@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os4-uganda/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "363fe35136bfa469"
 ---
 
 # Anti-terrorism regulation and the media in Uganda

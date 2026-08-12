@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9babe6d125897302"
 ---
 
 # Warum der Impfstatus bei der Corona-Triage doch eine Rolle spielen darf

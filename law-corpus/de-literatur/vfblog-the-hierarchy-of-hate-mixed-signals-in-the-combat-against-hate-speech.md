@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dd05717dff1c2997"
 ---
 
 # The Hierarchy of Hate: Mixed Signals in the Combat against Hate Speech

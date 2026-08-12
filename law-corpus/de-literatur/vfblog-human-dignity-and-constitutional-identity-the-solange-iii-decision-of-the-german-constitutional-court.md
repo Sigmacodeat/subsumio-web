@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "15c359826a9a7595"
 ---
 
 # Human Dignity and Constitutional Identity: The Solange-III-Decision of the German Constitutional Court

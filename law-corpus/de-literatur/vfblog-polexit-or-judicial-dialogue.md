@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/polexit-or-judicial-dialogue/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "14d5c4b4bf4468b9"
 ---
 
 # Polexit or judicial dialogue?

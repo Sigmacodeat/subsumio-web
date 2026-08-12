@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/le-pens-gambit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "03605b7b7f7e7ac6"
 ---
 
 # Le Pen’s Gambit

@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "dd25d5aa85f06dd4"
 ---
 
 § 25.1 Freiheit der Person (Art. 2 II 2, 104 GG) &#124; Inhaltsverzeichnis &#124; § 25.3 Ausbürgerung und Auslieferung (Art. 16 GG) 

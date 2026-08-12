@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "68f820bb65588a53"
 ---
 
 # Calling Murders by Their Names as Criminal Offence – a Risk of Statutory Negationism in Poland

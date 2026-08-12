@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-constitution-without-constitutionalism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "29757a9b04acd222"
 ---
 
 # A Constitution without Constitutionalism

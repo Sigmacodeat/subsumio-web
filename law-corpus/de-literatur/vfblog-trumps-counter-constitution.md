@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/trumps-counter-constitution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0d776255b5a6c9a2"
 ---
 
 # Trump’s Counter-Constitution

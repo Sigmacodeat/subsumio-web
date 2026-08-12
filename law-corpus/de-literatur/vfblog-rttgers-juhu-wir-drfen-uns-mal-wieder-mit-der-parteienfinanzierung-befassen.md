@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "78bfb2b17b706f38"
 ---
 
 # Rüttgers: Juhu, wir dürfen uns mal wieder mit der Parteienfinanzierung befassen!

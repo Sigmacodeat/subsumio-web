@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eroding-independence/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "04ea737cd3287b8d"
 ---
 
 # Eroding Independence

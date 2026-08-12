@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eine-collage-der-selbstreferenzialitaet/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "86f7aa765704b3d5"
 ---
 
 # Eine Collage der Selbstreferenzialität

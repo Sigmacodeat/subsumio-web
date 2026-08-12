@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "02918c2fcd22ad65"
 ---
 
 # Why Australia’s Social Media Ban for Kids May Breach Its Constitution

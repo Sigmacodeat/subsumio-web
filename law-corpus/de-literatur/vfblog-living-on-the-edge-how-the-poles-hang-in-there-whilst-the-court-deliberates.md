@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "427e34cbb414fee6"
 ---
 
 # Living on the edge – how the Poles hang in there whilst the Court deliberates

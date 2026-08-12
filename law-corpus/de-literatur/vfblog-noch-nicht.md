@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/noch-nicht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "373796da56090a45"
 ---
 
 # Die rote Karte

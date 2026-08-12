@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fur-einen-opferschutz-ohne-massenuberwach
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b3a7791a2d0dd59c"
 ---
 
 # Für einen Opferschutz ohne Massenüberwachung

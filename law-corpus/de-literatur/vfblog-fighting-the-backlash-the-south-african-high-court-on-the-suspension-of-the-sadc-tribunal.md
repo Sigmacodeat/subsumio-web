@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c2c82eda2b0194f9"
 ---
 
 # Fighting the Backlash – The South African High Court on the Suspension of the SADC Tribunal

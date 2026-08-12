@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gypten-vom-wert-einer-niegelnagelneuen-ve
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "03c3de9ae6dfa48a"
 ---
 
 # Ägypten: Vom Wert einer niegelnagelneuen Verfassung

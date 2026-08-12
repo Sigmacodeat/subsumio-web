@@ -18,6 +18,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2016
   AUSTRIAN LAW JOURNAL
+content_hash: "0e1fb14f4c943e19"
 ---
 
 # Transeuropäische Netze: Staatliche Planung im österreichischen Starkstromwegerecht

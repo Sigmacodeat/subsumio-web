@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c37863cb1f52b156"
 ---
 
 # Karlsruhe beendet Diskriminierung der Homo-Ehe bei der Erbschaftsteuer

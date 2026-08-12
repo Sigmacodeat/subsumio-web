@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "01c45aaf41a8b4cd"
 ---
 
 # Critique and Crisis: The German Struggle with Pandemic Control Measures and the State of Emergency

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/brexit-and-breuk-up/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "37ecf8214e79f9f3"
 ---
 
 # BrEXIT AND BreUK-UP

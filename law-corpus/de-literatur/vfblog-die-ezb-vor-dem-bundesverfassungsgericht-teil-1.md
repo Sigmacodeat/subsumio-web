@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-ezb-vor-dem-bundesverfassungsgericht-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f19474694a2344af"
 ---
 
 # Die EZB vor dem Bundesverfassungsgericht, Teil 1

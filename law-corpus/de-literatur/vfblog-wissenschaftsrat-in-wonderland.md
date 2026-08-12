@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wissenschaftsrat-in-wonderland/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1de4106bd78f5863"
 ---
 
 # Wissenschaftsrat in Wonderland

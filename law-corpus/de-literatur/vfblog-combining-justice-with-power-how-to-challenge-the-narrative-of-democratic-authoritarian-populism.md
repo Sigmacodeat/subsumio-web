@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "838c424c1672ab3c"
 ---
 
 # Combining Justice with Power: How to Challenge the Narrative of Democratic Authoritarian Populism

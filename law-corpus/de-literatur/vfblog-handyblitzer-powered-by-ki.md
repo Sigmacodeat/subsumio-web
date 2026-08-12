@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/handyblitzer-powered-by-ki/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5c0944253a608499"
 ---
 
 # Handyblitzer powered by KI

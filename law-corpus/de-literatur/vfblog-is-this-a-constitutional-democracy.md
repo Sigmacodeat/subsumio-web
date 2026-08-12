@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/is-this-a-constitutional-democracy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "212909ad24e2a6f5"
 ---
 
 # Is This a Constitutional Democracy

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/loschen-fur-die-vielfalt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bb524a9e6de30b39"
 ---
 
 # Löschen für die Vielfalt

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/werden-die-briten-doch-noch-europer/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0efbc9ba1dabbada"
 ---
 
 # Werden die Briten doch noch Europäer?

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "91f79109fca33f48"
 ---
 
 # Несподівані ускладнення: вплив російського вторгнення в Україну на кризу верховенства права в ЕС

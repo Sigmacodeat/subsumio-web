@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/immigration-impeachment/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "36c9b03c929dbe33"
 ---
 
 # Harsh immigration policy leads to a historic impeachment trial in Denmark

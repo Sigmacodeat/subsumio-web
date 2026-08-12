@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/small-fry/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6cd5ea039806f988"
 ---
 
 # Small Fry

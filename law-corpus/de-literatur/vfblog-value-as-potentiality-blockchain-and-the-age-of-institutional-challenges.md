@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7aa4ddfcce8c3e57"
 ---
 
 # Value as Potentiality – Blockchain and the Age of Institutional Challenges

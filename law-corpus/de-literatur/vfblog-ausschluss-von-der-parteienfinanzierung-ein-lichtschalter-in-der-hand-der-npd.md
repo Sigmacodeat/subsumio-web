@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "67ca00638eff2da9"
 ---
 
 # Ausschluss von der Parteienfinanzierung: ein Lichtschalter in der Hand der NPD

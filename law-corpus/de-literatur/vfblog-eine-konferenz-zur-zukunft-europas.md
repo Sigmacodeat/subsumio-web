@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eine-konferenz-zur-zukunft-europas/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e4ce3395dc553d51"
 ---
 
 # Eine Konferenz zur Zukunft Europas

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/neutralised-right-to-strike/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "86376ac549ae9b02"
 ---
 
 # Neutralised (Right to) Strike

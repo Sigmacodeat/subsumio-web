@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cfd64f0fb28046d9"
 ---
 
 # State Secrecy in Counterterrorism: Different Judicial Standards of Review – The Abu Omar Case before Italian Courts

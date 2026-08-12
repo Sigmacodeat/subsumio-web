@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "03fc887d55fb8a9a"
 ---
 
 # Parlamentswahlen in Island: was wir im Jahr 2016 vom isländischen Verfassungsexperiment lernen können

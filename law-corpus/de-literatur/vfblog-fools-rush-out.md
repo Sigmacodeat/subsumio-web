@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fools-rush-out/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e517c057da8dd1e7"
 ---
 
 # Fools Rush Out

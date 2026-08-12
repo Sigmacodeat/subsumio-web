@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6807dd779d6c6109"
 ---
 
 # Dr. “Law-Discoverer” and Mr. “Law-Maker”: the Strange Case of Case-Law in France.

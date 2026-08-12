@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-bakery-as-battleground/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5a3c8d6bd1e4d429"
 ---
 
 # The Bakery as battleground

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/intercultural-hearing-amazon/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "13df6a81b248699f"
 ---
 
 # “Selvar” the Courts

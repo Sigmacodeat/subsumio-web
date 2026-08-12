@@ -20,6 +20,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2024 Frédéric Bernard,
   Antoine Da Rugna; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "16a89b034f8a0a4a"
 ---
 
 # La qualité de victime en matière climatique selon la CourEDH: Analyse (1/2) de l&#039;Arrêt de la CourEDH [GC] 53600/20 du 9 avril 2024 (Verein KlimaSeniorinnen Schweiz et autres c. Suisse).

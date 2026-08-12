@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/is-the-crime-in-the-eye-of-the-beholder/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "93f5319fcf5e9802"
 ---
 
 # Is the Crime in the Eye of the Beholder?

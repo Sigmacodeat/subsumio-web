@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/lksg-menschenrechte/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e41015f787eca6ae"
 ---
 
 # Weder Rückschritt noch Frustration

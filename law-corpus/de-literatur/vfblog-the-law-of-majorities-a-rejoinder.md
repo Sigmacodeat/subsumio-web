@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-law-of-majorities-a-rejoinder/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bcdbee04e15913a6"
 ---
 
 # The Law of Majorities: A Rejoinder

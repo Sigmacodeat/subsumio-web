@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Lorenz Biberstein;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "614570117f5c3a5f"
 ---
 
 # Rezension: Christoph Urwyler, Die Praxis der bedingten Entlassung aus dem Strafvollzug

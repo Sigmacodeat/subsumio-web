@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/game-set-review/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3be11bbcf8c6746a"
 ---
 
 # Game, Set, Review

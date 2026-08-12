@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/tesla-und-die-sicherheit-autonomer-fahrze
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6064c3bf9775cc01"
 ---
 
 # Tesla und die Sicherheit autonomer Fahrzeuge

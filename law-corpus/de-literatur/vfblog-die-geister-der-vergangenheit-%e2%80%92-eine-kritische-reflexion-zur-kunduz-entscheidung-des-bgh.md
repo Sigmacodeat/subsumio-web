@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9ebdb76aa499bef6"
 ---
 
 # Die Geister der Vergangenheit ‒ Eine kritische Reflexion zur Kunduz-Entscheidung des BGH

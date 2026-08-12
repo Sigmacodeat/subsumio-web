@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-tale-of-two-unions/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7b32b4741be0217f"
 ---
 
 # A Tale of Two Unions

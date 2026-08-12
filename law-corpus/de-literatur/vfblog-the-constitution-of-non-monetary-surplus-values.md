@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-constitution-of-non-monetary-surplus-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "27816b7ad7a2ed3a"
 ---
 
 # The Constitution of Non-Monetary Surplus Values

@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f9dad1e7c5987e2d"
 ---
 
 # Putting an End to Minority Voter Disenfranchising in Hungary

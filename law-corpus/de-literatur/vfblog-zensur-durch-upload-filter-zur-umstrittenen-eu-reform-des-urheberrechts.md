@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "05b38b112f210c7f"
 ---
 
 # Zensur durch Upload-Filter: Zur umstrittenen EU-Reform des Urheberrechts

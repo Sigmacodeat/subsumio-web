@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/elon-absage/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c48f6e9b32322461"
 ---
 
 # Twitter – Wie der Digital Services Act willkürlichen (Ent-)Sperrungen und der „Generalamnestie“ eine Absage erteilt

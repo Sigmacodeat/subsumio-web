@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/in-a-nutshell/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "01505c06d7f0cb6f"
 ---
 
 # In a Nutshell

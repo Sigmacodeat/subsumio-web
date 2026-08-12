@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/elternzeit-diskriminierung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ca897807dc707758"
 ---
 
 # Der Preis der Elternzeit

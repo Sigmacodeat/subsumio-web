@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ecc980487d29fdb7"
 ---
 
 # A Constitutionally Momentous Judgment That Changes Practically Nothing?

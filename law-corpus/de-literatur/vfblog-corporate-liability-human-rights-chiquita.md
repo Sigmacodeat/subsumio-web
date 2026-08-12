@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/corporate-liability-human-rights-chiquita
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4c5b8e65655ca0f5"
 ---
 
 # A Historic Verdict Against Chiquita Brands

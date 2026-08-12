@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/whispers-of-change-vol-ii/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b5e30118e57ab0bf"
 ---
 
 # Whispers of Change (Vol. II)

@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "db35d6ffa3c33904"
 ---
 
 # Parlamentarische Verfassungskontrolle: Von Schweden lernen

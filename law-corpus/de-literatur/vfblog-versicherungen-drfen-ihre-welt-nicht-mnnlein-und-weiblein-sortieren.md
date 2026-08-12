@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4cb579adacc9c5e1"
 ---
 
 # Versicherungen dürfen ihre Welt nicht in Männlein und Weiblein sortieren

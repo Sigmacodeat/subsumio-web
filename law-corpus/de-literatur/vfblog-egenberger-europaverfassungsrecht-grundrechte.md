@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/egenberger-europaverfassungsrecht-grundre
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e77abcb238990c90"
 ---
 
 # Zwei Schritte vor, zwei zurück

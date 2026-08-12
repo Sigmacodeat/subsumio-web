@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/time-for-reform-in-bosnia-and-herzegovina
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "97aa5d5b88e4fcdc"
 ---
 
 # Time for Reform in Bosnia and Herzegovina

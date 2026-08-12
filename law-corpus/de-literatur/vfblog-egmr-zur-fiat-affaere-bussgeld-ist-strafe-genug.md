@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/egmr-zur-fiat-affaere-bussgeld-ist-strafe
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b160af2f9380db7f"
 ---
 
 # EGMR zur FIAT-Affäre: Ein Bußgeld ist Strafe genug

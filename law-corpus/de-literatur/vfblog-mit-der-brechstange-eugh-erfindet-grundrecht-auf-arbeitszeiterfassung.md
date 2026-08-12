@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "76e514eca8d79c83"
 ---
 
 # Mit der Brechstange: EuGH erfindet Grundrecht auf Arbeitszeit&shy;erfassung

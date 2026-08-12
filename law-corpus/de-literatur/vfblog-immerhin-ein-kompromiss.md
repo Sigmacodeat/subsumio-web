@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/immerhin-ein-kompromiss/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7f9c5bb9fb1bb993"
 ---
 
 # Immerhin ein Kompromiss

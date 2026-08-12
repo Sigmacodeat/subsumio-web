@@ -16,6 +16,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f73c91da2013f277"
 ---
 
 # Never Missing an Opportunity to Miss an Opportunity: The Council Legal Service Opinion on the Commission’s EU budget-related rule of law mechanism

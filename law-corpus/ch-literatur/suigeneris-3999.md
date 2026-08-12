@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2022 Regina Kiener, Roman
   Schuppli; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "625fd88004ad726d"
 ---
 
 # Die ausbleibenden Stellenerhöhungen bei der Stadtpolizei Zürich sind grundrechtlich problematisch

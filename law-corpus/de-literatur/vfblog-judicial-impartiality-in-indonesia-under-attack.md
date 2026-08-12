@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/judicial-impartiality-in-indonesia-under-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "069cc9c25b581773"
 ---
 
 # Judicial Impartiality in Indonesia Under Attack

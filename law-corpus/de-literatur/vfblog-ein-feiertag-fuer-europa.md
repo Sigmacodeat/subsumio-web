@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-feiertag-fuer-europa/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "62f906c5dc2a8a65"
 ---
 
 # Ein Feiertag für Europa

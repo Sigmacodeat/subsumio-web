@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/freedom-of-speech-at-the-fifa-world-cup-2
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c701dfd0fd8ee75c"
 ---
 
 # Freedom of Speech at the FIFA World Cup 2026

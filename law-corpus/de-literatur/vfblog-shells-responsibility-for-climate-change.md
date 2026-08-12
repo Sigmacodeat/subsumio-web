@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/shells-responsibility-for-climate-change/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5369a4c4480f15c0"
 ---
 
 # Shell’s Responsibility for Climate Change

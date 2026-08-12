@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/ip-hr2he-fashion-upcycling/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e8a899166932b596"
 ---
 
 # Fashion Upcycling and the Human Right to a Healthy Environment

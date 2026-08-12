@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-waere-wohl-so-etwas-wie-eine-verfassu
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "492ddc1691a509c5"
 ---
 
 # “Das wäre wohl so etwas wie eine Verfassungskrise”

@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2024 Adina Keller;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "d9c1d298f894f4e2"
 ---
 
 # «Klimaterrorismus» oder ziviler Ungehorsam? Eine Begriffsklärung.

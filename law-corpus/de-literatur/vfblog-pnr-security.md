@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pnr-security/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8e169e7b4363f288"
 ---
 
 # Passengers Name Records and Security

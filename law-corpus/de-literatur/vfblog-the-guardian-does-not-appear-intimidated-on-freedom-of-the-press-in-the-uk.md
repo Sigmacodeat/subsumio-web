@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6f48ecf691bf7f9a"
 ---
 
 # “The Guardian does not appear intimidated”: On Freedom of the Press in the UK

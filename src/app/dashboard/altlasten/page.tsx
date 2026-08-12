@@ -346,7 +346,7 @@ export default function AltlastenPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("altlasten.title")}
         description={t("altlasten.description")}

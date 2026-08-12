@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/um-jeden-preis/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "59566443f5a9ee7b"
 ---
 
 # Innere Geschlossenheit um jeden Preis

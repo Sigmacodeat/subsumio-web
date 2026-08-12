@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-rise-of-a-dissuasive-democracy-in-fra
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0e2b26914caa8362"
 ---
 
 # The Rise of a Dissuasive Democracy in France

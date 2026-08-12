@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kalter-entzug-auch-junkies-haben-menschen
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "25c59213e17d5e1a"
 ---
 
 # Kalter Entzug: Auch Junkies haben Menschenrechte

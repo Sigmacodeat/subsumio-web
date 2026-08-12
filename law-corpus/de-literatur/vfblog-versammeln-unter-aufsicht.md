@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/versammeln-unter-aufsicht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bf16b0649d0e00bd"
 ---
 
 # Versammeln unter Aufsicht

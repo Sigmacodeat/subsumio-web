@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-new-constitutional-dawn-for-unionism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "64dc5574aecd22c9"
 ---
 
 # A New Constitutional Dawn for Unionism?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/while-they-are-still-alive/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9d2d0289307fa335"
 ---
 
 # While they are still alive

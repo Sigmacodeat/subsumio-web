@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-failure-of-the-left-to-grasp-brexit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cda5a8765e85bc94"
 ---
 
 # The Failure of the Left to Grasp Brexit

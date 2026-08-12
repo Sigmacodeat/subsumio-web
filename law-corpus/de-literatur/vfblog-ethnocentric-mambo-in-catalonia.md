@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ethnocentric-mambo-in-catalonia/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "266d6bf7b49ca7a7"
 ---
 
 # Ethnocentric Mambo in Catalonia

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "87c56039740852e4"
 ---
 
 # Effiziente Praktik oder Gift für den freiheitlichen Rechtsstaat?

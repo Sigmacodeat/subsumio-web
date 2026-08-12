@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/european-parliament-brexit-referendum-mar
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1e510268de6ed402"
 ---
 
 # Political Reductionism at its Best: the EU Institutions’ Response to the Brexit Referendum

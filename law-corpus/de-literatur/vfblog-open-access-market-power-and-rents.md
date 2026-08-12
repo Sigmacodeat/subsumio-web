@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/open-access-market-power-and-rents/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5f3a8b0003bc13b8"
 ---
 
 # Open Access, Market Power, and Rents

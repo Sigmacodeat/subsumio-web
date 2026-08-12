@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "078d70c9872a558b"
 ---
 
 # Systemic Error – On Hungary’s Extension of European Voting Rights to Non-Resident Citizens

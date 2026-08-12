@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kommunale-spielraume-gegen-die-menschenwu
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dc73d4537e5535c6"
 ---
 
 # Kommunale Spiel(räum)e gegen die Menschenwürde

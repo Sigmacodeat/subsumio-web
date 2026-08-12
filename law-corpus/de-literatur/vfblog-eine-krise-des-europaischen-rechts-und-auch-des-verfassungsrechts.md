@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "84ba919269312bfa"
 ---
 
 # “Eine Krise des europäischen Rechts und auch des Verfassungsrechts”

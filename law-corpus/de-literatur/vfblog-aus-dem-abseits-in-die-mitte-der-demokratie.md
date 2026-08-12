@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/aus-dem-abseits-in-die-mitte-der-demokrat
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "34ff635f932ca835"
 ---
 
 # Aus dem Abseits in die Mitte der Demokratie

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-contingency-of-governance-in-the-eu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8b212dc5e3e46da7"
 ---
 
 # The Contingency of Governance in the EU

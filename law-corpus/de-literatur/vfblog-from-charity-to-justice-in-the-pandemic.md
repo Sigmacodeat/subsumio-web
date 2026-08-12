@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/from-charity-to-justice-in-the-pandemic/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7cf2317c2aa786c9"
 ---
 
 # From Charity to Justice in the Pandemic

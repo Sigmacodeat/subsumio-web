@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/impfung-macht-frei-als-sachkritik/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c2d01f139318ca05"
 ---
 
 # „Impfung macht frei“ als Sachkritik

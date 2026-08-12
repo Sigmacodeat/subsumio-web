@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/steward-ownership-wealth-inequality-and-l
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3771732eb8602b60"
 ---
 
 # Steward Ownership, Wealth Inequality, and LPE

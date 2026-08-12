@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/please-be-kind-and-polite-or-else/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "31435782007eff6f"
 ---
 
 # Please Be Kind and Polite. Or Else&#8230;

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2837bd679de70a7e"
 ---
 
 # An Early Deal-Breaker? EU Citizens’ Rights in the UK after Brexit, and the Future Role of the European Court of Justice

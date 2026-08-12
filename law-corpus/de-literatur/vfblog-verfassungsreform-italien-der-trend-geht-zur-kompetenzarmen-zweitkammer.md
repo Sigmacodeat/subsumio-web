@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d4294f6a1a9c2015"
 ---
 
 # Verfassungsreform in Italien: Der Trend geht zur kompetenzarmen Zweitkammer

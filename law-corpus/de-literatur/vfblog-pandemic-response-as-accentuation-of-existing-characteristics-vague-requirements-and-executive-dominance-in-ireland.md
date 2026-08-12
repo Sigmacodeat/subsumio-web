@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "21234b58a637e038"
 ---
 
 # Pandemic Response as Accentuation of Existing Characteristics: Vague Requirements and Executive Dominance in Ireland

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-asymmetric-bet-of-europe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fabc28cc0f879579"
 ---
 
 # The Asymmetric Bet of Europe

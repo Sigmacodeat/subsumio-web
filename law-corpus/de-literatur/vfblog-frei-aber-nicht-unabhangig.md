@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/frei-aber-nicht-unabhangig/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a0ca726a1c4efac6"
 ---
 
 # Frei, aber nicht unabhängig

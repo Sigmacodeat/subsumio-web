@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/evidenzbasierte-politik-ist-ein-menschenr
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5e205aa37ef1d78f"
 ---
 
 # Evidenzbasierte Politik ist ein Menschenrecht

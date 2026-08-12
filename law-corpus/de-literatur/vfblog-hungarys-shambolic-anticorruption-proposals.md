@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hungarys-shambolic-anticorruption-proposa
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "16a58988dd2fb631"
 ---
 
 # Hungary’s Shambolic Anticorruption Proposals

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/klima-kunst-kartoffelbrei/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7ecc021f2ca35c21"
 ---
 
 # Klima, Kunst, Kartoffelbrei

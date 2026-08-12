@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kritik-und-reform-des-jurastudiums/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ee844eb4cf6b7511"
 ---
 
 # Kritik und Reform des Jurastudiums

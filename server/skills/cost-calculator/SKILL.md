@@ -11,13 +11,19 @@ triggers:
   - "Kosten berechnen"
   - "Gebühren berechnen"
   - "RVG Berechnung"
+  - "RVG berechnen"
   - "RATG Berechnung"
   - "Anwaltskosten"
   - "Gerichtskosten"
   - "Streitwert berechnen"
+  - "Streitwert Gebühren"
+  - "Prozesskosten schätzen"
   - "calculate legal fees"
+  - "legal fee estimate"
   - "lawyer costs"
   - "court fees"
+  - "Verfahrensgebühr"
+  - "Termingebühr"
 priority: 65
 tools:
   - search

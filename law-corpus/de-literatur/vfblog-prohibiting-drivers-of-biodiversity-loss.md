@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/prohibiting-drivers-of-biodiversity-loss/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6466b730b6f7e78a"
 ---
 
 # Prohibiting Drivers of Biodiversity Loss

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/laws-conventions-and-fake-constitutions/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cc9e5b6e8e9b8256"
 ---
 
 # Laws, Conventions, and Fake Constitutions

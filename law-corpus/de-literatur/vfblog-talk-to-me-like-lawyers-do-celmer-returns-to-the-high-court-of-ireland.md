@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2c947844d0d4c7dc"
 ---
 
 # Talk to me like Lawyers do – Celmer returns to the High Court of Ireland

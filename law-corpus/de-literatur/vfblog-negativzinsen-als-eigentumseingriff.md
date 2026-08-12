@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/negativzinsen-als-eigentumseingriff/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "726033cf6f1e633b"
 ---
 
 # Negativzinsen als Eigentumseingriff?

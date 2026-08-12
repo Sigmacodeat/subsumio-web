@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hospitality-ltd/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9f36d10343b4bac7"
 ---
 
 # Hospitality Ltd

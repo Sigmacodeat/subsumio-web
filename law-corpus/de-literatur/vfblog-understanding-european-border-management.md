@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/understanding-european-border-management/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8b48b87f1be31f6c"
 ---
 
 # Understanding European Border Management

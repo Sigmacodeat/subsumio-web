@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d51a9a97a1d21270"
 ---
 
 # Defamation of Justice – Propositions on how to evaluate public attacks against the Judiciary

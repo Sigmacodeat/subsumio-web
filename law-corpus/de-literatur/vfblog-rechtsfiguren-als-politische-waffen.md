@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rechtsfiguren-als-politische-waffen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cdf17e49ae1d2e13"
 ---
 
 # Rechtsfiguren als politische Waffen

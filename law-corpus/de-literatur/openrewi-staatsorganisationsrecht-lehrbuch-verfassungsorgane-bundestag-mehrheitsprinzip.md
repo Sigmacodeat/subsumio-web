@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "9792b6c8d10b6975"
 ---
 
 § 5.2.2 Abstimmungen &#124; Inhaltsverzeichnis &#124; § 5.4 Minderheitenschutz 

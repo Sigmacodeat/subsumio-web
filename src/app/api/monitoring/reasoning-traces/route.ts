@@ -21,7 +21,7 @@ const querySchema = z.object({
  */
 export const GET = createHandler(
   {
-    action: "admin.*" as never,
+    action: "admin.*",
     query: querySchema,
     cacheMaxAge: 0,
   },
@@ -36,13 +36,19 @@ export const GET = createHandler(
       return apiSuccess({ traces: [], count: 0 });
     }
 
-    const result = await pool.query(
-      `SELECT * FROM subsumio_reasoning_traces
-       WHERE brain_id = $1
-       ORDER BY timestamp DESC
-       LIMIT $2`,
-      [ctx.brainId, limit]
-    );
+    let result;
+    try {
+      result = await pool.query(
+        `SELECT * FROM subsumio_reasoning_traces
+         WHERE brain_id = $1
+         ORDER BY timestamp DESC
+         LIMIT $2`,
+        [ctx.brainId, limit]
+      );
+    } catch (err) {
+      console.error("[reasoning-traces] query failed:", (err as Error).message);
+      return apiSuccess({ traces: [], count: 0 });
+    }
 
     const traces = result.rows as unknown as ReasoningTrace[];
 

@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "98efb1ad9e5fa150"
 ---
 
 # Investment Law in Corona Times: How Myths Fuel Injustice

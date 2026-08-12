@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-problems-with-general-purpose-ai-dete
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8873d08eed62d099"
 ---
 
 # The Problems with “General Purpose AI Detectability”

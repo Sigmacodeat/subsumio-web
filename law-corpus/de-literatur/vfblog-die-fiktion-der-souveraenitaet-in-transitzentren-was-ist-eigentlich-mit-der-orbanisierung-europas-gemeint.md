@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "877b7fcec391a4f8"
 ---
 
 # Die Fiktion der Souveränität in Transitzentren – Was ist eigentlich mit der Orbánisierung Europas gemeint?

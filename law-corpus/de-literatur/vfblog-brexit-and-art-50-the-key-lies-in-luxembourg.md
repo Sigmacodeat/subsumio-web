@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/brexit-and-art-50-the-key-lies-in-luxembo
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f95300efd932142e"
 ---
 
 # Brexit and Art. 50: the Key lies in Luxembourg

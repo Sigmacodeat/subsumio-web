@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os2-mexico-wall/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bcc2e3072c6ce0c2"
 ---
 
 # From Opposing the Wall to Becoming it

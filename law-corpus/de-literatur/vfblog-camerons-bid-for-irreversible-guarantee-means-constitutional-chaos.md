@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f61c2c97126c6f01"
 ---
 
 # Cameron’s bid for irreversible guarantee means constitutional chaos

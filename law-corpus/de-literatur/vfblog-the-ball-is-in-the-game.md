@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-ball-is-in-the-game/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d55df56286a52e23"
 ---
 
 # The Ball is in the Game

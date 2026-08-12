@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "952d3b41731439bc"
 ---
 
 # Separating Substance from Procedure: How to Address the Israeli Constitutional Crisis

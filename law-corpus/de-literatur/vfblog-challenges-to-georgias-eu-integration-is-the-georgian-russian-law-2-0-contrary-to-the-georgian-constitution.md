@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "37492b6b6174dd4f"
 ---
 
 # Challenges to Georgia’s EU Integration: Is the Georgian ‘Russian Law 2.0’ contrary to the Georgian Constitution?

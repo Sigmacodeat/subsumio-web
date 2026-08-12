@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/european-law-concepts/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bdae1ed3f197c51c"
 ---
 
 # Academic Vertigo

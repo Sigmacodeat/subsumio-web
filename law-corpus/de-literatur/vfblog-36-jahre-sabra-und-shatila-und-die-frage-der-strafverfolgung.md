@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "695d6c4f5aad57ea"
 ---
 
 # 36 Jahre Sabra und Shatila und die Frage der Strafverfolgung

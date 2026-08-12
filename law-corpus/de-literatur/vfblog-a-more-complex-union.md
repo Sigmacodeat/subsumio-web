@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-more-complex-union/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b83ab8e22fd079e7"
 ---
 
 # A More Complex Union

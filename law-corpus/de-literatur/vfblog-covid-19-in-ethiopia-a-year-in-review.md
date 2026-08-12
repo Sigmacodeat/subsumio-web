@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/covid-19-in-ethiopia-a-year-in-review/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "547232e79f9d9c9b"
 ---
 
 # COVID-19 in Ethiopia: A Year in Review

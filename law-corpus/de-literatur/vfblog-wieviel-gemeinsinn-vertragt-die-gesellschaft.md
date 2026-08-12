@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wieviel-gemeinsinn-vertragt-die-gesellsch
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d68ed8a31ed818fe"
 ---
 
 # Wieviel Gemeinsinn verträgt die Gesellschaft?

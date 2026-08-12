@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "70d9efe31448c07a"
 ---
 
 # CETA's Investment Court System and the Autonomy of EU Law: Insights from the Hearing in Opinion 1/17

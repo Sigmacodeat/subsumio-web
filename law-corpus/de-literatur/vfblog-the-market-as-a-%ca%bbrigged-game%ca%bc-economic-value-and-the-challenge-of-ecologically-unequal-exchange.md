@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7e50f69fa474dafa"
 ---
 
 # The Market as a ʻRigged Gameʼ? Economic Value and the Challenge of Ecologically Unequal Exchange

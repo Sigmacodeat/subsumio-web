@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/annual-migration-management-cycle/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "28a1f12333af7114"
 ---
 
 # The Ghost of Dublin Still Among Us

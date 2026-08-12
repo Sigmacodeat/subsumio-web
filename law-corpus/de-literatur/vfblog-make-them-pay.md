@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/make-them-pay/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3778452c9c94e703"
 ---
 
 # Russian Elites, Proxies, and Oligarchs – Make them Pay!

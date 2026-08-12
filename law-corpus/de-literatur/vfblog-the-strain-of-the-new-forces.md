@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-strain-of-the-new-forces/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5f7ffd044c45337c"
 ---
 
 # The Strain of the New Forces

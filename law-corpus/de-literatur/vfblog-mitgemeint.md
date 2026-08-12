@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mitgemeint/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "74fc569a70f3cd69"
 ---
 
 # Mitgemeint

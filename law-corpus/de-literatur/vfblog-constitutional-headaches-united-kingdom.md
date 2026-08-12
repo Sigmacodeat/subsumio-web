@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/constitutional-headaches-united-kingdom/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "368034c0761b8f1d"
 ---
 
 # United no more: Constitutional Headaches ahead for the United Kingdom

@@ -16,14 +16,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2017
   AUSTRIAN LAW JOURNAL
+content_hash: "cb257ae221030d15"
 ---
 
-# Der digitalisierte Forscher
-
-Autor:innen: Kröll, Thomas
-
-## Abstract
-
-Im 21.&nbsp;Jahrhundert ist der akademische Forscher nicht nur zunehmend digital informiert; die gesetzlich gebotene Evaluierung seiner Forschungsleistungen ist mitunter auch eine digital abgestützte. Dies bedeutet nicht nur Vorteile, sondern auch Risiken für den akademischen Forscher.
-
-Volltext: https://alj.uni-graz.at/index.php/alj/article/view/83
+# Der digitalisierte Forscher Autor:innen: Kröll, Thomas ## Abstract Im 21. Jahrhundert ist der akademische Forscher nicht nur zunehmend digital informiert; die gesetzlich gebotene Evaluierung seiner Forschungsleistungen ist mitunter auch eine digital abgestützte. Dies bedeutet nicht nur Vorteile, sondern auch Risiken für den akademischen Forscher. Volltext: https://alj.uni-graz.at/index.php/alj/article/view/83

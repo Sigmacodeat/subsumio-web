@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-bad-workman-blames-his-tools/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "028e0a132bd6f1b8"
 ---
 
 # A Bad Workman Blames His Tools

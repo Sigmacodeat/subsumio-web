@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "068fc66a7e32cbd7"
 ---
 
 # Zur falschen Zeit am falschen Ort – Reform des Investitionsrechts auf Abwegen

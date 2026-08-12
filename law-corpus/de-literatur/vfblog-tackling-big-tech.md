@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/tackling-big-tech/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5ff53b1ca8b0b7da"
 ---
 
 # Tackling Big Tech

@@ -31,7 +31,7 @@ const startPageIdx = args.indexOf("--start-page");
 const START_PAGE = startPageIdx >= 0 ? parseInt(args[startPageIdx + 1], 10) : 1;
 
 const OUT_DIR = join(
-  process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "law-corpus"),
+  process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus"),
   "ch-judikatur"
 );
 

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/setting-it-in-stone/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7a7aab6a80c35144"
 ---
 
 # Setting It in Stone

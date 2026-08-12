@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/schweiz-diktatur-der-mehrheit-reloaded/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1d42af475baf915d"
 ---
 
 # Schweiz: Diktatur der Mehrheit reloaded

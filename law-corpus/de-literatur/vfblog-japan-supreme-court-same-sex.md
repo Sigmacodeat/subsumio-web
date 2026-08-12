@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/japan-supreme-court-same-sex/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "11bf745e9029fbb0"
 ---
 
 # Breaking with Conservatism?

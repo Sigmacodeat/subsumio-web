@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-eu-and-poland-giving-up-on-the-rule-o
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1a3d2fd6c3e9b858"
 ---
 
 # The EU and Poland: Giving up on the Rule of Law?

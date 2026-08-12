@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-dignity-of-the-outvoted/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4c51d335d09715f1"
 ---
 
 # The Dignity of the Outvoted

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "07e00ab28e7f6bd6"
 ---
 
 # I know it’s wrong but I just can’t do right: First impressions on judgment no. 238 of 2014 of the Italian Constitutional Court

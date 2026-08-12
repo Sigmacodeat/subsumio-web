@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9879d82cae27e6b7"
 ---
 
 # Der Grundsatz (in)effektiver Opposition: zum Urteil des Bundes&shy;verfassungs&shy;gerichts in Sachen Oppositions&shy;fraktionsrechte

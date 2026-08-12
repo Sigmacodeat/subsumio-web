@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/austrias-struggle-to-respond-to-climate-c
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c6cf7f1831a0fabc"
 ---
 
 # Austria’s Struggle to Respond to Climate Change

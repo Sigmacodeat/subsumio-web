@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-volkskanzler/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fc74d9ab75586a16"
 ---
 
 # Ein Volkskanzler

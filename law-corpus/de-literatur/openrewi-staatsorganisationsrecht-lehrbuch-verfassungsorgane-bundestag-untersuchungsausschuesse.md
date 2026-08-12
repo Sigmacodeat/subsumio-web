@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "e421c86e5e485934"
 ---
 
 § 10.2 Ausschüsse &#124; Inhaltsverzeichnis &#124; § 10.3 Opposition 

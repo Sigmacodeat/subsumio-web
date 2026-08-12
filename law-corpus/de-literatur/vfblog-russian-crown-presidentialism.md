@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/russian-crown-presidentialism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "83301727903cf398"
 ---
 
 # Russian Crown-Presidentialism

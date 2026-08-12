@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os6-hong-kong-surveillance/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f5904468586146f2"
 ---
 
 # Hong Kong Surveillance Law

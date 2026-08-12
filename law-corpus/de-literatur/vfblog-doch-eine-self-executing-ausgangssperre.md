@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/doch-eine-self-executing-ausgangssperre/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "681b24b976d2422b"
 ---
 
 # Doch eine ’self-executing‘ Ausgangssperre

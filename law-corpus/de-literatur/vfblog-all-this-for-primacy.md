@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/all-this-for-primacy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d12bd93790c8ac29"
 ---
 
 # All This for «Primacy»?

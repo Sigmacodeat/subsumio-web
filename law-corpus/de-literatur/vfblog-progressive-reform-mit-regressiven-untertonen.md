@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/progressive-reform-mit-regressiven-untert
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "177fff657e172abb"
 ---
 
 # Progressive Reform mit regressiven Untertönen

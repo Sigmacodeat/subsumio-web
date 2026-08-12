@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wir-verschenken-unsere-stimme-die-armen-n
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cb8a64a16feb1873"
 ---
 
 # Wir verschenken unsere Stimme an die armen Negerlein

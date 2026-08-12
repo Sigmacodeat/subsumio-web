@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/warm-body-in-the-loop/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4670721c29a29268"
 ---
 
 # A Warm Body in the Loop

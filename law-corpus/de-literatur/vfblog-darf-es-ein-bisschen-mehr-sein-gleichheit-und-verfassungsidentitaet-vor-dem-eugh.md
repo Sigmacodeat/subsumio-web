@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "72bdae85ce5c46c3"
 ---
 
 # Darf es ein bisschen mehr sein? Gleichheit und Verfassungsidentität vor dem EuGH

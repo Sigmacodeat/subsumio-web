@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/binden-die-grundfreiheiten-den-unionsgese
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0c1ef444f9e1e6bc"
 ---
 
 # Binden die Grundfreiheiten den Unionsgesetzgeber?

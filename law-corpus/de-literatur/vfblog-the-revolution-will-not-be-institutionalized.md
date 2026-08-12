@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-revolution-will-not-be-institutionali
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bdadadd64903d459"
 ---
 
 # The Revolution Will Not Be Institutionalized

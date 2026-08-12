@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b2a922997afe419b"
 ---
 
 # Gauweiler und die fünf Profs kriegen ein Drittel ihrer Prozesskosten

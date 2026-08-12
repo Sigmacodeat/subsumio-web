@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dsa-contextualisation-replication/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3bfaa7d0101b6119"
 ---
 
 # Contextualisation over Replication

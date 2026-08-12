@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/silvester-strafrecht-und-symbolpolitik/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4d2af2886aa4fbaa"
 ---
 
 # Silvester, Strafrecht und Symbolpolitik

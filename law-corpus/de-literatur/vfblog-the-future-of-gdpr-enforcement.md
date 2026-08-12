@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-future-of-gdpr-enforcement/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f5304c45aa786716"
 ---
 
 # The Future of GDPR Enforcement

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/unpacking-the-luggage-2013-christopher-mc
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "99429a1cbb35ed75"
 ---
 
 # Unpacking the Luggage 2013: Christopher McCrudden

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/whats-the-added-value-of-legalising-city-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "264173dcda78827b"
 ---
 
 # What’s the Added Value of Legalising City-zenship?

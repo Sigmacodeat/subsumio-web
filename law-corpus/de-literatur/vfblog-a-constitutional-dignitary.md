@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-constitutional-dignitary/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "79b46637afe0a70d"
 ---
 
 # A Constitutional Dignitary Conceived in the Orbán-Regime

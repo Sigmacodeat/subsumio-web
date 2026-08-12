@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cb5ea50c4d553392"
 ---
 
 # Karlsruhe setzt kreativem Umgang mit Ordnungsgeldern Grenzen

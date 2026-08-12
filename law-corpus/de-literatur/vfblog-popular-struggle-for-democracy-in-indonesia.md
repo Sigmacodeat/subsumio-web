@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/popular-struggle-for-democracy-in-indones
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "975d3e50ae6cf148"
 ---
 
 # Popular Struggle for Democracy in Indonesia

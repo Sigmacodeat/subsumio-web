@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/spillovers-and-unexpected-interactions/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "96021fcd93183004"
 ---
 
 # Spillovers and Unexpected Interactions

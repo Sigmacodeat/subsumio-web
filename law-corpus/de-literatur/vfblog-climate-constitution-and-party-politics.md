@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/climate-constitution-and-party-politics/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c3deb8d65d97187c"
 ---
 
 # Climate, Constitution and Party Politics

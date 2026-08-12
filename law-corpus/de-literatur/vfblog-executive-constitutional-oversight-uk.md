@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/executive-constitutional-oversight-uk/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8f463a7f3ee885d0"
 ---
 
 # The Executive’s Responsibility for the Constitution

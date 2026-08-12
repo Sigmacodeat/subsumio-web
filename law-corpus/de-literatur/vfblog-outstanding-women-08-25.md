@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/outstanding-women-08-25/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "70c7819a898dc440"
 ---
 
 # Mia Yamamoto

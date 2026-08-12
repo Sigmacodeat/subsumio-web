@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5f417e40066879bd"
 ---
 
 # Die Beschränkung des politischen Streitraums: Warum das Problem nicht (nur) bei Normenkontrollen der Opposition liegt

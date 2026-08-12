@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os2-mit-sicherheit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "88189c35362b4a7c"
 ---
 
 # Mit Sicherheit gegen Migration

@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "15684a7069b6ffb0"
 ---
 
 # Bundesverfassungsgericht: Voßkuhle wird Chef – warum wohl?

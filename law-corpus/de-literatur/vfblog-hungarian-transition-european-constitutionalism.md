@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/hungarian-transition-european-constitutio
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f02d0f6a5368783c"
 ---
 
 # The Hungarian Transition’s Meaning for European Constitutionalism

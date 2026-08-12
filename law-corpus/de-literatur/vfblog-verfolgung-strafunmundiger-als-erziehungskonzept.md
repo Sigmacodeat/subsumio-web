@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/verfolgung-strafunmundiger-als-erziehungs
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c494b86004d3409d"
 ---
 
 # Verfolgung Strafunmündiger als Erziehungskonzept?

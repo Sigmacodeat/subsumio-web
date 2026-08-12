@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/debate-kumm-armstrong-wrong-question/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ef2b84774b4b5c08"
 ---
 
 # Why the Debate between Kumm and Armstrong is about the Wrong Question

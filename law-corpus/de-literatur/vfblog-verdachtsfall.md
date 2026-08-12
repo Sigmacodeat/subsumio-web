@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/verdachtsfall/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7bad85e0c2b85889"
 ---
 
 # Die AfD als Verdachtsfall

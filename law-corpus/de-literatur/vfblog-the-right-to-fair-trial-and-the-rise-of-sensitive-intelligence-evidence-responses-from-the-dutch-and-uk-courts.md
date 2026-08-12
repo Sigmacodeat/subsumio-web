@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "02aa4a07ce75c1c1"
 ---
 
 # The Right to Fair Trial and the Rise of Sensitive Intelligence Evidence: Responses from the Dutch and UK Courts

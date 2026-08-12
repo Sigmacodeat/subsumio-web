@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/chatgruppen-vertraulichkeit-rassismus/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5c6f8f03c87b088f"
 ---
 
 # Vertraulicher Rassismus

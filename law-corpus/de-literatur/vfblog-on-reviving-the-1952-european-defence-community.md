@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/on-reviving-the-1952-european-defence-com
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f1d136f1cf1a0b11"
 ---
 
 # On Reviving the 1952 European Defence Community

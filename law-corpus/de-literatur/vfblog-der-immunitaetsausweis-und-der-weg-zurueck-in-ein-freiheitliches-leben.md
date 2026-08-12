@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b21ddc98422c8a78"
 ---
 
 # Der Immunitäts&shy;ausweis und der Weg zurück in ein freiheitliches Leben

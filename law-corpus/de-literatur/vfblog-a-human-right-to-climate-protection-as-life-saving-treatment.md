@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3b7e916287bc0fbd"
 ---
 
 # A Human Right to Climate Protection as “Life-Saving Treatment”?

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bedade134ffa3947"
 ---
 
 # Is a Microstate about to Provide EU Rule of Law with its Van Gend Moment?

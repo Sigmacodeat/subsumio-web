@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/context-is-open-to-interpretation-too/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4674ab4efea66afb"
 ---
 
 # Context Is Open to Interpretation, Too

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/was-deutschland-von-der-schweiz-lernen-ka
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "811b46450e560efc"
 ---
 
 # Was Deutschland von der Schweiz lernen kann

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/exception-to-icc-jurisdiction/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "96b3c8d9eff2975a"
 ---
 
 # A “Democratic Exception” to ICC Jurisdiction

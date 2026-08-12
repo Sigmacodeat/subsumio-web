@@ -41,7 +41,7 @@ export default function WhiteLabelPage() {
     if (r.ok) setManifest(j.data.manifest);
   }
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={tr("workspace.white.title")}
         description={tr("workspace.white.description")}

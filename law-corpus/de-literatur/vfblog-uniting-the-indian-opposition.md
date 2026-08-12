@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/uniting-the-indian-opposition/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "93c51a901d1ae419"
 ---
 
 # Uniting the Indian Opposition

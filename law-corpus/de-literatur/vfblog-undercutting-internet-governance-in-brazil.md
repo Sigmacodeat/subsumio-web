@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/undercutting-internet-governance-in-brazi
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1bb10e13dfa95527"
 ---
 
 # Undercutting Internet Governance in Brazil

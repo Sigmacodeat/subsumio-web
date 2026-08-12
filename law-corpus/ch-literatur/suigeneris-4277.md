@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2023 Dario Haux, Georg
   Fischer; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "0b2483d3576d2120"
 ---
 
 # Zugang zum Recht: Ein Überblick über die offenen und (noch) verschlossenen Türen auf dem langen Weg zu Justitia

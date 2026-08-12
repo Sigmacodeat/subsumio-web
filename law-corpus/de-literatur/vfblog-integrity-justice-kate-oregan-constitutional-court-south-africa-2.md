@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3ec650a381aa38a6"
 ---
 
 # Taking Integrity Seriously: Justice Kate O'Regan on the Constitutional Court of South Africa

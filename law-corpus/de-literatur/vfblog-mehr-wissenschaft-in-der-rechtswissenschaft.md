@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mehr-wissenschaft-in-der-rechtswissenscha
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e739f4bcfc1c96bc"
 ---
 
 # Mehr Wissenschaft in der Rechtswissenschaft

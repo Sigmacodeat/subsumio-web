@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7b2135a9429c2bb2"
 ---
 
 # An Empire of Capital? Transatlantic Investment Protection as the Institutionalization of Unjustified Privilege

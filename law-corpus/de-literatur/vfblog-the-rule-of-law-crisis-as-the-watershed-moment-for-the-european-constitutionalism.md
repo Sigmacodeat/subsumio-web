@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "163e58f7a2267183"
 ---
 
 # The Rule of Law Crisis as the Watershed Moment for the European Constitutionalism

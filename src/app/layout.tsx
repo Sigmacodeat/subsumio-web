@@ -202,7 +202,7 @@ export default async function RootLayout({
               left: 0,
               right: 0,
               padding: "12px 16px",
-              background: "#1e40af",
+              background: "#303f88",
               color: "#fff",
               fontSize: "14px",
               textAlign: "center",

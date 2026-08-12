@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/after-the-second-brexit-extension-what-no
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a4ef7b9e19d7994a"
 ---
 
 # After the Second Brexit Extension: What Now?

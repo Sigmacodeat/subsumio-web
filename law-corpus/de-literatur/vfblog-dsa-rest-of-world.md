@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dsa-rest-of-world/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e5092a30fa0013fc"
 ---
 
 # The EU’s new Digital Services Act and the Rest of the World

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/executing-laws/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f6226804de81795f"
 ---
 
 # Executing the Laws

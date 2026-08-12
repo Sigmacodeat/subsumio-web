@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/geas-schutz-vulnerabler-gruppen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b9b183b709ac35c4"
 ---
 
 # (Schl)echter Schutz vulnerabler Gruppen?

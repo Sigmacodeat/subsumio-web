@@ -23,7 +23,7 @@ describe("Dialog", () => {
     render(
       <Dialog>
         <DialogTrigger>Open</DialogTrigger>
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           <DialogTitle>Escape Test</DialogTitle>
         </DialogContent>
       </Dialog>
@@ -38,7 +38,7 @@ describe("Dialog", () => {
     render(
       <Dialog>
         <DialogTrigger>Open</DialogTrigger>
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           <DialogTitle>Close Test</DialogTitle>
         </DialogContent>
       </Dialog>

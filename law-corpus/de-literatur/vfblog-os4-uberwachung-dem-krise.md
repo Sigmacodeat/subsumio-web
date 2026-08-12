@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/os4-uberwachung-dem-krise/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1a53a59c23ceb7b5"
 ---
 
 # Elektronische Überwachung in Zeiten einer demokratischen Krise

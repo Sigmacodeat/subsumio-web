@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/understanding-the-politics-of-resentment/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a3a7aa5d8c46d614"
 ---
 
 # Understanding the Politics of Resentment

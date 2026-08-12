@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/courts-refer-cases/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dd1984a11a1712f0"
 ---
 
 # How To Make Courts Refer Cases Even If They Don't Want To

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/final-thoughts-on-mnemonic-constitutional
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f2225b6937cc074b"
 ---
 
 # Final Thoughts on Mnemonic Constitutionalism

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4cf192521ca9a65e"
 ---
 
 # Von Punkten und anderen Symbolen – eine neue Linie im Abschiebungsrecht oder bloßer Aktionismus ?

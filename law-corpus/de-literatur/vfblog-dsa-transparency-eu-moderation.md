@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dsa-transparency-eu-moderation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aab463a67139162a"
 ---
 
 # Hack the DSA

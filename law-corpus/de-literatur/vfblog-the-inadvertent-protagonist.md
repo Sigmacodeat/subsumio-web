@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-inadvertent-protagonist/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "80abca490b60d101"
 ---
 
 # The Inadvertent Protagonist

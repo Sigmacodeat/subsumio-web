@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/opinion-hungary-advocategeneral/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d42fcf2ee67b8526"
 ---
 
 # From Dialogue to Discord

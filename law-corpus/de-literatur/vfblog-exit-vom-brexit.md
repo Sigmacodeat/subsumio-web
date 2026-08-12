@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/exit-vom-brexit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f430902885fd4dfc"
 ---
 
 # Exit vom Brexit?

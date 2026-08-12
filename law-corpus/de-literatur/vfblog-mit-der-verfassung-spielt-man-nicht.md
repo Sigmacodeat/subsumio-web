@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mit-der-verfassung-spielt-man-nicht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d2958c34e0897303"
 ---
 
 # Mit der Verfassung spielt man nicht!

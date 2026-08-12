@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/constitutional-review-ukraine-criminal-pr
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2a0263084787b0c6"
 ---
 
 # Wartime Constitutionalism and the Politics of Constitutional Review in Ukraine

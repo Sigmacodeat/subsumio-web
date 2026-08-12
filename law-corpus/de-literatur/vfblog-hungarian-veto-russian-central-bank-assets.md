@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hungarian-veto-russian-central-bank-asset
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e3b41661bab0d004"
 ---
 
 # Overcoming the Hungarian Veto

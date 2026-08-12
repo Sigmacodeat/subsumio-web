@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "449b9827110d1d28"
 ---
 
 # Effective Human Rights Due Diligence Ten Years After Rana Plaza?

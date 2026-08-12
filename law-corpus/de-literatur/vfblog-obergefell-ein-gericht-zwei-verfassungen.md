@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/obergefell-ein-gericht-zwei-verfassungen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e9254b3ea8c24173"
 ---
 
 # Obergefell: ein Gericht, zwei Verfassungen

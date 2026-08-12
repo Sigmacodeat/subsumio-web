@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/battling-the-hydra/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fc49e671ba05daae"
 ---
 
 # Battling the hydra in EU anti-discrimination law

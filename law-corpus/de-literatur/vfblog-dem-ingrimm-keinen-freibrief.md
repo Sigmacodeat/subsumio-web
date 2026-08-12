@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dem-ingrimm-keinen-freibrief/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "37c9594699122cf2"
 ---
 
 # Dem Ingrimm keinen Freibrief

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hand-in-hand-mit-der-direkten-demokratie/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5df30f09348ba66c"
 ---
 
 # Hand in Hand mit der direkten Demokratie

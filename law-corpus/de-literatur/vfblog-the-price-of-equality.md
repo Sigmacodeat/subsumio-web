@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-price-of-equality/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "85a2e27da25dcfba"
 ---
 
 # The Price of Equality

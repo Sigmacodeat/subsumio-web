@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-european-convention-on-human-rights-a
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b06d279743ad9fa8"
 ---
 
 # The European Convention on Human Rights at 75

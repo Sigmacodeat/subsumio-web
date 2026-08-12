@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0cbb1f8bbcf748b4"
 ---
 
 # Warum Europa nicht auf Ministerin Varga hereinfallen sollte

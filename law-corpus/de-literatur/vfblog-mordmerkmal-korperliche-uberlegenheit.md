@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mordmerkmal-korperliche-uberlegenheit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "145d6ae4de451577"
 ---
 
 # Muskelkraft als Mordmerkmal

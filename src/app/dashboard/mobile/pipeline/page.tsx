@@ -197,7 +197,7 @@ export default function MobilePipelinePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[color:var(--ds-bg)]">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8 min-h-screen bg-[color:var(--ds-bg)]">
       {/* Header */}
       <div className="sticky top-0 z-10 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
         <h1 className="text-lg font-semibold text-[color:var(--ds-text)]">Pipeline</h1>

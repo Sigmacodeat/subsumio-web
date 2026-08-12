@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ahead-of-the-curve/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b04d0be0f742a8a3"
 ---
 
 # Ahead of the Curve

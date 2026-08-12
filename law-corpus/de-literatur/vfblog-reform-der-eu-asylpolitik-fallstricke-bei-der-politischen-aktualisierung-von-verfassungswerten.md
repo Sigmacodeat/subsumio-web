@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "78ea0f02eb611224"
 ---
 
 # Reform der EU-Asylpolitik:  Fallstricke bei der politischen Aktualisierung von Verfassungswerten

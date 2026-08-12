@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bidens-vaccine-or-test-mandate-in-legal-l
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "91bc8ea179b0c85b"
 ---
 
 # Biden’s Vaccine-or-Test Mandate in Legal Limbo

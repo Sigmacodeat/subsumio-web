@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4b3fc4beee7856c9"
 ---
 
 # Drawing Red Lines and Giving (Some) Bite – the CJEU’s Deficiencies Judgment on the European Rule of Law

@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f7b640462b2071bc"
 ---
 
 # Extraterritoriale Einbürgerungen als Hegemonialinstrument

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "088e5a1673526624"
 ---
 
 # BVerfG: Musik ist kein Lärm, und der Geschmack eines Polizisten kein taugliches Kriterium

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "def5be544c06375e"
 ---
 
 # Warum die britische “Bill of Rights”-Diskussion uns alle angeht

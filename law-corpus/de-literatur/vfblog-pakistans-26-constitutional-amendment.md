@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/pakistans-26-constitutional-amendment/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2b9f7145353d9690"
 ---
 
 # Fractured Foundations and Pakistan’s Kafkaesque Constitutional Amendment

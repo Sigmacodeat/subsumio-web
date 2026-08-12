@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hungary-transparency-law-foreign-funding/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0229a9a60e624459"
 ---
 
 # A Threat to the Core

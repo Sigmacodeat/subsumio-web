@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/right-to-life-echr-pollution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e613670b3d140fb0"
 ---
 
 # A New Step in the Greening of the Right to Life

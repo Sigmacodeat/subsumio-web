@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "baa6012fcfed10b0"
 ---
 
 # Pandemic and Executive Powers in Colombia: A Problem and a Modest Proposal

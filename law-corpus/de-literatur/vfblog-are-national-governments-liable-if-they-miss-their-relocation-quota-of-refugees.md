@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "655409ba3612fefa"
 ---
 
 # Are National Governments Liable if They Miss Their Relocation Quota of Refugees?

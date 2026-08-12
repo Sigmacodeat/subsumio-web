@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "22ee83dce0af2073"
 ---
 
 # The Proposed Amendment of the Comitology Regulation – A Constitutional Perspective

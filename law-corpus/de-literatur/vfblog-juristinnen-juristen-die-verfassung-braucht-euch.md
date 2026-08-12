@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/juristinnen-juristen-die-verfassung-brauc
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "082bc83ac09f9f27"
 ---
 
 # Juristinnen! Juristen! Die Verfassung braucht Euch!

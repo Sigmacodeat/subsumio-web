@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/venice-commission-checklist-2025/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4f7043a4be562db2"
 ---
 
 # Keeping Up with Changing Times

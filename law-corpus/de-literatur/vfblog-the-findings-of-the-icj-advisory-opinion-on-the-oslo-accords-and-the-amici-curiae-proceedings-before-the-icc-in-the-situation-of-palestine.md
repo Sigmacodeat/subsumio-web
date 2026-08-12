@@ -16,6 +16,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "719815290e9e4345"
 ---
 
 # The Findings of the ICJ Advisory Opinion  on the Oslo Accords and the Amici Curiae Proceedings before the ICC in the Situation of Palestine

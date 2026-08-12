@@ -16,6 +16,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ceb34217911d28d8"
 ---
 
 # Zwischen modernem Sicherheitsrecht und klassischem Polizeirecht – Die Entscheidungen zur automatisierten Kenn&shy;zeichen&shy;kontrolle

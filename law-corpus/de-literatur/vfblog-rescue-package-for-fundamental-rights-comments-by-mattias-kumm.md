@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4e4b0cd0fd893dc5"
 ---
 
 # Rescue Package for Fundamental Rights: Comments by MATTIAS KUMM

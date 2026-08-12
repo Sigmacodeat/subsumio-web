@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-letzte-wort/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4d9e732cee0d9745"
 ---
 
 # Das letzte Wort?

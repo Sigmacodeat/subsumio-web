@@ -49,9 +49,26 @@ interface ParsedFrontmatter {
 
 export function parseFrontmatter(text: string): ParsedFrontmatter | null {
   if (!text.startsWith("---")) return null;
-  const endIdx = text.indexOf("---", 3);
-  if (endIdx === -1) return null;
-  const raw = text.slice(3, endIdx).trim();
+
+  // Handle double-`---` pattern: some files (at-landesrecht) start with
+  // an empty `---\n---\n` block followed by the actual frontmatter.
+  // Skip empty blocks and parse the first non-empty one.
+  let pos = 0;
+  let raw = "";
+  while (pos < text.length) {
+    if (!text.startsWith("---", pos)) break;
+    const endIdx = text.indexOf("---", pos + 3);
+    if (endIdx === -1) {
+      // No closing `---` — treat rest of file as frontmatter (some files lack closing marker)
+      raw = text.slice(pos + 3).trim();
+      break;
+    }
+    raw = text.slice(pos + 3, endIdx).trim();
+    if (raw.length > 0) break; // Found non-empty block
+    pos = endIdx; // Skip empty block, try next
+  }
+
+  if (raw.length === 0) return null;
 
   const fm: Record<string, string> = {};
   for (const line of raw.split("\n")) {
@@ -59,11 +76,14 @@ export function parseFrontmatter(text: string): ParsedFrontmatter | null {
     if (m) fm[m[1].toLowerCase()] = m[2].replace(/^"|"$/g, "").trim();
   }
 
-  if (!fm.abbreviation || !fm.jurisdiction) return null;
+  if (!fm.jurisdiction) return null;
+
+  // Fallback for abbreviation: use title if no abbreviation field
+  const abbr = fm.abbreviation || fm.title || "";
 
   return {
-    title: fm.title || fm.abbreviation,
-    abbreviation: fm.abbreviation,
+    title: fm.title || fm.abbreviation || "",
+    abbreviation: abbr,
     jurisdiction: fm.jurisdiction.toLowerCase(),
     gesetzesnummer: fm.gesetzesnummer || null,
     type: fm.type || null,
@@ -174,13 +194,13 @@ function resolveSlugKeys(entries: StatuteEntry[]): Map<string, string> {
 
 export function collectStatutes(): StatuteEntry[] {
   const entries: StatuteEntry[] = [];
-  const sources: { jur: Jurisdiction; dir: string; depth: "top" | "one" }[] = [
+  const sources: { jur: Jurisdiction; dir: string; depth: "top" | "one" | "mixed" }[] = [
     { jur: "at", dir: "at", depth: "top" },
     { jur: "de", dir: "de", depth: "top" },
     { jur: "ch", dir: "ch", depth: "top" },
     { jur: "eu", dir: "eu", depth: "top" },
     { jur: "at", dir: "at-staatsvertraege", depth: "top" },
-    { jur: "at", dir: "at-landesrecht", depth: "one" },
+    { jur: "at", dir: "at-landesrecht", depth: "mixed" as const },
   ];
 
   for (const source of sources) {
@@ -191,11 +211,13 @@ export function collectStatutes(): StatuteEntry[] {
     }
 
     let files: string[] = [];
-    if (source.depth === "top") {
-      files = readdirSync(dir)
+    if (source.depth === "top" || source.depth === "mixed") {
+      const topFiles = readdirSync(dir)
         .filter((f) => f.endsWith(".md") && !f.startsWith("."))
         .map((f) => `${source.dir}/${f}`);
-    } else {
+      files.push(...topFiles);
+    }
+    if (source.depth === "one" || source.depth === "mixed") {
       const subdirs = readdirSync(dir)
         .filter((d) => !d.startsWith("."))
         .map((d) => join(dir, d))
@@ -406,7 +428,7 @@ export function generateTypeScript(entries: StatuteEntry[]): string {
     if (group.length === 0) continue;
     lines.push(`  // ── ${jurLabels[jur]} (${group.length} statutes) ─────────────`);
     for (const e of group) {
-      const labelEsc = e.label.replace(/'/g, "\\'");
+      const labelEsc = e.label.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
       const typePart = e.type !== "statute" ? `, type: "${e.type}"` : "";
       lines.push(
         `  "${e.slugKey}": { jurisdiction: "${jur}", label: "${labelEsc}", file: "${e.file}"${typePart} },`

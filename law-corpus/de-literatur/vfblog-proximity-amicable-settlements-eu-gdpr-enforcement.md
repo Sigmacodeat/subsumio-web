@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/proximity-amicable-settlements-eu-gdpr-en
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "92ff774ae21d0d7a"
 ---
 
 # Proximity, Amicable Settlements, and how the EU Guts GDPR Enforcement

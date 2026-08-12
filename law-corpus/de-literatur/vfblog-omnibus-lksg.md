@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/omnibus-lksg/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ac6d8096f0f2d4ff"
 ---
 
 # Only Half Thrown Under the Bus

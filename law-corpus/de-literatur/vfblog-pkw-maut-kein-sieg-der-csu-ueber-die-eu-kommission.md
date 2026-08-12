@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pkw-maut-kein-sieg-der-csu-ueber-die-eu-k
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "db1ff9edffef42cb"
 ---
 
 # PKW-Maut: Kein Sieg der CSU über die EU-Kommission

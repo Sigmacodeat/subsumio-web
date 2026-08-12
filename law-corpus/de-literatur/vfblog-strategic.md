@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/strategic/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0c95559b193cc91b"
 ---
 
 # Strategic Decoration in the Persianate and Latinate Worlds c. 1500-1700

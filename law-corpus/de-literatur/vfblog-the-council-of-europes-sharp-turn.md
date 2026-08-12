@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-council-of-europes-sharp-turn/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bf3386b695dc8a7d"
 ---
 
 # The Council of Europe’s Sharp Turn

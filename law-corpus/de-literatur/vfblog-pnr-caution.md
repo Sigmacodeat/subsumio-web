@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pnr-caution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dd37c0779c3f73ac"
 ---
 
 # Caution: Safeguards may appear more robust than they are

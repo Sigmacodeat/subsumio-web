@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mar-menor-strafprozess-vertretung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e55d5b657b6e9865"
 ---
 
 # Eine Lagune im Gerichtssaal?

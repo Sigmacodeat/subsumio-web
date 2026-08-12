@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fc123f85627b7ef9"
 ---
 
 # Direkte Demokratie und Popularklage: Proposition 8 bleibt unverteidigt

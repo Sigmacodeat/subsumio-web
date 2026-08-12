@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/from-the-dmca-to-the-dsa/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e81d1b1fcece0f45"
 ---
 
 # From the DMCA to the DSA

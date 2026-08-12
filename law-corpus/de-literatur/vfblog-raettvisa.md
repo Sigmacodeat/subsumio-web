@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/raettvisa/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "476668acb3878922"
 ---
 
 # Big Brother’s Little, More Dangerous Brother

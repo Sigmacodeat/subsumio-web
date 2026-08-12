@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zuruck-zu-separate-but-equal/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dcf2ce0263653891"
 ---
 
 # Zurück zu „separate but equal“?

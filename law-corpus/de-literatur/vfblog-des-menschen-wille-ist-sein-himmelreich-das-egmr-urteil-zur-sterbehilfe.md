@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "42e6433cabddbdbf"
 ---
 
 # Des Menschen Wille ist sein Himmelreich: Das EGMR-Urteil zur Sterbehilfe

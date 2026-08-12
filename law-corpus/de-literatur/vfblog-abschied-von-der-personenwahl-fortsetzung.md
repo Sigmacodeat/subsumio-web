@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/abschied-von-der-personenwahl-fortsetzung
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "834761a998fc1868"
 ---
 
 # Abschied von der Personenwahl (Fortsetzung)

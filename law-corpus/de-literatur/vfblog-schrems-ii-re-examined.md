@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/schrems-ii-re-examined/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cae05efc567b72f3"
 ---
 
 # Schrems II Re-Examined

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ef424673d53ce539"
 ---
 
 # ESM/Fiskalpakt in Karlsruhe, Teil 1: Lieber später und verlässlicher entscheiden

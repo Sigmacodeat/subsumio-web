@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/in-court-for-saving-lives/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "641515dd7dc7f3fe"
 ---
 
 # In Court for Saving Lives

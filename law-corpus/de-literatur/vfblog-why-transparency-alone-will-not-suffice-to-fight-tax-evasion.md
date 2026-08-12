@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ac850a0514d2543b"
 ---
 
 # Why Transparency Alone Will Not Suffice To Fight Tax Evasion

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/abgang-eines-jahrhundert-bullshitters/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6eef4dceab20711c"
 ---
 
 # Abgang eines Jahrhundert-Bullshitters

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-ugly-german/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "314223464deb065d"
 ---
 
 # The Ugly German

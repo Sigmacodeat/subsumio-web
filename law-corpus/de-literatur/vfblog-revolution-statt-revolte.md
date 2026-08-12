@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/revolution-statt-revolte/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f1294dfea75d7372"
 ---
 
 # Revolution statt Revolte

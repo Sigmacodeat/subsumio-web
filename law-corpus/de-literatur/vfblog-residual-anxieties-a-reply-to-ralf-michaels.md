@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/residual-anxieties-a-reply-to-ralf-michae
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "37da9103a544e469"
 ---
 
 # Residual Anxieties – A Reply to Ralf Michaels

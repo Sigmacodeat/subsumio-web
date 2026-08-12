@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/uterus/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aca217b8fecb54e5"
 ---
 
 # “Rented Uterus” as a Universal Crime

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-amazon-rainforest-under-attack/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "316c704cb889c294"
 ---
 
 # The Amazon Rainforest under Attack

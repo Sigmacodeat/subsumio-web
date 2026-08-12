@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/abschiebehaft-darf-keine-strafe-sein/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d6640ebf3ef3770d"
 ---
 
 # Abschiebehaft darf keine Strafe sein

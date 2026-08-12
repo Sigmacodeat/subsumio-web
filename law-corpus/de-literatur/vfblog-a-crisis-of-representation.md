@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-crisis-of-representation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9c782efc7d4830a3"
 ---
 
 # A Crisis of Representation

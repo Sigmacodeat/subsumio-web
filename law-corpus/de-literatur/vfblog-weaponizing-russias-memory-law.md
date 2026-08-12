@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/weaponizing-russias-memory-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c4e3ce92dd99b830"
 ---
 
 # Weaponizing Russia’s Memory Law

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "63e8e9eb18c50dd9"
 ---
 
 # French Law is NOT a Model for the Polish Bill on Disciplining Judges

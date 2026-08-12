@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6ba404a8245e7b34"
 ---
 
 # In eigener Sache: Verfassungsblog und Rechtswissenschaft im (medialen) Wandel

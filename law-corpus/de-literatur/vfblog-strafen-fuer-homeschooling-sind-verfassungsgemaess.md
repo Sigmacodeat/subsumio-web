@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/strafen-fuer-homeschooling-sind-verfassun
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "04e05d3d0d45e236"
 ---
 
 # Strafen für Homeschooling sind verfassungsgemäß

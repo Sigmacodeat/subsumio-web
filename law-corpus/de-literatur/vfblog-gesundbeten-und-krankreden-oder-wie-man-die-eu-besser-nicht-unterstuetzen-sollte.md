@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2ab8827f7e2f554a"
 ---
 
 # Gesundbeten und Krankreden, oder: Wie man die EU besser nicht unterstützen sollte

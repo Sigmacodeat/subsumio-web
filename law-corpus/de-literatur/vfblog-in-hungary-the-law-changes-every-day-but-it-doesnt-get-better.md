@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7ea63645af6d7a87"
 ---
 
 # In Hungary, the Law Changes Every Day but It Doesn’t Get Better

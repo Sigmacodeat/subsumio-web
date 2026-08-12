@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e5dac6079d819e90"
 ---
 
 # The Danish Institute for Human Rights and the Copenhagen Declaration – a Reply to Helga Molbæk-Steensig

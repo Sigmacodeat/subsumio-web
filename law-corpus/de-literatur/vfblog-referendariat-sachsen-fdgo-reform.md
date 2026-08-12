@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/referendariat-sachsen-fdgo-reform/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ac6949dfbe385744"
 ---
 
 # Filter am Flaschenhals

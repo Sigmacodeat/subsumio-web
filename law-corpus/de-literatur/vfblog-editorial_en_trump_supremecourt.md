@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/editorial_en_trump_supremecourt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "de58d26fd31f932d"
 ---
 
 # Outrage Matters

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/constitutional-identity-in-and-on-eu-term
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "507f193be4824faa"
 ---
 
 # Constitutional Identity in and on EU Terms

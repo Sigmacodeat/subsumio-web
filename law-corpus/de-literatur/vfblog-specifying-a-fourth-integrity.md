@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/specifying-a-fourth-integrity/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "58ef00397378813c"
 ---
 
 # Specifying a Fourth Integrity

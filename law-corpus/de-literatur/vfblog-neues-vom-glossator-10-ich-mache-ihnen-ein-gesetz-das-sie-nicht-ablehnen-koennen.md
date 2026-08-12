@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b05912ced2d1bd50"
 ---
 
 # Neues vom Glossator (10): Ich mache ihnen ein Gesetz, das sie nicht ablehnen können

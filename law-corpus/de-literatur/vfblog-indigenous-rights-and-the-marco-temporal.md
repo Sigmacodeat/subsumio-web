@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/indigenous-rights-and-the-marco-temporal/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b48739f9f4b2dd7a"
 ---
 
 # Indigenous Rights and the “Marco Temporal”

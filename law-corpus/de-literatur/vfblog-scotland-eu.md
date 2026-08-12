@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/scotland-eu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c20436e3e8c88df8"
 ---
 
 # Fast-tracking Scotland’s re-entry to the EU

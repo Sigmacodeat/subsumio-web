@@ -19,7 +19,7 @@ const querySchema = z.object({
  */
 export const GET = createHandler(
   {
-    action: "admin.*" as never,
+    action: "admin.*",
     query: querySchema,
     cacheMaxAge: 0,
   },
@@ -31,14 +31,20 @@ export const GET = createHandler(
     }
 
     // Fetch pipeline states with guardrail data from the last N hours
-    const result = await pool.query(
-      `SELECT frontmatter, content, created_at
-       FROM pages
-       WHERE slug LIKE 'pipeline-state/%'
-         AND created_at >= now() - interval '${hours} hours'
-       ORDER BY created_at DESC
-       LIMIT 200`,
-    );
+    let result;
+    try {
+      result = await pool.query(
+        `SELECT frontmatter, content, created_at
+         FROM pages
+         WHERE slug LIKE 'pipeline-state/%'
+           AND created_at >= now() - interval '${hours} hours'
+         ORDER BY created_at DESC
+         LIMIT 200`,
+      );
+    } catch (err) {
+      console.error("[pipeline-stats] query failed:", (err as Error).message);
+      return apiSuccess({ total_pipelines: 0, by_layer: [], cross_verify: { total: 0, clean: 0, flagged: 0, clean_rate: 0, total_flags: 0 } });
+    }
 
     const states = result.rows.map((r) => {
       const fm = typeof r.frontmatter === "string" ? JSON.parse(r.frontmatter) : r.frontmatter;

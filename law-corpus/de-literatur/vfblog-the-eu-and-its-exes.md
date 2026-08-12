@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-eu-and-its-exes/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ec811ece0e498e30"
 ---
 
 # The EU and its ‘Exes’

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { csrfFetch } from "@/lib/csrf";
 import { api } from "@/lib/api";
 import { tracking, resetUser } from "@/lib/tracking";
+import type { OnboardingProgress } from "@/lib/types";
 
 export interface LoginInput {
   email: string;
@@ -29,6 +30,25 @@ export function useMe() {
     queryKey: ["auth", "me"],
     queryFn: () => api.auth.me(),
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useOnboardingProgress() {
+  return useQuery({
+    queryKey: ["onboarding"],
+    queryFn: () => api.onboarding.get(),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useUpdateOnboardingProgress() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (progress: Partial<OnboardingProgress>) => api.onboarding.updateProgress(progress),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["onboarding"] });
+      qc.invalidateQueries({ queryKey: ["auth", "me"] });
+    },
   });
 }
 

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kurven-und-kosten-in-corona-times/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0a0770eee4177bcd"
 ---
 
 # Kurven und Kosten in Corona Times

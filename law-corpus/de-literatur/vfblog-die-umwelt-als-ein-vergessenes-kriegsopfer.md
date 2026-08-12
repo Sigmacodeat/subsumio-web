@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-umwelt-als-ein-vergessenes-kriegsopfe
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8cc41e7ae7b88b24"
 ---
 
 # Die Umwelt als ein vergessenes Kriegsopfer

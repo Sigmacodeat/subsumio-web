@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/from-dialogue-to-trialogue/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "80a7f4fe639ce623"
 ---
 
 # From Dialogue to Trialogue

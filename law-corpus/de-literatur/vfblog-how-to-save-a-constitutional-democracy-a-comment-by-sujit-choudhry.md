@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aebb698d2b772605"
 ---
 
 # How to Save a Constitutional Democracy: a Comment by SUJIT CHOUDHRY

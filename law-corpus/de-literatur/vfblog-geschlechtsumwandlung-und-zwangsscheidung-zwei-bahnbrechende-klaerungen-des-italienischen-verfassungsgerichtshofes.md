@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "08850a8bb49877d7"
 ---
 
 # Geschlechtsumwandlung und Zwangsscheidung: zwei bahnbrechende Klärungen des italienischen Verfassungsgerichtshofes

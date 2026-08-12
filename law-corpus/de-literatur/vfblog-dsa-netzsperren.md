@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/dsa-netzsperren/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3689400e5e40f1d3"
 ---
 
 # Digital Services Act: Europaparlament diskutiert Netzsperren gegen Plattformen

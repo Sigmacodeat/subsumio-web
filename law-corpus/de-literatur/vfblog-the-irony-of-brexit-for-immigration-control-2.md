@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-irony-of-brexit-for-immigration-contr
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "caca111aac7e5f6d"
 ---
 
 # The Irony of Brexit for Immigration Control

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/two-defeats-one-winner/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "64f99ba500f863e5"
 ---
 
 # Two Defeats, One Winner

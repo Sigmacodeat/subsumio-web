@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/icelands-ongoing-constitutional-fight/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "885fca385c68761a"
 ---
 
 # Iceland's Ongoing Constitutional Fight

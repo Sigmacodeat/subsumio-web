@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/europe-does-need-a-constitution-but-of-wh
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bcbf672fd094375b"
 ---
 
 # Europe Does Need a Constitution. But Of What Kind?

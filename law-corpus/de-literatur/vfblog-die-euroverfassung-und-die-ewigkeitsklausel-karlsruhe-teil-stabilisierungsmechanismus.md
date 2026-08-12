@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2728ba817afc9b9b"
 ---
 
 # Die Euro-Verfassung und die Ewigkeitsklausel in Karlsruhe, Teil II: Stabilisierungsmechanismus

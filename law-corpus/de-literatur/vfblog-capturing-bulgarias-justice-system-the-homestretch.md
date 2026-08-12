@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/capturing-bulgarias-justice-system-the-ho
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a377eec0225396c3"
 ---
 
 # Capturing Bulgaria’s Justice System: The Homestretch

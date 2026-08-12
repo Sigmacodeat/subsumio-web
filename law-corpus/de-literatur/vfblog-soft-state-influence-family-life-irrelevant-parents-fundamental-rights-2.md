@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0135bd0f7d484a2e"
 ---
 
 # Soft state influence on family life – Irrelevant for the parents` fundamental rights?

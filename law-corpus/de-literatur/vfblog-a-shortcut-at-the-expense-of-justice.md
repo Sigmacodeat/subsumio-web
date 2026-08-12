@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-shortcut-at-the-expense-of-justice/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "742ff5cd3d03f7bd"
 ---
 
 # A Shortcut at the Expense of Justice

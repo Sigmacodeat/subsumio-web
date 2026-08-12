@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ce85d76bb9b1ac88"
 ---
 
 # The Strange Case of the Publicity of the Brexit Legal Advice

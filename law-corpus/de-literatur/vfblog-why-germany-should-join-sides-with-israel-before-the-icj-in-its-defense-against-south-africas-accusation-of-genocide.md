@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0023b2e047242420"
 ---
 
 # Why Germany Should Join Sides with Israel before the ICJ in its Defense against South Africa's Accusation of Genocide

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/afd-gewerkschaft-ausschluss/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0cbac488fd93b772"
 ---
 
 # (Noch) nicht verboten, aber unvereinbar (Teil II)

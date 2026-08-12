@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/lenin-and-wilson-in-tension/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "09d0f1b7d89507e4"
 ---
 
 # Lenin and Wilson in Tension

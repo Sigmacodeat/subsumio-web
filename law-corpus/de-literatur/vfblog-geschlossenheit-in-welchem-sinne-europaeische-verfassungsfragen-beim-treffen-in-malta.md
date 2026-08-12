@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "93bf095cff634702"
 ---
 
 # Geschlossenheit in welchem Sinne? Europäische Verfassungsfragen beim Treffen in Malta

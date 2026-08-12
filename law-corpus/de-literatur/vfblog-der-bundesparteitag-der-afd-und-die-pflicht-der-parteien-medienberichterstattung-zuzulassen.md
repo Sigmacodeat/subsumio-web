@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3cd54c47c42047f6"
 ---
 
 # Der Bundesparteitag der AfD und die Pflicht der Parteien, Medienberichterstattung zuzulassen

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/red-card-for-the-red-card/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bdfc368620a6d804"
 ---
 
 # Red Card for the Red Card

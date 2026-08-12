@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/one-health-one-welfare-one-rights/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b8d81acb0407f8ad"
 ---
 
 # One Health – One Welfare – One Rights

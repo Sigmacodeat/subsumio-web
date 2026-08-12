@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/der-staat-darf-keine-steuern-erfinden/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d6a52c40af0f801e"
 ---
 
 # Der Staat darf keine Steuern erfinden

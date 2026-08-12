@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "de2a5cc054ca4148"
 ---
 
 # Kundin oder Kunde – Geschlechtergerechte Sprache revisited

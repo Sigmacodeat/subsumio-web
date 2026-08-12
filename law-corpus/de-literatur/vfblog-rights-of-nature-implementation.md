@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rights-of-nature-implementation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "929a0d8fd8570c99"
 ---
 
 # Are Rights of Nature Working?

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "10bad96894d1f774"
 ---
 
 # Streikrecht für Staatsdiener? – Spagat am Bundesverfassungs&shy;gericht

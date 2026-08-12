@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/avoiding-the-next-brexit-cliff-edge/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "32b30d4ebb88d3bb"
 ---
 
 # Avoiding the next Brexit Cliff-Edge

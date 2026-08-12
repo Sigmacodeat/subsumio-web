@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rechts-nur-noch-die-wand/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "738425ec0f0c5a87"
 ---
 
 # Rechts nur noch die Wand?

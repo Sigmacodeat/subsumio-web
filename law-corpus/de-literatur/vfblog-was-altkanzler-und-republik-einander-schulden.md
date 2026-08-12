@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/was-altkanzler-und-republik-einander-schu
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bf8f82b9d94f2ebd"
 ---
 
 # Was Altkanzler und Republik einander schulden

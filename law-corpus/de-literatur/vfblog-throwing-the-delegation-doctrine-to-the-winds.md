@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/throwing-the-delegation-doctrine-to-the-w
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3ae6c39fc2c7799a"
 ---
 
 # Throwing the Delegation Doctrine to the Winds

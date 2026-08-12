@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/krokodilstranen-der-demokratie/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b47940ae23c4be62"
 ---
 
 # Krokodilstränen der Demokratie

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/offener-zugang-zu-offentlichem-recht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5573966f020504f2"
 ---
 
 # Offener Zugang zu öffentlichem Recht

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-scheitern-eines-justiz-experiments/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "270b7fc38d4d0c14"
 ---
 
 # Das Scheitern eines Justiz-Experiments

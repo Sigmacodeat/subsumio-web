@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eu-global-minimum-tax-legality/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "de213b74e0ab827f"
 ---
 
 # Accommodation at Any Cost

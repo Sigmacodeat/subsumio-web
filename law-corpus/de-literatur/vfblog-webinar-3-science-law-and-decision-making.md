@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/webinar-3-science-law-and-decision-making
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "94a130287734345c"
 ---
 
 # WEBINAR 3: “Science, Law and Decision-Making”

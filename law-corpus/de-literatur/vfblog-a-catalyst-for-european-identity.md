@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-catalyst-for-european-identity/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0c073b9b44554468"
 ---
 
 # “A Catalyst for European Identity”

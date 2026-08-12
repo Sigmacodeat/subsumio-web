@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/incremental-but-significant/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d596395a4aaf9816"
 ---
 
 # Incremental but Significant

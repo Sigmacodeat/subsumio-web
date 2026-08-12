@@ -69,6 +69,7 @@ describe("assessContentSanity — size boundaries", () => {
       compiled_truth: "a".repeat(600_000),
       timeline: "",
       title: "",
+      bytes_block: 500_000,
     });
     expect(r.oversize).toBe(true);
     expect(r.reasons).toContain("oversize_block");
@@ -83,6 +84,7 @@ describe("assessContentSanity — size boundaries", () => {
       compiled_truth: "normal prose. ".repeat(70_000), // ~890K bytes
       timeline: "",
       title: "A Long Article",
+      bytes_block: 500_000,
     });
     expect(r.shouldSkipEmbed).toBe(true);
     expect(r.shouldHardBlock).toBe(false);
@@ -101,7 +103,7 @@ describe("assessContentSanity — size boundaries", () => {
 
   test("defaults are exported and reasonable", () => {
     expect(DEFAULT_BYTES_WARN).toBe(50_000);
-    expect(DEFAULT_BYTES_BLOCK).toBe(500_000);
+    expect(DEFAULT_BYTES_BLOCK).toBe(50_000_000);
   });
 });
 
@@ -368,6 +370,7 @@ describe("assessContentSanity — reason ordering", () => {
       compiled_truth: "a".repeat(600_000),
       timeline: "",
       title: "",
+      bytes_block: 500_000,
     });
     const joined = r.reason_messages.join(" ");
     expect(joined).toContain("PAGE_OVERSIZED:");
@@ -382,6 +385,7 @@ describe("assessContentSanity — reason ordering", () => {
       compiled_truth: "Cloudflare Ray ID: abc\n" + "a".repeat(600_000),
       timeline: "",
       title: "",
+      bytes_block: 500_000,
     });
     expect(r.reasons).toContain("oversize_block");
     expect(r.reasons).toContain("junk_pattern");
@@ -648,6 +652,7 @@ describe("assessContentSanity — confidence split (Q1=A)", () => {
       compiled_truth: "normal prose. ".repeat(70_000),
       timeline: "",
       title: "book",
+      bytes_block: 500_000,
     });
     expect(r.oversize).toBe(true);
     expect(r.shouldSkipEmbed).toBe(true);

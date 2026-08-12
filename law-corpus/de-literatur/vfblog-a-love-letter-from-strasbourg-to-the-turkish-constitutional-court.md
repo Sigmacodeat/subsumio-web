@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fb7fbaacd72b5a8e"
 ---
 
 # A Love Letter from Strasbourg to the Turkish Constitutional Court

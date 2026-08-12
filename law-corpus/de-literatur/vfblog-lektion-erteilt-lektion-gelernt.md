@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/lektion-erteilt-lektion-gelernt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fcafa0eb003208a6"
 ---
 
 # Lektion erteilt, Lektion gelernt

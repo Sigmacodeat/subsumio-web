@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e24d4fb487493372"
 ---
 
 # Farbenfrohe Rechtsprechung: Verweisungsanalyse von Entscheidungen des Bundesverfassungsgerichts

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/karlsruhe-bremst-auch-fr-nazis/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a85033c0fb924181"
 ---
 
 # Karlsruhe bremst auch für Nazis

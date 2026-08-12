@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2e2e2f9413719305"
 ---
 
 # Die Minimalvariante: Der Gesetzesentwurf der Bundesregierung zur Dritten Option

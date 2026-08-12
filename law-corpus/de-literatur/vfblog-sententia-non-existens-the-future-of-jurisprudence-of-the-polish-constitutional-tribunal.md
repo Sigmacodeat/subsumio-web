@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "731f233267358b0b"
 ---
 
 # Sententia non existens – the future of jurisprudence of the Polish Constitutional Tribunal?

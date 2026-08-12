@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/buergerraete_demokratie_deutschland_umset
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f8b4d4c8a2c098b4"
 ---
 
 # Zeit zum Abwechseln

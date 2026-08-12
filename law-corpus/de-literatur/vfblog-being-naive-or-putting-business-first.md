@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/being-naive-or-putting-business-first/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cf608e37110f9cc5"
 ---
 
 # Being Naïve or Putting Business First?

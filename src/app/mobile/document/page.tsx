@@ -224,7 +224,7 @@ export default function MobileDocumentPage() {
                 borderRadius: 8,
                 padding: "7px 8px",
                 cursor: "pointer",
-                color: "hsl(230, 8%, 80%)",
+                color: "var(--ds-text-muted)",
                 display: "flex",
               }}
             >
@@ -238,7 +238,7 @@ export default function MobileDocumentPage() {
                 borderRadius: 8,
                 padding: "7px 8px",
                 cursor: "pointer",
-                color: "hsl(230, 8%, 80%)",
+                color: "var(--ds-text-muted)",
                 display: "flex",
                 textDecoration: "none",
               }}
@@ -258,8 +258,8 @@ export default function MobileDocumentPage() {
                 gap: 6,
                 padding: "8px 12px",
                 marginBottom: 12,
-                background: "hsla(40, 70%, 45%, 0.13)",
-                border: "1px solid hsla(40, 70%, 45%, 0.19)",
+                background: "var(--ds-warning-bg)",
+                border: "1px solid var(--ds-warning-border)",
                 borderRadius: 8,
                 fontSize: 12,
                 color: "var(--signal-warning-500)",
@@ -298,7 +298,7 @@ export default function MobileDocumentPage() {
               style={{
                 fontSize: 14,
                 lineHeight: 1.7,
-                color: "hsl(230, 8%, 80%)",
+                color: "var(--ds-text)",
                 whiteSpace: "pre-wrap",
                 wordBreak: "break-word",
               }}
@@ -401,7 +401,7 @@ export default function MobileDocumentPage() {
                 display: "flex",
                 alignItems: "flex-start",
                 padding: "13px 16px",
-                borderBottom: "1px solid hsl(230, 10%, 12%)",
+                borderBottom: "1px solid var(--ds-border)",
                 background: "none",
                 border: "none",
                 cursor: "pointer",
@@ -445,7 +445,7 @@ export default function MobileDocumentPage() {
                 </div>
               )}
               {page.created_at && (
-                <div style={{ fontSize: 10, color: "hsl(230, 8%, 35%)", marginTop: 4 }}>
+                <div style={{ fontSize: 10, color: "var(--ds-text-subtle)", marginTop: 4 }}>
                   {new Date(page.created_at).toLocaleDateString("de-AT")}
                 </div>
               )}

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/starmer-resignation-liberal-democracy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "718d0755ab4dd004"
 ---
 
 # A Tale of Our Times

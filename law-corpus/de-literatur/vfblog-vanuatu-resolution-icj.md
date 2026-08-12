@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/vanuatu-resolution-icj/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5f25dc64630deef0"
 ---
 
 # “Once the Lawyers Move In, You Know the Problem Is Serious”

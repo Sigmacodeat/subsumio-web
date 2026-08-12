@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-bursting-of-a-constitutional-bubble/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0ca8428a4c372ad0"
 ---
 
 # The Bursting of a Constitutional Bubble

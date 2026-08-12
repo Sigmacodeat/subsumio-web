@@ -782,7 +782,7 @@ export default function TrustAccountingPage() {
                   {t("trust.tx_amount" as DashboardKey)} *
                 </label>
                 <Input
-                  type="number"
+                  type="number" inputMode="decimal"
                   step="0.01"
                   value={txAmount}
                   onChange={(e) => setTxAmount(Number(e.target.value))}
@@ -848,7 +848,7 @@ export default function TrustAccountingPage() {
                     Bankbestand (Kontoauszug) *
                   </label>
                   <Input
-                    type="number"
+                    type="number" inputMode="decimal"
                     step="0.01"
                     value={reconcileBankBalance}
                     onChange={(e) => setReconcileBankBalance(Number(e.target.value))}
@@ -1105,7 +1105,7 @@ export default function TrustAccountingPage() {
                 {t("trust.opening_balance" as DashboardKey)}
               </label>
               <Input
-                type="number"
+                type="number" inputMode="decimal"
                 step="0.01"
                 value={newOpening}
                 onChange={(e) => setNewOpening(Number(e.target.value))}

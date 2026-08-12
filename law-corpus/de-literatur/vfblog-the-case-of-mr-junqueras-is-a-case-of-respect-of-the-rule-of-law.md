@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e9bf75a57d75cb4d"
 ---
 
 # The Case of Mr. Junqueras is a Case of Respect of the Rule of Law

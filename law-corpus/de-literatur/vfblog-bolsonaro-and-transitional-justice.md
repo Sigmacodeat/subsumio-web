@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bolsonaro-and-transitional-justice/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "24f29d35f357ae8d"
 ---
 
 # Bolsonaro and Transitional Justice

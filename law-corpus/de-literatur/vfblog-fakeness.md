@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fakeness/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e7e3c877572c405f"
 ---
 
 # Fakeness in Political Popularity

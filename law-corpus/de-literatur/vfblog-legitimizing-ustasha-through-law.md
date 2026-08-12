@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/legitimizing-ustasha-through-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e775f1408086fdb8"
 ---
 
 # Legitimizing Heresy through Law

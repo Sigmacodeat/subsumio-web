@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/judicial-reform-mexico/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f566e68321165523"
 ---
 
 # The 2024 Judicial Reform in Mexico

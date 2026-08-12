@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/will-the-dsa-have-the-brussels-effect/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b4b6f2375fb3e6bc"
 ---
 
 # Will the DSA have the Brussels Effect?

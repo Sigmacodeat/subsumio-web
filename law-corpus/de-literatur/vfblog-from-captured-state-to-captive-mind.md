@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/from-captured-state-to-captive-mind/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f09b735c59db5e98"
 ---
 
 # From Captured State to Captive Mind

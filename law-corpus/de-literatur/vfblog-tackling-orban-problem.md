@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/tackling-orban-problem/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0b1332822b323bdc"
 ---
 
 # Tackling the Union’s “Orbán Problem” Now

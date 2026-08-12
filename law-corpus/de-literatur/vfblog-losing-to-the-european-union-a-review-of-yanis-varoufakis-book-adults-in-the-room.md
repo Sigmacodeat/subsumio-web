@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "231c4d4c2ddb6e28"
 ---
 
 # Losing to the European Union: A Review of Yanis Varoufakis' Book “Adults in the Room”

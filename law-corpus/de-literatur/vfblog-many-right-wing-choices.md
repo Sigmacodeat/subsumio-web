@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/many-right-wing-choices/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a1544861cfeeed21"
 ---
 
 # Many Right(-wing) Choices

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mehr-menschenrechte-wagen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fe5b8a82b662f7c5"
 ---
 
 # Mehr Menschenrechte wagen

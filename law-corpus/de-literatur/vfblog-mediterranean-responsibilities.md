@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mediterranean-responsibilities/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4a9d765a6527a1b8"
 ---
 
 # Mediterranean Responsibilities

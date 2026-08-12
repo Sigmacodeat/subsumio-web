@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9d87bd8a29dd112f"
 ---
 
 # Why Courts will not Stop Global Warming, but Climate Litigation is Still Useful

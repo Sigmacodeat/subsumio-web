@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/memory-laws-and-security/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0dc6db8b9e769d74"
 ---
 
 # Memory Laws and Security

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wahlkreissieger-ohne-bundestagssitz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1e65a47bf3f5495f"
 ---
 
 # Wahlkreissieger ohne Bundestagssitz?

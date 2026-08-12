@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/restoring-academic-freedom-in-hungary/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b55e051bdd4332a4"
 ---
 
 # Restoring Academic Freedom in Hungary

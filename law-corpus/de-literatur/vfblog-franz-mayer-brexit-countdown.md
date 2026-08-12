@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/franz-mayer-brexit-countdown/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ee1d376b276f461f"
 ---
 
 # Zwei Jahre sind nicht immer gleich zwei Jahre: wann beginnt der Brexit-Countdown?

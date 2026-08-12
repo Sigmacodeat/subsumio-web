@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d87a66c7673443a0"
 ---
 
 # Abschied von Adenauer oder weshalb die Wahlrechtsreform ein Verfassungsrechtsproblem ist

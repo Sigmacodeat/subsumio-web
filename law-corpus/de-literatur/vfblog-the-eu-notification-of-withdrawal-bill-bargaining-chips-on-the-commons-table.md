@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1893c6f69121a4cd"
 ---
 
 # The EU (Notification of Withdrawal) Bill: Bargaining Chips on the Commons Table

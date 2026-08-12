@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/what-madonna-got/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5a9c24e4cc9ea0db"
 ---
 
 # What Madonna Got and the EU Did Not

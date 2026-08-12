@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-role-of-referenda-in-orbans-regime/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2cba419b15b8c969"
 ---
 
 # The Role of Referenda in Orban's Regime

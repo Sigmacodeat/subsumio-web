@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6f358b1525189c2b"
 ---
 
 # A Double Plea for International Opening and More Strongly Interlinked Multidisciplinarity

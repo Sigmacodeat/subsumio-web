@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "325b63d238250964"
 ---
 
 # Zur Korrektur&shy;dauer von Doktor&shy;arbeiten: ein Appell an die Dekane der rechts&shy;wissen&shy;schaftlichen Fakultäten in Deutschland

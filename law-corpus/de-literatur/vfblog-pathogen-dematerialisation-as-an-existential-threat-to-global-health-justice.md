@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "56724badc74d2d9c"
 ---
 
 # Pathogen Dematerialisation as an Existential Threat to Global Health Justice

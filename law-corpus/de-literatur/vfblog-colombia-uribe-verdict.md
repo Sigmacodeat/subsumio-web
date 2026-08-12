@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/colombia-uribe-verdict/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3e843b00536ef8e7"
 ---
 
 # Colombia’s Ketchup-Bottle-Case

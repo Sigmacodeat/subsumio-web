@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7c331674453e4eeb"
 ---
 
 # Two Tales of Two Courts: zum Kopftuch-Beschluss und dem „horror pleni“

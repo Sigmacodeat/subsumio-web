@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/towards-the-8th-decade-of-the-grundgesetz
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e8911e0d1947aef6"
 ---
 
 # Towards the 8th Decade of the Grundgesetz

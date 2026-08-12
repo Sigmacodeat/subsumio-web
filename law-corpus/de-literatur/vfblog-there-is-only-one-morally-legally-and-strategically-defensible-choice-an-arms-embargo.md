@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "452eb4a2182638ea"
 ---
 
 # “There is only one morally, legally and strategically defensible choice: an arms embargo”

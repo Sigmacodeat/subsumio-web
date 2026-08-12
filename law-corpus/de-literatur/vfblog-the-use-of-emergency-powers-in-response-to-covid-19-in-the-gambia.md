@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2a7f90d8a7740505"
 ---
 
 # The Use of Emergency Powers in Response to COVID-19 in The Gambia

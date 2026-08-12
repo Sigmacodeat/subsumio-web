@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -142,10 +142,12 @@ export default function IntakePage() {
   const [filter, setFilter] = useState<"all" | IntakeStatus>("all");
   const [sourceFilter, setSourceFilter] = useState<"all" | IntakeSource>("all");
   const [search, setSearch] = useState("");
-  const [conversionTargets, setConversionTargets] = useState<Record<string, string>>({});
-  const [createOpen, setCreateOpen] = useState(false);
+  const [searchParams] = useState(() => new URLSearchParams(typeof window !== "undefined" ? window.location.search : ""));
+
   const [wizardItem, setWizardItem] = useState<IntakeRecord | null>(null);
   const [updatingSlug, setUpdatingSlug] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [conversionTargets, setConversionTargets] = useState<Record<string, string>>({});
   const [createForm, setCreateForm] = useState({
     source: "manual" as IntakeSource,
     summary: "",
@@ -155,6 +157,17 @@ export default function IntakePage() {
     legal_area: "",
     missing_documents: "",
   });
+
+  useEffect(() => {
+    const isNew = searchParams.get("new") === "1";
+    const name = searchParams.get("name");
+    if (isNew) {
+      setCreateOpen(true);
+      if (name) {
+        setCreateForm((prev) => ({ ...prev, client_name: name }));
+      }
+    }
+  }, [searchParams]);
 
   const listQuery = useQuery({
     queryKey: ["intake", "list"],
@@ -286,7 +299,7 @@ export default function IntakePage() {
       .split(",")
       .map((value) => value.trim())
       .filter(Boolean);
-    await createMutation.mutateAsync({
+    const result = await createMutation.mutateAsync({
       source: createForm.source,
       summary,
       client_name: createForm.client_name.trim() || undefined,
@@ -297,6 +310,10 @@ export default function IntakePage() {
       legal_area: createForm.legal_area.trim() || undefined,
       missing_documents: missingDocuments.length ? missingDocuments : undefined,
     });
+    // AP11: Neugestalteter Intake leitet direkt in den Mandatsannahme-Wizard
+    if (result && typeof result === "object" && "slug" in result) {
+      setWizardItem(result as unknown as IntakeRecord);
+    }
   }
 
   function canStartAcceptance(item: IntakeRecord) {

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-epskopat-und-das-grundgesetz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "331bff24af458f92"
 ---
 
 # Der Episkopat und das Grundgesetz

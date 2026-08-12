@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Marc Hürzeler, Raffaella
   Biaggi; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "68981e0034c0b626"
 ---
 
 # Mitbestimmung des Personals beim Wechsel der Vorsorgeeinrichtung: Kommentar zu BGE 146 V 169

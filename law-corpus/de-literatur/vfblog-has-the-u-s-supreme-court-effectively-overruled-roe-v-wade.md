@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e095f493310be7ce"
 ---
 
 # Has the U.S. Supreme Court Effectively Overruled Roe v. Wade?

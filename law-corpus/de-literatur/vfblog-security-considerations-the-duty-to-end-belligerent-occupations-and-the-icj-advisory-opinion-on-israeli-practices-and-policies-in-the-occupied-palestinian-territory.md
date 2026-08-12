@@ -16,6 +16,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "671a365633efd527"
 ---
 
 # Security Considerations, the Duty to End Belligerent Occupations and the ICJ Advisory Opinion on Israeli practices and policies in the Occupied Palestinian Territory

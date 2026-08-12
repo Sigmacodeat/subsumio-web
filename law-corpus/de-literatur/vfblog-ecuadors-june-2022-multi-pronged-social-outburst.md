@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ecuadors-june-2022-multi-pronged-social-o
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "77c0e1f34089bffe"
 ---
 
 # Ecuador’s June 2022 Multi-pronged Social Outburst

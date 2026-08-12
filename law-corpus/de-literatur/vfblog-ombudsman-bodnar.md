@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ombudsman-bodnar/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2b1b7116ce3a3f36"
 ---
 
 # And Now His Watch Is Ended

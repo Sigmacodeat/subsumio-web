@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/boris-and-the-queen-lessons-from-canada/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4e5f97ed6ebcef1c"
 ---
 
 # Boris and the Queen: Lessons from Canada

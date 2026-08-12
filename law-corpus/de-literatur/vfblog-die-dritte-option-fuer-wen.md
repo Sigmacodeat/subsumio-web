@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-dritte-option-fuer-wen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d9359f59ccb73ae2"
 ---
 
 # Die Dritte Option: Für wen?

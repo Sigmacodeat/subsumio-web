@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7c1500d5f2e174b4"
 ---
 
 # „Der Fall könnte einen Präzedenzfall für das gesamte Internet schaffen”

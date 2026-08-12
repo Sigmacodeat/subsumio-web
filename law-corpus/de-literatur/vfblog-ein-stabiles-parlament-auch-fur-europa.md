@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-stabiles-parlament-auch-fur-europa/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "415f17688d5e5756"
 ---
 
 # Ein stabiles Parlament (auch) für Europa

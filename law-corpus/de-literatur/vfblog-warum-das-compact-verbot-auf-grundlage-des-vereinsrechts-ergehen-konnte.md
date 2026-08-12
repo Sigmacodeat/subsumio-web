@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cd84c049e0883bbc"
 ---
 
 # Warum das Compact-Verbot auf Grundlage des Vereinsrechts ergehen konnte

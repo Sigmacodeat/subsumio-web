@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/einige-gedanken-zum-zeitungssterben/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aeda5b7c56001017"
 ---
 
 # Einige Gedanken zum Zeitungssterben

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/shortcomings-of-the-ai-act/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9e1ba46a6e14d65f"
 ---
 
 # Shortcomings of the AI Act

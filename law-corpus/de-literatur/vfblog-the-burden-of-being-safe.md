@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-burden-of-being-safe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "df7fc5d8f5940376"
 ---
 
 # The Burden of Being “Safe”

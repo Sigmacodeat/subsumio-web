@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ecee36db482add31"
 ---
 
 # „…den Mensch dem Menschen ähnlich machen“:  Über Kooperationen zwischen Recht und Literatur

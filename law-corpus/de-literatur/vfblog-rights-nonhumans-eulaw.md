@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rights-nonhumans-eulaw/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4d67d38db4d61970"
 ---
 
 # Rights for Non-Humans in EU Law

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/reversing-emancipation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2e42d20a30e13aec"
 ---
 
 # Reversing Emancipation?

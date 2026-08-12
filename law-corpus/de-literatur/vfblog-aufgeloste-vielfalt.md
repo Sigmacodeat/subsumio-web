@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/aufgeloste-vielfalt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "868c2d8b1256d8e0"
 ---
 
 # Kündigung der Vielfalt – ohne Diskussion

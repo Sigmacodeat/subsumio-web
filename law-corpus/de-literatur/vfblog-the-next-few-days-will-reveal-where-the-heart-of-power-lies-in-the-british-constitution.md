@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8ddeb8ddbdd7dd5e"
 ---
 
 # The Next Few Days Will Reveal where the Heart of Power Lies in the British Constitution

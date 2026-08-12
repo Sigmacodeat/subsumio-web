@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bverfg-asylsozialrecht-existenzminimum/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c4c4eac5c9637bad"
 ---
 
 # Die Minimierung des Minimums

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/steadfast-and-unreserved/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6b7fc49aecf4063b"
 ---
 
 # &#8216;Steadfast and Unreserved'

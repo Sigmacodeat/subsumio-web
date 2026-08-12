@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ki-grok-deepfakes-strafrecht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "35fc90d5cf845bc3"
 ---
 
 # KI ohne Verantwortung?

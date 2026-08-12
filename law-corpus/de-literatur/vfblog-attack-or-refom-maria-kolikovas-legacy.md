@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/attack-or-refom-maria-kolikovas-legacy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ae819cfd248916ee"
 ---
 
 # Attack or Reform – Mária Kolíková's legacy

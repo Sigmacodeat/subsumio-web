@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Charlotte Sieber-Gasser;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "f9e4cca9f153d3d4"
 ---
 
 # Book Review: Jens Lehne, Crisis at the WTO: Is the Blocking of Appointments to the WTO Appellate Body by the United States Legally Justified?

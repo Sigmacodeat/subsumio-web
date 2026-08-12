@@ -237,4 +237,22 @@ describe("ChatInput", () => {
     fireEvent.click(screen.getByTestId("model-selector"));
     await waitFor(() => expect(onModelChange).toHaveBeenCalledWith("gpt-4"));
   });
+
+  it("does not send while IME is composing on Enter", async () => {
+    const { onSend } = renderChatInput();
+    const textarea = screen.getByRole("textbox");
+    await userEvent.type(textarea, "Hallo");
+    fireEvent.keyDown(textarea, { key: "Enter", code: "Enter", isComposing: true });
+    expect(onSend).not.toHaveBeenCalled();
+  });
+
+  it("sends on Enter once IME composition ends", async () => {
+    const { onSend } = renderChatInput();
+    const textarea = screen.getByRole("textbox");
+    await userEvent.type(textarea, "Hallo");
+    fireEvent.keyDown(textarea, { key: "Enter", code: "Enter", isComposing: false });
+    await waitFor(() => {
+      expect(onSend).toHaveBeenCalledWith("Hallo", undefined);
+    });
+  });
 });

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/leges-fugitivae-wie-recht-verschwindet/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0ed23b27f352f913"
 ---
 
 # Leges fugitivae: Wie Recht verschwindet

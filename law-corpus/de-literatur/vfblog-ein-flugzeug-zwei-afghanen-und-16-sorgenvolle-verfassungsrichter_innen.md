@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aa25247eae8b740c"
 ---
 
 # Ein Flugzeug, zwei Afghanen und 16 sorgenvolle Verfassungs&shy;richter_innen

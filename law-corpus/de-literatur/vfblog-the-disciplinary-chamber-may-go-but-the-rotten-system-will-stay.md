@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6ab2b7e60c2a5c7e"
 ---
 
 # The Disciplinary Chamber May Go – but the Rotten System will Stay

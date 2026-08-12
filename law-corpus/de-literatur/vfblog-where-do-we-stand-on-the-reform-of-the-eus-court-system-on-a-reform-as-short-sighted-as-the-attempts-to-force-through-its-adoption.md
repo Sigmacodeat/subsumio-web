@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "da1edf2309f0e5b8"
 ---
 
 # Where do we stand on the reform of the EU’s Court System? On a reform as short-sighted as the attempts to force through its adoption

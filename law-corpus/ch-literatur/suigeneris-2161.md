@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2019 Pranvera Këllezi;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "f77cc18a551bdf30"
 ---
 
 # Data protection and competition law: non-compliance as abuse of dominant position

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/as-good-as-it-gets/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e5d4978c44a6113f"
 ---
 
 # As Good as It Gets

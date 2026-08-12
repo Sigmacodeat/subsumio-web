@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/parteiverbot-gleich-mandatsverlust/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "58233d5280c4caab"
 ---
 
 # Parteiverbot gleich Mandatsverlust?

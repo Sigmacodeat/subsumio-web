@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/new-wine-in-old-bottles-csddd/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d7b5127f31be86a3"
 ---
 
 # New Wine in Old Bottles

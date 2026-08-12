@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "13b35eb4b07cd4cb"
 ---
 
 # Rahul Gandhi’s Disqualification and the Future of Political Opposition in India

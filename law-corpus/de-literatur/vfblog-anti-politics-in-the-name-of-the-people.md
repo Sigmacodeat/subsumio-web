@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/anti-politics-in-the-name-of-the-people/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cd67b352a6a2f9c8"
 ---
 
 # “Anti-Politics” in the Name of the People

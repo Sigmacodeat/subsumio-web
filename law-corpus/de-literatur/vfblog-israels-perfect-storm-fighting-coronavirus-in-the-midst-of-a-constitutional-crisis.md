@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e2d8f5559083bd2c"
 ---
 
 # Israel’s Perfect Storm: Fighting Coronavirus in the Midst of a Constitutional Crisis

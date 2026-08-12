@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/der-brusseler-testballon/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7b7bb9781d7d598a"
 ---
 
 # Der Brüsseler Testballon

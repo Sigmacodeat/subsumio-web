@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-male-white-and-conservative-constitutio
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "97cbac6b66670c91"
 ---
 
 # A Male, White and Conservative Constitutional Judge

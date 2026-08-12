@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b87d020e0c6b6021"
 ---
 
 # Draghi’s New Cabinet Sails but Italian Political Institutions Do not Risk Reforms

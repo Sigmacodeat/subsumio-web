@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wann-folgt-die-begrundung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "660eb936b12c8c44"
 ---
 
 # Wann folgt die Begründung?

@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2023 Sabine Steiger-Sackmann;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "762ff839e0e28e5b"
 ---
 
 # Arbeitsschutz für Arbeitnehmende mit wissenschaftlicher Tätigkeit

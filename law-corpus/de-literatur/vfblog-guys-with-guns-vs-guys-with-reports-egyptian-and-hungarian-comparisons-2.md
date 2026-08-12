@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e5800e262b9d1b3e"
 ---
 
 # Guys with Guns vs. Guys with Reports: Egyptian and Hungarian Comparisons

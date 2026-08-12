@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/striking-while-the-iron-is-hot/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b6035abc975793a4"
 ---
 
 # Striking While the Iron is Hot

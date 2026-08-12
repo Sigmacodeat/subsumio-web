@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gaza-artificial-intelligence-and-kill-lis
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "604aca1a09b0f57d"
 ---
 
 # Gaza, Artificial Intelligence, and Kill Lists

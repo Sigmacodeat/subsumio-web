@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/greeces-ambivalent-turn-to-militant-democ
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "405f93b1359e678a"
 ---
 
 # Greece’s Ambivalent Turn to Militant Democracy

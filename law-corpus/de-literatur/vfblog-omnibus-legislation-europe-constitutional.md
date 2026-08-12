@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/omnibus-legislation-europe-constitutional
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a1ae82da6e966698"
 ---
 
 # The Omnibus Road to Constitutional Drift

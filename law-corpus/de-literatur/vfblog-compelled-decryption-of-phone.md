@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/compelled-decryption-of-phone/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f3dc49d41eec8db4"
 ---
 
 # Compelled Decryption of a Mobile Phone

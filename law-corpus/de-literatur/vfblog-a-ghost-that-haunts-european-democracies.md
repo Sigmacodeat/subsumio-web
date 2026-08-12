@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-ghost-that-haunts-european-democracies/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "decf22165e46d85f"
 ---
 
 # A Ghost that Haunts European Democracies

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/neither-soil-nor-blood-nor-money/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c16da8bfefc0a862"
 ---
 
 # Neither Soil, Nor Blood, Nor Money

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/von-der-leyen-faces-the-vote/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d8e290205af81d19"
 ---
 
 # Von der Leyen Faces the Vote

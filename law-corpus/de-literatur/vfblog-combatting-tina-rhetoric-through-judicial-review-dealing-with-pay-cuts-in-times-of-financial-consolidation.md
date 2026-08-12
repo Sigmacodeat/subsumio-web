@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b8b16c77af4a67a2"
 ---
 
 # Combatting TINA-Rhetoric through Judicial Review: Dealing with Pay Cuts in Times of Financial Consolidation

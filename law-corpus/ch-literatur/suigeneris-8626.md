@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2024 Fabian Teichmann,
   Dimitri Gaffuri; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "d3a516f6941d6590"
 ---
 
 # Il rischio di responsabilità penale dell&#039;avvocato di-fensore che sporge denuncia

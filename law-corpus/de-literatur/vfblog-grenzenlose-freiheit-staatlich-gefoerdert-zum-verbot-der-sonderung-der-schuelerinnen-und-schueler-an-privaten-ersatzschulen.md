@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4d636e0c2a5738f9"
 ---
 
 # Grenzenlose Freiheit – staatlich gefördert? Zum Verbot der Sonderung der Schülerinnen und Schüler an privaten Ersatzschulen

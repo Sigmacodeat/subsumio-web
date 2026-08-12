@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gewalt-als-korperliche-zwangswirkung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d03082b59952155d"
 ---
 
 # Gewalt als körperliche Zwangswirkung

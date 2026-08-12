@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/burning-the-last-bridge-to-europe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d34f53c0eba4e28f"
 ---
 
 # Burning the Last Bridge to Europe

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/der-glanz-von-erfurt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a357287e9801f3d1"
 ---
 
 # Der Glanz von Erfurt

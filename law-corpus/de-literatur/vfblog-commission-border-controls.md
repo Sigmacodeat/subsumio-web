@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/commission-border-controls/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "088b79af2b6973f7"
 ---
 
 # At Germany’s Service

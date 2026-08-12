@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1df13f5bd42d3259"
 ---
 
 # EU-Recht bricht Völkerrecht? Der Trugschluss der europäischen Calvo-Doktrin

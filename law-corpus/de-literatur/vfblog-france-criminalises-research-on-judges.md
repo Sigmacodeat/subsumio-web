@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/france-criminalises-research-on-judges/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6e5878393e3b8909"
 ---
 
 # France Criminalises Research on Judges

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-limits-of-symbolic-regulation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "39a31528c1df1a8f"
 ---
 
 # The Limits of Symbolic Regulation

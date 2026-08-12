@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/taking-the-law-seriously/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "86aeec223f6703aa"
 ---
 
 # Taking the Law Seriously?

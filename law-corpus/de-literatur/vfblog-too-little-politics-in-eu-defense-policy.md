@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/too-little-politics-in-eu-defense-policy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8ef927669df313b1"
 ---
 
 # Too Little Politics in EU Defense Policy

@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Marc Thommen, Martina
   Farag-Jaussi; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "4d47a828974e0ec0"
 ---
 
 # Feuer und Flamme für Brandschutzvorschriften: Strafrechtliche Sorgfaltspflichten im Umgang mit Feuergefahren

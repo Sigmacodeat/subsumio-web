@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/ecjs-eus-climate-mitigation-obligations-m
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "839dbb95fedc7fd0"
 ---
 
 # The ECJ’s Opportunity to Address the EU’s Climate Mitigation Obligations

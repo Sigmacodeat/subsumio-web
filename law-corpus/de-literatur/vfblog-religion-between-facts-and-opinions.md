@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/religion-between-facts-and-opinions/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "43a7b70d3733584b"
 ---
 
 # Freedom to Discuss Religion Between Facts and Opinions

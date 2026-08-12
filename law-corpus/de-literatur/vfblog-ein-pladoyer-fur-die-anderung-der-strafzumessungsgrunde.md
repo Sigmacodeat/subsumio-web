@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b7613eb7506e2e4b"
 ---
 
 # Ein Plädoyer für die Änderung der Strafzumessungsgründe in § 46 Abs. 2 S. 2 StGB

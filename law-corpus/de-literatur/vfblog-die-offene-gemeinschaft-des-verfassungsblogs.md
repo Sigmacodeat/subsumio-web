@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-offene-gemeinschaft-des-verfassungsbl
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "488d3f64c413514a"
 ---
 
 # Die offene Gemeinschaft des Verfassungsblogs

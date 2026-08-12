@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "f4d236b0ff1f97ac"
 ---
 
 § 20 Verfassungsgerichtsbarkeit und BVerfG &#124; Inhaltsverzeichnis &#124; § 21.1 Organstreit 

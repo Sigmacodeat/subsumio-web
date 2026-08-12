@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/escaping-orbans-constitutional-prison/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "faa1a99bc7804c23"
 ---
 
 # Escaping Orbán’s Constitutional Prison

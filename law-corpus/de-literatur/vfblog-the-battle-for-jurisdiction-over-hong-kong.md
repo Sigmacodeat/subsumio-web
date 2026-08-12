@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-battle-for-jurisdiction-over-hong-kon
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e3275f32f9b8a597"
 ---
 
 # The Battle for Jurisdiction over Hong Kong

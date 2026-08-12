@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sitzblockaden-versammlungsfreiheit-zitier
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0e8f5064ff208937"
 ---
 
 # Versammlungsfreiheit zwischen Theorie und Realität

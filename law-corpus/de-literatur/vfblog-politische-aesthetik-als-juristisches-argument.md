@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/politische-aesthetik-als-juristisches-arg
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a53b42b067cd22bf"
 ---
 
 # Politische Ästhetik als juristisches Argument

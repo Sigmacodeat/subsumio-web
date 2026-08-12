@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6580fe74fc4fe194"
 ---
 
 # This is not the End: What lies ahead for the VDL Commission in terms of Brexit

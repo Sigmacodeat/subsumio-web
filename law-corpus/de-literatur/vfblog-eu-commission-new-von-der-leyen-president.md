@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eu-commission-new-von-der-leyen-president
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7a03ca9b94efae81"
 ---
 
 # La Commission, c’est moi?

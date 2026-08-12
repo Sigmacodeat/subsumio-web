@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/right-wing-crits/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6119a84fd0b9497b"
 ---
 
 # Right-Wing Crits

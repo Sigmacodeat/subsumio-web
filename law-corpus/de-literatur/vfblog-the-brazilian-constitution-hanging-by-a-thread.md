@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-brazilian-constitution-hanging-by-a-t
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a4098ec50fee16c4"
 ---
 
 # The Brazilian Constitution Hanging by a Thread

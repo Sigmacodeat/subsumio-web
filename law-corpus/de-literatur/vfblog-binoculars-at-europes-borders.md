@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/binoculars-at-europes-borders/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "15f679b3910dd8af"
 ---
 
 # The Binoculars at the Borders of Europe

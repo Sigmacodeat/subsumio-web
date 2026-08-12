@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os5-repression-by-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "42fb36efa7a964e7"
 ---
 
 # Repression by Law

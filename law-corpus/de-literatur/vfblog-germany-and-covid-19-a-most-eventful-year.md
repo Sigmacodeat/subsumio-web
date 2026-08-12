@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/germany-and-covid-19-a-most-eventful-year
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "37cf56209a8f33f2"
 ---
 
 # Germany and COVID-19: A Most Eventful Year

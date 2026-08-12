@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/georgias-foreign-agent-law-2-0-ecthr/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b586cdeaa673ccfe"
 ---
 
 # Georgia’s Foreign Agent Law 2.0

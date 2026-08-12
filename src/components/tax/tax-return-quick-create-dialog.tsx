@@ -172,7 +172,7 @@ export function TaxReturnQuickCreateDialog({
                 </Label>
                 <Input
                   id="tax-return-year"
-                  type="number"
+                  type="number" inputMode="numeric"
                   min={2000}
                   max={new Date().getFullYear() + 1}
                   value={year}

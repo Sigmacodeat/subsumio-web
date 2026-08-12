@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3bf25b1e5143c5b1"
 ---
 
 # A Homeless Ghost? European Legal Integration in Search of a Polity

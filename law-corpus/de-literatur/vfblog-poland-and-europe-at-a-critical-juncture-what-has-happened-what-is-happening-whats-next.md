@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "123a30ee8fcb4e21"
 ---
 
 # Poland and Europe at a Critical Juncture.  What has happened? What is happening? What’s next?

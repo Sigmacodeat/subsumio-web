@@ -1,4 +1,6 @@
 ---
+jurisdiction: at
+title: "OGH 1 Ob 200/23g — Amtshaftung bei hoheitlicher Gewalt"
 type: court_decision
 court: "OGH"
 date: "2024-01-25"
@@ -8,6 +10,7 @@ legal_area: "Zivilrecht"
 keywords: ["Amtshaftung", "Organ", "hoheitliche Gewalt", "Schadensersatz"]
 source: "ris-ogd"
 source_url: "https://ris.bka.gv.at/Dokument.wxe?Abfrage=Justiz&Dokumentnummer=1Ob200/23g"
+content_hash: "c347c8ae6819f8f3"
 ---
 
 # OGH 1 Ob 200/23g — Amtshaftung bei hoheitlicher Gewalt

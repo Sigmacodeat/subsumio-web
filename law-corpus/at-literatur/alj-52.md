@@ -18,6 +18,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2015
   AUSTRIAN LAW JOURNAL
+content_hash: "484cf4619de8be5e"
 ---
 
 # Replik auf Wolfgang Faber: Ergänzende Bemerkungen zum vereinbarten Eigentumsvorbehalt und dessen „Wirksamkeit“

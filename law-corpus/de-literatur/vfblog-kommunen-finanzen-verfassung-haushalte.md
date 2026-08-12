@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kommunen-finanzen-verfassung-haushalte/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "18ab01c8f23067d7"
 ---
 
 # Kollabierende Kommunen

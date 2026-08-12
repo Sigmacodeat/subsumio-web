@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eigentum-ist-nicht-nur-privat/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0954d8357ea13f00"
 ---
 
 # Eigentum ist nicht (nur) privat

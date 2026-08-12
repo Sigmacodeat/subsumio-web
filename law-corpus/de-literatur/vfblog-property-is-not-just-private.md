@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/property-is-not-just-private/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c96f76f305d53912"
 ---
 
 # Property is not (just) private

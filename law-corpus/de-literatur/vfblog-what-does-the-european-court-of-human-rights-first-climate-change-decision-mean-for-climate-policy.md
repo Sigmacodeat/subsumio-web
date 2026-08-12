@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "31802422dc893d97"
 ---
 
 # What Does the European Court of Human Rights’ First Climate Change Decision Mean for Climate Policy?

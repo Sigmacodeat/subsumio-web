@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zivile-seenotrettung-vor-deutschen-gerich
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7e9f279d771c995b"
 ---
 
 # Zivile Seenotrettung vor deutschen Gerichten

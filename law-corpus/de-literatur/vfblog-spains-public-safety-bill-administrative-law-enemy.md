@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/spains-public-safety-bill-administrative-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "83c0556db1712be9"
 ---
 
 # Spain’s Public Safety Bill as “Administrative Law of the Enemy

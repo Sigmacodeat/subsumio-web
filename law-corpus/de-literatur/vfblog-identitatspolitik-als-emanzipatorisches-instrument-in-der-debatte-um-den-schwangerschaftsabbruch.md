@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "360c1cb4bbe3fea6"
 ---
 
 # Identitätspolitik als emanzipatorisches Instrument in der Debatte um den Schwangerschaftsabbruch

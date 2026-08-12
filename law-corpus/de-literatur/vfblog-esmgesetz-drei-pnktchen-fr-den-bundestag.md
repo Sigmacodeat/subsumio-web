@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/esmgesetz-drei-pnktchen-fr-den-bundestag/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f1ba223bab4d2750"
 ---
 
 # ESM-Gesetz: Drei Pünktchen für den Bundestag

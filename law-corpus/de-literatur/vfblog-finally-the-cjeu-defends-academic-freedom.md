@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/finally-the-cjeu-defends-academic-freedom
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8a83111c023c6ad7"
 ---
 
 # Finally: The CJEU Defends Academic Freedom

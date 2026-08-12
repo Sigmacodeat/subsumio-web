@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/justitias-dresscode-zweiter-akt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "77318443e196a864"
 ---
 
 # Justitias Dresscode, zweiter Akt

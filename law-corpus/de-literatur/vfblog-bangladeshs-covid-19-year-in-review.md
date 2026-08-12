@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bangladeshs-covid-19-year-in-review/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f085f498bba5b2d9"
 ---
 
 # Bangladesh’s COVID-19 Year in Review

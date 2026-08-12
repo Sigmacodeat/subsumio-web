@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/headscarves-and-the-wrong-balance/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "061130fcf262ec5e"
 ---
 
 # Headscarves and the Wrong Balance

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/walking-a-democratic-tightrope/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f7add6e8c756f789"
 ---
 
 # Walking A Democratic Tightrope

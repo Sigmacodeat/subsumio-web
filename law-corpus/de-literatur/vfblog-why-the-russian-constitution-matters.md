@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/why-the-russian-constitution-matters/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9c717e62486b004b"
 ---
 
 # Why the Russian Constitution Matters

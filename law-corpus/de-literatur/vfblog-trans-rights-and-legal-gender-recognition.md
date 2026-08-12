@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/trans-rights-and-legal-gender-recognition
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ab9f556b499f7e47"
 ---
 
 # Trans Rights and Gender Recognition before the CJEU

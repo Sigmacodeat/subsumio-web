@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/at-odds/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4043d3933a1cecc8"
 ---
 
 # When National Laws and Human Rights Standards Are at Odds

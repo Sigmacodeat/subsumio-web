@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b52b0df3cbf14b24"
 ---
 
 # Financial Scrutiny of Frontex as a Political Accountability Tool

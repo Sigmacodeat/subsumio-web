@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/why-egenberger-could-be-next/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4a1239c4cbb82587"
 ---
 
 # Why Egenberger Could Be Next

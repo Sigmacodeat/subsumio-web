@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ba0f43a43e5bccd8"
 ---
 
 # Im Fegefeuer des Rechts: Lorenzo Zucca über „A Secular Europe“

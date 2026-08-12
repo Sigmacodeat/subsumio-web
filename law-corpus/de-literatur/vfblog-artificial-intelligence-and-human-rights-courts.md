@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/artificial-intelligence-and-human-rights-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e48e985f9d182a2c"
 ---
 
 # Artificial Intelligence and Human Rights Courts

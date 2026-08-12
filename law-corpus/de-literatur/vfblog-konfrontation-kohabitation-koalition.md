@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/konfrontation-kohabitation-koalition/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3053efe616e59cb2"
 ---
 
 # Konfrontation, Kohabitation, Koalition

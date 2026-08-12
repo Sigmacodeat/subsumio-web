@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-grande-synthe-saga-continues/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a7b5387a88eff292"
 ---
 
 # The Grande Synthe Saga Continues

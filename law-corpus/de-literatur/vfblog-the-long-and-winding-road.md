@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-long-and-winding-road/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ffaa4bb6b24e816f"
 ---
 
 # The Long and Winding Road

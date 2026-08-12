@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-eus-faustian-bargain/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9bdac59c48ad5c51"
 ---
 
 # The EU’s Faustian Bargain

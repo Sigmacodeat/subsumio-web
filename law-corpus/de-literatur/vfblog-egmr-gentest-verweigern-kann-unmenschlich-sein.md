@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/egmr-gentest-verweigern-kann-unmenschlich
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0c35c943d56a9936"
 ---
 
 # EGMR: Gentest verweigern kann unmenschlich sein

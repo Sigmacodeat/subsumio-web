@@ -15,6 +15,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "95351f4f94aed4d5"
 ---
 
 Fall 8a Sachverhalt &#124; Inhaltsverzeichnis &#124; Fall 9 Sachverhalt 

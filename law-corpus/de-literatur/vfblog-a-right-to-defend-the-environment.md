@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-right-to-defend-the-environment/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c2a89140de036c9f"
 ---
 
 # A Right to Defend the Environment

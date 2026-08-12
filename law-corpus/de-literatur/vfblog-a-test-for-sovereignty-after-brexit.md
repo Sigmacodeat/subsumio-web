@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-test-for-sovereignty-after-brexit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "849ac69ce6f4756c"
 ---
 
 # A Test for Sovereignty after Brexit

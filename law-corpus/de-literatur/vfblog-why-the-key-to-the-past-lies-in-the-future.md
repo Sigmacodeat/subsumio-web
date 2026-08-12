@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/why-the-key-to-the-past-lies-in-the-futur
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1305766a284b592f"
 ---
 
 # Why the Key to the Past Lies in the Future

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/einmal-im-kreis/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bde49dfbc9208a64"
 ---
 
 # Einmal im Kreis?

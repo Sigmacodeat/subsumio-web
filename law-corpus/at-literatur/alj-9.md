@@ -18,6 +18,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2014
   AUSTRIAN LAW JOURNAL
+content_hash: "6f2ce0ce1e644835"
 ---
 
 # Die Kehrseite von Governance: Der Wandel der Staatlichkeit und seine sozialen Kosten

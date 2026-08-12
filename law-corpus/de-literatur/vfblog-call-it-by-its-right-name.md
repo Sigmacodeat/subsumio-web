@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/call-it-by-its-right-name/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5a9afd011d4e27a4"
 ---
 
 # Call it by its right name

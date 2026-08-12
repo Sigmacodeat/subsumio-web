@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/covid-19-in-mexico-a-year-in-review/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f2953b9f7b7009fb"
 ---
 
 # COVID-19 in Mexico: A Year in Review

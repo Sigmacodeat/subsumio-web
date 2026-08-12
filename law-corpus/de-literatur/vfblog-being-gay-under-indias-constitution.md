@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/being-gay-under-indias-constitution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e32d6c5f5f43202a"
 ---
 
 # Being Gay under India’s Constitution

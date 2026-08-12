@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "69977f13008e05fa"
 ---
 
 # Vertagt, verdrängt – verfassungswidrig: Wie der Bundestag sich um eine überfällige Reform des Wahlrechts drückt

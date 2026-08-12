@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a5e8e19a5006d77e"
 ---
 
 # The Paradox of Liberal Constitutionalism: a Call for Communal Constitutionalism

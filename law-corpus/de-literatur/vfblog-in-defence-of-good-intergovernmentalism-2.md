@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/in-defence-of-good-intergovernmentalism-2
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8748053a3bac9b25"
 ---
 
 # In Defence of “Good Intergovernmentalism”

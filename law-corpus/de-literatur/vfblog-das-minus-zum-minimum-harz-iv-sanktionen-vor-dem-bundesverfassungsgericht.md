@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cf843e22f7e0ae0c"
 ---
 
 # Das Minus zum Minimum: Hartz-IV-Sanktionen vor dem Bundes&shy;verfassungs&shy;gericht

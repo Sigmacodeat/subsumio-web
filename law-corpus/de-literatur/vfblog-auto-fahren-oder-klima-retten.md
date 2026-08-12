@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/auto-fahren-oder-klima-retten/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c935d853052b2dcc"
 ---
 
 # Auto fahren oder Klima retten?

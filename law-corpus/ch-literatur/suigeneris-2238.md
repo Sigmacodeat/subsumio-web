@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Arnold Marti;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "71ce23e09cfb62f7"
 ---
 
 # Föderalismus und Rechtsstaat – ein Vergleich der Länder am Bodensee

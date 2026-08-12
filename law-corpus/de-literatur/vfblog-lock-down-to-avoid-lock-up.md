@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/lock-down-to-avoid-lock-up/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "af5149ea6fb422d8"
 ---
 
 # Lock-Down to Avoid Lock-Up?

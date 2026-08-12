@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sanctioning-the-treatment-of-uighurs-in-c
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "67252a9796b183d6"
 ---
 
 # Sanctioning the Treatment of Uighurs in China

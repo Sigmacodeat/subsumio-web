@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "58aae28792b45568"
 ---
 
 # Damned if you do, Damned if you don’t: Reflections on Brexit and Grexit

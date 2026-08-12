@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/press-here-to-reset-the-system/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a7cdc51db337f7e8"
 ---
 
 # Press Here to Reset the System

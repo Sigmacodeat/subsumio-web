@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/next-chapter-in-a-larger-story/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6df8f31abee35ece"
 ---
 
 # Next Chapter, in a Larger Story

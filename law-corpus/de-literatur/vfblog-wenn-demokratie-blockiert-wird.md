@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wenn-demokratie-blockiert-wird/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dbe79523a9ad26d7"
 ---
 
 # Wenn Demokratie blockiert wird

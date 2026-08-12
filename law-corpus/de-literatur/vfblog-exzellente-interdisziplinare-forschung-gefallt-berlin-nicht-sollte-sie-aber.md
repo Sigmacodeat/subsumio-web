@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ad5b7f91252094a7"
 ---
 
 # Exzellente interdisziplinäre Forschung – gefällt Berlin nicht? Sollte sie aber!

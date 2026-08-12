@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bverfg-strkt-meinungsfreiheit-von-auslnde
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ee5667825afdbc79"
 ---
 
 # BVerfG stärkt Meinungsfreiheit von Ausländerfeinden

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hungary-and-the-venice-commission/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f0915b1146229840"
 ---
 
 # Hungary and the Venice Commission

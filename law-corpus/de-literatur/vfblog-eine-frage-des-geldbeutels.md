@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eine-frage-des-geldbeutels/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "124657c270baa507"
 ---
 
 # Eine Frage des Geldbeutels

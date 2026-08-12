@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/geschlechtergerechtigkeit-in-der-lieferke
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3d07701b4b4d14cb"
 ---
 
 # Geschlechter&shy;gerechtig&shy;keit in der Lieferkette

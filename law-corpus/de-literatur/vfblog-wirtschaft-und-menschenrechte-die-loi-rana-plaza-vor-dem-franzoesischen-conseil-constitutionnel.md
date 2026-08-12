@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3f1ce866ebc23a41"
 ---
 
 # Wirtschaft und Menschenrechte: die „Loi Rana Plaza“ vor dem französischen Conseil constitutionnel

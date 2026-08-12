@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/schuldenbremse-und-klimawandel/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "783fbb372f2c69a7"
 ---
 
 # Schuldenbremse und Klimawandel

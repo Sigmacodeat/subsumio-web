@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-virus-macht-verkehrspolitik/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c838c97b592e5b3f"
 ---
 
 # Ein Virus macht Verkehrspolitik?

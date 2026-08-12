@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-battle-over-puerto-ricos-future/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bca1ea9df55a53b5"
 ---
 
 # The Battle Over Puerto Rico’s Future

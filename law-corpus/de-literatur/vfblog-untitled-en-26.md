@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/untitled-en-26/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a20fdcf65648a5a0"
 ---
 
 # “International criminal law is now an inherent part of world politics”

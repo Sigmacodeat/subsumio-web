@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/art-21-dsa-fundamental-rights-certificati
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8e0b0576a828264d"
 ---
 
 # Art. 21 DSA Has Come to Life

@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "f75d13936e88fa3c"
 ---
 
 § 15 Gesetzgebungskompetenzen &#124; Inhaltsverzeichnis &#124; § 17 Verfassungsänderungen 

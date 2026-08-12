@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/egypt-parliamentary-elections/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ad175af628b51562"
 ---
 
 # Sins of the Fathers

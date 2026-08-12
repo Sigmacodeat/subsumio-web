@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Monika Plozza;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "c9fe3f77ec4f2a88"
 ---
 
 # Verletzung des Willkürverbots im Entscheid über die ordentliche Einbürgerung: Kommentar zum Urteil des Bundesgerichts 1D_1/2019 vom 18. Dezember 2019

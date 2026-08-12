@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bend-it-like-britain/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "34467d0cfb50970e"
 ---
 
 # Bend it like Britain?

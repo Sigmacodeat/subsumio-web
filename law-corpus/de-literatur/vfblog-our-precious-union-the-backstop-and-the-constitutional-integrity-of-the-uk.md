@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6c02caffa69008c0"
 ---
 
 # ‘Our Precious Union’: The Backstop and the Constitutional Integrity of the UK

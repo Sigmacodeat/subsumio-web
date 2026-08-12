@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/os1-western-exceptionalism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b07adf7f8862fff8"
 ---
 
 # Deconstructing (Western) Exceptionalism for International Crimes

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/new-challenges-against-the-judiciary-in-r
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d0f1077e8f97fc1a"
 ---
 
 # New Challenges against the Judiciary in Romania

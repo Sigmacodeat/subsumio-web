@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "891c376e9bb57ce8"
 ---
 
 # A Commentary on Commentaries: The Wissenschaftsrat on Legal Commentaries and Beyond

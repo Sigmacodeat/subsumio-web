@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/thank-you-very-much-your-mail-is-perfectl
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1d890d28ce632a7f"
 ---
 
 # “Thank you very much, your mail is perfectly fine”

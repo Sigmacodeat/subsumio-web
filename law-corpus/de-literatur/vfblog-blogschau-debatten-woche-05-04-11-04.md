@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/blogschau-debatten-woche-05-04-11-04/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "95842b8557284f51"
 ---
 
 # Blogschau // Debatten der Woche // 05.04-11.04

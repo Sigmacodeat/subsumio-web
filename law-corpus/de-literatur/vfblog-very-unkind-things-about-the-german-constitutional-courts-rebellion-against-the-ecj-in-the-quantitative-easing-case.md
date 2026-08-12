@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "89d8b72394037e01"
 ---
 
 # Very Unkind Things about the German Constitutional Court’s Rebellion against the ECJ in the Quantitative Easing Case.

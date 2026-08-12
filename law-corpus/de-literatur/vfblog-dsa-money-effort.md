@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dsa-money-effort/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4b05b83f51f04c4d"
 ---
 
 # Will the DSA work?

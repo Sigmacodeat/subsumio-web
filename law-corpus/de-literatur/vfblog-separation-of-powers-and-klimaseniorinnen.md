@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/separation-of-powers-and-klimaseniorinnen
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a7c3dc6ccf8be6b5"
 ---
 
 # Separation of Powers and KlimaSeniorinnen

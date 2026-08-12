@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "38fb11d8a2cfad46"
 ---
 
 # Das italienische Wahlrecht nach deutscher Art reformieren – oder nicht?

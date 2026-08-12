@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "79d04175de0010e9"
 ---
 
 # Populism and the Turkish Constitutional Court: the Game Broker, the Populist and the Popular

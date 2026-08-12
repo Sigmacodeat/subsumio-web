@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/outstanding-women-10-25/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4e072a091f61762b"
 ---
 
 # Margarette May Macaulay

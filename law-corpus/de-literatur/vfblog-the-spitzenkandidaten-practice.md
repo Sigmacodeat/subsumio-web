@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-spitzenkandidaten-practice/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a2d03299d6f55802"
 ---
 
 # The Spitzenkandidaten Practice in the Spotlight

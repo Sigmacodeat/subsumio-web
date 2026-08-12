@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "71ba00a08d89df12"
 ---
 
 # Dismantle the University! The state of exception and neoliberal visions under Greek debt peonage

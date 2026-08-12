@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "3480521de9d62893"
 ---
 
 § 1.1 Der Staat als Akteur &#124; Inhaltsverzeichnis &#124; § 1.2.1 Verfassungsgeschichte 

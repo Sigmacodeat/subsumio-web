@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/totalverweigerung-des-existenzminimums/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bf91a06a64e9a72a"
 ---
 
 # Totalverweigerung des Existenzminimums?

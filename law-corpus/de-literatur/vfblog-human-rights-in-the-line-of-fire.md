@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/human-rights-in-the-line-of-fire/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "161f34aa41495226"
 ---
 
 # Human Rights in the Line of Fire

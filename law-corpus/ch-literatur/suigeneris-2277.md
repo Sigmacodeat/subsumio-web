@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Chris Lehner;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "55bf7ccfe4f29d7c"
 ---
 
 # Strafrechtliche Behandlungsmassnahmen abseits von zuverlässigen Diagnosen

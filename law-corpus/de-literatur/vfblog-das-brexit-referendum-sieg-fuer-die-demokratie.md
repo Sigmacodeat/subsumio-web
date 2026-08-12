@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-brexit-referendum-sieg-fuer-die-demok
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f37026bc5cc21a74"
 ---
 
 # Das Brexit-Referendum: Sieg für die Demokratie?

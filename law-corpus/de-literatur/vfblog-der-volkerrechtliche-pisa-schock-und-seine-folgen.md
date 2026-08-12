@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/der-volkerrechtliche-pisa-schock-und-sein
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1ed2ea2ba58159ab"
 ---
 
 # Der völkerrechtliche PISA-Schock und seine Folgen

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/interaction-without-affection/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "85ecb40ed0d23cf1"
 ---
 
 # Interaction Without Affection?

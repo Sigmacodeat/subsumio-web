@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Hildegund Sünderhauf,
   Martin Widrig; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "98977ce610e7d7ef"
 ---
 
 # EGMR anerkennt «Parental Alienation» : Besprechung des Urteils des EGMR 23641/17 (Pisic? gg. Moldawien) vom 29. Oktober 2019

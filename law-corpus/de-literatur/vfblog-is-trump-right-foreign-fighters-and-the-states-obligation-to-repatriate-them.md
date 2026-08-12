@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5fbfe9b72cadf527"
 ---
 
 # Is Trump Right? Foreign Fighters and the States' Obligation to Repatriate Them

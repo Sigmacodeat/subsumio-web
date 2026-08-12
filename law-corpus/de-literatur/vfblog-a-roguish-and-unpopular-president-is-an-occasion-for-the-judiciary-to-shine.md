@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f550fbe3189039f8"
 ---
 
 # “A Roguish and Unpopular President is potentially an Occasion for the Judiciary to Shine”

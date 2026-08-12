@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fb1fbf4e696e96ab"
 ---
 
 # Outright Monetary Transactions before the ECJ: In search of the ‘golden mean’

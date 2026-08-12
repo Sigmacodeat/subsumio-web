@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/verbessern-statt-verlangern/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aea3b5b3aaae4819"
 ---
 
 # Verbessern statt verlängern

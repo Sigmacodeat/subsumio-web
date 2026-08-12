@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5300c4281280d1fd"
 ---
 
 # Das Europäische Parlament sollte den Fiskalvertrag vor den EuGH bringen

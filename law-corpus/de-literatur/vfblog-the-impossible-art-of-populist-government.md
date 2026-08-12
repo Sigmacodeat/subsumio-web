@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-impossible-art-of-populist-government
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bde2d0b9cd09da43"
 ---
 
 # The Impossible Art of Populist Government

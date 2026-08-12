@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-state-of-emergency-virus/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b706b86d1430313d"
 ---
 
 # The State of Emergency Virus

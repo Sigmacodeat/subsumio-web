@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c5c88a7cfb5680de"
 ---
 
 # Noch ein EGMR-Urteil zur Religionsfreiheit: Auf die Bibel schwören oder nicht?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/medienfreiheit-als-europaische-tradition/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5e3437f191b53cc8"
 ---
 
 # Medienfreiheit als europäische Tradition

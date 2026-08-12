@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/greece-extradition-turkish-soldiers-art-3
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cb22c80b7c08067a"
 ---
 
 # Can Greece lawfully extradite the eight Turkish soldiers to Turkey?

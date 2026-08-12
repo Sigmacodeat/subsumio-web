@@ -16,7 +16,7 @@ const feedbackSchema = z.object({
 
 export const POST = createHandler(
   {
-    action: "legal.*" as never,
+    action: "legal.retrieval_feedback",
     body: feedbackSchema,
     audit: (ctx, body) => ({
       action: "legal.retrieval_feedback" as const,
@@ -80,7 +80,7 @@ const querySchema = z.object({
 
 export const GET = createHandler(
   {
-    action: "admin.*" as never,
+    action: "admin.*",
     query: querySchema,
     cacheMaxAge: 0,
   },

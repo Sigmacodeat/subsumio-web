@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/auch-die-schulpflicht-sollte-gelockert-we
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "df6fc4d180d6dc43"
 ---
 
 # Auch die Schulpflicht sollte gelockert werden

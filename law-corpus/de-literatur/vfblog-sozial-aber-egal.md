@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sozial-aber-egal/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7ad63a7ee1efec42"
 ---
 
 # Sozial, aber egal?

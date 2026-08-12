@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/voting-in-the-pandemic/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b05407bd7abc6ec6"
 ---
 
 # Voting in the Pandemic

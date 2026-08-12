@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kinderrechte-und-die-geas-reform/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6b5cb01789fce7e7"
 ---
 
 # Kinderrechte und die GEAS-Reform

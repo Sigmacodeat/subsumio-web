@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sonderopfer-fuer-die-volksgesundheit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0a4e07d84330af0e"
 ---
 
 # Sonderopfer für die Volksgesundheit

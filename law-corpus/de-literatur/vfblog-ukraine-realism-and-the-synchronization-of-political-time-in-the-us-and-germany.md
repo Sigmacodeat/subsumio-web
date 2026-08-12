@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0cf6bd3e3530668b"
 ---
 
 # Ukraine, Realism, and the Synchronization of Political Time in the US and Germany

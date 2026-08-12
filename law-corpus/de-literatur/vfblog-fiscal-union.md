@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fiscal-union/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "76e37e7eff03b2c3"
 ---
 
 # Our new “Fiscal Union”: What Is It All About?

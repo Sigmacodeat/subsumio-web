@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/isnt-it-ironic/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cd281addb80d0021"
 ---
 
 # Isn’t it Ironic?

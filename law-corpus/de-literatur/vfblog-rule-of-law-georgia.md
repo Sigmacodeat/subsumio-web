@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rule-of-law-georgia/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "987524be44196388"
 ---
 
 # The Rule of Law in Georgia

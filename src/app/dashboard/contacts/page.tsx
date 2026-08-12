@@ -1049,6 +1049,8 @@ function ContactFormFields({
           <Input
             {...form.register("email")}
             type="email"
+            autoComplete="email"
+            inputMode="email"
             placeholder={t("contacts.placeholder_email")}
             className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
           />

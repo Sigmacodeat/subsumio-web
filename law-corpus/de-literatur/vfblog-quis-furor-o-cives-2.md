@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/quis-furor-o-cives-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "124b52880bb47784"
 ---
 
 # Quis furor, o cives…

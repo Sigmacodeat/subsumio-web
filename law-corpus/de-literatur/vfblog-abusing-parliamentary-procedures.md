@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/abusing-parliamentary-procedures/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "98c30590cfde5f70"
 ---
 
 # Abusing Parliamentary Procedures

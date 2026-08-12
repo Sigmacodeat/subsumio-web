@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/disqualification-bill-bjp-india/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2e0eab3715aec346"
 ---
 
 # Weaponising Disqualification

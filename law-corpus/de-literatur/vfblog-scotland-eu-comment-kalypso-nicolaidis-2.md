@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/scotland-eu-comment-kalypso-nicolaidis-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0797f89d90e25603"
 ---
 
 # Scotland and the EU: Comment by KALYPSO NICOLAIDIS

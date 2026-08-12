@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "70d7c8f0066340b0"
 ---
 
 # Kinderrechte ins Grundgesetz – Potenzial für eine menschen&shy;rechtliche Erfolgsgeschichte

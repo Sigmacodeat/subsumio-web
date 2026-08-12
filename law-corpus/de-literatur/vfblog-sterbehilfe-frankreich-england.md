@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sterbehilfe-frankreich-england/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3904c89f18bf9c11"
 ---
 
 # Sterbehilfe endlich regeln

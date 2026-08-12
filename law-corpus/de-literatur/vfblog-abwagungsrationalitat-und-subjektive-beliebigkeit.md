@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/abwagungsrationalitat-und-subjektive-beli
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "119b9c87e7ee29d8"
 ---
 
 # Abwägungsrationalität und subjektive Beliebigkeit

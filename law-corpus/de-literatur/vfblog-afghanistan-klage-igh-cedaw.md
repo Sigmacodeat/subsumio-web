@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/afghanistan-klage-igh-cedaw/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b478f3ba22b6b1f5"
 ---
 
 # Hoffnung für afghanische Frauen

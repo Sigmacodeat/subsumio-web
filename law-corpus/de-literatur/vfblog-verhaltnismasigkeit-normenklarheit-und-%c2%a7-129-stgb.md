@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dd689e70b8656dd8"
 ---
 
 # Verhältnismäßigkeit, Normenklarheit und § 129 StGB

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/enhancing-fundamental-rights-protection/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b72b71be4749ce38"
 ---
 
 # Enhancing Fundamental Rights Protection

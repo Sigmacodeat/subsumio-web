@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/omt-ezb-bverfg-nettesheim/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "41bb47aa91562a54"
 ---
 
 # Ultra-vires-Kontrolle durch Bundesregierung und Bundestag – Für eine materielle Subsidiarität des Vorgehens gegen das Parlament

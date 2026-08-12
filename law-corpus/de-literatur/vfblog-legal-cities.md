@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/legal-cities/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4bc14411db03d1d5"
 ---
 
 # Legal Cities? Urban Renewal and Immigration in Berlin’s IBA 1984/87

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/of-red-fruits-and-social-conflict/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eebb0820587b827f"
 ---
 
 # Of Red Fruits and Social Conflict

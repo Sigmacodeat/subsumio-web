@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/filling-the-power-vacuum/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "11008305f5e918ff"
 ---
 
 # Filling the Power Vacuum

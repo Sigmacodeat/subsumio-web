@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7dc28ba8e880e7b5"
 ---
 
 # Data Sharing and the Public Interest in a Digital Pandemic*

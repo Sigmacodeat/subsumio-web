@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fob-context/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6d4d6c204dafaf58"
 ---
 
 # The Facebook Oversight Board and &#8216;Context'

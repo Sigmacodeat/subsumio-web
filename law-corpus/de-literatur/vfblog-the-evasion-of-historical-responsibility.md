@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-evasion-of-historical-responsibility/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a82d989c441933d9"
 ---
 
 # The Evasion of Historical Responsibility?

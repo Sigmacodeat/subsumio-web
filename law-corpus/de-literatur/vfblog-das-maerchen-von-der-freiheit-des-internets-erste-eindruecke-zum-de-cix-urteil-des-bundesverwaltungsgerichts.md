@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "411d6041702d2ce1"
 ---
 
 # Das Märchen von der Freiheit des Internets – erste Eindrücke zum DE-CIX-Urteil des Bundes&shy;verwaltungs&shy;gerichts

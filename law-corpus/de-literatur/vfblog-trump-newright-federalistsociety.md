@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/trump-newright-federalistsociety/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d2f4d24c1bcc8222"
 ---
 
 # Trump's Final Frontier?

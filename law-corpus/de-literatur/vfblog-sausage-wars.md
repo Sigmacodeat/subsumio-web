@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sausage-wars/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bb7cd8b353ab5b7e"
 ---
 
 # The Northern Ireland Protocol “Sausage Wars”

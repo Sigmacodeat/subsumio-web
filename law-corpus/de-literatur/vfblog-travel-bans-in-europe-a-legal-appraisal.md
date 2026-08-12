@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/travel-bans-in-europe-a-legal-appraisal/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e22be7ece1cc3dc7"
 ---
 
 # Travel Bans in Europe: A Legal Appraisal

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/menschenwurde-im-gefangnis/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "875ae2573d2313e8"
 ---
 
 # Menschenwürde im Gefängnis

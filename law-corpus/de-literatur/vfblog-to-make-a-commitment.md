@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/to-make-a-commitment/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "27e579d367ca6015"
 ---
 
 # To Make a Commitment

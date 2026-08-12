@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/lessons-from-new-york/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "63a682947419536e"
 ---
 
 # Lessons from New York

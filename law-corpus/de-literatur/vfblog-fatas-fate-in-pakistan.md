@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fatas-fate-in-pakistan/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ff1040bfbf1603c3"
 ---
 
 # FATA’s fate in Pakistan

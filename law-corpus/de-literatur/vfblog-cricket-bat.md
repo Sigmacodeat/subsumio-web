@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/cricket-bat/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5e091cb6dcd8e5d9"
 ---
 
 # Pakistan’s Qazi Court and Who is Afraid of the Cricket Bat

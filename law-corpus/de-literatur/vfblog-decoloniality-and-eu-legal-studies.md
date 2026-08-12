@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/decoloniality-and-eu-legal-studies/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "91dbe08f7e821fca"
 ---
 
 # (De)coloniality and EU Legal Studies

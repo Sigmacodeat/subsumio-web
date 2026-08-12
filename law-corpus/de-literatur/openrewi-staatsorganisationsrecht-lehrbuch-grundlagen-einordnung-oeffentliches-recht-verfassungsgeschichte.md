@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "a9aacd830998fcdc"
 ---
 
 § 1.2 Die Verfassung als Grundlage des staatlichen Handelns &#124; Inhaltsverzeichnis &#124; § 1.2.2 Begriff der Verfassung und Verhältnis zum einfachen Recht 

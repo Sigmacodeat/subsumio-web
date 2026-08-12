@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/principled-generosity-mixed-with-unmanage
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3d77a348ee70b53b"
 ---
 
 # Principled Generosity Mixed with Unmanaged Market

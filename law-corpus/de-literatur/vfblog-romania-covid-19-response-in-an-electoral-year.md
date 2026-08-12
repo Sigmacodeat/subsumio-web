@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/romania-covid-19-response-in-an-electoral
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3df5921f2262c048"
 ---
 
 # Romania: COVID-19 Response in an Electoral Year

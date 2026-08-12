@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c329170c8abba6b2"
 ---
 
 # 19 Jahre Prozess um Schadenshöhe und immer noch kein Urteil

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-government-versus-the-president/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a3506fcb3f326270"
 ---
 
 # The Government versus the President

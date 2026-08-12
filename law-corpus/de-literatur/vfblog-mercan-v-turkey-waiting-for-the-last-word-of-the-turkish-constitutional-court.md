@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6584ece0b9677a58"
 ---
 
 # Mercan v. Turkey: Waiting for the Last Word of the Turkish Constitutional Court

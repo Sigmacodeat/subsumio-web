@@ -16,7 +16,7 @@ export const maxDuration = 30;
 
 export const GET = createHandler(
   {
-    action: "admin.*" as never,
+    action: "admin.*",
     cacheMaxAge: 0,
   },
   async () => {
@@ -35,8 +35,13 @@ export const GET = createHandler(
 
 export const POST = createHandler(
   {
-    action: "admin.*" as never,
+    action: "admin.*",
     cacheMaxAge: 0,
+    audit: (_ctx, _body) => ({
+      action: "admin.dr" as const,
+      entityType: "dr",
+      details: { action: "dr_action" },
+    }),
   },
   async (_ctx, body, _query, req) => {
     let parsedBody: Record<string, unknown> = {};

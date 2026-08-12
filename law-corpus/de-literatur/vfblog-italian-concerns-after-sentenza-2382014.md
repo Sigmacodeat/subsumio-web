@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/italian-concerns-after-sentenza-2382014/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9b9bfeccb09b0a4d"
 ---
 
 # Italian Concerns after Sentenza 238/2014

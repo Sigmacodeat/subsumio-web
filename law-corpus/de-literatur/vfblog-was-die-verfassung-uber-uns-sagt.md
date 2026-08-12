@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/was-die-verfassung-uber-uns-sagt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b22482de6c426f07"
 ---
 
 # Was die Verfassung über uns sagt

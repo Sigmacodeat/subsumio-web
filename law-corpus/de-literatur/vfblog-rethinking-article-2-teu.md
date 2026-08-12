@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rethinking-article-2-teu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fcc16cc698f773d6"
 ---
 
 # Rethinking Article 2 TEU

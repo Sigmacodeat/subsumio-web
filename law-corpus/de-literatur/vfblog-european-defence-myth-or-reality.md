@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/european-defence-myth-or-reality/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6a27f551cd7f0f23"
 ---
 
 # European Defence: Myth or Reality?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/time-to-say-goodbye/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ed4374c8ed971a14"
 ---
 
 # Time to Say Goodbye

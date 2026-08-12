@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/daten-und-werte/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "88fe6473a63fd1ed"
 ---
 
 # Daten und Werte

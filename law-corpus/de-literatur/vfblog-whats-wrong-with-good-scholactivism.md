@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/whats-wrong-with-good-scholactivism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5f517d0058626a49"
 ---
 
 # What&rsquo;s wrong with good &ldquo;scholactivism&rdquo;?

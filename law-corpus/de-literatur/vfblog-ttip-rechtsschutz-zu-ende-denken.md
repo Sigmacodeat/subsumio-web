@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ttip-rechtsschutz-zu-ende-denken/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7d6eca6b4c7bd9e4"
 ---
 
 # Thinking out legal remedies under TTIP

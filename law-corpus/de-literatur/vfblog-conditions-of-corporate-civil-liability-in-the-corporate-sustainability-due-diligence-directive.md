@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3a3a8282d993107f"
 ---
 
 # Conditions of Corporate Civil Liability in the Corporate Sustainability Due Diligence Directive

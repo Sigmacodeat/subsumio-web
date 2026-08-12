@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/meat-free-public-procurement/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ab6606d89da7f615"
 ---
 
 # Can Public Procurement Lead Us to a Meat-Free Future?

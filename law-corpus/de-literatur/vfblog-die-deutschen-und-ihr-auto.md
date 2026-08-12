@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-deutschen-und-ihr-auto/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9c3b6d339c9bfd8e"
 ---
 
 # Die Deutschen und ihr Auto

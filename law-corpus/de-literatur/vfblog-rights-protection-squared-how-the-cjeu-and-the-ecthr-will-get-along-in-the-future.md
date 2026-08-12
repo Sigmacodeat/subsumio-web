@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0497f43ca124ce40"
 ---
 
 # Rights Protection squared – How the CJEU and the ECtHR will get along in the future

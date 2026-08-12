@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/alace-canpelli-italy-albania/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "03fbebd1042e85b1"
 ---
 
 # Longing for Safety before the European Court of Justice

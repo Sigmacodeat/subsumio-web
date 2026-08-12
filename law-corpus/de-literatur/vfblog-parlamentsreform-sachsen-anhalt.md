@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/parlamentsreform-sachsen-anhalt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d6a38ff346c85937"
 ---
 
 # Viel gewollt, noch nicht genug versucht

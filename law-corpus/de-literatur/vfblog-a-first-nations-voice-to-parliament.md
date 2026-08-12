@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-first-nations-voice-to-parliament/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "09607ea03c29a181"
 ---
 
 # A First Nations Voice to Parliament

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/10-anti-constitutional-commandments/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6164946cabac2cce"
 ---
 
 # 10 Anti-Constitutional Commandments

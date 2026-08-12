@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pkw-maut-naechster-halt-bundespraesidiala
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "555b52ddeec6110d"
 ---
 
 # PKW-Maut: Nächster Halt Bundespräsidialamt

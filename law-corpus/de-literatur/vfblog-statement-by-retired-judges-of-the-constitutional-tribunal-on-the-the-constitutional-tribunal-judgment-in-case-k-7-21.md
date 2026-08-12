@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cc915ecf1ceb9479"
 ---
 
 # Statement by Retired Judges of the Constitutional Tribunal on the the Constitutional Tribunal Judgment in case K 7/21

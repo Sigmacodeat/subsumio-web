@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8e7f5ab72acab688"
 ---
 
 # Die Zukunft des deutschen Films wird in Karlsruhe verhandelt

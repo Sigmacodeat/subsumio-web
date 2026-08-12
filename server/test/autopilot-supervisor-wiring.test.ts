@@ -34,8 +34,8 @@ const AUTOPILOT_SRC = readFileSync(
 
 describe("autopilot.ts ↔ ChildWorkerSupervisor wiring", () => {
   it("imports ChildWorkerSupervisor from the shared core", () => {
-    expect(AUTOPILOT_SRC).toContain(
-      "import { ChildWorkerSupervisor } from '../core/minions/child-worker-supervisor.ts';"
+    expect(AUTOPILOT_SRC).toMatch(
+      /import\s+\{\s*ChildWorkerSupervisor\s*\}\s+from\s+["']\.\.\/core\/minions\/child-worker-supervisor\.ts["'];/
     );
   });
 
@@ -55,10 +55,10 @@ describe("autopilot.ts ↔ ChildWorkerSupervisor wiring", () => {
     // resolveDefaultMaxRssMb() (cgroup-aware) and passes it as the cap. The
     // argv must still carry the --max-rss flag token + the resolved value.
     expect(AUTOPILOT_SRC).toContain("resolveDefaultMaxRssMb");
-    expect(AUTOPILOT_SRC).toContain("'--max-rss', String(autopilotMaxRssMb)");
-    expect(AUTOPILOT_SRC).toContain("'jobs', 'work'");
+    expect(AUTOPILOT_SRC).toMatch(/["']--max-rss["'],\s*String\(autopilotMaxRssMb\)/);
+    expect(AUTOPILOT_SRC).toMatch(/["']jobs["'],\s*["']work["']/);
     // The footgun literal must NOT come back.
-    expect(AUTOPILOT_SRC).not.toContain("'--max-rss', '2048'");
+    expect(AUTOPILOT_SRC).not.toMatch(/["']--max-rss["'],\s*["']2048["']/);
   });
 
   it("constructs ChildWorkerSupervisor with maxCrashes: 5", () => {
@@ -73,15 +73,15 @@ describe("autopilot.ts ↔ ChildWorkerSupervisor wiring", () => {
     // crash counter tripped, bypassing its own dispatch-loop cleanup and
     // lockfile removal. Post-refactor: the callback routes through
     // shutdown('max_crashes') so cleanup runs.
-    expect(AUTOPILOT_SRC).toMatch(/onMaxCrashesExceeded:[\s\S]{0,300}shutdown\('max_crashes'\)/);
+    expect(AUTOPILOT_SRC).toMatch(/onMaxCrashesExceeded:[\s\S]{0,300}shutdown\(["']max_crashes["']\)/);
   });
 
   it("shutdown drains via supervisor.killChild + awaitChildExit (not workerProc.kill)", () => {
     // The legacy shutdown reached into `workerProc` directly. Post-refactor
     // those calls go through the supervisor's typed surface, which lets the
     // class encapsulate the kill/drain sequence.
-    expect(AUTOPILOT_SRC).toContain("childSupervisor.killChild('SIGTERM')");
-    expect(AUTOPILOT_SRC).toContain("childSupervisor.awaitChildExit(35_000)");
+    expect(AUTOPILOT_SRC).toMatch(/childSupervisor\.killChild\(["']SIGTERM["']\)/);
+    expect(AUTOPILOT_SRC).toMatch(/childSupervisor\.awaitChildExit\(35_000\)/);
     expect(AUTOPILOT_SRC).not.toContain("workerProc");
   });
 });

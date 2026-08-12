@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f07c868ec7be3919"
 ---
 
 # Die Schule der Gesellschaft und die Gesellschaft der Schule – Zwei Bemerkungen zum Heimunterrichtsbeschluss des BVerfG

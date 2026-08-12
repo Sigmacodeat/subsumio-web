@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/envisioning-a-gender-equal-european-socie
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "663e111a073c627b"
 ---
 
 # Envisioning a Gender-Equal European Society

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/karlsruhe-hat-die-wahl/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9442e3f5bf7c2343"
 ---
 
 # Karlsruhe hat die Wahl

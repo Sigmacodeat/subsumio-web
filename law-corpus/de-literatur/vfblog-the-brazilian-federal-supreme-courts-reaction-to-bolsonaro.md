@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "422aa536fb5d2ad7"
 ---
 
 # The Brazilian Federal Supreme Court’s Reaction to Bolsonaro

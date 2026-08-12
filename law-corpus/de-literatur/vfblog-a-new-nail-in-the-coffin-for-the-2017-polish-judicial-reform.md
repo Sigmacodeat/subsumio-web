@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c74c8bcc9e00596f"
 ---
 
 # A New Nail in the Coffin for the 2017 Polish Judicial Reform

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "590ba4092e2710bf"
 ---
 
 # Die Auflösung des „Flügels“ in der AfD – Gewinn für die freiheitlich-demokratische Grundordnung?

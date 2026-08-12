@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nigeria-as-a-safe-country-of-origin/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cc986349f6686353"
 ---
 
 # Nigeria as a Safe Country of Origin?

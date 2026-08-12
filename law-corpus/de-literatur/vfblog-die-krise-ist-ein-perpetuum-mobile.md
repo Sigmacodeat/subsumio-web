@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-krise-ist-ein-perpetuum-mobile/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "56a9cba78fb1b12b"
 ---
 
 # “Die Krise ist ein Perpetuum Mobile”

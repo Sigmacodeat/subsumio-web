@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/cofoe-bureaucracy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c4cfead25323c5ed"
 ---
 
 # The Conference on the Future of Europe – Finally, an opportunity for more top-down bureaucracy?

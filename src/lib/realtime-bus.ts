@@ -61,6 +61,18 @@ export function broadcastDocumentUploaded(
   broadcastSseEvent(brainId, "document.uploaded", data);
 }
 
+export function broadcastPortalVisit(
+  brainId: string,
+  data: {
+    caseSlug: string;
+    documentSlug?: string;
+    action?: "view" | "sign" | "upload";
+    visitedAt: string;
+  }
+): void {
+  broadcastSseEvent(brainId, "portal.visit", data);
+}
+
 export function broadcastAutonomousTaskQueued(
   brainId: string,
   data: {

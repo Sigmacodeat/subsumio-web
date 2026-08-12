@@ -18,6 +18,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "8d79d627db7c74fe"
 ---
 
 § 19 Verwaltungskompetenzen &#124; Inhaltsverzeichnis &#124; § 21 Verfahrensarten vor dem BVerfG 

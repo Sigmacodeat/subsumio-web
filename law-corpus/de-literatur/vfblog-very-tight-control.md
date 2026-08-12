@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/very-tight-control/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a0e270fa2e4431a4"
 ---
 
 # “Very Tight Control”

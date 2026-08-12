@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/new-digital-borders-for-fortress-europe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1d93434a719b3f79"
 ---
 
 # New Digital Gates for Fortress Europe?

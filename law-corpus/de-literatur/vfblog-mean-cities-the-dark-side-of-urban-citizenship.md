@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mean-cities-the-dark-side-of-urban-citize
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b7adc095f1b50b5e"
 ---
 
 # Mean cities: the dark side of urban citizenship

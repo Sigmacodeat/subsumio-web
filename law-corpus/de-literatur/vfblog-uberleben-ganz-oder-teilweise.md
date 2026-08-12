@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/uberleben-ganz-oder-teilweise/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5c89ccd3af064ae5"
 ---
 
 # Überleben. Ganz oder teilweise.

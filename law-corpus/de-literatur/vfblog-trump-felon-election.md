@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/trump-felon-election/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ad04530c5ea69f16"
 ---
 
 # Should a Convicted Felon be the Next President of the US?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/schafft-den-bundesprsidenten-ab/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "87d898f6973bdad1"
 ---
 
 # Schafft den Bundespräsidenten ab!

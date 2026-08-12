@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-plaintiff-who-turned-into-a-prosecuto
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "28e0d76dc711fca5"
 ---
 
 # The Plaintiff who turned into a Prosecutor

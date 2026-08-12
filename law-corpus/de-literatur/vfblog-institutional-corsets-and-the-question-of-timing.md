@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/institutional-corsets-and-the-question-of
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "02188b17a844db67"
 ---
 
 # Institutional Corsets and the Question of Timing

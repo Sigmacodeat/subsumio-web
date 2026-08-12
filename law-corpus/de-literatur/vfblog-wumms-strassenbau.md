@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wumms-strassenbau/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7ea4456070f7a960"
 ---
 
 # Ein „konstitutioneller Wumms“ für den Straßenbau

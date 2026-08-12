@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "444b78b64f9f3902"
 ---
 
 # The Meaningful Vote on Brexit: the End of the Beginning or the Beginning of the End?

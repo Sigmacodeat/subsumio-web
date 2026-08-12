@@ -17,6 +17,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2016 Daniel Hürlimann,
   Herbert Zech; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "a38770e5c182c632"
 ---
 
 # Rechte an Daten

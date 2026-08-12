@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/femizid-feminizid-studien-kkf-tubingen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ccc7f1bfd3332fd0"
 ---
 
 # Jenseits der Statistik

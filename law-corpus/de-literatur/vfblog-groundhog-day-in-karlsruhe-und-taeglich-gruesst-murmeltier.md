@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a4d9702512956efc"
 ---
 
 # Groundhog Day in Karlsruhe: Und täglich grüßt das Murmeltier&#8230;

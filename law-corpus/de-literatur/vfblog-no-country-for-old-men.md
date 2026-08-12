@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/no-country-for-old-men/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "299f6be7836128b5"
 ---
 
 # No Country for ‘Old Men’

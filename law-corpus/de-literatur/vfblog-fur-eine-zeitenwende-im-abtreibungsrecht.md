@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fur-eine-zeitenwende-im-abtreibungsrecht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9b25ae32a6295813"
 ---
 
 # Für eine Zeitenwende im Abtreibungsrecht

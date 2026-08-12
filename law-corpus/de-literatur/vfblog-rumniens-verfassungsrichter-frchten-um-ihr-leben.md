@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rumniens-verfassungsrichter-frchten-um-ih
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ef97716114688b4e"
 ---
 
 # Rumäniens Verfassungsrichter fürchten um ihr Leben

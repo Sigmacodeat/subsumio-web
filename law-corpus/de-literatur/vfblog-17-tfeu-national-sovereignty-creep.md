@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/17-tfeu-national-sovereignty-creep/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fcfa7256be0cb87f"
 ---
 
 # Article 17 TFEU as a Gateway to National Sovereignty Creep

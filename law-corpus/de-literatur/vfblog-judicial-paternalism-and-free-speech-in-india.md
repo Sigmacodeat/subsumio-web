@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/judicial-paternalism-and-free-speech-in-i
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c10abdeec3739d94"
 ---
 
 # Judicial Paternalism and Free Speech in India

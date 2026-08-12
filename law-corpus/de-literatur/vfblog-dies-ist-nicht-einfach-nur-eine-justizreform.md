@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dies-ist-nicht-einfach-nur-eine-justizref
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b89affc0825f3f4e"
 ---
 
 # Dies ist nicht einfach nur eine “Justizreform”

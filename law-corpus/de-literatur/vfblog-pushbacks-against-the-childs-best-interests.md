@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pushbacks-against-the-childs-best-interes
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "42dc098034791437"
 ---
 
 # Pushbacks against the Child's Best Interests

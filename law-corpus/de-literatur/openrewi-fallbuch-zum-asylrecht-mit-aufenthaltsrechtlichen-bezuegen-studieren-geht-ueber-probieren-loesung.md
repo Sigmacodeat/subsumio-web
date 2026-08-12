@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "5f985cfc7e2c4b8e"
 ---
 
 Ein Text der Initiative OpenRewi. Wie du ihn verbesserst, ist hier beschrieben.

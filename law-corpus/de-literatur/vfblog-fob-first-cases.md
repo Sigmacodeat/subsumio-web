@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/fob-first-cases/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "02aad66c2b209680"
 ---
 
 # Facebook’s Oversight Board Just Announced Its First Cases, But It Already Needs An Overhaul

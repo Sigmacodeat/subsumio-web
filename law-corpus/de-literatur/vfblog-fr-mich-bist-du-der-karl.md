@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fr-mich-bist-du-der-karl/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dc0271204e7203c3"
 ---
 
 # Für mich bist du der Karl

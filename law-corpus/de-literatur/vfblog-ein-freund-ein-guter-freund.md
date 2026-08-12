@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-freund-ein-guter-freund/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c1bc2c7ccbfdbe6a"
 ---
 
 # Ein Freund, ein guter Freund

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/in-eigener-sache-assistant-editor-gesucht
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "46ec4f2cffda13e1"
 ---
 
 # In eigener Sache: Assistant Editor gesucht!

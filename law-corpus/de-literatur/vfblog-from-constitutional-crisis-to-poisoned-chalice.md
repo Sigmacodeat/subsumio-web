@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/from-constitutional-crisis-to-poisoned-ch
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "de9336d081cb7098"
 ---
 
 # From Constitutional Crisis to Poisoned Chalice

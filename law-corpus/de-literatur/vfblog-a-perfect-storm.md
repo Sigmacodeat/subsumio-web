@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-perfect-storm/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6af0d3fd12addf34"
 ---
 
 # A Perfect Storm

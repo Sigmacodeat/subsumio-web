@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bde8b0d38abfe5c8"
 ---
 
 # König Midas, Hauptmann Kettensäge und die Mittel des Völkerrechts zum Schutz der Biodiversität

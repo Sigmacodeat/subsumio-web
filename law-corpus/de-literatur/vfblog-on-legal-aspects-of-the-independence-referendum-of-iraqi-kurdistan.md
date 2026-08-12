@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e74af1b43c0550a9"
 ---
 
 # On Legal Aspects of the Independence Referendum of Iraqi Kurdistan

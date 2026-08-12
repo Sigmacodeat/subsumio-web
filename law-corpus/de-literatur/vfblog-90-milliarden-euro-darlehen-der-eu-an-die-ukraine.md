@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/90-milliarden-euro-darlehen-der-eu-an-die
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b19d3974b0c5a23e"
 ---
 
 # Kreditaufnahme statt Konfiskation

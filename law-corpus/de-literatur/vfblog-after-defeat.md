@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/after-defeat/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1494cc3ed7874317"
 ---
 
 # After Defeat

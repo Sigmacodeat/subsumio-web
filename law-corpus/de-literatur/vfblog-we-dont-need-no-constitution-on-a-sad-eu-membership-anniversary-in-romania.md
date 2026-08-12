@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "24a6fac2308cf78c"
 ---
 
 # ‘We Don’t Need No Constitution’ – On a Sad EU Membership Anniversary in Romania

@@ -18,6 +18,7 @@ triggers:
   - "file a claim"
   - "claim notification"
   - "Schadenregulierung"
+  - "coverage claim"
 priority: 64
 tools:
   - search

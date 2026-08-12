@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/investitionsschutz-ttip-der-kritik-oder-n
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dd8be2a6eebd71ad"
 ---
 
 # „Investitionsschutz in TTIP in der Kritik“ – oder nicht?

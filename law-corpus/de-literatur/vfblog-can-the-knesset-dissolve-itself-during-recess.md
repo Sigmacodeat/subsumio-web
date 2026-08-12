@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/can-the-knesset-dissolve-itself-during-re
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7801dff162b147ff"
 ---
 
 # Can the Knesset dissolve itself during recess?

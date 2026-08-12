@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/religious-ethos-on-trial/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2161fc5c0b8e4181"
 ---
 
 # Selectivity of Religious Ethos on Trial

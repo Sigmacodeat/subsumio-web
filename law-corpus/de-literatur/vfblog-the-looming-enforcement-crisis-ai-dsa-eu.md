@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-looming-enforcement-crisis-ai-dsa-eu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eea2269b92322c1a"
 ---
 
 # The Looming Enforcement Crisis in European Digital Policy

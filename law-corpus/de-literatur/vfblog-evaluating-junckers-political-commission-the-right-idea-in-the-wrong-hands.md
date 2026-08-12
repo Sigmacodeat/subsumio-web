@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2e7dd756f9240647"
 ---
 
 # Evaluating Juncker’s Political Commission: The Right Idea in the Wrong Hands?

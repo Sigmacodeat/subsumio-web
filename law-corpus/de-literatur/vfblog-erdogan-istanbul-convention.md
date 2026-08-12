@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/erdogan-istanbul-convention/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7d31d767a305c682"
 ---
 
 # An Unconstitutional Setback

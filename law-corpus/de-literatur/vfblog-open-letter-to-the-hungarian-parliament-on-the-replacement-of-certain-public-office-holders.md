@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "43ac83b9f10aaf95"
 ---
 
 # Open Letter to the Hungarian Parliament on the Replacement of Certain Public Office-Holders

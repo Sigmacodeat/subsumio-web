@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fingerzeig-an-die-karlsruher-kollegen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7fa7111abb1c85dd"
 ---
 
 # Fingerzeig an die Karlsruher Kollegen

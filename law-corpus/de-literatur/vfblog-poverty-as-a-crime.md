@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/poverty-as-a-crime/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3dd0ce813776fa33"
 ---
 
 # Poverty as a Crime

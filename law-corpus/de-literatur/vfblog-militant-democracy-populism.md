@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/militant-democracy-populism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "239bac7faa4aab44"
 ---
 
 # Defending Democracy Against Itself

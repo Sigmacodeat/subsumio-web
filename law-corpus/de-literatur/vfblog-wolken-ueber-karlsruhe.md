@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wolken-ueber-karlsruhe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5a6c1ca804f62f54"
 ---
 
 # Wolken über Karlsruhe

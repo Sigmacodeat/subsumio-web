@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "867df6cb6ed01914"
 ---
 
 # Expanding the Franchise – another Sleight of Hand by the Hungarian Government?

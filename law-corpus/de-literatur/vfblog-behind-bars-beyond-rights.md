@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/behind-bars-beyond-rights/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9f6c5b352d84ee4a"
 ---
 
 # Behind Bars, Beyond Rights

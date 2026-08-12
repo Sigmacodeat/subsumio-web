@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f68e7c9413401110"
 ---
 
 # Introducing the Symposium “Knowledge Under Occupation: Academic Freedom and Palestine on the Global Stage”

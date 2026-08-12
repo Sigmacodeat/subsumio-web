@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "db1c372d5975d5aa"
 ---
 
 # Brokkoli für alle! Obamas Gesundheitsreform passiert den Supreme Court

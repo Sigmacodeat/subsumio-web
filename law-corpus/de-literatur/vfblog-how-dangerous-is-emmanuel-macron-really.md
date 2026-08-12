@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/how-dangerous-is-emmanuel-macron-really/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "21e6289110c0883a"
 ---
 
 # How dangerous is Emmanuel Macron – really?

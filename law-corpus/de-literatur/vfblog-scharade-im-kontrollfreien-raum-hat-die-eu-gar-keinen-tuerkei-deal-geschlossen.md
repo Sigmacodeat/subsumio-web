@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a53bda2e16482e79"
 ---
 
 # Scharade im kontrollfreien Raum: Hat die EU gar keinen Türkei-Deal geschlossen?

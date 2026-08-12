@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a6de4b0e68067c65"
 ---
 
 # Das CETA-Gutachten des EuGH – Neue Maßstäbe allerorten…

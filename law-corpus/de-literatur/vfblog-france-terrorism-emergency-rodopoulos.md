@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/france-terrorism-emergency-rodopoulos/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9843de582fd5dcaa"
 ---
 
 # Between the Scylla of Terrorism and the Charybdis of the Police State: on the new French Anti-Terrorist Legislation

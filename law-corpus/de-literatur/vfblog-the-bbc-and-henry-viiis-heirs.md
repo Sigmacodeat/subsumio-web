@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-bbc-and-henry-viiis-heirs/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b2e310f6277139ed"
 ---
 
 # The BBC and Henry VIII’s Heirs

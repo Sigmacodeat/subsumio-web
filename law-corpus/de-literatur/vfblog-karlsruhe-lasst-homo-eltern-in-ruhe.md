@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/karlsruhe-lasst-homo-eltern-in-ruhe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0536758eb6d56dfa"
 ---
 
 # Karlsruhe lässt Homo-Eltern in Ruhe

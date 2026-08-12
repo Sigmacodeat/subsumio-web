@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nato-would-be-dead/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c3e6a5cd75e2cf24"
 ---
 
 # “NATO Would Be Dead”

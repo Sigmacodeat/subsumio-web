@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-eu-has-no-national-guard/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "07fc543d9f6d27b1"
 ---
 
 # The EU has no National Guard

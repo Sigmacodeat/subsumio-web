@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/under-black-skies/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8e6538a4354e71f0"
 ---
 
 # Under Black Skies

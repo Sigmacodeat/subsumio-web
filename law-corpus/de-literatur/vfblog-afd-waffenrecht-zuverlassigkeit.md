@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/afd-waffenrecht-zuverlassigkeit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9c0a41d38aa4b642"
 ---
 
 # Die Waffen des Rechts gegen die Waffen der AfD

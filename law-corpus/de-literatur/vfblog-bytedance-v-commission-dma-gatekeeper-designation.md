@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bytedance-v-commission-dma-gatekeeper-des
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bf70af6890a8daf0"
 ---
 
 # ByteDance v. Commission

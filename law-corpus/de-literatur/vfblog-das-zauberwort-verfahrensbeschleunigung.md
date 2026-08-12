@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-zauberwort-verfahrensbeschleunigung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b50d5511b0d9dc1c"
 ---
 
 # Das Zauberwort Verfahrensbeschleunigung

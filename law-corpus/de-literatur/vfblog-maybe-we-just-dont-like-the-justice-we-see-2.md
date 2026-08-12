@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/maybe-we-just-dont-like-the-justice-we-se
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "352c1ea14cc3f69f"
 ---
 
 # Maybe we just don't like the Justice we see&#8230;

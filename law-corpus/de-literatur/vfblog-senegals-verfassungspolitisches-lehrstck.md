@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/senegals-verfassungspolitisches-lehrstck/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e39c5d85bdf09fe0"
 ---
 
 # Senegals verfassungspolitisches Lehrstück

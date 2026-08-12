@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b5d5ac2de72e00d4"
 ---
 
 # Article 370: Is it a Basic Feature of the Indian Constitution?

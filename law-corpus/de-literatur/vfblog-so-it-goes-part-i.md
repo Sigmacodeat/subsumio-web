@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/so-it-goes-part-i/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9d5fac09c7848df6"
 ---
 
 # So It Goes – Part I

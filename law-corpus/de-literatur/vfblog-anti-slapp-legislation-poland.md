@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/anti-slapp-legislation-poland/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f39791575cc38d5e"
 ---
 
 # From Zero to Hero

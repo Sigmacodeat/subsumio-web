@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/two-step-test-master-of-none/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3d2ecc5edec5b7fb"
 ---
 
 # Two-Step Test Master of None

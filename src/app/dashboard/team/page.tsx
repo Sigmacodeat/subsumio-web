@@ -103,7 +103,7 @@ export default function TeamPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[900px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("nav.team")}
         description={t("team.description")}
@@ -288,6 +288,8 @@ export default function TeamPage() {
                     <span className="sr-only">E-Mail-Adresse</span>
                     <Input
                       type="email"
+                      autoComplete="email"
+                      inputMode="email"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
                       placeholder="kollegin@kanzlei.de"

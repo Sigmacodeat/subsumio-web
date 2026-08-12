@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ceb295f9c5090dab"
 ---
 
 # The AG Opinion in the Celmer Case:  Why the Test for the Appearance of Independence is Needed

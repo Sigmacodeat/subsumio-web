@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-closing-of-ranks/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6124eb217b10ed9d"
 ---
 
 # A Closing of Ranks

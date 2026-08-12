@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c1bb980c3b92a35c"
 ---
 
 # Kreative Gesetzesauslegung: Karlsruhe kann beim besten Willen kein Problem entdecken

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/failed-state-mitten-europa/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ef0f4e81f6d3e0c7"
 ---
 
 # Failed State mitten in Europa

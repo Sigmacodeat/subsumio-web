@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4fb934c86eeb4174"
 ---
 
 # Why an EU Country under the Surveillance Procedure (Article 7.1 TEU) Should not Chair the Council Presidency

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "49b198987c07c71f"
 ---
 
 # Der Gesetzgeber ist gefordert! Ein Vorschlag zur Regelung der Zirkumzision im „Gesetz über die religiöse Kindererziehung“

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "41b9f7a0dd46d49d"
 ---
 
 # Das TTIP-Gericht: Keimzelle oder Stolperstein für echte Multilateralisierung des internationalen Investitionsrechts?

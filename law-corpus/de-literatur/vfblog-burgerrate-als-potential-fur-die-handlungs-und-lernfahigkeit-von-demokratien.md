@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "71cb8e1268cf52dc"
 ---
 
 # Bürgerräte als Potential für die Handlungs- und Lernfähigkeit von Demokratien

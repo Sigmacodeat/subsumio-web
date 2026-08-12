@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5043089823d7dea4"
 ---
 
 # In Praise of the Tavares Report: Europe finally said No to Viktor Orbán

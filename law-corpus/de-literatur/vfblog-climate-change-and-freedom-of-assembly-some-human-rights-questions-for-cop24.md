@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e958b309b5aed512"
 ---
 
 # Climate Change and Freedom of Assembly: Some Human Rights Questions for COP24

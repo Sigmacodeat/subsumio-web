@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "17c2db161733cb1c"
 ---
 
 # Boris Johnson's Strategy of Assured Mutual Destruction: Crazy but not Irrational

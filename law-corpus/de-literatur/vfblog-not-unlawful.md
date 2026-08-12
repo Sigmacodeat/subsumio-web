@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/not-unlawful/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "df76ca3400314aaf"
 ---
 
 # Why Banning Russian Tourists from Schengen Might not Be Unlawful

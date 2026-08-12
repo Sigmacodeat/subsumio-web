@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/proscription-palestine-action/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2630105c8b8b172e"
 ---
 
 # Free Speech, Protest and the High Court’s Ruling on the Proscription of Palestine Action

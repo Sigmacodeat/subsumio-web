@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/aufruf-fuer-eine-menschliche-fluechtlings
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bf1797319c68b03e"
 ---
 
 # Aufruf für eine menschliche Flüchtlingspolitik

@@ -349,7 +349,7 @@ export default function EngineAPMPage() {
   };
 
   return (
-    <div
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8"
       style={{
         minHeight: "100vh",
         background: "var(--ds-bg)",

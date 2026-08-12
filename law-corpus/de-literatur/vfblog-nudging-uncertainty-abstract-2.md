@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nudging-uncertainty-abstract-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2e757c294b8d2012"
 ---
 
 # Nudging and Uncertainty (Abstract)

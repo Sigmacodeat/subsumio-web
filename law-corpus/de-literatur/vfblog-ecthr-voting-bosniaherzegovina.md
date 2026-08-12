@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ecthr-voting-bosniaherzegovina/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "036edf64f7785e95"
 ---
 
 # A Fallen Curtain and Open Questions

@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "dbd04f36832c504b"
 ---
 
 § 5.4 Minderheitenschutz &#124; Inhaltsverzeichnis &#124; § 5.6 Politische Parteien 

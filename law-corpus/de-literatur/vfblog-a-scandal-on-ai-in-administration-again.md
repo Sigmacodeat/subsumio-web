@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-scandal-on-ai-in-administration-again/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c5bbebe16fd49279"
 ---
 
 # A Scandal on AI in Administration, Again

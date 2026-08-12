@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/alles-eine-frage-der-eigenen-wahl/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7b3d344915bb4ce2"
 ---
 
 # Alles eine Frage der eigenen „Wahl“?

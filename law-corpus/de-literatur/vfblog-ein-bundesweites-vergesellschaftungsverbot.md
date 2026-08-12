@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-bundesweites-vergesellschaftungsverbo
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d9a69218b0fd3450"
 ---
 
 # Ein bundesweites Vergesellschaftungsverbot?

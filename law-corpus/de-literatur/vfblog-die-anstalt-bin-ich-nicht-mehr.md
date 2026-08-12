@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-anstalt-bin-ich-nicht-mehr/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2d5c8ac412309790"
 ---
 
 # Die Anstalt bin ich – nicht mehr

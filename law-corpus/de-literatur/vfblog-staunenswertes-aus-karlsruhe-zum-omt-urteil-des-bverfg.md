@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c85e44f0dc4042da"
 ---
 
 # Staunenswertes aus Karlsruhe: zum OMT-Urteil des BVerfG

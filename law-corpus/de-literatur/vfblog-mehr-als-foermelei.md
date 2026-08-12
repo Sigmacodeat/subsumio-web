@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mehr-als-foermelei/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "abe2dace75547b1f"
 ---
 
 # Mehr als Förmelei

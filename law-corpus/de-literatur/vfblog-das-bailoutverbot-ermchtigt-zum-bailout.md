@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-bailoutverbot-ermchtigt-zum-bailout/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4ade6887fd93ffa6"
 ---
 
 # Das Bailout-Verbot ermächtigt zum Bailout

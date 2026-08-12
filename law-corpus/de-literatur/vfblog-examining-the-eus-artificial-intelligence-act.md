@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/examining-the-eus-artificial-intelligence
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f80b541b5f66eadb"
 ---
 
 # Examining the EU's Artificial Intelligence Act

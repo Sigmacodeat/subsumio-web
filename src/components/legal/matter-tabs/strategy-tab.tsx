@@ -128,7 +128,7 @@ function ProzessOekonomieSection({ caseSlug, lang }: { caseSlug: string; lang: s
   return (
     <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
       <div className="flex items-center gap-2">
-        <Coins size={16} className="text-[color:var(--ds-text-secondary)]" />
+        <Coins size={16} className="text-[color:var(--ds-text-muted)]" />
         <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
           {lang === "en" ? "Litigation Economics" : "Prozess-Ökonomie"}
         </h3>
@@ -140,7 +140,7 @@ function ProzessOekonomieSection({ caseSlug, lang }: { caseSlug: string; lang: s
       </div>
       {loading ? (
         <div
-          className="flex items-center gap-2 py-3 text-sm text-[color:var(--ds-text-secondary)]"
+          className="flex items-center gap-2 py-3 text-sm text-[color:var(--ds-text-muted)]"
           role="status"
           aria-live="polite"
         >
@@ -148,7 +148,7 @@ function ProzessOekonomieSection({ caseSlug, lang }: { caseSlug: string; lang: s
           {lang === "en" ? "Loading analyses..." : "Analysen werden geladen..."}
         </div>
       ) : available.length === 0 ? (
-        <p className="py-2 text-sm text-[color:var(--ds-text-secondary)]">
+        <p className="py-2 text-sm text-[color:var(--ds-text-muted)]">
           {lang === "en"
             ? "No litigation-economics analyses yet. They are generated automatically when the case analysis pipeline runs after document upload."
             : "Noch keine Prozess-Ökonomie-Analysen. Sie entstehen automatisch, wenn die Aktenanalyse nach dem Dokumenten-Upload läuft."}
@@ -178,7 +178,7 @@ function ProzessOekonomieSection({ caseSlug, lang }: { caseSlug: string; lang: s
                       className="shrink-0 text-[color:var(--ds-text-muted)]"
                     />
                   )}
-                  <Icon size={14} className="shrink-0 text-[color:var(--ds-text-secondary)]" />
+                  <Icon size={14} className="shrink-0 text-[color:var(--ds-text-muted)]" />
                   <span className="text-xs font-medium text-[color:var(--ds-text)]">
                     {lang === "en" ? a.labelEn : a.labelDe}
                   </span>
@@ -470,13 +470,13 @@ export function StrategyTab() {
         <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <AlertTriangle size={16} className="text-[color:var(--ds-text-secondary)]" />
+              <AlertTriangle size={16} className="text-[color:var(--ds-text-muted)]" />
               <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
                 {t("strategytab.semantic_contradictions")}
               </h3>
             </div>
             {ctx.probeLastRun && (
-              <span className="text-xs text-[color:var(--ds-text-secondary)]">
+              <span className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("strategytab.last_probe")}{" "}
                 {new Date(ctx.probeLastRun).toLocaleDateString(lang === "en" ? "en-US" : "de-DE", {
                   day: "2-digit",
@@ -489,7 +489,7 @@ export function StrategyTab() {
           </div>
           {ctx.probeLoading ? (
             <div
-              className="flex items-center gap-2 py-4 text-sm text-[color:var(--ds-text-secondary)]"
+              className="flex items-center gap-2 py-4 text-sm text-[color:var(--ds-text-muted)]"
               role="status"
               aria-live="polite"
             >
@@ -520,7 +520,7 @@ export function StrategyTab() {
                       {f.severity.toUpperCase()}
                     </Badge>
                     {f.axis && (
-                      <span className="text-xs text-[color:var(--ds-text-secondary)]">
+                      <span className="text-xs text-[color:var(--ds-text-muted)]">
                         {f.axis}
                       </span>
                     )}
@@ -528,20 +528,20 @@ export function StrategyTab() {
                   <div className="space-y-1.5 text-sm">
                     <div>
                       <span className="font-medium text-[color:var(--ds-text)]">A: </span>
-                      <span className="text-[color:var(--ds-text-secondary)]">
+                      <span className="text-[color:var(--ds-text-muted)]">
                         {f.chunk_a.slice(0, 200)}
                         {f.chunk_a.length > 200 ? "..." : ""}
                       </span>
                     </div>
                     <div>
                       <span className="font-medium text-[color:var(--ds-text)]">B: </span>
-                      <span className="text-[color:var(--ds-text-secondary)]">
+                      <span className="text-[color:var(--ds-text-muted)]">
                         {f.chunk_b.slice(0, 200)}
                         {f.chunk_b.length > 200 ? "..." : ""}
                       </span>
                     </div>
                     {f.explanation && (
-                      <div className="pt-1 text-xs text-[color:var(--ds-text-secondary)] italic">
+                      <div className="pt-1 text-xs text-[color:var(--ds-text-muted)] italic">
                         {f.explanation}
                       </div>
                     )}
@@ -550,13 +550,13 @@ export function StrategyTab() {
               ))}
             </div>
           ) : ctx.probeAvailable ? (
-            <div className="py-4 text-center text-sm text-[color:var(--ds-text-secondary)]">
+            <div className="py-4 text-center text-sm text-[color:var(--ds-text-muted)]">
               {lang === "en"
                 ? "No contradictions found in the latest probe."
                 : "Keine Widersprüche im letzten Scan gefunden."}
             </div>
           ) : (
-            <div className="py-4 text-center text-sm text-[color:var(--ds-text-secondary)]">
+            <div className="py-4 text-center text-sm text-[color:var(--ds-text-muted)]">
               {lang === "en"
                 ? "No contradiction probe has run yet. The nightly probe scans for semantic contradictions automatically."
                 : "Es wurde noch kein Widerspruchs-Scan durchgeführt. Der nächtliche Scan sucht automatisch nach semantischen Widersprüchen."}
@@ -569,7 +569,7 @@ export function StrategyTab() {
           <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <ListChecks size={16} className="text-[color:var(--ds-text-secondary)]" />
+                <ListChecks size={16} className="text-[color:var(--ds-text-muted)]" />
                 <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
                   {t("strategytab.field_contradictions")}
                 </h3>
@@ -612,21 +612,21 @@ export function StrategyTab() {
                     >
                       {c.severity.toUpperCase()}
                     </Badge>
-                    <span className="font-mono text-xs text-[color:var(--ds-text-secondary)]">
+                    <span className="font-mono text-xs text-[color:var(--ds-text-muted)]">
                       {c.field}
                     </span>
                   </div>
                   <div className="space-y-1 text-sm">
                     <div>
                       <span className="font-medium text-[color:var(--ds-text)]">A: </span>
-                      <span className="text-[color:var(--ds-text-secondary)]">{c.value_a}</span>
+                      <span className="text-[color:var(--ds-text-muted)]">{c.value_a}</span>
                     </div>
                     <div>
                       <span className="font-medium text-[color:var(--ds-text)]">B: </span>
-                      <span className="text-[color:var(--ds-text-secondary)]">{c.value_b}</span>
+                      <span className="text-[color:var(--ds-text-muted)]">{c.value_b}</span>
                     </div>
                     {c.description && (
-                      <div className="pt-1 text-xs text-[color:var(--ds-text-secondary)] italic">
+                      <div className="pt-1 text-xs text-[color:var(--ds-text-muted)] italic">
                         {c.description}
                       </div>
                     )}

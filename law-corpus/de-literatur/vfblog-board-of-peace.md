@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/board-of-peace/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "99d504300a63c52d"
 ---
 
 # Peace by Chairman

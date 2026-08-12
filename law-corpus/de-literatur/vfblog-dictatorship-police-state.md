@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/dictatorship-police-state/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ceae2c1f325451dd"
 ---
 
 # “Is it a dictatorship and a police state yet?” Scheppele and Halmai on current Hungarian constitutional politics

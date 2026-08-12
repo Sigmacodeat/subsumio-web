@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/opposing-an-idle-federal-government/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d85b266d9f81c417"
 ---
 
 # Opposing an Idle Federal Government

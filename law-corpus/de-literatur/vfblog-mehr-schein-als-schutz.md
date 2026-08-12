@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mehr-schein-als-schutz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "afddb1fdd95c0e34"
 ---
 
 # Mehr Schein als Schutz

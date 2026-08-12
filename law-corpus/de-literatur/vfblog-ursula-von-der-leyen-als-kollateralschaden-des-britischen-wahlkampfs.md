@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8d896fbf4dc9e906"
 ---
 
 # Ursula von der Leyen als Kollateral&shy;schaden des britischen Wahlkampfs?

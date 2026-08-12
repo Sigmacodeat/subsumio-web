@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fc97a6aa803a047c"
 ---
 
 # Suggesting Solutions: Providing Compensation to the Victims as a Moral and Legal Duty

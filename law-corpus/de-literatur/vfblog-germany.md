@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/germany/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8f3e3e6713ac79f8"
 ---
 
 # Germany – yes you can!

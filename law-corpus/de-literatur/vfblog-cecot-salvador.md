@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/cecot-salvador/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "30413471094e6f8b"
 ---
 
 # Security Sells

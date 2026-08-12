@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-end-of-the-german-legal-culture/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b2180540234b326f"
 ---
 
 # The End of the German Legal Culture?

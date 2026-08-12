@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gazing-into-the-abyss/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "00ef0c03bf5d7b37"
 ---
 
 # Gazing into the Abyss

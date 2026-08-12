@@ -16,6 +16,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2021 Markus Mohler;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "f688de9b12a7becb"
 ---
 
 # PMT-Gesetz: Verfahren und Zweckerreichung

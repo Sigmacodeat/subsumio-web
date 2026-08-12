@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2023 Enzo Bastian;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "b5c128e9a05392a2"
 ---
 
 # Le NFT : de l&#039;œuvre d&#039;art à l&#039;instrument financier

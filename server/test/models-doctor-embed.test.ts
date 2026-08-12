@@ -22,9 +22,9 @@ describe("models doctor — embedding reachability probe (v0.40.x)", () => {
   const src = readFileSync(join(__dirname, "..", "src", "commands", "models.ts"), "utf-8");
 
   test("ProbeResult.touchpoint declares 'embedding_reachability' (codex #7)", () => {
-    expect(src).toContain("'embedding_reachability'");
+    expect(src).toMatch(/["']embedding_reachability["']/);
     // Distinct from the zero-network config probe's touchpoint.
-    expect(src).toContain("'embedding_config'");
+    expect(src).toMatch(/["']embedding_config["']/);
   });
 
   test("probeEmbeddingReachability uses embed() with inputType query + abort signal (codex #6)", () => {
@@ -32,7 +32,7 @@ describe("models doctor — embedding reachability probe (v0.40.x)", () => {
     expect(fnIdx).toBeGreaterThan(0);
     const slice = src.slice(fnIdx, fnIdx + 1500);
     expect(slice).toContain("embed([");
-    expect(slice).toContain("inputType: 'query'");
+    expect(slice).toMatch(/inputType:\s*["']query["']/);
     expect(slice).toContain("abortSignal");
     // Must NOT use embedQuery (no abort signal support — codex #6).
     expect(slice).not.toContain("embedQuery(");
@@ -45,6 +45,6 @@ describe("models doctor — embedding reachability probe (v0.40.x)", () => {
     // The config probe result is captured and the reachability call is gated
     // on its status === 'ok' before firing.
     expect(slice).toContain("const embeddingConfig = await probeEmbeddingConfig()");
-    expect(slice).toMatch(/embeddingConfig\.status === 'ok'[\s\S]*probeEmbeddingReachability\(\)/);
+    expect(slice).toMatch(/embeddingConfig\.status === ["']ok["'][\s\S]*probeEmbeddingReachability\(\)/);
   });
 });

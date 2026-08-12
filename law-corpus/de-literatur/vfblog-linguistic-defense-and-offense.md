@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/linguistic-defense-and-offense/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7fc2d3f81911989c"
 ---
 
 # Linguistic Defense and Offense

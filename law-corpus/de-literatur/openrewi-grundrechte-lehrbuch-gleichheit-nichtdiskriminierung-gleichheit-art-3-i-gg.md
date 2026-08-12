@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "3f88da0a978f199e"
 ---
 
 § 19 Gleichheit & Nichtdiskriminierung &#124; Inhaltsverzeichnis &#124; § 19.2 Gleichberechtigungsauftrag (Art. 3 II GG) 

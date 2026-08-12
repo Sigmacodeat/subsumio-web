@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "225890774ce8d2fb"
 ---
 
 # Literature as Human Dignity: The Constitutional Court’s Misguided Ban of the Novel Esra

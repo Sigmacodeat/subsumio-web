@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-political-process-in-search-of-a-judg
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e2845199f8446f3a"
 ---
 
 # The Political Process in Search of a Judge

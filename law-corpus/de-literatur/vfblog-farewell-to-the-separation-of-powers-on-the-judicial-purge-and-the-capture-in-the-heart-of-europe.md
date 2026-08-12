@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b31840258ce817b2"
 ---
 
 # Farewell to the Separation of Powers – On the Judicial Purge and the Capture in the Heart of Europe

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/no-new-cold-war-for-international-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dd3c93ae8db117f1"
 ---
 
 # No New Cold War for International Law

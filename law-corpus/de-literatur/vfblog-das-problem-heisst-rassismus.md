@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-problem-heisst-rassismus/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "42dbb41ad294425f"
 ---
 
 # Das Problem heißt Rassismus

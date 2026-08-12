@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eb88d03adf4f5c64"
 ---
 
 # Governance Needs for Pandemic Preparedness and Response (PPR)

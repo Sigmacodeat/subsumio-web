@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4f1b499c01871b43"
 ---
 
 # Let Third-Country Nationals Become Citizens in Host Member States and of the European Union

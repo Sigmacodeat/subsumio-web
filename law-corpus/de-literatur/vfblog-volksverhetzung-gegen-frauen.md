@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/volksverhetzung-gegen-frauen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e92e388ab2636507"
 ---
 
 # Volksverhetzung gegen Frauen

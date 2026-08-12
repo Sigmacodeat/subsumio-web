@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-rule-of-law-crisis-in-poland-a-new-ch
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2b15f5a9dc3a2216"
 ---
 
 # The Rule of Law Crisis in Poland: A New Chapter

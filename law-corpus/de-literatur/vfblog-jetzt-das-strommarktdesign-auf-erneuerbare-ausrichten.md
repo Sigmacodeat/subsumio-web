@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b5d89f572fb704c6"
 ---
 
 # Jetzt das Strommarktdesign auf Erneuerbare ausrichten

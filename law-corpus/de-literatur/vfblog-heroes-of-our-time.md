@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/heroes-of-our-time/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a4468417c9c1369a"
 ---
 
 # Heroes of our Time

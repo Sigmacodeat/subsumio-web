@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/domesticating-word-articulations-violent/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2d4be45e88ec2287"
 ---
 
 # Domesticating the Word: Articulations of a Violent Past

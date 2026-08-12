@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7a56304c7fde3a4a"
 ---
 
 # Die verfassungs&shy;rechtlichen Gefahren des social distancing im Bayerischen Landtag

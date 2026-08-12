@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "80f3f426c3412499"
 ---
 
 # Fundamental Rights as Bycatch – Russia’s Anti-Fake News Legislation

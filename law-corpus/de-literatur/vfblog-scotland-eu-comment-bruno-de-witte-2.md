@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/scotland-eu-comment-bruno-de-witte-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fc7a02214f6c6263"
 ---
 
 # Scotland and the EU: Comment by BRUNO DE WITTE

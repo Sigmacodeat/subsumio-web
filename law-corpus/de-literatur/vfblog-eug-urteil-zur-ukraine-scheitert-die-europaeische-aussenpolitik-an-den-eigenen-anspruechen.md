@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2bacfbaaff8419d2"
 ---
 
 # EuG-Urteil zur Ukraine: Scheitert die europäische Außenpolitik an den eigenen Ansprüchen?

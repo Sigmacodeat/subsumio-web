@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "db5d5409d8a6211d"
 ---
 
 # Slowing or Stopping the Turn to Authoritarianism in Israel

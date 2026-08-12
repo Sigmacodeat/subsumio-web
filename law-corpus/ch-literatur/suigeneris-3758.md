@@ -20,6 +20,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2022 Bernhard Rütsche, Daniel
   Hürlimann, Marc Thommen; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "8e95b76b911d38f6"
 ---
 
 # Ist Suizidhilfe für Gesunde mittels Natrium-Pentobarbital strafbar?

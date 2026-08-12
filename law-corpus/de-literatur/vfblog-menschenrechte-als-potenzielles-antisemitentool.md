@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/menschenrechte-als-potenzielles-antisemit
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3c63498f7612df77"
 ---
 
 # Menschenrechte als potenzielles Antisemiten-Tool?

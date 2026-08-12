@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "43a19cc1fd9c9038"
 ---
 
 # The Making and Unmaking of a Constitutional Crisis in Samoa

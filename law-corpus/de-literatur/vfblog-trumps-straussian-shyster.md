@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/trumps-straussian-shyster/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "75f530c35fd8d68e"
 ---
 
 # Trump’s Straussian Shyster

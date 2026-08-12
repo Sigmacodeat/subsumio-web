@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/trading-rights-for-responsibility/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3d5d16c005347bf1"
 ---
 
 # Trading Rights for Responsibility

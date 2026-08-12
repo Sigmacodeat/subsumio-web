@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/karlsruhe-ldt-sarrazin-zum-klagen-ein/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "05d20964a5d1f327"
 ---
 
 # Karlsruhe lädt Sarrazin zum Klagen ein

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f0a2787090b80c6e"
 ---
 
 # The Covid-19 Pandemic, the Failure of the Binary PHEIC Declaration System, and the Need for Reform

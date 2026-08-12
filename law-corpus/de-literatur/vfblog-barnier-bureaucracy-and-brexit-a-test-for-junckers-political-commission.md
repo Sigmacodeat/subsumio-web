@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0b8c4d05fdc61be2"
 ---
 
 # Barnier, Bureaucracy and Brexit – a Test for Juncker’s ‘Political’ Commission

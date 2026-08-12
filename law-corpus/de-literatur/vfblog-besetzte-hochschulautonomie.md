@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/besetzte-hochschulautonomie/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fcc2339668923e49"
 ---
 
 # Besetzte Hochschulautonomie

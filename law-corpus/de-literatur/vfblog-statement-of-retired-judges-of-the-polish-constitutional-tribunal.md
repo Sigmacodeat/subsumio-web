@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d0d5c4ff72b46ede"
 ---
 
 # Statement of Retired Judges of the Polish Constitutional Tribunal

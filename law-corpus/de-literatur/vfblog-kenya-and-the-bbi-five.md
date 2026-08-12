@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kenya-and-the-bbi-five/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b0af801141271230"
 ---
 
 # Kenya and the BBI Five

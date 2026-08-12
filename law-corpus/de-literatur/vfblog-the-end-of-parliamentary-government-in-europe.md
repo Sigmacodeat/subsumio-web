@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-end-of-parliamentary-government-in-eu
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "47695b5ca7f90520"
 ---
 
 # The End of Parliamentary Government in Europe

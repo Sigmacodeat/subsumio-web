@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-populistischer-taschenspielertrick/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ad3eea75db9da97d"
 ---
 
 # Ein populistischer Taschenspielertrick

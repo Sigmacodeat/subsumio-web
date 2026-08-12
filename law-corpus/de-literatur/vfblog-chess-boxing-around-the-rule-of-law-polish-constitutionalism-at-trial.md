@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9b50cb59df507240"
 ---
 
 # Chess-boxing around the Rule of Law: Polish Constitutionalism at Trial

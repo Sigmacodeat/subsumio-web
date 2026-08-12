@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "78d81ed9c01459bc"
 ---
 
 # One year after the Brexit Referendum: More, Fewer or No Referendums in Europe?

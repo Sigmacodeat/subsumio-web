@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "65f0717222d87dc7"
 ---
 
 # Tort Law and New Zealand’s Corporate Greenhouse Gas Emissions

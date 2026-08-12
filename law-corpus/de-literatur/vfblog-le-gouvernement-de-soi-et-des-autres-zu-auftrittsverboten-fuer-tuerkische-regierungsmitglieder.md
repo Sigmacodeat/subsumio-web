@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d47ebbb11b551f80"
 ---
 
 # Le gouvernement de soi et des autres: Zu Auftrittsverboten für türkische Regierungsmitglieder

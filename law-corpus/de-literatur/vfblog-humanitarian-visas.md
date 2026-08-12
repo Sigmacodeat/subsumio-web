@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/humanitarian-visas/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a6e6557afe5a3c0b"
 ---
 
 # Humanitarian Visas for International Protection Purposes

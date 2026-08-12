@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "138ed931ca1253ce"
 ---
 
 # Franken für Deutschland? Zeit für ein einheitliches EU-Wahlrecht!

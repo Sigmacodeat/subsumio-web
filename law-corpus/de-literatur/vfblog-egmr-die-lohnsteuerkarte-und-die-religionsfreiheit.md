@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/egmr-die-lohnsteuerkarte-und-die-religion
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e1e8e9f7a4421ba9"
 ---
 
 # EGMR: Die Lohnsteuerkarte und die Religionsfreiheit

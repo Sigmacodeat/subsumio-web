@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/funktionen-eines-parteiverbotes/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cc69bd24ce3df5da"
 ---
 
 # Funktionen eines Parteiverbotes

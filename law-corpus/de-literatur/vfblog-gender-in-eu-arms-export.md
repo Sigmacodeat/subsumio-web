@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gender-in-eu-arms-export/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "78b1676c7cbe24bc"
 ---
 
 # Mainstreaming Gender in EU Arms Export Controls

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/neues-vom-glossator-15-fussnoten-verfasse
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "52165ea1b14e931a"
 ---
 
 # Neues vom Glossator (15):  Fußnoten verfassen

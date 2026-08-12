@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dunnes-eis-fur-die-5-sperrklausel/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7dedd4f4425779dd"
 ---
 
 # Dünnes Eis für die 5%-Sperrklausel

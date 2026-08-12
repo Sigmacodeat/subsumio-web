@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "12f251f56e7847cb"
 ---
 
 # The ‘Constitutional Military Inter&shy;vention’: Brazil on the Verge of Democratic Breakdown

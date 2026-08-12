@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/cleaning-up-after-2016/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b7f4d68e7e2d786f"
 ---
 
 # Cleaning up after 2016

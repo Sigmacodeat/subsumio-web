@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/spain-abortion-constitution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7d4bb16b118d8629"
 ---
 
 # A Second-Class Right

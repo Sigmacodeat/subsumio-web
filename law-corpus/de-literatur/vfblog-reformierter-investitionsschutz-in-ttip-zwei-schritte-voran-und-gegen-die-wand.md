@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aa2d05dd0f651e9e"
 ---
 
 # „Reformierter“ Investitionsschutz in TTIP: Zwei Schritte voran – und gegen die Wand

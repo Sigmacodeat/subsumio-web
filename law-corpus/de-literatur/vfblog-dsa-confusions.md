@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/dsa-confusions/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "95404a0d4613fc72"
 ---
 
 # The Digital Services Act and the Reproduction of Old Confusions

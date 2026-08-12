@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/new-forces-for-greek-state-reform/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9c672b8b73809b53"
 ---
 
 # New Forces for Greek State Reform

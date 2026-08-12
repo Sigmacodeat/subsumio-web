@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/action-recommended/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "234f787e0e6d3d42"
 ---
 
 # Action Recommended

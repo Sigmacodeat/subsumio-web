@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/digitale-rechtssubjekte-ja-aber-nur-teilw
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2c28d35d3f62ab7c"
 ---
 
 # Digitale Rechtssubjekte? Ja, aber nur teilweise

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/alter-zugang-zu-neuem-recht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2004ccc5c05d2712"
 ---
 
 # Alter Zugang zu neuem Recht

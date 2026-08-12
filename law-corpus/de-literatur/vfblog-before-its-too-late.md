@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/before-its-too-late/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "52fb46588fdace39"
 ---
 
 # Before It's Too Late

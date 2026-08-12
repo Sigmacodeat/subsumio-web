@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-memory-machine/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9af3cf3d29e721f5"
 ---
 
 # The Memory Machine

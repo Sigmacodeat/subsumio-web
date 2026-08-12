@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-grundrecht-auf-generationengerechtigk
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f54f1d94d43189df"
 ---
 
 # Ein Grundrecht auf Generationengerechtigkeit?

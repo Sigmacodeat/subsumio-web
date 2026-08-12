@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kein-recht-auf-whistleblowing-fur-anwalte
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4891e4cfc3b8af76"
 ---
 
 # Kein Recht auf Whistleblowing für Anwälte

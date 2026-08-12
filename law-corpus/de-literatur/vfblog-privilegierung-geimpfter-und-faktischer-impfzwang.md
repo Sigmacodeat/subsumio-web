@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/privilegierung-geimpfter-und-faktischer-i
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5ab0c6ecd4ae289f"
 ---
 
 # Privilegierung Geimpfter und faktischer Impfzwang?

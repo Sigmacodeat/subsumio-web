@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/international-labour-law-platform-economy
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ca2504fa8ddd23fe"
 ---
 
 # Taking Labour Law for a Ride

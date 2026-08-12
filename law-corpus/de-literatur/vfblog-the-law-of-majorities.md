@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-law-of-majorities/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8d9f43d584e7e5b7"
 ---
 
 # The Law of Majorities

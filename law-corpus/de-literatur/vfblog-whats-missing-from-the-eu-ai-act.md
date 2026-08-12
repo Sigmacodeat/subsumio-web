@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/whats-missing-from-the-eu-ai-act/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0738d350c84a06d5"
 ---
 
 # What's Missing from the EU AI Act

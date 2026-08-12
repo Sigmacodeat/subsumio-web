@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/carte-blanche-for-judicial-appointments/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4b95282e5d6bb118"
 ---
 
 # Carte Blanche for Judicial Appointments?

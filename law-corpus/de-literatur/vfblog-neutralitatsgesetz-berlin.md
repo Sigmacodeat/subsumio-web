@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/neutralitatsgesetz-berlin/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f3d564e71599ea90"
 ---
 
 # Neutralitätsgesetz 2.0

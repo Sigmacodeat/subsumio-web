@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "02d8abb54adbee00"
 ---
 
 # The Janus Face of Fetal Citizenship: A Tool of Inclusion or a Threat to Abortion Rights?

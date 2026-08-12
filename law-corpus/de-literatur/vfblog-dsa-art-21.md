@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/dsa-art-21/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b87a150c32a6334c"
 ---
 
 # The Digital Services Act wants you to “sue” Facebook over content decisions in private de facto courts

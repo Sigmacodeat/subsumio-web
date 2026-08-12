@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/covid-19-and-disposable-migrant-workers/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b912f4b63c03d2bb"
 ---
 
 # COVID-19 and Disposable Migrant Workers

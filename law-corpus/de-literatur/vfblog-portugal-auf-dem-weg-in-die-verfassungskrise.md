@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/portugal-auf-dem-weg-in-die-verfassungskr
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fb688a42ef8301f3"
 ---
 
 # Portugal auf dem Weg in die Verfassungskrise?

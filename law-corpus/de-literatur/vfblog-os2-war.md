@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os2-war/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ee56815cfd0ed7d0"
 ---
 
 # We are at war

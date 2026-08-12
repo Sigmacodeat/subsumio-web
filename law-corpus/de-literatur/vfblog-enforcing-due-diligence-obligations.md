@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/enforcing-due-diligence-obligations/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a9050564b6e0eb69"
 ---
 
 # Enforcing Due Diligence Obligations

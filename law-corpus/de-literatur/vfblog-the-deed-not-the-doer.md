@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-deed-not-the-doer/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "64e916b568ee15f7"
 ---
 
 # The Deed, not the Doer

@@ -1,4 +1,6 @@
 ---
+jurisdiction: at
+title: "OGH 5 Ob 92/23s — Verjährung und Hemmung"
 type: court_decision
 court: "OGH"
 date: "2023-11-14"
@@ -8,6 +10,7 @@ legal_area: "Zivilrecht"
 keywords: ["Verjährung", "Hemmung", "Unterbrechung", "Fristbeginn"]
 source: "ris-ogd"
 source_url: "https://ris.bka.gv.at/Dokument.wxe?Abfrage=Justiz&Dokumentnummer=5Ob92/23s"
+content_hash: "24829e9633e78b6c"
 ---
 
 # OGH 5 Ob 92/23s — Verjährung und Hemmung

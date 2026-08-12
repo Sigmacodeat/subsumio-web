@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/psychisch-kranke-den-fngen-der-strafjusti
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "225b3f70d4bc3042"
 ---
 
 # Psychisch Kranke in den Fängen der Strafjustiz

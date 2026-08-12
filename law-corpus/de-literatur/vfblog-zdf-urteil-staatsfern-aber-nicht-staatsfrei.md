@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zdf-urteil-staatsfern-aber-nicht-staatsfr
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e61e200122565ba0"
 ---
 
 # ZDF-Urteil: Staatsfern, aber nicht staatsfrei

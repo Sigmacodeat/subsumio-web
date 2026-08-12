@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "02410e45cdbc2e30"
 ---
 
 # Eine verpasste Chance, ein wirklich gutes Buch zu schreiben

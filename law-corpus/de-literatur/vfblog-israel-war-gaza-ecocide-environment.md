@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/israel-war-gaza-ecocide-environment/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "029dbb08e8d5ad91"
 ---
 
 # The Silent Victim of Israel’s War on Gaza

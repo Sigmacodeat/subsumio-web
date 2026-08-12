@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "42a961515170f782"
 ---
 
 # No means No: Wie Bodo Ramelow jedenfalls nicht Ministerpräsident von Thüringen werden kann

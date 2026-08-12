@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "86686e36c70e0ffb"
 ---
 
 # The Phantom Insurrection: how Counter-Insurgency Theory Became a Paradigm of Governing

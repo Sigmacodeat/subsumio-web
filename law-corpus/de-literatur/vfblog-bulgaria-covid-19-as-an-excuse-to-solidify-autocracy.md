@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "147b52417c5387ed"
 ---
 
 # Bulgaria: COVID-19 as an Excuse to Solidify Autocracy?

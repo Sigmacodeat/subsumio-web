@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ae199e298e40e544"
 ---
 
 # Keine Diktatur der Volksherrschaft! Warum Volksrechte und Menschenrechte nicht gegeneinander ausgespielt werden sollten

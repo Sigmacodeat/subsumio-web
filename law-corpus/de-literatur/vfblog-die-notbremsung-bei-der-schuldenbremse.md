@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-notbremsung-bei-der-schuldenbremse/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f930bcb5ac8f9013"
 ---
 
 # Die Notbremsung bei der Schuldenbremse

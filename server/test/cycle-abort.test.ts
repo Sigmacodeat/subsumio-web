@@ -110,7 +110,7 @@ describe("autopilot-cycle handler contract (v0.20.5)", () => {
     // the original 2000-char ceiling. The intent of the guard is unchanged:
     // "the autopilot-cycle handler passes job.signal to runCycle." The
     // window just needs to be wide enough to span any reasonable handler.
-    const handlerStart = jobsSource.indexOf("worker.register('autopilot-cycle'");
+    const handlerStart = jobsSource.search(/worker\.register\(["']autopilot-cycle["']/);
     expect(handlerStart).toBeGreaterThan(-1);
     const handlerBlock = jobsSource.slice(handlerStart, handlerStart + 6000);
 
@@ -178,7 +178,7 @@ describe("#1972 — complete cooperative-abort coverage", () => {
     // Terminal guard: the success stamp is gated on !aborted, and the report
     // carries reason 'aborted'.
     expect(body).toContain("!aborted");
-    expect(body).toContain("reason: 'aborted'");
+    expect(body).toMatch(/reason:\s*["']aborted["']/);
     // Phase-duration force-evict attribution log (T11).
     expect(body).toContain("FORCE_EVICT_DEADLINE_MS");
   });

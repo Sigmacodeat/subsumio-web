@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/one-day-vandaag/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2d21a140a347b1af"
 ---
 
 # One day (Vandaag) …

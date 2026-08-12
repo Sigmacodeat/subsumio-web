@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/darf-npd-bundespraesidenten-mund-verbiete
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9dc8cfa4b58521e8"
 ---
 
 # Darf die NPD dem Bundespräsidenten den Mund verbieten lassen?

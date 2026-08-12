@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1e09cfe2031c8d06"
 ---
 
 # VB vom Blatt: sechs Antworten von VALENTIN AICHELE zum BVerfG-Beschluss zum Wahlrecht von Menschen mit Behinderung

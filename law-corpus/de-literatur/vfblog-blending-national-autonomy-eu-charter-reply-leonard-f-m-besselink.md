@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ce8789d1721d4d95"
 ---
 
 # Blending National Autonomy into the EU Charter. A Reply to Leonard F.M. Besselink

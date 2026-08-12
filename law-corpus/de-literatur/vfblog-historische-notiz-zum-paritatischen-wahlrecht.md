@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/historische-notiz-zum-paritatischen-wahlr
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "25f3a9e3edb27d7b"
 ---
 
 # „In Bonn haben wir ja die Gleichberechtigung der Frau beschlossen.“

@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2021 Bertil Cottier;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "619e37d03c396e67"
 ---
 
 # Recension: Doris Angst / Emma Lantschner (Hrsg.), ICERD, Internationales Übereinkommen zur Beseitigung jeder Form von Rassendiskriminierung, Handkommentar

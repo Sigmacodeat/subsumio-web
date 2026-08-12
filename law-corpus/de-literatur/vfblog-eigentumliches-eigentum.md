@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eigentumliches-eigentum/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2d6740f8785e41b0"
 ---
 
 # Eigentümliches Eigentum

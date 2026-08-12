@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-volk-im-palast/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "259397861cbcfb2c"
 ---
 
 # Das Volk im Palast

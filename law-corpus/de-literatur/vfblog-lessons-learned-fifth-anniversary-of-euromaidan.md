@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/lessons-learned-fifth-anniversary-of-euro
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2729b34446ba4e39"
 ---
 
 # Lessons Learned? Fifth Anniversary of Euromaidan

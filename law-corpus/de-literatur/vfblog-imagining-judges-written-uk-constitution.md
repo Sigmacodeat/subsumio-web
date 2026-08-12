@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/imagining-judges-written-uk-constitution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e9361fe73337fc29"
 ---
 
 # Imagining judges in a written UK Constitution

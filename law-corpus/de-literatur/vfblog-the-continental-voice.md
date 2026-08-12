@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-continental-voice/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eb12500fde575d08"
 ---
 
 # The Continental Voice

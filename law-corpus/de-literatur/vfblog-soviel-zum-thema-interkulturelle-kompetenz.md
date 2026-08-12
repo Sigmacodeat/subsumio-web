@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/soviel-zum-thema-interkulturelle-kompeten
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0ee3d2c3249a2d1b"
 ---
 
 # Soviel zum Thema Interkulturelle Kompetenz

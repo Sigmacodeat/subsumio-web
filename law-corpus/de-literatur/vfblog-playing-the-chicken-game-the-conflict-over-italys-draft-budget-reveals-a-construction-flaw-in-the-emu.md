@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "648245343d41c3e2"
 ---
 
 # Playing the chicken game: The conflict over Italy's draft budget reveals a construction flaw in the EMU

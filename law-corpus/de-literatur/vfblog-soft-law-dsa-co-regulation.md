@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/soft-law-dsa-co-regulation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "68ec647067b63d9d"
 ---
 
 # Soft law, hardcore?

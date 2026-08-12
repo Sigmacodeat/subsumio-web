@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/becoming-a-critical-eu-law-scholar-today/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "20082598c648259f"
 ---
 
 # Becoming a (Critical) EU Law Scholar Today

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/turning-the-lights-off/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b6795d8c129539e1"
 ---
 
 # Turning the Lights Off

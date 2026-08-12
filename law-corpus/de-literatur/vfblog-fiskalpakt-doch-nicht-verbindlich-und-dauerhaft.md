@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fiskalpakt-doch-nicht-verbindlich-und-dau
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "81a97bb14d4bfcf4"
 ---
 
 # Fiskalpakt: Doch nicht so “verbindlich und dauerhaft”?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/lights-camera-inclusion/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6c647be2a0fd9cd0"
 ---
 
 # Lights, Camera, Inclusion?

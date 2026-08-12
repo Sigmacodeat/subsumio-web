@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/have-you-noticed-that-burnt-smell/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9d83fd8ad694f499"
 ---
 
 # Have you noticed that burnt smell?

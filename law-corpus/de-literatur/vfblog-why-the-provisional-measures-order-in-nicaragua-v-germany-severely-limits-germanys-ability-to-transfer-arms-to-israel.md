@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cc9ff35181494c4a"
 ---
 
 # Why the Provisional Measures Order in Nicaragua v. Germany severely limits Germany’s ability to transfer arms to Israel

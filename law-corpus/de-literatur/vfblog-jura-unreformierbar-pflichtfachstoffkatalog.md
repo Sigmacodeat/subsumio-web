@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/jura-unreformierbar-pflichtfachstoffkatal
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0beb8e0ddfcf86c7"
 ---
 
 # Ist die juristische Ausbildung wirklich unreformierbar?

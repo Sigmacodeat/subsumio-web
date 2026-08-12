@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2742ab6fea6ffc53"
 ---
 
 # Resurrected Colonial Courts and the Decolonization of the Chagos Archipelago

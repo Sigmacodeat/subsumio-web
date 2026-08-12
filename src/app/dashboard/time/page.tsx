@@ -7,8 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Download, Edit, Trash2, Filter, FileText } from "lucide-react";
+import { Calendar, Download, Edit, Trash2, Filter, FileText, Plus, Clock, Briefcase } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
@@ -53,6 +60,16 @@ export default function TimeEntriesPage() {
     rate: "",
     billable: true,
   });
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    description: "",
+    minutes: "",
+    date: new Date().toISOString().split("T")[0],
+    rate: "",
+    case_slug: "",
+    activity_type: "other" as "research" | "drafting" | "court" | "meeting" | "other",
+    billable: true,
+  });
 
   // Fetch time entries
   const { data: entries, isLoading } = useQuery({
@@ -61,6 +78,11 @@ export default function TimeEntriesPage() {
       const data = await api.time.list({ limit: 500 });
       return data.entries || [];
     },
+  });
+
+  const { data: cases = [] } = useQuery({
+    queryKey: ["time-cases"],
+    queryFn: () => api.cases.list({ limit: 100 }),
   });
 
   // Filter entries
@@ -87,7 +109,39 @@ export default function TimeEntriesPage() {
       return true;
     }) || [];
 
-  // Calculate totals
+  const createMutation = useMutation({
+    mutationFn: api.time.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["time-entries"] });
+      addToast({ title: "Zeiteintrag erstellt", type: "success" });
+      setCreateOpen(false);
+      setCreateForm({
+        description: "",
+        minutes: "",
+        date: new Date().toISOString().split("T")[0],
+        rate: "",
+        case_slug: "",
+        activity_type: "other",
+        billable: true,
+      });
+    },
+    onError: (err: Error) => {
+      addToast({ title: "Fehler", description: err.message, type: "error" });
+    },
+  });
+
+  function handleCreate() {
+    if (!createForm.description || !createForm.minutes || !createForm.case_slug) return;
+    createMutation.mutate({
+      case_slug: createForm.case_slug,
+      description: createForm.description,
+      minutes: parseInt(createForm.minutes, 10),
+      date: createForm.date,
+      rate: createForm.rate ? parseFloat(createForm.rate) : undefined,
+      activity_type: createForm.activity_type,
+      billable: createForm.billable,
+    });
+  }
   const totalMinutes = filteredEntries.reduce(
     (sum: number, e: TimeEntryWithMeta) => sum + (e.minutes || 0),
     0
@@ -235,11 +289,15 @@ export default function TimeEntriesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("nav.time_tracking")}
         description={t("nav.time_tracking")}
         actions={[
+          <Button key="create" variant="primary" size="sm" onClick={() => setCreateOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Neuer Eintrag
+          </Button>,
           <Button key="export-csv" variant="outline" size="sm" onClick={() => handleExport("csv")}>
             <Download className="mr-2 h-4 w-4" />
             CSV Export
@@ -256,31 +314,31 @@ export default function TimeEntriesPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Gesamtzeit</CardTitle>
-            <Calendar className="text-muted-foreground h-4 w-4" />
+            <Calendar className="text-[color:var(--ds-text-muted)] h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalHours}h</div>
-            <p className="text-muted-foreground text-xs">{totalMinutes} Minuten</p>
+            <p className="text-[color:var(--ds-text-muted)] text-xs">{totalMinutes} Minuten</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Abrechenbar</CardTitle>
-            <Calendar className="text-muted-foreground h-4 w-4" />
+            <Calendar className="text-[color:var(--ds-text-muted)] h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">€{billableAmount}</div>
-            <p className="text-muted-foreground text-xs">Nicht abgerechnet</p>
+            <p className="text-[color:var(--ds-text-muted)] text-xs">Nicht abgerechnet</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Einträge</CardTitle>
-            <Calendar className="text-muted-foreground h-4 w-4" />
+            <Calendar className="text-[color:var(--ds-text-muted)] h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{filteredEntries.length}</div>
-            <p className="text-muted-foreground text-xs">Gefiltert</p>
+            <p className="text-[color:var(--ds-text-muted)] text-xs">Gefiltert</p>
           </CardContent>
         </Card>
       </div>
@@ -329,7 +387,7 @@ export default function TimeEntriesPage() {
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <div className="text-muted-foreground py-8 text-center">Laden...</div>
+                <div className="text-[color:var(--ds-text-muted)] py-8 text-center">Laden...</div>
               ) : filteredEntries.length > 0 ? (
                 <div className="space-y-4">
                   {filteredEntries.map((entry: TimeEntryWithMeta) => (
@@ -339,7 +397,7 @@ export default function TimeEntriesPage() {
                     >
                       <div className="flex-1">
                         <div className="font-medium">{entry.description}</div>
-                        <div className="text-muted-foreground text-sm">
+                        <div className="text-[color:var(--ds-text-muted)] text-sm">
                           {formatDate(entry.date)} • {entry.case_slug || "Global"} • {entry.minutes}{" "}
                           min
                         </div>
@@ -362,7 +420,7 @@ export default function TimeEntriesPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-muted-foreground py-8 text-center">
+                <div className="text-[color:var(--ds-text-muted)] py-8 text-center">
                   Keine Einträge gefunden
                 </div>
               )}
@@ -371,8 +429,111 @@ export default function TimeEntriesPage() {
         </TabsContent>
       </Tabs>
 
+      {/* Create Dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Neuer Zeiteintrag</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="create-description">Beschreibung</Label>
+              <Input
+                id="create-description"
+                value={createForm.description}
+                onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+                placeholder="Tätigkeit beschreiben"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="create-minutes">Minuten</Label>
+                <Input
+                  id="create-minutes"
+                  type="number" inputMode="numeric"
+                  value={createForm.minutes}
+                  onChange={(e) => setCreateForm({ ...createForm, minutes: e.target.value })}
+                  placeholder="60"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="create-date">Datum</Label>
+                <Input
+                  id="create-date"
+                  type="date"
+                  value={createForm.date}
+                  onChange={(e) => setCreateForm({ ...createForm, date: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Akte</Label>
+              <Select value={createForm.case_slug} onValueChange={(v) => setCreateForm({ ...createForm, case_slug: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Akte auswählen" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cases.map((c: { slug: string; title: string }) => (
+                    <SelectItem key={c.slug} value={c.slug}>
+                      {c.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Aktivität</Label>
+                <Select value={createForm.activity_type} onValueChange={(v) => setCreateForm({ ...createForm, activity_type: v as typeof createForm.activity_type })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="research">Recherche</SelectItem>
+                    <SelectItem value="drafting">Entwurf</SelectItem>
+                    <SelectItem value="court">Gericht</SelectItem>
+                    <SelectItem value="meeting">Besprechung</SelectItem>
+                    <SelectItem value="other">Sonstiges</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="create-rate">Stundensatz (€)</Label>
+                <Input
+                  id="create-rate"
+                  type="number" inputMode="decimal"
+                  step="0.01"
+                  value={createForm.rate}
+                  onChange={(e) => setCreateForm({ ...createForm, rate: e.target.value })}
+                  placeholder="250"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Abrechenbar</Label>
+              <Button
+                variant={createForm.billable ? "primary" : "outline"}
+                className="w-full"
+                onClick={() => setCreateForm({ ...createForm, billable: !createForm.billable })}
+              >
+                {createForm.billable ? "Ja" : "Nein"}
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>
+              {t("time.cancel")}
+            </Button>
+            <Button onClick={handleCreate} disabled={createMutation.isPending}>
+              {createMutation.isPending ? t("time.saving") : t("time.save")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Dialog */}
       <Dialog open={!!editEntry} onOpenChange={(open) => !open && setEditEntry(null)}>
+
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>{t("time.edit_title")}</DialogTitle>
@@ -391,7 +552,7 @@ export default function TimeEntriesPage() {
                 <Label htmlFor="edit-minutes">Minuten</Label>
                 <Input
                   id="edit-minutes"
-                  type="number"
+                  type="number" inputMode="numeric"
                   value={editForm.minutes}
                   onChange={(e) => setEditForm({ ...editForm, minutes: e.target.value })}
                 />
@@ -411,7 +572,7 @@ export default function TimeEntriesPage() {
                 <Label htmlFor="edit-rate">Stundensatz (€)</Label>
                 <Input
                   id="edit-rate"
-                  type="number"
+                  type="number" inputMode="decimal"
                   step="0.01"
                   value={editForm.rate}
                   onChange={(e) => setEditForm({ ...editForm, rate: e.target.value })}
@@ -447,7 +608,7 @@ export default function TimeEntriesPage() {
           <DialogHeader>
             <DialogTitle>{t("time.delete_title")}</DialogTitle>
           </DialogHeader>
-          <p className="text-muted-foreground py-4 text-sm">{t("time.delete_confirm")}</p>
+          <p className="text-[color:var(--ds-text-muted)] py-4 text-sm">{t("time.delete_confirm")}</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteEntry(null)}>
               {t("time.cancel")}

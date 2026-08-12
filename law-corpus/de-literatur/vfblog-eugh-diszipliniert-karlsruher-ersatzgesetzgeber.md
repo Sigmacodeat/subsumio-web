@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eugh-diszipliniert-karlsruher-ersatzgeset
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a2980104f764cacd"
 ---
 
 # EuGH diszipliniert Karlsruher Ersatz-Gesetzgeber

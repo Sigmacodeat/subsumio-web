@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/demokratische-neutralitat/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "22644fc45f844387"
 ---
 
 # Demokratische Neutralität

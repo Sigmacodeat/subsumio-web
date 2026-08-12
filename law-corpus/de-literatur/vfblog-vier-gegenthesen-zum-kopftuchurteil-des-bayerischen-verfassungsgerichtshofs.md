@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "342c8d19373907f6"
 ---
 
 # Vier Gegenthesen zum Kopftuch&shy;urteil des Bayerischen Verfassungs&shy;gerichtshofs

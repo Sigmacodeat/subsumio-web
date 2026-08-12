@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/its-solidarity-stupid/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ea2251f31975d1c8"
 ---
 
 # It’s solidarity, stupid!

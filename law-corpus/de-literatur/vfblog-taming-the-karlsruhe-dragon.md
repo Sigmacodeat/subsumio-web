@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/taming-the-karlsruhe-dragon/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ad240023cb58fc97"
 ---
 
 # Taming the Karlsruhe Dragon

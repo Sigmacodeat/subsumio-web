@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b88bab41be151dc2"
 ---
 
 # The Social Credit System as a New Regulatory Approach: From ‘Code-Based’ to ‘Market-Based’ Regulation

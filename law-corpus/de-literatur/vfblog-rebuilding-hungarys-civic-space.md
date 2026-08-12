@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rebuilding-hungarys-civic-space/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f241db94d6219dbf"
 ---
 
 # Rebuilding Hungary’s Civic Space

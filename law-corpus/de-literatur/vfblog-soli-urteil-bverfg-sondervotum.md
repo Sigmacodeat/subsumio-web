@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/soli-urteil-bverfg-sondervotum/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "16609cf8524ef5ee"
 ---
 
 # Kreative Kassenführung à la Karlsruhe?

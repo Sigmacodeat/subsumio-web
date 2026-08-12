@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9bd0a3fb05808643"
 ---
 
 # Coping with Covid-19 in Portugal: From Constitutional Normality to the State of Emergency

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "89dd440b34f29cda"
 ---
 
 # „It’s the End of the World as We Know it” – Schulpflicht vs. Versammlungsfreiheit

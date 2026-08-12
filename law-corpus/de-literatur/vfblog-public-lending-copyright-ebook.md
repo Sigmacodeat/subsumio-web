@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/public-lending-copyright-ebook/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0f9d61dfce74708d"
 ---
 
 # Thou Shalt Not E-lend

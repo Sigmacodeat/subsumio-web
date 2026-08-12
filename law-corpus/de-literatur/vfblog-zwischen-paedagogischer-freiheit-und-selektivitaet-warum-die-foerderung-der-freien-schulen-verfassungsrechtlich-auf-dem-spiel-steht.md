@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "40e973edc244925c"
 ---
 
 # Zwischen pädagogischer Freiheit und Selektivität: Warum die Förderung der freien Schulen verfassungsrechtlich auf dem Spiel steht

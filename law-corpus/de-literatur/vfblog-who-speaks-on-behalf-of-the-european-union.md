@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/who-speaks-on-behalf-of-the-european-unio
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cf015f9f6cbe4ba6"
 ---
 
 # Who Speaks on Behalf of the European Union?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/tuerkey_barassociation_ruleoflaw/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "544fd7c1bea233f6"
 ---
 
 # Criminalising the Legal Profession

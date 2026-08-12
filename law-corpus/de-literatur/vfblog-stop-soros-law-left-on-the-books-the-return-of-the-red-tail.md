@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4e9c1f2ab49b391c"
 ---
 
 # Stop Soros Law Left on the Books – The Return of the “Red Tail”?

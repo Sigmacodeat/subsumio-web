@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kollektive-unfriedlichkeit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ccd22c42f8d6021e"
 ---
 
 # Kollektive Unfriedlichkeit

@@ -22,6 +22,7 @@ import {
   Zap,
   AlertTriangle,
   Ban,
+  Loader2,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { triageBatch, type TriageInput, type TriageCard } from "@/lib/triage";
@@ -36,6 +37,21 @@ import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
 import type { BrainPage } from "@/lib/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 type Channel = "all" | "bea" | "whatsapp" | "email" | "portal";
 
@@ -213,6 +229,9 @@ export default function CommunicationsPage() {
   const { t, lang } = useLang();
   const { addToast } = useToast();
   const qc = useQueryClient();
+  const [assignTarget, setAssignTarget] = useState<UnifiedMessage | null>(null);
+  const [assignCase, setAssignCase] = useState("");
+  const [assignBusy, setAssignBusy] = useState(false);
   const [view, setView] = useState<View>("messages");
   const [channel, setChannel] = useState<Channel>("all");
   const [search, setSearch] = useState("");
@@ -253,6 +272,36 @@ export default function CommunicationsPage() {
       addToast({ type: "error", title: tr("toast_error", lang) });
     },
   });
+
+  const { data: cases = [] } = useQuery({
+    queryKey: ["communications-cases"],
+    queryFn: () => api.cases.list({ limit: 200 }),
+  });
+
+  async function assignToCase(msg: UnifiedMessage, caseSlug: string) {
+    if (!caseSlug) return;
+    setAssignBusy(true);
+    try {
+      await api.brain.updatePage({
+        slug: msg.slug,
+        frontmatter: {
+          case_slug: caseSlug,
+          assigned_at: new Date().toISOString(),
+        },
+      });
+      addToast({ type: "success", title: "Nachricht der Akte zugewiesen" });
+      await batchQuery.refetch();
+      setAssignTarget(null);
+      setAssignCase("");
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: err instanceof Error ? err.message : "Zuweisung fehlgeschlagen",
+      });
+    } finally {
+      setAssignBusy(false);
+    }
+  }
 
   const allMessages = useMemo(
     () => (batchQuery.data ? extractMessages(batchQuery.data) : []),
@@ -319,7 +368,7 @@ export default function CommunicationsPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={tr("title", lang)}
         description={tr("description", lang)}
@@ -655,6 +704,15 @@ export default function CommunicationsPage() {
                             <X size={12} />
                             {tr("triage_dismiss", lang)}
                           </button>
+                          {!msg.caseSlug && (
+                            <button
+                              onClick={() => setAssignTarget(msg)}
+                              className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-2 py-1 text-xs text-[color:var(--ds-info-text)] transition-colors hover:bg-[color:var(--ds-info-bg)] disabled:opacity-50"
+                            >
+                              <ArrowUpRight size={12} />
+                              {tr("triage_assign", lang)}
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -680,6 +738,46 @@ export default function CommunicationsPage() {
           )}
         </>
       )}
+
+      {/* Assign to Case Dialog */}
+      <Dialog open={!!assignTarget} onOpenChange={(open) => !open && setAssignTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{lang === "en" ? "Assign to case" : "Akte zuweisen"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>{lang === "en" ? "Case" : "Akte"}</Label>
+              <Select value={assignCase} onValueChange={setAssignCase}>
+                <SelectTrigger>
+                  <SelectValue placeholder={lang === "en" ? "Select case" : "Akte wählen"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {cases.map((c: { slug: string; title: string }) => (
+                    <SelectItem key={c.slug} value={c.slug}>
+                      {c.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignTarget(null)} disabled={assignBusy}>
+              {lang === "en" ? "Cancel" : "Abbrechen"}
+            </Button>
+            <Button
+              onClick={() => assignTarget && void assignToCase(assignTarget, assignCase)}
+              disabled={assignBusy || !assignCase}
+            >
+              {assignBusy ? (
+                <Loader2 size={14} className="mr-2 animate-spin" />
+              ) : null}
+              {lang === "en" ? "Assign" : "Zuweisen"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/direct-democracy-and-indirect-electoral-c
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d40c98b56e1e75b1"
 ---
 
 # Direct Democracy and Indirect Electoral Campaign

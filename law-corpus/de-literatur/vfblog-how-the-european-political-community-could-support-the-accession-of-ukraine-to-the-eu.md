@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2b0fb00d6f1664a5"
 ---
 
 # How the European Political Community Could Support the Accession of Ukraine to the EU

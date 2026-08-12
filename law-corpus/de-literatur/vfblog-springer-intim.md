@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/springer-intim/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f31bd9bf7e5d01ba"
 ---
 
 # Springer intim

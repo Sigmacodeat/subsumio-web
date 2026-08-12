@@ -21,6 +21,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Thierry Urwyler, Thomas
   Noll, Astrid Rossegger; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "be46d3678d37c4cb"
 ---
 
 # Corona-Prävention im Straf- und Massnahmenvollzug: Temporäre Einschränkungen der Therapiefrequenz und Grenzen der ausserordentlichen bedingten Entlassung

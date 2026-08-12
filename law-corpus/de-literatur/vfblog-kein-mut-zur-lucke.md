@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kein-mut-zur-lucke/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e37b62e421bec03d"
 ---
 
 # Kein Mut zur Lücke!

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "40835833ad630f64"
 ---
 
 # Überraschung! US Supreme Court hält Gesundheitsreform am Leben

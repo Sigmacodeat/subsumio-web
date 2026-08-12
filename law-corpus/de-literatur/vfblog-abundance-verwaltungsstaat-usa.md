@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/abundance-verwaltungsstaat-usa/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3571f7f0a0a4c504"
 ---
 
 # Fasten für den Überfluss?

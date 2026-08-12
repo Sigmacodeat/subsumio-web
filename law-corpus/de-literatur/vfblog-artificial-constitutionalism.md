@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/artificial-constitutionalism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "919c539d876659e7"
 ---
 
 # Artificial Constitutionalism?

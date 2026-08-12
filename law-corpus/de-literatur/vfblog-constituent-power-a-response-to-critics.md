@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/constituent-power-a-response-to-critics/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2eba1cadf565d887"
 ---
 
 # Constituent Power: A response to critics

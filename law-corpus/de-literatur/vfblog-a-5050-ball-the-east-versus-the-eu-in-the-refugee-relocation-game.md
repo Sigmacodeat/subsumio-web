@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "678984701ec6beff"
 ---
 
 # A 50/50 Ball: The East versus the EU in the Refugee Relocation Game

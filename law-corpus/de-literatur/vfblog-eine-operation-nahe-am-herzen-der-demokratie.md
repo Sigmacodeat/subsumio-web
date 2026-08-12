@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eine-operation-nahe-am-herzen-der-demokra
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d4f41c69a2d2a9cd"
 ---
 
 # Eine Operation nahe am Herzen der Demokratie

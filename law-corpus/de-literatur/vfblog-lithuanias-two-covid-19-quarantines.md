@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/lithuanias-two-covid-19-quarantines/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fe2e9c69ffb49d8f"
 ---
 
 # Lithuania’s Two COVID-19 Quarantines

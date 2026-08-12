@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/access-to-supply-chain-justice/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ff67a5d5de0bd46f"
 ---
 
 # Access to Supply Chain Justice?

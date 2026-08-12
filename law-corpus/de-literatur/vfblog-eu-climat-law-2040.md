@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eu-climat-law-2040/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6cadc29b708468cf"
 ---
 
 # Shaping the EU’s 2040 Climate Target

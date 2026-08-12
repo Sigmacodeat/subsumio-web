@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/italian-constitutional-referendum-voting-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a9630e82c7de1cac"
 ---
 
 # Italian Constitutional Referendum: Voting for Structural Reform or Constitutional Transformation?

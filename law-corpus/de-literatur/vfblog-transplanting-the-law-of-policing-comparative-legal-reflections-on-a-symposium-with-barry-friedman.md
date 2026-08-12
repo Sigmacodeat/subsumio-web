@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b66970ade15311a8"
 ---
 
 # Transplanting the Law of Policing? – Comparative Legal Reflections on a Symposium with Barry Friedman

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/after-the-explosion/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "83396018b67a56d0"
 ---
 
 # After the Explosion

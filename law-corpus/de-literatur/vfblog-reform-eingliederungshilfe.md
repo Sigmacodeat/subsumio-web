@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/reform-eingliederungshilfe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "56d4252dd5729fc1"
 ---
 
 # Schulische Inklusion in Gefahr

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/egenberger-ultra-vires-proceduralisation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "386ae6aecea7916b"
 ---
 
 # No Elegy for Ultra Vires

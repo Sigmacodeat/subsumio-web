@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/garzweiler-urteil-my-home-is-not-my-castl
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e9295b860b21430e"
 ---
 
 # Garzweiler-Urteil: My Home is not my Castle

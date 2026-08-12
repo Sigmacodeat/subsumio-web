@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/human-rights-violations-to-deflect-refuge
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2d4b104da4602f02"
 ---
 
 # Human Rights Violations to Deflect Refugees

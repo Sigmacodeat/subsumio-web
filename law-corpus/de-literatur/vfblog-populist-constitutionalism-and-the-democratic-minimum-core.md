@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0cc21d7ce9bf6a1a"
 ---
 
 # Populist Constitutionalism and the Democratic Minimum Core

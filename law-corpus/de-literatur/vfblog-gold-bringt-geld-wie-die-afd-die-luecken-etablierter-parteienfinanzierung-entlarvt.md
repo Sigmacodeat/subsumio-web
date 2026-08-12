@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b99a6cd797522fa3"
 ---
 
 # Gold bringt Geld – Wie die AfD die Lücken etablierter Parteienfinanzierung entlarvt

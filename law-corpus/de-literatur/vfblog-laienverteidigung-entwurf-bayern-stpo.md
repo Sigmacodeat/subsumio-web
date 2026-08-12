@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/laienverteidigung-entwurf-bayern-stpo/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ff7abb57a23696cf"
 ---
 
 # Bayrischer Bärendienst für den Rechtsstaat

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/behorde-parteiverbot/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "84de4212a2a22c48"
 ---
 
 # Grenzen der Werteverwaltung

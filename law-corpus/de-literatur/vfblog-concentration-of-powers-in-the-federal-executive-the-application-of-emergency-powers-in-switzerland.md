@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0e1616d6c482728c"
 ---
 
 # Concentration of Powers in the Federal Executive: The Application of Emergency Powers in Switzerland

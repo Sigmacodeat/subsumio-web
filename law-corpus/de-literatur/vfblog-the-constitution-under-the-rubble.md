@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-constitution-under-the-rubble/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2e95e42cf3476d16"
 ---
 
 # The Constitution under the Rubble

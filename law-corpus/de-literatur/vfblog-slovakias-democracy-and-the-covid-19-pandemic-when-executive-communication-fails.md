@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "537c6caa8a227bf9"
 ---
 
 # Slovakia’s Democracy and the COVID-19 Pandemic: When Executive Communication Fails

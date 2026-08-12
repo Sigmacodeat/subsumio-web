@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/glucksspielmonopol-oops-we-did-it-again/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ab221234be612ac9"
 ---
 
 # Glücksspielmonopol: Oops, we did it again&#8230;

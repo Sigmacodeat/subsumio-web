@@ -15,6 +15,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "6b469e61a93ee607"
 ---
 
 Fall 5 Sachverhalt &#124; Inhaltsverzeichnis &#124; Fall 6 Sachverhalt 

@@ -18,6 +18,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2014
   AUSTRIAN LAW JOURNAL
+content_hash: "a41cfb105746adbf"
 ---
 
 # Governance, Behavioral Science und das Bild des Menschen im Verfassungsrecht

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "038014759db6e045"
 ---
 
 # Datenschutzgrundverordnung gilt für parlamentarische Untersuchungsausschüsse

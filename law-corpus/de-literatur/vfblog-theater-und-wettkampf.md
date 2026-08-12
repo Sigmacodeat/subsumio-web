@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/theater-und-wettkampf/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b79702af47b7a552"
 ---
 
 # Theater und Wettkampf

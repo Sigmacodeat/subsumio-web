@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "06cabf1041933510"
 ---
 
 # Neues vom Glossator 6: Über Ehen, Eön und den Genuss des Gesetzes

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "76a33cf4d7eb5dab"
 ---
 
 # Sri Lanka’s Legal Response to COVID-19: Past Trends and Future Prospects

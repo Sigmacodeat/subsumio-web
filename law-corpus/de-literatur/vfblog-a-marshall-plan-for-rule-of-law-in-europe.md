@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-marshall-plan-for-rule-of-law-in-europe
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "28243a899815c0eb"
 ---
 
 # A “Marshall Plan” for Rule of Law in Europe

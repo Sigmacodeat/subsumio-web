@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/fob-trump/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b7cb68e848fb76fa"
 ---
 
 # Facebook’s Oversight Board Takes on the Curious Case of Donald J. Trump

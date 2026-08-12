@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/deprivation-citizenship-merz-interview/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c07a531f300cfe8e"
 ---
 
 # “This Undermines the State’s Promise of Equality”

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a48f1c5eed68b461"
 ---
 
 # ‚EU-Ausländer’ bleiben trotz Einbürgerung: Der EuGH macht es möglich!

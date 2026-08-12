@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/from-syrian-revolution-to-constitutional-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "265be4bc243db006"
 ---
 
 # From Syrian Revolution to Constitutional Ambiguity

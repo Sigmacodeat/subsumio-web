@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b43e09a76a565967"
 ---
 
 # Reflexive Disziplinarität und (Kartell-)Recht im Kontext

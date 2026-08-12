@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/der-trumpf-wird-zur-last/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ab78803ab26460ba"
 ---
 
 # Der Trumpf wird zur Last

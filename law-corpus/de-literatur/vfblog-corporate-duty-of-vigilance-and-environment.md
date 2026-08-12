@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/corporate-duty-of-vigilance-and-environme
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "37e5c2ed6cc3c85c"
 ---
 
 # Corporate Duty of Vigilance and Environment

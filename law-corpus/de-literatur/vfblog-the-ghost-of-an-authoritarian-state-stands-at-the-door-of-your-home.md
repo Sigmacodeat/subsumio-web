@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "88f5dfbcd0f0939d"
 ---
 
 # The Ghost of an Authoritarian State Stands at the Door of Your Home

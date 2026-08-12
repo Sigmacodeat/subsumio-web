@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pakistans-supreme-court-to-purify-parliam
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d696c84eb48e9eb4"
 ---
 
 # Pakistan’s Supreme Court to Purify Parliamentarians

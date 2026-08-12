@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-genre-bending-of-climate-litigation-i
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7b7ad2a949cfc16c"
 ---
 
 # The Genre-Bending of Climate Litigation in India

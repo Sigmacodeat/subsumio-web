@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-blatant-attack-on-free-media/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fcb6f364712677b7"
 ---
 
 # A Blatant Attack on Free Media

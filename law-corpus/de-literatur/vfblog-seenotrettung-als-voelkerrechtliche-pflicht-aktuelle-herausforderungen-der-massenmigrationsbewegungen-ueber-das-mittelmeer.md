@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "22c26d0cf7ceb489"
 ---
 
 # Seenotrettung als völkerrechtliche Pflicht: Aktuelle Heraus&shy;forderungen der Massenmigrations&shy;bewegungen über das Mittelmeer

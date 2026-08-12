@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "99081c8193ec8845"
 ---
 
 # Nudging: nicht wirklich neu und auch – ohne Kontextualisierung – nicht weiterführend

@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c2f2fb906a8852be"
 ---
 
 # Ohne Mimik keine Lehre? Vom Schleierverbot an Universitäten

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/freundschaft-schliesen-mit-der-entgelttra
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "67238365ff04a6ac"
 ---
 
 # Freundschaft schließen mit der Entgelttransparenz

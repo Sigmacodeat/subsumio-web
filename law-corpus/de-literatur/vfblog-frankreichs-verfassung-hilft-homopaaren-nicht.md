@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/frankreichs-verfassung-hilft-homopaaren-n
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "df4813190947b01d"
 ---
 
 # Frankreichs Verfassung hilft Homo-Paaren nicht

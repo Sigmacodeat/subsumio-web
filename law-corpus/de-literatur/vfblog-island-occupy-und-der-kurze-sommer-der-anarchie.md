@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/island-occupy-und-der-kurze-sommer-der-an
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4172e3da9d47a49b"
 ---
 
 # Island, Occupy und der kurze Sommer der Anarchie

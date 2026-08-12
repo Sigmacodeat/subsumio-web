@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/imitating-democracy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "316a55d972b981b8"
 ---
 
 # Imitating Democracy

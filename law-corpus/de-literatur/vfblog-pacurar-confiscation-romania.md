@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pacurar-confiscation-romania/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ed6d2ed0882d4cd3"
 ---
 
 # Assets Without Alibi

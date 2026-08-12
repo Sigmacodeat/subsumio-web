@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "41b67a6d925eedc2"
 ---
 
 # Finland: Soft measures, respect for the rule of law, and plenty of good luck

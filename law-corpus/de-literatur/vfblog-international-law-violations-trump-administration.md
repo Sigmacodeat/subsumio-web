@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/international-law-violations-trump-admini
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b804b25f2db04e41"
 ---
 
 # International Law Under Pressure

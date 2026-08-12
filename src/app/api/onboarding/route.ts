@@ -3,6 +3,7 @@ import { createHandler } from "@/lib/api-handler";
 import { getStore } from "@/lib/auth/store";
 import { isValidIndustry } from "@/lib/industry-pack";
 import { provisionBrainAsync } from "@/lib/provision";
+import type { OnboardingProgress } from "@/lib/types";
 
 const completeSchema = z.object({
   industry: z.string().nullable().optional(),
@@ -16,6 +17,16 @@ const completeSchema = z.object({
       focus: z.string().max(500).optional(),
     })
     .optional(),
+});
+
+const progressSchema = z.object({
+  progress: z.object({
+    firm: z.boolean().optional(),
+    firstCase: z.boolean().optional(),
+    firstDeadline: z.boolean().optional(),
+    teamInvited: z.boolean().optional(),
+    firstQuery: z.boolean().optional(),
+  }),
 });
 
 export const POST = createHandler(
@@ -70,6 +81,40 @@ export const GET = createHandler(
       onboardingCompletedAt: ctx.user.onboardingCompletedAt ?? null,
       industry: ctx.user.industry ?? null,
       jurisdiction: ctx.user.jurisdiction ?? null,
+      progress: ctx.user.onboardingProgress ?? {
+        firm: false,
+        firstCase: false,
+        firstDeadline: false,
+        teamInvited: false,
+        firstQuery: false,
+      },
     });
+  }
+);
+
+export const PATCH = createHandler(
+  {
+    action: "onboarding.progress",
+    rateTier: "standard",
+    body: progressSchema,
+    audit: (ctx, body) => ({
+      action: "onboarding.progress" as const,
+      entityType: "user",
+      entityId: ctx.user.id,
+      details: { user: ctx.user.email, progress: body.progress },
+    }),
+  },
+  async (ctx, body) => {
+    const current = ctx.user.onboardingProgress ?? {
+      firm: false,
+      firstCase: false,
+      firstDeadline: false,
+      teamInvited: false,
+      firstQuery: false,
+    };
+    const next: OnboardingProgress = { ...current, ...body.progress };
+    const updated = await getStore().update(ctx.user.id, { onboardingProgress: next });
+    if (!updated) return Response.json({ error: "user_not_found" }, { status: 404 });
+    return Response.json({ ok: true, progress: next });
   }
 );

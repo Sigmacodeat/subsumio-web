@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/der-volksbefragung-eine-chance-geben/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ca1e52e764e7fe10"
 ---
 
 # Der Volksbefragung eine Chance geben

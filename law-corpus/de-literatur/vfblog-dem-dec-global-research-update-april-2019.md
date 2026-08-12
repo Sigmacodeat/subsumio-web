@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dem-dec-global-research-update-april-2019
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fbecf543a538d4d0"
 ---
 
 # DEM-DEC Global Research Update – April 2019

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-malfunctioning-system/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c381db16872699eb"
 ---
 
 # A Malfunctioning System

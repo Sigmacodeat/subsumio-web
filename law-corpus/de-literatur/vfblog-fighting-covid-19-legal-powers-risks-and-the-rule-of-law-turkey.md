@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9578f60fc612976b"
 ---
 
 # Fighting COVID-19 – Legal Powers, Risks and the Rule of Law: Turkey

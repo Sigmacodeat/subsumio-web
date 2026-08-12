@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f9092f04bb97b3a4"
 ---
 
 # Strafen für Atatürk-Beleidigungen: Straßburg, wie hältst du's mit der Meinungsfreiheit?

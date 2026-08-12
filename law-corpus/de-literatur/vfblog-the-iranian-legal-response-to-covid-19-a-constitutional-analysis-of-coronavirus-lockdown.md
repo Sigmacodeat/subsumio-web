@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5072ac70a8cd2e7c"
 ---
 
 # The Iranian Legal Response to Covid-19: A Constitutional Analysis of Coronavirus Lockdown

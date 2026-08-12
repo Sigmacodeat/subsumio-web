@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/accessing-information-about-abortion/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cfdb56be364e4e0f"
 ---
 
 # Accessing Information about Abortion

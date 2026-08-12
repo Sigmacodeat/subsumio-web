@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ende-der-demokratie-in-europa/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c89fe3aed8cdeae1"
 ---
 
 # Ende der Demokratie in Europa?

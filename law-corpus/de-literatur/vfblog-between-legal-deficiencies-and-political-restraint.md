@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/between-legal-deficiencies-and-political-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "88e50c4aace8d676"
 ---
 
 # Between Legal Deficiencies and Political Restraint

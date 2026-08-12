@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/versteinerte-verfassungen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0a54d7e8c0195598"
 ---
 
 # Versteinerte Verfassungen

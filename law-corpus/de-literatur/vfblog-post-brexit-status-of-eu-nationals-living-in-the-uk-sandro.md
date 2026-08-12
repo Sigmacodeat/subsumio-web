@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cdeec869d5294416"
 ---
 
 # Like a Bargaining Chip: Enduring the Unsettled Status of EU Nationals Living in the UK

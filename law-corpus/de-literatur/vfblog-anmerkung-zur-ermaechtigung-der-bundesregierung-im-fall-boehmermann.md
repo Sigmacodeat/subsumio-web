@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6340dde1a5cc5595"
 ---
 
 # Anmerkung zur Ermächtigung der Bundesregierung im Fall Böhmermann

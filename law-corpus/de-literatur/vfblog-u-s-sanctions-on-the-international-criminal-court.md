@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/u-s-sanctions-on-the-international-crimin
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7148972bdbf3ec4d"
 ---
 
 # U.S. Sanctions on the International Criminal Court

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/antisemitism-on-trial/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "59e14c152a6a11e9"
 ---
 
 # Antisemitism on Trial

@@ -28,6 +28,10 @@ export const D = {
   "nav.section.research_knowledge": { de: "Recherche & Kanzleiwissen", en: "Research & Knowledge" },
   "nav.section.billing_compliance": { de: "Abrechnung & Compliance", en: "Billing & Compliance" },
   "nav.section.billing": { de: "Abrechnung", en: "Billing" },
+  "nav.section.honorar": { de: "Abrechnung", en: "Billing" },
+  "nav.section.buchhaltung": { de: "Kanzleibuchhaltung", en: "Firm Accounting" },
+  "nav.section.kanzleisteuerung": { de: "Kanzleisteuerung", en: "Firm Management" },
+  "nav.section.mandate_docs": { de: "Mandatsdokumente", en: "Mandate Documents" },
   "nav.section.compliance": { de: "Compliance", en: "Compliance" },
   "nav.section.communication": { de: "Kommunikation", en: "Communication" },
   "nav.section.operations": { de: "Kanzlei-Steuerung", en: "Operations" },
@@ -78,6 +82,22 @@ export const D = {
   "nav.section.desc.billing": {
     de: "Rechnungen, Gebühren, Kosten und Controlling",
     en: "Invoices, fees, costs and controlling",
+  },
+  "nav.section.desc.honorar": {
+    de: "Zeiterfassung, Rechnungen, Honorarvereinbarungen und Kosten",
+    en: "Time tracking, invoices, fee agreements and costs",
+  },
+  "nav.section.desc.buchhaltung": {
+    de: "Klientengelder, DATEV, FiBu und finanzielle Buchführung",
+    en: "Client funds, DATEV, accounting and financial bookkeeping",
+  },
+  "nav.section.desc.kanzleisteuerung": {
+    de: "KPIs, Controlling, Benchmarks und Kanzlei-Benachrichtigungen",
+    en: "KPIs, controlling, benchmarks and firm notifications",
+  },
+  "nav.section.desc.mandate_docs": {
+    de: "Vollmachten, Mandatsbriefe und Mandatsannahme-Dokumente",
+    en: "Power of attorney, engagement letters and mandate documents",
   },
   "nav.section.desc.firm_ops": {
     de: "Workflows, Freigaben und Kanzlei-Automatisierung",
@@ -160,6 +180,12 @@ export const D = {
   "nav.monitoring": { de: "Monitoring", en: "Monitoring" },
   "nav.compliance_export": { de: "Compliance-Audit", en: "Compliance Audit" },
   "nav.sources": { de: "Rechtsquellen", en: "Legal Sources" },
+  "nav.admin_overview": { de: "Admin-Übersicht", en: "Admin Overview" },
+  "nav.admin_users": { de: "Kunden", en: "Customers" },
+  "nav.admin_mailbox": { de: "Mailbox", en: "Mailbox" },
+  "nav.feedback_triage": { de: "Feedback-Triage", en: "Feedback Triage" },
+  "nav.guardrails": { de: "Guardrails", en: "Guardrails" },
+  "nav.rag_optimizer": { de: "RAG-Optimizer", en: "RAG Optimizer" },
 
   // ── Sidebar: nav items (drafts & billing) ──
   "nav.drafting": { de: "Schriftsatz", en: "Drafting" },
@@ -246,6 +272,10 @@ export const D = {
   "nav.tooltip.intake": {
     de: "Neue Mandanten und Eingänge erfassen",
     en: "Capture new clients and incoming items",
+  },
+  "nav.tooltip.chat": {
+    de: "KI-Assistent für Recherche, Entwürfe und Fristen",
+    en: "AI assistant for research, drafts and deadlines",
   },
   "nav.tooltip.settings": {
     de: "Persönliche und Kanzlei-Einstellungen verwalten",
@@ -7757,6 +7787,32 @@ export const D = {
   "drafting.tpl.widerruf": { de: "Widerruf", en: "Revocation" },
   "drafting.error_prefix": { de: "Fehler", en: "Error" },
   "drafting.btn_generate_suffix": { de: "generieren", en: "generate" },
+  "drafting.btn_background": { de: "Im Hintergrund", en: "Background" },
+  "drafting.btn_background_hint": {
+    de: "Entwurf asynchron vorbereiten — du wirst benachrichtigt sobald der Entwurf fertig ist.",
+    en: "Prepare draft asynchronously — you'll be notified when the draft is ready.",
+  },
+  "drafting.enqueued_ok": { de: "Entwurf in Warteschlange", en: "Draft queued" },
+  "drafting.enqueued_desc": {
+    de: "Der Entwurf wird im Hintergrund generiert. Du findest ihn unter Aufgaben.",
+    en: "The draft is being generated in the background. Find it under Tasks.",
+  },
+  "drafting.enqueued_error": {
+    de: "Warteschlange fehlgeschlagen",
+    en: "Queue failed",
+  },
+  "draftreview.status_pending": { de: "In Bearbeitung", en: "In progress" },
+  "draftreview.status_completed": { de: "Fertig", en: "Completed" },
+  "draftreview.status_failed": { de: "Fehlgeschlagen", en: "Failed" },
+  "draftreview.status_approval": { de: "Freigabe erforderlich", en: "Approval required" },
+  "draftreview.case": { de: "Akte", en: "Case" },
+  "draftreview.copy": { de: "Kopieren", en: "Copy" },
+  "draftreview.copied": { de: "Kopiert", en: "Copied" },
+  "draftreview.sign": { de: "Unterschreiben", en: "Sign" },
+  "draftreview.pending_hint": {
+    de: "Der Entwurf wird im Hintergrund generiert…",
+    en: "The draft is being generated in the background…",
+  },
 
   // ── Template Library page ──
   "templates.title": { de: "Vorlagen-Bibliothek", en: "Template Library" },
@@ -9098,6 +9154,10 @@ export const D = {
 
   // ── DocuSign Send Dialog ──
   "docusign.send_title": { de: "Zur Unterschrift senden", en: "Send for signature" },
+  "docusign.send_desc": {
+    de: "Versende das Dokument über DocuSign an alle Unterzeichner.",
+    en: "Send the document to all signers via DocuSign.",
+  },
   "docusign.blurb": { de: "Begleittext", en: "Cover note" },
   "docusign.documents": { de: "Dokumente", en: "Documents" },
   "docusign.no_documents": { de: "Keine Dokumente verfügbar", en: "No documents available" },
@@ -9110,6 +9170,9 @@ export const D = {
   "docusign.send": { de: "Senden", en: "Send" },
   "docusign.sent_ok": { de: "DocuSign-Umschlag gesendet", en: "DocuSign envelope sent" },
   "docusign.sent_error": { de: "DocuSign-Versand fehlgeschlagen", en: "DocuSign send failed" },
+  "docusign.signer_email_aria": { de: "E-Mail des Unterzeichners", en: "Signer email" },
+  "docusign.signer_name_aria": { de: "Name des Unterzeichners", en: "Signer name" },
+  "docusign.remove_signer_aria": { de: "Unterzeichner entfernen", en: "Remove signer" },
 
   // ── Mandantenportal i18n (P0-TODO 3) ──
   "portal.loading": { de: "Portal wird geladen…", en: "Loading portal…" },
@@ -9209,6 +9272,80 @@ export const D = {
   "portal.send": { de: "Senden", en: "Send" },
   "portal.tab_info": { de: "Akte", en: "Case" },
   "portal.tab_chat": { de: "Chat", en: "Chat" },
+  "portal.tab_sign": { de: "Unterschreiben", en: "Sign" },
+  "portal.sign_title": { de: "Dokumente zur Unterschrift", en: "Documents to sign" },
+  "portal.sign_desc": {
+    de: "Unterschreiben Sie Dokumente direkt hier — mit Finger oder getipptem Namen.",
+    en: "Sign documents directly here — with finger or typed name.",
+  },
+  "portal.sign_empty": { de: "Keine Dokumente zur Unterschrift", en: "No documents to sign" },
+  "portal.sign_empty_hint": {
+    de: "Ihre Kanzlei wird Ihnen hier Dokumente zur Unterschrift bereitstellen.",
+    en: "Your law firm will provide documents for signature here.",
+  },
+  "portal.sign_btn": { de: "Unterschreiben", en: "Sign" },
+  "portal.sign_valid_until": { de: "Gültig bis", en: "Valid until" },
+  "portal.sign_deep_link_title": {
+    de: "Dokument zur Unterschrift",
+    en: "Document to sign",
+  },
+  "portal.sign_deep_link_already_signed": {
+    de: "Dieses Dokument wurde bereits unterschrieben oder ist nicht mehr verfügbar.",
+    en: "This document has already been signed or is no longer available.",
+  },
+  "portal.thank_you_title": {
+    de: "Vielen Dank — Unterschrift erfasst",
+    en: "Thank you — signature captured",
+  },
+  "portal.thank_you_desc": {
+    de: "Ihre Unterschrift wurde erfolgreich gespeichert und an Ihre Kanzlei übermittelt. Sie können dieses Fenster nun schließen.",
+    en: "Your signature has been successfully saved and transmitted to your law firm. You can now close this window.",
+  },
+  "portal.thank_you_no_action": {
+    de: "Keine weitere Aktion erforderlich.",
+    en: "No further action required.",
+  },
+  "portal_event.view_title": { de: "Mandanten-Portal geöffnet", en: "Client portal opened" },
+  "portal_event.view_desc": {
+    de: "Mandant hat das Portal geöffnet ({time})",
+    en: "Client opened the portal ({time})",
+  },
+  "portal_event.signed_title": {
+    de: "Dokument unterschrieben",
+    en: "Document signed",
+  },
+  "portal_event.signed_desc": {
+    de: "Mandant hat unterschrieben ({time})",
+    en: "Client signed ({time})",
+  },
+  "portal_event.upload_title": {
+    de: "Dokument hochgeladen",
+    en: "Document uploaded",
+  },
+  "portal_event.upload_desc": {
+    de: "Mandant hat ein Dokument hochgeladen ({time})",
+    en: "Client uploaded a document ({time})",
+  },
+  "portal.tab_files": { de: "Ablage", en: "Files" },
+  "portal.files_title": { de: "Meine Unterlagen", en: "My documents" },
+  "portal.files_desc": {
+    de: "Alle Dokumente Ihrer Akte — hochgeladen oder von Ihrer Kanzlei geteilt.",
+    en: "All documents in your case — uploaded or shared by your law firm.",
+  },
+  "portal.files_empty": { de: "Noch keine Dokumente", en: "No documents yet" },
+  "portal.files_empty_hint": {
+    de: "Laden Sie ein Dokument hoch oder Ihre Kanzlei teilt Dokumente mit Ihnen.",
+    en: "Upload a document or your law firm will share documents with you.",
+  },
+  "portal.files_upload": { de: "Dokument hochladen", en: "Upload document" },
+  "portal.files_uploading": { de: "Wird hochgeladen…", en: "Uploading…" },
+  "portal.files_uploaded_ok": { de: "Dokument hochgeladen", en: "Document uploaded" },
+  "portal.files_upload_error": {
+    de: "Upload fehlgeschlagen",
+    en: "Upload failed",
+  },
+  "portal.files_shared_by_firm": { de: "Von Kanzlei geteilt", en: "Shared by firm" },
+  "portal.files_uploaded_by_you": { de: "Von Ihnen hochgeladen", en: "Uploaded by you" },
   "portal.chat_disclaimer": {
     de: "Der Chatbot beantwortet Fragen ausschließlich zu Ihrer Akte. Fragen zu anderen Akten oder internen Notizen werden nicht beantwortet.",
     en: "The chatbot answers questions about your case only. Questions about other cases or internal notes will not be answered.",
@@ -9404,6 +9541,11 @@ export const D = {
   "dictation.err_required": { de: "Pflichtfelder fehlen", en: "Required fields missing" },
   "dictation.ok_create": { de: "Diktat erstellt", en: "Dictation created" },
   "dictation.err_create": { de: "Fehler", en: "Error" },
+  "dictation.status_recording": { de: "Aufnahme", en: "Recording" },
+  "dictation.status_transcribed": { de: "Transkribiert", en: "Transcribed" },
+  "dictation.status_corrected": { de: "Korrigiert", en: "Corrected" },
+  "dictation.status_filed": { de: "Abgelegt", en: "Filed" },
+  "dictation.status_failed": { de: "Fehler", en: "Failed" },
 
   "kyc.title": { de: "GwG / KYC", en: "AML / KYC" },
   "kyc.description": {
@@ -9466,6 +9608,95 @@ export const D = {
     en: "Manage validity and expiry of powers of attorney",
   },
   "poa.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+  "poa.err_required": { de: "Pflichtfelder fehlen", en: "Required fields missing" },
+  "poa.err_save": { de: "Fehler", en: "Error" },
+  "poa.ok_create": { de: "Vollmacht erstellt", en: "Power of attorney created" },
+  "poa.create_title": { de: "Neue Vollmacht", en: "New power of attorney" },
+  "poa.btn_create": { de: "Vollmacht", en: "Power of Attorney" },
+  "poa.btn_save": { de: "Speichern", en: "Save" },
+  "poa.fld_case": { de: "Akte", en: "Case" },
+  "poa.fld_client": { de: "Mandant", en: "Client" },
+  "poa.fld_client_email": { de: "Mandant E-Mail", en: "Client email" },
+  "poa.fld_type": { de: "Typ", en: "Type" },
+  "poa.fld_scope": { de: "Umfang", en: "Scope" },
+  "poa.fld_scope_ph": {
+    de: "Z.B. Vertretung im Verfahren XY vor dem AG Berlin",
+    en: "e.g. Representation in proceeding XY before the AG Berlin",
+  },
+  "poa.fld_expires": { de: "Ablaufdatum", en: "Expiry date" },
+  "poa.empty": { de: "Keine Vollmachten", en: "No powers of attorney" },
+  "poa.empty_hint": {
+    de: "Erfassen Sie Vollmachten mit Geltungsdauer und Ablauf-Tracking.",
+    en: "Record powers of attorney with validity period and expiry tracking.",
+  },
+  "poa.expiring_warn": {
+    de: "Vollmacht(en) laufen innerhalb von 30 Tagen ab.",
+    en: "power(s) of attorney expire within 30 days.",
+  },
+  "poa.scope_label": { de: "Akte", en: "Case" },
+  "poa.expires_label": { de: "Ablauf", en: "Expires" },
+  "poa.btn_pdf": { de: "PDF", en: "PDF" },
+  "poa.btn_pdf_aria": { de: "Vollmacht als PDF generieren", en: "Generate power of attorney as PDF" },
+  "poa.btn_sign": { de: "Unterschreiben", en: "Sign" },
+  "poa.btn_sign_aria": { de: "Vollmacht unterschreiben", en: "Sign power of attorney" },
+  "poa.pdf_generated": { de: "PDF generiert", en: "PDF generated" },
+  "poa.pdf_error": { de: "PDF-Generierung fehlgeschlagen", en: "PDF generation failed" },
+  "poa.btn_send": { de: "Senden", en: "Send" },
+  "poa.btn_resend": { de: "Erneut senden", en: "Resend" },
+  "poa.btn_resend_aria": {
+    de: "Signatur-Link erneut an Mandant senden",
+    en: "Resend signature link to client",
+  },
+  "poa.btn_send_aria": {
+    de: "Signatur-Link an Mandant senden",
+    en: "Send signature link to client",
+  },
+  "poa.status_sent_to_client": {
+    de: "An Mandant gesendet",
+    en: "Sent to client",
+  },
+  "poa.status_viewed": { de: "Geöffnet", en: "Opened" },
+  "poa.status_signed_by_client": {
+    de: "Unterschrieben",
+    en: "Signed",
+  },
+  "sendlink.title": { de: "Link senden", en: "Send link" },
+  "sendlink.desc": { de: "Dokument", en: "Document" },
+  "sendlink.whatsapp": { de: "WhatsApp", en: "WhatsApp" },
+  "sendlink.whatsapp_no_phone": {
+    de: "Handy eingeben zum Senden",
+    en: "Enter phone to send",
+  },
+  "sendlink.email": { de: "E-Mail", en: "Email" },
+  "sendlink.email_empty": { de: "E-Mail eingeben", en: "Enter email" },
+  "sendlink.copy": { de: "Link kopieren", en: "Copy link" },
+  "sendlink.copy_desc": {
+    de: "Link in Zwischenablage legen — manuell weiterleiten",
+    en: "Copy link to clipboard — forward manually",
+  },
+  "sendlink.phone_label": { de: "Mandanten-Handy", en: "Client phone" },
+  "sendlink.phone_save_hint": {
+    de: "Wird am Mandanten-Kontakt gespeichert für zukünftige Sends.",
+    en: "Will be saved to the client contact for future sends.",
+  },
+  "sendlink.email_label": { de: "Mandanten-E-Mail", en: "Client email" },
+  "sendlink.btn_copy": { de: "Kopieren", en: "Copy" },
+  "sendlink.btn_whatsapp": { de: "Senden", en: "Send" },
+  "sendlink.btn_email": { de: "Senden", en: "Send" },
+  "sendlink.select_channel": { de: "Kanal wählen", en: "Select channel" },
+  "sendlink.copied": { de: "Kopiert!", en: "Copied!" },
+  "sendlink.copied_ok": { de: "Link kopiert", en: "Link copied" },
+  "sendlink.whatsapp_ok": { de: "WhatsApp gesendet", en: "WhatsApp sent" },
+  "sendlink.whatsapp_desc": {
+    de: "Der Mandant erhält den Link mit Signatur-Aufforderung.",
+    en: "The client receives the link with signature request.",
+  },
+  "sendlink.email_ok": { de: "E-Mail gesendet", en: "Email sent" },
+  "sendlink.email_desc": {
+    de: "Der Mandant erhält den Link per E-Mail.",
+    en: "The client receives the link via email.",
+  },
+  "sendlink.error": { de: "Senden fehlgeschlagen", en: "Send failed" },
 
   "outbound.title": { de: "Postausgangsbuch", en: "Outbound Register" },
   "outbound.description": {
@@ -10028,13 +10259,62 @@ export const D = {
   },
   "sig.desc": { de: "Dokumente digital unterschreiben lassen", en: "Digitally sign documents" },
   "sig.breadcrumb": { de: "e-Signatur", en: "e-Signature" },
-  "sig.aria_ext_sent": { de: "Als extern versendet markieren", en: "Mark as sent externally" },
+  "sig.aria_ext_sent": { de: "Signatur-Link senden", en: "Send signature link" },
+  "sig.no_case": {
+    de: "Kein Fall verknüpft — Link kann nicht gesendet werden",
+    en: "No case linked — link cannot be sent",
+  },
   "sig.aria_brain": { de: "Brain-Seite öffnen", en: "Open Brain page" },
   "sig.status_draft": { de: "Entwurf", en: "Draft" },
   "sig.status_sent": { de: "Versendet", en: "Sent" },
   "sig.status_signed": { de: "Unterschrieben", en: "Signed" },
   "sig.status_declined": { de: "Abgelehnt", en: "Declined" },
   "sig.status_expired": { de: "Abgelaufen", en: "Expired" },
+  "sig.btn_configure": { de: "Anbieter konfigurieren", en: "Configure provider" },
+  "sig.setup_hint_title": {
+    de: "Externer Signatur-Provider erforderlich",
+    en: "External signature provider required",
+  },
+  "sig.setup_hint_body": {
+    de: "Subsumio speichert Signatur-Anfragen revisionsfähig im Brain und verfolgt Status. Der rechtlich wirksame Versand erfolgt über einen Anbieter wie Docusign oder ein Kanzlei-Signaturportal. Kein Demo-Versand wird vorgetäuscht.",
+    en: "Subsumio stores signature requests auditably in the Brain and tracks status. Legally binding dispatch happens via a provider like Docusign or a firm signature portal. No demo dispatch is simulated.",
+  },
+  "sig.empty": {
+    de: "Noch keine Unterschriften-Anfragen.",
+    en: "No signature requests yet.",
+  },
+  "sig.empty_hint": {
+    de: "Erstelle eine Anfrage, um Dokumente digital unterschreiben zu lassen.",
+    en: "Create a request to have documents digitally signed.",
+  },
+  "sig.valid_until": { de: "Gültig bis", en: "Valid until" },
+  "sigdialog.title": { de: "Dokument unterschreiben", en: "Sign document" },
+  "sigdialog.desc": {
+    de: "Zeichnen oder tippen Sie Ihre Unterschrift. Diese wird rechtsverbindlich im Dokument gespeichert.",
+    en: "Draw or type your signature. It will be legally stored in the document.",
+  },
+  "sigdialog.legal_level": { de: "Rechtsform", en: "Legal level" },
+  "sigdialog.signer_name": { de: "Unterzeichner-Name", en: "Signer name" },
+  "sigdialog.signer_email": { de: "E-Mail", en: "Email" },
+  "sigdialog.instructions": {
+    de: "Zeichnen Sie mit Finger, Maus oder Stift im Feld. Alternativ können Sie Ihren Namen tippen.",
+    en: "Draw with finger, mouse or stylus in the field. Alternatively, type your name.",
+  },
+  "sigdialog.canvas_aria": { de: "Signatur-Zeichenfläche", en: "Signature drawing area" },
+  "sigdialog.confirm": {
+    de: "Ich bestätige, dass ich dieses Dokument rechtsverbindlich unterschreibe.",
+    en: "I confirm that I am signing this document legally binding.",
+  },
+  "sigdialog.btn_sign": { de: "Unterschreiben", en: "Sign" },
+  "sigdialog.signed_ok": { de: "Unterschrift erfasst", en: "Signature captured" },
+  "sigdialog.signed_desc": {
+    de: "Die Unterschrift wurde im Dokument gespeichert.",
+    en: "The signature has been stored in the document.",
+  },
+  "sigdialog.signed_error": {
+    de: "Signatur fehlgeschlagen",
+    en: "Signature failed",
+  },
 
   // ── Vault page strings ──
   "vault.deep_analysis_failed": { de: "Deep Analysis fehlgeschlagen", en: "Deep Analysis failed" },

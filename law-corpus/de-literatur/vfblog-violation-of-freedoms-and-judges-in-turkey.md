@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/violation-of-freedoms-and-judges-in-turke
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "46a3a40af929e31d"
 ---
 
 # Violation of Freedoms and Judges in Turkey

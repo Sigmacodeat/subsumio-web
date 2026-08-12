@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/is-egenberger-next/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eb9b38aefeca2a2f"
 ---
 
 # Is Egenberger next?

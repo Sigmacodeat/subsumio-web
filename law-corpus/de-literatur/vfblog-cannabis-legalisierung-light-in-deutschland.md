@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/cannabis-legalisierung-light-in-deutschla
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e2d7853485d07d48"
 ---
 
 # Cannabis-Legalisierung light in Deutschland

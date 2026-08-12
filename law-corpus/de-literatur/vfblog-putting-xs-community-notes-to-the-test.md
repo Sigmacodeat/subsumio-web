@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/putting-xs-community-notes-to-the-test/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "27e9feeda876181a"
 ---
 
 # Putting X’s Community Notes to the Test

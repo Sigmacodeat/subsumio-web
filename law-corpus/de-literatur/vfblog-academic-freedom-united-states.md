@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/academic-freedom-united-states/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "25c8b98b3ec46df4"
 ---
 
 # Harvard Under Attack

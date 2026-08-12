@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2019 Thomas Gächter;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "56aaa3fb96f8b2c2"
 ---
 
 # Keine «Rationierung» im geltenden KVG: Bemerkungen zu BGE 145 V 116

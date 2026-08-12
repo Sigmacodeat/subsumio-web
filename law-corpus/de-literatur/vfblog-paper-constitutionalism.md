@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/paper-constitutionalism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "19197c7ea0a0d041"
 ---
 
 # Paper Constitutionalism

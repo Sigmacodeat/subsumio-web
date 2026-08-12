@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/just-the-illusion-of-protection/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a3c203f7e30583b8"
 ---
 
 # “Just the Illusion of Protection”

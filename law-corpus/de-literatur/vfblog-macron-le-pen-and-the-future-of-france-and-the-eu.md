@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/macron-le-pen-and-the-future-of-france-an
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "77d6313f4474ccd6"
 ---
 
 # A High-Stakes Game

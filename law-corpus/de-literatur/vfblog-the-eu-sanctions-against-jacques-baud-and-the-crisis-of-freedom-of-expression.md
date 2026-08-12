@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ea11dee21ecfd4ea"
 ---
 
 # The EU Sanctions against Jacques Baud and the Crisis of Freedom of Expression

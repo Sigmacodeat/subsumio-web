@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/what-is-low-isnt-free/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "904e3c73817c1846"
 ---
 
 # What is Low isn’t Free

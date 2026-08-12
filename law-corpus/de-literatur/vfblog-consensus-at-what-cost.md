@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/consensus-at-what-cost/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "da0104d7ae28b960"
 ---
 
 # Consensus, at what Cost?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/scheidungsunterhalt-quod-licet-bverfg-lic
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "47a2d6912aa97dda"
 ---
 
 # Scheidungsunterhalt: Quod licet BVerfG non licet BGH

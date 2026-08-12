@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3ff24ea9e70c6300"
 ---
 
 # The Tjebbes Fail: Going Farcical about Bulgakovian Truths

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "34e054acfa5c8e57"
 ---
 
 # The Catalunya Conundrum, Part 1: How Could Things Come to Such a Pass?

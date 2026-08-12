@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/constituent-power-a-history-of-what-exact
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "617102bba2aeaf52"
 ---
 
 # Constituent Power: A History of What Exactly?

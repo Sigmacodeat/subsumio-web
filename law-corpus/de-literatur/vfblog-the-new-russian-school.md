@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-new-russian-school/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6cdebdd948a53c9a"
 ---
 
 # The New Russian School

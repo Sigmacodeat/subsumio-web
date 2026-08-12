@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/open-access-oeffentliche-gueter/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9c16a00ed75341b9"
 ---
 
 # The Revolution Will Not Be Institutionalized

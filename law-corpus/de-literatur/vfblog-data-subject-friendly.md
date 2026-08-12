@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/data-subject-friendly/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cfec18515d31cb84"
 ---
 
 # Towards a data-subject-friendly interpretation of Article 82 GDPR

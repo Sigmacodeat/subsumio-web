@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b899a239e25dd0cb"
 ---
 
 # Warum schalten die Datenkraken genauso uneffektiv Werbung wie alle anderen auch?

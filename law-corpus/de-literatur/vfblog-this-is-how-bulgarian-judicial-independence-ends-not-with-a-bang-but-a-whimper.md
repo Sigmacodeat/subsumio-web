@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e260c7851bebd6d1"
 ---
 
 # This is how Bulgarian Judicial Independence Ends&#8230;Not with a Bang but a Whimper

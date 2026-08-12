@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/bafog-beschluss-bverfg/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4ad19f2edde562ec"
 ---
 
 # Aufstieg und Fall des Rechts auf individuelle Ausbildungsförderung

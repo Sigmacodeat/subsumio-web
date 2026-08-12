@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "78d3d9b0e5c6ffca"
 ---
 
 # Anbindehaltung – Keine rechtliche Grauzone, sondern illegale Routine

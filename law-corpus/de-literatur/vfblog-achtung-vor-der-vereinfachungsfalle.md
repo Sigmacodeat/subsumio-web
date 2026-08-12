@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/achtung-vor-der-vereinfachungsfalle/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "18f496e8b655e3e2"
 ---
 
 # Achtung vor der „Vereinfachungsfalle“

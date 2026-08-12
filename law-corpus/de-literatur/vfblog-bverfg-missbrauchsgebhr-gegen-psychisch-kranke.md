@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bverfg-missbrauchsgebhr-gegen-psychisch-k
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ffcce0e79e918f70"
 ---
 
 # BVerfG: Missbrauchsgebühr gegen psychisch Kranke?

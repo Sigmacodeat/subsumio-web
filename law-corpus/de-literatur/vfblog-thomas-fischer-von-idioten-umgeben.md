@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/thomas-fischer-von-idioten-umgeben/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a22852d91b583da8"
 ---
 
 # Thomas Fischer, von Idioten umgeben

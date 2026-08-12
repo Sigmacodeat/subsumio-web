@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-u-s-supreme-court-and-the-2020-electi
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "14d039c6c6c36470"
 ---
 
 # The U.S. Supreme Court and the 2020 Election

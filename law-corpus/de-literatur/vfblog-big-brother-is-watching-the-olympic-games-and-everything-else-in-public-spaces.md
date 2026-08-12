@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f37fa7bdc6d606ac"
 ---
 
 # Big Brother is Watching the Olympic Games – and Everything Else in Public Spaces

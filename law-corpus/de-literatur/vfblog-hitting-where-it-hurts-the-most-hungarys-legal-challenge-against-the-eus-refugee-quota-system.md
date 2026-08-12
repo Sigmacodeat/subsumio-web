@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2877b8976380d76c"
 ---
 
 # Hitting where it hurts the most: Hungary’s legal challenge against the EU’s refugee quota system

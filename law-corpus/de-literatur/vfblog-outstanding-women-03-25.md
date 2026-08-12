@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/outstanding-women-03-25/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f517674bcda6032c"
 ---
 
 # Ángela de Oliveira Cézar de Costa

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "18a36e3feb582434"
 ---
 
 # Before it Spreads “Like Wildfire”: Prisoners’ Rights in the Time of COVID-19

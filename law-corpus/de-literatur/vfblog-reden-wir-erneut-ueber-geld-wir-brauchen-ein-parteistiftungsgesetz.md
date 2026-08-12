@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2e7bd51f4e2f8493"
 ---
 
 # Reden wir erneut über Geld: Wir brauchen ein Parteistiftungsgesetz!

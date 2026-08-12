@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hamburg-schreitet-ein/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "41c33978f51aed8c"
 ---
 
 # Hamburg schreitet ein

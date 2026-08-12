@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ebf5d8780ad32df9"
 ---
 
 # Justitias Dresscode: Wie das BVerfG Neutralität mit „Normalität“ verwechselt

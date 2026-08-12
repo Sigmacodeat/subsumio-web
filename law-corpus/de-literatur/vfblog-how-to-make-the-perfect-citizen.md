@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/how-to-make-the-perfect-citizen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fed672a5491c1c9f"
 ---
 
 # How to Make the Perfect Citizen?

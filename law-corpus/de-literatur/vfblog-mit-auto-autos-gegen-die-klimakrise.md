@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mit-auto-autos-gegen-die-klimakrise/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "49c7a1eca292ce2e"
 ---
 
 # Mit Auto-Autos gegen die Klimakrise?

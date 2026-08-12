@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e0e355dc55a846a2"
 ---
 
 # Can an Art. 50 TEU withdrawal notice be revoked? How Advocate General Bordona offered a legal Trojan horse to Union law

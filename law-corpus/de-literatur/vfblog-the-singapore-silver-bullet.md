@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-singapore-silver-bullet/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "07e5b6e5e283962e"
 ---
 
 # The Singapore Silver Bullet

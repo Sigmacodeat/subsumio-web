@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sparen-auf-kosten-des-volkerrechts/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6ea077bf7e8f150e"
 ---
 
 # Sparen auf Kosten des Völkerrechts

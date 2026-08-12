@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c56d7e544e80ee7c"
 ---
 
 # Die Logik des Krieges: eine Anmerkung zur ukrainischen Verfassungsreform

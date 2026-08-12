@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "599b769cfa10a537"
 ---
 
 # 17 Thesen zum Kopftuch-Urteil des Bayerischen Verfassungs&shy;gerichtshofs

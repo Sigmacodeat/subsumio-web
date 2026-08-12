@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fraenkel-israel-gaza/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "97e36f2371c7afb5"
 ---
 
 # Behemoth v. The Dual State in the Gaza War

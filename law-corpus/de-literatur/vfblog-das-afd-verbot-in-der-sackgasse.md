@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-afd-verbot-in-der-sackgasse/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dc66fd7ad2f251b7"
 ---
 
 # Das AfD-Verbot in der Sackgasse?

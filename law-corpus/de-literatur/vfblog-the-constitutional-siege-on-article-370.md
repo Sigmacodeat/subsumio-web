@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-constitutional-siege-on-article-370/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "661a29237350865f"
 ---
 
 # The Constitutional Siege on Article 370

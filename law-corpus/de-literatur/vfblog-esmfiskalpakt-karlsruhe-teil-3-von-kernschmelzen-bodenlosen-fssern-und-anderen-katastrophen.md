@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0864bf0eb3a62f81"
 ---
 
 # ESM/Fiskalpakt in Karlsruhe, Teil 3: Von Kernschmelzen, bodenlosen Fässern und anderen Katastrophen

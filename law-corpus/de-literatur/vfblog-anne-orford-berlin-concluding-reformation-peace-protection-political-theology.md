@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aeb72881d56fa45c"
 ---
 
 # Anne Orford in Berlin, rethinking R2P: Concluding the Reformation? On peace, protection and political theology

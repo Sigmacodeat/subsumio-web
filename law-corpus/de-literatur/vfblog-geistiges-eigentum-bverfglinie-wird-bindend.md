@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/geistiges-eigentum-bverfglinie-wird-binde
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5d9d4e5c2d1e818d"
 ---
 
 # Geistiges Eigentum: BVerfG-Linie wird bindend

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/lawrules-8-we-need-to-talk-about-the-pena
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cb7f5a81ff4af1b4"
 ---
 
 # LawRules #8: We Need to Talk About the Penal System

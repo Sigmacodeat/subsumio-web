@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/how-to-deal-with-evil-law-in-hungary-and-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d368883141d120ad"
 ---
 
 # How to Deal With Evil Law in Hungary and Elsewhere

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/greenifying-copyright/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8d0d461690fb9c28"
 ---
 
 # Greenifying Copyright

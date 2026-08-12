@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zutritt-verboten/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a4ffa4cf495e5755"
 ---
 
 # Zutritt verboten

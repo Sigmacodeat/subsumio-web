@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hb-essay-zum-bundesverfassunsgericht-jetz
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "92fbb64369581e35"
 ---
 
 # HB-Essay online; Voßkuhle in der SZ; Lenz in der FAZ

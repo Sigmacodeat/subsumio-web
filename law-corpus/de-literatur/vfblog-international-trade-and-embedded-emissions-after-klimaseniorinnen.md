@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "70295ccee28a2d6d"
 ---
 
 # International Trade and &ldquo;Embedded Emissions&rdquo; after KlimaSeniorinnen

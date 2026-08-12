@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "baa701e5f6b9b7e0"
 ---
 
 # Fighting COVID 19 – Legal Powers and Risks: SWITZERLAND

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nothing-will-change/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2c68b50cc9159760"
 ---
 
 # Nothing will Change

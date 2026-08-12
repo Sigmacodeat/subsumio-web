@@ -18,6 +18,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2015
   AUSTRIAN LAW JOURNAL
+content_hash: "03fb12b49c712bd1"
 ---
 
 # Kosovo – UNMIK accountability: Human Rights Advisory Panel Finds Discrimination in Privatization Cases

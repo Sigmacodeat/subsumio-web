@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/five-questions-on-brexit-to-kenneth-armst
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "12cf3e7a52dc8f1d"
 ---
 
 # Five Questions on Brexit to KENNETH ARMSTRONG

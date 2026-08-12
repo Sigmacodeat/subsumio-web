@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "174fd9afcbe11b12"
 ---
 
 # Selmayr's Appointment: Why this Juncker Crisis is Much More Dangerous for the EU Commission than the Santer Crisis in 1999

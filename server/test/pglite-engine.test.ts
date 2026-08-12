@@ -193,7 +193,10 @@ describe("PGLiteEngine: Pages", () => {
 // Search (tsvector triggers + FTS)
 // ─────────────────────────────────────────────────────────────────
 describe("PGLiteEngine: Search", () => {
-  beforeAll(async () => {
+  // NOTE: bun:test runs ALL beforeAll hooks before ANY test. Sibling describe
+  // blocks with beforeEach(truncateAll) wipe data set in beforeAll. Use
+  // beforeEach here so search data survives truncation from other blocks.
+  beforeEach(async () => {
     await truncateAll();
     await engine.putPage("companies/novamind", {
       type: "company",
@@ -1016,7 +1019,8 @@ describe("PGLiteEngine: IngestLog", () => {
 // Stats + Health
 // ─────────────────────────────────────────────────────────────────
 describe("PGLiteEngine: Stats & Health", () => {
-  beforeAll(async () => {
+  // Same bun:test beforeAll/beforeEach issue as Search block above.
+  beforeEach(async () => {
     await truncateAll();
     await engine.putPage("test/stats", testPage);
     await engine.upsertChunks("test/stats", [

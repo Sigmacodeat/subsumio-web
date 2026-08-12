@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/os1-neue-aera/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "32af4e3edd019616"
 ---
 
 # Der Abzug aus Afghanistan läutet eine neue Ära globaler Kriege um Infrastruktur und Lieferketten ein

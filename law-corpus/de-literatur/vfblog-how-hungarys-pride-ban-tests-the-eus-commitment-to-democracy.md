@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2642ad8ba3ea78f5"
 ---
 
 # How Hungary’s Pride Ban Tests the EU’s Commitment to Democracy

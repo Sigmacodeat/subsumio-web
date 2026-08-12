@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/au-revoir-to-neoliberalism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e192e23f2b3492c2"
 ---
 
 # Au revoir to Neoliberalism?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/enemy-of-the-people/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "93a693ea91bf31c1"
 ---
 
 # Enemies of the People?

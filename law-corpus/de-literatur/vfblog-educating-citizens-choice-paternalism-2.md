@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/educating-citizens-choice-paternalism-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9703c8221e1138ef"
 ---
 
 # Educating Citizens: The Choice for Paternalism

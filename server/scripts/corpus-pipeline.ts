@@ -1020,6 +1020,54 @@ function runFassungsSync(): void {
   console.log(`  [fassungs-sync] Done: ${staleCount} stale jurisdiction(s)`);
 }
 
+// ── Layer 7: RIS Delta-Watcher (incremental sync) ──────────────────────
+
+/** Run the RIS Delta-Watcher as a child process.
+ *  - Automatic: at most once per 24h (configurable via PIPELINE_DELTA_INTERVAL_S)
+ *  - Manual: triggered by pipeline_config.delta_sync_triggered
+ *
+ *  The delta-watcher fetches new/changed documents from RIS OGD API,
+ *  writes them to disk, and marks them for import via markiereZumImport.
+ *  The regular import stage then picks them up. */
+function runDeltaWatcher(state: CycleState): void {
+  const key = "ris-delta";
+  ensureSourceRow(key);
+
+  // Check for manual trigger (from dashboard or cron route)
+  const triggerRaw = psqlQuery(
+    "SELECT value->>'applikation' FROM pipeline_config WHERE key = 'delta_sync_triggered'"
+  ).trim();
+  const manualTrigger = triggerRaw !== "";
+
+  // Check if we already ran in the last 24h (unless manually triggered)
+  const intervalS = parseInt(process.env.PIPELINE_DELTA_INTERVAL_S || "86400", 10);
+  const row = psqlJSON(`SELECT last_cycle_at FROM pipeline_state WHERE source_key = '${key}'`);
+  if (!manualTrigger && Array.isArray(row) && row.length > 0 && row[0].last_cycle_at) {
+    const lastRun = new Date(row[0].last_cycle_at);
+    const elapsed = (Date.now() - lastRun.getTime()) / 1000;
+    if (elapsed < intervalS) return;
+  }
+
+  // Check if delta-watcher is already running
+  const procState = checkSourceProcess(key, state);
+  if (procState.running) {
+    console.log("  [ris-delta] Läuft bereits — überspringe");
+    return;
+  }
+
+  console.log("  [ris-delta] Starte RIS Delta-Watcher...");
+
+  // Build command — run as child process with PID tracking
+  const argv = ["scripts/ris-delta-watcher.ts", "--once"];
+  if (manualTrigger && triggerRaw && triggerRaw !== "all") {
+    argv.push("--applikation", triggerRaw);
+  }
+
+  startProcess("ris-delta", argv, key, 7200); // 2h timeout
+  updateSourceState(key, { stage: "running", last_cycle_at: new Date().toISOString() });
+  appendHistory(key, "delta", manualTrigger ? "triggered manually" : "scheduled run");
+}
+
 // ── Main cycle ─────────────────────────────────────────────────────────
 
 interface SourceReport {
@@ -1070,6 +1118,8 @@ async function cycle(): Promise<void> {
     // Also ensure hash-integrity and fassungs-sync source rows
     ensureSourceRow("hash-integrity");
     ensureSourceRow("fassungs-sync");
+    // Also ensure ris-delta source row
+    ensureSourceRow("ris-delta");
 
     // Reload state after ensuring rows
     const freshDbState = loadDBState();
@@ -1380,22 +1430,73 @@ async function cycle(): Promise<void> {
       });
     }
 
+    // ── Re-Embed trigger (from dashboard: pipeline_config.reembed_triggered) ──
+    const reembedTriggered = psqlQuery(
+      "SELECT value->>'source' FROM pipeline_config WHERE key = 'reembed_triggered'"
+    ).trim();
+    if (reembedTriggered && !embedRunning && !REPORT_ONLY) {
+      // Clear embedded_at for the specified source so auto-embed picks them up
+      const sourceFilter = reembedTriggered.replace(/'/g, "''");
+      psqlQuery(
+        `UPDATE content_chunks SET embedded_at = NULL
+         WHERE page_id IN (
+           SELECT id FROM pages WHERE source_id = '${sourceFilter}' AND deleted_at IS NULL
+         )`
+      );
+      // Clear the trigger
+      psqlQuery("DELETE FROM pipeline_config WHERE key = 'reembed_triggered'");
+      console.log(`  🔄 Re-Embed ausgelöst für Source: ${reembedTriggered}`);
+      appendHistory("embed", "reembed", `triggered: ${reembedTriggered}`);
+    }
+
+    // ── Fetch-missing trigger (from dashboard: pipeline_config.fetch_triggered) ──
+    const fetchTriggered = psqlQuery(
+      "SELECT value->>'source_key' FROM pipeline_config WHERE key = 'fetch_triggered'"
+    ).trim();
+    if (fetchTriggered && !REPORT_ONLY) {
+      const key = fetchTriggered.replace(/'/g, "''");
+      // Map source_key to fetch script
+      const fetchCmd: Record<string, string[]> = {
+        "jud-ogh": ["scripts/fetch-all-at-judikatur.ts", "--source", "ogh"],
+        "jud-vfgh": ["scripts/fetch-all-at-judikatur.ts", "--source", "vfgh"],
+        "jud-vwgh": ["scripts/fetch-all-at-judikatur.ts", "--source", "vwgh"],
+        "jud-bvwg": ["scripts/fetch-all-at-judikatur.ts", "--source", "bvwg"],
+        "jud-lvwg": ["scripts/fetch-all-at-judikatur.ts", "--source", "lvwg"],
+      };
+      const cmd = fetchCmd[key];
+      if (cmd) {
+        const fetchRunning = processRunningGrep("fetch-all-at-judikatur");
+        if (!fetchRunning) {
+          startProcess("fetch-missing", cmd, "fetch-missing", 14400);
+          console.log(`  📥 Fetch ausgelöst für: ${key}`);
+          appendHistory(key, "fetch", "triggered");
+        }
+      }
+      // Clear the trigger
+      psqlQuery("DELETE FROM pipeline_config WHERE key = 'fetch_triggered'");
+    }
+
     // ── Embed stage ──
     let embedAction = "—";
     const embedProc = checkSourceProcess("embed", state);
     const embedRunning = embedProc.running || processRunningGrep("auto-embed-pg.ts");
-    if (pendingEmbeds > 0 && !embedRunning && !REPORT_ONLY) {
+    // Re-read pending embeds after potential reembed trigger
+    const currentPendingEmbeds = parseInt(
+      psqlQuery("SELECT count(*) FROM content_chunks WHERE embedded_at IS NULL") || "0",
+      10
+    );
+    if (currentPendingEmbeds > 0 && !embedRunning && !REPORT_ONLY) {
       startProcess(
         "auto-embed",
         ["scripts/auto-embed-pg.ts", "--batch-size", "100"],
         "embed",
         3600
       );
-      embedAction = `embed gestartet (${pendingEmbeds} pending)`;
+      embedAction = `embed gestartet (${currentPendingEmbeds} pending)`;
       updateSourceState("embed", { stage: "importing", last_cycle_at: startedAt });
       appendHistory("embed", "embed", "started");
     } else if (embedRunning) {
-      embedAction = `embed läuft (${pendingEmbeds} pending)`;
+      embedAction = `embed läuft (${currentPendingEmbeds} pending)`;
     }
 
     // ── Freshness check (at most once per 24h) ──
@@ -1407,12 +1508,15 @@ async function cycle(): Promise<void> {
     // ── Layer 6: Fassungs-Sync / version_date delta (at most once per 12h) ──
     runFassungsSync();
 
+    // ── Layer 7: RIS Delta-Watcher (at most once per 24h or manual trigger) ──
+    runDeltaWatcher(state as CycleState);
+
     // ── Report ──
     const lines: string[] = [];
     lines.push(`# Corpus-Pipeline Report — ${startedAt}`);
     lines.push("");
     lines.push(
-      `Chunks: ${totalChunks} | Embeddings pending: ${pendingEmbeds} (${embedAction}) | Links: ${totalLinks}`
+      `Chunks: ${totalChunks} | Embeddings pending: ${currentPendingEmbeds} (${embedAction}) | Links: ${totalLinks}`
     );
     lines.push("");
     lines.push(

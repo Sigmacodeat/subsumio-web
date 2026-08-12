@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-pomp-of-popular-constitutional-outrag
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "db4d98e2df22ef27"
 ---
 
 # The Pomp of Popular Constitutional Outrage

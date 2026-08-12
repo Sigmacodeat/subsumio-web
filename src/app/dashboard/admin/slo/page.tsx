@@ -71,7 +71,7 @@ const metricLabels: Record<string, string> = {
   avg_cost_usd: "Ø Kosten (USD)",
   guardrail_pass_rate: "Guardrail-Pass-Rate",
   regeneration_rate: "Regenerationsrate",
-  hit_rate: "Hit-Rate",
+  hit_rate: "Trefferrate",
 };
 
 function formatValue(value: number, metric: string): string {
@@ -90,20 +90,20 @@ function formatValue(value: number, metric: string): string {
 function statusIcon(status: string) {
   switch (status) {
     case "met":
-      return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+      return <CheckCircle2 className="h-4 w-4 text-[color:var(--ds-success-text)]" />;
     case "breached":
-      return <XCircle className="h-4 w-4 text-red-500" />;
+      return <XCircle className="h-4 w-4 text-[color:var(--ds-danger-text)]" />;
     default:
-      return <Activity className="text-muted-foreground h-4 w-4" />;
+      return <Activity className="text-[color:var(--ds-text-muted)] h-4 w-4" />;
   }
 }
 
 function statusBadge(status: string) {
   switch (status) {
     case "met":
-      return <Badge className="bg-green-100 text-green-700">Erfüllt</Badge>;
+      return <Badge className="bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]">Erfüllt</Badge>;
     case "breached":
-      return <Badge className="bg-red-100 text-red-700">Verletzt</Badge>;
+      return <Badge className="bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]">Verletzt</Badge>;
     default:
       return <Badge variant="default">Keine Daten</Badge>;
   }
@@ -131,7 +131,7 @@ export default function SLOPage() {
   }, {});
 
   return (
-    <div className="container mx-auto max-w-6xl space-y-6 p-6">
+    <div className="mx-0 w-full space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("admin.slo.title")}
         description={t("admin.slo.desc")}
@@ -143,7 +143,7 @@ export default function SLOPage() {
       />
 
       <div className="flex items-center justify-between">
-        <p className="text-muted-foreground text-sm">
+        <p className="text-[color:var(--ds-text-muted)] text-sm">
           Auto-Refresh alle 30s ·{" "}
           {data ? `Aktualisiert: ${new Date(data.timestamp).toLocaleTimeString("de-AT")}` : "Lädt…"}
         </p>
@@ -157,37 +157,37 @@ export default function SLOPage() {
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
-            <Gauge className="h-8 w-8 text-blue-500" />
+            <Gauge className="h-8 w-8 text-[color:var(--ds-info-text)]" />
             <div>
               <p className="text-2xl font-bold">{summary?.total ?? "—"}</p>
-              <p className="text-muted-foreground text-xs">SLOs gesamt</p>
+              <p className="text-[color:var(--ds-text-muted)] text-xs">SLOs gesamt</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
-            <CheckCircle2 className="h-8 w-8 text-green-500" />
+            <CheckCircle2 className="h-8 w-8 text-[color:var(--ds-success-text)]" />
             <div>
               <p className="text-2xl font-bold">{summary?.met ?? "—"}</p>
-              <p className="text-muted-foreground text-xs">Erfüllt</p>
+              <p className="text-[color:var(--ds-text-muted)] text-xs">Erfüllt</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
-            <XCircle className="h-8 w-8 text-red-500" />
+            <XCircle className="h-8 w-8 text-[color:var(--ds-danger-text)]" />
             <div>
               <p className="text-2xl font-bold">{summary?.breached ?? "—"}</p>
-              <p className="text-muted-foreground text-xs">Verletzt</p>
+              <p className="text-[color:var(--ds-text-muted)] text-xs">Verletzt</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
-            <AlertTriangle className="h-8 w-8 text-orange-500" />
+            <AlertTriangle className="h-8 w-8 text-[color:var(--ds-warning-text)]" />
             <div>
               <p className="text-2xl font-bold">{summary?.critical_breaches ?? "—"}</p>
-              <p className="text-muted-foreground text-xs">Kritische Verletzungen</p>
+              <p className="text-[color:var(--ds-text-muted)] text-xs">Kritische Verletzungen</p>
             </div>
           </CardContent>
         </Card>
@@ -198,8 +198,8 @@ export default function SLOPage() {
         <Card>
           <CardContent className="p-4">
             <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
-              <AlertTriangle className="h-4 w-4 text-orange-500" />
-              Aktive Alerts ({alerts.length})
+              <AlertTriangle className="h-4 w-4 text-[color:var(--ds-warning-text)]" />
+              Aktive Warnungen ({alerts.length})
             </h3>
             <div className="space-y-2">
               {alerts.map((alert, i) => (
@@ -208,8 +208,8 @@ export default function SLOPage() {
                     <Badge
                       className={
                         alert.severity === "critical"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-orange-100 text-orange-700"
+                          ? "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
+                          : "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
                       }
                     >
                       {alert.severity}
@@ -219,7 +219,7 @@ export default function SLOPage() {
                         {workflowLabels[alert.workflow] ?? alert.workflow} —{" "}
                         {metricLabels[alert.metric] ?? alert.metric}
                       </p>
-                      <p className="text-muted-foreground text-xs">{alert.message}</p>
+                      <p className="text-[color:var(--ds-text-muted)] text-xs">{alert.message}</p>
                     </div>
                   </div>
                   <div className="text-right text-xs">
@@ -250,20 +250,20 @@ export default function SLOPage() {
                         <p className="text-sm font-medium">
                           {metricLabels[slo.metric] ?? slo.metric}
                         </p>
-                        <p className="text-muted-foreground text-xs">{slo.description}</p>
+                        <p className="text-[color:var(--ds-text-muted)] text-xs">{slo.description}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       {slo.status === "met" ? (
-                        <TrendingUp className="h-4 w-4 text-green-500" />
+                        <TrendingUp className="h-4 w-4 text-[color:var(--ds-success-text)]" />
                       ) : slo.status === "breached" ? (
-                        <TrendingDown className="h-4 w-4 text-red-500" />
+                        <TrendingDown className="h-4 w-4 text-[color:var(--ds-danger-text)]" />
                       ) : null}
                       <span className="font-mono text-sm">
                         {slo.status === "no_data"
                           ? "—"
                           : formatValue(slo.current_value, slo.metric)}
-                        <span className="text-muted-foreground">
+                        <span className="text-[color:var(--ds-text-muted)]">
                           {" / "}
                           {formatValue(slo.target, slo.metric)}
                         </span>
@@ -281,8 +281,8 @@ export default function SLOPage() {
       {statuses.length === 0 && !isLoading && (
         <Card>
           <CardContent className="p-8 text-center">
-            <Activity className="text-muted-foreground mx-auto mb-3 h-12 w-12" />
-            <p className="text-muted-foreground text-sm">
+            <Activity className="text-[color:var(--ds-text-muted)] mx-auto mb-3 h-12 w-12" />
+            <p className="text-[color:var(--ds-text-muted)] text-sm">
               Keine SLO-Daten verfügbar. Metriken werden gesammelt, sobald Workflows ausgeführt
               werden.
             </p>

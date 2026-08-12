@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fighting-covid-19-with-religious-discrimi
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5460abe2934ac84f"
 ---
 
 # Fighting COVID-19 with Religious Discrimination

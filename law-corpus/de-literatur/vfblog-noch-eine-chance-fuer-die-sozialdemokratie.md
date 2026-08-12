@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/noch-eine-chance-fuer-die-sozialdemokrati
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a77cd54264e97845"
 ---
 
 # Noch eine Chance für die Sozialdemokratie?

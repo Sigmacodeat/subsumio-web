@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/staatenlos-ab-geburt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5ab81e25e3e1b62b"
 ---
 
 # Staatenlos ab Geburt

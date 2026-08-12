@@ -270,7 +270,7 @@ export function BillingTab() {
               className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 md:col-span-2"
             />
             <input
-              type="number"
+              type="number" inputMode="numeric"
               placeholder={t("cases.detail_time_min_ph")}
               value={newEntry.minutes}
               disabled={isArchived}
@@ -294,7 +294,7 @@ export function BillingTab() {
                 ))}
               </select>
               <input
-                type="number"
+                type="number" inputMode="numeric"
                 placeholder={t("cases.detail_time_rate_ph")}
                 value={newEntry.rate}
                 disabled={isArchived}
@@ -452,7 +452,7 @@ export function BillingTab() {
             />
             <input
               {...ctx.expenseForm.register("amount")}
-              type="number"
+              type="number" inputMode="decimal"
               step="0.01"
               placeholder={t("cases.detail_exp_amount_ph")}
               disabled={isArchived}

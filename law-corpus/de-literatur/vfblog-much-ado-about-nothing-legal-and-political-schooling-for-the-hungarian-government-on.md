@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fdcffcd354f36855"
 ---
 
 # Much Ado About Nothing? Legal and Political Schooling for the Hungarian Government

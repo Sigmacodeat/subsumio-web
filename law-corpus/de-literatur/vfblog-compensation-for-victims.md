@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/compensation-for-victims/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "953fde9121bee660"
 ---
 
 # Compensation for Victims of Violent Crimes

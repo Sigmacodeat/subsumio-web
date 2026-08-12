@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bundestag-geschaftsordnung-obstruktion/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bc0c0bfb31617b3e"
 ---
 
 # Reden und reden lassen

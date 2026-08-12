@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9d61a16b39d55ec1"
 ---
 
 # Strafrecht als Kommunikationsform in der demokratischen Gesellschaft – ein Blick in das neue Buch von Thomas Fischer

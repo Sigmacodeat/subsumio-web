@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-theoretical-limits-on-the-override-po
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b399024b21d4f02f"
 ---
 
 # The Theoretical Limits on the Override Power

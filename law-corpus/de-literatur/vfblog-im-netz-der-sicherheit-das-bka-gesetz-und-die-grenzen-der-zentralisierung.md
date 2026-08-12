@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8a66799dc1b3711c"
 ---
 
 # Im Netz der Sicherheit: das BKA-Gesetz und die Grenzen der Zentralisierung

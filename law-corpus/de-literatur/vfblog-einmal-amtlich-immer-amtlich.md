@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/einmal-amtlich-immer-amtlich/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1c470992f8cc31e7"
 ---
 
 # Einmal amtlich, immer amtlich?

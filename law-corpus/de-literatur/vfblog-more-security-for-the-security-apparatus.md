@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/more-security-for-the-security-apparatus/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "764e3f7d0913fa9c"
 ---
 
 # More Security for the Security Apparatus

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f37c69cae233b0ba"
 ---
 
 # Verteidigung der Ehe durch Steuern? DOMA bröselt vor dem Supreme Court

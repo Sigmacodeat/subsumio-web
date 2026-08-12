@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sovereignty/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f4f908f43bd0d9ca"
 ---
 
 # W(h)ither Sovereignty?

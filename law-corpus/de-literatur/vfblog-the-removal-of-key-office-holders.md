@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-removal-of-key-office-holders/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b954d585681740f3"
 ---
 
 # The Removal of Key Office Holders

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ki-trainingsdaten-urheberrecht-lg-hamburg
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4eb9daec77604890"
 ---
 
 # Frisch gewagt ist nur halb gewonnen

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b61dde09abb40ebb"
 ---
 
 # The Pechstein case: Transnational constitutionalism in inaction at the Bundesgerichtshof

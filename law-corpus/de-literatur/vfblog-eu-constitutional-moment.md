@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eu-constitutional-moment/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e24a71e534f57a7c"
 ---
 
 # The EU’s 1787 Moment

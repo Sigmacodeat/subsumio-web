@@ -20,6 +20,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2017
   AUSTRIAN LAW JOURNAL
+content_hash: "5220a47ad8a148e6"
 ---
 
 # Einstweilige Kontenpfändung im Europäischen Zivilverfahrensrecht: Ein Vergleich zwischen Brüssel Ia und der Kontenpfändungsverordnung aus österreichischer und slowenischer Perspektive

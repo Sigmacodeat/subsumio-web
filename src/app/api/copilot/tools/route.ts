@@ -5,6 +5,7 @@ import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { calculateRvg } from "@/lib/rvg";
 import { isToolAvailable, getToolList, type ToolConditionContext } from "@/lib/agent-conditionals";
 import { sendMailboxMessage, buildMailDraft } from "@/lib/email/mailbox";
+import { markOnboardingProgress } from "@/lib/auth/store";
 
 // ── Tool Schemas ──────────────────────────────────────────────────────
 
@@ -2101,6 +2102,11 @@ export const POST = createHandler(
         default:
           return apiError("invalid_tool", `Unknown tool: ${body.tool}`, 400);
       }
+
+      if (body.tool === "create_case" && result && typeof result === "object" && "success" in result && result.success) {
+        void markOnboardingProgress(ctx.user.id, { firstCase: true });
+      }
+
       return Response.json(result);
     } catch (err) {
       if (err instanceof z.ZodError) {

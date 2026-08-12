@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ungarn-hat-doch-noch-ein-verfassungsgeric
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0d9a3aac6a907e54"
 ---
 
 # Ungarn hat doch noch ein Verfassungsgericht

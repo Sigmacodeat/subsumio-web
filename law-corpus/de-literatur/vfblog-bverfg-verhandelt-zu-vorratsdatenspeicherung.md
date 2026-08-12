@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bverfg-verhandelt-zu-vorratsdatenspeicher
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2532dd57411a5a6f"
 ---
 
 # BVerfG verhandelt zu Vorratsdatenspeicherung

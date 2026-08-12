@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "abb40f74c8eb1cd4"
 ---
 
 # How the DMCA Anticipated the DSA’s Due Process Obligations

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/what-comes-after-neoliberalism-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1d01cf93ef342f80"
 ---
 
 # What Comes After Neoliberalism?

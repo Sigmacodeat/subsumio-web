@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-global-milestone/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5c874e83fc2a8815"
 ---
 
 # A Global Milestone

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/drei-milliarden-euro-als-verfassungsfrage
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e42442e54279d5cf"
 ---
 
 # Drei Milliarden Euro als Verfassungsfrage

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-tale-of-primacy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "91effc439c14840e"
 ---
 
 # A Tale of Primacy

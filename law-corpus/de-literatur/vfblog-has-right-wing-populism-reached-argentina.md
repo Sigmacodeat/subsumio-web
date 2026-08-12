@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/has-right-wing-populism-reached-argentina
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b1e443c27642dacc"
 ---
 
 # Has Right-Wing Populism Reached Argentina?

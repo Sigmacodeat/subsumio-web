@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9b64ba620f7de366"
 ---
 
 # Statement by the former presidents of the Constitutional Tribunal: Marek Safjan, Jerzy Stępień, Bohdan Zdziennicki and Andrzej Zoll

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "58b1fc19db870cea"
 ---
 
 # Verfassungsblog Seminar: Einführung in das rechtswissenschaftliche Bloggen

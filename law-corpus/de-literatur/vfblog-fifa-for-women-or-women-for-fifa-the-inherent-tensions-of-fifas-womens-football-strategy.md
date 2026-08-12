@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2e3a1b0325d3db40"
 ---
 
 # FIFA for Women or Women for FIFA? The Inherent Tensions of FIFA’s Women’s Football Strategy

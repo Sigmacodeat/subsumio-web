@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ausbildungsreform-als-praventiver-demokra
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a6a717cc42f4ea55"
 ---
 
 # Ausbildungsreform als präventiver Demokratieschutz

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "676ca3485688f3bb"
 ---
 
 # EuGH gibt Monsanto eins auf die mit Gen-Patenten gepanzerte Nase

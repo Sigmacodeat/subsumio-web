@@ -187,8 +187,8 @@ function MatterContextCard({ info, lang }: { info: MatterContextInfo; lang: Lang
   return (
     <div className="shrink-0 border-b border-[color:var(--ds-border)] px-3 py-2">
       <div className="flex items-center gap-2">
-        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[color:var(--ds-surface-2)]">
-          <Briefcase size={12} className="text-[color:var(--brand-primary)]" />
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-[var(--card-shadow)] sm:h-6 sm:w-6">
+          <Briefcase className="h-5 w-5 text-[color:var(--brand-primary)] sm:h-3 sm:w-3" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="truncate text-[13px] leading-tight font-medium text-[color:var(--ds-text)]">
@@ -205,14 +205,18 @@ function MatterContextCard({ info, lang }: { info: MatterContextInfo; lang: Lang
             </span>
           </div>
         </div>
-        {info.nextDeadlineDate && (
-          <div className="shrink-0 rounded-md bg-[color:var(--ds-warning-bg)] px-2 py-1 text-xs font-medium text-[color:var(--ds-warning-text)]">
-            {new Date(info.nextDeadlineDate).toLocaleDateString(isEn ? "en-GB" : "de-DE", {
-              day: "2-digit",
-              month: "short",
-            })}
-          </div>
-        )}
+        {info.nextDeadlineDate && (() => {
+          const date = new Date(info.nextDeadlineDate);
+          if (Number.isNaN(date.getTime())) return null;
+          return (
+            <div className="shrink-0 rounded-md bg-[color:var(--ds-warning-bg)] px-2 py-1 text-xs font-medium text-[color:var(--ds-warning-text)]">
+              {date.toLocaleDateString(isEn ? "en-GB" : "de-DE", {
+                day: "2-digit",
+                month: "short",
+              })}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
@@ -242,7 +246,7 @@ const ALERT_ICONS: Record<ProactiveAlert["icon"], typeof Clock> = {
   document: FileText,
 };
 
-function ProactiveAlerts({ alerts, onQuery, onDismiss, t, className }: ProactiveAlertsProps) {
+export function ProactiveAlerts({ alerts, onQuery, onDismiss, t, className }: ProactiveAlertsProps) {
   if (alerts.length === 0) return null;
   return (
     <div className={cn("shrink-0 border-b border-[color:var(--ds-border)] px-3 py-2", className)}>
@@ -251,40 +255,39 @@ function ProactiveAlerts({ alerts, onQuery, onDismiss, t, className }: Proactive
           const alertKey = `${alert.label}-${alert.query}`;
           const Icon = ALERT_ICONS[alert.icon];
           return (
-            <button
+            <div
               key={alertKey}
+              role="button"
+              tabIndex={0}
               onClick={() => onQuery(alert.query)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onQuery(alert.query);
+                }
+              }}
               className={cn(
-                "group/alert flex w-full items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left text-xs transition-[background-color,border-color] duration-200 ease-[var(--ds-ease-smooth)]",
+                "group/alert flex w-full min-h-11 items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-[background-color,border-color] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-1 focus-visible:ring-[color:var(--ds-ring)] sm:min-h-0 sm:gap-2 sm:px-2.5 sm:py-1.5 sm:text-xs",
                 alert.severity === "urgent"
                   ? "border-l-2 border-l-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg-hover)]"
                   : alert.severity === "warning"
                     ? "border-l-2 border-l-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] hover:bg-[color:var(--ds-warning-bg-hover)]"
-                    : "border-l-2 border-l-[color:var(--brand-primary)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+                    : "border-l-2 border-l-[color:var(--brand-primary)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] shadow-[var(--card-shadow)] hover:bg-[color:var(--ds-hover)]"
               )}
             >
-              <Icon size={11} className="shrink-0" aria-hidden />
+              <Icon className="h-4 w-4 shrink-0 sm:h-3 sm:w-3" aria-hidden />
               <span className="min-w-0 flex-1 truncate">{alert.label}</span>
-              <span
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onDismiss(alertKey);
                 }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onDismiss(alertKey);
-                  }
-                }}
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-hover/alert:opacity-100 hover:bg-[color:var(--ds-hover)]"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded opacity-0 transition-opacity hover:bg-[color:var(--ds-hover)] focus-visible:ring-1 focus-visible:ring-[color:var(--ds-ring)] group-hover/alert:opacity-100 max-2xl:opacity-100 sm:h-5 sm:w-5"
                 aria-label={t("copilot.dismiss_hint")}
-                role="button"
-                tabIndex={0}
               >
-                <X size={10} />
-              </span>
-            </button>
+                <X className="h-4 w-4 sm:h-2.5 sm:w-2.5" />
+              </button>
+            </div>
           );
         })}
       </div>
@@ -296,9 +299,9 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   const pathname = usePathname();
   const router = useRouter();
   // "Compact" mode renders the Copilot as an overlay drawer instead of a docked
-  // side panel. Applies below lg (1024px) so the panel never squeezes the main
-  // content on tablet / split-screen widths (kept named isMobile to avoid churn).
-  const isMobile = useMediaQuery("(max-width: 1023px)");
+  // side panel. Applies below md (768px) so the panel never squeezes the main
+  // content on phone widths (kept named isMobile to avoid churn).
+  const isMobile = useMediaQuery("(max-width: 767px)");
   const { t, lang } = useLang();
   const { reduceMotion, panelTransition, tapTransition: softTransition } = useDashboardMotion();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -424,7 +427,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   } = useResizable({
     minWidth: 280,
     maxWidth: 560,
-    initialWidth: typeof window !== "undefined" && window.innerWidth < 1024 ? 300 : 400,
+    initialWidth: typeof window !== "undefined" && window.innerWidth < 768 ? 300 : 400,
     storageKey: "subsumio-copilot-width",
     side: "right",
   });
@@ -433,7 +436,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   useEffect(() => {
     if (typeof window === "undefined") return;
     const handleOrientationChange = () => {
-      const maxW = window.innerWidth < 1024 ? 300 : 400;
+      const maxW = window.innerWidth < 768 ? 300 : 400;
       setPanelWidth((w) => {
         if (w <= maxW) return w;
         return Math.min(w, maxW);
@@ -790,7 +793,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         }}
         transition={reduceMotion ? { duration: 0 } : { duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
-          "fixed inset-0 z-50 bg-black/30 lg:hidden",
+          "fixed inset-0 z-50 bg-black/30 md:hidden",
           mobileOpen ? "" : "pointer-events-none"
         )}
         onClick={() => {
@@ -827,7 +830,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         style={
           mobileOpen && !reduceMotion ? { opacity: swipeOpacity, scale: swipeScale } : undefined
         }
-        className="fixed top-0 right-0 z-50 h-full w-full max-w-md will-change-transform lg:hidden"
+        className="fixed top-0 right-0 z-50 h-full w-full max-w-md will-change-transform md:hidden"
         role="dialog"
         aria-label={t("copilot.title")}
         aria-modal={mobileOpen ? "true" : undefined}
@@ -912,7 +915,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         }}
         transition={panelTransition}
         className={cn(
-          "dashboard-panel-surface fixed inset-y-0 right-0 z-40 hidden min-w-0 overflow-hidden border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pt-[env(safe-area-inset-top)] lg:relative lg:inset-auto lg:block lg:shrink-0",
+          "dashboard-panel-surface fixed inset-y-0 right-0 z-40 hidden min-w-0 overflow-hidden border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pt-[env(safe-area-inset-top)] md:relative md:inset-auto md:block md:shrink-0",
           isResizing ? "transition-none" : "will-change-[width,opacity]",
           className
         )}
@@ -946,12 +949,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                 });
               }
             }}
-            className={cn(
-              "absolute top-0 left-0 z-40 h-full w-1.5 cursor-col-resize transition-[width,background-color] duration-150 select-none focus-visible:bg-[var(--brand-primary)] focus-visible:outline-none",
-              isResizing
-                ? "w-2 bg-[var(--brand-primary)]"
-                : "bg-transparent hover:w-2 hover:bg-[color:var(--ds-border-strong)]"
-            )}
+            className="absolute top-0 left-0 z-40 h-full w-11 -translate-x-full cursor-col-resize select-none focus-visible:outline-none"
             role="separator"
             aria-orientation="vertical"
             aria-label={t("copilot.resize")}
@@ -959,7 +957,16 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             aria-valuenow={panelWidth}
             aria-valuemin={280}
             aria-valuemax={560}
-          />
+          >
+            <div
+              className={cn(
+                "ml-auto h-full w-1.5 transition-[width,background-color] duration-150",
+                isResizing
+                  ? "w-2 bg-[var(--brand-primary)]"
+                  : "bg-[color:var(--ds-border-strong)] hover:w-2 hover:bg-[var(--brand-primary)]"
+              )}
+            />
+          </div>
         )}
         {/* Inner wrapper — fixed width matches panel, never reflows. Only outer aside clips. */}
         <motion.div

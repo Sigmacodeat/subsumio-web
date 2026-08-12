@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/searching-for-a-government/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "32c77a2583602af4"
 ---
 
 # Searching for a Government

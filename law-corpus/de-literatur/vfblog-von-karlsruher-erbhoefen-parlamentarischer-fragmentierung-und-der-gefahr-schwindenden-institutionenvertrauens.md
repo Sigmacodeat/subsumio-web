@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0ab9926e1c6db2e8"
 ---
 
 # Von Karlsruher Erbhöfen, parlamen&shy;tarischer Fragmen&shy;tierung und der Gefahr schwindenden Institutionen&shy;vertrauens

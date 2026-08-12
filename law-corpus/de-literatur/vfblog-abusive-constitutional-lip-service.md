@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/abusive-constitutional-lip-service/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e62e53dcb20b10c5"
 ---
 
 # Abusive Constitutional Lip Service

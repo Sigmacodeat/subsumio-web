@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/is-uefa-on-the-other-side-of-the-rainbow/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b346b070e17e3801"
 ---
 
 # Is UEFA on “the Other Side of the Rainbow”?

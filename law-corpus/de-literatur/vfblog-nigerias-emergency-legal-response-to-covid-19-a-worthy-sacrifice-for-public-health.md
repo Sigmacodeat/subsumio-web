@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "51f468e98829ed25"
 ---
 
 # Nigeria’s Emergency (Legal) Response to COVID-19: A Worthy Sacrifice for Public Health?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/high-treason-in-germany-rebellion-in-spai
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3ac04fadce82e434"
 ---
 
 # High Treason in Germany – Rebellion in Spain

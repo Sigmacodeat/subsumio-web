@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/drifting-case-law-on-judicial-independenc
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "64da4240b6ec3928"
 ---
 
 # Drifting Case-law on Judicial Independence

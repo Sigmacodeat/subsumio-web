@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/strasbourg-slams-old-democracies-on-elect
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f184c6648f9e7482"
 ---
 
 # Strasbourg slams old democracies on elections

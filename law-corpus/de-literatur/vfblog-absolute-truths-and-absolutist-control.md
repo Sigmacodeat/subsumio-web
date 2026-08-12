@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/absolute-truths-and-absolutist-control/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6c0b5b550cdcb8b7"
 ---
 
 # Absolute Truths and Absolutist Control

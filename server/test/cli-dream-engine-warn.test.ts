@@ -61,6 +61,8 @@ describe("#1422 — dream surfaces connectEngine failures", () => {
       );
       const { stderr, status } = runDream(["--dir", tmpBrain, "--phase", "lint"], {
         GBRAIN_HOME: tmpHome,
+        DATABASE_URL: "",
+        GBRAIN_DATABASE_URL: "",
       });
       // Filesystem-only phases still run; exit code reflects cycle outcome,
       // not connect failure. The KEY contract: the WARNING text appears.

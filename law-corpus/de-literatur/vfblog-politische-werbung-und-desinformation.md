@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/politische-werbung-und-desinformation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0e39e04b152210c7"
 ---
 
 # Politische Werbung und Desinformation

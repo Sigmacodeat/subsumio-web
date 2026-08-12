@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d7dc272b3e6dba2b"
 ---
 
 # Nur wer die Verfassung ändert, bleibt ihr treu

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-zukunft-der-staatlichen-kreditaufnahm
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c83531f022c0d903"
 ---
 
 # Die Zukunft der staatlichen Kreditaufnahme

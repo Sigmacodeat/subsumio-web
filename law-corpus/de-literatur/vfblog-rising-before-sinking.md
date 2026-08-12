@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rising-before-sinking/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "37a3e803bef94473"
 ---
 
 # Rising Before Sinking

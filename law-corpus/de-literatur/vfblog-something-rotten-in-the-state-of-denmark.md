@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/something-rotten-in-the-state-of-denmark/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d50cc2974cb4334c"
 ---
 
 # Something Rotten in the State of Denmark?

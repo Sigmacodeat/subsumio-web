@@ -23,6 +23,7 @@ license: >-
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2026 Tilmann Altwicker, Nadja
   Braun Binder, Apollo Dauag, Vanessa Rüegger , Julia Ruf, Martin Seelmann,
   Monika Simmler; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "2316c3ea5e376cce"
 ---
 
 # KI-Systeme in der Justiz: Typologisierung

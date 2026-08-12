@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f8a18cf937ea04db"
 ---
 
 # The AG Opinion in the Celmer Case: Why Lack of Judicial Independence Should Have Been Framed as a Rule of Law Issue

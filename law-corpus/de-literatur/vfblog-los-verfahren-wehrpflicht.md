@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/los-verfahren-wehrpflicht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "741af595314d4ced"
 ---
 
 # Das Los der Soldaten

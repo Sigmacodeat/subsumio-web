@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/food-culture-and-the-far-right/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "13ba107689d1df27"
 ---
 
 # Food Culture and the Far-Right

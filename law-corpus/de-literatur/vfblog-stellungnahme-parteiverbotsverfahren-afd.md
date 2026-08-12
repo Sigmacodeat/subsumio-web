@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/stellungnahme-parteiverbotsverfahren-afd/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0b2061c953801b1d"
 ---
 
 # Rechtswissenschaftliche Stellungnahme zu einem Parteiverbotsverfahren gegen die Alternative für Deutschland

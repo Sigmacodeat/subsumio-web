@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/irrationale-farbenlehre/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a038cf62d9724aa4"
 ---
 
 # Irrationale Farbenlehre

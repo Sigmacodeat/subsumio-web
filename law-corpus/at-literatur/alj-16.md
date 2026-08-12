@@ -18,6 +18,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2014
   AUSTRIAN LAW JOURNAL
+content_hash: "09c9322370058e19"
 ---
 
 # Privatrechtliche Regelsetzung, Governance und Verhaltensökonomik

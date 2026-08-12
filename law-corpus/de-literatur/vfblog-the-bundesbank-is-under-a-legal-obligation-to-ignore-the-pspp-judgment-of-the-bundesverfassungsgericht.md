@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5b6e99d0a63e4b14"
 ---
 
 # The Bundesbank is under a legal obligation to ignore the PSPP Judgment of the Bundes&shy;verfassungs&shy;gericht

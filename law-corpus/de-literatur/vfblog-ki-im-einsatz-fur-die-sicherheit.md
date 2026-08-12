@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ki-im-einsatz-fur-die-sicherheit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f984c3e9e0d5d8e4"
 ---
 
 # KI im Einsatz für die Sicherheit

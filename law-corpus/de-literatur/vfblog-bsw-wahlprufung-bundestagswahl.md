@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bsw-wahlprufung-bundestagswahl/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "81066847a02c0098"
 ---
 
 # An der Sache vorbei

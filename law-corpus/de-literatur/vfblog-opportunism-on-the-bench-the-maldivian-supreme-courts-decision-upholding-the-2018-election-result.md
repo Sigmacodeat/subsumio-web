@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0fe1b2acd735b875"
 ---
 
 # Opportunism on the Bench – The Maldivian Supreme Court’s Decision Upholding the 2018 Election Result

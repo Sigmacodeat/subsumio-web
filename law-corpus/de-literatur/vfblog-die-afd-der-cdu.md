@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-afd-der-cdu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b2c9897aa9f726cd"
 ---
 
 # Die AfD der CDU

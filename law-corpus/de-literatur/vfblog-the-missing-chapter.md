@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-missing-chapter/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "524dade0d9bdbfc4"
 ---
 
 # The Missing Chapter

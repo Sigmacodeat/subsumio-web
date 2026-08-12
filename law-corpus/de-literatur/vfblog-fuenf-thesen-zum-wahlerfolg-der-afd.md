@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fuenf-thesen-zum-wahlerfolg-der-afd/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7b16e29ffa26f6ae"
 ---
 
 # Fünf Thesen zum Wahlerfolg der AfD

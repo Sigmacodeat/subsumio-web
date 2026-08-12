@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/trumps-straussian-shysters-the-scary-sequ
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7f7dd2e643ce3c12"
 ---
 
 # Trump’s Straussian Shysters: The Scary Sequel

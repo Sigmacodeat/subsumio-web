@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ce2419178a91f751"
 ---
 
 # Die AfD, ihre Stiftung und das Bundesverfassungsgericht

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-meinungsfreiheit-ist-kein-freifahrtsc
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ac60285c39883a97"
 ---
 
 # Die Meinungsfreiheit ist kein Freifahrtschein

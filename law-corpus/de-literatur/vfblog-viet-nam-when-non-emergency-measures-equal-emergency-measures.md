@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "57a137a86a3f35ea"
 ---
 
 # Viet Nam: When Non-Emergency Measures Equal Emergency Measures

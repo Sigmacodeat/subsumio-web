@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import {
   FileText,
   Users,
@@ -14,9 +14,12 @@ import {
   Bot,
   Send,
   ArrowUpCircle,
+  PenTool,
+  CheckCircle2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CitationPanel } from "@/components/legal/CitationPanel";
+import { SignatureDialog } from "@/components/legal/SignatureDialog";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
@@ -95,10 +98,27 @@ const DEADLINE_STATUS: Record<string, string> = {
   done: "text-emerald-400",
 };
 
+interface SignableDoc {
+  slug: string;
+  title: string;
+  document_type: "signature_request" | "power_of_attorney" | "legal_document";
+  status: string;
+  recipient_name?: string;
+  recipient_email?: string;
+  expires_at?: string;
+}
+
 export default function PortalPage() {
   const { lang, t, setLang } = useLang();
   const params = useParams();
+  const searchParams = useSearchParams();
   const token = decodeURIComponent(params.token as string);
+  const deepLinkSignSlug = searchParams.get("sign");
+  const deepLinkType = searchParams.get("type") as
+    | "signature_request"
+    | "power_of_attorney"
+    | "legal_document"
+    | null;
   const [verifying, setVerifying] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [caseData, setCaseData] = useState<PortalCase | null>(null);
@@ -112,13 +132,24 @@ export default function PortalPage() {
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [documentPassword, setDocumentPassword] = useState("");
   const [documentRequests, setDocumentRequests] = useState<PortalDocumentRequest[]>([]);
-  const [activeTab, setActiveTab] = useState<"info" | "chat">("info");
+  const [activeTab, setActiveTab] = useState<"info" | "chat" | "sign" | "files">("info");
   const [chatMessages, setChatMessages] = useState<
     Array<{ role: "user" | "bot"; text: string; grounding?: GroundingMetadata }>
   >([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [escalating, setEscalating] = useState(false);
+  const [signableDocs, setSignableDocs] = useState<SignableDoc[]>([]);
+  const [signDoc, setSignDoc] = useState<{
+    slug: string;
+    title: string;
+    document_type: "signature_request" | "power_of_attorney" | "legal_document";
+    recipient_name?: string;
+    recipient_email?: string;
+  } | null>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [signNotice, setSignNotice] = useState<string | null>(null);
+  const [signedSuccessfully, setSignedSuccessfully] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -141,6 +172,28 @@ export default function PortalPage() {
           await loadCase();
           await loadDocumentRequests();
           await loadMessages(verifyData.caseSlug);
+          const docs = await loadSignableDocs();
+          // Deep-Link: if ?sign=[slug] present, auto-open SignatureDialog
+          if (deepLinkSignSlug) {
+            // Check if the document is still signable (not signed/expired/declined)
+            const doc = docs?.find((d) => d.slug === deepLinkSignSlug);
+            if (doc) {
+              setTimeout(() => {
+                setSignDoc({
+                  slug: deepLinkSignSlug,
+                  title: doc.title,
+                  document_type: deepLinkType ?? doc.document_type ?? "signature_request",
+                  recipient_name: doc.recipient_name,
+                  recipient_email: doc.recipient_email,
+                });
+                setActiveTab("sign");
+              }, 100);
+            } else {
+              // Document not signable (already signed / expired / not found)
+              setSignNotice(t("portal.sign_deep_link_already_signed"));
+              setActiveTab("sign");
+            }
+          }
         }
       } catch (err) {
         console.error("[portal] verify failed:", err instanceof Error ? err.message : String(err));
@@ -183,6 +236,26 @@ export default function PortalPage() {
         "[portal] load document requests failed:",
         err instanceof Error ? err.message : String(err)
       );
+    }
+  }
+
+  async function loadSignableDocs(): Promise<SignableDoc[]> {
+    try {
+      const res = await fetch(
+        `/api/portal/signable-docs?token=${encodeURIComponent(token)}`,
+        { signal: AbortSignal.timeout(15_000) }
+      );
+      if (!res.ok) return [];
+      const data = await res.json();
+      const docs = data.docs || [];
+      setSignableDocs(docs);
+      return docs;
+    } catch (err) {
+      console.error(
+        "[portal] load signable docs failed:",
+        err instanceof Error ? err.message : String(err)
+      );
+      return [];
     }
   }
 
@@ -454,6 +527,35 @@ export default function PortalPage() {
           >
             <Bot size={14} />
             {t("portal.tab_chat")}
+          </button>
+          {signableDocs.length > 0 && (
+            <button
+              onClick={() => setActiveTab("sign")}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                activeTab === "sign"
+                  ? "bg-violet-600/15 text-violet-300"
+                  : "[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)]"
+              }`}
+            >
+              <PenTool size={14} />
+              {t("portal.tab_sign")}
+              {signableDocs.length > 0 && (
+                <span className="ml-1 rounded-full bg-violet-500/20 px-1.5 py-0.5 text-xs text-violet-300">
+                  {signableDocs.length}
+                </span>
+              )}
+            </button>
+          )}
+          <button
+            onClick={() => setActiveTab("files")}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              activeTab === "files"
+                ? "bg-violet-600/15 text-violet-300"
+                : "[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)]"
+            }`}
+          >
+            <FileText size={14} />
+            {t("portal.tab_files")}
           </button>
         </div>
         {activeTab === "info" && (
@@ -834,11 +936,182 @@ export default function PortalPage() {
           </div>
         )}
 
+        {/* Sign Tab */}
+        {activeTab === "sign" && (
+          <div className="space-y-4">
+            {signedSuccessfully ? (
+              <div className="flex flex-col items-center justify-center rounded-2xl border border-[color:var(--mk-border)] bg-[color:var(--mk-surface)] px-6 py-12 text-center">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10">
+                  <CheckCircle2 size={32} className="text-green-500" />
+                </div>
+                <h3 className="text-lg font-semibold">{t("portal.thank_you_title")}</h3>
+                <p className="mt-2 max-w-md text-sm [color:var(--mk-text-muted)]">
+                  {t("portal.thank_you_desc")}
+                </p>
+                <p className="mt-4 text-xs [color:var(--mk-text-muted)]">
+                  {t("portal.thank_you_no_action")}
+                </p>
+              </div>
+            ) : (
+              <>
+            <h3 className="text-sm font-semibold">{t("portal.sign_title")}</h3>
+            <p className="text-xs [color:var(--mk-text-muted)]">
+              {t("portal.sign_desc")}
+            </p>
+            {signNotice && (
+              <div className="flex items-center gap-2 rounded-xl border border-[color:var(--mk-border)] bg-[color:var(--mk-surface-2)] px-4 py-3 text-sm [color:var(--mk-text-muted)]">
+                <CheckCircle2 size={16} className="shrink-0 text-green-500" />
+                {signNotice}
+              </div>
+            )}
+            {signableDocs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed [border-color:var(--mk-border)] py-12 text-center">
+                <PenTool size={28} className="mb-3 [color:var(--mk-text-muted)]" />
+                <p className="text-sm font-medium">{t("portal.sign_empty")}</p>
+                <p className="mt-1 text-xs [color:var(--mk-text-muted)]">
+                  {t("portal.sign_empty_hint")}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {signableDocs.map((doc) => (
+                  <div
+                    key={doc.slug}
+                    className="flex items-center gap-3 rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] px-4 py-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <FileText size={16} className="shrink-0 [color:var(--mk-text-muted)]" />
+                        <span className="truncate text-sm font-medium">{doc.title}</span>
+                      </div>
+                      <div className="mt-0.5 text-xs [color:var(--mk-text-muted)]">
+                        {doc.recipient_name ? `${doc.recipient_name}` : ""}
+                        {doc.expires_at ? ` · ${t("portal.sign_valid_until")} ${doc.expires_at.split("T")[0]}` : ""}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setSignDoc(doc)}
+                      className="flex shrink-0 items-center gap-1.5 rounded-lg bg-violet-600/15 px-3 py-2 text-sm font-medium text-violet-300 transition-colors hover:bg-violet-600/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 active:scale-[0.98]"
+                    >
+                      <PenTool size={14} />
+                      {t("portal.sign_btn")}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+            )}
+        </div>
+      )}
+
         {/* Footer */}
         <div className="pt-6 pb-8 text-center text-xs [color:var(--mk-text-subtle)]">
           <p>{t("portal.footer")}</p>
         </div>
       </main>
+
+      {/* Files Tab */}
+      {activeTab === "files" && (
+        <div className="mx-auto max-w-3xl space-y-4 px-4 pb-6">
+          <div className="space-y-1">
+            <h3 className="text-sm font-semibold">{t("portal.files_title")}</h3>
+            <p className="text-xs [color:var(--mk-text-muted)]">{t("portal.files_desc")}</p>
+          </div>
+
+          {/* Upload button */}
+          <label
+            className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed [border-color:var(--mk-border)] px-4 py-3 text-sm font-medium transition-colors hover:bg-[color:var(--mk-surface-2)] ${
+              uploadingFile ? "opacity-50" : ""
+            }`}
+          >
+            {uploadingFile ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Upload size={16} />
+            )}
+            {uploadingFile ? t("portal.files_uploading") : t("portal.files_upload")}
+            <input
+              type="file"
+              className="hidden"
+              accept={UPLOAD_ACCEPT_ATTRIBUTE}
+              disabled={uploadingFile}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setUploadingFile(true);
+                try {
+                  const formData = new FormData();
+                  formData.append("token", token);
+                  formData.append("file", file);
+                  const res = await fetch("/api/portal/upload", {
+                    method: "POST",
+                    body: formData,
+                    signal: AbortSignal.timeout(600_000),
+                  });
+                  if (res.ok) {
+                    await loadCase();
+                  }
+                } catch (err) {
+                  console.error("[portal] file upload failed:", err);
+                } finally {
+                  setUploadingFile(false);
+                  e.target.value = "";
+                }
+              }}
+            />
+          </label>
+
+          {/* Document list */}
+          {caseData?.documents.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed [border-color:var(--mk-border)] py-12 text-center">
+              <FileText size={28} className="mb-3 [color:var(--mk-text-muted)]" />
+              <p className="text-sm font-medium">{t("portal.files_empty")}</p>
+              <p className="mt-1 text-xs [color:var(--mk-text-muted)]">
+                {t("portal.files_empty_hint")}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {caseData?.documents.map((doc, i) => (
+                <div
+                  key={doc.slug || i}
+                  className="flex items-center gap-3 rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] px-4 py-3"
+                >
+                  <FileText size={16} className="shrink-0 [color:var(--mk-text-muted)]" />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">{doc.name || "Dokument"}</div>
+                    {doc.uploadedAt && (
+                      <div className="text-xs [color:var(--mk-text-muted)]">
+                        {new Date(doc.uploadedAt).toLocaleDateString("de-DE")}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {signDoc && (
+        <SignatureDialog
+          open={!!signDoc}
+          onOpenChange={(open) => !open && setSignDoc(null)}
+          documentSlug={signDoc.slug}
+          documentType={signDoc.document_type}
+          documentTitle={signDoc.title}
+          signerName={signDoc.recipient_name}
+          signerEmail={signDoc.recipient_email}
+          legalLevel="simple"
+          isClientFacing
+          onSigned={() => {
+            setSignDoc(null);
+            setSignedSuccessfully(true);
+            void loadSignableDocs();
+          }}
+        />
+      )}
     </div>
   );
 }

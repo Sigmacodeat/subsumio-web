@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "777f12ecd05a066e"
 ---
 
 # Stand with Wojciech Sadurski: his freedom of expression is (y)ours

@@ -82,7 +82,7 @@ describe("Source-text contract (cheap belt + suspenders)", () => {
   test("src/core/search/hybrid.ts imports embedQuery from embedding.ts", () => {
     const src = readFileSync(resolve(process.cwd(), "src/core/search/hybrid.ts"), "utf8");
     // The import must include embedQuery; matches both `embedQuery` and `{ embed, embedQuery }`.
-    expect(src).toMatch(/from '..\/embedding.ts'/);
+    expect(src).toMatch(/from\s+["']\.\.\/embedding\.ts["']/);
     expect(src).toContain("embedQuery");
   });
 

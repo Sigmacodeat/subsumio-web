@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "85f2714c55fa0320"
 ---
 
 # Autonomy in Decline? A Commentary on Rimšēvičs and ECB v Latvia

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0d6f5155527d3819"
 ---
 
 # Die Menschenrechts&shy;verletzung bzw. die Missachtung der menschenrechtlichen Sorgfaltspflicht als zivilrechtlicher Haftungstatbestand

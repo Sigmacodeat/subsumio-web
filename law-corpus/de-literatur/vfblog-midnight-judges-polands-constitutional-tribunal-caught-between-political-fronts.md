@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f7c85f22d174bd0e"
 ---
 
 # Midnight Judges: Poland's Constitutional Tribunal Caught Between Political Fronts

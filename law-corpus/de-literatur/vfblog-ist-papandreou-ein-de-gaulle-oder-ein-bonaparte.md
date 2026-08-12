@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ist-papandreou-ein-de-gaulle-oder-ein-bon
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f25a2700ac88f617"
 ---
 
 # Ist Papandreou ein De Gaulle oder ein Bonaparte?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/regulating-political-advertising/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0cf2cafc434d564c"
 ---
 
 # Regulating Political Advertising

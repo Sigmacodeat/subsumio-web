@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e34f3b6687089496"
 ---
 
 # Auch Führerscheintouristen haben ein Recht auf den gesetzlichen (Europa-)Richter

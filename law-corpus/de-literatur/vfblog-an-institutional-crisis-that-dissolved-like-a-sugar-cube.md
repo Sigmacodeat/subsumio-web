@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ffdb5ae7491052ea"
 ---
 
 # An Institutional Crisis that Dissolved Like a Sugar Cube

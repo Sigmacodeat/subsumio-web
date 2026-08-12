@@ -148,7 +148,7 @@ export default function AIActConformityPage() {
   const totalCount = CONFORMITY_ITEMS.length;
 
   return (
-    <div style={{ maxWidth: 800, margin: "0 auto", padding: "24px 20px" }}>
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8" style={{ maxWidth: 800, margin: "0 auto", padding: "24px 20px" }}>
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>

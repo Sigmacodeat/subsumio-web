@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/when-treaties-are-forbidden/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ac0e9423d56c58f2"
 ---
 
 # When Treaties are Forbidden

@@ -21,6 +21,7 @@ license: >-
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2021 Fabian Teichmann,
   Madeleine Camprubi, Léonard Gerber;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "8149f28801820889"
 ---
 
 # Le droit au suicide médicalement assisté: Regard sur le droit suisse, du Benelux et de la Cour EDH

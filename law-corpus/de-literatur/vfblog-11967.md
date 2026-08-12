@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/11967/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9a47d9b9d41b4aa2"
 ---
 
 # While in the USA money talks loud politically, in Brazil it must shut up

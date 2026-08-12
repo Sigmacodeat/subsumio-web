@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/we-need-to-talk-about-valuation-in-isds/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0ad7fd2ae11c49fd"
 ---
 
 # We Need to Talk About Valuation in ISDS

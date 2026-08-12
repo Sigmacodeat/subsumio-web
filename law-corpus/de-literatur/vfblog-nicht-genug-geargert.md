@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nicht-genug-geargert/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "db05f3f700035e5b"
 ---
 
 # Nicht genug geärgert für immateriellen Schadensersatz

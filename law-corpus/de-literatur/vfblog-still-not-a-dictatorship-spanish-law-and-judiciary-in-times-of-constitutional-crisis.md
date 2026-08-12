@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bc159c3caeecfd27"
 ---
 
 # Still not a Dictatorship: Spanish Law and Judiciary in Times of Constitutional Crisis

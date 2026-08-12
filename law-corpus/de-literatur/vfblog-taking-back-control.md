@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/taking-back-control/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f8b5e9763b9bb895"
 ---
 
 # Taking Back Control?

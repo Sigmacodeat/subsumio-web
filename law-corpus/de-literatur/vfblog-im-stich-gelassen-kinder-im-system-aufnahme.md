@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/im-stich-gelassen-kinder-im-system-aufnah
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e0f6d08da305c43e"
 ---
 
 # Im Stich gelassen – Kinder im System Aufnahme

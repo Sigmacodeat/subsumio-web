@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b77a409b9f27dfe6"
 ---
 
 # Would the election of a Member of the European Parliament as President of the Commission make democratic sense?

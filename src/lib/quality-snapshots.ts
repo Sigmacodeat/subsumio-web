@@ -68,18 +68,24 @@ export async function getQualityTrends(brainId: string, limit = 30): Promise<Qua
   const pool = getSharedPgPool();
   if (!pool) return [];
 
-  const result = await pool.query(
-    `
-    SELECT id, brain_id, report_date::text AS report_date, report, health_score,
-      corpus_total_pages, corpus_total_chunks, embedding_coverage_pct,
-      hallucination_rate, guardrail_pass_rate, generated_at::text AS generated_at,
-      created_at::text AS created_at
-    FROM quality_snapshots
-    WHERE brain_id = $1
-    ORDER BY report_date DESC
-    LIMIT $2
-    `,
-    [brainId, limit]
-  );
-  return result.rows as QualitySnapshotRow[];
+  try {
+    const result = await pool.query(
+      `
+      SELECT id, brain_id, report_date::text AS report_date, report, health_score,
+        corpus_total_pages, corpus_total_chunks, embedding_coverage_pct,
+        hallucination_rate, guardrail_pass_rate, generated_at::text AS generated_at,
+        created_at::text AS created_at
+      FROM quality_snapshots
+      WHERE brain_id = $1
+      ORDER BY report_date DESC
+      LIMIT $2
+      `,
+      [brainId, limit]
+    );
+    return result.rows as QualitySnapshotRow[];
+  } catch (err) {
+    // quality_snapshots table might not exist yet
+    console.error("[quality-snapshots] query failed:", (err as Error).message);
+    return [];
+  }
 }

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/migrant-instrumentalisation-facts-and-fic
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "04a506fe887350e4"
 ---
 
 # Migrant Instrumentalisation: Facts and Fictions

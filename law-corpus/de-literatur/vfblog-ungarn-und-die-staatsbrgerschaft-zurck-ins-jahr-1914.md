@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d12c53ec9e3321cd"
 ---
 
 # Ungarn und die Staatsbürgerschaft: Zurück ins Jahr 1914?

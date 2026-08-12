@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/impacts-animal-source-foods/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1eeece5b0ca73ba1"
 ---
 
 # The Environmental and Health Impacts of Animal Source Foods

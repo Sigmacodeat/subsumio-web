@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/berlin-asog-novelle-kbos/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "545f7356ef509c90"
 ---
 
 # Try harder hilft selten

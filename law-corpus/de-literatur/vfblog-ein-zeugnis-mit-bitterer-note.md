@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-zeugnis-mit-bitterer-note/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f07fc8f0edfff593"
 ---
 
 # Ein Zeugnis mit bitterer Note

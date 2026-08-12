@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/greece-voting-for-or-against-europe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "91198c51a602b4c5"
 ---
 
 # Greece: voting for or against Europe

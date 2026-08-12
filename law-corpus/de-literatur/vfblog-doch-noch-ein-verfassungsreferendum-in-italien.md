@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/doch-noch-ein-verfassungsreferendum-in-it
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aa2ab33f4dc0adb3"
 ---
 
 # Doch noch ein Verfassungs&shy;referendum in Italien

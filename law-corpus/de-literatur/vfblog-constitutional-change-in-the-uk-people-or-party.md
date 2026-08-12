@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/constitutional-change-in-the-uk-people-or
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e69511c1c098f716"
 ---
 
 # Constitutional Change in the UK – People or Party?

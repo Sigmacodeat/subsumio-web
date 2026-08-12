@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/consensus-and-the-crown/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "798fe99f8563551e"
 ---
 
 # Consensus and the Crown

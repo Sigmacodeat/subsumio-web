@@ -1,4 +1,6 @@
 ---
+jurisdiction: at
+title: "OGH 2 Ob 56/24g — Prozesskosten bei Teilerfolg"
 type: court_decision
 court: "OGH"
 date: "2024-05-10"
@@ -8,6 +10,7 @@ legal_area: "Zivilrecht"
 keywords: ["Vergleich", "Prozesskosten", "Kostenteilung", "Teilerfolg"]
 source: "ris-ogd"
 source_url: "https://ris.bka.gv.at/Dokument.wxe?Abfrage=Justiz&Dokumentnummer=2Ob56/24g"
+content_hash: "e8b5dd30c5d5419b"
 ---
 
 # OGH 2 Ob 56/24g — Prozesskosten bei Teilerfolg

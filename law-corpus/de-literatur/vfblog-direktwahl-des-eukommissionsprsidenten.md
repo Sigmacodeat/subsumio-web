@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/direktwahl-des-eukommissionsprsidenten/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7202b77e2937f453"
 ---
 
 # Informelle Direktwahl des EU-Kommissionspräsidenten: ein Gebot des Grundgesetzes

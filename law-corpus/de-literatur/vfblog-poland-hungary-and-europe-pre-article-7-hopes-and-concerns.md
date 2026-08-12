@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "de307c17da40c731"
 ---
 
 # Poland, Hungary and Europe: Pre-Article 7 Hopes and Concerns

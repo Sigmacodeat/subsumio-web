@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/forschungsfreiheit-im-strafprozess/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3d4f2d608ebd31c7"
 ---
 
 # Forschungsfreiheit im Strafprozess

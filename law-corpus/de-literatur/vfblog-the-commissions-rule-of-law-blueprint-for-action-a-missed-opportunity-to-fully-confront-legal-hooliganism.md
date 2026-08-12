@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2d209e31bc3dee92"
 ---
 
 # The Commission’s Rule of Law Blueprint for Action: A Missed Opportunity to Fully Confront Legal Hooliganism

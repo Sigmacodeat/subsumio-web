@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-sorrows-of-scraping-for-science/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fd3261baeb55d717"
 ---
 
 # The Sorrows of Scraping for Science

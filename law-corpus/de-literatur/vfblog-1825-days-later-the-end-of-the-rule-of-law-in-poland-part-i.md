@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5cfb90a896afe25d"
 ---
 
 # 1825 Days Later: The End of the Rule of Law in Poland (Part I)

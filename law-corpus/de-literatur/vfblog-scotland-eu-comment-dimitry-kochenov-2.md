@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/scotland-eu-comment-dimitry-kochenov-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "156a735a949c4724"
 ---
 
 # Scotland in the EU: Comment by DIMITRY KOCHENOV

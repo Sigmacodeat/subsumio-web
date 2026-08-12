@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/der-burkini-als-technological-fix/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c8c68d081666785c"
 ---
 
 # Der Burkini als Technological Fix

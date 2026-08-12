@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/independence-as-an-assertion/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "228fe0c8d418b13a"
 ---
 
 # Independence as an Assertion

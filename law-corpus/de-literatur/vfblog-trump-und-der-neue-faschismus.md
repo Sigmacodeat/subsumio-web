@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/trump-und-der-neue-faschismus/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "579915c11d652647"
 ---
 
 # Trump und der neue Faschismus

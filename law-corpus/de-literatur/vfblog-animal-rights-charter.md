@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/animal-rights-charter/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "24d7ec2b2d75ce39"
 ---
 
 # Animal Law Jurisprudence in the EU and Beyond

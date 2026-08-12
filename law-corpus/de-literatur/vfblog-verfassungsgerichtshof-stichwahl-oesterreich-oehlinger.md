@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6afc6bd57f21fc2e"
 ---
 
 # Gute und schlechte Gründe: zur Annullierung der Stichwahl in Österreich

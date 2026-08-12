@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2c884d31cb6be2c4"
 ---
 
 # Brexit – a Tragic Continuity of Europe’s Daily Operation

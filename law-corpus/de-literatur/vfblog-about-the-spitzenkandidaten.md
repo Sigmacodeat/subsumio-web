@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/about-the-spitzenkandidaten/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ee4e8ea708ef1120"
 ---
 
 # Putting the Record Straight About the Spitzenkandidaten

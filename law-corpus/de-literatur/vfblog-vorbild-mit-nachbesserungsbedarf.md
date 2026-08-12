@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/vorbild-mit-nachbesserungsbedarf/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "91e79cafe03818eb"
 ---
 
 # Vorbild mit Nachbesserungsbedarf

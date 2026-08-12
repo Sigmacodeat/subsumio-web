@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-docile-minds-of-perfect-societies/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "80c2defdac9458e6"
 ---
 
 # The Docile Minds of Perfect Societies

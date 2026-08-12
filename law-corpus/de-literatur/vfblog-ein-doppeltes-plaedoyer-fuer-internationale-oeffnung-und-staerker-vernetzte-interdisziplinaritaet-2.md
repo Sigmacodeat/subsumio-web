@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bc2e0e29f424d1f2"
 ---
 
 # Ein doppeltes Plädoyer für internationale Öffnung und stärker vernetzte Interdisziplinarität

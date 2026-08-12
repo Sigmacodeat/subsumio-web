@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fd0ed78c01b68a25"
 ---
 
 # Human Rights Outsourcing and Reliance on User Activism in the DSA

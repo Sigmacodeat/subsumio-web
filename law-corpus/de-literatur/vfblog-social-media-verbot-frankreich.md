@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/social-media-verbot-frankreich/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "95c4d1c0e2649247"
 ---
 
 # Social-Media-Verbot à la française

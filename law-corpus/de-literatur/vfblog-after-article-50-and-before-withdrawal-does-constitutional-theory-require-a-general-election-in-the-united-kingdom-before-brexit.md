@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7c25e38b80caa2c2"
 ---
 
 # After Article 50 and Before Withdrawal: Does Constitutional Theory Require a General Election in the United Kingdom Before Brexit?

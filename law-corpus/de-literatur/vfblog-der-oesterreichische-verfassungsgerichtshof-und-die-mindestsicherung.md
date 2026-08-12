@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e4dd32961595f186"
 ---
 
 # Der österreichische Verfassungs&shy;gerichts&shy;hof und die Mindest&shy;sicherung

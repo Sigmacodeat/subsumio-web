@@ -12,15 +12,15 @@ function isolatedEnv(home: string): Record<string, string> {
   for (const [key, value] of Object.entries(process.env)) {
     if (value !== undefined) env[key] = value;
   }
-  delete env.GBRAIN_DATABASE_URL;
-  delete env.DATABASE_URL;
+  env.GBRAIN_DATABASE_URL = "";
+  env.DATABASE_URL = "";
   env.GBRAIN_HOME = home;
   return env;
 }
 
 describe("CLI structure", () => {
   test("imports operations from operations.ts", () => {
-    expect(cliSource).toContain("from './core/operations.ts'");
+    expect(cliSource).toMatch(/from\s+["']\.\/core\/operations\.ts["']/);
   });
 
   test("builds cliOps map from operations", () => {
@@ -28,12 +28,12 @@ describe("CLI structure", () => {
   });
 
   test("CLI_ONLY set contains expected commands", () => {
-    expect(cliSource).toContain("'init'");
-    expect(cliSource).toContain("'upgrade'");
-    expect(cliSource).toContain("'import'");
-    expect(cliSource).toContain("'export'");
-    expect(cliSource).toContain("'embed'");
-    expect(cliSource).toContain("'files'");
+    expect(cliSource).toMatch(/["']init["']/);
+    expect(cliSource).toMatch(/["']upgrade["']/);
+    expect(cliSource).toMatch(/["']import["']/);
+    expect(cliSource).toMatch(/["']export["']/);
+    expect(cliSource).toMatch(/["']embed["']/);
+    expect(cliSource).toMatch(/["']files["']/);
   });
 
   // v0.41.11 #1451 regression — `reindex` had a `case 'reindex':` handler
@@ -43,7 +43,7 @@ describe("CLI structure", () => {
   test('reindex is in CLI_ONLY (does not get "Unknown command")', () => {
     const onlyMatch = cliSource.match(/const CLI_ONLY = new Set\(\[([\s\S]*?)\]\)/);
     expect(onlyMatch).not.toBeNull();
-    expect(onlyMatch![1]).toContain(`'reindex'`);
+    expect(onlyMatch![1]).toMatch(/["']reindex["']/);
   });
 
   test("has formatResult function for CLI output", () => {
@@ -66,8 +66,8 @@ describe("CLI version", () => {
 
 describe("ask alias", () => {
   test("ask alias maps to query in source", () => {
-    expect(cliSource).toContain("if (command === 'ask')");
-    expect(cliSource).toContain("command = 'query'");
+    expect(cliSource).toMatch(/if\s*\(command\s*===\s*["']ask["']\)/);
+    expect(cliSource).toMatch(/command\s*=\s*["']query["']/);
   });
 
   test("ask does NOT appear in --tools-json output", async () => {

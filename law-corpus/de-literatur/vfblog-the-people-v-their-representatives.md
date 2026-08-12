@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-people-v-their-representatives/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "758d5ee3b5c687ff"
 ---
 
 # The People v Their Representatives

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-disunited-kingdom-two-nations-in-two-na
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5a47bc40fe178588"
 ---
 
 # A Disunited Kingdom: two Nations in, two Nations out

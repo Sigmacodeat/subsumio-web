@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/brexit-im-europaeischen-verfassungsverbun
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bbf9144a162f4527"
 ---
 
 # Brexit im europäischen Verfassungsverbund

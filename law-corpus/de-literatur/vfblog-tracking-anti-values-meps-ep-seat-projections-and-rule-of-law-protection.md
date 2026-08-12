@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f01b2d43799ed6cb"
 ---
 
 # Tracking Anti-Values MEPs: EP Seat Projections and Rule of Law Protection

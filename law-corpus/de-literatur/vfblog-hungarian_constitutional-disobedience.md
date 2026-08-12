@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hungarian_constitutional-disobedience/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8ebd8192fbaf9620"
 ---
 
 # The Case for Constitutional Disobedience

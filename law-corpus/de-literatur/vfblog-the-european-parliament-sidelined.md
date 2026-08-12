@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-european-parliament-sidelined/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "75f3d6fb4a3423ae"
 ---
 
 # The European Parliament Sidelined

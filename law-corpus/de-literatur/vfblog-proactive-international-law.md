@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/proactive-international-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "544d6bb56a76b29b"
 ---
 
 # Proactive International Law

@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2014 Daniel Hürlimann;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "42a0cfe77a97c5b3"
 ---
 
 # Das Google-Urteil des EuGH und die Entfernungspflicht von Suchmaschinen nach schweizerischem Recht

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/afd-verbotsverfahren-als-demokratische-pf
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fb006333c1daa465"
 ---
 
 # AfD-Verbotsverfahren als demokratische Pflicht

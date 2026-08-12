@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/paritat-und-historische-auslegung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e2a64b0e671f5431"
 ---
 
 # Parität und historische Auslegung

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "20425b1fecbada01"
 ---
 
 # Die Genehmigungs&shy;praxis für deutsche Rüstungs&shy;exporte ist verfassungswidrig!

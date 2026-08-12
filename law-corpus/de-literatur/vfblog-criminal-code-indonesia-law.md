@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/criminal-code-indonesia-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e6c88d7b435f5749"
 ---
 
 # Constitutional Disobedience by Statute

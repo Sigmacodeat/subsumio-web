@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/big-tech-war-activism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6a4dcc9b7ec9fc23"
 ---
 
 # Big Tech War Activism

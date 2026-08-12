@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "26d575bd8df8599b"
 ---
 
 # Covid-19 – the Maltese Response: Slow at First but Steady and Effective

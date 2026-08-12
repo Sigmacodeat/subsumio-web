@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-end-of-the-centre/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "30bc0029b695d05b"
 ---
 
 # The End of the Centre

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-anfang-mehr-nicht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "79de4e0c0cc2803c"
 ---
 
 # Ein Anfang, mehr nicht

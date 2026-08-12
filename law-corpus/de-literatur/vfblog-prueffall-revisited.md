@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/prueffall-revisited/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "de395a578a799b78"
 ---
 
 # „Prüffall“ revisited?

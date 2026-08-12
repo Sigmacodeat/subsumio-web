@@ -15,6 +15,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "dbc5fde199a6bba5"
 ---
 
 § 18.4 Umwelt- und Klimaschutz &#124; Inhaltsverzeichnis &#124; § 19.1  Gleichheit (Art. 3 I GG) 

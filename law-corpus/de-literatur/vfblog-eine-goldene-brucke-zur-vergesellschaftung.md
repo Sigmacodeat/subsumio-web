@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eine-goldene-brucke-zur-vergesellschaftun
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e733496e2395bb86"
 ---
 
 # Eine goldene Brücke zur Vergesellschaftung

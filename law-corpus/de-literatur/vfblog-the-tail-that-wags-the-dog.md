@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-tail-that-wags-the-dog/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aad3e178b35cb726"
 ---
 
 # The Tail That Wags the Dog

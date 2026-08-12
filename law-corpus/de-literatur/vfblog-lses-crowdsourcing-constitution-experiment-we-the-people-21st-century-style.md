@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e4ec7b6034daf272"
 ---
 
 # LSE's crowdsourcing constitution experiment: “We, the People”, 21st century style

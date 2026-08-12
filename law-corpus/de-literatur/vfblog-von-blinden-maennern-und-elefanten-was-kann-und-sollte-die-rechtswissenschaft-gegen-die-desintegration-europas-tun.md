@@ -16,6 +16,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5878a3b39e21af82"
 ---
 
 # Of Blind Men, Elephants and European Disintegration – What could and what should legal academics do against the “disintegration” of Europe?

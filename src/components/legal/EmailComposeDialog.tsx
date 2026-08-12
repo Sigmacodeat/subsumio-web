@@ -89,6 +89,8 @@ export function EmailComposeDialog({
             <Input
               id="email-to"
               type="email"
+              autoComplete="email"
+              inputMode="email"
               value={to}
               onChange={(e) => setTo(e.target.value)}
               placeholder={
@@ -102,6 +104,8 @@ export function EmailComposeDialog({
             <Input
               id="email-cc"
               type="email"
+              autoComplete="email"
+              inputMode="email"
               value={cc}
               onChange={(e) => setCc(e.target.value)}
               placeholder="cc@example.com (optional)"

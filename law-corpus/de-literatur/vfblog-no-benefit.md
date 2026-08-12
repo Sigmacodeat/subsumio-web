@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/no-benefit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5565e2a3c014c69a"
 ---
 
 # No Benefit

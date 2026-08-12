@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/romania-hungarys-footsteps-victor-strateg
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "37063d3666e395cd"
 ---
 
 # Romania In Hungary's Footsteps: Different Victor, Same Strategy

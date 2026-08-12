@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-myth-of-a-neoliberal-european-private
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "df6cb1a1f1be4e16"
 ---
 
 # The Myth of a Neoliberal European Private Law

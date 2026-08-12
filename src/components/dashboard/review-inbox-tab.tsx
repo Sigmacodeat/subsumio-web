@@ -97,8 +97,10 @@ const TYPE_BADGE: Record<ReviewItem["type"], string> = {
     "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
   client_submission:
     "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
-  suggested_party: "border-purple-500/20 bg-purple-500/10 text-purple-600",
-  pending_fact: "border-cyan-500/20 bg-cyan-500/10 text-cyan-600",
+  suggested_party:
+    "border-[color:var(--ds-category-violet-border)] bg-[color:var(--ds-category-violet-bg)] text-[color:var(--ds-category-violet-text)]",
+  pending_fact:
+    "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
 };
 
 const PRIORITY_STYLES: Record<string, string> = {

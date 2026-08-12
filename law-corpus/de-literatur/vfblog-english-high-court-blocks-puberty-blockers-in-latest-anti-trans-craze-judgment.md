@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2a38988e6cc902eb"
 ---
 
 # English Court Blocks Puberty Blockers in Anti-Trans Craze Judgment

@@ -124,7 +124,7 @@ export function EvalGateWidget() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Shield size={16} className="text-[color:var(--ds-text-secondary)]" />
+          <Shield size={16} className="text-[color:var(--ds-text-muted)]" />
           <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
             {t("evalgate.title")}
           </h3>

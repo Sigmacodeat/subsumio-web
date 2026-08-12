@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/relationalizing-responsibility/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bd034fb54a045544"
 ---
 
 # Relationalizing the EU's Fundamental Rights Responsibility

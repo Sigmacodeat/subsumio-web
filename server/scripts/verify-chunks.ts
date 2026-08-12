@@ -10,7 +10,7 @@
 import { readFileSync, existsSync } from "fs";
 import { join, basename } from "path";
 import { parseMarkdown } from "../src/core/markdown.ts";
-import { chunkLegalSection } from "../src/core/chunkers/legal-statute.ts";
+import { chunkLegalSection, formatStatuteRef } from "../src/core/chunkers/legal-statute.ts";
 import { chunkLegalDecision } from "../src/core/chunkers/legal-decision.ts";
 import { isLegalPage, isCourtDecisionPage } from "../src/core/embedding-context.ts";
 import { loadConfig, toEngineConfig } from "../src/core/config.ts";
@@ -47,7 +47,7 @@ function normalize(s: string) {
 }
 
 function buildStatuteLabel(m: any): string {
-  const ref = m.paragraph_ref ? `§ ${m.paragraph_ref}` : "Norm";
+  const ref = formatStatuteRef(m.paragraph_ref, m.jurisdiction);
   const abs = m.absatz ? ` Abs. ${m.absatz}` : "";
   return `${m.statute_abbr || "unbekannt"} ${ref}${abs}`.trim();
 }
@@ -55,16 +55,17 @@ function buildStatuteLabel(m: any): string {
 function buildStatuteLabels(m: any): { type: string; text: string; display: string }[] {
   const labels: { type: string; text: string; display: string }[] = [];
   if (m.statute_abbr && m.paragraph_ref) {
+    const ref = formatStatuteRef(m.paragraph_ref, m.jurisdiction);
     labels.push({
       type: "statute",
-      text: `${m.statute_abbr} § ${m.paragraph_ref}`,
-      display: `${m.statute_abbr} § ${m.paragraph_ref}`,
+      text: `${m.statute_abbr} ${ref}`,
+      display: `${m.statute_abbr} ${ref}`,
     });
     if (m.absatz) {
       labels.push({
         type: "paragraph",
-        text: `${m.statute_abbr} § ${m.paragraph_ref} Abs. ${m.absatz}`,
-        display: `${m.statute_abbr} § ${m.paragraph_ref} Abs. ${m.absatz}`,
+        text: `${m.statute_abbr} ${ref} Abs. ${m.absatz}`,
+        display: `${m.statute_abbr} ${ref} Abs. ${m.absatz}`,
       });
     }
   } else if (m.statute_abbr) {

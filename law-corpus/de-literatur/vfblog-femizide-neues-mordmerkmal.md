@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/femizide-neues-mordmerkmal/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2cae4dd82d00a752"
 ---
 
 # Femizide im Fokus

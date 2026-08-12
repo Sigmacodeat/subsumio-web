@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-european-unions-fantastical-constitut
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "85b78b089f70fc81"
 ---
 
 # The European Union’s Fantastical Constitution

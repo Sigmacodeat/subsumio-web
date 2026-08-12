@@ -29,7 +29,7 @@ export default function BulkCasesPage() {
     if (r.ok) setResult(j.data);
   }
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={tr("workspace.bulk.title")}
         description={tr("workspace.bulk.description")}

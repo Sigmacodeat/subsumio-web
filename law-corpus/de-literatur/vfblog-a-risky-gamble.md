@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-risky-gamble/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4627cef290b7d6f0"
 ---
 
 # A Risky Gamble

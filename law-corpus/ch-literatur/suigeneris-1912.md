@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2018 Samuel Schweizer;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "b74528bbdae61603"
 ---
 
 # Die kontrollierte Abgabe von Cannabis als wissenschaftliche Forschung aus rechtlicher Sicht

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/warmewende-foderalismus-heizungsgesetz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "636ecd5b2c71e469"
 ---
 
 # Wärmewende zwischen Bund und Ländern

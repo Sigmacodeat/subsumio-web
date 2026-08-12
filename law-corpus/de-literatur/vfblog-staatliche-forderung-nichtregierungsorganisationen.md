@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/staatliche-forderung-nichtregierungsorgan
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "342393a8ad6eb7ec"
 ---
 
 # Warum die staatliche Förderung von Nichtregierungsorganisationen parlamentsgesetzlich zu regeln ist

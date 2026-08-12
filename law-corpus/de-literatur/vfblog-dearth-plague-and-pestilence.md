@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dearth-plague-and-pestilence/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3abfbdf746e07b02"
 ---
 
 # Dearth, Plague and Pestilence

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/is-the-uk-government-undermining-the-bbc/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "21c0826b30b51bcf"
 ---
 
 # Is the UK Government Undermining the BBC?

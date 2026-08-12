@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6761c09a62cdaa3a"
 ---
 
 # Addressing IP Barriers in the Context of a Pandemic Treaty

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eu-leaders-agenda-whos-afraid-of-reforms/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "39269219eb661fae"
 ---
 
 # EU Leaders' Agenda: Who's Afraid of Reforms?

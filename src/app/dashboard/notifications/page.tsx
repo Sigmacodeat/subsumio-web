@@ -253,7 +253,7 @@ export default function NotificationCenterPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("notifications.title")}
         description={t("notifications.desc")}
@@ -285,7 +285,7 @@ export default function NotificationCenterPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t("notifications.unread")}</CardTitle>
-            <Bell className="text-muted-foreground h-4 w-4" />
+            <Bell className="text-[color:var(--ds-text-muted)] h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{unreadCount}</div>
@@ -294,7 +294,7 @@ export default function NotificationCenterPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t("notifications.total")}</CardTitle>
-            <Bell className="text-muted-foreground h-4 w-4" />
+            <Bell className="text-[color:var(--ds-text-muted)] h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{data?.length ?? 0}</div>
@@ -303,7 +303,7 @@ export default function NotificationCenterPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t("notifications.filtered")}</CardTitle>
-            <Search className="text-muted-foreground h-4 w-4" />
+            <Search className="text-[color:var(--ds-text-muted)] h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{filtered.length}</div>
@@ -360,7 +360,7 @@ export default function NotificationCenterPage() {
           <Card>
             <CardContent className="p-0">
               {isLoading ? (
-                <div className="text-muted-foreground p-8 text-center">
+                <div className="text-[color:var(--ds-text-muted)] p-8 text-center">
                   {t("notifications.loading")}
                 </div>
               ) : filtered.length > 0 ? (

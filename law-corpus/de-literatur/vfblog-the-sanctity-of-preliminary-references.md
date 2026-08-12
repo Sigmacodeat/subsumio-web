@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-sanctity-of-preliminary-references/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ab17cc367a59400b"
 ---
 
 # The Sanctity of Preliminary References

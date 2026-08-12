@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/defendingthedefenders-episode-4-turkey/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b09eb9966d08ca03"
 ---
 
 # #DefendingTheDefenders – Episode 4: Turkey

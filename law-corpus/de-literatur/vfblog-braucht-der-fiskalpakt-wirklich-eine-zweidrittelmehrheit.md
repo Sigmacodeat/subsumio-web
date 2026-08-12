@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "20504186564e4751"
 ---
 
 # Braucht der Fiskalpakt wirklich eine Zweidrittelmehrheit?

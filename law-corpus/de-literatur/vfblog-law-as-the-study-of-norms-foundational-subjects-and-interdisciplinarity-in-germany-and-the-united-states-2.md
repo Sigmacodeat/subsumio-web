@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8e016f811c55c160"
 ---
 
 # “Law as the Study of Norms” – Foundational Subjects and Interdisciplinarity in Germany and the United States

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/how-much-money-is-a-lot-of-money/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "60de3e77e03e3424"
 ---
 
 # How Much Money is a Lot of Money?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/drohnenabwehr-bundeswehr-grundgesetz-luft
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "df020ec19f89766f"
 ---
 
 # Drohnenabwehr durch die Bundeswehr

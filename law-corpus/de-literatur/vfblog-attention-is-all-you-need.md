@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/attention-is-all-you-need/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a9944e7a9ac5bca7"
 ---
 
 # Attention Is All You Need

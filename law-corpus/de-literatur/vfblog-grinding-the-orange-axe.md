@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/grinding-the-orange-axe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1a3e04dfb38e4343"
 ---
 
 # Grinding the Orange Axe

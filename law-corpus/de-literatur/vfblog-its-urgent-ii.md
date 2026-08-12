@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/its-urgent-ii/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a44e5e0e16b76a55"
 ---
 
 # It’s Urgent II

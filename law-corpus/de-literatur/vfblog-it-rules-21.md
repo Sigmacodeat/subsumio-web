@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/it-rules-21/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6cb3c4dce7c418a1"
 ---
 
 # India’s New Intermediary Guidelines

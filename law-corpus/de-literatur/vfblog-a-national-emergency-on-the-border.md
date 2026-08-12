@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-national-emergency-on-the-border/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7017330d9d758e30"
 ---
 
 # A National Emergency on the Border?

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b95e0fa07cecb226"
 ---
 
 # Lockdown Bubbles through Layers of Law, Discretion and Nudges – New Zealand

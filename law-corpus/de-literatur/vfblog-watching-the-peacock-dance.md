@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/watching-the-peacock-dance/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4b5fc2187d6133a0"
 ---
 
 # Watching the Peacock Dance

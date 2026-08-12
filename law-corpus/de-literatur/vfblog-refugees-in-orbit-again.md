@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/refugees-in-orbit-again/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "76d3144437398aec"
 ---
 
 # Refugees in Orbit – again!

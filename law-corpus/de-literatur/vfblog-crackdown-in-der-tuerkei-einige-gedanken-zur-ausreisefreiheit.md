@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c59bf97f69226b49"
 ---
 
 # Crackdown in der Türkei: einige Gedanken zur Ausreisefreiheit

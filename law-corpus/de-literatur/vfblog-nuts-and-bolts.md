@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nuts-and-bolts/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e797219432ae2ac8"
 ---
 
 # Nuts and Bolts

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5f9ca04799e28ea6"
 ---
 
 # How Emmanuel Macron’s Quest for Efficiency  Undermines French Democracy

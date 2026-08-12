@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/brexit-and-citizenship/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9b49463091a35b1b"
 ---
 
 # Brexit and Citizenship

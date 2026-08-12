@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/winning-an-election-right-to-disobey/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "16b2dad842aea2d4"
 ---
 
 # Winning an Election Doesn’t Give the Right to Disobey

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/diskriminierung-und-juristische-ausbildun
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "72634dedded3c52c"
 ---
 
 # Diskriminierung und juristische Ausbildung

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/regime-change-israel/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3e0bcdb8a05b3715"
 ---
 
 # A Possible Regime Change in Israel

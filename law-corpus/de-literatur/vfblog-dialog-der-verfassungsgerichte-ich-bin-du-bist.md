@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dialog-der-verfassungsgerichte-ich-bin-du
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a28fdeb84f016443"
 ---
 
 # Dialog der Verfassungsgerichte: Ich bin okay, du bist okay

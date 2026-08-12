@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/durfen-die-das/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "afa68263156dd23f"
 ---
 
 # Dürfen die das?

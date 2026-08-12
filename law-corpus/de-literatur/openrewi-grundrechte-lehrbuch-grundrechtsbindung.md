@@ -15,6 +15,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "a0216c1e0f973c57"
 ---
 
 § 3 Grundrechtsberechtigung Juristischer Personen &#124; Inhaltsverzeichnis &#124; Abschnitt 2 - Freiheitsgrundrecht 

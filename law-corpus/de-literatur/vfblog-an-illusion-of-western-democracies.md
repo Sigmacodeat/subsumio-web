@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/an-illusion-of-western-democracies/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fe66b2e8d411e04e"
 ---
 
 # An Illusion of Western Democracies

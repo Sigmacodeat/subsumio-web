@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-writing-is-on-the-wall/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ed06fc92d6cc9687"
 ---
 
 # The Writing is on the Wall

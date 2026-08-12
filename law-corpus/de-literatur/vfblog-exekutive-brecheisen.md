@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/exekutive-brecheisen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6c8ba02546bff9b1"
 ---
 
 # Exekutive Brecheisen

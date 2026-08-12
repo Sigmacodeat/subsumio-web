@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d959cde5dfda418a"
 ---
 
 # Experten unter sich: Warum die Regierung findet, dass die Snowden-Affäre uns nichts angeht

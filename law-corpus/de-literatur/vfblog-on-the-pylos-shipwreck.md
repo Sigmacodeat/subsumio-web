@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/on-the-pylos-shipwreck/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ddee5c0de4f6f1e8"
 ---
 
 # On the Pylos Shipwreck

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2f10de4caaba65e1"
 ---
 
 # The Disheartening Speech by the President of Bulgaria’s Supreme Court Which Nobody in Brussels Noticed

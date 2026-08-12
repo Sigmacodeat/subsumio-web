@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bc8da066c32251b7"
 ---
 
 # Sollte Obama die Folter-Verantwortlichen der Bush-Ära begnadigen?

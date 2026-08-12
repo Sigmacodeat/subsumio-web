@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/not-much-of-a-waiver/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "92bc4de8c7a62313"
 ---
 
 # Not Much of a Waiver

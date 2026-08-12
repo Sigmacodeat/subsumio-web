@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-eu-projekt-auf-der-langen-bank/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "25a07e8df1b06044"
 ---
 
 # Das EU-Projekt auf der langen Bank?

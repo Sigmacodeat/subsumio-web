@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-paean-to-judicial-self-restraint/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b5c68bda4efbc61b"
 ---
 
 # A Paean to Judicial (Self) Restraint

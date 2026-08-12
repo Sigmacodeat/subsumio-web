@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-smile-on-their-faces/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0eea945951cd2e9e"
 ---
 
 # The Smile on Their Faces

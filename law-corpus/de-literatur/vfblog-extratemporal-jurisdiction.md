@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/extratemporal-jurisdiction/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5cb4cdafc3c45cc1"
 ---
 
 # Extratemporal Jurisdiction

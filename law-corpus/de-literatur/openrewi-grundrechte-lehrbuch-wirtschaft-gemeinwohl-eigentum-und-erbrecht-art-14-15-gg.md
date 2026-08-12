@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "fd4d939208a9a06c"
 ---
 
 § 21 Wirtschaft & Gemeinwohl &#124; Inhaltsverzeichnis &#124; § 21.2 Berufsfreiheit (Art. 12 GG) 

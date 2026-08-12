@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/legitimation-contra-verfahren/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "68450a29edbe65ac"
 ---
 
 # Legitimation contra Verfahren

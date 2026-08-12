@@ -16,6 +16,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c5301457cb44c0fe"
 ---
 
 # Modernisation in Continuity. Ernst-Wolfgang &shy; Böckenförde´s most famous ideas and the Depolarization Paradox in Representative Democracy*

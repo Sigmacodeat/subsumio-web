@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-2025-polish-presidency-of-the-council
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d9db9ff1c3b4fbf9"
 ---
 
 # The 2025 Polish Presidency of the Council

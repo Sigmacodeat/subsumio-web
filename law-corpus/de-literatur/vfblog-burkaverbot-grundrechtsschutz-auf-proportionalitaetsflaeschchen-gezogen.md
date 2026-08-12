@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "40b4cfa70ac3cef5"
 ---
 
 # Burkaverbot: Grundrechtsschutz auf Proportionalitäts-Fläschchen gezogen

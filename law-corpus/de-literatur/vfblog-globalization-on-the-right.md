@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/globalization-on-the-right/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f5eb8936f7695d97"
 ---
 
 # Globalization on the Right

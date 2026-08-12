@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "00ad9939e41c730e"
 ---
 
 # „Der Sinn der ganzen Strategie“: Die AfD und eine offene Flanke der Thüringer Verfassung

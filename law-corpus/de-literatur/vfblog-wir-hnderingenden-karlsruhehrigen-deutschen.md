@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wir-hnderingenden-karlsruhehrigen-deutsch
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f1122f028595efce"
 ---
 
 # Wir händeringenden, karlsruhehörigen Deutschen

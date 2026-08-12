@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/how-the-eu-death-machine-works/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "74c0ab3055cd452c"
 ---
 
 # How the EU Death Machine Works

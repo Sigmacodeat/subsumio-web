@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "284eeb4e799d6aef"
 ---
 
 § 3 Grundentscheidungen der Verfassung &#124; Inhaltsverzeichnis &#124; § 3.2 Grundrechte 

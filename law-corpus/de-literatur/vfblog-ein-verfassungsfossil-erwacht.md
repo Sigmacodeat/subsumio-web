@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-verfassungsfossil-erwacht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "405c2a7458b02133"
 ---
 
 # Ein Verfassungsfossil erwacht

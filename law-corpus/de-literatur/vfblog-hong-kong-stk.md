@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hong-kong-stk/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "85534661e36019bd"
 ---
 
 # Rainbow in the Dark

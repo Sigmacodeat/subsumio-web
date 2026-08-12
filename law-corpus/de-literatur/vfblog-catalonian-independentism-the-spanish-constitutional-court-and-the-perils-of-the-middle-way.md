@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "62e1d04019489778"
 ---
 
 # Catalonian Independentism, the Spanish Constitutional Court and the Perils of the Middle Way

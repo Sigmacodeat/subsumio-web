@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/two-steps-forward/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "30b5d284091c3e72"
 ---
 
 # Two Steps Forward?

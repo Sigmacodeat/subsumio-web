@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-de-regulatory-turn-of-the-eu-commissi
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5d073a53e44c14f8"
 ---
 
 # The De-Regulatory Turn of the EU Commission

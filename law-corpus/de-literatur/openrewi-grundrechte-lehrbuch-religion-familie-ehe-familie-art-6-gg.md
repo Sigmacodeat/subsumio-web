@@ -15,6 +15,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "fe90bc9ad22dd7f4"
 ---
 
 § 22.1 Religionsfreiheit (Art. 4 GG) &#124; Inhaltsverzeichnis &#124; § 22.3 Schule (Art. 7 GG) 

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/totgesagte-leben-laenger/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a5ba48302faa8204"
 ---
 
 # Totgesagte leben länger

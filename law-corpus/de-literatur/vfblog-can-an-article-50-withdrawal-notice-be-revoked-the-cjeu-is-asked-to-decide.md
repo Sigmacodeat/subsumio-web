@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eb60f9e9371c180e"
 ---
 
 # Can An Article 50 Withdrawal Notice be Revoked? The CJEU is Asked to Decide

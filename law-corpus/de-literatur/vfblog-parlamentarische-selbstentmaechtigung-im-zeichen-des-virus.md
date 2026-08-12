@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1d9b981211f04309"
 ---
 
 # Parlamentarische Selbst&shy;entmächtigung im Zeichen des Virus

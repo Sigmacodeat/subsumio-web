@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dieselrichter-in-deutschland/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5d91d5aa505d3a54"
 ---
 
 # Dieselrichter in Deutschland?

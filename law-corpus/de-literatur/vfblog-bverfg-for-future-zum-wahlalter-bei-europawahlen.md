@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bverfg-for-future-zum-wahlalter-bei-europ
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "12922ad1dab59673"
 ---
 
 # BVerfG for Future: zum Wahlalter bei Europawahlen

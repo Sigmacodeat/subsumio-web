@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/change-for-the-sake-of-change/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8336c322d6fa4c0a"
 ---
 
 # Change for the Sake of Change

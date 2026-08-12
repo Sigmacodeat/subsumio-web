@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/back-to-the-future-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3cc241dbb6cdf9c9"
 ---
 
 # Back to the Future

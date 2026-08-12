@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f178b1e9ee9f35c4"
 ---
 
 # Eine Schuldenrestrukturierung setzt keinen Grexit voraus!

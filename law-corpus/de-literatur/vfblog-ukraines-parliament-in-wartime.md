@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ukraines-parliament-in-wartime/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dd824e774a75ba5a"
 ---
 
 # Ukraine’s Parliament in Wartime

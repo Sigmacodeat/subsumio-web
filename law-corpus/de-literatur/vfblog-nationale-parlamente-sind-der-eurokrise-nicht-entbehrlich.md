@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "14a060a2327e5d62"
 ---
 
 # Nationale Parlamente sind in der Euro-Krise nicht entbehrlich

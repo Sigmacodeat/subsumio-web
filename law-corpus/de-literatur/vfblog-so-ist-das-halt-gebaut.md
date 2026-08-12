@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/so-ist-das-halt-gebaut/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9a176804ecb4f57c"
 ---
 
 # So ist das halt gebaut

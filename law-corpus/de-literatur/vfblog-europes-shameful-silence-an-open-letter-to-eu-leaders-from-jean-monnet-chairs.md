@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8f815fef0e225e0e"
 ---
 
 # Europe’s Shameful Silence – An Open Letter to EU Leaders from Jean Monnet Chairs

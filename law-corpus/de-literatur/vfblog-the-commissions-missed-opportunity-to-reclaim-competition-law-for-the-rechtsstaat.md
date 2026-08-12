@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ab9b84d318814a0e"
 ---
 
 # The Commission’s missed opportunity to reclaim competition law for the Rechtsstaat

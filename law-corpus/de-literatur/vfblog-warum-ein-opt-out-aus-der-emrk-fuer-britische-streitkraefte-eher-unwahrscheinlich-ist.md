@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "440f04659e164ec5"
 ---
 
 # Warum ein Opt-out aus der EMRK für britische Streitkräfte eher unwahrscheinlich ist

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/article-50-teu-as-legal-basis-for-future-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e727a86d58b35f36"
 ---
 
 # Article 50 TEU as Legal Basis for Future Relations?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kein-geld-ohne-reform/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f753f23bdfb38826"
 ---
 
 # Kein Geld ohne Reform

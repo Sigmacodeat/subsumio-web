@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3bec50fe69999604"
 ---
 
 # The Curious Case of Article 299 of the Turkish Penal Code: Insulting the Turkish President

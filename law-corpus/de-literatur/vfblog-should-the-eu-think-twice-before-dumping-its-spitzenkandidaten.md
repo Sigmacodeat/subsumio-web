@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "af1d4bdecab3d9e4"
 ---
 
 # Should the EU Think Twice Before Dumping its Spitzenkandidaten?

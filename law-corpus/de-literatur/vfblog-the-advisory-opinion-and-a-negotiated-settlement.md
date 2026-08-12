@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-advisory-opinion-and-a-negotiated-set
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f39cfc43ebeae6c8"
 ---
 
 # The Advisory Opinion and a Negotiated Settlement?

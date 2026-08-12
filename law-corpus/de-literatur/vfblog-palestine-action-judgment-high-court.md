@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/palestine-action-judgment-high-court/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b8f4274690e1d5be"
 ---
 
 # Soft Law in Hard Times

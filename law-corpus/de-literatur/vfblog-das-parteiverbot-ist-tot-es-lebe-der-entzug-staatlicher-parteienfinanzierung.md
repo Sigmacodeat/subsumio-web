@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b5a6c91c6155679e"
 ---
 
 # Das Parteiverbot ist tot, es lebe der Entzug staatlicher Parteienfinanzierung?

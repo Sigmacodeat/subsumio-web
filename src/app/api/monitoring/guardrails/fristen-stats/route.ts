@@ -26,7 +26,7 @@ const querySchema = z.object({
  */
 export const GET = createHandler(
   {
-    action: "admin.*" as never,
+    action: "admin.*",
     query: querySchema,
     cacheMaxAge: 0,
   },
@@ -52,16 +52,31 @@ export const GET = createHandler(
       });
     }
 
-    const result = await pool.query(
-      `SELECT frontmatter, created_at
-       FROM pages
-       WHERE source_id = $2
-         AND slug LIKE 'legal/deadline%'
-         AND created_at >= now() - ($1 * interval '1 hour')
-       ORDER BY created_at DESC
-       LIMIT 500`,
-      [hours, sourceId],
-    );
+    let result;
+    try {
+      result = await pool.query(
+        `SELECT frontmatter, created_at
+         FROM pages
+         WHERE source_id = $2
+           AND slug LIKE 'legal/deadline%'
+           AND created_at >= now() - ($1 * interval '1 hour')
+         ORDER BY created_at DESC
+         LIMIT 500`,
+        [hours, sourceId],
+      );
+    } catch (err) {
+      console.error("[fristen-stats] query failed:", (err as Error).message);
+      return apiSuccess({
+        total: 0,
+        deterministic: 0,
+        non_deterministic: 0,
+        by_art: [],
+        by_regime: [],
+        by_classification: { ok: 0, vorfrist: 0, kritisch: 0, ueberfaellig: 0 },
+        by_source: {},
+        llm_fallback_rate: 0,
+      });
+    }
 
     const heute = toISODate(new Date());
 

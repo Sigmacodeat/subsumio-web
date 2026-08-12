@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gleiche-rechte-als-sonderrechte/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "09a00c1485e9d133"
 ---
 
 # Gleiche Rechte als Sonderrechte?

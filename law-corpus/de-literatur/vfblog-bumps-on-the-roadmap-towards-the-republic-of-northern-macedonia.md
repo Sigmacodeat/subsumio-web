@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d8ce4bf657f70cf0"
 ---
 
 # Bumps on the Roadmap towards the Republic of Northern Macedonia?

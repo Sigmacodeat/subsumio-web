@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/iacthr-right-to-a-healthy-climate/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f957d56105f57aa3"
 ---
 
 # Protecting Rights in the Anthropocene

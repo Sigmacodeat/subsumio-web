@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gruene-plakate/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "708002f13c49dbab"
 ---
 
 # Alles von der Meinungsfreiheit gedeckt?!

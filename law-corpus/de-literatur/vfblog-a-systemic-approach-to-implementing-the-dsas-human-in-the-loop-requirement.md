@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "45d13cda89354c11"
 ---
 
 # A Systemic Approach to Implementing the DSA’s Human-in-the-Loop Requirement

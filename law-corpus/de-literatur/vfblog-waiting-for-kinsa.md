@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/waiting-for-kinsa/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4887f5dd5c64e0bb"
 ---
 
 # Waiting for Kinsa

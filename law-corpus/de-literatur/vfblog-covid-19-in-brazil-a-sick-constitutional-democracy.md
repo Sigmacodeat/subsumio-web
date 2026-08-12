@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/covid-19-in-brazil-a-sick-constitutional-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f487d01cf535704d"
 ---
 
 # COVID-19 in Brazil: A Sick Constitutional Democracy

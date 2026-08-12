@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "69dab681adf8efcc"
 ---
 
 # Brazil in the Dock: The Inter-American Court of Human Rights Rulings Concerning the Dictatorship of 1964-1985

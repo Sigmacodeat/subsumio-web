@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ccf6e88deeac13f5"
 ---
 
 # On Vaccine Nationalism, the &#8216;Slowbalisation' and Zoonotic Diseases – Part II

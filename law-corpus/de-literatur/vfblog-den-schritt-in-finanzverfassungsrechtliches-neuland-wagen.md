@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "62dfef00db4e6863"
 ---
 
 # Den Schritt in „finanzv&shy;erfassungs&shy;rechtliches Neuland“ wagen

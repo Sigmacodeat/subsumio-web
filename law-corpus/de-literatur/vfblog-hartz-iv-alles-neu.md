@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hartz-iv-alles-neu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1978a3173af346c0"
 ---
 
 # Hartz IV: Alles neu?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/politik-unter-der-flagge-von-wissenschaft
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f53c259fe973ed19"
 ---
 
 # Politik unter der Flagge von Wissenschaft?

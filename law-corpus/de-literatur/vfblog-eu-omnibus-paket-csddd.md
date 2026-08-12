@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eu-omnibus-paket-csddd/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4c1b6ba1164403b5"
 ---
 
 # Eine teure Busfahrt

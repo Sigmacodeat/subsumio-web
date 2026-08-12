@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/toward-a-glorious-revolution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8334d7354fa61f4b"
 ---
 
 # Toward a Glorious Revolution

@@ -45,6 +45,19 @@ const ABSATZ_MARKER = /^\((\d+[a-z]?)\)\s*/;
 const ZIFFER_MARKER = /^(\d+[a-z]?)\.\s+/;
 const LITERAL_MARKER = /^([a-z])\)\s+/;
 
+/** RIS XML norm files embed the norm designation at the start of the first
+ *  Absatz: `§ 1. (1) Ziel dieses Bundesgesetzes…` or `Art. 24. (1) Die
+ *  Differenzbesteuerung…`. The leading `§ N.` / `Art. N.` is redundant with
+ *  the frontmatter `paragraph` field and hides the `(1)` Absatz marker from
+ *  ABSATZ_MARKER (which anchors at `^(`). Stripping it exposes the marker
+ *  so Absatz 1 is detected correctly. Without this, the first Absatz of
+ *  every RIS-XML norm gets `absatz=null` instead of `absatz="1"`, and the
+ *  canonical label loses its `Abs. 1` suffix.
+ *
+ *  Safe for the monolith path: there, `## § N` is a heading on its own line
+ *  and the body never starts with `§ N.` — so this regex is a no-op. */
+const LEADING_NORM_DESIGNATION = /^(?:§|Art\.)\s*\d+[a-z]*[.,]?\s+(?=\()/;
+
 export interface LegalChunkMetadata {
   /** The § or Art. reference, e.g. "933", "1a", "29 und 30". */
   paragraph_ref: string;
@@ -65,11 +78,24 @@ export interface LegalChunk {
   metadata: LegalChunkMetadata;
 }
 
+/** Build the reference part of a statute label. If paragraph_ref already
+ *  starts with a marker (§, Art., Anl. — as in RIS XML norm files whose
+ *  `paragraph` frontmatter carries the full RIS designation like "§ 1",
+ *  "Art. 5", "Anl. 2", "Art. 4 § 1"), use it as-is; otherwise prepend the
+ *  appropriate marker based on jurisdiction (§ for DE/AT, Art. for CH/EU).
+ *  This prevents double-marker labels like "UWG § § 1" or "AktG § Art. 5"
+ *  when importing per-norm RIS XML files. */
+export function formatStatuteRef(paragraph_ref: string, jurisdiction: string): string {
+  if (!paragraph_ref) return "Norm";
+  // Match markers with or without trailing whitespace (§ 1, §1, Art. 5, Anl. 2).
+  if (/^(§+|Art\.?|Anl\.?)(\s|\d|[a-zA-Z])/i.test(paragraph_ref)) return paragraph_ref;
+  const marker = jurisdiction === "ch" || jurisdiction === "eu" ? "Art." : "§";
+  return `${marker} ${paragraph_ref}`;
+}
+
 /** Context used only for the embedding input; canonical chunk_text stays clean. */
 export function formatLegalSectionEmbeddingContext(metadata: LegalChunkMetadata): string {
-  const reference = metadata.paragraph_ref
-    ? `${metadata.jurisdiction === "ch" || metadata.jurisdiction === "eu" ? "Art." : "§"} ${metadata.paragraph_ref}`
-    : "Norm";
+  const reference = formatStatuteRef(metadata.paragraph_ref, metadata.jurisdiction);
   const absatz = metadata.absatz ? `, Abs. ${metadata.absatz}` : "";
   return `[Rechtsquelle: ${metadata.statute_abbr || "unbekannt"} ${reference}${absatz}; Jurisdiktion: ${metadata.jurisdiction || "unbekannt"}; Abschnitt: ${metadata.chunk_role}]`;
 }
@@ -91,7 +117,14 @@ export function chunkLegalSection(
     jurisdiction: string;
   }
 ): LegalChunk[] {
-  const trimmed = body.trim();
+  // Strip RIS-OGD boilerplate footer that fetchers append to every document.
+  // Pattern: "\n---\n*Quelle: [RIS-OGD](https://www.ris.bka.gv.at/...)*"
+  // This URL noise pollutes embeddings and chunk text — remove before chunking.
+  const stripped = body.replace(
+    /\n---\n\*Quelle:\s*\[[^\]]*\]\([^)]*\)\*\s*$/i,
+    ""
+  );
+  const trimmed = stripped.trim();
   if (!trimmed) return [];
 
   const wordCount = countCJKAwareWords(trimmed);
@@ -118,22 +151,33 @@ export function chunkLegalSection(
   let currentBuf: string[] = [];
   let currentWords = 0;
   let currentAbsatz: string | null = null;
+  /** Track how many distinct absatz values have been merged into the
+   *  current buffer. If >1, the chunk spans multiple Absätze and the
+   *  flush must use absatz=null (not the last one) — otherwise the
+   *  canonical label claims "Abs. 5" for a chunk that contains Abs. 1-5,
+   *  and absatz-specific search misses it. */
+  let absatzCountInBuffer = 0;
   let chunkIndex = 0;
 
   const flush = (absatz: string | null, role: LegalChunkMetadata["chunk_role"]) => {
     const text = currentBuf.join("\n").trim();
     if (!text) return;
+    // If the buffer merged multiple Absätze, the chunk is not specific to
+    // any single Absatz — use null so the label doesn't mislead.
+    const effectiveAbsatz = absatzCountInBuffer > 1 ? null : absatz;
+    const effectiveRole = absatzCountInBuffer > 1 ? "full" : role;
     chunks.push({
       text,
       index: chunkIndex++,
       metadata: {
         ...metadata,
-        absatz,
-        chunk_role: role,
+        absatz: effectiveAbsatz,
+        chunk_role: effectiveRole,
       },
     });
     currentBuf = [];
     currentWords = 0;
+    absatzCountInBuffer = 0;
   };
 
   for (const seg of segments) {
@@ -175,6 +219,13 @@ export function chunkLegalSection(
 
     // Update absatz tracking when we enter a new Absatz segment.
     if (seg.absatz) {
+      if (currentAbsatz !== null && currentAbsatz !== seg.absatz) {
+        // A second distinct Absatz is being merged into this buffer.
+        absatzCountInBuffer++;
+      } else if (currentAbsatz === null) {
+        // First Absatz in this buffer.
+        absatzCountInBuffer = 1;
+      }
       currentAbsatz = seg.absatz;
     }
 
@@ -238,11 +289,18 @@ function splitAtLegalBoundaries(body: string): LegalSegment[] {
   for (const line of lines) {
     const trimmedLine = line.trim();
 
+    // Strip a leading `§ N.` norm designation (RIS XML artifact) to expose
+    // the `(1)` Absatz marker that follows it. See LEADING_NORM_DESIGNATION.
+    const strippedLine = trimmedLine.replace(LEADING_NORM_DESIGNATION, "");
+
     // Check for Absatz marker: (1), (2a), etc.
-    const absatzMatch = trimmedLine.match(ABSATZ_MARKER);
+    const absatzMatch = strippedLine.match(ABSATZ_MARKER);
     if (absatzMatch) {
       flush();
       currentAbsatz = absatzMatch[1];
+      // Keep the original line (with § N.) in the chunk text so keyword
+      // search still finds the norm designation — only the marker check
+      // uses the stripped version.
       currentLines.push(line);
       continue;
     }
@@ -282,7 +340,10 @@ function splitAtLegalBoundaries(body: string): LegalSegment[] {
   flush();
 
   // If we got no segments (no Absatz markers), fall back to paragraph splitting.
-  if (segments.length <= 1) {
+  // But if we got exactly 1 segment WITH an absatz, keep it — the fallback
+  // would discard the absatz metadata, producing absatz=null for a single-
+  // absatz norm like "(1) Langer Text..." (501 words, over the chunk threshold).
+  if (segments.length === 0) {
     return splitAtParagraphs(body);
   }
 

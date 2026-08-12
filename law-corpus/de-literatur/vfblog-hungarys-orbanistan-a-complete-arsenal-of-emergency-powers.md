@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7268bf7737a2feab"
 ---
 
 # Hungary's Orbánistan: A Complete Arsenal of Emergency Powers

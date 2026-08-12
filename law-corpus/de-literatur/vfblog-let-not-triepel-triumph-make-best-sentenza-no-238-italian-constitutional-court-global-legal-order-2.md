@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "959e3361c0a8fd60"
 ---
 
 # Let Not Triepel Triumph – How To Make the Best Out of Sentenza No. 238 of the Italian Constitutional Court for a Global Legal Order

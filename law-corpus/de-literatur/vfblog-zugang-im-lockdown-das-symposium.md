@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zugang-im-lockdown-das-symposium/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dd897c3ea87339c8"
 ---
 
 # Zugang im Lockdown – das Symposium

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ec5c3b32152ac976"
 ---
 
 # An Alternative to the Brexit Backstop: An All-Ireland “Common No-Custom Area” under Art. 24 GATT

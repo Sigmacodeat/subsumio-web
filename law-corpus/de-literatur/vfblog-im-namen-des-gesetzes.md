@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/im-namen-des-gesetzes/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5d897f87ca5b8fa0"
 ---
 
 # Im Namen des Gesetzes

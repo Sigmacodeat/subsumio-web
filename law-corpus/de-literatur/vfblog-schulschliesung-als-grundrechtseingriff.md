@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/schulschliesung-als-grundrechtseingriff/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e69df49979c0c5c8"
 ---
 
 # Schulschließung als Grundrechtseingriff

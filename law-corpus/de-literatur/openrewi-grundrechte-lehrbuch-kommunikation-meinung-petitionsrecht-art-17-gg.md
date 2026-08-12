@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "c479bc9da862d1b6"
 ---
 
 § 20.4 Vereinigungsfreiheit (Art. 9 GG) &#124; Inhaltsverzeichnis &#124; § 21 Wirtschaft & Gemeinwohl 

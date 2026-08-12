@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0e654be495883da7"
 ---
 
 # Statement by Canadian Law Professors and Jurists on the Proposed Legal Reforms in Israel

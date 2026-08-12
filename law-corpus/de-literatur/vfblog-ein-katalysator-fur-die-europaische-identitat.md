@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-katalysator-fur-die-europaische-ident
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f2caa26506ae2110"
 ---
 
 # „Ein Katalysator für die europäische Identität“

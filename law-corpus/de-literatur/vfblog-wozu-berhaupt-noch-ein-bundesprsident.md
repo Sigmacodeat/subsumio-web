@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wozu-berhaupt-noch-ein-bundesprsident/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "24a17ebbdcc68695"
 ---
 
 # Wozu überhaupt noch ein Bundespräsident?

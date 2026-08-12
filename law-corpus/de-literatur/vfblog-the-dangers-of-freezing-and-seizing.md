@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-dangers-of-freezing-and-seizing/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "072bcf098da36f56"
 ---
 
 # The Dangers of Freezing and Seizing

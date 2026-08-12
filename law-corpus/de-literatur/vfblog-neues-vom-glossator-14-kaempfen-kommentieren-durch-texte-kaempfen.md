@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3e5580f99caae3b0"
 ---
 
 # Neues vom Glossator (14): Kämpfen, kommentieren, durch Texte kämpfen

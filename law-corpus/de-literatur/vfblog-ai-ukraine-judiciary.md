@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ai-ukraine-judiciary/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3220ccae7d177723"
 ---
 
 # Integrating Artificial Intelligence in Ukraine’s Courts

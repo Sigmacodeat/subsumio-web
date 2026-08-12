@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/elfes-revisited/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7249b4e72e1240d5"
 ---
 
 # „Elfes“ Revisited?

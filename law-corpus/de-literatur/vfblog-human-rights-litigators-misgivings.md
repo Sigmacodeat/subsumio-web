@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/human-rights-litigators-misgivings/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fac452ec839459e8"
 ---
 
 # A Human Rights Litigator's Misgivings

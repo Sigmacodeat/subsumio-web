@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-witch-hunt-in-french-universities/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8dc59b3e7b69cd2b"
 ---
 
 # A Witch Hunt In French Universities

@@ -101,8 +101,8 @@ export default function MobileDeadlinesPage() {
                 display: "flex",
                 alignItems: "center",
                 gap: 5,
-                background: "hsla(0, 60%, 50%, 0.08)",
-                border: "1px solid hsla(0, 60%, 50%, 0.19)",
+                background: "var(--ds-danger-bg)",
+                border: "1px solid var(--ds-danger-border)",
                 borderRadius: 20,
                 padding: "3px 10px",
               }}
@@ -120,8 +120,8 @@ export default function MobileDeadlinesPage() {
           <div
             style={{
               flex: 1,
-              background: "hsla(0, 60%, 50%, 0.08)",
-              border: "1px solid hsla(0, 60%, 50%, 0.19)",
+              background: "var(--ds-danger-bg)",
+              border: "1px solid var(--ds-danger-border)",
               borderRadius: 8,
               padding: "8px 10px",
               textAlign: "center",
@@ -130,13 +130,13 @@ export default function MobileDeadlinesPage() {
             <div style={{ fontSize: 18, fontWeight: 700, color: "var(--signal-danger-500)" }}>
               {overdueCount}
             </div>
-            <div style={{ fontSize: 10, color: "hsl(0, 40%, 38%)" }}>Überfällig</div>
+            <div style={{ fontSize: 10, color: "var(--signal-danger-500)" }}>Überfällig</div>
           </div>
           <div
             style={{
               flex: 1,
-              background: "hsla(40, 70%, 45%, 0.08)",
-              border: "1px solid hsla(40, 70%, 45%, 0.19)",
+              background: "var(--ds-warning-bg)",
+              border: "1px solid var(--ds-warning-border)",
               borderRadius: 8,
               padding: "8px 10px",
               textAlign: "center",
@@ -145,13 +145,13 @@ export default function MobileDeadlinesPage() {
             <div style={{ fontSize: 18, fontWeight: 700, color: "var(--signal-warning-500)" }}>
               {todayCount}
             </div>
-            <div style={{ fontSize: 10, color: "hsl(40, 40%, 38%)" }}>Heute</div>
+            <div style={{ fontSize: 10, color: "var(--signal-warning-500)" }}>Heute</div>
           </div>
           <div
             style={{
               flex: 1,
-              background: "hsla(230, 60%, 52%, 0.06)",
-              border: "1px solid hsla(230, 60%, 52%, 0.19)",
+              background: "var(--ds-info-bg)",
+              border: "1px solid var(--ds-info-border)",
               borderRadius: 8,
               padding: "8px 10px",
               textAlign: "center",
@@ -164,7 +164,7 @@ export default function MobileDeadlinesPage() {
                 ).length
               }
             </div>
-            <div style={{ fontSize: 10, color: "hsl(230, 8%, 45%)" }}>7 Tage</div>
+            <div style={{ fontSize: 10, color: "var(--ds-text-subtle)" }}>7 Tage</div>
           </div>
         </div>
 
@@ -216,7 +216,7 @@ export default function MobileDeadlinesPage() {
                   display: "flex",
                   alignItems: "center",
                   padding: "13px 16px",
-                  borderBottom: "1px solid hsl(230, 10%, 12%)",
+                  borderBottom: "1px solid var(--ds-border)",
                 }}
               >
                 <div
@@ -258,7 +258,7 @@ export default function MobileDeadlinesPage() {
                   <div style={{ fontSize: 13, fontWeight: 700, color }}>
                     {overdue ? `${Math.abs(days)}d überfällig` : days === 0 ? "Heute" : `${days}d`}
                   </div>
-                  <div style={{ fontSize: 10, color: "hsl(230, 8%, 35%)" }}>
+                  <div style={{ fontSize: 10, color: "var(--ds-text-subtle)" }}>
                     {PRIORITY_LABELS[d.priority]}
                   </div>
                 </div>

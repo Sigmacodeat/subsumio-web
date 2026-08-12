@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/monkeys-in-their-own-right/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d4be5019139ccd74"
 ---
 
 # Monkeys in Their Own Right

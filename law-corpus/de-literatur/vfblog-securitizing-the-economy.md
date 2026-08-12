@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/securitizing-the-economy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e12e00cf93e69482"
 ---
 
 # Securitizing the Economy

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wer-schuetzt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8d7d20f4cb1a3d35"
 ---
 
 # Afghanistan – wer schützt das Völkerrecht?

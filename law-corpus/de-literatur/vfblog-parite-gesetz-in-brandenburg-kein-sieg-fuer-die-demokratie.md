@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7a72eeb9481d36aa"
 ---
 
 # Parité-Gesetz in Brandenburg – Kein Sieg für die Demokratie

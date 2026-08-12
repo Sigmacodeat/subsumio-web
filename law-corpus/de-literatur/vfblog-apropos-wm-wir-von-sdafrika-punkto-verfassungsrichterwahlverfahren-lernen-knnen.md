@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d79b801e24ab98e2"
 ---
 
 # Apropos WM: Was wir von Südafrika in punkto Verfassungsrichter-Wahlverfahren lernen können

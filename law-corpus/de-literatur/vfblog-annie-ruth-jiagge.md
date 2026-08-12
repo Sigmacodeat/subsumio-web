@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/annie-ruth-jiagge/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e697ec98c11d41aa"
 ---
 
 # Annie Ruth Jiagge

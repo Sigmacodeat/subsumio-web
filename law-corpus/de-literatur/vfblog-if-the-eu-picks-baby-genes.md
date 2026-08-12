@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/if-the-eu-picks-baby-genes/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dd84c9751ab2e620"
 ---
 
 # If the EU Picks Baby Genes

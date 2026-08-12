@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/without-enforcement-the-emfa-is-dead-lett
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fbb527c4d524ac9f"
 ---
 
 # Without Enforcement, the EMFA is Dead Letter

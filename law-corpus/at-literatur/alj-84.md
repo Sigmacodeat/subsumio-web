@@ -16,6 +16,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2017
   AUSTRIAN LAW JOURNAL
+content_hash: "5e65ef46c5746621"
 ---
 
 # Cyber Crime - Der digitalisierte Täter

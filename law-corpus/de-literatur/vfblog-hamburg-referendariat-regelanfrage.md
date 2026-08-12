@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hamburg-referendariat-regelanfrage/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cd1f9e700f8e4a43"
 ---
 
 # Verfassungsfeinde auch im Vorbereitungsdienst

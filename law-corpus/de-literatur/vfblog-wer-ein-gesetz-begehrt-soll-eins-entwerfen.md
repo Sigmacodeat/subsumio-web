@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wer-ein-gesetz-begehrt-soll-eins-entwerfe
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7b6ad2464d0d8a71"
 ---
 
 # Wer ein Gesetz begehrt, soll eins entwerfen

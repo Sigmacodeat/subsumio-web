@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/offshoring-asylum-the-italian-way/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2f894e69d1b15f49"
 ---
 
 # Offshoring Asylum the Italian Way

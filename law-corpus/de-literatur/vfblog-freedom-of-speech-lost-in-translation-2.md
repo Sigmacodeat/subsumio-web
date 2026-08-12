@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/freedom-of-speech-lost-in-translation-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "41d70bb4b12e6b34"
 ---
 
 # Lost in Translation

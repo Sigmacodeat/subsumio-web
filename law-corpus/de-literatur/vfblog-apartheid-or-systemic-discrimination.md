@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/apartheid-or-systemic-discrimination/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "51e26d6b87e6228d"
 ---
 
 # Apartheid or Systemic Discrimination?

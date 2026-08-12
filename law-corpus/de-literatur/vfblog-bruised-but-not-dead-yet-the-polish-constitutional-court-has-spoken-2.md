@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4df971fe183ea185"
 ---
 
 # Bruised, but not dead (yet): The Polish Constitutional Court has spoken

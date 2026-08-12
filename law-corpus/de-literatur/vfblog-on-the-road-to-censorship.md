@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/on-the-road-to-censorship/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0fa127b7730ebc7e"
 ---
 
 # On the Road to Censorship

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "63e8449cab2dccad"
 ---
 
 # The Polish Judicial Council v The Bulgarian Judicial Council: Can You Spot the Difference?

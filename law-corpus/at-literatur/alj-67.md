@@ -19,6 +19,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2016
   AUSTRIAN LAW JOURNAL
+content_hash: "ebb4af960bf5deb8"
 ---
 
 # Jurisdiction over Consumer, Employment, and Insurance Contracts under the Brussels I Regulation Recast: Enhancing the Protection of the Weaker Party

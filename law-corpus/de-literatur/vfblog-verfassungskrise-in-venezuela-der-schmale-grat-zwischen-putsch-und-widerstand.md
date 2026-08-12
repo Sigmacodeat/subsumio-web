@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "136e082d1d7ae80a"
 ---
 
 # Verfassungskrise in Venezuela – Der schmale Grat zwischen Putsch und Widerstand

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/greenforcement-of-intellectual-property-r
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a1f09fef8887a8eb"
 ---
 
 # Greenforcement of Intellectual Property Rights

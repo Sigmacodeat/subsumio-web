@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/limiting-human-rights-during-pandemics/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "541d2dceb15d5781"
 ---
 
 # Limiting Human Rights during Pandemics

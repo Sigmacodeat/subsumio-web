@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ae72b7f61594fc71"
 ---
 
 # Die Reproduktion sozialer Hierarchien im deutschen Jurastudium

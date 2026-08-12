@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "086aa9b44d56311d"
 ---
 
 # The Council’s Conditionality Decision as a Violation of Academic Freedom?

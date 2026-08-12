@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/when-will-the-eu-commission-act/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b485f304d73bb7ea"
 ---
 
 # When Will the EU Commission Act?

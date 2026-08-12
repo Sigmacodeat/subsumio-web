@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cce5da8c494da6fc"
 ---
 
 # Die Unbestimmtheit der Verfassung: „Verfassungs&shy;patriotismus“ mit Jürgen Habermas nach 70 Jahren

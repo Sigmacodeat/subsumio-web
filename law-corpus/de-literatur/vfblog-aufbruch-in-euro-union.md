@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/aufbruch-in-euro-union/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2208a8e026eda12e"
 ---
 
 # Aufbruch in die Euro-Union

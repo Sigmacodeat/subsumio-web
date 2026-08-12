@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2384f274084498f3"
 ---
 
 # Nix wissen macht nix: unsere fiebrige Lust am Pandemic Turn

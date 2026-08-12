@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ethiopias-tigray-crisis-a-troubled-federa
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4941806f19223451"
 ---
 
 # Ethiopia’s Tigray Crisis: A Troubled Federation

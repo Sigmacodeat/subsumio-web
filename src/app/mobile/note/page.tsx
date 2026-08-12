@@ -183,7 +183,7 @@ export default function MobileNotePage() {
           {saved.text.slice(0, 120)}
           {saved.text.length > 120 ? "…" : ""}
         </div>
-        <div style={{ fontSize: 11, color: "hsl(230, 8%, 35%)", marginBottom: 28 }}>
+        <div style={{ fontSize: 11, color: "var(--ds-text-subtle)", marginBottom: 28 }}>
           {new Date(saved.timestamp).toLocaleString("de-AT")}
         </div>
         <div style={{ display: "flex", gap: 10 }}>
@@ -207,9 +207,9 @@ export default function MobileNotePage() {
             style={{
               padding: "10px 20px",
               background: "var(--ds-border)",
-              border: "1px solid hsl(230, 10%, 30%)",
+              border: "1px solid var(--ds-border-strong)",
               borderRadius: 10,
-              color: "hsl(230, 8%, 80%)",
+              color: "var(--ds-text-muted)",
               fontSize: 14,
               textDecoration: "none",
             }}
@@ -293,7 +293,7 @@ export default function MobileNotePage() {
             width: "100%",
             padding: "16px",
             borderRadius: 14,
-            background: recording ? "hsla(0, 60%, 50%, 0.13)" : "hsla(230, 60%, 52%, 0.13)",
+            background: recording ? "var(--ds-danger-bg)" : "var(--ds-info-bg)",
             border: `2px solid ${recording ? "var(--signal-danger-500)" : "var(--brand-500)"}`,
             color: recording ? "var(--signal-danger-500)" : "var(--brand-500)",
             fontSize: 14,
@@ -391,8 +391,8 @@ export default function MobileNotePage() {
               display: "flex",
               alignItems: "center",
               gap: 6,
-              background: "hsla(0, 60%, 50%, 0.08)",
-              border: "1px solid hsla(0, 60%, 50%, 0.19)",
+              background: "var(--ds-danger-bg)",
+              border: "1px solid var(--ds-danger-border)",
               borderRadius: 8,
               padding: "8px 12px",
             }}

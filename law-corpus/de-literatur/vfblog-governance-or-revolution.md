@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/governance-or-revolution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4f7ae2732948ff9a"
 ---
 
 # Governance or Revolution?

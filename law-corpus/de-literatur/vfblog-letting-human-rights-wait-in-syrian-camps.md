@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/letting-human-rights-wait-in-syrian-camps
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d9e8c4c70a3dba34"
 ---
 
 # Letting Human Rights Wait in Syrian Camps

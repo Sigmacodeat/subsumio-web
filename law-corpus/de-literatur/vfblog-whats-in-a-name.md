@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/whats-in-a-name/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d50e17dc8826200d"
 ---
 
 # What’s in a Name?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/politisches-microtargeting-vs-rechtsaufsi
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d090c75f6a215e8d"
 ---
 
 # Politisches Microtargeting vs. Rechtsaufsicht

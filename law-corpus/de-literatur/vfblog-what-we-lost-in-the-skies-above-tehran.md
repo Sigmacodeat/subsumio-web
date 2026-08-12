@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/what-we-lost-in-the-skies-above-tehran/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "79515b5a23262d4b"
 ---
 
 # What We Lost in the Skies Above Tehran

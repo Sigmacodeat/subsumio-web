@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/aiwanger-und-wir/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3fb1144eb623d695"
 ---
 
 # Aiwanger und wir

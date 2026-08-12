@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/scotland-and-the-eu-comment-by-michael-ke
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cbca9ddba5c21cc0"
 ---
 
 # Scotland and the EU: Comment by MICHAEL KEATING

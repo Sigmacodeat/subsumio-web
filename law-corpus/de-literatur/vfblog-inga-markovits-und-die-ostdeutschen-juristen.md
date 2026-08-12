@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/inga-markovits-und-die-ostdeutschen-juris
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fdd8d54564f071f9"
 ---
 
 # “Guns for Hire” oder Ordnungshüter? Inga Markovits und die ostdeutschen Juristen

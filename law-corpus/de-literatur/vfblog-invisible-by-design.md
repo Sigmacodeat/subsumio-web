@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/invisible-by-design/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fcbc52ccc5f51313"
 ---
 
 # Invisible by Design

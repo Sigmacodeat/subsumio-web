@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/if-vote-leave-broke-the-law-could-brexit-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6a552eba975a0b4c"
 ---
 
 # If &#8216;Vote Leave' Broke the Law, Could Brexit be Void?

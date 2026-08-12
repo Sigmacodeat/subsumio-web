@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2022 Martin Reimann;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "25145c8f5dd13b98"
 ---
 
 # Die Entsperrung und Spiegelung von passwortgeschützten Datenträgern im Siegelungsverfahren

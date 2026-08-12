@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3fae3dd257515e8a"
 ---
 
 # Academic Freedom in an Illiberal Democracy:  From Rule of Law through Rule by Law to Rule by Men in Hungary

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-nail-in-the-coffin-of-hong-kongs-rule-o
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cf13cb0aa10a250f"
 ---
 
 # A Nail in the Coffin of Hong Kong’s Rule of Law

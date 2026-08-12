@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/transitional-justice-after-hybrid-regimes
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9282bee073a83ec7"
 ---
 
 # Transitional Justice after Hybrid Regimes in Europe

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/how-ukraine-should-join-the-european-unio
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e2a81df2e92df8ee"
 ---
 
 # How Ukraine Should Join the European Union

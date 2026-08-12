@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2025 Damiano Canapa, Arthur
   Grisoni; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "18c47ea81d479d66"
 ---
 
 # Le régime de l&#039;action en responsabilité du créancier social : de lege lata et de lege ferenda

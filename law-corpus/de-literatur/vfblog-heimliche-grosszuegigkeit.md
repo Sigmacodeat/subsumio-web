@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/heimliche-grosszuegigkeit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e40c4827d12d98b0"
 ---
 
 # Heimliche Großzügigkeit

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nhert-sich-das-ende-des-mehrheitswahlrech
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b5689d21895bd713"
 ---
 
 # Nähert sich das Ende des Mehrheitswahlrechts?

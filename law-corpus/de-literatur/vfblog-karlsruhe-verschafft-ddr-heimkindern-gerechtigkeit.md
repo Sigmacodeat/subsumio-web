@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/karlsruhe-verschafft-ddr-heimkindern-gere
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e5a7e59d18c00982"
 ---
 
 # Karlsruhe verschafft DDR-Heimkindern Gerechtigkeit

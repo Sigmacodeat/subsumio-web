@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-landerbremse/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "004ccc4f3086222d"
 ---
 
 # Die Länderbremse

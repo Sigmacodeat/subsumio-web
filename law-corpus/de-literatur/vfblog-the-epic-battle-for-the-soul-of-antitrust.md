@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-epic-battle-for-the-soul-of-antitrust
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d83dba9588c36117"
 ---
 
 # The Epic Battle for the Soul of Antitrust

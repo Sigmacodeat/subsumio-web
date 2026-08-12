@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/in-defence-of-multilevel-citizenship-a-re
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b31b6ed82124a305"
 ---
 
 # In Defence of Multilevel Citizenship – A Rejoinder

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "795985c66759d2ab"
 ---
 
 # Streitigkeiten über gemeinwohlorientierte Regulierung von Investoren gehören im demokratischen Rechtsstaat vor die nationalen Gerichte

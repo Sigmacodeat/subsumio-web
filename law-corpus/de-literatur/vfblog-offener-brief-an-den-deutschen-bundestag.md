@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/offener-brief-an-den-deutschen-bundestag/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b02045dfce9c2cca"
 ---
 
 # Offener Brief an den Deutschen Bundestag

@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2025 Mirjam Eggen;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "3ca0423f62702b2f"
 ---
 
 # Schweizer Kryptoregulierung: Gesetzgeberischer Handlungsbedarf im Zivil- und Aufsichtsrecht

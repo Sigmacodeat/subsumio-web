@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/erhohung-statt-anpassung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f99f5e0b3ddf44fb"
 ---
 
 # Erhöhung statt Anpassung

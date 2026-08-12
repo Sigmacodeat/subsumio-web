@@ -67,7 +67,7 @@ describe("autopilot wiring: nightly quality probe", () => {
   });
 
   test('hasEmbeddingProvider reads from gateway.isAvailable("embedding") (codex round-2 #12 — in-process, not subprocess)', () => {
-    expect(SOURCE).toContain(`isAvailable('embedding')`);
+    expect(SOURCE).toMatch(/isAvailable\(["']embedding["']\)/);
     expect(SOURCE).toContain(`gateway`);
   });
 

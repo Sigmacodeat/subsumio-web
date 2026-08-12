@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/roa-the-paradox-of-efficiency/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5655f4f5f2efac35"
 ---
 
 # The Paradox of Efficiency: Frictions Between Law and Algorithms

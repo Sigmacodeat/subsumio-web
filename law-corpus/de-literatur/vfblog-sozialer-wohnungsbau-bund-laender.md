@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sozialer-wohnungsbau-bund-laender/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d8a3dc606212a8e4"
 ---
 
 # Irreführendes Versprechen

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/der-form-ein-unmgliches-amt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1a6f1f9ce0e222e0"
 ---
 
 # In der Form ein unmögliches Amt!

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/warum-die-reform-des-sexualstrafrechts-ke
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3b4bd6fc33a4d856"
 ---
 
 # Warum die “Reform” des Sexualstrafrechts keine ist

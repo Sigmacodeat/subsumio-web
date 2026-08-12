@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/os2-uk-migration/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1345d9290819ba80"
 ---
 
 # Die Versicherheitlichung und Kriminalisierung von Migration und Asyl in Großbritannien

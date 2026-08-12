@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/digital-sovereignty-and-the-rights/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2124a8f5456b7e8c"
 ---
 
 # EU’s Digital Sovereignty and the Rights-Based Imperative

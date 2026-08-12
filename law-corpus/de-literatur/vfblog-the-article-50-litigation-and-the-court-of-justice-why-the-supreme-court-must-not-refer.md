@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c75a10997a940fe2"
 ---
 
 # The Article 50 Litigation and the Court of Justice: Why the Supreme Court must NOT refer

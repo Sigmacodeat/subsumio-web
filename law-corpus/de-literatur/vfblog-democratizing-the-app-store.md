@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/democratizing-the-app-store/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2e00180e7b86137b"
 ---
 
 # Democratizing the App Store

@@ -368,7 +368,7 @@ export function DataTable<T>({
           className={cn("overflow-x-auto", shouldVirtualize && "overflow-y-auto")}
           style={shouldVirtualize ? { maxHeight: "70vh" } : undefined}
         >
-          <table className="w-full text-sm">
+          <table className="w-full text-sm text-[color:var(--ds-text)]">
             <thead className="sticky top-0 z-10">
               <tr className="border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
                 {selectable && (

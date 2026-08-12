@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rethinking-rights/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b38309245ea50755"
 ---
 
 # Rethinking Rights in Social Media Governance

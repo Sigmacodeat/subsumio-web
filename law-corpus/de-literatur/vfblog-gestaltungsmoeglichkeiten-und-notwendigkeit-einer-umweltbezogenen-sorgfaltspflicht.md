@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "905901ea9742ce64"
 ---
 
 # Gestaltungsmöglich&shy;keiten und Notwendigkeit einer umweltbezogenen Sorgfaltspflicht

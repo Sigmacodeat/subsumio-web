@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wahlrecht-parteien/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "514c5b7bb5e3f9e7"
 ---
 
 # Wählen heißt Auswählen – aber zwischen Parteien

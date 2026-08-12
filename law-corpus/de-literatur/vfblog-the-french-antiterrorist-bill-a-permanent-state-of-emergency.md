@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "06dc5feb6bb07c23"
 ---
 
 # The French Antiterrorist Bill: A Permanent State of Emergency

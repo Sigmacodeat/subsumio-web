@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zum-studieren-genug-zum-leben-zu-wenig/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d25555120bab123a"
 ---
 
 # Zum Studieren genug, zum Leben zu wenig

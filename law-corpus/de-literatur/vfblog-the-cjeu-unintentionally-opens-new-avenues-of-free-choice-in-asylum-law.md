@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "efed78a55449147f"
 ---
 
 # The CJEU (Unintentionally) Opens New Avenues of “Free Choice” in Asylum Law

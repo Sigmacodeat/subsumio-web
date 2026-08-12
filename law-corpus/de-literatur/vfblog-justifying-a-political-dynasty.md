@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/justifying-a-political-dynasty/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c8b9a1a3322f2c86"
 ---
 
 # Justifying a Political Dynasty

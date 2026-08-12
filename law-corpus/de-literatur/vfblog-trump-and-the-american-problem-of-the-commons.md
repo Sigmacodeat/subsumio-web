@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/trump-and-the-american-problem-of-the-com
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8cab005d41a0b32c"
 ---
 
 # Trump and the American Problem of the Commons

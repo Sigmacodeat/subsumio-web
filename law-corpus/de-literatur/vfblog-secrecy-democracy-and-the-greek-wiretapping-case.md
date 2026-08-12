@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/secrecy-democracy-and-the-greek-wiretappi
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ad812b92b0a29a1e"
 ---
 
 # Secrecy, Democracy, and the Greek Wiretapping Case

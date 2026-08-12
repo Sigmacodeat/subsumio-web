@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ca01820637d6578d"
 ---
 
 # On the Margin: Observations on Reception, Ratio and Reform of the Strasbourg Court

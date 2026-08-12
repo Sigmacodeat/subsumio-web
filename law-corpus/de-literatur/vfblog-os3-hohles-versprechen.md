@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os3-hohles-versprechen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "95f6d638c9065e9b"
 ---
 
 # Ein hohles Versprechen

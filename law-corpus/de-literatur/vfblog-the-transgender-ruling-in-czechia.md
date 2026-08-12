@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-transgender-ruling-in-czechia/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "05b79d6ec9ac8fda"
 ---
 
 # The New Transgender Ruling in Czechia

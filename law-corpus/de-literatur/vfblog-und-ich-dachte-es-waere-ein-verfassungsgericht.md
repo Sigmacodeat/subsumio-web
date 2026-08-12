@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/und-ich-dachte-es-waere-ein-verfassungsge
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4866c23413df1686"
 ---
 
 # Geht es nicht um Verfassungsrecht?

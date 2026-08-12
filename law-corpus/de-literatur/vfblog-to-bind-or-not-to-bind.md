@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/to-bind-or-not-to-bind/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "49a57e7efaecb0fc"
 ---
 
 # To Bind or Not to Bind

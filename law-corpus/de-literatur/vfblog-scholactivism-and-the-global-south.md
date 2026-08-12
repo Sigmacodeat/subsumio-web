@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/scholactivism-and-the-global-south/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "50dff696e8e1d8e1"
 ---
 
 # Scholactivism and the Global South

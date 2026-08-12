@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/naturalised-and-muted/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "380050305050059b"
 ---
 
 # Naturalised and Muted

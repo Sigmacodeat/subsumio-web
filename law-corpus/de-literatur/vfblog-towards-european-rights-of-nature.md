@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/towards-european-rights-of-nature/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "237e1a9f9e975530"
 ---
 
 # Towards European Rights of Nature

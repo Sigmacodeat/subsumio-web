@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-battle-over-the-sacred-and-the-profan
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "98f92bd983c2fe01"
 ---
 
 # The Battle over the Sacred and the Profane

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-eurozone-crisis-reply-by-the-authors-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "64fd41f487294b83"
 ---
 
 # “The Eurozone Crisis”: Reply by the Authors

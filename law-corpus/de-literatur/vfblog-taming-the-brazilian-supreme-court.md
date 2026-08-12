@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/taming-the-brazilian-supreme-court/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "06618f2d4e13ff9c"
 ---
 
 # Taming the Brazilian Supreme Court

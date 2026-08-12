@@ -7,6 +7,7 @@ import path from "node:path";
 import { randomBytes, randomUUID } from "node:crypto";
 import { Pool, type PoolConfig } from "pg";
 import { AuthError } from "@/lib/errors";
+import type { OnboardingProgress } from "@/lib/types";
 
 export type Plan = "free" | "pro" | "team" | "enterprise";
 
@@ -66,6 +67,8 @@ export interface User {
   preferredModel?: string | null;
   /** ISO timestamp when the guided onboarding wizard was completed. null = not yet done. */
   onboardingCompletedAt?: string | null;
+  /** Per-step setup progress for the dashboard guide / checklist. */
+  onboardingProgress?: OnboardingProgress;
   createdAt: string;
 }
 
@@ -683,6 +686,13 @@ export async function buildNewUser(opts: {
     industry: opts.industry ?? null,
     jurisdiction: opts.jurisdiction ?? null,
     onboardingCompletedAt: null,
+    onboardingProgress: {
+      firm: false,
+      firstCase: false,
+      firstDeadline: false,
+      teamInvited: false,
+      firstQuery: false,
+    },
     createdAt: new Date().toISOString(),
   };
 }
@@ -726,4 +736,27 @@ export function toPublic(user: User): PublicUser {
   void _aak;
   void _zek;
   return pub;
+}
+
+const DEFAULT_ONBOARDING_PROGRESS: OnboardingProgress = {
+  firm: false,
+  firstCase: false,
+  firstDeadline: false,
+  teamInvited: false,
+  firstQuery: false,
+};
+
+export async function markOnboardingProgress(
+  userId: string,
+  patch: Partial<OnboardingProgress>
+): Promise<void> {
+  const store = getStore();
+  const user = await store.getById(userId);
+  if (!user) return;
+  const next: OnboardingProgress = {
+    ...DEFAULT_ONBOARDING_PROGRESS,
+    ...user.onboardingProgress,
+    ...patch,
+  };
+  await store.update(userId, { onboardingProgress: next });
 }

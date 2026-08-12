@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/egmr-grobritannien-zieht-die-handschuhe-a
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8aa7805c9e6bfb2c"
 ---
 
 # EGMR: Großbritannien zieht die Handschuhe aus

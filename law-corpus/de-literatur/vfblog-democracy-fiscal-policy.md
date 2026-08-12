@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/democracy-fiscal-policy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "adf487eb511c92e2"
 ---
 
 # The Limits of Limiting Democracy

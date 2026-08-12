@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "4d792b9204c96c6e"
 ---
 
 § 20.3 Versammlungsfreiheit (Art. 8 GG) &#124; Inhaltsverzeichnis &#124; § 20.5 Petitionsrecht (Art. 17 GG) 

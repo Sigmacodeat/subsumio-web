@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0c6ff9f9a49bc9dc"
 ---
 
 # Eine Strategie tut not, nicht Schnellschüsse

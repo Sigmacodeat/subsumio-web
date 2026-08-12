@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-war-for-the-tech-economy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ff0642990a80a0e9"
 ---
 
 # A War for the Tech Economy

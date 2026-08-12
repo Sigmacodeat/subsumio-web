@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fighting-for-a-cause/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "91f31b2a603e7c4e"
 ---
 
 # Fighting for a Cause

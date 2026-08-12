@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/judges-as-guardians-of-promises/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c6e0dd34ae059cc9"
 ---
 
 # Judges as Guardians of Promises

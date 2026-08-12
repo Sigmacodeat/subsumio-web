@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ac87d5b8bb5b6da8"
 ---
 
 # Judicial Responses to Bolsonarism: The Leading Role of the Federal Supreme Court

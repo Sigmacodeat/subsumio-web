@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/myanmars-military-coup-detat-is-unconstit
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "21866c4fec8d4177"
 ---
 
 # Myanmar’s Military Coup d’État Is Unconstitutional

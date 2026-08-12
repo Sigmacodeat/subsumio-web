@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/georgias-coronation-of-an-orwellian-doubl
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b09a63faa23521a2"
 ---
 
 # Georgia’s Coronation of an Orwellian Doublethink

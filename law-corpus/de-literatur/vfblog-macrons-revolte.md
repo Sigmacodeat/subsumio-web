@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/macrons-revolte/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "050e29db1bc4eeda"
 ---
 
 # Macrons Revolte

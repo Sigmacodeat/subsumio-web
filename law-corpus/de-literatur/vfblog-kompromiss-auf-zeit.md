@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kompromiss-auf-zeit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "480b8a98ef75c090"
 ---
 
 # Kompromiss auf Zeit

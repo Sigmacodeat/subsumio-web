@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/post-script-to-the-symposium/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "679ca42cfb8e94f1"
 ---
 
 # Post-Script to the Symposium

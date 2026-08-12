@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4e8e3003203bc3e0"
 ---
 
 # Is Bulgaria’s Rule of Law about to Die under the European Commission’s Nose? The Country’s Highest-Ranking Judge Fears So

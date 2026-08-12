@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ziviler-ungehorsam-in-der-klimakrise/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "710a4cde00eea76b"
 ---
 
 # Ziviler Ungehorsam in der Klimakrise

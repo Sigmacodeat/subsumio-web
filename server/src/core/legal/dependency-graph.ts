@@ -362,7 +362,7 @@ export class DependencyGraphStore {
       // If the dependency has a specific paragraph_ref, check if it was amended
       if (paragraphRef && !amendedSet.has(paragraphRef)) {
         await this.reVerify(dependencyId, "not_affected", reviewerId,
-          `§ ${paragraphRef} was not in amended set [${amendedParagraphs.join(", ")}]`);
+          `${paragraphRef} was not in amended set [${amendedParagraphs.join(", ")}]`);
         return "not_affected";
       }
 
@@ -428,7 +428,7 @@ export class DependencyGraphStore {
       const hashes = result.rows[0].paragraph_hashes as Record<string, string>;
       const storedHash = hashes[paragraph];
       if (storedHash) {
-        return `§ ${paragraph} (hash: ${storedHash.slice(0, 16)})`;
+        return `${paragraph} (hash: ${storedHash.slice(0, 16)})`;
       }
       return hash.slice(0, 16);
     } catch {

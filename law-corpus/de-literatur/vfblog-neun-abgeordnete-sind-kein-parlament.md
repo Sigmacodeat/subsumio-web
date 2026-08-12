@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/neun-abgeordnete-sind-kein-parlament/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "73b0f8fc4acf18a2"
 ---
 
 # Neun Abgeordnete sind kein Parlament

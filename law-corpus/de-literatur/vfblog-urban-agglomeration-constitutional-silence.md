@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/urban-agglomeration-constitutional-silenc
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1157fd951b01f327"
 ---
 
 # Urban Agglomeration, Constitutional Silence

@@ -20,6 +20,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Marc Thommen, Elmar
   Habermeyer, Marc Graf; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "c00e14a05acd8507"
 ---
 
 # Tatenlose Massnahmen? Einsichts- und Steuerungsfähigkeit sowie Putativrechtfertigung schizophrener Wahntäter

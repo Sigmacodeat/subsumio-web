@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ec5c57c06a3aff66"
 ---
 
 # Gleich meint gleich! Warum sich Sozial&shy;leistungen (auch) für Geflüchtete nicht ohne Weiteres kürzen lassen

@@ -934,7 +934,7 @@ function SettingsPageInner() {
                       <div className="flex flex-wrap items-center gap-2">
                         <Euro size={14} className="text-[color:var(--ds-text-muted)]" />
                         <Input
-                          type="number"
+                          type="number" inputMode="numeric"
                           {...kanzleiForm.register("stundensatz")}
                           placeholder="200"
                           className="w-32"
@@ -943,7 +943,7 @@ function SettingsPageInner() {
                           {t("settings.per_hour")}
                         </span>
                         <Input
-                          type="number"
+                          type="number" inputMode="numeric"
                           {...kanzleiForm.register("abrechnungstakt")}
                           placeholder="15"
                           className="ml-2 w-24"
@@ -966,7 +966,7 @@ function SettingsPageInner() {
                             </span>
                             <Euro size={12} className="text-[color:var(--ds-text-muted)]" />
                             <input
-                              type="number"
+                              type="number" inputMode="numeric"
                               value={String(satz)}
                               onChange={(e) => {
                                 const updated = {
@@ -1034,7 +1034,7 @@ function SettingsPageInner() {
                   <div className="flex items-center gap-2">
                     <Input
                       id="settings-zahlungsziel-tage"
-                      type="number"
+                      type="number" inputMode="numeric"
                       {...kanzleiForm.register("zahlungszielTage")}
                       placeholder="14"
                       className="w-24"

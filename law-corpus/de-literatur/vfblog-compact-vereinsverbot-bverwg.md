@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/compact-vereinsverbot-bverwg/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "48e18c856aa79497"
 ---
 
 # Ist das Presse oder kann das weg?

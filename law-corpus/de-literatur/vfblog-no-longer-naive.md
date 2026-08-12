@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/no-longer-naive/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0b1cf738047b433e"
 ---
 
 # No longer naive

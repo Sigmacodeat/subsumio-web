@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/esm-kredite-statt-corona-bonds/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "180074c13ba0486f"
 ---
 
 # ESM-Kredite statt Corona-Bonds

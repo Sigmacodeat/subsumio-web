@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wohnungsmarkt-ohne-borsendruck/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "23a8c39175187886"
 ---
 
 # Wohnungsmarkt ohne Börsendruck

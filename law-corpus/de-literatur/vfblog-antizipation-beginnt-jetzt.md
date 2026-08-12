@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/antizipation-beginnt-jetzt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f9e2396c1b17a129"
 ---
 
 # Antizipation beginnt jetzt!

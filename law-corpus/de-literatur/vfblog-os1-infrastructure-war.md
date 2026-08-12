@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/os1-infrastructure-war/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e9e3ec1123771a42"
 ---
 
 # Exiting Afghanistan as Ushering in a New Era of Global Infrastructure and Supply Chain Wars

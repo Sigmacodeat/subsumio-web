@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/irans-covid-19-response-who-calls-the-sho
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "882b0aacf91f4c65"
 ---
 
 # Iran’s COVID-19 Response: Who Calls the Shots?

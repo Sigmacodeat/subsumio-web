@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6f2461e86c13e5d8"
 ---
 
 # Macht gibt Macht, Recht muss sie wieder nehmen: Minister und Abgeordnete im Wahlkampf

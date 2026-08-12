@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f3aaa7296f8c1e25"
 ---
 
 # Tausche Britannien gegen Schottland, oder: Volkssouveränität mal ganz anders

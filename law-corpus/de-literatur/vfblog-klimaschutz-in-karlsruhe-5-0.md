@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/klimaschutz-in-karlsruhe-5-0/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "efb0d9ddeaab30d3"
 ---
 
 # Klimaschutz in Karlsruhe 5.0

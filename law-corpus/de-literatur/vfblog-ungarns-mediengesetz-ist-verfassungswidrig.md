@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ungarns-mediengesetz-ist-verfassungswidri
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bdf0dfd526fed762"
 ---
 
 # Ungarns Mediengesetz ist verfassungswidrig

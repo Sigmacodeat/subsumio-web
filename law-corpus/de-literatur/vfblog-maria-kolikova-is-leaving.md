@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/maria-kolikova-is-leaving/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e0d00b12e1a4ecde"
 ---
 
 # Mária Kolíková is leaving

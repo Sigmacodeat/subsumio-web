@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-autocratic-party-structure/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dbd95b55cbb298ff"
 ---
 
 # The Autocratic Party-Structure of PiS

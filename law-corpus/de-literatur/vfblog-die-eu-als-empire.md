@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-eu-als-empire/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bb54bce85a984899"
 ---
 
 # Die EU als Empire

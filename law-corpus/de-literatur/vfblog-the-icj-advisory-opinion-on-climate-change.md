@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-icj-advisory-opinion-on-climate-chang
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a9fcc61e9cef3278"
 ---
 
 # The ICJ’s Advisory Opinion on Climate Change

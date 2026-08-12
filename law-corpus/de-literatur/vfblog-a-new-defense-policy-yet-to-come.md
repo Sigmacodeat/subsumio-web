@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/a-new-defense-policy-yet-to-come/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "169acdcdf1484667"
 ---
 
 # A New Defense Policy Yet to Come. Two Remarks on the Current State of CSDP

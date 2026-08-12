@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pnr-fundamental-rights/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f46125c33fb235df"
 ---
 
 # Squaring the triangle of fundamental rights concerns

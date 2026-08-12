@@ -117,7 +117,7 @@ export default function WebhooksPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Webhook size={20} className="text-[color:var(--ds-text)]" />

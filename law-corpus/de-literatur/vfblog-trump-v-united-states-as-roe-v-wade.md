@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/trump-v-united-states-as-roe-v-wade/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c9bba4c4137d0c90"
 ---
 
 # Trump v. United States as Roe v. Wade

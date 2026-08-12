@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/altersgrenze-notare-berufsfreiheit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "569d0c9e1ce05007"
 ---
 
 # Alternde Notare und gepflegtes Recht

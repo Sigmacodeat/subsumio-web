@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/irland-verankert-kinderrechte-in-der-verf
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5091c009cddcbeca"
 ---
 
 # Irland verankert Kinderrechte in der Verfassung

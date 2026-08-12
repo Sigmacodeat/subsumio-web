@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/democrativeducationsocialmediaban/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b6558d37c0e83834"
 ---
 
 # Democratic Education in a Tempest

@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a3c93d75b23d1f47"
 ---
 
 # Seit wann kann ein Gericht eine Legislaturperiode halbieren?

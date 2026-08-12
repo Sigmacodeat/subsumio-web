@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/keine-reform-nirgends-doch-im-luneburger-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "19205f6b48607ad7"
 ---
 
 # Keine Reform nirgends? Doch, im Lüneburger Modell!

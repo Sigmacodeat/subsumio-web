@@ -158,7 +158,7 @@ export default function MemoryManagementPage() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 md:px-6">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("memory.page_title")}
         description={t("memory.desc")}

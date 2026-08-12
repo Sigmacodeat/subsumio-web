@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/death-blow-tcc/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b91ffeb20b889d84"
 ---
 
 # The Final Death Blow to the Turkish Constitutional Court

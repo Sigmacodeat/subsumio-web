@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wie-geld-oder-gold/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7a39e5edfd4cb2e7"
 ---
 
 # Wie Geld oder Gold

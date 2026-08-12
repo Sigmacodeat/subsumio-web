@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-timid-proposal/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a2c3ff1ff68d7d1b"
 ---
 
 # A Timid Proposal

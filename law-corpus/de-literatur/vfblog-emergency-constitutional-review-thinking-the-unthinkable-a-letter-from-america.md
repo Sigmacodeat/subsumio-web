@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b71bf1cb6a58728e"
 ---
 
 # “Emergency Constitutional Review”: thinking the unthinkable? A Letter from America

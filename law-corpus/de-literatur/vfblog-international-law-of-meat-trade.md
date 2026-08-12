@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/international-law-of-meat-trade/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2a6e2284b66690c4"
 ---
 
 # The International Law of Meat Trade

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/beobachtung-der-afd/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ba9e5655ebea7f30"
 ---
 
 # Beobachtung der AfD

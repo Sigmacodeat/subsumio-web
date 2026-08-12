@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9c81ffb404682ccd"
 ---
 
 # COVID-19 and the European Central Bank: The Legal Foundations of EMU as the Next Victim?

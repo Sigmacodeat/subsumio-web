@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6b76dd6b9ece3c73"
 ---
 
 # Judicial “Reform” in Poland: The President's Bills are as Unconstitutional as the Ones he Vetoed

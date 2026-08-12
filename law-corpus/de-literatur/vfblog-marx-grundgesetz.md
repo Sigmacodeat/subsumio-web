@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/marx-grundgesetz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "34843217112d7aac"
 ---
 
 # Verfassungsfeind Marx?

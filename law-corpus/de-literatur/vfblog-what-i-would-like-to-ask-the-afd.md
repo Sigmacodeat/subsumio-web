@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/what-i-would-like-to-ask-the-afd/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ab1badbc8af0548a"
 ---
 
 # What I would like to ask the AfD

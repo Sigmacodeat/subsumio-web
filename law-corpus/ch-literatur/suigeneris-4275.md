@@ -22,6 +22,7 @@ license: >-
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2023 Nils Güggi, Dario Haux,
   Luca Ranzoni, Stefan Schlegel, Charlotte Sieber-Gasser, Marc Thommen;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "e57fef30b3f96d57"
 ---
 
 # Vorwort zu #unbequem

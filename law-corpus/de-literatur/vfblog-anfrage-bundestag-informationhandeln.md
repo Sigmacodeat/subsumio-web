@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/anfrage-bundestag-informationhandeln/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fb292caf56bb84c7"
 ---
 
 # Man wird ja wohl mal fragen dürfen?

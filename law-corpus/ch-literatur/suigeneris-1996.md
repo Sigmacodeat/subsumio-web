@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2018 Valérie Junod;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "8d221c76ce2cd2be"
 ---
 
 # Cannabis utilisé à des fins non-médicales: Feu vert pour des essais pilotes ciblés?

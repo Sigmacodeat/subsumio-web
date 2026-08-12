@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "24881608eeea6d04"
 ---
 
 # “Ultimately, the member states decide” – interview with Andrew Moravcsik on the Scottish referendum and European Union politics

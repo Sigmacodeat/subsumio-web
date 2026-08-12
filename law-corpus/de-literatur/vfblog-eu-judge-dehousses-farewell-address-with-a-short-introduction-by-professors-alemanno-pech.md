@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "30e62ea0b944fb15"
 ---
 
 # EU Judge Dehousse’s Farewell Address, with a short introduction by Professors Alemanno &#038; Pech

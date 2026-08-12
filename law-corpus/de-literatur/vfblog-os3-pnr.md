@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/os3-pnr/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bc0151aefa842de4"
 ---
 
 # The European PNR framework and the changing landscape of EU-security

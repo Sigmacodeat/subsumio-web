@@ -15,6 +15,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "399da4601dbb46d7"
 ---
 
 Didaktik: Sachverhalt &#124; Inhaltsverzeichnis &#124; Didaktik: Musterbearbeitung 

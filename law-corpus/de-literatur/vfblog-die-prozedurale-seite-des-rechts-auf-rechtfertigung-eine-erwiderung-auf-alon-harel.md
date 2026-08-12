@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "317295fa012d8fc1"
 ---
 
 # Die prozedurale Seite des Rechts auf Rechtfertigung: eine Erwiderung auf ALON HAREL

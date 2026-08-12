@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hartz-iv-papiers-vermchtnis/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b76071aac2f1d65e"
 ---
 
 # Hartz IV: Papiers Vermächtnis

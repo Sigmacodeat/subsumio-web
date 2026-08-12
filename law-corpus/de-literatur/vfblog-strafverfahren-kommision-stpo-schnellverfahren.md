@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/strafverfahren-kommision-stpo-schnellverf
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c9c2765743794b8a"
 ---
 
 # Zeit für ein Tempolimit im Strafverfahren

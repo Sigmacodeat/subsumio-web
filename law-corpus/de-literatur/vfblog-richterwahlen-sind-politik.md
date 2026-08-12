@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/richterwahlen-sind-politik/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1873e6005c4a4e05"
 ---
 
 # Richterwahlen sind Politik

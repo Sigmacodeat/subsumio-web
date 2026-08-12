@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/gender-south-africa-chief-justice/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cae48eec84dcd5a0"
 ---
 
 # Weaponising Gender in South Africa’s Chief Justice Appointment

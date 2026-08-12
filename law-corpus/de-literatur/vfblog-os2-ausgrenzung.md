@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os2-ausgrenzung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "78b701d2cef4da70"
 ---
 
 # Eine Kultur der Ausgrenzung wird in die Extreme getrieben

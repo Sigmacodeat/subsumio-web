@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2f89b9d5683fab02"
 ---
 
 # Fight Against Covid-19 in Serbia: Saving the Nation or Securing the Re-Election?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hungarys-lesson-for-europe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "79bf7c7ea2849b19"
 ---
 
 # Hungary’s Lesson for Europe

@@ -131,14 +131,14 @@ export default function FAOTrackingPage() {
       )
       .join("");
     win.document.write(
-      `<!DOCTYPE html><html><head><meta charset="utf-8"><title>FAO-Tracking ${year}</title><style>body{font-family:Arial,sans-serif;margin:40px}h1{font-size:18px}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:12px}th{background:#f5f5f5}.summary{margin:20px 0;padding:12px;background:#f0f4ff;border-radius:8px}</style></head><body><h1>FAO-Tracking ${year}</h1><div class="summary"><p><strong>Verifizierte Stunden:</strong> ${verifiedHours} / ${FAO_REQUIRED_HOURS}</p><p><strong>Verbleibend:</strong> ${remaining}h</p></div><table><thead><tr><th>Datum</th><th>Anwalt</th><th>Fachanwaltsbezeichnung</th><th>Thema</th><th>Veranstalter</th><th>Stunden</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></body></html>`
+      `<!DOCTYPE html><html><head><meta charset="utf-8"><title>FAO-Tracking ${year}</title><style>body{font-family:Arial,sans-serif;margin:40px}h1{font-size:18px}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid hsl(230, 8%, 85%);padding:8px;text-align:left;font-size:12px}th{background:hsl(230, 8%, 96%)}.summary{margin:20px 0;padding:12px;background:hsl(230, 60%, 97%);border-radius:8px}</style></head><body><h1>FAO-Tracking ${year}</h1><div class="summary"><p><strong>Verifizierte Stunden:</strong> ${verifiedHours} / ${FAO_REQUIRED_HOURS}</p><p><strong>Verbleibend:</strong> ${remaining}h</p></div><table><thead><tr><th>Datum</th><th>Anwalt</th><th>Fachanwaltsbezeichnung</th><th>Thema</th><th>Veranstalter</th><th>Stunden</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></body></html>`
     );
     win.document.close();
     setTimeout(() => win.print(), 300);
   }
 
   return (
-    <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       {showWarning && warningChecked && !warningDismissed && (
         <div
           className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4"
@@ -248,6 +248,8 @@ export default function FAOTrackingPage() {
               </Label>
               <Input
                 type="email"
+                autoComplete="email"
+                inputMode="email"
                 value={form.lawyer_email}
                 onChange={(e) => setForm({ ...form, lawyer_email: e.target.value })}
                 required
@@ -278,7 +280,7 @@ export default function FAOTrackingPage() {
                 {t("fao.hours")} *
               </Label>
               <Input
-                type="number"
+                type="number" inputMode="numeric"
                 min="0"
                 max="24"
                 step="0.5"

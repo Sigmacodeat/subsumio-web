@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "035d1f818a686bf8"
 ---
 
 # Politisierung des Europaparlaments: Für Karlsruhe nichts als “spekulativ”

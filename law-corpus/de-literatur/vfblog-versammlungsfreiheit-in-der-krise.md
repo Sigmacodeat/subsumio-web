@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/versammlungsfreiheit-in-der-krise/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "11810fd70c183d81"
 ---
 
 # Versammlungsfreiheit in der Krise

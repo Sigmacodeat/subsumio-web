@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sentient-companions-classified-as-baggage
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "439ed0bce04be305"
 ---
 
 # Sentient Companions Classified As Baggage

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/data-retention-in-a-cross-border-perspect
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "87f6ed401b80e1f9"
 ---
 
 # Data Retention in a Cross-Border Perspective

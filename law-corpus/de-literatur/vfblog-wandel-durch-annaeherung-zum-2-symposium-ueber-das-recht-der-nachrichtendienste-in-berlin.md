@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "763fe7d971677f81"
 ---
 
 # Wandel durch Annäherung? Zum 2. Symposium über das Recht der Nachrichten&shy;dienste in Berlin

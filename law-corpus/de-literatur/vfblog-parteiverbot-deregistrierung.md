@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/parteiverbot-deregistrierung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fc3a52ff102cad7a"
 ---
 
 # Ein unabhängiger Trigger für das Parteiverbot

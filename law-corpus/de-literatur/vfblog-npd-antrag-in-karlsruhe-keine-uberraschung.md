@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/npd-antrag-in-karlsruhe-keine-uberraschun
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f9a8e5acb8e746d4"
 ---
 
 # NPD-Antrag in Karlsruhe: Keine Überraschung

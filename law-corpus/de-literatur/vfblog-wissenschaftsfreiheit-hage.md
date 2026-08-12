@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wissenschaftsfreiheit-hage/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "004976f3705fa5ff"
 ---
 
 # Forschung unter Vorbehalt

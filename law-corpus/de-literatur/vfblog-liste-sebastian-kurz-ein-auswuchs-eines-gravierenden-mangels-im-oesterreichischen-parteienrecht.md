@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bb98fe60be01a4e2"
 ---
 
 # “Liste Sebastian Kurz”: ein Auswuchs eines gravierenden Mangels im österreichischen Parteienrecht

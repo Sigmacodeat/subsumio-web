@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wahlrecht-bundestag-grabenwahlrecht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0a7a8344635f751b"
 ---
 
 # Wählen heißt Auswählen

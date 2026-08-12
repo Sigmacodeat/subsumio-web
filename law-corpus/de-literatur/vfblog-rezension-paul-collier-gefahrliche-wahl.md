@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rezension-paul-collier-gefahrliche-wahl/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "09b285ee77047c7c"
 ---
 
 # Rezension: Paul Collier, Gefährliche Wahl

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/querdenker-suspension-fb/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8a344190f93e3ff0"
 ---
 
 # Facebook suspends accounts of German Covid-19-deniers

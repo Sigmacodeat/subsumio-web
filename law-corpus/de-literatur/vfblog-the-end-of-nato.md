@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-end-of-nato/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "137470a6c86112b3"
 ---
 
 # The End of NATO As We Know It

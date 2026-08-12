@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bistable-perception/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fcb80b24986ee84c"
 ---
 
 # Bistable Perception

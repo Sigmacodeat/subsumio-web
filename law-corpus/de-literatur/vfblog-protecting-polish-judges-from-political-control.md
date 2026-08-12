@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/protecting-polish-judges-from-political-c
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3d9e3331c2144a78"
 ---
 
 # Protecting Polish Judges from Political Control

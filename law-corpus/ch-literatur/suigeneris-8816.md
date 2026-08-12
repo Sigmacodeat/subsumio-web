@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2024 Vanessa Rüegger;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "8a5ebde72794db91"
 ---
 
 # Selbstbestimmung von Menschen mit Behinderungen im Bereich Wohnen: Grund- und menschenrechtliche Pflichten und Kompetenzen von Bund und Kantonen

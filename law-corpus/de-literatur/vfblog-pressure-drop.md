@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pressure-drop/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aa7979ee6c9341b6"
 ---
 
 # Pressure Drop

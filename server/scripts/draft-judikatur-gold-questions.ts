@@ -5,7 +5,7 @@
  *
  *   bun run server/scripts/draft-judikatur-gold-questions.ts
  *
- * Reads server/law-corpus/at-judikatur/*.md (RIS Rechtssatz exports: each
+ * Reads law-corpus/at-judikatur/*.md (RIS Rechtssatz exports: each
  * file has a `Norm` field — the statute/§ interpreted — and a `Rechtssatz`
  * field — the legal principle in natural German prose, describing the
  * decision WITHOUT naming its own Geschäftszahl/case number).

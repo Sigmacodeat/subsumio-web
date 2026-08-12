@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/two-faces-german-bicameralism-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a9b28c62ebe673c9"
 ---
 
 # Two Faces of German Bicameralism

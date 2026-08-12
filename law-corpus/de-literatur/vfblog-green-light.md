@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/green-light/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6eed41b9d9c150ba"
 ---
 
 # A cautious green light for technology-driven mass surveillance

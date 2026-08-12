@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0d804886b8e0e075"
 ---
 
 # Neues vom Glossator 2: Acht Thesen zum genauen Hinschauen

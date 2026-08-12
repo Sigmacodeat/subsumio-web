@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/self-fulfilling-prophecies/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "98c1e7bb090c63ee"
 ---
 
 # Self-Fulfilling Prophecies

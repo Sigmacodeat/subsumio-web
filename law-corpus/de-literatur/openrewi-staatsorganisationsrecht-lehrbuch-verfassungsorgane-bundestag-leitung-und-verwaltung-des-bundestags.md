@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "f4c439d4b2410273"
 ---
 
 § 10.3 Opposition &#124; Inhaltsverzeichnis &#124; § 11 Bundesrat 

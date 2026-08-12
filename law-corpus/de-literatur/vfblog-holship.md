@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/holship/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4b2f2c6296dffe80"
 ---
 
 # The Demise of Viking and Laval

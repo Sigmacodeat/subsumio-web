@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nicht-tragfahig-begrundbar/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bd12f9b9e7929822"
 ---
 
 # Nicht tragfähig begründbar

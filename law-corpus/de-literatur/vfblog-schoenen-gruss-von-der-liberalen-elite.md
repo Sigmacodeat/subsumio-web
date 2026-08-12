@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/schoenen-gruss-von-der-liberalen-elite/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ebfb49ca89518794"
 ---
 
 # Schönen Gruß von der liberalen Elite

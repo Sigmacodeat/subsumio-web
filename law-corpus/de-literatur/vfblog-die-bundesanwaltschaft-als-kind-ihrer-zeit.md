@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-bundesanwaltschaft-als-kind-ihrer-zei
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1e90758bab9c6d07"
 ---
 
 # Die Bundesanwaltschaft als Kind ihrer Zeit

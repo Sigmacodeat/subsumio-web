@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/again-the-european-defence-community-is-d
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b97cb969d9c07c25"
 ---
 
 # Again, the European Defence Community Is Dead, Let It Rest in Peace

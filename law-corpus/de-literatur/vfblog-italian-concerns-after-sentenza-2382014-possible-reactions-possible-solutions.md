@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9f11af425bd18ce4"
 ---
 
 # Italian concerns after sentenza 238/2014: possible reactions, possible solutions

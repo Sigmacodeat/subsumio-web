@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/tesla-ig-metall-betriebswahlen-union-bust
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "54c7197f79a7ae15"
 ---
 
 # Wenn der Arbeitgeber Wahlkampf macht

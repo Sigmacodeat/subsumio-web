@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/offentlich-rechtlicher-rundfunk-afd-emfa/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fc29faad8ac1c7de"
 ---
 
 # Öffentlich-rechtlicher (G)rundfunk?

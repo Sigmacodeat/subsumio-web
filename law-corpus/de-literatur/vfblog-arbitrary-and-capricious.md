@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/arbitrary-and-capricious/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8c4db4793f947829"
 ---
 
 # Arbitrary and capricious

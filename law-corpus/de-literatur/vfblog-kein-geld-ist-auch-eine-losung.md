@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kein-geld-ist-auch-eine-losung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "70ee29827096f9d3"
 ---
 
 # Kein Geld ist auch eine Lösung

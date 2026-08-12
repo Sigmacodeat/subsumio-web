@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/viel-geld-fur-wenig-transparenz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "060308268de16163"
 ---
 
 # Viel Geld für wenig Transparenz

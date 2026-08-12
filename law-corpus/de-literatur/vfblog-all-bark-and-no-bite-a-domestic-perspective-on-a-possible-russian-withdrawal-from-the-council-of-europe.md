@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8889783e158384cc"
 ---
 
 # All Bark and no Bite? A Domestic Perspective on a Possible Russian Withdrawal from the Council of Europe

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0db51035e47c2c2c"
 ---
 
 # Is the Turkish Constitutional Complaint System on the Verge of a Crisis?

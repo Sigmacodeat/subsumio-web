@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-deutsche-lieferkettengesetz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eb9d719cf10608a0"
 ---
 
 # Das deutsche Lieferkettengesetz

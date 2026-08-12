@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b36084cb4e5bf384"
 ---
 
 # Is Ethnic Gerrymandering a Solution for the Constitutional Impasse?

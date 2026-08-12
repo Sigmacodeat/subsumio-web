@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3721101eae77b863"
 ---
 
 # The Universal Declaration of the Rights of Humankind: Big Words, Small Effect

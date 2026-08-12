@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wehrpflicht-losverfahren/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a131f71c6f4dffd3"
 ---
 
 # Zwischen Gleichheit, Gerechtigkeit und Allgemeinheit

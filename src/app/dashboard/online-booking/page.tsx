@@ -57,7 +57,7 @@ export default function OnlineBookingPage() {
     new Date(iso).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("booking.title")}
         description={t("booking.description")}
@@ -103,7 +103,7 @@ export default function OnlineBookingPage() {
           <div>
             <Label>{t("booking.duration")}</Label>
             <Input
-              type="number"
+              type="number" inputMode="numeric"
               value={slotDuration}
               onChange={(e) => setSlotDuration(e.target.value)}
             />

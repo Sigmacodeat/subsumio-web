@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-kapitulation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "940ee349347208a3"
 ---
 
 # Die Kapitulation

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4677b219c5b7f038"
 ---
 
 # Lammerts Eröffnungsrede zur Bundesversammlung gegen Trump und AfD – Darf der das?

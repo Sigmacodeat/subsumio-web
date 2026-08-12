@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/barring-legal-gender-reassignment-in-bulg
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "66375be7f96c1c54"
 ---
 
 # Barring Legal Gender Reassignment in Bulgaria

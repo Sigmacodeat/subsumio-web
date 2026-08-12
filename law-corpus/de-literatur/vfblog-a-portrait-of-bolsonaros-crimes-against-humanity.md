@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-portrait-of-bolsonaros-crimes-against-h
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "44a377ecab50d097"
 ---
 
 # A Portrait of Bolsonaro’s Crimes Against Humanity

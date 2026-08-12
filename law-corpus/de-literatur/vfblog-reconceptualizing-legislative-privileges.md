@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/reconceptualizing-legislative-privileges/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "89a3b866ac2ce853"
 ---
 
 # Reconceptualizing Legislative Privileges

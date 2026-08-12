@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "2efe4a63af1a887e"
 ---
 
 § 23 Kunst und Wissenschaft &#124; Inhaltsverzeichnis &#124; § 23.2 Wissenschaftsfreiheit (Art. 5 III GG) 

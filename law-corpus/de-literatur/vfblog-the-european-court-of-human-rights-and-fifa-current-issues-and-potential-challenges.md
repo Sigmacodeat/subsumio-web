@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ad7e4275199bd3c8"
 ---
 
 # The European Court of Human Rights and FIFA: Current Issues and Potential Challenges

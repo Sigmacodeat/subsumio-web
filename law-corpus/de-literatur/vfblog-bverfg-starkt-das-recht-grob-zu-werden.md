@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bverfg-starkt-das-recht-grob-zu-werden/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ffbeafc88ee6d9a7"
 ---
 
 # BVerfG stärkt das Recht, grob zu werden

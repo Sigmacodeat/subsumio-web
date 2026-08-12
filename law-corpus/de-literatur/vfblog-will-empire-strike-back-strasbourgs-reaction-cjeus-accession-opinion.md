@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3c7818b69cb55f08"
 ---
 
 # Will the empire strike back? Strasbourg’s reaction to the CJEU’s accession opinion

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/irelands-8th-amendment-repeal-or-retain/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "540641874c5f6bcd"
 ---
 
 # Ireland’s 8th Amendment: Repeal or Retain?

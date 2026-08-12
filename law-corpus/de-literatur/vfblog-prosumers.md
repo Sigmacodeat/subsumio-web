@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/prosumers/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bfa3e1e29fb7310c"
 ---
 
 # The Contractual Rights and Obligations of Prosumers on Social Media Platforms

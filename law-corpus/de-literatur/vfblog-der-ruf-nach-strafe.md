@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/der-ruf-nach-strafe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "42ab26441025d99a"
 ---
 
 # Der Ruf nach Strafe

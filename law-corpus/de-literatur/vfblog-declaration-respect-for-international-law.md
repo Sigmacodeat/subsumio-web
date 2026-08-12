@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/declaration-respect-for-international-law
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "acdb0e456d544679"
 ---
 
 # Respect for International Law

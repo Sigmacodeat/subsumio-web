@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/academic-freedom-security/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5e1d2a2ccfe0b7e2"
 ---
 
 # As Open as Necessary?

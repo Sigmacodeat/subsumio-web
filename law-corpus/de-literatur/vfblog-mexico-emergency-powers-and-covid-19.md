@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mexico-emergency-powers-and-covid-19/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "72115d2fa04c8c84"
 ---
 
 # Mexico: Emergency Powers and COVID-19

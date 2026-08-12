@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/aufgeschoben-ist-nicht-aufgehoben/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f5f57e122ed7d445"
 ---
 
 # Aufgeschoben ist nicht aufgehoben

@@ -16,6 +16,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2018 Marc Thommen;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "3deea8298a85692e"
 ---
 
 # Darf der Beschuldigte im Strafverfahren lügen?

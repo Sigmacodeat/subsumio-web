@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "52587cd27aecb022"
 ---
 
 # Ecclesia rules the waves: der Vatikan als Flaggenstaat privater Rettungsschiffe im Mittelmeer?

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1f595c96e93d8bc2"
 ---
 
 # Serious Cyberattack Raises Questions About GDPR Application in Finland

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-nachruf-ohne-tranen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "da83260f8cad0300"
 ---
 
 # Ein Nachruf ohne Tränen

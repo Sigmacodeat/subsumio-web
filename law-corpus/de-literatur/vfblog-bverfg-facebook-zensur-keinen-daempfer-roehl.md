@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/bverfg-facebook-zensur-keinen-daempfer-ro
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "12b595bc2a48b9d8"
 ---
 
 # Das BVerfG verpasst der “Facebook-Zensur” aber so was von überhaupt nicht einen Dämpfer

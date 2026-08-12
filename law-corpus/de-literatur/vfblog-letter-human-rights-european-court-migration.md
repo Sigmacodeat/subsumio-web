@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/letter-human-rights-european-court-migrat
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8810efeecefdf8a3"
 ---
 
 # What Are Human Rights For?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wie-viel-unwahrheit-vertragt-die-kunst/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f39f03867a72c1bd"
 ---
 
 # Wie viel Unwahrheit verträgt die Kunst?

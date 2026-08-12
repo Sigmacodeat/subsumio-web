@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-paar-ketzerische-gedanken-zur-ausbuer
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "99fbcb66bc2fb4d1"
 ---
 
 # Ein paar ketzerische Gedanken zur Ausbürgerung

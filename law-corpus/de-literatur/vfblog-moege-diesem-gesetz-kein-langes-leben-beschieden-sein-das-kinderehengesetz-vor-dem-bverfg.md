@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8ecfb2a139e35c59"
 ---
 
 # „Möge diesem Gesetz kein langes Leben beschieden sein!“: das Kinderehengesetz vor dem BVerfG

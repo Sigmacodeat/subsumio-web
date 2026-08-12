@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "461f8e9fbfbc9ee2"
 ---
 
 # The Timing of Dialogue: Slovenian Constitutional Court and the Data Retention Directive

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c5d440699db6b243"
 ---
 
 # Im Dutzend mehr Freiheit – mit Finnland gibt es bald in 12 europäischen Staaten die Ehe auch für Homosexuelle

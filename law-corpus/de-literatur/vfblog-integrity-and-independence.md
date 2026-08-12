@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/integrity-and-independence/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a5d14f6e07957344"
 ---
 
 # Integrity and Independence

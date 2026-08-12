@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/editorial-thuringen-projekt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9ce7b5e3302751fa"
 ---
 
 # Das Thüringen-Projekt

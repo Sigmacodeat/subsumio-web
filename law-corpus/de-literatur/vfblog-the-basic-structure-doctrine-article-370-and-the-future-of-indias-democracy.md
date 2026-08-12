@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e9d81fcb4ed5d16b"
 ---
 
 # The Basic Structure Doctrine, Article 370 and the Future of India’s Democracy

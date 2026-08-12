@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6b63bcc2d3ec336f"
 ---
 
 # Is Bauer the new Bosman? – The implications of the recent jurisprudence of the Court of Justice of the European Union for FIFA

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-italian-no-jab-no-job-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "208d1c95d961d110"
 ---
 
 # The Italian “No Jab, No Job” Law

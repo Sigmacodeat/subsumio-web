@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/schule-als-markt-staatlicher-bildungsange
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "340e4ad060bf5722"
 ---
 
 # Schule als Markt staatlicher Bildungsangebote

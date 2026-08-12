@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-political-impasse-and-how-to-get-out-of
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "efbb2cc1b93cb8b3"
 ---
 
 # A Political Impasse, and How to Get Out of It

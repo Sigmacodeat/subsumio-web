@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/reproductive-rights-and-the-climate-crisi
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b642fcba67328685"
 ---
 
 # Reproductive Rights and the Climate Crisis

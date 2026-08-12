@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/diminishing-authority/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4a6e564fbb1dea54"
 ---
 
 # Diminishing Authority

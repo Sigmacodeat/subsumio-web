@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "97fb7e08b238c1b4"
 ---
 
 # Dusting off the Old Precedent – Why the Commission Must Stick to the Art. 7 Procedure Against Poland

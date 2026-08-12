@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/another-lost-opportunity/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7fc49c0bc240560f"
 ---
 
 # A(nother) lost opportunity?

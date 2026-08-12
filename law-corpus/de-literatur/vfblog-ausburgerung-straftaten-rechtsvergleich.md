@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ausburgerung-straftaten-rechtsvergleich/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ffefa1bc68e2b9d1"
 ---
 
 # Merz im (europäischen) Trend?

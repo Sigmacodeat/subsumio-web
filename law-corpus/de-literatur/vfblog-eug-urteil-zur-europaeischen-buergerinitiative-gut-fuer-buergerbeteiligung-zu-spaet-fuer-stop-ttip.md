@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "886839a7f2ba4364"
 ---
 
 # EuG-Urteil zur Europäischen Bürgerinitiative: Gut für Bürgerbeteiligung, zu spät für “Stop TTIP”

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/selbstbestimmung-statt-fremdbestimmung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b88e9a76dad5ae08"
 ---
 
 # Selbstbestimmung statt Fremdbestimmung

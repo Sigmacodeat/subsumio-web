@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/brazil-abortion-reproductive-rights/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a348b619ae15577c"
 ---
 
 # Legislating Reproductive Rights

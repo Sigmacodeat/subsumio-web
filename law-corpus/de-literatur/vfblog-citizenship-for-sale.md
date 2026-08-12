@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/citizenship-for-sale/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "018851bb0a308a10"
 ---
 
 # Citizenship for Sale (Commission v Malta)

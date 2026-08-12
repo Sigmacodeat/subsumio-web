@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/haftsystem-libyen-istgh/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c31d112aa154d6a7"
 ---
 
 # „Das Haftsystem ist in Libyen zu einer Industrie geworden“

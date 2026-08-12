@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/speaking-up-in-beijing-or-not/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "78d56c70d6ddbf42"
 ---
 
 # Speaking up in Beijing or not?

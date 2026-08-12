@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wohngemeinnutzigkeit-eigentum-verfassung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bf2c52ff8e89d73e"
 ---
 
 # Bezahlbare Miete statt Rendite

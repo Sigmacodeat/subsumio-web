@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/utopia-im-nordatlantik/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8c1728285123a872"
 ---
 
 # Utopia im Nordatlantik

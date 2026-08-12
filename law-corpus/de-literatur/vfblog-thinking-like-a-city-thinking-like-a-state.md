@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/thinking-like-a-city-thinking-like-a-stat
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f75a1d66bdf2d2d6"
 ---
 
 # Thinking Like a City, Thinking Like a State

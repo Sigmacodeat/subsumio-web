@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/afd-wahlliste-richter-heilbronn/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ce88183e61ef4af3"
 ---
 
 # Im Süden nichts Neues

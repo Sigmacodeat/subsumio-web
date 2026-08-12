@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/protecting-democracy-in-the-digital-era/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ab56f973a74f02b3"
 ---
 
 # Protecting Democracy in the Digital Era

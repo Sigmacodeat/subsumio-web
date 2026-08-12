@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dank-und-adieu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1ea16fb3f53e1b8c"
 ---
 
 # Dank und Adieu

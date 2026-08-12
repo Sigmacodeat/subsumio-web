@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "48f219a3a44d0d9c"
 ---
 
 # Union wirft Verfassungsgericht vor, Verfassung nicht ernst zu nehmen

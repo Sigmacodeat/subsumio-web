@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wanting-to-know-the-facts/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ccd8af9c8d3c6436"
 ---
 
 # Wanting to Know the Facts

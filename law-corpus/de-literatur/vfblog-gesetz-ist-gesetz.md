@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gesetz-ist-gesetz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1c0ce118d4840194"
 ---
 
 # Gesetz ist Gesetz?

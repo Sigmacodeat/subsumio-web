@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-oligarchs-among-us/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b10b610f5ea826ff"
 ---
 
 # The Oligarchs Among Us

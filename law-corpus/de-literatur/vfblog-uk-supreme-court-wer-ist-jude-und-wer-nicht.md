@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/uk-supreme-court-wer-ist-jude-und-wer-nic
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "44ad5e04edff81a9"
 ---
 
 # UK Supreme Court: Wer ist Jude und wer nicht?

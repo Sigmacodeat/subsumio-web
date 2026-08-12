@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "37eb8cc52914531a"
 ---
 
 # Emergency Law Amendments to Fight Covid-19 in Egypt: Putting the Poison in the Honey

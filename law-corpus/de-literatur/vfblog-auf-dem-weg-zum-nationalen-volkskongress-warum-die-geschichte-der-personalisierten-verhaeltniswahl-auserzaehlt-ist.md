@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4dddfb1a2282c171"
 ---
 
 # Auf dem Weg zum Nationalen Volkskongress – warum die Geschichte der personalisierten Verhältniswahl auserzählt ist

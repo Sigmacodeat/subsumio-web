@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "604d780674a51164"
 ---
 
 # Das Merkel-Urteil verpasst die Chance, den Willen zur Verfassung zu stärken

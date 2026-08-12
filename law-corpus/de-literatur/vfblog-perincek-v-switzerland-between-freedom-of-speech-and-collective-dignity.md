@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0d6e1176a41d87b1"
 ---
 
 # Perinçek v. Switzerland: Between Freedom of Speech and Collective Dignity

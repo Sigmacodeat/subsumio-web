@@ -30,6 +30,7 @@ import {
   mapRisReference,
   stripHtml,
 } from "../src/core/ingestion/connectors/legal-judgements.ts";
+import { stripHtmlComplete } from "./backfill-utils";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 const MAX_RETRIES = 3;
@@ -295,14 +296,29 @@ async function fetchRisFullText(
   caseNum: string,
   ecli: string
 ): Promise<string> {
-  // Extract Abfrage and DokNr from source_url for deterministic URLs
-  const abfrageMatch = sourceUrl.match(/Abfrage=([^&]+)/);
-  const dokNrMatch = sourceUrl.match(/Dokumentnummer=([^&]+)/);
+  // Extract Abfrage and DokNr from source_url for deterministic URLs.
+  // Supports both API-style URLs (?Abfrage=X&Dokumentnummer=Y) and
+  // direct document URLs (/Dokumente/{Abfrage}/{DokNr}/{DokNr}.html).
+  let abfrage: string | null = null;
+  let dokNr: string | null = null;
 
-  // Strategy 1: XML URL — structured, clean, most reliable
-  if (abfrageMatch && dokNrMatch) {
-    const abfrage = abfrageMatch[1];
-    const dokNr = dokNrMatch[1];
+  const abfrageQuery = sourceUrl.match(/Abfrage=([^&]+)/);
+  const dokNrQuery = sourceUrl.match(/Dokumentnummer=([^&]+)/);
+  if (abfrageQuery && dokNrQuery) {
+    abfrage = abfrageQuery[1];
+    dokNr = dokNrQuery[1];
+  } else {
+    const pathMatch = sourceUrl.match(/\/Dokumente\/([^/]+)\/([^/]+)\//);
+    if (pathMatch) {
+      abfrage = pathMatch[1];
+      dokNr = pathMatch[2];
+    }
+  }
+
+  // Strategy 1: XML URL — structured, clean, most reliable.
+  // XML has <ueberschrift typ="titel"> headers that risXmlToText converts
+  // to ## headers, and NO sr-only duplicate text (that's only in HTML).
+  if (abfrage && dokNr) {
     const xmlUrl = `https://www.ris.bka.gv.at/Dokumente/${abfrage}/${dokNr}/${dokNr}.xml`;
     try {
       const res = await fetchWithRetry(xmlUrl);
@@ -317,15 +333,17 @@ async function fetchRisFullText(
     }
   }
 
-  // Strategy 2: Deterministic HTML URL
-  if (abfrageMatch && dokNrMatch) {
-    const abfrage = abfrageMatch[1];
-    const dokNr = dokNrMatch[1];
+  // Strategy 2: Deterministic HTML URL.
+  // Uses stripHtmlComplete (NOT the primitive stripHtml) which:
+  //   - Converts <h1> to ## headers
+  //   - Removes sr-only spans (duplicate spelled-out text)
+  //   - Decodes all HTML entities properly
+  if (abfrage && dokNr) {
     const directHtmlUrl = `https://www.ris.bka.gv.at/Dokumente/${abfrage}/${dokNr}/${dokNr}.html`;
     try {
       const res = await fetchWithRetry(directHtmlUrl);
       if (res.ok) {
-        const candidate = stripHtml(await res.text());
+        const candidate = stripHtmlComplete(await res.text());
         if (candidate.length >= 50 && contentMatchesDocument(candidate, caseNum, ecli)) {
           return candidate;
         }
@@ -340,7 +358,7 @@ async function fetchRisFullText(
     try {
       const res = await fetchWithRetry(htmlUrl);
       if (res.ok) {
-        const candidate = stripHtml(await res.text());
+        const candidate = stripHtmlComplete(await res.text());
         if (candidate.length >= 50 && contentMatchesDocument(candidate, caseNum, ecli)) {
           return candidate;
         }

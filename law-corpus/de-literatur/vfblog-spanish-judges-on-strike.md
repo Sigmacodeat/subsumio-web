@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/spanish-judges-on-strike/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f2982e2f4f2555d0"
 ---
 
 # Spanish Judges on Strike

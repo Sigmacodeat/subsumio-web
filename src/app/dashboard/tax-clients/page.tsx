@@ -399,6 +399,8 @@ export default function TaxClientsPage() {
                 </label>
                 <Input
                   type="email"
+                  autoComplete="email"
+                  inputMode="email"
                   value={form.contactEmail}
                   onChange={(e) => setForm((p) => ({ ...p, contactEmail: e.target.value }))}
                 />

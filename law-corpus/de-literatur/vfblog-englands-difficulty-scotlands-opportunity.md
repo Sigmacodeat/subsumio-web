@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/englands-difficulty-scotlands-opportunity
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "15aee6ee0352e69b"
 ---
 
 # England’s Difficulty; Scotland’s Opportunity

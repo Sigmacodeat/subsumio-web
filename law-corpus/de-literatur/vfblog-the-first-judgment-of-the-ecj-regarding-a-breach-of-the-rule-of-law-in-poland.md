@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6e24fe826def00d3"
 ---
 
 # The first judgment of the ECJ regarding a breach of the rule of law in Poland?

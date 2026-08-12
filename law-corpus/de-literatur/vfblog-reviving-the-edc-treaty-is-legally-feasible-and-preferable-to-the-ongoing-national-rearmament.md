@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "00be8bc872c702e1"
 ---
 
 # Reviving the EDC Treaty is Legally Feasible, and Preferable to the Ongoing National Rearmament

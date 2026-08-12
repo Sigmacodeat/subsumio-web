@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/technology-and-law-going-mental/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ab827867da3cf7e7"
 ---
 
 # Technology and Law Going Mental

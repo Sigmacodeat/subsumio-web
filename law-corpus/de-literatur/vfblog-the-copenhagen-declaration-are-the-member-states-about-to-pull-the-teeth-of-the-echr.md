@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "29b1c2181b3e358f"
 ---
 
 # The Copenhagen Declaration: Are the Member States about to Pull the Teeth of the ECHR?

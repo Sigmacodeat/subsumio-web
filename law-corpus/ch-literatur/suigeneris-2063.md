@@ -16,6 +16,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights:
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "286af43025977fd6"
 ---
 
 # Das Koordinatensystem der Methodik

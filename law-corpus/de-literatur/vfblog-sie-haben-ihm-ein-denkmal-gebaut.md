@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sie-haben-ihm-ein-denkmal-gebaut/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "db7a80c40af92106"
 ---
 
 # Sie haben ihm ein Denkmal gebaut

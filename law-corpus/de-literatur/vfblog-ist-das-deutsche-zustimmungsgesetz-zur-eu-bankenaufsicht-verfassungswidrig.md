@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2126a8285e13b515"
 ---
 
 # Ist das deutsche Zustimmungsgesetz zur EU-Bankenaufsicht verfassungswidrig?

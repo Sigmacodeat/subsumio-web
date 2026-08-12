@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-zombiegesetz-nachtrgliche-sicherungsv
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bedc33dcedecb881"
 ---
 
 # Das Zombie-Gesetz nachträgliche Sicherungsverwahrung

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eu-omnibus-csrd/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "18907fd4a39343e2"
 ---
 
 # Simplification Promised, Uncertainty Delivered

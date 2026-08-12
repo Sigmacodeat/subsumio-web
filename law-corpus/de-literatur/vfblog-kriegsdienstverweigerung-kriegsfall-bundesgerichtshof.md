@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f6deea31b3a2e3c8"
 ---
 
 # Kriegsdienstverweigerung im Kriegsfall verboten

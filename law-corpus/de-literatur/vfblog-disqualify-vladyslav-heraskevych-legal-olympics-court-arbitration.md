@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "77e62017f6462794"
 ---
 
 # Is the International Olympic Committee’s Decision to Disqualify Vladyslav Heraskevych Legal?

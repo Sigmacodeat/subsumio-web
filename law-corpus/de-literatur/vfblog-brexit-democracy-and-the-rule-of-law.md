@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/brexit-democracy-and-the-rule-of-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "14a8bd61dd378f6d"
 ---
 
 # Brexit, Democracy and the Rule of Law

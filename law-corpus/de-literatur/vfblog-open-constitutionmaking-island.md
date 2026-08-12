@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/open-constitutionmaking-island/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2a4c3ffc56f7a53b"
 ---
 
 # Open Verfassungsreform in Island

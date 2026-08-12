@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/judges-resistance-executive-power/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "be6277dc4288cc37"
 ---
 
 # Judges Under Stress and the Duty to Resist

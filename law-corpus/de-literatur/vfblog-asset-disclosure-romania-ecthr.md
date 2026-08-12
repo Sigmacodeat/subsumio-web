@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/asset-disclosure-romania-ecthr/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5cd6f518e4688cb0"
 ---
 
 # Private Wealth, Public Doubt

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2a06def3dcfad722"
 ---
 
 # Year One: Reflections on Turkey’s Legal Responses to the COVID-19 Pandemic

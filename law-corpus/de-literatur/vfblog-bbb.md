@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bbb/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5e4bf865b87b01d5"
 ---
 
 # Bricolage, Bullshit, and Bustle

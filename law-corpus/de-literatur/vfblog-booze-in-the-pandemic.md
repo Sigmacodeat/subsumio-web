@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/booze-in-the-pandemic/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "296cf2e2940cca16"
 ---
 
 # Booze in the Pandemic

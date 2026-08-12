@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "58817a8ae8bb81f3"
 ---
 
 # Shifting towards a democratic-authoritarian state: Israel’s new Nation-State Law

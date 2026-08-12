@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/oeffentlichkeit-in-online-gerichtsverhand
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e97aeac50c4db1f4"
 ---
 
 # Öffentlichkeit in Online-Gerichts&shy;verhandlungen

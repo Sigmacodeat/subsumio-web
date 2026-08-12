@@ -27,10 +27,10 @@ export function exportTracesHTML(traces: ReasoningTrace[]): string {
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>EU AI Act Art. 12-13 — Compliance Audit Export</title>
 <style>
-@page { margin: 2cm; } body { font-family: Arial, sans-serif; color: #1a1a1a; line-height: 1.6; max-width: 900px; margin: 0 auto; padding: 20px; }
-h1 { font-size: 22px; border-bottom: 2px solid #333; padding-bottom: 8px; } h2 { font-size: 16px; margin-top: 24px; color: #444; }
-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 12px; } th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; } th { background: #f5f5f5; }
-.meta { background: #f8f8f8; padding: 12px 16px; border-radius: 6px; margin: 16px 0; font-size: 13px; } .valid { color: #16a34a; font-weight: 600; } .broken { color: #dc2626; font-weight: 600; }
+@page { margin: 2cm; } body { font-family: Arial, sans-serif; color: hsl(230, 8%, 15%); line-height: 1.6; max-width: 900px; margin: 0 auto; padding: 20px; }
+h1 { font-size: 22px; border-bottom: 2px solid hsl(230, 60%, 52%); padding-bottom: 8px; } h2 { font-size: 16px; margin-top: 24px; color: hsl(230, 8%, 30%); }
+table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 12px; } th, td { border: 1px solid hsl(230, 8%, 85%); padding: 6px 8px; text-align: left; } th { background: hsl(230, 8%, 96%); }
+.meta { background: hsl(230, 8%, 97%); padding: 12px 16px; border-radius: 6px; margin: 16px 0; font-size: 13px; } .valid { color: hsl(158, 55%, 46%); font-weight: 600; } .broken { color: hsl(0, 78%, 54%); font-weight: 600; }
 </style></head><body>
 <h1>EU AI Act Art. 12-13 — Compliance Audit Export</h1>
 <div class="meta"><p><strong>Export timestamp:</strong> ${exportTs}</p><p><strong>Trace count:</strong> ${traces.length}</p><p><strong>Chain linkage:</strong> <span class="${chainLinked ? "valid" : "broken"}">${chainLinked ? "LINKED ✓" : "BROKEN ✗"}</span></p><p><strong>Note:</strong> Cryptographic hash verification is performed server-side.</p><p><strong>Jurisdictions:</strong> ${[...new Set(traces.map((trace) => trace.jurisdiction ?? "—"))].join(", ")}</p><p><strong>Models used:</strong> ${[...new Set(traces.map((trace) => trace.model_used))].join(", ")}</p></div>

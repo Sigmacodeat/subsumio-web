@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/shit-als-menschenrechtsverletzung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "49aebad069602e2d"
 ---
 
 # Shit happens als Menschenrechtsverletzung

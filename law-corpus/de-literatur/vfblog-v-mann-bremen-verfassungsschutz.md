@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/v-mann-bremen-verfassungsschutz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "861c9ffaab28bcf5"
 ---
 
 # Wenn Vertrauensleute Vertrauen zerstören

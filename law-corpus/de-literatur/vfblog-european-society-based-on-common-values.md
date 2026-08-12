@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/european-society-based-on-common-values/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e9d8596aaedb1d03"
 ---
 
 # The Dangerous Idea of a European Society Based on Common Values

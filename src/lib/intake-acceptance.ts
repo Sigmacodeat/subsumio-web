@@ -38,6 +38,7 @@ export interface IntakePoa {
 export interface IntakeEngagementLetter {
   status: EngagementLetterStatus;
   document_slug?: string;
+  generated_at?: string;
   sent_at?: string;
 }
 

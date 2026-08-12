@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/vom-zwanglosen-genotigtwerden-vegetarier-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "62f8364b80725549"
 ---
 
 # Vom zwanglosen Genötigtwerden, Vegetarier zu werden

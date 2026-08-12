@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/thug-life-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "35024241c6b8e647"
 ---
 
 # Thug Life

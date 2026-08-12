@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/paradigmenwechsel-im-infektionsschutzgese
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a0f6e44e1f1435d7"
 ---
 
 # Paradigmenwechsel im Infektionsschutzgesetz?

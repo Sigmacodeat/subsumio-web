@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/opening-the-discourse/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d0fd8db4019060c1"
 ---
 
 # Opening the Discourse

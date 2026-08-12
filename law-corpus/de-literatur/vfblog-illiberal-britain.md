@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/illiberal-britain/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "153bd46988a6524d"
 ---
 
 # Illiberal Britain

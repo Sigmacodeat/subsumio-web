@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "b6d10d6920dad48b"
 ---
 
 § 24.1 Vertraulichkeit der Kommunikation (Art. 10 GG) &#124; Inhaltsverzeichnis &#124; § 24.3 Informationelle Selbstbestimmung 

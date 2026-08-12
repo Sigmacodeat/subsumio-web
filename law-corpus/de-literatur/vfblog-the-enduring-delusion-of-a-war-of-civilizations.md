@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-enduring-delusion-of-a-war-of-civiliz
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "42c0fbf4319c3fe6"
 ---
 
 # The Enduring Delusion of a War of Civilizations

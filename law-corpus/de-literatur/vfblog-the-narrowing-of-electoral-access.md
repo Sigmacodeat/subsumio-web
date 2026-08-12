@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-narrowing-of-electoral-access/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a1f8b3affdcf40dc"
 ---
 
 # The Narrowing of Electoral Access

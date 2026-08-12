@@ -20,6 +20,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2024 Andreas Abegg, Christian
   Meyer; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "79ea1f0ed372c4b8"
 ---
 
 # Unterirdische Hürden für Cargo Sous Terrain - zur Umsetzung gewässerschutzrechtlicher Vorgaben im Rahmen des Bundesgesetzes über den unterirdischen Gütertransport

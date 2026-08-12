@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "34cccc4e7613d8bf"
 ---
 
 # How to Demolish an Independent Judiciary with the Help of a Constitutional Court

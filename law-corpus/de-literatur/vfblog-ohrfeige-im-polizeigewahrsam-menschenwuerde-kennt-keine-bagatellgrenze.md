@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "238c66ebe1c6b22f"
 ---
 
 # Ohrfeige im Polizeigewahrsam: Menschenwürde kennt keine Bagatellgrenze

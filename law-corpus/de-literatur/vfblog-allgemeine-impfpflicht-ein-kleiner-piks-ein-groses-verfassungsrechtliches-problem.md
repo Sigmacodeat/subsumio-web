@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "59b1f0a02417bd29"
 ---
 
 # Allgemeine Impfpflicht – ein kleiner Piks, ein großes verfassungsrechtliches Problem

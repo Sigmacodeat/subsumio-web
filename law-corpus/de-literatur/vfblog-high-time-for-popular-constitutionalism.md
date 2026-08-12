@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/high-time-for-popular-constitutionalism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7291c4db77ff8952"
 ---
 
 # High time for popular constitutionalism!

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/alle-lieben-karlsruhe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "53fd0eebdc4f866a"
 ---
 
 # Alle lieben Karlsruhe

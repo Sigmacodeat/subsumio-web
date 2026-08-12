@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8d293cf6a6111168"
 ---
 
 # The EU elephant in the Greek room: What would EU citizens have voted for in the referendum?

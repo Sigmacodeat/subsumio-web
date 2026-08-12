@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/turkey-1921-2021/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fb62eddd052bc69d"
 ---
 
 # Turkey’s Constitution of 1921 and Turkey’s Culture Wars of 2021

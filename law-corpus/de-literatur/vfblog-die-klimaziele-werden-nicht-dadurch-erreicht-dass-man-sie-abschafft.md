@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4652991117db5161"
 ---
 
 # Die Klimaziele werden nicht dadurch erreicht, dass man sie abschafft

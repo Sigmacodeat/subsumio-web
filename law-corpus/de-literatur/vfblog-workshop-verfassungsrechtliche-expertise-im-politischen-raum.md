@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "95fc9eb601a10a55"
 ---
 
 # Workshop: Verfassungsrechtliche Expertise im politischen Raum

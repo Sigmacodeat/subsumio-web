@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0386795a371ea353"
 ---
 
 # Pringle-Urteil des EuGH: Bailout plus Austerity ist erlaubt

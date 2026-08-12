@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/irelands-senate-introduction-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6559819595a16842"
 ---
 
 # Ireland’s Senate: An Introduction

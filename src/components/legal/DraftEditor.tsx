@@ -365,10 +365,12 @@ export function DraftEditor({
                 </label>
                 <input
                   type="email"
+                  autoComplete="email"
+                  inputMode="email"
                   value={emailTo}
                   onChange={(e) => setEmailTo(e.target.value)}
                   placeholder="empfaenger@gericht.gv.at"
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-3 py-2 text-base sm:text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
                 {recipientName && !emailTo && recipientEmail && (
                   <button

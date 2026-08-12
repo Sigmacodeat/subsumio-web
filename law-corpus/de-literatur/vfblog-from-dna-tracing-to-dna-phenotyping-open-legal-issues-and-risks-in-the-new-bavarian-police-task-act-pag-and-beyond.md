@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "30add2b00dc241bf"
 ---
 
 # From DNA Tracing to DNA Phenotyping – Open Legal Issues and Risks in the new Bavarian Police Task Act (PAG) and beyond

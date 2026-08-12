@@ -16,6 +16,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "db85df4605eccfbb"
 ---
 
 # “Constitutional Resilience – How Can a Democratic Constitution Survive an Autocratic Majority?”: Freedom of Speech, Media and Civil Society in Hungary and Poland

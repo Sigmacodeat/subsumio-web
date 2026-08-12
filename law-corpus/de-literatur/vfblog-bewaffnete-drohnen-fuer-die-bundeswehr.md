@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bewaffnete-drohnen-fuer-die-bundeswehr/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "075c8849e97e5a68"
 ---
 
 # Bewaffnete Drohnen für die Bundeswehr?

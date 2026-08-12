@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b8f336dfc53f421d"
 ---
 
 # “Trump's statements express the same kind of populist opposition to constitutional court judges we have seen elsewhere”

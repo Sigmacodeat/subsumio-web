@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hungary-poland-illiberal-womens-rights/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a776733c1124d216"
 ---
 
 # Post-Illiberal Women’s Rights

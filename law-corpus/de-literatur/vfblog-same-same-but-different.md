@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/same-same-but-different/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "430d16c13dd82ee1"
 ---
 
 # Same, Same but Different?

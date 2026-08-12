@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-right-to-die-like-the-trees-standing/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "429178a7b33f16e7"
 ---
 
 # The Right To Die Like The Trees: Standing

@@ -190,7 +190,7 @@ export default function BrainPage() {
   };
 
   return (
-    <div className="flex h-full min-w-0 overflow-hidden">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8 flex h-full min-w-0 overflow-hidden">
       <div className="w-52 shrink-0 space-y-1 overflow-y-auto border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <p className="mb-3 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
           {t("brain.type")}

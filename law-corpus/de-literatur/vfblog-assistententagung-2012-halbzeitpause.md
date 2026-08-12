@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/assistententagung-2012-halbzeitpause/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "75a99f74a735c407"
 ---
 
 # Assistententagung 2012: Halbzeitpause

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a130c68b5954325b"
 ---
 
 # Four Indian Supreme Court Judges Accuse the Chief Justice of Wrongdoing

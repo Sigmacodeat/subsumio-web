@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7be660ec97449125"
 ---
 
 # Die EZB vor Gericht, Teil 2: Spärliche Erfolgsaussichten

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/copyrighting-voice-and-image/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2de7893e668ff8c4"
 ---
 
 # Copyrighting Voice and Image

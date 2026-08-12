@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/teaching-human-rights-in-russian-legal-ed
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8a229778abb160d3"
 ---
 
 # Teaching Human Rights in Russian Legal Education

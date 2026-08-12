@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "94e9da7e4c7cf90b"
 ---
 
 # What Does the Spring Bring for the Rule of Law in Europe?

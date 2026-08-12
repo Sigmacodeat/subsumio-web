@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8ca150e9e8a22262"
 ---
 
 # Glücksspielmonopol: Karlsruhe droht neuer Ärger aus Luxemburg

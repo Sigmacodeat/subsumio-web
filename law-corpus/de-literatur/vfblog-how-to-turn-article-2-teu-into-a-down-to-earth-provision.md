@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7d9e7196ce2c6f15"
 ---
 
 # How to turn Article 2 TEU into a down-to-Earth provision?

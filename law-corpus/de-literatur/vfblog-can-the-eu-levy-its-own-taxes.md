@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/can-the-eu-levy-its-own-taxes/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d80df39e10c7ad8d"
 ---
 
 # Can The EU Levy Its Own Taxes?

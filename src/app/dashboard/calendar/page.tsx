@@ -182,7 +182,7 @@ export default function CalendarPage() {
   const isLoading = deadlinesLoading || casesLoading || outlookLoading;
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-[1200px] flex-col p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8 flex h-full w-full flex-col">
       <PageHeader
         title={t("calendar.title")}
         description={t("calendar.description")}

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "59373368e466b5bd"
 ---
 
 # Gehen oder bleiben? Der Gesetzgeber kann sich nicht entscheiden

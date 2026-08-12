@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/externalising-migration-control/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b4c1b7d6e520c6b4"
 ---
 
 # Externalising Migration Control

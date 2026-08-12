@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fbda8172ada6ecee"
 ---
 
 # COVID-19 in Iceland: The Need for Constitutional Justification and Checks and Balances

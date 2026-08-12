@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8763bfc829a4f6e7"
 ---
 
 # Ein Weg aus der Zwickmühle für das Bundesverfassungsgericht

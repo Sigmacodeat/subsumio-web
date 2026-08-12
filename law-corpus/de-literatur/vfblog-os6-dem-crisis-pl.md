@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os6-dem-crisis-pl/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b3c4a6d208b7b0ac"
 ---
 
 # Electronic Surveillance in a Time of Democratic Crisis

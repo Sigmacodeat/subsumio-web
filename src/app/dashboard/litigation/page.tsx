@@ -133,7 +133,7 @@ function PipelineStrategyCard({ caseSlug, lang }: { caseSlug: string; lang: stri
         className="flex w-full items-center gap-2 px-3 py-2.5 text-left"
         aria-expanded={open}
       >
-        <FileSearch size={14} className="shrink-0 text-[color:var(--ds-text-secondary)]" />
+        <FileSearch size={14} className="shrink-0 text-[color:var(--ds-text-muted)]" />
         <span className="text-xs font-medium text-[color:var(--ds-text)]">
           {lang === "en"
             ? `Automatic procedural strategy from ${dateLabel}`

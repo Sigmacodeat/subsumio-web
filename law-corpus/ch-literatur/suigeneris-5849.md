@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2024 Sven Schleifer;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "1147f124b2e05adc"
 ---
 
 # Tonische Immobilität und die Auslegung der neuen sexualstrafrechtlichen Tatbestände in Art. 189 und 190 StGB

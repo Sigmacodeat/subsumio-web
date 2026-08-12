@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/informationsfreiheit-berlin-kahlschlag/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a89c6e2a42b81405"
 ---
 
 # Kahlschlag bei der Informationsfreiheit

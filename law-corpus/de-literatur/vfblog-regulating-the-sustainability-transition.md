@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/regulating-the-sustainability-transition/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "400f6eed90db0343"
 ---
 
 # Regulating the Sustainability Transition

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-jokes-have-ended/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4c10b09f8434c980"
 ---
 
 # The Jokes Have Ended

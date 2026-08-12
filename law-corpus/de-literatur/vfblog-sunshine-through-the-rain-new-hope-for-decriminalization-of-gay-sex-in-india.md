@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "526c3479592900e4"
 ---
 
 # Sunshine through the Rain: New Hope for Decriminalization of Gay Sex in India?

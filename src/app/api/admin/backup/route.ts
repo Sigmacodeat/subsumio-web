@@ -25,6 +25,11 @@ export const POST = createHandler(
     action: "admin.*",
     rateTier: "heavy",
     body: postSchema,
+    audit: (ctx) => ({
+      action: "admin.backup" as const,
+      entityType: "backup",
+      details: { triggeredBy: ctx.user.email },
+    }),
   },
   async (ctx, _body) => {
     // Fetch all pages from the engine

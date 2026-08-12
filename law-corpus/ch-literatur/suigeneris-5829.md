@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2024 Thomas Gächter, Thuy
   Xuan Truong; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "4cf8afbfd3e87631"
 ---
 
 # Anerkannte Regeln der medizinischen Wissenschaften und Berufspflichten bei der NaP-Verschreibung

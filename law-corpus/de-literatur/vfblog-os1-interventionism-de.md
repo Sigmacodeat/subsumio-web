@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/os1-interventionism-de/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d6ddd453fdb59fce"
 ---
 
 # Afghanistan und &#8216;Great Power Interventionism' als Selbstverteidigung

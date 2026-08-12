@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d4c9c41af54196c2"
 ---
 
 # The Poverty of Militant Doctrinal Constitutionalism in the European Union

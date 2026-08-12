@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gerrymandering-and-judicial-review-in-mal
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8d11a716bb4c3e38"
 ---
 
 # Gerrymandering and Judicial Review in Malaysia

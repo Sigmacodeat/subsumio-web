@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/military-emissions-icj-climate-opinion/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0887d974937573ae"
 ---
 
 # Of Warming and Warzones

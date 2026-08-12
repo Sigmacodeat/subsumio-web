@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/animalrights-charter-wolves/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "87db018f85618580"
 ---
 
 # A Wolf’s Right to the Surface of the Earth

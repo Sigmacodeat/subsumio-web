@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wiley-and-the-european-law-journal/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ccd27fbb1b75adb6"
 ---
 
 # Wiley and the European Law Journal

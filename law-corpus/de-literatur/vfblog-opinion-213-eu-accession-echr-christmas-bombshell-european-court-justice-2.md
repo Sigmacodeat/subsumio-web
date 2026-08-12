@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c76f0a4e484a0291"
 ---
 
 # Opinion 2/13 on EU accession to the ECHR: a Christmas bombshell from the European Court of Justice

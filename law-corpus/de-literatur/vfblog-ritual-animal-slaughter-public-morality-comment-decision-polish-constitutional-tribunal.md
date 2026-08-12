@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "68531d0019223189"
 ---
 
 # Ritual Animal Slaughter and Public Morality: a Comment on the Decision of the Polish Constitutional Tribunal

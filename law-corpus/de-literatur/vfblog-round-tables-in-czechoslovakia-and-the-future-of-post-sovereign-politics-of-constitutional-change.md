@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c02cf2311e069abe"
 ---
 
 # Round Tables in Czechoslovakia and the Future of Post-Sovereign Politics of Constitutional Change

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-constitution-borne-out-of-actual-bullet
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c94be3130307cce4"
 ---
 
 # A Constitution Borne Out of Actual Bullets

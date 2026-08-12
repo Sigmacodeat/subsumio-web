@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e29f5b143c632683"
 ---
 
 # On the Separation of Powers and Judicial Self-Defence at times of unconstitutional capture

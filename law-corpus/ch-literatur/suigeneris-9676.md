@@ -16,6 +16,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2025 Marcel Thoms;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "4f2042aa5777d1e8"
 ---
 
 # Wirtschaftlichkeitsbetrachtungen von Stablecoins in der Schweiz

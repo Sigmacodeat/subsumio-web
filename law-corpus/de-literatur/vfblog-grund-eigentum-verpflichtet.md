@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/grund-eigentum-verpflichtet/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2f9a1528e1b4a8e3"
 ---
 
 # (Grund-)Eigentum verpflichtet

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-public-thing/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e9abcbd94112ca59"
 ---
 
 # The Public Thing

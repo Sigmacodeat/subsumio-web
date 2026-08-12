@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "69b44bf8de04738e"
 ---
 
 # Vom Chancentod zur Chance: Ein wahlrechtlicher Vorschlag zur Güte

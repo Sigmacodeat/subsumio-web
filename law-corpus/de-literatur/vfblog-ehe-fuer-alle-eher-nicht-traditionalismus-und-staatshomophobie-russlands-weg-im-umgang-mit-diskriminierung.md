@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a395e3e7c2835079"
 ---
 
 # „Ehe für alle“ eher nicht: Traditionalismus und Staatshomophobie – Russlands Weg im Umgang mit Diskriminierung

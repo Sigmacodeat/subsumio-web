@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/orbans-veto-play-the-subsidiarity-card/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "da476dfe8150b39e"
 ---
 
 # Orbán’s Veto Play – The Subsidiarity Card

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ecuadors-mutual-death-clause/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8440761ff7775ac1"
 ---
 
 # Ecuador’s Mutual Death Clause

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "42a6ad0f155df2da"
 ---
 
 # Gegenleistung für einen „gesamtgesellschaft&shy;lichen Vorteil“: Das BVerfG-Urteil zum Rundfunkbeitrag

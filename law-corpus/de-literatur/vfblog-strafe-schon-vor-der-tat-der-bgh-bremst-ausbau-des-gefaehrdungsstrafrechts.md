@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2231d103d08fd640"
 ---
 
 # Strafe schon vor der Tat? Der BGH bremst Ausbau des Gefährdungsstrafrechts

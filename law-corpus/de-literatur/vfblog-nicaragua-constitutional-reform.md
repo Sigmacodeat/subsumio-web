@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nicaragua-constitutional-reform/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6fca908fd88b32cf"
 ---
 
 # From Democracy to Dynastic Rule?

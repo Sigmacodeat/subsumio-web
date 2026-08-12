@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bverfg-lebenslang-der-trkei-ist-unmenschl
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "345067b77ed98699"
 ---
 
 # BVerfG: Lebenslang in der Türkei ist unmenschlich

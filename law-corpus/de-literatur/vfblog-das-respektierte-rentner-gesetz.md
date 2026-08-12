@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-respektierte-rentner-gesetz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "baf49e9dc7ad130d"
 ---
 
 # Das „Respektierte-Rentner-Gesetz“

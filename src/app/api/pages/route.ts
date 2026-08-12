@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
+import { markOnboardingProgress } from "@/lib/auth/store";
 
 const pagesQuerySchema = z.object({
   limit: z.string().optional(),
@@ -186,6 +187,13 @@ export const POST = createHandler(
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       void recordQuota(ctx, "pages");
       const result = await res.json();
+
+      if (body.type === "legal_case") {
+        void markOnboardingProgress(ctx.user.id, { firstCase: true });
+      } else if (body.type === "legal_deadline") {
+        void markOnboardingProgress(ctx.user.id, { firstDeadline: true });
+      }
+
       broadcastSseEvent(ctx.brainId, "case.updated", {
         slug: body.slug,
         by: ctx.user.email,

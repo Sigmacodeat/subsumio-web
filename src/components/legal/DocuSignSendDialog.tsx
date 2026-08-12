@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -62,7 +63,7 @@ export function DocuSignSendDialog({
 
     setSending(true);
     try {
-      // Fetch documents as base64
+      // Fetch documents as base64 (chunked to avoid stack overflow on large files)
       const docs = await Promise.all(
         documents
           .filter((d) => d.url)
@@ -70,7 +71,13 @@ export function DocuSignSendDialog({
             const res = await fetch(d.url!);
             const blob = await res.blob();
             const buffer = await blob.arrayBuffer();
-            const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+            const bytes = new Uint8Array(buffer);
+            let binary = "";
+            const CHUNK = 0x8000;
+            for (let j = 0; j < bytes.length; j += CHUNK) {
+              binary += String.fromCharCode(...bytes.subarray(j, j + CHUNK));
+            }
+            const base64 = btoa(binary);
             return {
               documentBase64: base64,
               name: d.name,
@@ -135,6 +142,7 @@ export function DocuSignSendDialog({
             <PenTool size={18} />
             {t("docusign.send_title")}
           </DialogTitle>
+          <DialogDescription>{t("docusign.send_desc")}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -184,14 +192,20 @@ export function DocuSignSendDialog({
               {signers.map((signer, idx) => (
                 <div key={idx} className="flex gap-2">
                   <Input
+                    id={`ds-signer-email-${idx}`}
                     type="email"
+                    autoComplete="email"
+                    inputMode="email"
                     placeholder="email@example.com"
+                    aria-label={t("docusign.signer_email_aria")}
                     value={signer.email}
                     onChange={(e) => updateSigner(idx, "email", e.target.value)}
                     className="flex-1"
                   />
                   <Input
+                    id={`ds-signer-name-${idx}`}
                     placeholder="Name"
+                    aria-label={t("docusign.signer_name_aria")}
                     value={signer.name}
                     onChange={(e) => updateSigner(idx, "name", e.target.value)}
                     className="flex-1"
@@ -202,6 +216,7 @@ export function DocuSignSendDialog({
                       size="sm"
                       onClick={() => removeSigner(idx)}
                       type="button"
+                      aria-label={t("docusign.remove_signer_aria")}
                     >
                       <Trash2 size={12} />
                     </Button>

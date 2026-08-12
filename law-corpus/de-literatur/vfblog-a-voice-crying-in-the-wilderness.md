@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-voice-crying-in-the-wilderness/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "77b33d6738454bf0"
 ---
 
 # “A Voice Crying in the Wilderness”

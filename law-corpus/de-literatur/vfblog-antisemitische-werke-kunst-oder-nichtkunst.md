@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/antisemitische-werke-kunst-oder-nichtkuns
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a53cf29c510734d6"
 ---
 
 # Antisemitische Werke: Kunst oder Nichtkunst?

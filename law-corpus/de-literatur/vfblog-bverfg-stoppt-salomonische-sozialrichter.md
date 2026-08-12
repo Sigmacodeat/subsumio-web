@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bverfg-stoppt-salomonische-sozialrichter/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fba836cb82ec6bac"
 ---
 
 # BVerfG stoppt salomonische Sozialrichter

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/belfast-good-friday-agreement-echr/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e8d33449b5ab55a4"
 ---
 
 # Hollowing Out Human Rights

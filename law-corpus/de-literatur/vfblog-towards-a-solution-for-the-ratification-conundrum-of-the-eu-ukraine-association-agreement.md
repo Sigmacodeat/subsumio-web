@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2b5962254946d2c5"
 ---
 
 # Towards a Solution for the Ratification Conundrum of the EU-Ukraine Association Agreement?

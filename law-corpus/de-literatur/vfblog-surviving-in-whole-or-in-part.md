@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/surviving-in-whole-or-in-part/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1cf0ac48c8e13a27"
 ---
 
 # Surviving, in Whole or in Part

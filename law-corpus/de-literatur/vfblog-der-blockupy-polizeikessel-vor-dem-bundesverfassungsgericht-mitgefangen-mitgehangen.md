@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e3db0c159fc73704"
 ---
 
 # Der Blockupy-Polizeikessel vor dem Bundesverfassungs&shy;gericht: Mitgefangen, mitgehangen?

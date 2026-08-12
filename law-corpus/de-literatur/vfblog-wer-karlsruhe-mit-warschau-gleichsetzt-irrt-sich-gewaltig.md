@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "04c5d75222aa6c54"
 ---
 
 # Wer Karlsruhe mit Warschau gleichsetzt, irrt sich gewaltig

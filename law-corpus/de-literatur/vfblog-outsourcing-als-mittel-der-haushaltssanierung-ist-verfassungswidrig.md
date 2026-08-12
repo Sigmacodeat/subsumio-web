@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c869101e12d9c5a6"
 ---
 
 # Outsourcing als Mittel der Haushaltssanierung ist verfassungswidrig

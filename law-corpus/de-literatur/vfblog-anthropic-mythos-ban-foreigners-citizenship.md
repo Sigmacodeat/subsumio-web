@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/anthropic-mythos-ban-foreigners-citizensh
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b7192b29439ee63e"
 ---
 
 # Banned From the Future

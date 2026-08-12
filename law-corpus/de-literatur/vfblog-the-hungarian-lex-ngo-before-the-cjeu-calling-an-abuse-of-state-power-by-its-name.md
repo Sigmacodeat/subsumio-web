@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "44d557a04994f778"
 ---
 
 # The Hungarian “Lex NGO” before the CJEU: Calling an Abuse of State Power by its Name

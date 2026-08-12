@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/moglich-aber-nicht-hinzunehmen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "171b0597fc009f15"
 ---
 
 # Möglich, aber nicht hinzunehmen

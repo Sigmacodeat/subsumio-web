@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/made-up-principles/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0784e58906e4ded3"
 ---
 
 # Made-Up Principles

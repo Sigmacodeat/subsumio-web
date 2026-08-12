@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pars-pro-toto/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2ae546f350768577"
 ---
 
 # Pars pro Toto

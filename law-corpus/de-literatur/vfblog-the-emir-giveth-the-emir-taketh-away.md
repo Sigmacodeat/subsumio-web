@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-emir-giveth-the-emir-taketh-away/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ee6e13a973dcdd01"
 ---
 
 # The Emir Giveth, the Emir Taketh Away

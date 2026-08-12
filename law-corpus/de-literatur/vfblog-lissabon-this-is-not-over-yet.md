@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/lissabon-this-is-not-over-yet/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ae3c4744e8b92739"
 ---
 
 # Lissabon: This is not over yet&#8230;

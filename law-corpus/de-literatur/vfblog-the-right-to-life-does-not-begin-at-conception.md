@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-right-to-life-does-not-begin-at-conce
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dd9a00449fb8c7d8"
 ---
 
 # “The right to life does not begin at conception”

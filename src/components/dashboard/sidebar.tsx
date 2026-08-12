@@ -435,8 +435,8 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    titleKey: "nav.section.billing",
-    descKey: "nav.section.desc.billing",
+    titleKey: "nav.section.honorar",
+    descKey: "nav.section.desc.honorar",
     colorVar: "--nav-cat-billing",
     items: [
       {
@@ -447,22 +447,10 @@ export const NAV_SECTIONS: NavSection[] = [
         tooltipKey: "nav.tooltip.invoicing",
       },
       {
-        href: "/dashboard/time-tracking",
-        icon: Timer,
-        labelKey: "nav.time_tracking",
-        keywords: "zeit time tracking stunden zeiterfassung",
-      },
-      {
         href: "/dashboard/time",
         icon: Clock,
         labelKey: "nav.time",
-        keywords: "zeiterfassung time entries leistungen timer",
-      },
-      {
-        href: "/dashboard/notifications",
-        icon: Bell,
-        labelKey: "nav.notifications",
-        keywords: "benachrichtigung notifications alerts erwähnung frist",
+        keywords: "zeiterfassung time tracking stunden leistungen timer",
       },
       {
         href: "/dashboard/cost-calculator",
@@ -470,6 +458,48 @@ export const NAV_SECTIONS: NavSection[] = [
         labelKey: "nav.cost_calculator",
         keywords: "kostenrechner rvg calculator streitwert",
         audienceTier: "erweitert",
+      },
+      {
+        href: "/dashboard/fee-agreements",
+        icon: Wallet,
+        labelKey: "nav.fee_agreements",
+        keywords: "honorar vereinbarung budget fee agreement deckelung",
+        audienceTier: "erweitert",
+      },
+      {
+        href: "/dashboard/trust-accounting",
+        icon: Landmark,
+        labelKey: "nav.trust_accounting",
+        keywords: "treuhand trust klientengelder fiduciary",
+        tooltipKey: "nav.tooltip.trust_accounting",
+      },
+      {
+        href: "/dashboard/claim-account",
+        icon: Gavel,
+        labelKey: "nav.claim_account",
+        keywords: "mahnung zwangsvollstreckung forderung claim mahnbescheid zv",
+        audienceTier: "erweitert",
+      },
+      {
+        href: "/dashboard/legal-insurance",
+        icon: ShieldCheck,
+        labelKey: "nav.legal_insurance",
+        keywords: "rechtsschutz rsv drebis deckungsanfrage versicherung",
+        audienceTier: "dach-integration",
+      },
+    ],
+  },
+  {
+    titleKey: "nav.section.buchhaltung",
+    descKey: "nav.section.desc.buchhaltung",
+    colorVar: "--nav-cat-billing",
+    items: [
+      {
+        href: "/dashboard/fibu",
+        icon: Banknote,
+        labelKey: "nav.fibu",
+        keywords: "fibu finanzbuchhaltung bank opos mahnung zahlung payment",
+        tooltipKey: "nav.tooltip.fibu",
       },
       {
         href: "/dashboard/datev-export",
@@ -488,20 +518,13 @@ export const NAV_SECTIONS: NavSection[] = [
         comingSoon: true,
         audienceTier: "dach-integration",
       },
-      {
-        href: "/dashboard/trust-accounting",
-        icon: Landmark,
-        labelKey: "nav.trust_accounting",
-        keywords: "treuhand trust klientengelder fiduciary",
-        tooltipKey: "nav.tooltip.trust_accounting",
-      },
-      {
-        href: "/dashboard/fibu",
-        icon: Banknote,
-        labelKey: "nav.fibu",
-        keywords: "fibu finanzbuchhaltung bank opos mahnung zahlung payment",
-        tooltipKey: "nav.tooltip.fibu",
-      },
+    ],
+  },
+  {
+    titleKey: "nav.section.kanzleisteuerung",
+    descKey: "nav.section.desc.kanzleisteuerung",
+    colorVar: "--nav-cat-ops",
+    items: [
       {
         href: "/dashboard/kanzlei-tools",
         icon: Calculator,
@@ -517,32 +540,17 @@ export const NAV_SECTIONS: NavSection[] = [
         tooltipKey: "nav.tooltip.controlling",
       },
       {
-        href: "/dashboard/fee-agreements",
-        icon: Wallet,
-        labelKey: "nav.fee_agreements",
-        keywords: "honorar vereinbarung budget fee agreement deckelung",
-        audienceTier: "erweitert",
-      },
-      {
-        href: "/dashboard/claim-account",
-        icon: Gavel,
-        labelKey: "nav.claim_account",
-        keywords: "mahnung zwangsvollstreckung forderung claim mahnbescheid zv",
-        audienceTier: "erweitert",
-      },
-      {
-        href: "/dashboard/legal-insurance",
-        icon: ShieldCheck,
-        labelKey: "nav.legal_insurance",
-        keywords: "rechtsschutz rsv drebis deckungsanfrage versicherung",
-        audienceTier: "dach-integration",
-      },
-      {
         href: "/dashboard/peer-benchmark",
         icon: TrendingUp,
         labelKey: "nav.peer_benchmark",
         keywords: "benchmark vergleich kanzlei erfolgsquote durchlaufzeit",
         audienceTier: "erweitert",
+      },
+      {
+        href: "/dashboard/notifications",
+        icon: Bell,
+        labelKey: "nav.notifications",
+        keywords: "benachrichtigung notifications alerts erwähnung frist",
       },
     ],
   },
@@ -579,6 +587,20 @@ export const NAV_SECTIONS: NavSection[] = [
         tooltipKey: "nav.tooltip.absences",
       },
       {
+        href: "/dashboard/fao-tracking",
+        icon: GraduationCap,
+        labelKey: "nav.fao_tracking",
+        keywords: "fao fortbildung nachweise fachanwalt",
+        audienceTier: "erweitert",
+      },
+      {
+        href: "/dashboard/team-meeting",
+        icon: Users,
+        labelKey: "nav.team_meeting",
+        keywords: "team besprechung agenda woechentlich",
+        audienceTier: "erweitert",
+      },
+      {
         href: "/dashboard/case-assignment",
         icon: Users,
         labelKey: "nav.case_assignment",
@@ -606,6 +628,26 @@ export const NAV_SECTIONS: NavSection[] = [
         labelKey: "nav.white_label",
         keywords: "white label branding pwa portal logo farben",
         audienceTier: "erweitert",
+      },
+    ],
+  },
+  {
+    titleKey: "nav.section.mandate_docs",
+    descKey: "nav.section.desc.mandate_docs",
+    colorVar: "--nav-cat-cases",
+    items: [
+      {
+        href: "/dashboard/power-of-attorney",
+        icon: FileSignature,
+        labelKey: "nav.power_of_attorney",
+        keywords: "vollmacht power of attorney mandatsvollmacht",
+        audienceTier: "erweitert",
+      },
+      {
+        href: "/dashboard/review-queue",
+        icon: ListTodo,
+        labelKey: "nav.review_queue",
+        keywords: "review queue warteschlange freigabe",
       },
     ],
   },
@@ -654,39 +696,12 @@ export const NAV_SECTIONS: NavSection[] = [
         audienceTier: "dach-integration",
       },
       {
-        href: "/dashboard/power-of-attorney",
-        icon: FileSignature,
-        labelKey: "nav.power_of_attorney",
-        keywords: "vollmacht power of attorney mandatsvollmacht",
-        audienceTier: "erweitert",
-      },
-      {
-        href: "/dashboard/fao-tracking",
-        icon: GraduationCap,
-        labelKey: "nav.fao_tracking",
-        keywords: "fao fortbildung nachweise fachanwalt",
-        audienceTier: "erweitert",
-      },
-      {
-        href: "/dashboard/team-meeting",
-        icon: Users,
-        labelKey: "nav.team_meeting",
-        keywords: "team besprechung agenda woechentlich",
-        audienceTier: "erweitert",
-      },
-      {
         href: "/dashboard/data-export",
         icon: Download,
         labelKey: "nav.data_export",
         keywords: "export daten download csv",
         audienceTier: "dach-integration",
         tooltipKey: "nav.tooltip.data_export",
-      },
-      {
-        href: "/dashboard/review-queue",
-        icon: ListTodo,
-        labelKey: "nav.review_queue",
-        keywords: "review queue warteschlange freigabe",
       },
       {
         href: "/dashboard/kyc",
@@ -769,6 +784,13 @@ const PRIMARY_ITEMS: NavItem[] = [
     keywords: "recherche rechtsprechung gesetze urteile research hub",
     tooltipKey: "nav.tooltip.research",
   },
+  {
+    href: "/dashboard/chat",
+    icon: MessageSquareText,
+    labelKey: "nav.chat",
+    keywords: "chat copilot assistent ki fragen recherche drafting",
+    tooltipKey: "nav.tooltip.chat",
+  },
 ];
 
 const PRIMARY_COLOR_VARS: string[] = [
@@ -777,6 +799,7 @@ const PRIMARY_COLOR_VARS: string[] = [
   "--nav-cat-cases",
   "--nav-cat-comm",
   "--nav-cat-research",
+  "--nav-cat-comm",
 ];
 
 const ADMIN_SECTION: NavSection = {
@@ -785,6 +808,30 @@ const ADMIN_SECTION: NavSection = {
   colorVar: "--nav-cat-admin",
   items: [
     ...BOTTOM_ITEMS,
+    {
+      href: "/dashboard/admin",
+      icon: LayoutDashboard,
+      labelKey: "nav.admin_overview",
+      keywords: "admin overview dashboard kunden uebersicht stats mrr",
+      tier: "admin",
+      audienceTier: "system",
+    },
+    {
+      href: "/dashboard/admin/users",
+      icon: Users,
+      labelKey: "nav.admin_users",
+      keywords: "kunden users benutzer customers verwaltung plan role",
+      tier: "admin",
+      audienceTier: "system",
+    },
+    {
+      href: "/dashboard/admin/mailbox",
+      icon: Mailbox,
+      labelKey: "nav.admin_mailbox",
+      keywords: "mailbox mail email inbox posteingang",
+      tier: "admin",
+      audienceTier: "system",
+    },
     {
       href: "/dashboard/billing",
       icon: CreditCard,
@@ -919,14 +966,6 @@ const ADMIN_SECTION: NavSection = {
       tooltipKey: "nav.tooltip.corpus_dashboard",
     },
     {
-      href: "/dashboard/admin/pipeline",
-      icon: Workflow,
-      labelKey: "nav.corpus_pipeline",
-      keywords: "pipeline korpus supervisor backfill import embed reconcile alerts pause resume",
-      tier: "admin",
-      audienceTier: "system",
-    },
-    {
       href: "/dashboard/mobile",
       icon: Smartphone,
       labelKey: "nav.mobile",
@@ -1022,6 +1061,30 @@ const ADMIN_SECTION: NavSection = {
       icon: FileText,
       labelKey: "nav.compliance_export",
       keywords: "compliance audit export reasoning traces eu ai act",
+      tier: "admin",
+      audienceTier: "system",
+    },
+    {
+      href: "/dashboard/admin/feedback-triage",
+      icon: MessagesSquare,
+      labelKey: "nav.feedback_triage",
+      keywords: "feedback triage queue error classification correction",
+      tier: "admin",
+      audienceTier: "system",
+    },
+    {
+      href: "/dashboard/admin/guardrails",
+      icon: ShieldAlert,
+      labelKey: "nav.guardrails",
+      keywords: "guardrails ai safety monitoring queries blocked flagged",
+      tier: "admin",
+      audienceTier: "system",
+    },
+    {
+      href: "/dashboard/admin/rag-optimizer",
+      icon: BrainCog,
+      labelKey: "nav.rag_optimizer",
+      keywords: "rag optimizer retrieval augmented generation baseline auto-tune",
       tier: "admin",
       audienceTier: "system",
     },
@@ -1423,6 +1486,30 @@ const TAX_ADMIN_SECTION: NavSection = {
   items: [
     ...BOTTOM_ITEMS,
     {
+      href: "/dashboard/admin",
+      icon: LayoutDashboard,
+      labelKey: "nav.admin_overview",
+      keywords: "admin overview dashboard kunden uebersicht stats mrr",
+      tier: "admin",
+      audienceTier: "system",
+    },
+    {
+      href: "/dashboard/admin/users",
+      icon: Users,
+      labelKey: "nav.admin_users",
+      keywords: "kunden users benutzer customers verwaltung plan role",
+      tier: "admin",
+      audienceTier: "system",
+    },
+    {
+      href: "/dashboard/admin/mailbox",
+      icon: Mailbox,
+      labelKey: "nav.admin_mailbox",
+      keywords: "mailbox mail email inbox posteingang",
+      tier: "admin",
+      audienceTier: "system",
+    },
+    {
       href: "/dashboard/billing",
       icon: CreditCard,
       labelKey: "nav.billing",
@@ -1554,14 +1641,6 @@ const TAX_ADMIN_SECTION: NavSection = {
       tier: "admin",
       audienceTier: "system",
       tooltipKey: "nav.tooltip.corpus_dashboard",
-    },
-    {
-      href: "/dashboard/admin/pipeline",
-      icon: Workflow,
-      labelKey: "nav.corpus_pipeline",
-      keywords: "pipeline korpus supervisor backfill import embed reconcile alerts pause resume",
-      tier: "admin",
-      audienceTier: "system",
     },
     {
       href: "/dashboard/mobile",
@@ -1727,7 +1806,12 @@ const ADMIN_GROUPS: Array<{ titleKey: DashboardKey; hrefs: string[] }> = [
       "/dashboard/admin/feature-flags",
       "/dashboard/admin/backup",
       "/dashboard/admin/corpus",
-      "/dashboard/admin/pipeline",
+      "/dashboard/admin/slo",
+      "/dashboard/admin/dr",
+      "/dashboard/admin/compliance-export",
+      "/dashboard/admin/feedback-triage",
+      "/dashboard/admin/guardrails",
+      "/dashboard/admin/rag-optimizer",
       "/dashboard/monitoring",
       "/dashboard/ai-quality",
       "/dashboard/connectors",
@@ -1737,6 +1821,9 @@ const ADMIN_GROUPS: Array<{ titleKey: DashboardKey; hrefs: string[] }> = [
   {
     titleKey: "nav.section.admin_users",
     hrefs: [
+      "/dashboard/admin",
+      "/dashboard/admin/users",
+      "/dashboard/admin/mailbox",
       "/dashboard/team",
       "/dashboard/settings/scim",
       "/dashboard/settings/security",

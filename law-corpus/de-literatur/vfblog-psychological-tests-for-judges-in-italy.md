@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/psychological-tests-for-judges-in-italy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4503d0315f7e3bdd"
 ---
 
 # The Proposed Psychological Tests for Judges in Italy

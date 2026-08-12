@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-patriots-repossession/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "37b1930779ffa634"
 ---
 
 # The Patriots’ Repossession

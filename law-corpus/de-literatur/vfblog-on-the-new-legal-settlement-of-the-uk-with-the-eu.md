@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/on-the-new-legal-settlement-of-the-uk-wit
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "708fbcd4b500c59d"
 ---
 
 # On the new Legal Settlement of the UK with the EU

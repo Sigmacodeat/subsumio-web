@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gorbachevs-legacy-in-lithuania/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cc8596e5be48de35"
 ---
 
 # Gorbachev’s Legacy in Lithuania

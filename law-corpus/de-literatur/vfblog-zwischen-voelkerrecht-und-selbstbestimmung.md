@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zwischen-voelkerrecht-und-selbstbestimmun
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "40c5a73cdee758b4"
 ---
 
 # Zwischen Völkerrecht und Selbstbestimmung

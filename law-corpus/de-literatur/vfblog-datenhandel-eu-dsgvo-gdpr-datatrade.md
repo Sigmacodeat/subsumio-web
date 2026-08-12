@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/datenhandel-eu-dsgvo-gdpr-datatrade/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "09dd1f392c0e3829"
 ---
 
 # Schattenwirtschaft Datenhandel

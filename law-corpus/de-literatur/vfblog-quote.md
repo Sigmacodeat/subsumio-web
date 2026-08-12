@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/quote/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8fe6ba7a1b16839b"
 ---
 
 # Frauenpower, überfraktionell: Gleichberechtigung durch Quote?

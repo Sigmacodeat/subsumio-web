@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rtbf-2022/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9dabd74f441916c9"
 ---
 
 # The Right to be Forgotten in 2022

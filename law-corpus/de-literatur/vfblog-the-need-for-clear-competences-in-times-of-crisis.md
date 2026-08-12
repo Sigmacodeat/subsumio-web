@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-need-for-clear-competences-in-times-o
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a819cd3298f717f4"
 ---
 
 # The Need for Clear Competences in Times of Crisis

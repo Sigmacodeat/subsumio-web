@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-lex-tvn-and-the-end-of-free-media-in-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "31530ca12987e460"
 ---
 
 # The Lex TVN and the End of Free Media in Poland

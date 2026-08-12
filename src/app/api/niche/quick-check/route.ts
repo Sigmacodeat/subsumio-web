@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { hit, clientIp } from "@/lib/auth/rate-limit";
+import { createPublicHandler } from "@/lib/api-handler";
+import { clientIp } from "@/lib/auth/rate-limit";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
-
-interface QuickCheckBody {
-  case_description?: string;
-  email?: string;
-  niche?: string;
-  source?: string;
-}
 
 /**
  * POST /api/niche/quick-check — public, unauthenticated marketing lead-gen
@@ -17,16 +11,14 @@ interface QuickCheckBody {
  * so it is rate-limited by IP to prevent scraping/spam and to bound the
  * fire-and-forget fetch to /api/leads it triggers on every call.
  */
-export async function POST(req: NextRequest) {
-  const ip = clientIp(req.headers);
-  const rate = await hit(`niche-quick-check:${ip}`, 10, 60_000);
-  if (!rate.ok) {
-    return NextResponse.json(
-      { error: "rate_limited", message: "Too many requests. Please try again later." },
-      { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } }
-    );
-  }
-
+export const POST = createPublicHandler(
+  {
+    maxDuration: 30,
+    rateLimitKey: (req) => `niche-quick-check:${clientIp(req.headers)}`,
+    rateLimitMax: 10,
+    rateLimitWindowMs: 60_000,
+  },
+  async (req: NextRequest) => {
   try {
     const formData = await req.formData();
     const caseDescription = formData.get("case_description") as string | null;
@@ -136,4 +128,4 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Analysis failed. Please try again." }, { status: 500 });
   }
-}
+});

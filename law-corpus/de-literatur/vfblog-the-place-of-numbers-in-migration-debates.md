@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-place-of-numbers-in-migration-debates
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ac48109fd27bfc5e"
 ---
 
 # The Place of Numbers in Migration Debates

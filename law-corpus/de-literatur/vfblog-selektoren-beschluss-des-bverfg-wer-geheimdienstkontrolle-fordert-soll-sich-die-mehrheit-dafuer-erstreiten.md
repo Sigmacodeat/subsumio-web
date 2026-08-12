@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2e525c57bbd84ecc"
 ---
 
 # Selektoren-Beschluss des BVerfG: Wer Geheimdienst&shy;kontrolle fordert, soll sich die Mehrheit dafür erstreiten

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/crossing-the-rubicon/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fb47e099f791df2d"
 ---
 
 # Crossing the Rubicon

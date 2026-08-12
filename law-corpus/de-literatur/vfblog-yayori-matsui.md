@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/yayori-matsui/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "72d9a6897004d1f8"
 ---
 
 # Yayori Matsui

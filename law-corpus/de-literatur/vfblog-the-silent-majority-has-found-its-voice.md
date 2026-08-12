@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-silent-majority-has-found-its-voice/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "800e96b02a656c38"
 ---
 
 # The Silent Majority Has Found Its Voice

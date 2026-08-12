@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/warum-das-tarifeinheitsgesetz-die-falsche
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e4fa665de2353fbd"
 ---
 
 # Warum das Tarifeinheitsgesetz die Falschen trifft

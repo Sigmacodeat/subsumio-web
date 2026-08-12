@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/constitutionalizing-facebook/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5c1f78dee0874ab2"
 ---
 
 # Constitutionalizing Facebook

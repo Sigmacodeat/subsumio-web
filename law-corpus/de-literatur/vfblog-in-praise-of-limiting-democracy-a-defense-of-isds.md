@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/in-praise-of-limiting-democracy-a-defense
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5083e0dea8f7e1cc"
 ---
 
 # In Praise of Limiting Democracy: a Defense of ISDS

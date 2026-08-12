@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cc165d434e378736"
 ---
 
 # President Tusk’s Proposal for a New Settlement for the UK in the EU: Fueling – not Taming – EU Disintegration

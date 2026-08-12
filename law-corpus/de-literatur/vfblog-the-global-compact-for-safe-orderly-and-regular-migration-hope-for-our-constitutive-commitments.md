@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e5e52d17f633662f"
 ---
 
 # The Global Compact for Safe, Orderly and Regular Migration – Hope for our Constitutive Commitments?

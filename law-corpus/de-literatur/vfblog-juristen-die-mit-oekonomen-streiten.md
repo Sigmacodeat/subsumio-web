@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/juristen-die-mit-oekonomen-streiten/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7689a607e330c870"
 ---
 
 # Juristen, die mit Ökonomen streiten

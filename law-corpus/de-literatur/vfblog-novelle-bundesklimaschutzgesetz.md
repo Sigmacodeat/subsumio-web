@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/novelle-bundesklimaschutzgesetz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f616a6a831c6ad42"
 ---
 
 # Eine vertane Chance, aber keine Katastrophe

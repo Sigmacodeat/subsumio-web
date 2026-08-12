@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e1633d4422359336"
 ---
 
 # ‘Girls belong in school, and not in front of the altar’: Is the German Bill on child marriages violating international law?

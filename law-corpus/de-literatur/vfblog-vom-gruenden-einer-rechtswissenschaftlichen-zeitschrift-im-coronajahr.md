@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9e0c0f7719693eb1"
 ---
 
 # Vom Gründen einer rechtswissenschaftlichen Zeitschrift im Coronajahr

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/von-politisierbarkeit-bundespraesidentenw
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b4c5ad5e45afd7cd"
 ---
 
 # Von der Politisierbarkeit der Bundespräsidentenwahl

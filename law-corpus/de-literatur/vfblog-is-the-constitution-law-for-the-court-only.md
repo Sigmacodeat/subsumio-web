@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/is-the-constitution-law-for-the-court-onl
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "79028cec9d121f44"
 ---
 
 # Is the Constitution Law for the Court Only?

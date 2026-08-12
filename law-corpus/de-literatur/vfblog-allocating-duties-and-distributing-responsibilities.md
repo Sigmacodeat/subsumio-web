@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c181eab2172c1d29"
 ---
 
 # Allocating Duties and Distributing Responsibilities in a Post-Territorial Human Rights Paradigm

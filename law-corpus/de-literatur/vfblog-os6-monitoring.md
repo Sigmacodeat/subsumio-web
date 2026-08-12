@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/os6-monitoring/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7ae21bcf6114280f"
 ---
 
 # Zwei Jahrzehnte nach 9/11 – Höchste Zeit für ein empirisch basiertes Monitoring staatlicher Überwachungsmaßnahmen

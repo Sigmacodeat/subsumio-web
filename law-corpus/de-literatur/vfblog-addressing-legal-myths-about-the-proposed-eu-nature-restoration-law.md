@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2dd14ee600f4c894"
 ---
 
 # Addressing Legal Myths about the Proposed EU Nature Restoration Law

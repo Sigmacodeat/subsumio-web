@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/legal-uncertainty-reproductive-rights/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e41b11ecdb3d7b56"
 ---
 
 # When Legal Uncertainty Violates Reproductive Rights

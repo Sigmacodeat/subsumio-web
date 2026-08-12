@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/junqueras-immunity-an-example-of-judicial
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "756a3882cbcd5679"
 ---
 
 # Junqueras’ Immunity: An Example of Judicial Dialogue

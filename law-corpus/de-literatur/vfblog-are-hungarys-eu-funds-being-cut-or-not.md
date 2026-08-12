@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/are-hungarys-eu-funds-being-cut-or-not/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6f707acc0b0cc522"
 ---
 
 # Are Hungary’s EU Funds Being Cut (or Not)?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/why-bother-with-legal-reasoning/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cd0cd60bf9cd5297"
 ---
 
 # Why bother with legal reasoning?

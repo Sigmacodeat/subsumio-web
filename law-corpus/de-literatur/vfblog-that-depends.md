@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/that-depends/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2111e35464a3ecaa"
 ---
 
 # That Depends

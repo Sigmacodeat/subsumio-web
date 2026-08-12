@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/krise-kritik-und-globaler-konstitutionali
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "88f48c7c03c565cf"
 ---
 
 # Krise, Kritik und Globaler Konstitutionalismus

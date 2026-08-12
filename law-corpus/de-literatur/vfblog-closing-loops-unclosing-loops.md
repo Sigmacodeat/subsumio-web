@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/closing-loops-unclosing-loops/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "711cc8f6659d5726"
 ---
 
 # Closing Loops, Unclosing Loops

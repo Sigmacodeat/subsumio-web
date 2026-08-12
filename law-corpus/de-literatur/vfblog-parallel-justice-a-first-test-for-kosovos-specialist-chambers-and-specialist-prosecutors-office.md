@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0e7881e030d2aab8"
 ---
 
 # Parallel Justice: A First Test for Kosovo’s Specialist Chambers and Specialist Prosecutor’s Office

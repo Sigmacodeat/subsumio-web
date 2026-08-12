@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4ca97046ea13b268"
 ---
 
 # Naked Law, Lost Traditions. A Comment on Reut Paz  and Legal Pluralism

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f024f77a5f5a5177"
 ---
 
 # The Italian Constitutional Court Opens Up to Hear the Voice of Civil Society

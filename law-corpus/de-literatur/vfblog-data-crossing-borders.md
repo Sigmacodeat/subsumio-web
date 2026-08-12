@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/data-crossing-borders/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8c5734e7b217c3fa"
 ---
 
 # Data crossing borders

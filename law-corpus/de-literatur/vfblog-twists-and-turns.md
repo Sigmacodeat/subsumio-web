@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/twists-and-turns/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7fc4480c65aec770"
 ---
 
 # Twists and Turns

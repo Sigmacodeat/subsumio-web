@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/trojan-discrimination-cjeu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f7c320b4ac5e014c"
 ---
 
 # The Trojan Horse of Free Movement Law

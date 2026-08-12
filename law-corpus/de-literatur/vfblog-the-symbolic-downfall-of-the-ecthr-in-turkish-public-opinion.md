@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2493a0c9e5eb2778"
 ---
 
 # The Symbolic Downfall of the ECtHR in Turkish Public Opinion

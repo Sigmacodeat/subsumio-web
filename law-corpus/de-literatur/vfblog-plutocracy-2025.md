@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/plutocracy-2025/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "226221510044f604"
 ---
 
 # Plutocracy 2025

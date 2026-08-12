@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/harmonization-pains-but-stakeholders-gain
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e9f7f2ed2c1a711a"
 ---
 
 # Harmonization Pains but Stakeholders’ Gain

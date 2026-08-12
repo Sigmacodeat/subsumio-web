@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/armstrong-wrong-fact-legal-duty-appoint-j
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5e6d2274356ee55e"
 ---
 
 # Why Armstrong is wrong and there IS in fact a legal duty to appoint Juncker

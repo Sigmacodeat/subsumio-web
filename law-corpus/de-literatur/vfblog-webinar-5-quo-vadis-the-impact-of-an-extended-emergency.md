@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b105462b25aecda7"
 ---
 
 # WEBINAR 5: “Quo Vadis? – The Impact of an Extended Emergency”

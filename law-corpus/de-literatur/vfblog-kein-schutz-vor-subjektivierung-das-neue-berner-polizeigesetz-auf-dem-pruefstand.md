@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "df1ae6d03b131ac6"
 ---
 
 # Kein Schutz vor Subjektivierung: Das neue Berner Polizeigesetz auf dem Prüfstand

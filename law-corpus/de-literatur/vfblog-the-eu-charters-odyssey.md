@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-eu-charters-odyssey/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b435ff1856de0bc6"
 ---
 
 # The EU Charter’s Odyssey

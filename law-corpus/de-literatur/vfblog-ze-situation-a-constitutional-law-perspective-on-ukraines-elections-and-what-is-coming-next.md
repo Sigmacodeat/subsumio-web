@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b0ca6e04cbaa37ef"
 ---
 
 # Ze-Situation: A Constitutional Law Perspective on Ukraine’s Elections and What is Coming Next

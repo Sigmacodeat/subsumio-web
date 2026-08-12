@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/entsetzliche-ordnung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aa7005f0c798f111"
 ---
 
 # Entsetzliche Ordnung

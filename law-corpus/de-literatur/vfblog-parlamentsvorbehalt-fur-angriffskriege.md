@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/parlamentsvorbehalt-fur-angriffskriege/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c5f1a56cb39f6706"
 ---
 
 # Parlamentsvorbehalt für Angriffskriege

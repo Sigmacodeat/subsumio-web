@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/who-will-count-the-votes-in-poland/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2a041738db6bdb9c"
 ---
 
 # Who will Count the Votes in Poland?

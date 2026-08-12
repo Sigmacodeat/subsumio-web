@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "522244ea933b6645"
 ---
 
 # Sonia Sotomayors geliebte Welt – und das, was wir von unseren Verfassungsrichter/innen erwarten können

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/is-the-hungarian-block-really-a-legal-iss
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1bca25765df85b3b"
 ---
 
 # Is the Hungarian Block Really a Legal Issue?

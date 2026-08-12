@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-fragility-of-proportionality-review/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b8f14fd676d67a0a"
 ---
 
 # The Fragility of Proportionality Review

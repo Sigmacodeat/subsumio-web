@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Frederica De Rossa,
   Clarissa David; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "6031e10a0ad3e3c2"
 ---
 
 # La durabilité dans le nouveau droit des marchés publics : un changement de paradigme effectif ?

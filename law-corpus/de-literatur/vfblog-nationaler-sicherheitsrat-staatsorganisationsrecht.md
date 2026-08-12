@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/nationaler-sicherheitsrat-staatsorganisat
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5af195ff1e0a7a28"
 ---
 
 # Endlich mehr Strategiefähigkeit in der Außen- und Sicherheitspolitik

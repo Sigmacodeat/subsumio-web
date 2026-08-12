@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wir-werden-quatsch-aber-nicht-beenden-her
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0d05a1289031615f"
 ---
 
 # Wir werden den Quatsch aber nicht beenden, Herr Gabriel

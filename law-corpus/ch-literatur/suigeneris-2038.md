@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2019 Philipp Bärtschi;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "9af666fd411fff35"
 ---
 
 # Rezension: Silvio Hänsenberger, Die zivilrechtliche Haftung für autonome Drohnen unter Einbezug von Zulassungs- und Betriebsvorschriften

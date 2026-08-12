@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zum-beten-in-den-keller/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b4580b1c29cf4dc8"
 ---
 
 # Zum Beten in den Keller?

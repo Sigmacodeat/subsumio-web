@@ -19,6 +19,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2016
   AUSTRIAN LAW JOURNAL
+content_hash: "d756835e7d7eaf2a"
 ---
 
 # Kontrolliert die Europäische Kommission das Verhalten ihrer Mitglieder zu nachlässig? Der Europäische Bürgerbeauftragte ortet diesbezüglich erhebliche „Missstände“

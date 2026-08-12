@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-stabilitt-des-euro-der-falle/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6fe46a194768a1f2"
 ---
 
 # Die Stabilität des Euro in der Falle?

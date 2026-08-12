@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d2d5087ae9b2fa16"
 ---
 
 # UK Supreme Court: Kein Recht auf Diskriminierung aus Glaubensgründen

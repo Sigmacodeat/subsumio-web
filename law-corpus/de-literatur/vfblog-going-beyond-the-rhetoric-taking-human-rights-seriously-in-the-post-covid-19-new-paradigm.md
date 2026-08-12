@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3bc7e83d8511d4e4"
 ---
 
 # Going Beyond the Rhetoric: Taking Human Rights Seriously in the Post-COVID-19 New Paradigm

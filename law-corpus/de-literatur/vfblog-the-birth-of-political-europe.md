@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-birth-of-political-europe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2365d2cca990af87"
 ---
 
 # The Birth of Political Europe

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rekonstruktion-eines-phantomstraftatbesta
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1f0c26098b569b18"
 ---
 
 # Rekonstruktion eines Phantomstraftatbestands

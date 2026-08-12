@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hehrer-zweck-mit-hohen-hurden/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "48db28e528fb17dc"
 ---
 
 # Hehrer Zweck mit hohen Hürden

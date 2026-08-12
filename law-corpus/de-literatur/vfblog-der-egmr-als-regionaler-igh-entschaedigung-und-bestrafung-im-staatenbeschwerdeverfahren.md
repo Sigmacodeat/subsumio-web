@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b4668d2f33977eaf"
 ---
 
 # Der EGMR als regionaler IGH? Entschädigung und Bestrafung im Staatenbeschwerdeverfahren

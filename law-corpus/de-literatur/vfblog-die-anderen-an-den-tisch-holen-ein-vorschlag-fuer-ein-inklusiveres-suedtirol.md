@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "71d33ca846e633b9"
 ---
 
 # Die ‚Anderen‘ an den Tisch holen: Ein Vorschlag für ein inklusiveres Südtirol

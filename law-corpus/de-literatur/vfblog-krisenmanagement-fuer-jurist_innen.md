@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/krisenmanagement-fuer-jurist_innen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2cbc3600b0444491"
 ---
 
 # Krisenmanagement für Jurist_innen

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/verfassungsbruch-schlimmer-ein-fehler/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "38cf64531b36dc0a"
 ---
 
 # Verfassungsbruch? Schlimmer: Ein Fehler

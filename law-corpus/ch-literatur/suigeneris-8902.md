@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2024 Nicolas Curchod, Bruno
   Pasquier; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "8a6cf73ae436b46e"
 ---
 
 # Private Law Aspects of Liquidity Pools in Decentralized Finance (DeFi)

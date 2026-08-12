@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/emfa-dsa/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "445afd44c9977f8b"
 ---
 
 # Protecting Media Content on Social Media Platforms

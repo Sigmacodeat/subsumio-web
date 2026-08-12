@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "18ad3ea43712be8b"
 ---
 
 # Attacke im Ärzteblatt: Bekommt der Whistleblower Ärger?

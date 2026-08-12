@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/on-publishers-carriers-and-bookstores/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bdb963ddd6f5ed7c"
 ---
 
 # On Publishers, Carriers, and Bookstores

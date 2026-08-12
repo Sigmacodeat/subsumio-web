@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/legitimizing-authoritarian-transformation
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6b8987e1a9404e25"
 ---
 
 # Legitimizing Authoritarian Transformation

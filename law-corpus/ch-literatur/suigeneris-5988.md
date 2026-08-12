@@ -68,6 +68,7 @@ license: >-
   Volker Schmidt, Matthias Stürm, Marc Thommen, Fanny de Tribolet Hardy,
   Leonardo Vertone, Jürg Vetter, Julian Voss, Theres Wehrhold;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "4bdcc0adcef28e3d"
 ---
 
 # Psycholog:innen als Sachverständige für Gutachten zur Schuldfähigkeit und Massnahmenindikation im Erwachsenenstrafrecht: Falsifikation der bundesgerichtlichen Thesen in BGE 140 IV 49

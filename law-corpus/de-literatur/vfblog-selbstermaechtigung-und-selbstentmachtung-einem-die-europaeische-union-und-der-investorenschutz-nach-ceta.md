@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c1a03e3d66f0179d"
 ---
 
 # Selbstermächtigung und Selbstentmachtung in einem – die Europäische Union und der Investorenschutz nach CETA

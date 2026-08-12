@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os2-shadow/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "461db872106b4704"
 ---
 
 # The Long Shadow of 9/11

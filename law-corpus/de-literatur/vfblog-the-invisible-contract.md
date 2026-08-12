@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-invisible-contract/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "efed17b8478ae325"
 ---
 
 # The Invisible Contract

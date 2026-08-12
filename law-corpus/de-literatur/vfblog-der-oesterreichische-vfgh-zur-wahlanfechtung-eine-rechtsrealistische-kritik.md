@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ee22e6d216c9bdb1"
 ---
 
 # Der österreichische VfGH zur Wahlanfechtung: eine rechtsrealistische Kritik

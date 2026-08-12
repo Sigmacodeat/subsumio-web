@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-inherent-limits-of-law-the-case-of-sl
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "10bd65a98eaf29f2"
 ---
 
 # The Inherent Limits of Law – the Case of Slovenia

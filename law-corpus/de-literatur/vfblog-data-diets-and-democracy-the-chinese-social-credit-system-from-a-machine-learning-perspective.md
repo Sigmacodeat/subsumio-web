@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "099fae073e7b987e"
 ---
 
 # Data Diets and Democracy: The Chinese Social Credit System  From a Machine Learning Perspective

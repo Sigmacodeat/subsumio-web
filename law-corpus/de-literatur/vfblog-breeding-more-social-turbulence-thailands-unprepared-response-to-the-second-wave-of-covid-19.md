@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9c25059b4546ec11"
 ---
 
 # Breeding More Social Turbulence? – Thailand's Unprepared Response to the Second Wave of COVID-19

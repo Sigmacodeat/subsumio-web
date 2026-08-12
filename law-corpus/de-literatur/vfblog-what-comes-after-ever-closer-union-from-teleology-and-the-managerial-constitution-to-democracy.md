@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "04d8ed405d2fb5c8"
 ---
 
 # What comes after ,Ever Closer Union'?  From Teleology and the ‘Managerial Constitution’ to Democracy

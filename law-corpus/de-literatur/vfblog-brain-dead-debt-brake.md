@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/brain-dead-debt-brake/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "83a3c8cb56264444"
 ---
 
 # Brain-Dead Debt Brake

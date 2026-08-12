@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/from-intellectual-poker-to-open-debate/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "37cd0b0953fdb3f0"
 ---
 
 # From Intellectual Poker to Open Debate

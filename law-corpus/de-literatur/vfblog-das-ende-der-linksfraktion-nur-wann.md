@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-ende-der-linksfraktion-nur-wann/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "92b5d32a1e1f0a95"
 ---
 
 # Das Ende der Linksfraktion, nur wann?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/judicial-officers-in-tunisia/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c511d65d0c762513"
 ---
 
 # Presidential Dismissals of Judicial Officers in Tunisia

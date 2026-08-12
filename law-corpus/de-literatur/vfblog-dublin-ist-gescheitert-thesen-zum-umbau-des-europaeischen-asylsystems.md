@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ab8fde06efb75b58"
 ---
 
 # Dublin ist gescheitert: Thesen zum Umbau des europäischen Asylsystems

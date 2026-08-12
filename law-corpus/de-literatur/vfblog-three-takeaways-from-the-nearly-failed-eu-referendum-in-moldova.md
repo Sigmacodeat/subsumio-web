@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "09a0aa25f64eac10"
 ---
 
 # Three Takeaways from the Nearly Failed EU Referendum in Moldova

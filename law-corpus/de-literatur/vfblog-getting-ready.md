@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/getting-ready/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b0d5f5f8c8638ff0"
 ---
 
 # Getting Ready

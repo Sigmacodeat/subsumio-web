@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ungleicher-schutz-fur-whistleblower/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "db74468db6795585"
 ---
 
 # Ungleicher Schutz für Whistleblower

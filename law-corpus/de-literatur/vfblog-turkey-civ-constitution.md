@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/turkey-civ-constitution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bdf53c09e99f05ee"
 ---
 
 # A Turkish Fairy Tale About a &#8216;New, Civilian Constitution'

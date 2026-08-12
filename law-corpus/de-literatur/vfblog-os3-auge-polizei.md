@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os3-auge-polizei/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "520fc61fa399f70a"
 ---
 
 # Im Auge der Polizei

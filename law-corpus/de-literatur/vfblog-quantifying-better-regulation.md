@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/quantifying-better-regulation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "33fbe37cbadc9618"
 ---
 
 # Quantifying ‘Better Regulation’

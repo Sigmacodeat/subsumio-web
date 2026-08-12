@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "43f117d09cf7eec0"
 ---
 
 # A Defining Moment for the UN Business and Human Rights Treaty Process

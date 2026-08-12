@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-primer-on-the-uk-online-safety-act/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "14eac441175e6f0c"
 ---
 
 # A Primer on the UK Online Safety Act

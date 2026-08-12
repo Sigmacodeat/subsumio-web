@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/vetbills-eucharter/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4efbef2d3065d91b"
 ---
 
 # Vet Bills and the EU Charter

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/introduction-constitutional-courts-and-po
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9a23e59035540d7d"
 ---
 
 # Introduction: Constitutional Courts and Populism

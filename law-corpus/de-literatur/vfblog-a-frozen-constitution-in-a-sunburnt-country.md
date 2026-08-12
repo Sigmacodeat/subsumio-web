@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-frozen-constitution-in-a-sunburnt-count
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "30f30b240e6a8003"
 ---
 
 # A Frozen Constitution in a Sunburnt Country

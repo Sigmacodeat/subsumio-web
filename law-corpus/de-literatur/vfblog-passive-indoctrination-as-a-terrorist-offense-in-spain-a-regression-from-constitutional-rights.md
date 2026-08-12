@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "550563bc61baf2d9"
 ---
 
 # “Passive Indoctrination” as a Terrorist Offense in Spain – A Regression from Constitutional Rights?

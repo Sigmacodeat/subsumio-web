@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pfizergate-rule-of-law-eu-commission/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "261299d1ea653c38"
 ---
 
 # Text Messages, Transparency, and the Rule of Law

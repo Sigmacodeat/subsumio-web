@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "640e1cf196fbb286"
 ---
 
 # Фрагментарне реагування на загрозу свободі 3МІ в ЄС

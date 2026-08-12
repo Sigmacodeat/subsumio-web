@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-guardian-is-absent/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "45a66d11a9e5e287"
 ---
 
 # The Guardian is Absent

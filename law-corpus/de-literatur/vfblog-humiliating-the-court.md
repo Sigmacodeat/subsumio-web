@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/humiliating-the-court/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e300ebc64c449520"
 ---
 
 # Humiliating the Court?

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "28d6d83fa1814de1"
 ---
 
 # “The traditional one-size-fits-all approach to European integration is obsolete”

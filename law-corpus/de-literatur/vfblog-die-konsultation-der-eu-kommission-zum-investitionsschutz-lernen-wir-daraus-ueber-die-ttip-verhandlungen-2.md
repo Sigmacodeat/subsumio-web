@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "900656f21fe7265e"
 ---
 
 # Die Konsultation der EU-Kommission zum Investitionsschutz: Was lernen wir daraus über die TTIP-Verhandlungen?

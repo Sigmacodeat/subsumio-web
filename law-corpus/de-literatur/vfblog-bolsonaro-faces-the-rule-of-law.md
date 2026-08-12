@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bolsonaro-faces-the-rule-of-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fde3da2094d3a50f"
 ---
 
 # Bolsonaro Faces the Rule of Law

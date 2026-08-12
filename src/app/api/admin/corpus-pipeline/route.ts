@@ -15,6 +15,14 @@ const actionSchema = z.discriminatedUnion("action", [
     action: z.literal("clear_alerts"),
     source_key: z.string().min(1).max(100),
   }),
+  z.object({
+    action: z.literal("reembed"),
+    source: z.string().min(1).max(100),
+  }),
+  z.object({
+    action: z.literal("fetch_missing"),
+    source_key: z.string().min(1).max(100),
+  }),
 ]);
 
 /**
@@ -30,11 +38,11 @@ const actionSchema = z.discriminatedUnion("action", [
  */
 export const POST = createHandler(
   {
-    action: "admin.*" as never,
+    action: "admin.*",
     rateTier: "standard",
     body: actionSchema,
     audit: (_ctx, body) => ({
-      action: "settings.update" as const,
+      action: "admin.corpus_pipeline" as const,
       entityType: "corpus_pipeline",
       details: body as Record<string, unknown>,
     }),
@@ -69,15 +77,60 @@ export const POST = createHandler(
     }
 
     // clear_alerts
-    const res = await pool.query(
-      `UPDATE pipeline_state
-          SET alert_flags = '[]'::jsonb, updated_at = NOW()
-        WHERE source_key = $1`,
-      [body.source_key]
-    );
-    if (res.rowCount === 0) {
-      return apiError("not_found", `Source "${body.source_key}" nicht in pipeline_state`, 404);
+    if (body.action === "clear_alerts") {
+      const res = await pool.query(
+        `UPDATE pipeline_state
+            SET alert_flags = '[]'::jsonb, updated_at = NOW()
+          WHERE source_key = $1`,
+        [body.source_key]
+      );
+      if (res.rowCount === 0) {
+        return apiError("not_found", `Source "${body.source_key}" nicht in pipeline_state`, 404);
+      }
+      return Response.json({ ok: true, cleared: body.source_key });
     }
-    return Response.json({ ok: true, cleared: body.source_key });
+
+  // reembed: trigger embedding generation for a specific source
+  if (body.action === "reembed") {
+    try {
+      await pool.query(
+        `INSERT INTO pipeline_config (key, value, updated_at, updated_by)
+         VALUES ('reembed_triggered', $1::jsonb, NOW(), $2)
+         ON CONFLICT (key)
+         DO UPDATE SET value = $1::jsonb, updated_at = NOW(), updated_by = $2`,
+        [JSON.stringify({ source: body.source, seit: new Date().toISOString() }), ctx.user.email]
+      );
+    } catch {
+      return apiError(
+        "migration_missing",
+        "pipeline_config-Tabelle fehlt — Migration 011 anwenden",
+        503
+      );
+    }
+    return Response.json({ ok: true, triggered: true, source: body.source });
   }
+
+  // fetch_missing: trigger discovery/fetch for a source with reconcile_gap
+  if (body.action === "fetch_missing") {
+    try {
+      await pool.query(
+        `INSERT INTO pipeline_config (key, value, updated_at, updated_by)
+         VALUES ('fetch_triggered', $1::jsonb, NOW(), $2)
+         ON CONFLICT (key)
+         DO UPDATE SET value = $1::jsonb, updated_at = NOW(), updated_by = $2`,
+        [JSON.stringify({ source_key: body.source_key, seit: new Date().toISOString() }), ctx.user.email]
+      );
+    } catch {
+      return apiError(
+        "migration_missing",
+        "pipeline_config-Tabelle fehlt — Migration 011 anwenden",
+        503
+      );
+    }
+    return Response.json({ ok: true, triggered: true, source_key: body.source_key });
+  }
+
+  // Unreachable — discriminated union covers all cases
+  return Response.json({ ok: false, error: "Unbekannte Aktion" }, { status: 400 });
+  },
 );

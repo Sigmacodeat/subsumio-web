@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/after-sentenza-238-a-plea-for-legal-peace
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cefdcb4b66eb358f"
 ---
 
 # After Sentenza 238: A Plea for Legal Peace

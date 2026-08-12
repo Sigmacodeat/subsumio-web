@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/polizeigesetz-sachsen-referentenentwurf/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a0396de29db937cb"
 ---
 
 # Allwissende Polizei?

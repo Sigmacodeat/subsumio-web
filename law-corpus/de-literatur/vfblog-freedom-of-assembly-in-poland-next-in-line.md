@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/freedom-of-assembly-in-poland-next-in-lin
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "79dc37eee27b5ccb"
 ---
 
 # Freedom of Assembly in Poland: Next in Line?

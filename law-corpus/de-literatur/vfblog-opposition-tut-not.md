@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/opposition-tut-not/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "474c1d3b455d914c"
 ---
 
 # Opposition tut not!

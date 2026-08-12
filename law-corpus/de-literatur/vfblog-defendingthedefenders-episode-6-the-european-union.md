@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/defendingthedefenders-episode-6-the-europ
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "39edeb4d95355416"
 ---
 
 # #DefendingTheDefenders – Episode 6: The European Union

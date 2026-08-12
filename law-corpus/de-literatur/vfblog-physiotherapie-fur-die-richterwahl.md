@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/physiotherapie-fur-die-richterwahl/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "52708cd400e375d6"
 ---
 
 # Physiotherapie für die Richterwahl

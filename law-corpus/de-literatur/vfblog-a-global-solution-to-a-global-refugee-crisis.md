@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-global-solution-to-a-global-refugee-cri
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5c2567e9bce59690"
 ---
 
 # A Global Solution to a Global Refugee Crisis

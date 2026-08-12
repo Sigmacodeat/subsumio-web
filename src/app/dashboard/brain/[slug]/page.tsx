@@ -165,7 +165,7 @@ export default function BrainDetailPage() {
   };
 
   return (
-    <div className="flex h-full min-w-0 overflow-hidden">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8 flex h-full min-w-0 overflow-hidden">
       {/* Main */}
       <div className="min-w-0 flex-1 overflow-y-auto">
         {/* Breadcrumb + Actions */}

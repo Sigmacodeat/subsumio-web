@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/on-the-risk-of-trying-to-kill-seven-at-a-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8006f408f9d367e1"
 ---
 
 # On the Risk of Trying to Kill “Seven at a Blow”

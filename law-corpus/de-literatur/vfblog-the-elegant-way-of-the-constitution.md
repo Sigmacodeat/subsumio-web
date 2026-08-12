@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-elegant-way-of-the-constitution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3d07f671ab7bb672"
 ---
 
 # The ‘Elegant Way’ of the Constitution

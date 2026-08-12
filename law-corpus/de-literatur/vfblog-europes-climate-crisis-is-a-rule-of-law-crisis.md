@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/europes-climate-crisis-is-a-rule-of-law-c
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "857ec6a81d1dd5f0"
 ---
 
 # Europe’s Climate Crisis Is a Rule-of-Law Crisis

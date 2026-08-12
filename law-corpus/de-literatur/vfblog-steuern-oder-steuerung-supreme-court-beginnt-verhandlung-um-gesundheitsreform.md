@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7564a7ffb9299b12"
 ---
 
 # Steuern oder Steuerung? US Supreme Court beginnt Verhandlung um Gesundheitsreform

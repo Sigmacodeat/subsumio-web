@@ -33,7 +33,7 @@ interface CalibrationTrendPoint {
  */
 export const GET = createHandler(
   {
-    action: "admin.*" as never,
+    action: "admin.*",
     query: querySchema,
     cacheMaxAge: 0,
   },

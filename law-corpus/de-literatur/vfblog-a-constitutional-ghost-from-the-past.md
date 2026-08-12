@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-constitutional-ghost-from-the-past/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d1906b73e5b9e7d8"
 ---
 
 # “A Constitutional Ghost From the Past”

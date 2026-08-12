@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/missbrauchsunabhangige-entflechtung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "66a6cde3ed6a9e3c"
 ---
 
 # Missbrauchsunabhängige Entflechtung – verfassungswidriger Kartellrechtspopulismus oder sinnvolle Ultima Ratio?

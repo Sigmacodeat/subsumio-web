@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/taking-data-sharing-seriously/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ca2c1895387584f1"
 ---
 
 # Taking Data Sharing Seriously

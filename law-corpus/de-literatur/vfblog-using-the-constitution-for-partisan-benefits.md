@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/using-the-constitution-for-partisan-benef
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "64a6bca6c8f00f9a"
 ---
 
 # Using the Constitution for Partisan Benefits

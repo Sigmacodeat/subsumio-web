@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-future-of-european-climate-change-lit
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a72a611d595eaee1"
 ---
 
 # The Future of European Climate Change Litigation

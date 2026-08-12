@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/week-1-after-trump/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "140a185c6e1af9fa"
 ---
 
 # Week #1 after Trump

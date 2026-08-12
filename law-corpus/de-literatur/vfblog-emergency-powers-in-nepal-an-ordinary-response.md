@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/emergency-powers-in-nepal-an-ordinary-res
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c52a2f95dbc506cc"
 ---
 
 # Emergency Powers in Nepal: An Ordinary Response?

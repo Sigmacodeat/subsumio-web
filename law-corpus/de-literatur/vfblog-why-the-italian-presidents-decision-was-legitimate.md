@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/why-the-italian-presidents-decision-was-l
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3fec383ad5a4a7a3"
 ---
 
 # Why the Italian President's Decision was Legitimate

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/luebbe-wolff-nachfolge-sorgt-der-spd-fuer
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f36ef09277eb9deb"
 ---
 
 # Lübbe-Wolff-Nachfolge sorgt in der SPD für Ärger

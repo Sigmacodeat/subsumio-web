@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/berlin-gehorcht-karlsruhe-leider-nur-aufs
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4facdd75bb9ed147"
 ---
 
 # Berlin gehorcht Karlsruhe: Leider nur aufs Wort

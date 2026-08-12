@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2026 Laurent Bieri;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "51de4453f6b4778a"
 ---
 
 # L’adaptation du loyer selon la méthode relative en cas de variations des coûts

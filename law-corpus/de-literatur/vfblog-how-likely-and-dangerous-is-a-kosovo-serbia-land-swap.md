@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bacf5a3c3c8cd36b"
 ---
 
 # How likely – and dangerous – is a Kosovo/Serbia “Land Swap” ?

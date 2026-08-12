@@ -62,6 +62,15 @@ const nextConfig: NextConfig = {
         destination: "/dashboard/research?tab=commentaries",
         permanent: true,
       },
+      // Admin section consolidation — /admin/* → /dashboard/admin/*
+      { source: "/admin", destination: "/dashboard/admin", permanent: true },
+      { source: "/admin/users", destination: "/dashboard/admin/users", permanent: true },
+      {
+        source: "/admin/users/:id",
+        destination: "/dashboard/admin/users/:id",
+        permanent: true,
+      },
+      { source: "/admin/mailbox", destination: "/dashboard/admin/mailbox", permanent: true },
     ];
   },
   async headers() {

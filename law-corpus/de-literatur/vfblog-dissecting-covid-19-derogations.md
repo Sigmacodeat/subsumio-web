@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dissecting-covid-19-derogations/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ce3de95f96180964"
 ---
 
 # Dissecting Covid-19 Derogations

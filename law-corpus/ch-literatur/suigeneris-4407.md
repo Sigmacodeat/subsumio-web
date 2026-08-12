@@ -20,6 +20,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2023 Simone Brauchbar
   Birkhäuser, Olivia Zingg; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "8ca332d0daccbebb"
 ---
 
 # Die Eventmarke - eine Marke wie jede andere? Zum marken- und lauterkeitsrechtlichen Schutz der Eventmarke unterBerücksichtigung des Bundesgerichtsurteils 4A_518/2021 und 4A_526/2021 «QATAR 2022» und «WORLD CUP 2022» vs. «PUMA WORLD CUP QATAR 2022» und «PUMA WORLD CUP 2022» vom 6. April 2022

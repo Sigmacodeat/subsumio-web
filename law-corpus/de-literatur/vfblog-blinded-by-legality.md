@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/blinded-by-legality/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e87768d895c83ef7"
 ---
 
 # Blinded by Legality

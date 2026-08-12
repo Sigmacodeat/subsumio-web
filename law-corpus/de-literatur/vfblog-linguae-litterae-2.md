@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/linguae-litterae-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4bdb9c0cd04ae657"
 ---
 
 # Linguae et Litterae: Sprachenpolitik in der (Rechts-)Wissenschaft

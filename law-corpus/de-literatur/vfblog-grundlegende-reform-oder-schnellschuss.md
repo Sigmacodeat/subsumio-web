@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/grundlegende-reform-oder-schnellschuss/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fc653d7f413dcebf"
 ---
 
 # Grundlegende Reform oder Schnellschuss?

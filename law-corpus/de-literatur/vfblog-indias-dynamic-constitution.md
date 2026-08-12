@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/indias-dynamic-constitution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bb16771837855d36"
 ---
 
 # India’s Dynamic Constitution

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/leading-through-dialogue/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "01bc5349187e0bb4"
 ---
 
 # Leading Through Dialogue

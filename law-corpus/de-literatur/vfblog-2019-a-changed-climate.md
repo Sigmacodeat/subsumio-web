@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/2019-a-changed-climate/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "db9667f8b9471b46"
 ---
 
 # 2019: a Changed Climate

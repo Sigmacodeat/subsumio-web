@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/revenge-in-the-big-village/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "972cfe5968ad34e3"
 ---
 
 # Revenge in the Big Village

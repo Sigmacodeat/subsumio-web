@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/theresa-mays-great-repeal-bill-a-scottish
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "88cb4e8a61c08f13"
 ---
 
 # Theresa May’s Great Repeal Bill – a Scottish own goal?

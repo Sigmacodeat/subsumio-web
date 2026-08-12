@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a68479ec225ab970"
 ---
 
 # The Retro Style in Liberal Politics: A Review of Mark Lilla's ,The Once and Future Liberal: After Identity Politics'

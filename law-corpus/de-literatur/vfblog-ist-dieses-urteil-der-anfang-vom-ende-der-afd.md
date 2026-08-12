@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ist-dieses-urteil-der-anfang-vom-ende-der
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c1fb8610ea1771d8"
 ---
 
 # Ist dieses Urteil der Anfang vom Ende der AfD?

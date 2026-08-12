@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "05090d4a49bf4498"
 ---
 
 # The EU sanctions dilemma of how to deal with the Russian ally Belarus

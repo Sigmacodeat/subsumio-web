@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/when-context-disappears/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7ac73a20ee61855d"
 ---
 
 # When Context Disappears

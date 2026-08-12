@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/even-in-prison/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cdfed0c7ca5acdcd"
 ---
 
 # Even in Prison

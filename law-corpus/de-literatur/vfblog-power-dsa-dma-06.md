@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/power-dsa-dma-06/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "88c9fafa99ce8ebe"
 ---
 
 # Using Terms and Conditions to apply Fundamental Rights to Content Moderation

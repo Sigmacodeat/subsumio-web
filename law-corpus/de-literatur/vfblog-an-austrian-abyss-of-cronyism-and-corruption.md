@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/an-austrian-abyss-of-cronyism-and-corrupt
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9224ededbc808458"
 ---
 
 # An Austrian Abyss of Cronyism and Corruption

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-good-constitution-and-the-habits-of-hea
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1042c5a5e38c4848"
 ---
 
 # „A Good Constitution” and the Habits of Heart

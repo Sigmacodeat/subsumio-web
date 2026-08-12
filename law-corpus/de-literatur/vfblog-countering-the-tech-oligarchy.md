@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/countering-the-tech-oligarchy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "be150015f2d66bd8"
 ---
 
 # Countering the Tech Oligarchy

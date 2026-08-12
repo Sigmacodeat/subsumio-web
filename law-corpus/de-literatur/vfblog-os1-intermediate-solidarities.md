@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/os1-intermediate-solidarities/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1db681d184d84370"
 ---
 
 # Intermediate Solidarities: The Case of the Afghan Interpreters

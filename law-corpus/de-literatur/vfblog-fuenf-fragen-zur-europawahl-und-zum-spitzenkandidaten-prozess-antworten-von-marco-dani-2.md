@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1eafba4a8b19453b"
 ---
 
 # Fünf Fragen zur Europawahl und zum “Spitzenkandidaten”-Prozess: Antworten von MARCO DANI

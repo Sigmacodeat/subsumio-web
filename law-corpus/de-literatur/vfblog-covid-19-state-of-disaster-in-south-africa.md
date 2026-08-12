@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/covid-19-state-of-disaster-in-south-afric
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c63b243a6c6ef80f"
 ---
 
 # COVID-19: State of Disaster in South Africa

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-feedback-loop-of-power/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "06fa3bb61356af5c"
 ---
 
 # The Feedback Loop of Power

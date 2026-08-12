@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-local-case-against-climate-deception/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "50c1b36b0ea88495"
 ---
 
 # The Local Case Against Climate Deception

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/patchwork-law-love/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d0e1d38d2d28df49"
 ---
 
 # Patchwork Law (Love)

@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "76b58c20f5bbfac0"
 ---
 
 # Karlsruhe im Luxemburger Gewand, aber dennoch eigenständig

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/of-minor-benefits-and-major-costs/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0d803f4065c23ef3"
 ---
 
 # Of Minor Benefits and Major Costs

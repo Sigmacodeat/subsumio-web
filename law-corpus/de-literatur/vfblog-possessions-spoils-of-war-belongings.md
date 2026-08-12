@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/possessions-spoils-of-war-belongings/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "90abc2f99d8e783a"
 ---
 
 # Possessions, Spoils of War, Belongings

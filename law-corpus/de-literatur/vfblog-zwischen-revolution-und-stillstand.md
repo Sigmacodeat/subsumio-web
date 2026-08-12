@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zwischen-revolution-und-stillstand/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "06bf6361c95f6776"
 ---
 
 # Zwischen Revolution und Stillstand?

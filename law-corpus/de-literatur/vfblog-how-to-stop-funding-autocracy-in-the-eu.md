@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/how-to-stop-funding-autocracy-in-the-eu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dae05fd4e7729c0a"
 ---
 
 # How to Stop Funding Autocracy in the EU

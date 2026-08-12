@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/avian-flu-and-meat-governance/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "af72c25bb896a211"
 ---
 
 # Avian Flu Shows the Need for Transformative Meat Governance

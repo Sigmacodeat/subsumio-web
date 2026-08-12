@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "31f8d4a80f342e51"
 ---
 
 # „A new era in the settlement of investment disputes?“ – Reformvorschläge der EU-Kommission zum Investitionsschutz in TTIP

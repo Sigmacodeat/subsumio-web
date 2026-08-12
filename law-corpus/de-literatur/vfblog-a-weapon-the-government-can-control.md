@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-weapon-the-government-can-control/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2f1eb35ff8ae1046"
 ---
 
 # A Weapon the Government Can Control

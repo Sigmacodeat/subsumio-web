@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/are-they-all-textualists-now/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d6fe0d31e228a528"
 ---
 
 # Are They All Textualists Now?

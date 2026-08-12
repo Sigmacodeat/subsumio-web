@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dcaf862a697146eb"
 ---
 
 # From &#8216;Assigned Residence' to &#8216;Zone': Introduction to the Book Review Symposium on The ABC of the OPT

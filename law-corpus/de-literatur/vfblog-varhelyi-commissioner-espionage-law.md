@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/varhelyi-commissioner-espionage-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "72b19550f9055f5a"
 ---
 
 # Espionage, Eligibility, and the Integrity of the European Commission

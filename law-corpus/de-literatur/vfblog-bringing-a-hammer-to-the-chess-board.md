@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bringing-a-hammer-to-the-chess-board/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "80dba2b180443389"
 ---
 
 # Bringing a Hammer to the Chess Board

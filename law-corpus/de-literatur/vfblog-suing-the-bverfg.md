@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/suing-the-bverfg/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "51c02e7a51cbe7fa"
 ---
 
 # Suing the BVerfG

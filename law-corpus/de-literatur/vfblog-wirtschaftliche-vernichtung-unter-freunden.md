@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wirtschaftliche-vernichtung-unter-freunde
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5217db126ca07807"
 ---
 
 # „Wirtschaftliche Vernichtung“ unter Freunden

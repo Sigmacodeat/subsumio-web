@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/der-funktionsfahige-staat/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "97b4f990f14b682c"
 ---
 
 # Der funktionsfähige Staat

@@ -20,6 +20,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Charlotte E. Blattner,
   Raffael N. Fasel; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "8b3ae8a9f89f9a68"
 ---
 
 # Grundrechte jenseits der «anthropologischen Schranke»? Die Primateninitiative im Lichte des wegweisenden Urteils des Verfassungsgerichts Basel-Stadt

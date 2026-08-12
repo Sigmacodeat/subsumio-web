@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/free-trade-in-legal-scholarship-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6b04fd7b2e92ead8"
 ---
 
 # Free Trade in Legal Scholarship?

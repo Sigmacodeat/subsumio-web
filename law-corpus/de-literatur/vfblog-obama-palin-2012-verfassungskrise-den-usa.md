@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/obama-palin-2012-verfassungskrise-den-usa
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d543dd3b37cc4837"
 ---
 
 # Obama vs. Palin 2012: Verfassungskrise in den USA?

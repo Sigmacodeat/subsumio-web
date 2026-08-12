@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2023 Patrice Martin Zumsteg;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "b89cd2ad08258987"
 ---
 
 # Der Polizeigewahrsam nach Zürcher Recht - Anmerkungen aus grundrechtlicher Sicht

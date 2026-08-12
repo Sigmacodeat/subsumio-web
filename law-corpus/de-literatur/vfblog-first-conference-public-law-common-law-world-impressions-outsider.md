@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aa737c6fa1feb3c7"
 ---
 
 # The First Conference on Public Law in the Common Law World: Some Impressions of an Outsider

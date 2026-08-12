@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/verschleppte-vergesellschaftung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1dba26664922ef08"
 ---
 
 # Verschleppte Vergesellschaftung

@@ -53,10 +53,12 @@ describe("thin-client routing audit — v0.32 REFUSE additions stay in the table
       // We look for the literal in the set declaration. The set is plain
       // text in src/cli.ts so a simple string check is honest: a future
       // refactor that drops the entry would also drop the literal.
+      // Quote-agnostic: Prettier may normalize single→double quotes.
       const setStart = CLI_SOURCE.indexOf("const THIN_CLIENT_REFUSED_COMMANDS = new Set([");
       const setEnd = CLI_SOURCE.indexOf("]);", setStart);
       const setBlock = CLI_SOURCE.slice(setStart, setEnd);
-      expect(setBlock).toContain(`'${command}'`);
+      const re = new RegExp(`["']${command.replace(/-/g, "\\-")}["']`);
+      expect(re.test(setBlock)).toBe(true);
     });
 
     test(`'${command}' has a hint in THIN_CLIENT_REFUSE_HINTS`, () => {
@@ -94,7 +96,8 @@ describe("thin-client routing audit — v0.32 REFUSE additions stay in the table
       "sources",
     ];
     for (const cmd of v0_31_originals) {
-      expect(setBlock).toContain(`'${cmd}'`);
+      const re = new RegExp(`["']${cmd.replace(/-/g, "\\-")}["']`);
+      expect(re.test(setBlock)).toBe(true);
     }
   });
 });
@@ -108,26 +111,26 @@ describe("thin-client routing audit — v0.32 ROUTE additions wire callRemoteToo
 
   test("src/commands/recall.ts imports callRemoteTool + isThinClient", () => {
     const src = readFileSync(join(import.meta.dir, "..", "src", "commands", "recall.ts"), "utf8");
-    expect(src).toContain(`from '../core/config.ts'`);
+    expect(src).toMatch(/from ["']\.\.\/core\/config\.ts["']/);
     expect(src).toContain("isThinClient");
-    expect(src).toContain(`from '../core/mcp-client.ts'`);
+    expect(src).toMatch(/from ["']\.\.\/core\/mcp-client\.ts["']/);
     expect(src).toContain("callRemoteTool");
   });
 
   test('src/commands/recall.ts: recall routing branch calls callRemoteTool with op="recall"', () => {
     const src = readFileSync(join(import.meta.dir, "..", "src", "commands", "recall.ts"), "utf8");
-    expect(src).toContain(`callRemoteTool(cfg!, 'recall'`);
+    expect(src).toMatch(/callRemoteTool\(cfg!,\s*["']recall["']/);
   });
 
   test('src/commands/recall.ts: forget routing branch calls callRemoteTool with op="forget_fact"', () => {
     const src = readFileSync(join(import.meta.dir, "..", "src", "commands", "recall.ts"), "utf8");
-    expect(src).toContain(`callRemoteTool(cfg!, 'forget_fact'`);
+    expect(src).toMatch(/callRemoteTool\(cfg!,\s*["']forget_fact["']/);
   });
 
   test("src/commands/jobs.ts: list/get routing branches call callRemoteTool", () => {
     const src = readFileSync(join(import.meta.dir, "..", "src", "commands", "jobs.ts"), "utf8");
-    expect(src).toContain(`from '../core/mcp-client.ts'`);
-    expect(src).toContain(`callRemoteTool(cfg!, 'list_jobs'`);
-    expect(src).toContain(`callRemoteTool(cfg!, 'get_job'`);
+    expect(src).toMatch(/from ["']\.\.\/core\/mcp-client\.ts["']/);
+    expect(src).toMatch(/callRemoteTool\([^)]*["']list_jobs["']/s);
+    expect(src).toMatch(/callRemoteTool\(cfg!,\s*["']get_job["']/);
   });
 });

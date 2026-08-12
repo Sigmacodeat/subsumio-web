@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f197d31d5fc98c0c"
 ---
 
 # WTO Option in Practice: How a No-Deal Brexit Would Seriously Damage Key UK Industries

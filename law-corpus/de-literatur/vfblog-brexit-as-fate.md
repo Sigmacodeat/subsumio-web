@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/brexit-as-fate/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6c39450f9e6fe3f5"
 ---
 
 # Brexit as Fate

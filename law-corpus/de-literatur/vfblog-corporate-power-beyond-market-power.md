@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/corporate-power-beyond-market-power/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6f4d5e52750f1fcd"
 ---
 
 # Corporate Power Beyond Market Power

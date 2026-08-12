@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/now-europe-needs-a-constitution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "527e2eb8d23d8933"
 ---
 
 # Now Europe Needs a Constitution

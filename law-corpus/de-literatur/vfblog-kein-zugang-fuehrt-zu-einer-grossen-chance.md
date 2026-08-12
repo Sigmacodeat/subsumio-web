@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kein-zugang-fuehrt-zu-einer-grossen-chanc
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "51a7e514258d6d02"
 ---
 
 # (Kein) Zugang führt zu einer großen Chance

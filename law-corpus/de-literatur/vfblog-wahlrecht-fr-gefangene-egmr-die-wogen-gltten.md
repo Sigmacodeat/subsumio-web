@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wahlrecht-fr-gefangene-egmr-die-wogen-glt
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "62b12c1662f3bd3b"
 ---
 
 # Wahlrecht für Gefangene: EGMR will die Wogen glätten

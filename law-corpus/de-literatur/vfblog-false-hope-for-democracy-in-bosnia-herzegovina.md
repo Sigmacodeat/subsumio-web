@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/false-hope-for-democracy-in-bosnia-herzeg
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ef55462c91f7d642"
 ---
 
 # False Hope for Democracy in Bosnia &#038; Herzegovina

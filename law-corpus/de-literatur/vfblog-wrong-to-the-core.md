@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wrong-to-the-core/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fa4d81a76a3bf2fe"
 ---
 
 # Wrong to the Core

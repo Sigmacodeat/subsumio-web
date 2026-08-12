@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c7fa1cea47cac11a"
 ---
 
 # In the shadow of sovereign debt conditionality: the rise of spending conditionality in the EU

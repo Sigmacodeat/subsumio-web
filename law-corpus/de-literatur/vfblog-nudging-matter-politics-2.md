@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nudging-matter-politics-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "887dd02d8924e8d3"
 ---
 
 # Nudging as a Matter of Politics

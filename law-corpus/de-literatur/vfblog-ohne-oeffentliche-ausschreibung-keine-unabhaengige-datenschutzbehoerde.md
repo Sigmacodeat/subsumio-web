@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "55530b012d6d4300"
 ---
 
 # Ohne öffentliche Ausschreibung keine unabhängige Datenschutzbehörde

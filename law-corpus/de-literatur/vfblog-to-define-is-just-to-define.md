@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/to-define-is-just-to-define/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6fb2c90c8cd642ba"
 ---
 
 # To Define Is Just to Define

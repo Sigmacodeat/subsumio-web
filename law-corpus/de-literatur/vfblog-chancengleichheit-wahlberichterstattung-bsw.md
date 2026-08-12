@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/chancengleichheit-wahlberichterstattung-b
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4d053b93e8c99cc4"
 ---
 
 # Talkshow für alle?

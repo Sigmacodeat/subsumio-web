@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/belgian-senate-little-damage-little-use-2
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "103baa3e70feac5e"
 ---
 
 # The Belgian Senate: little damage, little use

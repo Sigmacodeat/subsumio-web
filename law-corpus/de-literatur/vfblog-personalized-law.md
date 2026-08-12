@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/personalized-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f9dab887e392fa03"
 ---
 
 # Personalized Law and Social Media

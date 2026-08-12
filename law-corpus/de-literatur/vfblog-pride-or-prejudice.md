@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pride-or-prejudice/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "11f17ef98d7c7f21"
 ---
 
 # Pride or Prejudice?

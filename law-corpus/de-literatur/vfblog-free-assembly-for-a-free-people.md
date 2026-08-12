@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/free-assembly-for-a-free-people/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d51c4e9fef34ac06"
 ---
 
 # Free Assembly for a Free People

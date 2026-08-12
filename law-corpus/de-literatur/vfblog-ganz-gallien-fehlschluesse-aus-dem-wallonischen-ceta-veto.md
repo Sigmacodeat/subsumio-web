@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fbb099ac5f128423"
 ---
 
 # Ganz Gallien? Fehlschlüsse aus dem wallonischen CETA-Veto

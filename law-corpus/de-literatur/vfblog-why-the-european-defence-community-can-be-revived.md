@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/why-the-european-defence-community-can-be
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2f7127ecea9eb9a8"
 ---
 
 # Why the European Defence Community Can Be Revived

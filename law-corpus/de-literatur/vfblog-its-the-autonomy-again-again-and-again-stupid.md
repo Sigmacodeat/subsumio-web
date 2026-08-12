@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/its-the-autonomy-again-again-and-again-st
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ba843bf4e6a0e555"
 ---
 
 # It’s the Autonomy (Again, Again and Again), Stupid!

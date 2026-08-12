@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sounding-the-death-knell-for-eu-social-di
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "40a52e9ba36c31f5"
 ---
 
 # Sounding the Death Knell for EU Social Dialogue?

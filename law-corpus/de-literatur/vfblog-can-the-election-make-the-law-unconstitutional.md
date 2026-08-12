@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/can-the-election-make-the-law-unconstitut
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "27af605098e878d5"
 ---
 
 # Can the Election make the Law Unconstitutional?

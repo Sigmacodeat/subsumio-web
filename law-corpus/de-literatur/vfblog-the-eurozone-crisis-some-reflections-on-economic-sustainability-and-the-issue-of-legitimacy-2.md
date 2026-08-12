@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f8e7aadded413249"
 ---
 
 # The Eurozone Crisis: Some reflections on economic sustainability and the issue of legitimacy

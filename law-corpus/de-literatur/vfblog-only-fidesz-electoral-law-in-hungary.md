@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/only-fidesz-electoral-law-in-hungary/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "10e79046a8bf8580"
 ---
 
 # “Only Fidesz” – Minority Electoral Law in Hungary

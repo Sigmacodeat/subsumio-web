@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fremdkorper-im-strafprozess/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cf92396a463972b0"
 ---
 
 # Fremdkörper im Strafprozess

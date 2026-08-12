@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-vorratsdatenspeicherung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a4e2ad1af9e1020f"
 ---
 
 # Die Vorratsdatenspeicherung

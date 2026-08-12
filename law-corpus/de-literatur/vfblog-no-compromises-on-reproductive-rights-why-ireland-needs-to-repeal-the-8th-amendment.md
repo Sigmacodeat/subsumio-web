@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "18793d10244c9d87"
 ---
 
 # No Compromises on Reproductive Rights – Why Ireland Needs Constitutional Change

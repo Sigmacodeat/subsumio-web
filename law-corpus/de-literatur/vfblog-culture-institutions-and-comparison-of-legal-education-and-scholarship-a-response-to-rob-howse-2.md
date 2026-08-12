@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4eba3d1814fea144"
 ---
 
 # Culture, Institutions, and Comparison of Legal Education and Scholarship—A Response to Rob Howse

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/open-access-and-then/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dedc1146c9653eb5"
 ---
 
 # Open Access &#8230; And Then?

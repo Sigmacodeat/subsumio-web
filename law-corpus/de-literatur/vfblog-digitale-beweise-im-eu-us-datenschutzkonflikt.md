@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/digitale-beweise-im-eu-us-datenschutzkonf
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "60ff6e63c269fc2d"
 ---
 
 # Digitale Beweise im EU-/US-Datenschutzkonflikt

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/spanische-tragoedie/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5da8f144a8e7aae5"
 ---
 
 # Spanische Tragödie

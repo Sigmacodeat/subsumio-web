@@ -16,6 +16,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7ba06d3c19bd10d6"
 ---
 
 # Versionen fiktiver Migrationspolitik und was sie unterscheidet: Transitzentren, Flughafenverfahren und die australische non-Migration Zone

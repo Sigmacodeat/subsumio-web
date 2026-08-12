@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5c839abaa4956726"
 ---
 
 # Deutschlands Weg in den Kampf gegen den IS – ein Pflaster aus rechtlichen Stolpersteinen

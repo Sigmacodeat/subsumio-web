@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/direct-democracy-or-climate-litigation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b271119882eb82e6"
 ---
 
 # Direct Democracy or Climate Litigation?

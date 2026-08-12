@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0c4a1c871f9cb46d"
 ---
 
 # Translation “Perspectives of Legal Sholarship in Germany” available online now

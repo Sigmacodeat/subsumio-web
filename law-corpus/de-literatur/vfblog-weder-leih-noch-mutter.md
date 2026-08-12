@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/weder-leih-noch-mutter/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ab54ea75b0638919"
 ---
 
 # Weder Leih- noch Mutter

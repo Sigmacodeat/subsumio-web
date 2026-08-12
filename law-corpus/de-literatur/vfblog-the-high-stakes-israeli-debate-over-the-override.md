@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-high-stakes-israeli-debate-over-the-o
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d1360992eeb4cd23"
 ---
 
 # The High Stakes Israeli Debate over the Override

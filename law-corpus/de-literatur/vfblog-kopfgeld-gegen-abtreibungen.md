@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kopfgeld-gegen-abtreibungen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6e6f99084179be82"
 ---
 
 # Kopfgeld gegen Abtreibungen

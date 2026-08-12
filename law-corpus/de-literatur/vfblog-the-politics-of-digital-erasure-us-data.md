@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-politics-of-digital-erasure-us-data/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "29cfc1ce02ac3642"
 ---
 
 # The Politics of Digital Erasure

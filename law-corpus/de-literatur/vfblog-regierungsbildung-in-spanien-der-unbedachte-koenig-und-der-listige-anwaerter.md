@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aade1a2b9db21ea4"
 ---
 
 # Regierungsbildung in Spanien: der unbedachte König und der listige Anwärter

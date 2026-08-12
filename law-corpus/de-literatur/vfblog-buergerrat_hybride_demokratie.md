@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/buergerrat_hybride_demokratie/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fdf6b75a8bf776ce"
 ---
 
 # Der Bürgerrat als Hybride?

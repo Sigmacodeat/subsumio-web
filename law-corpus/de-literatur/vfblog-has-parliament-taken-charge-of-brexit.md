@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/has-parliament-taken-charge-of-brexit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b4650a2111410e0c"
 ---
 
 # Has Parliament Taken Charge of Brexit?

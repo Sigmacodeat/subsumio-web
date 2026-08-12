@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/scottish-independence-on-hold/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e913668b209a07c7"
 ---
 
 # Scottish Independence on Hold

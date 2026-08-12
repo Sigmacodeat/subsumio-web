@@ -24,6 +24,7 @@ license: >-
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Marc Thommen, David
   Eschle, Selma Kuratle, Simone Walser, Fabienne Zimmermann;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "60dba760512eb249"
 ---
 
 # Übersetzung von Strafbefehlen — «Wo chiemte mer hi?»: Besprechung von BGE 145 IV 197 (6B_517/2018) vom 24. April 2019 i.S. X. gegen Oberstaatsanwaltschaft des Kantons Zürich

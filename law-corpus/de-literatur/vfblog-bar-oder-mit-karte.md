@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bar-oder-mit-karte/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ebeea841ceeef88e"
 ---
 
 # Bar oder mit Karte?

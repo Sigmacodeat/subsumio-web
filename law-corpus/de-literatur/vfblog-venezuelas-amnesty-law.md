@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/venezuelas-amnesty-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "02cce6ab9a031ba7"
 ---
 
 # Venezuela’s Amnesty Law

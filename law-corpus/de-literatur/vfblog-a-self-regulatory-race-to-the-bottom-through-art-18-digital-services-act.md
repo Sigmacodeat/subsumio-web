@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6f6e53e48dd7bfff"
 ---
 
 # A Self-Regulatory Race to the Bottom through Out-of-Court Dispute Settlement in the Digital Services Act

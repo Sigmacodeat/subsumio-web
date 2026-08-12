@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1f8471e83b5b8b7f"
 ---
 
 # Der Fall Brandstetter und der österreichische Verfassungsgerichtshof

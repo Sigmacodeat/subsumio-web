@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-matter-of-faith/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9ff91ad6e8d1bc2d"
 ---
 
 # A Matter of Faith

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/indian-constitutionalism-in-the-last-deca
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "028b4eb23b3364e1"
 ---
 
 # Indian Constitutionalism in the Last Decade

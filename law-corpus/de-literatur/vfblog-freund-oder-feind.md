@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/freund-oder-feind/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "69f889ddd27c145e"
 ---
 
 # Freund oder Feind?

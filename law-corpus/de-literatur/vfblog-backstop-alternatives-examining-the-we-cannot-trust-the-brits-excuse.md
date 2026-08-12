@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "24103d815d368c30"
 ---
 
 # Backstop Alternatives: Examining the “We Cannot Trust the Brits” Excuse

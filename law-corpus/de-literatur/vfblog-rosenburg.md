@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/rosenburg/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7d65ac9cbfa4bf45"
 ---
 
 # Karrieren und Kontinuitäten: Das Bundesministerium der Justiz und seine Vergangenheiten

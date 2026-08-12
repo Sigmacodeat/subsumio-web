@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/parlamentarische-beobachtung-versammlunge
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3b48849b616b949b"
 ---
 
 # Keine Kontrolle ohne Kenntnis

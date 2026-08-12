@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/how-not-to-divorce-muslim-women-in-india/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0227fd4ba222c185"
 ---
 
 # How not to Divorce Muslim Women in India

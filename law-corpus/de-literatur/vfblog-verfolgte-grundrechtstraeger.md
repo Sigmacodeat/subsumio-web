@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/verfolgte-grundrechtstraeger/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "83b4d2e31944419a"
 ---
 
 # Verfolgte Grundrechtsträger?

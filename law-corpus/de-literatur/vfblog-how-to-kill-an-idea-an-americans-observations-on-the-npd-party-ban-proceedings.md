@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "864adf834d63e597"
 ---
 
 # How to Kill an Idea:  An American’s Observations on the NPD Party-Ban Proceedings

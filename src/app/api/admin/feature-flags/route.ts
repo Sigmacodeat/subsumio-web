@@ -33,6 +33,12 @@ export const POST = createHandler(
     action: "admin.*",
     rateTier: "standard",
     body: createSchema,
+    audit: (_ctx, body) => ({
+      action: "admin.feature_flag" as const,
+      entityType: "feature_flag",
+      entityId: body.key,
+      details: { op: "create", key: body.key, enabled: body.enabled },
+    }),
   },
   async (ctx, body) => {
     const flag = await createFeatureFlag(
@@ -66,6 +72,12 @@ export const PATCH = createHandler(
     action: "admin.*",
     rateTier: "standard",
     body: patchSchema,
+    audit: (_ctx, body) => ({
+      action: "admin.feature_flag" as const,
+      entityType: "feature_flag",
+      entityId: body.key,
+      details: { op: "update", key: body.key, fields: Object.keys(body).filter((k) => k !== "key") },
+    }),
   },
   async (ctx, body) => {
     const { key, ...updates } = body;
@@ -84,6 +96,12 @@ export const DELETE = createHandler(
     action: "admin.*",
     rateTier: "standard",
     body: deleteSchema,
+    audit: (_ctx, body) => ({
+      action: "admin.feature_flag" as const,
+      entityType: "feature_flag",
+      entityId: body.key,
+      details: { op: "delete", key: body.key },
+    }),
   },
   async (ctx, body) => {
     const deleted = await deleteFeatureFlag(body.key);

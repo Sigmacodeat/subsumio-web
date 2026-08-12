@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/masks-vaccines-and-investment-promises/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "942a0daf55129961"
 ---
 
 # Masks, vaccines, and investment promises

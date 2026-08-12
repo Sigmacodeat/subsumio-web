@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "228dd9ad51a18758"
 ---
 
 # Dreiprozenthürde bei Europawahl: Der Bundestag will's wissen

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-plurinationales-rechtssystem-fur-chil
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bf51456c5c14d38f"
 ---
 
 # Ein plurinationales Rechtssystem für Chile

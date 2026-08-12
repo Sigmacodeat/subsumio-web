@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bverfg/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "49ec2a3b8202d594"
 ---
 
 # BVerfG ruft Justiz in punkto Versammlungsrecht zur Ordnung

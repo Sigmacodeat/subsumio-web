@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/was-weisse-rechtswissenschaft-jetzt-tun-k
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9e2dee4d17585f67"
 ---
 
 # Was „weiße“ Rechtswissenschaft jetzt tun kann

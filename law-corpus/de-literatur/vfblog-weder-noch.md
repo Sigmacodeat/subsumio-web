@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/weder-noch/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "04d083e862292cb2"
 ---
 
 # Weder Burnout-Attest noch Jodel-Diplom

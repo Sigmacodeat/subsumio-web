@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/not-only-legally-dubious-but-also-ineffec
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a32d64414df93d6f"
 ---
 
 # “Not only legally dubious but also ineffective”

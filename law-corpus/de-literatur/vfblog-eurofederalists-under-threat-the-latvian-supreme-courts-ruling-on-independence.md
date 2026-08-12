@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "908d8279e4d732f0"
 ---
 
 # Eurofederalists under Threat: The Latvian Supreme Court’s Ruling on Independence

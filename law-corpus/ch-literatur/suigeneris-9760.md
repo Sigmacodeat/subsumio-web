@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2025 Oliver Bühlmann, Gian
   Ege; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "ddea6cda96220f8d"
 ---
 
 # Straflos jenseits der Kantonsgrenze? Zur strafrechtlichen Verfolgung kantonaler Übertretungen im Jugendstrafverfahren

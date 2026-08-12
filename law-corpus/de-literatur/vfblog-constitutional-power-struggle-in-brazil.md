@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/constitutional-power-struggle-in-brazil/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ece419774089c448"
 ---
 
 # Constitutional Power Struggle in Brazil

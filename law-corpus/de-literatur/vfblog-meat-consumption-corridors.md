@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/meat-consumption-corridors/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fe32af5d78074984"
 ---
 
 # Meat Consumption Corridors as Transformative Meat Governance

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/when-judges-fall-silent/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "87eb941327731b65"
 ---
 
 # When Judges Fall Silent

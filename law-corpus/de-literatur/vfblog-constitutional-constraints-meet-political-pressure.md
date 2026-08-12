@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/constitutional-constraints-meet-political
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "02648c3c1425a4ce"
 ---
 
 # Constitutional Constraints meet Political Pressure

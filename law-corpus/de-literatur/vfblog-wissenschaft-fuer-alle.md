@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wissenschaft-fuer-alle/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e98b28a4d24503c6"
 ---
 
 # Wissenschaft für alle

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-tale-of-two-exits-scotland-and-brexit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e2e9f016658338c2"
 ---
 
 # A Tale of Two Exits: Scotland and Brexit

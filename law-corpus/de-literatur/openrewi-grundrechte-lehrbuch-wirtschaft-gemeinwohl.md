@@ -15,6 +15,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "93f30f2211d195a2"
 ---
 
 § 20.5 Petitionsrecht (Art. 17 GG) &#124; Inhaltsverzeichnis &#124; § 21.1 Eigentumsfreiheit (Art. 14, 15 GG) 

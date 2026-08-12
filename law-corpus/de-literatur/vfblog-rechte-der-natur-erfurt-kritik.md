@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rechte-der-natur-erfurt-kritik/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "15216e64d8fea8a6"
 ---
 
 # Irritierend distanzlos

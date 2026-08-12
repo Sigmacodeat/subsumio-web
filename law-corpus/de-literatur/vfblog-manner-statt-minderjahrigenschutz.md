@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/manner-statt-minderjahrigenschutz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e5b8c98a5018ed29"
 ---
 
 # Männer- statt Minderjährigenschutz

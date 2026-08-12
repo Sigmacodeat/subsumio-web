@@ -18,6 +18,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2014
   AUSTRIAN LAW JOURNAL
+content_hash: "a10c9623cffcf941"
 ---
 
 # Judicial Governance in Private Law through the Application of Fundamental Rights

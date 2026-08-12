@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-new-chapter-in-the-european-rule-of-law
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d7881ebb228438c7"
 ---
 
 # A New Chapter in the European Rule of Law Saga?

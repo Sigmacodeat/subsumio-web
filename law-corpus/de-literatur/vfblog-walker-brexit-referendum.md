@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/walker-brexit-referendum/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3781a541412548ca"
 ---
 
 # The Brexit Vote: The Wrong Question for Britain and Europe

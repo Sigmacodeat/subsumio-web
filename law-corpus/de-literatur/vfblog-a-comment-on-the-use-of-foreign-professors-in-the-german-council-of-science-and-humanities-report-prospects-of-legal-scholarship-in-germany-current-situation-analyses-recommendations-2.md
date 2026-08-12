@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c6d4e88993b527c4"
 ---
 
 # A Comment on the Use of Foreign Professors in the German Council of Science and Humanities Report

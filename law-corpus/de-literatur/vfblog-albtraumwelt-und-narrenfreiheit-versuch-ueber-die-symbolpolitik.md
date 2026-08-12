@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6792f33a4c8b9750"
 ---
 
 # Albtraumwelt und Narrenfreiheit: Versuch über die Symbolpolitik

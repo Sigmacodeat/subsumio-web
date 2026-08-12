@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mandat-zu-meinungspflege/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ab495657e7fa1a9f"
 ---
 
 # Mandat zu Meinungspflege?

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c4a7b3eba84904ff"
 ---
 
 # How Can a Democratic Constitution Survive an Autocratic Majority? A Report on the Presentations on the Judiciary

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/vom-globalen-bourgeois-zum-globalen-citoy
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d6c5137969524688"
 ---
 
 # Vom globalen Bourgeois zum globalen Citoyen

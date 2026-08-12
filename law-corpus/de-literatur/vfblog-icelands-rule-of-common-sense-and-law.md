@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/icelands-rule-of-common-sense-and-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9c5fa2b103b6bf1e"
 ---
 
 # Iceland’s Rule of Common Sense … and Law?

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bb858a844ae0be04"
 ---
 
 # „Wie in einem finsteren Film über den Kalten Krieg“ – Der völkerrechtliche Hintergrund der Eiszeit zwischen Vietnam und Deutschland

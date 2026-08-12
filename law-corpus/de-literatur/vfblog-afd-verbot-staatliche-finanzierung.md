@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/afd-verbot-staatliche-finanzierung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "92e9c8360038d74e"
 ---
 
 # Mehr als Lex NPD

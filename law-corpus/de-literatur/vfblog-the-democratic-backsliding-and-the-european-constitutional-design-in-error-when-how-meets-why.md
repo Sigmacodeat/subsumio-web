@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c84d09376dca01be"
 ---
 
 # The Democratic Backsliding and the European constitutional design in error. When will HOW meet WHY?

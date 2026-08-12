@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dont-shoot-the-messenger/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a8bd61bf4620defc"
 ---
 
 # Don’t shoot the Messenger

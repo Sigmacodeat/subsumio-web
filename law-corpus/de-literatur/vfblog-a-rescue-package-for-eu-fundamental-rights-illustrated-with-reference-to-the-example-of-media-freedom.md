@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "531e4f5aa7a63c87"
 ---
 
 # A Rescue Package for EU Fundamental Rights – Illustrated with Reference to the Example of Media Freedom

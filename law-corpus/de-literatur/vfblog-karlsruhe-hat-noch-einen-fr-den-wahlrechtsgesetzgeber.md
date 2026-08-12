@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a6a5987200aba022"
 ---
 
 # Karlsruhe hat noch einen für den Wahlrechts-Gesetzgeber

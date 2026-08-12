@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-island-of-hope-in-a-sea-of-misery/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "52d4f40df18b4a2b"
 ---
 
 # The Island of Hope in a Sea of Misery

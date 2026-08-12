@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os6-slovakia/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2a016afba5239c3b"
 ---
 
 # The Costs of Mass Surveillance in Slovakia

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6350e7f4cb75e50d"
 ---
 
 # Drama or Serenity? Upcoming Judicial Appointments at the Slovak Constitutional Court

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/neues-nur-am-rande/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "be5849e149f6cf2b"
 ---
 
 # Neues nur am Rande

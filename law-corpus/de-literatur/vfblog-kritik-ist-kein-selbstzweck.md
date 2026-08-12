@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kritik-ist-kein-selbstzweck/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b3dce4f295aa88d8"
 ---
 
 # Kritik ist kein Selbstzweck

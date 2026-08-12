@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/big-brother-is-analyzing-you/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f142a10bf2e9db9a"
 ---
 
 # Big Brother Is Analyzing You

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/transnational-laws-multiple-legalities/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b80f536ec91e6ac2"
 ---
 
 # Transnational Law’s Multiple Legalities

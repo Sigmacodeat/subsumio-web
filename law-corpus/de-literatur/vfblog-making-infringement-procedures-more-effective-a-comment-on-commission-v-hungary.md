@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "40e3469ad1e0f72a"
 ---
 
 # Making Infringement Procedures More Effective:  A Comment on Commission v. Hungary

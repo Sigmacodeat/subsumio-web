@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/how-to-overcome-an-anti-democratic-herita
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f1e062af694707b7"
 ---
 
 # How to Overcome an Anti-democratic Heritage

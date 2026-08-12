@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/government-shutdowns-and-the-u-s-constitu
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eced06884827dd2e"
 ---
 
 # Government “Shutdowns” and the U.S. Constitution

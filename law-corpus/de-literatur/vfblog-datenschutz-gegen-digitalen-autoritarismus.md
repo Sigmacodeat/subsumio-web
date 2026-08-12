@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/datenschutz-gegen-digitalen-autoritarismu
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d1f3924d1c8c52c7"
 ---
 
 # Datenschutz gegen digitalen Autoritarismus

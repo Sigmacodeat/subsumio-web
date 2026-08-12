@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0c582795dce4b004"
 ---
 
 # A Fresh Start: How to Resolve the Conflict between the ICJ and the Italian Constitutional Court

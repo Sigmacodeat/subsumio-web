@@ -20,6 +20,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2019 Sarah Frehner, Annina
   Mullis; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "33ee5ffc3d9ed1e4"
 ---
 
 # Asylunwürdigkeit wegen «Gefährdung der inneren oder äusseren Sicherheit»: von abstrakter Gefährdung und Beweislastumkehr: Kommentierung ausgewählter Aspekte von BVGE 2018 VI/5

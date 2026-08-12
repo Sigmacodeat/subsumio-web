@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9f3a75b98a35f4f4"
 ---
 
 # CJEU Opens the Door for the Commission to Reconsider Charges against Poland

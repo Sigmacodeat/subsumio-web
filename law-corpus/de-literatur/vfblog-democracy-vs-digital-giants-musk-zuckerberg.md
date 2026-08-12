@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/democracy-vs-digital-giants-musk-zuckerbe
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5849d0d85a5f1129"
 ---
 
 # Democracy vs. Digital Giants

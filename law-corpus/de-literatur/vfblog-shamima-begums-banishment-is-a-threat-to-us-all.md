@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/shamima-begums-banishment-is-a-threat-to-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1fc73bc4d5988b9d"
 ---
 
 # Shamima Begum’s Banishment is a Threat to Us All

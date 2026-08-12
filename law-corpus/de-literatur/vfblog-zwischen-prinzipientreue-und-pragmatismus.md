@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zwischen-prinzipientreue-und-pragmatismus
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6b8028f9d74ae6b0"
 ---
 
 # Zwischen Prinzipientreue und Pragmatismus

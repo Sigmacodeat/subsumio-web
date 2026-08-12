@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d06a8366e340f379"
 ---
 
 # Reform of International Corporate Tax Norms: A Value-Theoretical Perspective

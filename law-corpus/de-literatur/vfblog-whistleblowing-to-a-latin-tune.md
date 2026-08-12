@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/whistleblowing-to-a-latin-tune/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "598f8bb14abaa82d"
 ---
 
 # Whistleblowing to a Latin Tune

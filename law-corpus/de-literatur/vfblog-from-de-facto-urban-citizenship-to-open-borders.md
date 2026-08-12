@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/from-de-facto-urban-citizenship-to-open-b
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "73e2758de02063c9"
 ---
 
 # From De Facto Urban Citizenship to Open Borders

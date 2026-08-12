@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/covid-19-in-autocratic-bulgaria/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a98da257f6b1d3d8"
 ---
 
 # COVID-19 in Autocratic Bulgaria

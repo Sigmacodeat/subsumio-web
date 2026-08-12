@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eigentlich-schon-lange-quitt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "06c45ede1aa3c5ec"
 ---
 
 # Eigentlich schon lange quitt

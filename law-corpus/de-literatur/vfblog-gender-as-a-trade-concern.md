@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gender-as-a-trade-concern/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2d5f2674728586dc"
 ---
 
 # Gender as a Trade Concern

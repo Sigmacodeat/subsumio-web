@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1babb9b700c5692e"
 ---
 
 # Deutsche Rüstungsexporte als Teil einer kohärenten Außen- und Sicherheitsstrategie

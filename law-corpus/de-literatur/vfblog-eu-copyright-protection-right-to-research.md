@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/eu-copyright-protection-right-to-research
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f48819d96cfe1fa5"
 ---
 
 # Reconciling EU Copyright Protection With the Right to Research

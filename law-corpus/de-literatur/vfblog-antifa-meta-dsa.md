@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/antifa-meta-dsa/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3c4e4dc921a5b32a"
 ---
 
 # Don’t say Antifa!

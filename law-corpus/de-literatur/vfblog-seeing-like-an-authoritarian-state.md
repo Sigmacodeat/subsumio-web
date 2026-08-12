@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/seeing-like-an-authoritarian-state/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "263a96efa66ae6e5"
 ---
 
 # Seeing Like an Authoritarian State

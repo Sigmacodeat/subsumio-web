@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/with-tragedy-comes-farce/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "18b7193775e2f44d"
 ---
 
 # With Tragedy Comes Farce

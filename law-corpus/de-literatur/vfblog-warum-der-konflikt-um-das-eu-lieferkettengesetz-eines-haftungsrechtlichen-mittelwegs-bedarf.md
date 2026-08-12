@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a070cdc90ffadeae"
 ---
 
 # Warum der Konflikt um das EU-Lieferkettengesetz eines haftungsrechtlichen Mittelwegs bedarf

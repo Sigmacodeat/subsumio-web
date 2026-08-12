@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "85d62da666b83252"
 ---
 
 # Warum die Reform des Geldwäsche­paragraphen ihr Ziel verfehlt

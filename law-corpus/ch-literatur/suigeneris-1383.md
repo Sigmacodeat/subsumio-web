@@ -20,6 +20,7 @@ license: >-
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2016 Jasmin Grossenbacher,
   Vanessa Rüegger, Christa Isabelle Stünzi, Karl-Marc Wyss;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "ceabc89cb058a3ea"
 ---
 
 # Fracking – Technologie mit Gefährdungspotential

@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2019 Blaise Carron;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "8c8ffa2f2ca15470"
 ---
 
 # Le nouveau droit suisse de la prescription: Présentation et analyse critique au regard des objectifs visés

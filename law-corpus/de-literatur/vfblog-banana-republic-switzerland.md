@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/banana-republic-switzerland/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1a20fef1aa897b25"
 ---
 
 # Banana Republic Switzerland?

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a19e75dd5437bb10"
 ---
 
 # Die Stichwahl in Österreich wird wiederholt, und das ist gut so

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/preserving-prejudice-in-the-name-of-profi
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b346ae3da5905c10"
 ---
 
 # Preserving Prejudice in the Name of Profit

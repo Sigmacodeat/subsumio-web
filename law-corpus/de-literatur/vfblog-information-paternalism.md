@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/information-paternalism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "13b20a3a55712d0e"
 ---
 
 # Information and Paternalism

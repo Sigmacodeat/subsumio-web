@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/masernimpfpflicht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2a9f2831e6e38bd6"
 ---
 
 # Masernimpfpflicht: Zur Notwendigkeit einer Debatte über die Grenzen des (bislang) erlaubten Risikos

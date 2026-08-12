@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/elena-kagan-lesbisch-und-wenn-schon/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c213e8be5aebe76a"
 ---
 
 # Elena Kagan lesbisch? Und wenn schon?

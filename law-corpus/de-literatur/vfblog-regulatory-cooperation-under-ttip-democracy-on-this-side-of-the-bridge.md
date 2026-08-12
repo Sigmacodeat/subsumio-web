@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "308fccc25944a209"
 ---
 
 # Regulatory Cooperation under TTIP: Democracy on this Side of the Bridge

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/on-the-basis-of-backwardness/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "20380a0ff5d4b1a0"
 ---
 
 # On the Basis of ‘Backwardness’

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/national-dialogues-as-constitutional-mome
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "be7d327e9833b9c3"
 ---
 
 # National Dialogues as Constitutional Moments

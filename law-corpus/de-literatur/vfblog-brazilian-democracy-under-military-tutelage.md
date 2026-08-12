@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/brazilian-democracy-under-military-tutela
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "53dfe7a647f8ee14"
 ---
 
 # Brazilian Democracy Under Military Tutelage

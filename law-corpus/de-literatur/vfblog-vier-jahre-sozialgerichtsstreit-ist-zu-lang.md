@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/vier-jahre-sozialgerichtsstreit-ist-zu-la
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cc812d832e44722f"
 ---
 
 # Vier Jahre Sozialgerichtsstreit ist zu lang

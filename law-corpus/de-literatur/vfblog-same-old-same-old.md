@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/same-old-same-old/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f32a14d5a2e6edf0"
 ---
 
 # Same Old, Same Old

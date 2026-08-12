@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/blogschau-debatten-der-woche-1-5-8-5-2014
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0c0a409ad74268c3"
 ---
 
 # Blogschau // Debatten der Woche // 1.5. – 8.5.2014

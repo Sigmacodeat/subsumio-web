@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/parlament-als-buhne/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6012325aca45e136"
 ---
 
 # Parlament als Bühne

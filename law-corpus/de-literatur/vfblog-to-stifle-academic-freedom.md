@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/to-stifle-academic-freedom/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "74200362f183f4c7"
 ---
 
 # Ten Commandments to Stifle Academic Freedom

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/visibility-and-crime-at-sea/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1a1d28a3f64c0268"
 ---
 
 # Visibility and Crime at Sea

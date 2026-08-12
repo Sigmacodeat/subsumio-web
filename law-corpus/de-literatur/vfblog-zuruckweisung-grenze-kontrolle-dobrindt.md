@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zuruckweisung-grenze-kontrolle-dobrindt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5f87d8437dbdf212"
 ---
 
 # Dobrindts Rechtsbruch

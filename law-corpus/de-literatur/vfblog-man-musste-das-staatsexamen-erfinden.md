@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/man-musste-das-staatsexamen-erfinden/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b7ffc04cd4328271"
 ---
 
 # Man müsste das Staatsexamen erfinden

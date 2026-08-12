@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/versammlungsfreiheit-gilt-auch-fur-palast
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6dc7930f0d9d7172"
 ---
 
 # Versammlungsfreiheit gilt auch für Palästinenser

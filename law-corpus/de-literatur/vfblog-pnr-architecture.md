@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pnr-architecture/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a40742a186ef970d"
 ---
 
 # The European Legal Architecture on Security

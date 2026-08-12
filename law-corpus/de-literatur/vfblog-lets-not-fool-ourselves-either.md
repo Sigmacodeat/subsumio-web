@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/lets-not-fool-ourselves-either/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e555f04befc52774"
 ---
 
 # Let's not fool ourselves either!

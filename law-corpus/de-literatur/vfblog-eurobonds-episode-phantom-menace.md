@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eurobonds-episode-phantom-menace/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "292e912368f73e69"
 ---
 
 # Eurobonds, Episode I: The Phantom Menace

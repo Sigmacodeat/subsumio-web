@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-strafrecht-als-mittel-der-migrationsk
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ed8e02236d0b3cef"
 ---
 
 # Das Strafrecht als Mittel der Migrationskontrolle?

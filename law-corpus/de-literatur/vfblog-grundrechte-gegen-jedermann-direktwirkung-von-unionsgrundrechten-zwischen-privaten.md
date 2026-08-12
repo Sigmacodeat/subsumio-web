@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c57a1ab1a69294ba"
 ---
 
 # Grundrechte gegen jedermann: Direktwirkung von Unionsgrundrechten zwischen Privaten

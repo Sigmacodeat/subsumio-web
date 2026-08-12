@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/is-legal-longtermism-common-sense/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0c336ddc990a3550"
 ---
 
 # Is Legal Longtermism Common Sense?

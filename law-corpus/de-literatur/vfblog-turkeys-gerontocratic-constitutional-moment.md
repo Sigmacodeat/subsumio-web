@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/turkeys-gerontocratic-constitutional-mome
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b69f06d7ae1e80f3"
 ---
 
 # Turkey’s Gerontocratic Constitutional Moment

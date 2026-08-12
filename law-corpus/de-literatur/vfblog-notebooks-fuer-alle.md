@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/notebooks-fuer-alle/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ec3bb797d637862f"
 ---
 
 # Notebooks für Alle

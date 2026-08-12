@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9dd28b09f56c9dd3"
 ---
 
 # The Great Repeal Bill and the Charter of Fundamental Rights – not a promising start

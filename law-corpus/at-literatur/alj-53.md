@@ -18,6 +18,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2016
   AUSTRIAN LAW JOURNAL
+content_hash: "7aaea223f3c970e8"
 ---
 
 # Die Besetzung von Schiedsgerichten zwischen Parteiautonomie und Rechtsstaatlichkeit

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bundeskanzler-richtlinienkompetenz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a667cb192cd745b3"
 ---
 
 # Merzens Machtspruch

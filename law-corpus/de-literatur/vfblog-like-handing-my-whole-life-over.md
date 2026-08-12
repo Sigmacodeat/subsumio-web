@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/like-handing-my-whole-life-over/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2b9129d48f46d7ea"
 ---
 
 # “Like Handing My Whole Life Over”

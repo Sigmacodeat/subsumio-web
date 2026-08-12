@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bolsonarism-at-the-ballot-box/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8bef48854b8b6f3a"
 ---
 
 # Bolsonarism at the Ballot Box

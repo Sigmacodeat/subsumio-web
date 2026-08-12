@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8835230a8d3f4ff3"
 ---
 
 # Karlsruhe ist kein Schiedsrichter: Warum der Normen&shy;kontroll&shy;antrag gegen § 219a StGB ein Fehler ist

@@ -85,9 +85,9 @@ function isoToDe(iso: string): string {
   return iso.replace(/(\d{4})-(\d{2})-(\d{2})/, "$3.$2.$1");
 }
 
-// Trigger date 11 days ago: StPO-Beschwerde (14 Tage, nicht vhfZ-gehemmt)
-// → Fristende in 3 Tagen = kritisch.
-const _triggerDate = new Date(Date.now() - 11 * 86400000).toISOString().slice(0, 10);
+// Trigger date 13 days ago: StPO-Beschwerde (14 Tage, nicht vhfZ-gehemmt)
+// → Fristende in 1 Tag = kritisch.
+const _triggerDate = new Date(Date.now() - 13 * 86400000).toISOString().slice(0, 10);
 
 const PIPELINE_CALENDAR_PAGE = {
   slug: "deadline-calendars/urgent-case-2025",

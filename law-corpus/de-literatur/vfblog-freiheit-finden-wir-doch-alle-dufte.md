@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/freiheit-finden-wir-doch-alle-dufte/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c06c427ffb6ba86b"
 ---
 
 # Freiheit finden wir doch alle dufte

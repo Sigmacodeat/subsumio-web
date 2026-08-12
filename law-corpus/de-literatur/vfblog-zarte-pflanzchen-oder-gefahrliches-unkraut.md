@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zarte-pflanzchen-oder-gefahrliches-unkrau
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8cdde0799fe7851b"
 ---
 
 # Zarte Pflänzchen oder gefährliches Unkraut?

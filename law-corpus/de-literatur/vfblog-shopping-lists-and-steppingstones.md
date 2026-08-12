@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/shopping-lists-and-steppingstones/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b582ac5044b035d7"
 ---
 
 # Shopping Lists and Steppingstones

@@ -520,7 +520,7 @@ export default function TaxAssessmentsPage() {
                   {t("tax.assessments.label_year")}
                 </label>
                 <Input
-                  type="number"
+                  type="number" inputMode="numeric"
                   value={createForm.year}
                   onChange={(e) => setCreateForm((p) => ({ ...p, year: Number(e.target.value) }))}
                   min={2000}
@@ -570,7 +570,7 @@ export default function TaxAssessmentsPage() {
                   {t("tax.assessments.label_amount")}
                 </label>
                 <Input
-                  type="number"
+                  type="number" inputMode="decimal"
                   min={0}
                   step={0.01}
                   value={createForm.amount}

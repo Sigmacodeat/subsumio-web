@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bespitzelungs-affare-my-ass/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bb13076b626616ab"
 ---
 
 # Bespitzelungs-Affäre, my ass&#8230;

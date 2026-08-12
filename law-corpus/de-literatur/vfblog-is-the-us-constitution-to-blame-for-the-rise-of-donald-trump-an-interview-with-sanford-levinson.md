@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f70d8cc99bb2d5f3"
 ---
 
 # Is the US Constitution to blame for the Rise of Donald Trump? An Interview with SANFORD LEVINSON

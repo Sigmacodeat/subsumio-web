@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/saving-the-constitution-from-politics/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e74efb9ecf577b54"
 ---
 
 # Saving the Constitution from Politics

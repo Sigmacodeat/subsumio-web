@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/blogs-den-sozialwissenschaften/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "64ffd084a430d52f"
 ---
 
 # Blogs in den Sozialwissenschaften

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7c66273e62d4b214"
 ---
 
 # The Philippines’ Dalliance with Authoritarianism in Times of National Emergency

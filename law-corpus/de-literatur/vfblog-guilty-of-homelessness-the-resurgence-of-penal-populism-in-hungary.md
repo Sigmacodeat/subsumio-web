@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7518ff6a172203b0"
 ---
 
 # Guilty of Homelessness – The Resurgence of Penal Populism in Hungary

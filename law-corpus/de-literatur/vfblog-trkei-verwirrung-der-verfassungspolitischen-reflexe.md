@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b5fc7c882ea53ac7"
 ---
 
 # Türkei: Verwirrung der verfassungspolitischen Reflexe

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fe8662df0ff4d1d2"
 ---
 
 # Sovereignty means Sovereignty: Über den Verlust von Rechten entscheidet das Parlament

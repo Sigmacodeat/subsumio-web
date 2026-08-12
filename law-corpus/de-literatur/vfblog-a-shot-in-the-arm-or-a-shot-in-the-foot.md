@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-shot-in-the-arm-or-a-shot-in-the-foot/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c1d2bbba87bc5abb"
 ---
 
 # A Shot in the Arm or a Shot in the Foot?

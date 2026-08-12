@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/whos-afraid-national-parliaments-green-ca
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f27dabe6d76fb31c"
 ---
 
 # Who’s Afraid of National Parliaments’ “Green Card”?

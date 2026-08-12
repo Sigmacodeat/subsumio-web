@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2016 Hanjo Hamann;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "8e2215ff645d1512"
 ---
 
 # Freier Zugang zur juristischen Fachliteratur im Spiegel der Open-Science-Bewegung

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/short-but-sweet/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d1265ac5b24d523a"
 ---
 
 # Short but Sweet

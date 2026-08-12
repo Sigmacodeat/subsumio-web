@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/procedural-fairness-ai/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7ac4314dba3db8a0"
 ---
 
 # Preserving Procedural Fairness in The AI Era

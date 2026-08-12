@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-right-lessons-from-trump-1-0/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6b0e56cdb062ad1a"
 ---
 
 # The right lessons from Trump 1.0

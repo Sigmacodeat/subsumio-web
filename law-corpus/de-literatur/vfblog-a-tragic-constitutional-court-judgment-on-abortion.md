@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-tragic-constitutional-court-judgment-on
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9f145a62ffce5243"
 ---
 
 # A Tragic Constitutional Court Judgment on Abortion

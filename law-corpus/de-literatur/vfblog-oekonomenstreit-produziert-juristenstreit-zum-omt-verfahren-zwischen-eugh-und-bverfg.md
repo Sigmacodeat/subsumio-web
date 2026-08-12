@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4505ee039c881b71"
 ---
 
 # Ökonomenstreit produziert Juristenstreit: zum OMT-Verfahren zwischen EuGH und BVerfG

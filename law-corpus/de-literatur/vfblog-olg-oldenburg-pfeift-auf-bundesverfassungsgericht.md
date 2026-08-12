@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/olg-oldenburg-pfeift-auf-bundesverfassung
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "46072ddb64f8c80e"
 ---
 
 # OLG Oldenburg pfeift auf Bundesverfassungsgericht

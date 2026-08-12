@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/consent-to-govern/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "12b8e11e9af1b9bf"
 ---
 
 # Consent to Govern

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-bka-als-cyberabwehrbehorde/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b9d3ba02567ab1be"
 ---
 
 # Das BKA als Cyberabwehrbehörde

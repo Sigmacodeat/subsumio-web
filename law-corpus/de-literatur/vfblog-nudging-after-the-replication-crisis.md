@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nudging-after-the-replication-crisis/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d1fd79fe48b7d70f"
 ---
 
 # Nudging After the Replication Crisis

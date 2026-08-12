@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6f39b97c33d054d5"
 ---
 
 # Darf man den öffentlich-rechtlichen Rundfunkanstalten die Textberichterstattung im Internet verbieten?

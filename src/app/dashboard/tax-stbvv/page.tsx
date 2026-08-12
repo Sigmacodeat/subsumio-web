@@ -60,7 +60,7 @@ export default function TaxStBVVPage() {
               <Label htmlFor="stbvv-value">{t("tax.stbvv.label_value")}</Label>
               <Input
                 id="stbvv-value"
-                type="number"
+                type="number" inputMode="numeric"
                 min={0}
                 step={100}
                 value={value}
@@ -95,7 +95,7 @@ export default function TaxStBVVPage() {
               </div>
               <Input
                 id="stbvv-factor"
-                type="number"
+                type="number" inputMode="numeric"
                 min={0.5}
                 max={10}
                 step={0.1}

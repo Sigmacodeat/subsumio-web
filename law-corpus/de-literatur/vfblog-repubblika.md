@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/repubblika/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2f79a86d1af1cf5a"
 ---
 
 # Repubblika: Anything new under the Maltese Sun?

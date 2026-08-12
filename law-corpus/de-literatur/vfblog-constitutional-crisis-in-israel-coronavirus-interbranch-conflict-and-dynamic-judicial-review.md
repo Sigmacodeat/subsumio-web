@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "de1174a17109035c"
 ---
 
 # Constitutional Crisis in Israel: Coronavirus, Interbranch Conflict, and Dynamic Judicial Review

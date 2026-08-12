@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4cfcb806939250c9"
 ---
 
 # An Emergency By Any Other Name? Measures Against the COVID-19 Pandemic in Poland

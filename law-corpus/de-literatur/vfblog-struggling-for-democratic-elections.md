@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/struggling-for-democratic-elections/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0a989bab17303c5d"
 ---
 
 # Struggling for Democratic Elections

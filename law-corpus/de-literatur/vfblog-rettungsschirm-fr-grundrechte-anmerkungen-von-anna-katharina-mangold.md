@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9de4dbe73c3fe2d3"
 ---
 
 # Rettungsschirm für Grundrechte: Anmerkungen von ANNA KATHARINA MANGOLD

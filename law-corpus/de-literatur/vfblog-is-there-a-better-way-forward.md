@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/is-there-a-better-way-forward/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3e6c2d71fb963f4e"
 ---
 
 # Is There A Better Way Forward?

@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ba8d6a3bafe9c60a"
 ---
 
 # Das Ende der „Schattenfinanzierung“ parteinaher Stiftungen

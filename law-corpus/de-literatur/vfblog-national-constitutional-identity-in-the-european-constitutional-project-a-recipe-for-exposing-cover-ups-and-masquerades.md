@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b773fcf7fb910be7"
 ---
 
 # National Constitutional Identity in the European Constitutional Project: A Recipe for Exposing Cover Ups and Masquerades

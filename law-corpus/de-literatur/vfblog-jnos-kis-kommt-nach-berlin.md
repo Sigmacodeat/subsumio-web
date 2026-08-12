@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/jnos-kis-kommt-nach-berlin/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "37bd335e8f556a7d"
 ---
 
 # János Kis kommt nach Berlin

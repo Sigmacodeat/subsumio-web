@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f4f5d12da698e3eb"
 ---
 
 # Stabilität als Fluchtpunkt der italienischen Verfassungsreform – auf welchem Weg und um welchem Preis?

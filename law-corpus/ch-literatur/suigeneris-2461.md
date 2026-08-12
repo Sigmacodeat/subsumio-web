@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Luka Marki?;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "c029fb2fb1ff4479"
 ---
 
 # Von Verfügungen über das (Nicht-) Zustandekommen eidgenössischer Referenden und den Tücken bei deren Anfechtung: Bemerkungen zu BGE 146 I 126, Sozialdemokratische Partei Neuenburg et al. gegen «Überparteiliches Komitee gegen immer mehr staatliche Abgaben»

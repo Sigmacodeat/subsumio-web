@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-muss-er-sein-der-european-way-of-life
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9f9253ad21d11be3"
 ---
 
 # Das muss er sein, der European Way of Life

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/german-officials-might-be-criminally-liab
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fe90cd904f841775"
 ---
 
 # “German Officials Might Be Criminally Liable”

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/polands-illegal-judges/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "67c1745d1a50aa55"
 ---
 
 # Poland’s “Illegal Judges”

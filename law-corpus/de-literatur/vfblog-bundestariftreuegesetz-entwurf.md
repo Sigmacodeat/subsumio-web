@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bundestariftreuegesetz-entwurf/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6a88ed56e2791e9a"
 ---
 
 # Tariftreue light

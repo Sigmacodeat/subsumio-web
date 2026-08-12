@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/why-academic-ivory-towerism-cant-be-the-a
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3781fe9bd24d0d44"
 ---
 
 # Why Academic Ivory Towerism Can’t Be The Answer

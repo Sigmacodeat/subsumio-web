@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-uks-post-brexit-constitutional-unsett
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ed645903330e999f"
 ---
 
 # The UK’s Post-Brexit ‘Constitutional Unsettlement’

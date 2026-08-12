@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3805702350e844a0"
 ---
 
 # Negotiating the Data Protection Thicket:  Life in the Aftermath of Schrems

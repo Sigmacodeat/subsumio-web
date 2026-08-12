@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-eu-fiscal-rules/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "006f4e9b7dc76d4d"
 ---
 
 # The Reform of the EU Fiscal Rules

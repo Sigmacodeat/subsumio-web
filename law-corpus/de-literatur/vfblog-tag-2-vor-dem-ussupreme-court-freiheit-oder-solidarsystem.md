@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "03a74663c8532976"
 ---
 
 # Tag 2 vor dem US-Supreme Court: Freiheit oder Solidarsystem?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/targeted-ad/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5cb8fd0c899ee991"
 ---
 
 # Tackling Discrimination in Targeted Advertising

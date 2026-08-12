@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/schweigen-als-sozialisierungssperre/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5b091bf9f95f74f0"
 ---
 
 # Schweigen als Sozialisierungssperre?

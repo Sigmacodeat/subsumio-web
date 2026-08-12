@@ -7,6 +7,7 @@ version_date: "2026-05-26"
 retrieved_at: "2026-07-10"
 source_url: "https://www.gesetze-im-internet.de/zvg/xml.zip"
 license: "Amtliches Werk, § 5 UrhG (gemeinfrei). Quelle: gesetze-im-internet.de, Bundesamt für Justiz."
+content_hash: "74df44f5a218e415"
 ---
 
 ## § 1

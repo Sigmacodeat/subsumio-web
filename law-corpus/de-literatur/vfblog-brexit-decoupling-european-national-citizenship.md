@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/brexit-decoupling-european-national-citiz
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7a5002cbf771753d"
 ---
 
 # After Brexit: Time for a further Decoupling of European and National Citizenship?

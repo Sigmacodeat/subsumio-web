@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/not-all-right/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a1e1c92e3dd1853c"
 ---
 
 # Not All Right

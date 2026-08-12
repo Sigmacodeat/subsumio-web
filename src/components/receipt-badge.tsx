@@ -92,7 +92,7 @@ export function ReceiptBadge({
   if (loading) {
     return (
       <span
-        className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium text-muted-foreground border-border ${className}`}
+        className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium text-[color:var(--ds-text-muted)] border-[color:var(--ds-border)] ${className}`}
       >
         <Loader2 className="h-3 w-3 animate-spin" />
         Prüfe Status…

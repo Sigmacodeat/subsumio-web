@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-schiedsgericht-fuer-die-gerichte/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6558fa03c267b0b1"
 ---
 
 # Ein Schiedsgericht für die Gerichte?

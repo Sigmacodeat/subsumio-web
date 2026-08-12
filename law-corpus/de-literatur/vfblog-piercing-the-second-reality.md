@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/piercing-the-second-reality/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "53fa3b5049245e0c"
 ---
 
 # Piercing the Second Reality

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/entgleisung-des-bundesrechnungshofs/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c243509cf0eed2e0"
 ---
 
 # Entgleisung des Bundesrechnungshofs

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/academic-lawyers-blog/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4c0c131fde1f7407"
 ---
 
 # Should academic lawyers blog?

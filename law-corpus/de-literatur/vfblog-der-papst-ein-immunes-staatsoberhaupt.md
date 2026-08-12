@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/der-papst-ein-immunes-staatsoberhaupt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4672b7f812a6e068"
 ---
 
 # Der Papst, ein immunes Staatsoberhaupt?

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f23c560f1ca15f72"
 ---
 
 # How to Protect European Values: Assessing European Responses to Recent Reforms in Poland

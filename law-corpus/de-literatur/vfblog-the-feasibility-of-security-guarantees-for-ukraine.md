@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-feasibility-of-security-guarantees-fo
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5253d7cdd973ff81"
 ---
 
 # The Feasibility of Security Guarantees for Ukraine

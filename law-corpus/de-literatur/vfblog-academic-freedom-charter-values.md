@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/academic-freedom-charter-values/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "00a7f74ffe95377a"
 ---
 
 # Hitting the Mark?

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "94b84e7dbf184ecc"
 ---
 
 # Who Controls the Digital Frankenstein? The Future of the Data Retention Directive

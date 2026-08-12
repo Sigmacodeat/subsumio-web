@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/art-science-research-and-teaching-are-fre
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aba5e89e3aa84a29"
 ---
 
 # Art, Science, Research and Teaching Are Free

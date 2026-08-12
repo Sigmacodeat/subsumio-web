@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/crossing-a-line-in-plain-sight/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "84d17d0ba7c0ccfa"
 ---
 
 # Crossing a Line in Plain Sight

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-komplexer-konflikt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c3b5fa5e15b6d391"
 ---
 
 # Ein komplexer Konflikt

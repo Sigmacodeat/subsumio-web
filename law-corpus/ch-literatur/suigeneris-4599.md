@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2023 Ryan Gauderon;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "347cc7119a48bdc7"
 ---
 
 # Investigation secrète et nemo tenetur : l&#039;exercice (trop?) sensible de la récolte d&#039;aveux: analyse et propositions autour de l&#039;ATF 148 IV 205

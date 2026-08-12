@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/klagewelle-im-sonnenuntergang/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b2150c10e5daa669"
 ---
 
 # Klagewelle im Sonnenuntergang?

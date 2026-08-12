@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/keine-bosen-uberraschungen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9e81a1e9db832911"
 ---
 
 # Keine bösen Überraschungen

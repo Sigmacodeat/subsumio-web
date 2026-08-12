@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "40e04d7a33657791"
 ---
 
 # Legal Safeguards for the Volunteers of Ukraine’s Cyber Militia

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/in-law-as-in-life/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4516629a123f1e8e"
 ---
 
 # In Law as in Life?

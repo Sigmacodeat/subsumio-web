@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/back-to-start/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8975af8d0356ec52"
 ---
 
 # Back to Start?

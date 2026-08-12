@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-end-of-the-eurocrats-dream-in-endless
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ef50be9580d9596a"
 ---
 
 # The End of the Eurocrats’ Dream in Endless Europe

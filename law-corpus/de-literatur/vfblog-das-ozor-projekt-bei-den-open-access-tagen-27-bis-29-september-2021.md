@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4ca0128bc8418a4a"
 ---
 
 # Das OZOR-Projekt bei den Open-Access-Tagen (27. bis 29. September 2021)

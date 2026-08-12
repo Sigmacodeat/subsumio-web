@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wie-viel-raum-braucht-gerechtigkeit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "63f002f393dab93d"
 ---
 
 # Wie viel Raum braucht Gerechtigkeit?

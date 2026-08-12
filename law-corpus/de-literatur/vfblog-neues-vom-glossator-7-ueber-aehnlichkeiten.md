@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/neues-vom-glossator-7-ueber-aehnlichkeite
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "44072ce2c40dd3e0"
 ---
 
 # Neues vom Glossator 7: Über Ähnlichkeiten

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/one-act-to-rule-them-all/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c7143154752efa1b"
 ---
 
 # One Act to Rule Them All

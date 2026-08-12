@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/paving-the-way-to-autocracy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e26a52470f058fed"
 ---
 
 # Paving the Way to Autocracy?

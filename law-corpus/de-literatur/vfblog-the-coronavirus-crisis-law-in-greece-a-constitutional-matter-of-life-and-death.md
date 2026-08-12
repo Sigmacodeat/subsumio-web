@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fac3397e757abef7"
 ---
 
 # The Coronavirus Crisis-Law in Greece:  A (Constitutional) Matter of Life and Death

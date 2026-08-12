@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "91c4ef70ebad0312"
 ---
 
 # A Constitutional Defense of CJEU Opinion 2/13  on EU Accession to the ECHR (and the way forward)

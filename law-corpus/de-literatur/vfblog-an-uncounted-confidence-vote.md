@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/an-uncounted-confidence-vote/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2d928950f4ed39d1"
 ---
 
 # An Uncounted Confidence Vote

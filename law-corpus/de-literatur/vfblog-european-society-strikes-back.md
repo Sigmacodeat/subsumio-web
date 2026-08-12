@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/european-society-strikes-back/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "642c7e437692fca6"
 ---
 
 # European Society Strikes Back

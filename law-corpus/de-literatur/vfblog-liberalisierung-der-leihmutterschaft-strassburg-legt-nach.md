@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d402c7e72a9279fb"
 ---
 
 # Liberalisierung der Leihmutterschaft: Straßburg legt nach

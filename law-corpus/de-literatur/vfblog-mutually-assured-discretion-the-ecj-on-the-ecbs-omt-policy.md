@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c4a2f5bd5d2730a7"
 ---
 
 # Mutually Assured Discretion: The ECJ on the ECB’s OMT Policy

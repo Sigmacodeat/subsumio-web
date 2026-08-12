@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/democratic-decay-resource-august-research
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bcff80396b46a7b3"
 ---
 
 # Democratic Decay Resource (DEM-DEC): First Monthly Bibliography Update-August 2018

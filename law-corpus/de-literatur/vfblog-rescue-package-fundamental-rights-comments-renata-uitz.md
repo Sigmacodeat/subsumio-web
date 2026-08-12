@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "423e80f8f9b7a5f4"
 ---
 
 # Rescue Package for Fundamental Rights: Comments by RENATA UITZ

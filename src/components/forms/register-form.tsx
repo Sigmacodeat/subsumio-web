@@ -38,13 +38,13 @@ export function RegisterForm() {
     <form onSubmit={handleSubmit((data) => registerMutation.mutate(data))} className="space-y-4">
       <div className="space-y-1.5">
         <Label htmlFor="name">Name</Label>
-        <Input id="name" {...register("name")} placeholder="RA Max Mustermann" />
+        <Input id="name" autoComplete="name" {...register("name")} placeholder="RA Max Mustermann" />
         {errors.name && <p className="text-xs text-red-400">{errors.name.message}</p>}
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="email">E-Mail</Label>
-        <Input id="email" type="email" {...register("email")} placeholder="name@kanzlei.de" />
+        <Input id="email" type="email" autoComplete="email" inputMode="email" {...register("email")} placeholder="name@kanzlei.de" />
         {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
       </div>
 
@@ -53,6 +53,7 @@ export function RegisterForm() {
         <Input
           id="password"
           type="password"
+          autoComplete="new-password"
           {...register("password")}
           placeholder="Mindestens 8 Zeichen"
         />

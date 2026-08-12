@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/not-to-play-along/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d3a3147f88955e8a"
 ---
 
 # Not to play along

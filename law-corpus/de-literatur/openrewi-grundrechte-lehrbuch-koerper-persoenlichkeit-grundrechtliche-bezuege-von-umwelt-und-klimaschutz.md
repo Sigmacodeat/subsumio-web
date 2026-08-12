@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "550d9ff54aa7b19f"
 ---
 
 § 18.3 Leben, körperliche Unversehrtheit (Art. 2 II GG) &#124; Inhaltsverzeichnis &#124; § 19 Gleichheit & Nichtdiskriminierung 

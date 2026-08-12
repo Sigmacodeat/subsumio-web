@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fifas-eigen-constitutionalization-and-its
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1043073ba7074321"
 ---
 
 # FIFA's Eigen-constitutionalization and its limits

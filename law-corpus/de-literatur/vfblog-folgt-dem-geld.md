@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/folgt-dem-geld/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0cb6d32bd67b7d7d"
 ---
 
 # Folgt dem Geld

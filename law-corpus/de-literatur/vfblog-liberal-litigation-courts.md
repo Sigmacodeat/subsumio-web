@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/liberal-litigation-courts/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "085c4d899536bc4a"
 ---
 
 # The Liberal Litigation Trap

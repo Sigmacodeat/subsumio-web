@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "20b5b8a601fccb17"
 ---
 
 # Hello – and Goodbye! How Royal Powerplay aborted Malaysia’s ICC Membership

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-leap-forward-for-biodiversity-litigatio
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5b237d3b8b9d518f"
 ---
 
 # A Leap Forward for Biodiversity Litigation

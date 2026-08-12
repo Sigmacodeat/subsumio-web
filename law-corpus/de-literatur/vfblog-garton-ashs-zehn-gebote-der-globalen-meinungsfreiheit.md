@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "541ffdab1c624d6c"
 ---
 
 # Garton Ashs Zehn Gebote der globalen Meinungsfreiheit

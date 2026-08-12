@@ -709,6 +709,24 @@ export class PGLiteEngine implements BrainEngine {
         ALTER TABLE content_chunks ADD COLUMN IF NOT EXISTS doc_comment TEXT;
         ALTER TABLE content_chunks ADD COLUMN IF NOT EXISTS symbol_name_qualified TEXT;
         ALTER TABLE content_chunks ADD COLUMN IF NOT EXISTS search_vector TSVECTOR;
+
+        CREATE INDEX IF NOT EXISTS idx_chunks_search_vector
+          ON content_chunks USING GIN(search_vector);
+
+        CREATE OR REPLACE FUNCTION update_chunk_search_vector() RETURNS TRIGGER AS $fn$
+        BEGIN
+          NEW.search_vector :=
+            setweight(to_tsvector('german', COALESCE(NEW.doc_comment, '')), 'A') ||
+            setweight(to_tsvector('german', COALESCE(NEW.symbol_name_qualified, '')), 'A') ||
+            setweight(to_tsvector('german', COALESCE(NEW.chunk_text, '')), 'B');
+          RETURN NEW;
+        END;
+        $fn$ LANGUAGE plpgsql;
+
+        DROP TRIGGER IF EXISTS chunk_search_vector_trigger ON content_chunks;
+        CREATE TRIGGER chunk_search_vector_trigger
+          BEFORE INSERT OR UPDATE ON content_chunks
+          FOR EACH ROW EXECUTE FUNCTION update_chunk_search_vector();
       `);
     }
 

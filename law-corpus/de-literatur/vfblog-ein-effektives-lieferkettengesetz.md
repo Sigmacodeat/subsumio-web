@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-effektives-lieferkettengesetz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "22e433dc5f4e5ee9"
 ---
 
 # Ein effektives Lieferkettengesetz?

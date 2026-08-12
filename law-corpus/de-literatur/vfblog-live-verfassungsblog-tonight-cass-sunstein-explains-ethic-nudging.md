@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9ff402a58e9ea9c6"
 ---
 
 # Live on Verfassungsblog tonight: Cass Sunstein explains the Ethic of Nudging

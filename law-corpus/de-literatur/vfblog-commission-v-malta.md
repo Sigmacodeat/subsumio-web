@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/commission-v-malta/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a06e6072126e0bf3"
 ---
 
 # Everything Comes at a Price

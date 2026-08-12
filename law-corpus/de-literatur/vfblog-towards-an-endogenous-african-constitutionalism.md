@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/towards-an-endogenous-african-constitutio
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b4ce3cac88b301e4"
 ---
 
 # Towards an Endogenous African Constitutionalism

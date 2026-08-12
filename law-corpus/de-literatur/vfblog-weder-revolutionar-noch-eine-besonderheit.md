@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/weder-revolutionar-noch-eine-besonderheit
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a884f74597c6ea97"
 ---
 
 # Weder revolutionär noch eine Besonderheit

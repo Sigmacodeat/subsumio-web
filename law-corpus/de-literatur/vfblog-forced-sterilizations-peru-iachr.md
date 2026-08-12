@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/forced-sterilizations-peru-iachr/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f0a2772bd5b3a50d"
 ---
 
 # Forced Sterilizations on Trial

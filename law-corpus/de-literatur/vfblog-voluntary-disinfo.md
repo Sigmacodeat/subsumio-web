@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/voluntary-disinfo/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5dba17802ce3d042"
 ---
 
 # The EU’s regulatory push against disinformation

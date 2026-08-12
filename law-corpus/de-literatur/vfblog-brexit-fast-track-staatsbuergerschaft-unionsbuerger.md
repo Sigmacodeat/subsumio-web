@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5895e71e96ac9e19"
 ---
 
 # Nach dem Brexit-Referendum: ein Fast Track zur deutschen Staatsbürgerschaft für bedrohte Unionsbürger!

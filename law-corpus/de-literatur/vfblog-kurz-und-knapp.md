@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kurz-und-knapp/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2792826f634709eb"
 ---
 
 # Kurz und knapp

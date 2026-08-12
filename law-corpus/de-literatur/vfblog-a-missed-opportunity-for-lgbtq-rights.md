@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-missed-opportunity-for-lgbtq-rights/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cfcd3999e1eb895b"
 ---
 
 # A Missed Opportunity for LGBTQ Rights

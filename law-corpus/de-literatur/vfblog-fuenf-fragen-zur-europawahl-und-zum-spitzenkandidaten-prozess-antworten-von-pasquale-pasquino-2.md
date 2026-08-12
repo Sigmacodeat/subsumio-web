@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6e63e776c4f538fa"
 ---
 
 # Fünf Fragen zur Europawahl und zum “Spitzenkandidaten”-Prozess: Antworten von PASQUALE PASQUINO

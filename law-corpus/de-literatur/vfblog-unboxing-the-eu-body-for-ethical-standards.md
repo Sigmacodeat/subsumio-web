@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/unboxing-the-eu-body-for-ethical-standard
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a11b2ed3f1820808"
 ---
 
 # Unboxing the EU Body for Ethical Standards

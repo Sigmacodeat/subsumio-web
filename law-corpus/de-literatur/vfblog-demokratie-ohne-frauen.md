@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/demokratie-ohne-frauen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dafa4bbc83979437"
 ---
 
 # Demokratie ohne Frauen

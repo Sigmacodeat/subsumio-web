@@ -5604,6 +5604,62 @@ export const MIGRATIONS: Migration[] = [
         ON output_dependencies (brain_id) WHERE brain_id IS NOT NULL;
     `,
   },
+  {
+    version: 122,
+    name: "statute_version_chain",
+    // Statute version tracking — RIS stores every version of a paragraph as a
+    // separate NOR (e.g. ASVG Art. 2 has 24 versions from 1959 to 1989), all
+    // with ausserkraft=null. Without a version chain the AI can't tell which
+    // is the currently-in-force version and might cite a 1959 text.
+    //
+    // Two new columns on pages:
+    //   is_current      — true for the latest version of a (source, abk, para)
+    //                    group; false for all superseded versions. NULL for
+    //                    pages without abbreviation (not versioned).
+    //   superseded_at   — the inkrafttretensdatum of the version that replaced
+    //                    this one. NULL for the current version and for pages
+    //                    that were never superseded.
+    //
+    // A partial index on (source_id, frontmatter->>'abbreviation', frontmatter->>'paragraph')
+    // WHERE is_current = true gives the search path a fast lookup for "find
+    // the current version of ASVG Art. 2".
+    idempotent: true,
+    sql: `
+      ALTER TABLE pages ADD COLUMN IF NOT EXISTS is_current BOOLEAN;
+      ALTER TABLE pages ADD COLUMN IF NOT EXISTS superseded_at TIMESTAMPTZ;
+      CREATE INDEX IF NOT EXISTS idx_pages_current_version
+        ON pages (source_id, (frontmatter->>'abbreviation'), (frontmatter->>'paragraph'))
+        WHERE is_current = true;
+    `,
+  },
+  {
+    version: 123,
+    name: "legal-metadata-prefilter-indexes",
+    // Vorfilter-Indizes für die Rechtssuche: "nur OGH", "nur Zivilrecht",
+    // "nur ab 2020", "nur geltende Fassung" laufen sonst als Seq Scan über
+    // Millionen Chunks.
+    //
+    // WARUM ALS MIGRATION: Diese sechs Indizes existierten bisher nur, weil
+    // sie am 2026-08-02 von Hand in der laufenden Datenbank angelegt wurden.
+    // Eine frisch aufgesetzte Datenbank hätte sie NICHT gehabt — die Suche
+    // wäre still langsam geworden, ohne dass ein Test anschlägt. Schema
+    // gehört in die Migrationen, nicht in die Erinnerung des Betreibers.
+    idempotent: true,
+    sql: `
+      CREATE INDEX IF NOT EXISTS idx_chunks_decision_date
+        ON content_chunks (decision_date) WHERE decision_date IS NOT NULL;
+      CREATE INDEX IF NOT EXISTS idx_chunks_legal_area
+        ON content_chunks (legal_area) WHERE legal_area IS NOT NULL;
+      CREATE INDEX IF NOT EXISTS idx_chunks_document_type
+        ON content_chunks (document_type) WHERE document_type IS NOT NULL;
+      CREATE INDEX IF NOT EXISTS idx_chunks_chunk_role
+        ON content_chunks (chunk_role) WHERE chunk_role IS NOT NULL;
+      CREATE INDEX IF NOT EXISTS idx_chunks_court
+        ON content_chunks (court) WHERE court IS NOT NULL;
+      CREATE INDEX IF NOT EXISTS idx_pages_is_current
+        ON pages (is_current) WHERE is_current = true;
+    `,
+  },
 ];
 
 export const LATEST_VERSION =

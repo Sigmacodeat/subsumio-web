@@ -617,7 +617,7 @@ export default function ReviewSetsPage() {
                   {t("review_sets.bates_start" as DashboardKey)}
                 </label>
                 <Input
-                  type="number"
+                  type="number" inputMode="numeric"
                   value={newBatesStart}
                   onChange={(e) => setNewBatesStart(Number(e.target.value))}
                 />

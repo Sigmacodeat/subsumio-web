@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-european-game/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "96e6794bce27d3a0"
 ---
 
 # The European Game

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f9e0bd338b2d72f8"
 ---
 
 # A Motion of No Confidence and Political Power Struggles Amidst a Pandemic

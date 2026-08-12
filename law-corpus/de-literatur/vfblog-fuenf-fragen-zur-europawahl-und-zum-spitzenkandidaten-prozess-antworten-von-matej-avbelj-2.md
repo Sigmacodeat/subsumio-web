@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7a066d8aa3d808c4"
 ---
 
 # Five Questions on the EP Elections and the “Spitzenkandidat” Process: Answers by MATEJ AVBELJ

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-case-for-ai-constrained-firearms/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "df57fa73bfef91d3"
 ---
 
 # Should Guns Be Able to Say No?

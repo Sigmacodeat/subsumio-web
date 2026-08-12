@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/os3-eroding-protests-aus/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3ea84cd66574e2b4"
 ---
 
 # How Public Space Surveillance is Eroding Political Protests in Australia

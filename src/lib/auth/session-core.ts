@@ -39,30 +39,36 @@ async function fetchRevocationVersion(userId: string): Promise<number> {
   if (cached && now - cached.fetchedAt < REVOCATION_CACHE_TTL_MS) {
     return cached.minVersion;
   }
-  // Fetch from the app's own internal endpoint (same-origin, no auth needed —
-  // just returns the min version for a given user ID).
-  // In edge runtime this is a simple fetch to the origin.
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
-    const res = await fetch(
+  // Fire-and-forget background refresh to avoid deadlocking the edge runtime.
+  // The middleware runs in the edge runtime within the same Node.js process
+  // that serves /api/internal/revocation-check. Awaiting a fetch to
+  // localhost:3000 from within the middleware can deadlock when the server
+  // is waiting for the middleware to complete before handling the fetch.
+  // By not awaiting, we return the cached value (or 0 for first-ever lookup)
+  // immediately and populate the cache asynchronously for subsequent requests.
+  const baseUrl = process.env.SUBSUMIO_INTERNAL_URL || process.env.NEXT_PUBLIC_SITE_URL || "";
+  if (baseUrl) {
+    fetch(
       `${baseUrl}/api/internal/revocation-check?uid=${encodeURIComponent(userId)}`,
-      {
-        signal: AbortSignal.timeout(2_000),
-      }
-    );
-    if (res.ok) {
-      const data = (await res.json()) as { minVersion: number };
-      revocationCache.set(userId, { minVersion: data.minVersion ?? 0, fetchedAt: now });
-      return data.minVersion ?? 0;
-    }
-  } catch {
-    // Network error or timeout below.
+      { signal: AbortSignal.timeout(2_000) }
+    )
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { minVersion: number } | null) => {
+        if (data) {
+          revocationCache.set(userId, {
+            minVersion: data.minVersion ?? 0,
+            fetchedAt: Date.now(),
+          });
+        }
+      })
+      .catch(() => {
+        // Network error or timeout — cache stays stale, next request retries.
+      });
   }
-  // The revocation endpoint is unreachable. Fall back to the last known
-  // value instead of blindly returning 0 ("nothing is revoked") — a stale
-  // cache entry still correctly rejects a session that was revoked before
-  // the outage started. Only truly unknown users (never cached) fail open,
-  // which is an acceptable availability tradeoff for first-ever lookups.
+  // Return the stale cached value if available, otherwise fail open (0).
+  // A stale cache entry still correctly rejects a session that was revoked
+  // before the outage started. Only truly unknown users (never cached) fail
+  // open, which is an acceptable availability tradeoff for first-ever lookups.
   if (cached) return cached.minVersion;
   return 0;
 }

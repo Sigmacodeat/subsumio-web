@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bolsonaros-conviction/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e578ea17f8877169"
 ---
 
 # Bolsonaro’s Conviction

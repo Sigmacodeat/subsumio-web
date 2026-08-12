@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "68f0acf962ae117b"
 ---
 
 # Normality and Exception: The Advocate General’s Opinion in A.S. and Jafari

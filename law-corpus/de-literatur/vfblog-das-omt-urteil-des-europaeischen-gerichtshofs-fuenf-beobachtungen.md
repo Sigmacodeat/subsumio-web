@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8e129483629a5194"
 ---
 
 # Das OMT-Urteil des Europäischen Gerichtshofs: Fünf Beobachtungen

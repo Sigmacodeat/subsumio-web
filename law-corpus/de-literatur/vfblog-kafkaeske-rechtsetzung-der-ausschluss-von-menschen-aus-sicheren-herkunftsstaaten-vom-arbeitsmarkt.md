@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e8da9dbd57aa6af0"
 ---
 
 # Kafkaeske Rechtsetzung – Der Ausschluss von Menschen aus sicheren Herkunftsstaaten vom Arbeitsmarkt

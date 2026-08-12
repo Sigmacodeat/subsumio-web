@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zugang-im-lockdown/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4a7088e886cf154d"
 ---
 
 # Zugang im Lockdown

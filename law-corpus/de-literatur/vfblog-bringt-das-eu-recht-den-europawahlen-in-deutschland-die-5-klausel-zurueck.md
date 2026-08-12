@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a68e01160d116aa8"
 ---
 
 # Bringt das EU-Recht den Europawahlen in Deutschland die 5%-Klausel zurück?

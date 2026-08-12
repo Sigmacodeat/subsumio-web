@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3da36fa9d7db5066"
 ---
 
 # The European Approach to Human Rights-Based Climate Litigation in Global Context

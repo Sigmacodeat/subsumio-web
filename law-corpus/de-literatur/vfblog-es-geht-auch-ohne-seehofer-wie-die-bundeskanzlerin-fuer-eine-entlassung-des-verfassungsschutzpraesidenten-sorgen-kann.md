@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f73da72f451e947d"
 ---
 
 # Es geht auch ohne Seehofer: Wie die Bundeskanzlerin für eine Entlassung des Verfassungs&shy;schutz&shy;präsidenten sorgen kann

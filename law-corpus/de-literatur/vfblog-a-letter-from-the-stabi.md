@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-letter-from-the-stabi/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b57f0f2c039ba34a"
 ---
 
 # A Letter from the Stabi

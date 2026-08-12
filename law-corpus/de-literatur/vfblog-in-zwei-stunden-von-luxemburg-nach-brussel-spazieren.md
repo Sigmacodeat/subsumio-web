@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "949f2af8ce1781c0"
 ---
 
 # In zwei Stunden von Luxemburg nach Brüssel spazieren

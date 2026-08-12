@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/geschwiegen-und-doppelt-bestraft/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "60e44e7977941056"
 ---
 
 # Geschwiegen und doppelt bestraft

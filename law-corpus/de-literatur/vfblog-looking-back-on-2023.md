@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/looking-back-on-2023/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9a62966469257ece"
 ---
 
 # Looking Back on 2023

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/marx-constitution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d9ea85c2d0da865e"
 ---
 
 # Marx, Enemy of the Constitution?

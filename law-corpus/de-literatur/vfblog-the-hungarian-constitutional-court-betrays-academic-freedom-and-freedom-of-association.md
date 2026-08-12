@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a8e69149bd8968f1"
 ---
 
 # The Hungarian Constitutional Court betrays Academic Freedom and Freedom of Association

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f75eda01e575e7ad"
 ---
 
 # Völkerrechtswidrig&shy;keit benennen: Warum die Bundesregierung ihre Verbündeten für den Syrien-Luftangriff kritisieren sollte

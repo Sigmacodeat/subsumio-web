@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ecj-save-country-italy-albania/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4e4e538b6ee266db"
 ---
 
 # Safe for Everyone?

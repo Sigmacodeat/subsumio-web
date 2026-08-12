@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/defund-meat-intro/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "46832bb31d524356"
 ---
 
 # Defund Meat: A Call for Transformative Meat Governance

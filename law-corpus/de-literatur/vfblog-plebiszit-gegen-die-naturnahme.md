@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/plebiszit-gegen-die-naturnahme/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a18dfa89d99a6489"
 ---
 
 # Plebiszit gegen die Naturnahme

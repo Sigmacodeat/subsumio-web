@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-gericht-rudert-zurueck-nikolaus-ohne-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "86f30e1c1d817382"
 ---
 
 # Ein Gericht rudert zurück: „Nikolaus“ ohne Haus

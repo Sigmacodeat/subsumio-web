@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/an-election-in-the-time-of-pandemic/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d79d2cb4bb413d9a"
 ---
 
 # An Election in the Time of Pandemic

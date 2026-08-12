@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/recognizing-turkeys-anti-rule-of-law-syst
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c1e79e74092980b8"
 ---
 
 # Recognizing Turkey’s Anti-Rule of Law System

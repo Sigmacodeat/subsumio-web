@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/burgerrate_verfassung_demokratie/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b83d7c2dd68c1ace"
 ---
 
 # Mitwirkung durch Los?

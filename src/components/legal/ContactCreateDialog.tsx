@@ -305,6 +305,8 @@ export function ContactCreateDialog({
               <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">E-Mail</label>
               <Input
                 type="email"
+                autoComplete="email"
+                inputMode="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="email@beispiel.at"

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ausfalloption-karlsruhe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "291ac960dfd03b39"
 ---
 
 # Ausfalloption Karlsruhe

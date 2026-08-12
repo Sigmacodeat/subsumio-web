@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-stunde-des-gesetzgebers/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0e7608a819c0678f"
 ---
 
 # Die Stunde des Gesetzgebers

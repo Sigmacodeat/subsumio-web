@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/italys-constitutional-gamble/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3465efbf84e6dd68"
 ---
 
 # Italy’s Constitutional Gamble

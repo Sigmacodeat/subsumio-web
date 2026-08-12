@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/europes-sick-success-child/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "24c68a11ea5dea01"
 ---
 
 # Europe's Sick Success Child

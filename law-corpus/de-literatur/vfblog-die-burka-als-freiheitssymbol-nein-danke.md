@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-burka-als-freiheitssymbol-nein-danke/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "142d2ac2848540fb"
 ---
 
 # Die Burka als Freiheitssymbol? Nein, danke

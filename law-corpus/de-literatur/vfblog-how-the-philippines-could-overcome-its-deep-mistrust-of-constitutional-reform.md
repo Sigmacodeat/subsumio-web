@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d6af9b5e27fd086a"
 ---
 
 # How the Philippines Could Overcome Its Deep Mistrust of Constitutional Reform

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bf46e55275908bad"
 ---
 
 # In Judges We Trust? A long overdue Paradigm Shift within the Polish Judiciary (Part I)

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/poland-constitutional-amendment/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b3721f8c1af99779"
 ---
 
 # Untying Ulysses From The Mast

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "81f8c030567144ed"
 ---
 
 # Marktplätze, soziale Netzwerke und die BVerfG-Entscheidung zum “III. Weg”

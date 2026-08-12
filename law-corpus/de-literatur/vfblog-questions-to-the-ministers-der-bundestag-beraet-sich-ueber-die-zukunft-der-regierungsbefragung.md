@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "06c9ac43568231a5"
 ---
 
 # Questions to the ministers: Der Bundestag berät sich über die Zukunft der Regierungsbefragung

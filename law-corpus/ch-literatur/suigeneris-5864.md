@@ -20,6 +20,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2024 Melanie Berger, Sarah
   Progin-Theuerkauf; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "155c357f69487a47"
 ---
 
 # Die Haftung von Frontex für Grundrechtsverletzungen: Eine Analyse des Urteils des Europäischen Gerichts EuG «WS u.a. gegen Frontex» (Rs. T-600/21)

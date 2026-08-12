@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/its-not-about-pluralism-its-about-power-p
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5ec78d76be83ad17"
 ---
 
 # It’s not about pluralism. It’s about power politics!

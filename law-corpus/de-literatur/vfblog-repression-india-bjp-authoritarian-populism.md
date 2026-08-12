@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/repression-india-bjp-authoritarian-populi
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ba242f4c0b20a0c7"
 ---
 
 # The Playbook of Repression

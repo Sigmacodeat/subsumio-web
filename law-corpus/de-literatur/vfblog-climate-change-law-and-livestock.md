@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/climate-change-law-and-livestock/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a394c3544631dd83"
 ---
 
 # Transforming the Livestock Sector through Climate Change Mitigation Law

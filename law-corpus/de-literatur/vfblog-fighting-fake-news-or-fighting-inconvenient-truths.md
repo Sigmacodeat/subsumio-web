@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fighting-fake-news-or-fighting-inconvenie
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f84c7f5cd41bd800"
 ---
 
 # Fighting Fake News or Fighting Inconvenient Truths?

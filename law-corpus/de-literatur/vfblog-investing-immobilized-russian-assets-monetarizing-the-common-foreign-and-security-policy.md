@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "552f55d737b41415"
 ---
 
 # Investing Immobilized Russian Assets, Monetarizing the Common Foreign and Security Policy

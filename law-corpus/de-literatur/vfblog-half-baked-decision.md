@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/half-baked-decision/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "affb7e020a9fb614"
 ---
 
 # Half-baked decision

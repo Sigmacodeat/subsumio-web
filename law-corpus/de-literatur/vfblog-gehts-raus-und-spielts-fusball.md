@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gehts-raus-und-spielts-fusball/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bea0c563a5e8b38b"
 ---
 
 # Geht’s raus und spielt’s Fußball!

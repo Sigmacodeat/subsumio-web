@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-dubious-judgment-by-a-dubious-court/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bbcc84a5631703a9"
 ---
 
 # A Dubious Judgment by a Dubious Court

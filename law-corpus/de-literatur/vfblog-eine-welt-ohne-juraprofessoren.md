@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eine-welt-ohne-juraprofessoren/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "563c9ddf535645f2"
 ---
 
 # Eine Welt ohne Juraprofessoren

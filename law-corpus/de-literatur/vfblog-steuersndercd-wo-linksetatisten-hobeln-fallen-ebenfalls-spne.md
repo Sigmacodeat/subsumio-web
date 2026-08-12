@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "97c7d488c27b0c72"
 ---
 
 # Steuersünder-CD: Wo Links-Etatisten hobeln, fallen ebenfalls Späne

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/saifan-and-the-weaponization-of-trade-sec
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fe93d46fa763c431"
 ---
 
 # Saifan and the Weaponization of Trade Secrets

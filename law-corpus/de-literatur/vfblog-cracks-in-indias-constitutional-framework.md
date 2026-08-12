@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/cracks-in-indias-constitutional-framework
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9e422a0dc258b6d2"
 ---
 
 # Cracks in India’s Constitutional Framework

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/constitutional-complaint-as-orbans-tool/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "13965de7e3aef0dc"
 ---
 
 # Constitutional Complaint as Orbán's Tool

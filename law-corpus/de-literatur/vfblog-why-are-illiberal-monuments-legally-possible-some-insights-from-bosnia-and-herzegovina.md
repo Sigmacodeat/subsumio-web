@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c87b80695e16baaf"
 ---
 
 # Why are illiberal monuments legally possible? Some insights from Bosnia and Herzegovina

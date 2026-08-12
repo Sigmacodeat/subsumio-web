@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dont-call-a-spade-a-shovel/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "281054032cda8504"
 ---
 
 # Don’t Call a Spade a Shovel

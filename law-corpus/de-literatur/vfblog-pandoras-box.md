@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pandoras-box/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a6bb48e79e60c640"
 ---
 
 # Pandora’s Box and Nostalgia

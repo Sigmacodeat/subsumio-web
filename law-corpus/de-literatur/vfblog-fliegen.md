@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fliegen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b308667c35a185c3"
 ---
 
 # Zahlen und fliegen? Oder regulieren und nicht fliegen?

@@ -81,14 +81,14 @@ describe("v0.41 T9 R-GATE: NEEDS_LOCK_PHASES contract (source-shape)", () => {
     const blockEnd = cycleTsSrc.indexOf("]);", blockStart);
     expect(blockEnd).toBeGreaterThan(blockStart);
     const block = cycleTsSrc.slice(blockStart, blockEnd);
-    expect(block).toContain("'extract_atoms'");
+    expect(block).toMatch(/["']extract_atoms["']/);
   });
 
   test("cycle.ts source includes synthesize_concepts in NEEDS_LOCK_PHASES", () => {
     const blockStart = cycleTsSrc.indexOf("NEEDS_LOCK_PHASES");
     const blockEnd = cycleTsSrc.indexOf("]);", blockStart);
     const block = cycleTsSrc.slice(blockStart, blockEnd);
-    expect(block).toContain("'synthesize_concepts'");
+    expect(block).toMatch(/["']synthesize_concepts["']/);
   });
 });
 
@@ -98,11 +98,11 @@ describe("v0.41 T9 R-GATE: orchestrator dispatch wires the pack-gate", () => {
   // phase. Future refactors that accidentally drop the gate would still
   // pass happy-path runtime tests; this assertion catches the drop.
   test("cycle.ts dispatch for extract_atoms calls packDeclaresPhase", () => {
-    expect(cycleTsSrc).toContain("packDeclaresPhase(engine, 'extract_atoms')");
+    expect(cycleTsSrc).toMatch(/packDeclaresPhase\(engine,\s*["']extract_atoms["']\)/);
   });
 
   test("cycle.ts dispatch for synthesize_concepts calls packDeclaresPhase", () => {
-    expect(cycleTsSrc).toContain("packDeclaresPhase(engine, 'synthesize_concepts')");
+    expect(cycleTsSrc).toMatch(/packDeclaresPhase\(engine,\s*["']synthesize_concepts["']\)/);
   });
 
   test("packDeclaresPhase helper function exists in cycle.ts", () => {
@@ -138,9 +138,9 @@ describe("v0.41 T9 R-GATE: pre-existing 17 core phases always run", () => {
   // assertion: only the 2 new lens-pack phases reference packDeclaresPhase
   // in the dispatch.
   test("only extract_atoms + synthesize_concepts dispatch sites reference packDeclaresPhase", () => {
-    const matches = cycleTsSrc.match(/packDeclaresPhase\(engine, '[^']+'\)/g) ?? [];
+    const matches = cycleTsSrc.match(/packDeclaresPhase\(engine,\s*["'][^"']+["']\)/g) ?? [];
     const phaseNames = matches.map((m) => {
-      const inner = /packDeclaresPhase\(engine, '([^']+)'\)/.exec(m);
+      const inner = /packDeclaresPhase\(engine,\s*["']([^"']+)["']\)/.exec(m);
       return inner ? inner[1] : "";
     });
     // Should be EXACTLY two phases gated.
@@ -151,7 +151,7 @@ describe("v0.41 T9 R-GATE: pre-existing 17 core phases always run", () => {
     // Pre-existing phase; must always run on every pack. Window scoped
     // to the SINGLE dispatch block — find the next `// ──` comment
     // marker (the next phase dispatch header) and stop there.
-    const blockStart = cycleTsSrc.indexOf("if (phases.includes('extract_facts'))");
+    const blockStart = cycleTsSrc.search(/if\s*\(phases\.includes\(["']extract_facts["']\)\)/);
     expect(blockStart).toBeGreaterThan(-1);
     const blockEnd = cycleTsSrc.indexOf("// ──", blockStart + 10);
     expect(blockEnd).toBeGreaterThan(blockStart);
@@ -161,7 +161,7 @@ describe("v0.41 T9 R-GATE: pre-existing 17 core phases always run", () => {
 
   test("calibration_profile dispatch does NOT consult packDeclaresPhase", () => {
     // Pre-existing v0.36.1.0 phase; always-on.
-    const cpBlockStart = cycleTsSrc.indexOf("phases.includes('calibration_profile')");
+    const cpBlockStart = cycleTsSrc.search(/phases\.includes\(["']calibration_profile["']\)/);
     expect(cpBlockStart).toBeGreaterThan(-1);
     // Window of 1500 chars covers the dispatch.
     const block = cycleTsSrc.slice(cpBlockStart, cpBlockStart + 1500);
@@ -171,13 +171,13 @@ describe("v0.41 T9 R-GATE: pre-existing 17 core phases always run", () => {
 
 describe("v0.41 T9 R-GATE: dispatch result envelope", () => {
   test("extract_atoms not_in_active_pack skip carries the correct reason marker", () => {
-    expect(cycleTsSrc).toContain("reason: 'not_in_active_pack'");
+    expect(cycleTsSrc).toMatch(/reason:\s*["']not_in_active_pack["']/);
   });
 
   test("synthesize_concepts not_in_active_pack uses the same marker (semantic consistency)", () => {
     // Both phases should use identical reason marker — doctor can match
     // a single string across both pack-gated skip events.
-    const occurrences = (cycleTsSrc.match(/reason: 'not_in_active_pack'/g) ?? []).length;
+    const occurrences = (cycleTsSrc.match(/reason:\s*["']not_in_active_pack["']/g) ?? []).length;
     expect(occurrences).toBe(2);
   });
 });

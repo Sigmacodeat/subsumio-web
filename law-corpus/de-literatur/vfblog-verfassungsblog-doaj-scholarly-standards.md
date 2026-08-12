@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/verfassungsblog-doaj-scholarly-standards/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6622996777cd9591"
 ---
 
 # Access Denied

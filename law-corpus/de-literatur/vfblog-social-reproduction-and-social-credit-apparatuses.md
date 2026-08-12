@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/social-reproduction-and-social-credit-app
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "27e82d5e3e85312f"
 ---
 
 # Social Reproduction and Social Credit Apparatuses

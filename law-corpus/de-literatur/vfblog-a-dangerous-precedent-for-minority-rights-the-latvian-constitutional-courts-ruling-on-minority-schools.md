@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "05281b85fab6d12f"
 ---
 
 # A Dangerous Precedent for Minority Rights: the Latvian Constitutional Court’s Ruling on Minority Schools

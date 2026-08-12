@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/politicagem-court-elections/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6d12fd6d2b602b24"
 ---
 
 # The Problem Is Not Politicization

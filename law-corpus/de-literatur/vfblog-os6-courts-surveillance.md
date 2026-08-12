@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os6-courts-surveillance/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d7ed1b5406b5fd48"
 ---
 
 # Public Surveillance before the European Courts

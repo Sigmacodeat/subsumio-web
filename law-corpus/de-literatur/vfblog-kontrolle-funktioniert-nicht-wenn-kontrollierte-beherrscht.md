@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f16320e9de2b8312"
 ---
 
 # “Kontrolle funktioniert nicht, wenn der Kontrollierte sie beherrscht.”

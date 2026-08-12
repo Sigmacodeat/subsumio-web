@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/we-dont-need-no-education/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8b2f257dd85c09cc"
 ---
 
 # We Don’t Need No Education?

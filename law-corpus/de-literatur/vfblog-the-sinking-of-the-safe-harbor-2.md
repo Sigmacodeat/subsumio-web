@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-sinking-of-the-safe-harbor-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a6c93cc593b3cb68"
 ---
 
 # The Sinking of the Safe Harbor

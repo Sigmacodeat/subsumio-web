@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/improper-property/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2cdd115aa2f66a29"
 ---
 
 # Improper Property

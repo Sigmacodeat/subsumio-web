@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2022 Laurent Bieri;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "43aa2016f9844caa"
 ---
 
 # Rendement net de la chose louée et réévaluation des fonds propres

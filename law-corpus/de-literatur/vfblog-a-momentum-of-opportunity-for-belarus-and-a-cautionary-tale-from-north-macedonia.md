@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ab65261ce270a960"
 ---
 
 # A Momentum of Opportunity for Belarus and a Cautionary Tale from North Macedonia

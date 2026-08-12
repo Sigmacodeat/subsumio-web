@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "163811fdc5523dfc"
 ---
 
 # Big Brother Watch and others v. the United Kingdom: A Victory of Human Rights over Modern Digital Surveillance?

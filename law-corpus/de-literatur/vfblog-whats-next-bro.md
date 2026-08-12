@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/whats-next-bro/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1ce5a50512e3ba06"
 ---
 
 # What’s Next, Bro?

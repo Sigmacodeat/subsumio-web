@@ -7,6 +7,7 @@ version_date: "2026-07-01"
 retrieved_at: "2026-07-10"
 source_url: "https://www.odat.ch/de/cc/210-20260701-de.html"
 license: "Quelle: odat.ch (Forma Legis) — CC-BY-SA-4.0. Nicht-amtliche Veröffentlichung."
+content_hash: "bd92aa1ecdc07b2f"
 ---
 
 - 

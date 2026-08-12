@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b0106da6b476e9ba"
 ---
 
 # Save the Date: Podiumsdiskussion des Verfassungsblogs am 28.10.2013

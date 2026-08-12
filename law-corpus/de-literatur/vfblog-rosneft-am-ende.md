@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rosneft-am-ende/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "487ee4f6c81457fa"
 ---
 
 # Rosneft am Ende?

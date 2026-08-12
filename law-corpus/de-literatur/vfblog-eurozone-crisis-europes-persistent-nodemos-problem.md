@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/eurozone-crisis-europes-persistent-nodemo
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2123ec8d4b1a36c3"
 ---
 
 # The Eurozone Crisis and Europe’s Persistent ‘No-Demos Problem’

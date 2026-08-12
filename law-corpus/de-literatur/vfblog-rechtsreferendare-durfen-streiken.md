@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rechtsreferendare-durfen-streiken/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d8153e2c2d7f39aa"
 ---
 
 # Rechtsreferendare dürfen streiken

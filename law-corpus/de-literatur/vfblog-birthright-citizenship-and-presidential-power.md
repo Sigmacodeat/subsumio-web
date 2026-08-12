@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/birthright-citizenship-and-presidential-p
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "05c013be8d56ba05"
 ---
 
 # Birthright Citizenship and Presidential Power

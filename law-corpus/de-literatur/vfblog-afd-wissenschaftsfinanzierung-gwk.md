@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/afd-wissenschaftsfinanzierung-gwk/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "50b3f32fd8e3ffbb"
 ---
 
 # Von Werten zu Vetos

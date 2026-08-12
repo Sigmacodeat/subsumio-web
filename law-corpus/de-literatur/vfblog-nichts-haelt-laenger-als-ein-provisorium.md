@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nichts-haelt-laenger-als-ein-provisorium/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6517bc765dd4a764"
 ---
 
 # Nichts hält länger als ein Provisorium

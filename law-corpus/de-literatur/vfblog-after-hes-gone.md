@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/after-hes-gone/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ad8b77b32b59e1e5"
 ---
 
 # After he's gone

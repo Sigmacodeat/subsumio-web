@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "434afa95950273a7"
 ---
 
 # When Journalists Weaken Democracy or How to Better Communicate the Rule of Law

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/freie-fahrt-fuer-die-mietpreisbremse/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "94abd0af362bda74"
 ---
 
 # Freie Fahrt für die Mietpreisbremse

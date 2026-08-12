@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/constitutional-borrowings-not-hegemony/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "74afe53d85a817f7"
 ---
 
 # Constitutional Borrowings, Not Hegemony

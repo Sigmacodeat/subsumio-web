@@ -20,6 +20,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Gian Ege, David Eschle;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "3df640ccce12a99f"
 ---
 
 # Das Strafrecht in der Krise: Eine Untersuchung der Strafbestimmungen in der COVID-19-Verordnung 2 und welche Lehren daraus zu ziehen sind

@@ -13,7 +13,7 @@ export const maxDuration = 15;
  */
 export const POST = createHandler(
   {
-    action: "admin.*" as never,
+    action: "admin.*",
     cacheMaxAge: 0,
     skipCsrf: true,
   },

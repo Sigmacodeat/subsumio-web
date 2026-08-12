@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dbf3e3af3dcf8827"
 ---
 
 # What Difference Does it Make to Fully Annex the Quasi-Annexed Occupied Territories?

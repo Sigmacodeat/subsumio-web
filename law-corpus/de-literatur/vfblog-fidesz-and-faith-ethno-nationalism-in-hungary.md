@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fidesz-and-faith-ethno-nationalism-in-hun
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "04b32678733c71a6"
 ---
 
 # Fidesz and Faith: Ethno-Nationalism in Hungary

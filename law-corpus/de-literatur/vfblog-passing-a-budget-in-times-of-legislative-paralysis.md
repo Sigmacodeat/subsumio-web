@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/passing-a-budget-in-times-of-legislative-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "11169d8b2c078f79"
 ---
 
 # Passing a Budget in Times of Legislative Paralysis

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/georgia-criminalization/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b106c4a54db93abe"
 ---
 
 # Criminalization without Harm

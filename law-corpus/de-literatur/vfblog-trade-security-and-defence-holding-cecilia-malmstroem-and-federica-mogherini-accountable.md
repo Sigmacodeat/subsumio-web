@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fe5d17ee4f76880c"
 ---
 
 # Trade, Security and Defence: Holding Cecilia Malmström and Federica Mogherini Accountable

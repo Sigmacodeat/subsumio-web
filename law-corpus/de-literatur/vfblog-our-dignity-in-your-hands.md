@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/our-dignity-in-your-hands/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6c53bb0fcbf66025"
 ---
 
 # Our Dignity in Your Hands

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/power-dsa-dma-04/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "63dc3af61ab1510e"
 ---
 
 # Five Reasons to be Skeptical About the DSA

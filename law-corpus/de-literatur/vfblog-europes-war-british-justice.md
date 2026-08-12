@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/europes-war-british-justice/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2b16a5fc61ed69d4"
 ---
 
 # “Europe's War on British Justice”

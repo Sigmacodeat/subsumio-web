@@ -16,6 +16,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1e72f6e5e0266996"
 ---
 
 # Deutsche und Französische Verwaltungs&shy;gerichtsbarkeit im europäischen Mehrebenensystem: ein Interview mit JEAN-MARC SAUVÉ und KLAUS RENNERT

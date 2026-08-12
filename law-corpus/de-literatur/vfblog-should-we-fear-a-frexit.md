@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/should-we-fear-a-frexit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fb98301fc99bc671"
 ---
 
 # Should we fear a Frexit?

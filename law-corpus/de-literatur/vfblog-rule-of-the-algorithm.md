@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rule-of-the-algorithm/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "705f64cba380ab25"
 ---
 
 # The Rule of Law versus the Rule of the Algorithm

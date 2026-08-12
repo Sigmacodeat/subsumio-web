@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/stasi-spitzel-wer-traegt-die-beweislast/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "77414b75f19befce"
 ---
 
 # Stasi-Spitzel: Wer trägt die Beweislast?

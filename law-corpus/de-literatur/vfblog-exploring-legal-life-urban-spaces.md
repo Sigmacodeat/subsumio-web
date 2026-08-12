@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/exploring-legal-life-urban-spaces/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aee5602cc0afa1d1"
 ---
 
 # Exploring the Legal Life of Urban Spaces

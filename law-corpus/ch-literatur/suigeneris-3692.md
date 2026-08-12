@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2022 Beatrix Schibli;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "82272a9a92ba30cc"
 ---
 
 # Teilrevision Raumplanungsgesetz – notwendige demokratische Legitimation für Biomasseanlagen in der Landwirtschaftszone

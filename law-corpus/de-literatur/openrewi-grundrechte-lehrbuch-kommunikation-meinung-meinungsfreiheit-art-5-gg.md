@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "8a4e20626bb69e10"
 ---
 
 § 20 Kommunikation & Meinung &#124; Inhaltsverzeichnis &#124; § 20.2 Informations- & Medienfreiheiten (Art. 5 GG) 

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-crisis-made-in-italy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "05ac1258558f2d40"
 ---
 
 # A Crisis Made in Italy

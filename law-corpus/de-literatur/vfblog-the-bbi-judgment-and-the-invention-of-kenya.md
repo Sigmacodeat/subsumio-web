@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-bbi-judgment-and-the-invention-of-ken
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "574d99ef3e9280f2"
 ---
 
 # The BBI Judgment and the Invention of Kenya

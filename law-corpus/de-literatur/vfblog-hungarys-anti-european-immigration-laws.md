@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hungarys-anti-european-immigration-laws/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fcb68261aca4b1a4"
 ---
 
 # The Invalid Anti-Migrant Referendum in Hungary

@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/kagan/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a59e77428bf374d4"
 ---
 
 # Justice Kagan über Rechtskritik und die Eismaschine im Supreme Court

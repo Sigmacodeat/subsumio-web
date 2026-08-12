@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "19d02ddc8b2d461b"
 ---
 
 # Ausgangspunkt ist das Gewaltverbot, nicht die Rechtfertigung

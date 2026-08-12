@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/shell-milieudefensie-non-retrogression/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eed13439fc026eed"
 ---
 
 # Into Reverse Gear

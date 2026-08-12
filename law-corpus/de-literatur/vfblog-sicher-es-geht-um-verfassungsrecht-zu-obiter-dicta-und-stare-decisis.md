@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f7d18a6c59c09756"
 ---
 
 # Sicher, es geht um Verfassungsrecht: zu obiter dicta und „stare decisis“

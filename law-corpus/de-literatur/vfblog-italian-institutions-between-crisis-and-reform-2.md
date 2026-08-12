@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/italian-institutions-between-crisis-and-r
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "de29626ed83587f1"
 ---
 
 # Italian institutions between crisis and reform

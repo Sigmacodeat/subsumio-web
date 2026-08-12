@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/americas-first-religious-public-school/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4562435a1b4e7bb4"
 ---
 
 # America's First Religious Public School?

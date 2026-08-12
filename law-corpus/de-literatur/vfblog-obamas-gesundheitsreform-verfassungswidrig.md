@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/obamas-gesundheitsreform-verfassungswidri
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2d2f1014e4a3ddc1"
 ---
 
 # Obamas Gesundheitsreform verfassungswidrig?

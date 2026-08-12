@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "074c5bc9dab69679"
 ---
 
 # Rule of Law in Times of the Populist Surge. Comments on Armin von Bogdandy and Michael Ioannidis

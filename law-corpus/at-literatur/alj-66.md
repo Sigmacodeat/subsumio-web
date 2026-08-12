@@ -19,6 +19,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2016
   AUSTRIAN LAW JOURNAL
+content_hash: "f51266e1ed865851"
 ---
 
 # Erlebt Schengen eine „Renaissance“ oder geht es unter? Wird aus den vorübergehenden Wiedereinführungen von Binnengrenzkontrollen eine Dauereinrichtung?

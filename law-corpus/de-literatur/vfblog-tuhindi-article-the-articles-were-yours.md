@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/tuhindi-article-the-articles-were-yours/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "38bfbad79a60b122"
 ---
 
 # “Tuhindi Article” (“The Articles Were Yours”)

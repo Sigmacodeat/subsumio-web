@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/os2-uk/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cd05d5cb425abd34"
 ---
 
 # The UK’s Securitisation and Criminalisation of Migration and Asylum

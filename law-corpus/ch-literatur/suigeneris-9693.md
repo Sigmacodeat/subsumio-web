@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2025 Marc Thommen;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "956dc6b8fe6264fd"
 ---
 
 # In dubio pro REA: Risques de poursuites pénales en matière de réanimation

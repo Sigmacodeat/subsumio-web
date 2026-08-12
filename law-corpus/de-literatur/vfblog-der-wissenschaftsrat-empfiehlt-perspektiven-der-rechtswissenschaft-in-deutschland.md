@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b3caeac306d8d008"
 ---
 
 # Der Wissenschaftsrat empfiehlt: Perspektiven der Rechtswissenschaft in Deutschland

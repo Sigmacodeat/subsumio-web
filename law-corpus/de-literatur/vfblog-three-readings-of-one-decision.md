@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/three-readings-of-one-decision/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e2d921aa4b80b525"
 ---
 
 # Three Readings of One Decision

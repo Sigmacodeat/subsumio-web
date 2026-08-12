@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/tax-transparency-too-little-too-late/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d567fbb56e902b20"
 ---
 
 # Tax Transparency: too little, too late

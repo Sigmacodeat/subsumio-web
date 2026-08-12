@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/sticking-to-the-rules/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "11e5f3395cd43c4e"
 ---
 
 # How to Avoid Another Botched EU Enlargement by Sticking to the Rules

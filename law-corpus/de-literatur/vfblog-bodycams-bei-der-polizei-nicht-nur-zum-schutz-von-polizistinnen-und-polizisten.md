@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "89ba52c9043e3821"
 ---
 
 # Bodycams bei der Polizei – nicht nur zum Schutz von Polizistinnen und Polizisten!

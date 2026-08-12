@@ -18,6 +18,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2016
   AUSTRIAN LAW JOURNAL
+content_hash: "42d2a57836d282f2"
 ---
 
 # Die Internationale Norm ISO 19600 Compliance Management Systems – Inhalte und Zertifizierung

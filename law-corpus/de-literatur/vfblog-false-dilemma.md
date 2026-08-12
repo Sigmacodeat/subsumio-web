@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/false-dilemma/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "10fa3da0b440c1a2"
 ---
 
 # False Dilemma

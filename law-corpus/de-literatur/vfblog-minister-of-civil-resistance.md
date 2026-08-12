@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/minister-of-civil-resistance/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b90338f2d0199299"
 ---
 
 # Minister of Civil Resistance

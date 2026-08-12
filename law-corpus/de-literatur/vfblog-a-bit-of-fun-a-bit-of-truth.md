@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-bit-of-fun-a-bit-of-truth/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9b17de938bfa8c3e"
 ---
 
 # “A Bit of Fun. A Bit of Truth.”

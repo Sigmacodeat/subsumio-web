@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dutt-is-berlin/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3aa7a9d9528e9c55"
 ---
 
 # Dütt is Berlin

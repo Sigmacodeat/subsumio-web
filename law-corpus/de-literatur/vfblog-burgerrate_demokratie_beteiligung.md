@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/burgerrate_demokratie_beteiligung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3cecade6070c0dc9"
 ---
 
 # Wer ist dabei?

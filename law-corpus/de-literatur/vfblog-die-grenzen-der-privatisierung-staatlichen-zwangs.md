@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-grenzen-der-privatisierung-staatliche
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2f7dc11d3e65a3e8"
 ---
 
 # Die Grenzen der Privatisierung staatlichen Zwangs

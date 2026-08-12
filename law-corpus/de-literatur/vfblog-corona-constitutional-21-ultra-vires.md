@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/corona-constitutional-21-ultra-vires/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "542977ef7c4999fa"
 ---
 
 # Corona Constitutional #21: Ultra Vires

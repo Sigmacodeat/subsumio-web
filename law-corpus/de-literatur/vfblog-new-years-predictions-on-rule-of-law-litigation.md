@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/new-years-predictions-on-rule-of-law-liti
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3e4a9852ae92f3a7"
 ---
 
 # New Year’s Predictions on Rule of Law Litigation

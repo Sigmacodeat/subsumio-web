@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/attacking-the-bar-associations/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4a841d8b04c1a141"
 ---
 
 # Attacking the Bar Associations

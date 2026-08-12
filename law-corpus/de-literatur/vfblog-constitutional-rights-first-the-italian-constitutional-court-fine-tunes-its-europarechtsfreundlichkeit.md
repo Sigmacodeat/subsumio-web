@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b0bdda4b33748044"
 ---
 
 # Constitutional Rights First: The Italian Constitutional Court fine-tunes its “Europarechts&shy;freundlichkeit”

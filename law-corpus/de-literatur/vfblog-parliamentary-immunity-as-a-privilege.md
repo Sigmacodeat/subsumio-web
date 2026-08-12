@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/parliamentary-immunity-as-a-privilege/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d4b5148ff4fc83f2"
 ---
 
 # Parliamentary Immunity as a Privilege

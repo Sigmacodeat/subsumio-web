@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ioc-genetic-sex-testing/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "036473bf4a8bc85c"
 ---
 
 # The IOC’s Great Leap Backwards on Genetic Sex Testing

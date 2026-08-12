@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4a4b407afef6d6a2"
 ---
 
 # A New York Moment for the Oceans to join the Paris Moment for the Climate?

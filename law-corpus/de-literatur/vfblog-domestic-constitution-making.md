@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/domestic-constitution-making/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "401592978b7d9a04"
 ---
 
 # Domestic Constitution Making

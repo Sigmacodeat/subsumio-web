@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/freispruch-bleibt-freispruch/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fcdda306b683de37"
 ---
 
 # Freispruch bleibt Freispruch

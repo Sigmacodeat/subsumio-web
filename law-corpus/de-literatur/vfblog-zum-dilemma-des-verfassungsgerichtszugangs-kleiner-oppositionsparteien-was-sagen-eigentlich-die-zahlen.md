@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "786b0b9c1d2fd3c4"
 ---
 
 # Zum Dilemma des Verfassungsgerichtszugangs kleiner Oppositionsparteien: Was sagen eigentlich die Zahlen?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/corruption-trump-usa/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "484234c094bec8e8"
 ---
 
 # Power, Profit, and Washington’s Paradox

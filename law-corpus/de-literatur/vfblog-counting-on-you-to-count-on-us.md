@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/counting-on-you-to-count-on-us/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "439970601a4860f9"
 ---
 
 # Counting on You to Count on Us

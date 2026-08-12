@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/seat-apportionment/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "465b36b08fc97e17"
 ---
 
 # In Search of a Methodical Approach to Seat Apportionment in the European Parliament

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-changing-culture-and-perception-of-co
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "030838f68ad1a998"
 ---
 
 # The Changing Culture and Perception of Corruption

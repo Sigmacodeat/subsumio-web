@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/more-than-just-protecting-veterans/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cdd153b2972c8e9f"
 ---
 
 # More than just ,Protecting Veterans’

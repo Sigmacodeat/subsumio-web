@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f9f373833baa6350"
 ---
 
 # A Part of the Constitution Is Unconstitutional, the Slovak Constitutional Court has Ruled

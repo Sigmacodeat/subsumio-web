@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/digital-border/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3fba8b08dbd178d4"
 ---
 
 # Fundamental Rights at the Digital Border

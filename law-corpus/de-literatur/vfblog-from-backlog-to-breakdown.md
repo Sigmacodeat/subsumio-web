@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/from-backlog-to-breakdown/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a1209b2865df0efd"
 ---
 
 # From Backlog to Breakdown

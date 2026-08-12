@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nach-dem-kollaps/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6a05a9caf5098636"
 ---
 
 # Nach dem Kollaps

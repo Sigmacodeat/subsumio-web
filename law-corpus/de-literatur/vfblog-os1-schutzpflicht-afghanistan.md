@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/os1-schutzpflicht-afghanistan/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f66b6ec5048c4f7e"
 ---
 
 # Verletzung von Schutzpflichten durch die Bundesrepublik in Afghanistan?

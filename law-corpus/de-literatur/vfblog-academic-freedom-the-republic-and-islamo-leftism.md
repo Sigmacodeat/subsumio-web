@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/academic-freedom-the-republic-and-islamo-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d777d27d804832d0"
 ---
 
 # Academic Freedom, the Republic and “Islamo-Leftism”

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/one-size-fits-all/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "47a4b7479b2ebc30"
 ---
 
 # Das Ende der ‚one size fits all‘-Verweisung

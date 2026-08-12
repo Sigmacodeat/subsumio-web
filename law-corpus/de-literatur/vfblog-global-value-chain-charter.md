@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/global-value-chain-charter/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d4fc53a0df10080a"
 ---
 
 # The Legal Form of Animals in Global Value Chain Law

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/riga-and-venice-on-a-collision-course/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "910a86e72903f9db"
 ---
 
 # Riga and Venice on a Collision Course

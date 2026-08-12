@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-best-available-science/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "356d4571318c98c7"
 ---
 
 # The “Best Available Science”

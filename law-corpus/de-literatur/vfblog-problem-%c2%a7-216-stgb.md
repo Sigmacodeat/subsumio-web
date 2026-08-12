@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/problem-%c2%a7-216-stgb/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1bb3bac8860713af"
 ---
 
 # Das Problem um § 216 StGB

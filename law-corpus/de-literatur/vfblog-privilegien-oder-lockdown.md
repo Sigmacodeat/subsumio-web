@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/privilegien-oder-lockdown/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "09e4decba537ff71"
 ---
 
 # „Privilegien“ für einige oder Lockdown für alle?

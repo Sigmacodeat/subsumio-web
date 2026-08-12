@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bezirksamt-berlin-mitte-contra-tagesschau
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "865423bbdf0f0a11"
 ---
 
 # Bezirksamt Berlin-Mitte contra Tagesschau

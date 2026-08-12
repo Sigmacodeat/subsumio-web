@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/why-we-lost/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b1b4b0771e1cf691"
 ---
 
 # Why We Lost

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/lawful-access-gatekeeper/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ad4b06d1c64ad5ec"
 ---
 
 # Lawful Access as a Gatekeeper for TDM in the EU

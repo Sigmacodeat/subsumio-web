@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-unmoegliche-revolution-teil-3-eskalat
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5a483df07cbdad3e"
 ---
 
 # Eskalation: Bericht aus Barcelona, Teil 3

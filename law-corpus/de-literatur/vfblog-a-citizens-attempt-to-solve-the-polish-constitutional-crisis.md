@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "358b32ef281221b7"
 ---
 
 # A Citizens' Attempt to Solve the Polish Constitutional Crisis

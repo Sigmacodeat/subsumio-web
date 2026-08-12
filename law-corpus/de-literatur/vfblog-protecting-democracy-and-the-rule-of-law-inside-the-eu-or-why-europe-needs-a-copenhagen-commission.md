@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fa924957190fa017"
 ---
 
 # Protecting Democracy and the Rule of Law inside the EU, or: Why Europe Needs a Copenhagen Commission

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "109c2342f5db9bb6"
 ---
 
 # The UK’s Potential Withdrawal from the European Convention on Human Rights – Just a Flash in the Pan or a Real Threat?

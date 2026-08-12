@@ -20,7 +20,7 @@ const args = process.argv.slice(2);
 const targetIdx = args.indexOf("--target");
 const TARGET = targetIdx >= 0 ? parseInt(args[targetIdx + 1], 10) : 5000;
 
-const JUDIKATUR_DIR = join(import.meta.dir, "..", "law-corpus", "at-judikatur");
+const JUDIKATUR_DIR = join(import.meta.dir, "..", "..", "law-corpus", "at-judikatur");
 const EMBEDDING_MODEL = "openrouter:openai/text-embedding-3-small";
 
 interface DecisionStats {

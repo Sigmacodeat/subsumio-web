@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "14cff35545b7f3ee"
 ---
 
 # How a Boat Trip to Estonia Challenged the Foundations of the Finnish Sentencing System

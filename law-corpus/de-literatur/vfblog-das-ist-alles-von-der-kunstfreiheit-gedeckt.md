@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-ist-alles-von-der-kunstfreiheit-gedec
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d0adafc67de64f7d"
 ---
 
 # Das ist Alles von der Kunstfreiheit gedeckt

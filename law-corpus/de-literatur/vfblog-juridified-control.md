@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/juridified-control/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "42900bab1d5a5f0b"
 ---
 
 # “Juridified” Control

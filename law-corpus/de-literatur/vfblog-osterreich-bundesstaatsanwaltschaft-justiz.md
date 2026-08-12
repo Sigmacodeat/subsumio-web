@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/osterreich-bundesstaatsanwaltschaft-justi
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "750dc0122ff59f62"
 ---
 
 # Ein Strohfeuer für die österreichische Justiz

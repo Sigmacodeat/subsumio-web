@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/between-constitutional-tragedy-and-politi
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "56672896af34ce52"
 ---
 
 # Between Constitutional Tragedy and Political Farce

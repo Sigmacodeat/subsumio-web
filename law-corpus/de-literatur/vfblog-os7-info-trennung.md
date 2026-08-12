@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os7-info-trennung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "96a9bcc9ac7ff3a5"
 ---
 
 # Die Entwicklung des informationellen Trennungsprinzips

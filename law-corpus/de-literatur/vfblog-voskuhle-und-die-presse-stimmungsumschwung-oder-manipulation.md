@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "424790e045eb4fba"
 ---
 
 # Voßkuhle und die Presse: Stimmungs&shy;umschwung oder Manipulation?

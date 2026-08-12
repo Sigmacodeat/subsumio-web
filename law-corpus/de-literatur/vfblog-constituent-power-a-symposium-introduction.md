@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/constituent-power-a-symposium-introductio
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1ee1f0d5cefc70ef"
 ---
 
 # Constituent Power: A Symposium – Introduction

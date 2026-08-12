@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/egmr-strkt-diskriminierungsschutz-fr-homo
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b1e6d866f7bba44e"
 ---
 
 # EGMR stärkt Diskriminierungsschutz für Homosexuelle

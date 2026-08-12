@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "88b47dce72422e2c"
 ---
 
 # New Constitutional Amendment Proposal in Turkey:  A Threat to Pluralistic Democracy!

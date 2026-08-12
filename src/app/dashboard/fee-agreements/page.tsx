@@ -96,7 +96,7 @@ export default function FeeAgreementsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("fee.title")}
         description={t("fee.description")}
@@ -145,7 +145,7 @@ export default function FeeAgreementsPage() {
             <div>
               <Label>{t("fee.hourly_rate")}</Label>
               <Input
-                type="number"
+                type="number" inputMode="numeric"
                 value={form.hourly_rate}
                 onChange={(e) => setForm({ ...form, hourly_rate: e.target.value })}
                 disabled={form.model !== "hourly" && form.model !== "capped"}
@@ -154,7 +154,7 @@ export default function FeeAgreementsPage() {
             <div>
               <Label>{t("fee.flat_amount")}</Label>
               <Input
-                type="number"
+                type="number" inputMode="numeric"
                 value={form.flat_amount}
                 onChange={(e) => setForm({ ...form, flat_amount: e.target.value })}
                 disabled={form.model !== "flat"}
@@ -163,7 +163,7 @@ export default function FeeAgreementsPage() {
             <div>
               <Label>{t("fee.budget_cap")}</Label>
               <Input
-                type="number"
+                type="number" inputMode="numeric"
                 value={form.budget_cap}
                 onChange={(e) => setForm({ ...form, budget_cap: e.target.value })}
               />

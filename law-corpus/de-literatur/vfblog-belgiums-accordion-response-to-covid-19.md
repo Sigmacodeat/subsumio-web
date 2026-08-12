@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/belgiums-accordion-response-to-covid-19/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9d749525c6a63703"
 ---
 
 # Belgium’s Accordion Response to COVID-19

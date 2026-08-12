@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-deal-is-a-deal/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "870bc9a7ff373358"
 ---
 
 # A Deal Is a Deal

@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ab0840637b660a5f"
 ---
 
 # NPD darf am Holocaust-Gedenktag gegen Euro demonstrieren

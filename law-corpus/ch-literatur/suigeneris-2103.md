@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2019 David Vasella;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "aa963ec6ab61b8f9"
 ---
 
 # Rezension: Aurelia Tamò-Larrieux, Designing for Privacy and its Legal Framework

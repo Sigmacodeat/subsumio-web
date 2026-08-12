@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6dac347794ec9b2c"
 ---
 
 # Sovereign Choices: The CJEU’s Ruling on Exit from Brexit

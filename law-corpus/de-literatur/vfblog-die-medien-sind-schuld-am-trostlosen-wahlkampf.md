@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-medien-sind-schuld-am-trostlosen-wahl
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "edc56e313e0f3aaa"
 ---
 
 # Die Medien sind schuld am trostlosen Wahlkampf?

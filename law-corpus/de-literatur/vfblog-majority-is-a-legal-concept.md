@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/majority-is-a-legal-concept/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c535fb6404d701cb"
 ---
 
 # Majority is a Legal Concept

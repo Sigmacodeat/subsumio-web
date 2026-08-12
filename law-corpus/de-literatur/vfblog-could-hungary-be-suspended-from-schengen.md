@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/could-hungary-be-suspended-from-schengen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "41f867acc1c7cde4"
 ---
 
 # Could Hungary be suspended from Schengen?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/towards-a-digital-constitution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cf3d742e68bb2935"
 ---
 
 # Towards a Digital Constitution

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/trump-2-0-as-dual-state/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c43d21bcb80e6459"
 ---
 
 # Trump 2.0 as ‘Dual State'?

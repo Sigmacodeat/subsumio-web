@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "78c5f6f65d40ade0"
 ---
 
 # A Year of Zeros?  Legal Responses to the COVID-19 Pandemic in Russia

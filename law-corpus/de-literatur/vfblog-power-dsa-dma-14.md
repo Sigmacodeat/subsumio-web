@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/power-dsa-dma-14/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "997dd716b7e14906"
 ---
 
 # Platform research access in Article 31 of the Digital Services Act

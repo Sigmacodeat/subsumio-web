@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/this-is-not-simplification/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "54764c08e2b0097e"
 ---
 
 # This Is Not Simplification

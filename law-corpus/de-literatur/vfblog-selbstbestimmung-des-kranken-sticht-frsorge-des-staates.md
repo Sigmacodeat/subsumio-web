@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "20ed2b39337be20f"
 ---
 
 # Selbstbestimmung des Kranken sticht Fürsorge des Staates

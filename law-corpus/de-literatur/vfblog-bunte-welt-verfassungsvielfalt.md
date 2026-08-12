@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bunte-welt-verfassungsvielfalt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d45d2d152739a974"
 ---
 
 # Die bunte Welt der Verfassungsvielfalt

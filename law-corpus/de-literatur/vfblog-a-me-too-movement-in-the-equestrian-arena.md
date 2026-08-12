@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-me-too-movement-in-the-equestrian-arena
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "12b43ce0cf1e478e"
 ---
 
 # A “Me too” Movement in the Equestrian Arena?

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8f3b8d09f39ee463"
 ---
 
 # A New Chapter in the Hungarian Government’s Crusade Against LGBTQI People

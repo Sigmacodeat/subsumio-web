@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/erweiterte-dna-analyse/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f2d0f9d3c828502f"
 ---
 
 # Das Ringen um das genetische Phantombild

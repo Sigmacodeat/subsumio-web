@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "da74cc35786fc7a1"
 ---
 
 # Dealing with the Pandemic: A Stress Test for Colombian Political Institutions

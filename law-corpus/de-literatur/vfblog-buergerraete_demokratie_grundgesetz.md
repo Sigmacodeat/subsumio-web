@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/buergerraete_demokratie_grundgesetz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "96494a64b848785a"
 ---
 
 # Bürgerräte als legitime Gestaltungsoption

@@ -25,7 +25,7 @@ const CONCURRENCY = concurrencyIdx >= 0 ? parseInt(args[concurrencyIdx + 1], 10)
 const courtIdx = args.indexOf("--court");
 const COURT_FILTER = courtIdx >= 0 ? args[courtIdx + 1] : null;
 
-const OUT_DIR = join(import.meta.dir, "..", "law-corpus", "de-judikatur");
+const OUT_DIR = join(import.meta.dir, "..", "..", "law-corpus", "de-judikatur");
 const TOC_URL = "https://www.rechtsprechung-im-internet.de/rii-toc.xml";
 
 interface TOCItem {

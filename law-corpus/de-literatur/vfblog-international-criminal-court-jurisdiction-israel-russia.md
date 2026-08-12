@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "092f933b203e8af9"
 ---
 
 # Why the International Criminal Court's Jurisdiction Doctrinally Attaches to Israeli and Russian Nationals

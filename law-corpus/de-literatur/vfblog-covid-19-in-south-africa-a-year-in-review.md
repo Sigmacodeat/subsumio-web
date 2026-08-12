@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/covid-19-in-south-africa-a-year-in-review
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8b9dc8f5d3a7d7c8"
 ---
 
 # COVID-19 in South Africa: A Year in Review

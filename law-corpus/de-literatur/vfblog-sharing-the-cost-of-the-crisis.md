@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sharing-the-cost-of-the-crisis/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f8c5b54230c843f2"
 ---
 
 # Sharing the Cost of the Crisis

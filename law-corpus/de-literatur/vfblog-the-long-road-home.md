@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-long-road-home/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3f22e76ef9c48df1"
 ---
 
 # The Long Road Home

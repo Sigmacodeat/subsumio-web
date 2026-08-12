@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/icj-climate-right-to-a-healthy-environmen
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "742f7f25b96c8fe2"
 ---
 
 # A Right Foundational to Humanity’s Existence

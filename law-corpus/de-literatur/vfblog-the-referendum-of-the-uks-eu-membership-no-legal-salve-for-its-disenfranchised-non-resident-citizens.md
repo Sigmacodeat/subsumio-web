@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cf0b8b1f885573f4"
 ---
 
 # The referendum of the UK’s EU membership: No legal salve for its disenfranchised non-resident citizens

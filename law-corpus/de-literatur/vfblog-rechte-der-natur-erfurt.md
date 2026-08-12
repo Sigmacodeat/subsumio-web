@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rechte-der-natur-erfurt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3cc4f6946e029c79"
 ---
 
 # Pioniertat oder Bärendienst?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/swastika-in-the-polish-parliament/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c134b0b1b91c0cfc"
 ---
 
 # Swastika in the Polish Parliament

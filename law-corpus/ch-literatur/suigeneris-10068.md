@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2026 Marc Thommen, Jana
   Hesske; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "b49415f440bcf367"
 ---
 
 # Wilder Westen oder findige Fahndung? Darf die Polizei nach Krawallen auf Notfallstationen nach Tätern suchen?

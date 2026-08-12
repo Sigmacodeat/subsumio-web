@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1a8e9671c75420f1"
 ---
 
 # A Stress Test for Politics: Insights from the Comparative Covid Response Project (CompCoRe) 2020

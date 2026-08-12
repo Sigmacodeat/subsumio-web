@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6a10e66f0ea96920"
 ---
 
 # Rescue Package For Fundamental Rights: Comments by PÁL SONNEVEND

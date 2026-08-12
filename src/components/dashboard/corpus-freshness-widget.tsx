@@ -3,11 +3,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   CheckCircle2,
   AlertTriangle,
   XCircle,
-  RefreshCw,
   Clock,
   FileText,
   Globe,
@@ -62,9 +62,17 @@ export function CorpusFreshnessWidget() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center py-4 text-muted-foreground">
-            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-            Loading...
+          <div className="space-y-3" aria-busy="true" aria-label="Corpus Freshness wird geladen">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-6 w-16 rounded-full" />
+            </div>
+            <Skeleton className="h-2 w-full" />
+            <div className="grid grid-cols-3 gap-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full rounded-lg" />
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -94,21 +102,21 @@ export function CorpusFreshnessWidget() {
         {/* Summary stats */}
         <div className="grid grid-cols-3 gap-2 text-center">
           <div>
-            <div className="text-lg font-bold text-green-600">{freshCount}</div>
-            <div className="text-xs text-muted-foreground">Fresh</div>
+            <div className="text-lg font-bold text-[color:var(--ds-success-text)]">{freshCount}</div>
+            <div className="text-xs text-[color:var(--ds-text-muted)]">Fresh</div>
           </div>
           <div>
-            <div className="text-lg font-bold text-orange-600">{staleCount}</div>
-            <div className="text-xs text-muted-foreground">Stale</div>
+            <div className="text-lg font-bold text-[color:var(--ds-warning-text)]">{staleCount}</div>
+            <div className="text-xs text-[color:var(--ds-text-muted)]">Stale</div>
           </div>
           <div>
-            <div className="text-lg font-bold text-red-600">{errorCount}</div>
-            <div className="text-xs text-muted-foreground">Error</div>
+            <div className="text-lg font-bold text-[color:var(--ds-danger-text)]">{errorCount}</div>
+            <div className="text-xs text-[color:var(--ds-text-muted)]">Error</div>
           </div>
         </div>
 
         {/* Total documents */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t">
+        <div className="flex items-center justify-between text-xs text-[color:var(--ds-text-muted)] pt-1 border-t">
           <span className="flex items-center gap-1">
             <FileText className="h-3 w-3" />
             Total documents
@@ -129,7 +137,7 @@ export function CorpusFreshnessWidget() {
                   {label}
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">{source.doc_count} docs</span>
+                  <span className="text-[color:var(--ds-text-muted)]">{source.doc_count} docs</span>
                   <Badge variant={config.variant} className="text-xs">
                     {source.status}
                   </Badge>
@@ -141,7 +149,7 @@ export function CorpusFreshnessWidget() {
 
         {/* Last updated */}
         {data?.last_updated && (
-          <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t">
+          <div className="flex items-center justify-between text-xs text-[color:var(--ds-text-muted)] pt-1 border-t">
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
               Last check

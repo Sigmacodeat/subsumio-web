@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/den-waehle-ich-nicht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e5f5b9458758d0c1"
 ---
 
 # „Den wähle ich nicht!“

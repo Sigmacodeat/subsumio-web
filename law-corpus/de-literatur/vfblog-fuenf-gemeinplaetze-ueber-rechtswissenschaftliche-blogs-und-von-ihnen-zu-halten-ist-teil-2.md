@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5cf721982b0b8b62"
 ---
 
 # Fünf Gemeinplätze über rechtswissenschaftliche Blogs, und was von ihnen zu halten ist: Teil 2

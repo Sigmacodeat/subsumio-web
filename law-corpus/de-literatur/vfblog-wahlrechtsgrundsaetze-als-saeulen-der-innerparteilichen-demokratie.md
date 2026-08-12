@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ef8f24fe50bd5b62"
 ---
 
 # Wahlrechtsgrundsätze als Säulen der innerparteilichen Demokratie

@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/os1-oblig-of-protection/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3bea1ba642f6242b"
 ---
 
 # Has the Federal Republic of Germany violated its obligations of protection in Afghanistan?

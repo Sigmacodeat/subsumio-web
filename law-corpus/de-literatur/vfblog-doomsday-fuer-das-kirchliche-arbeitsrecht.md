@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/doomsday-fuer-das-kirchliche-arbeitsrecht
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5b1d11ec772e1449"
 ---
 
 # „Doomsday“ für das kirchliche Arbeitsrecht?

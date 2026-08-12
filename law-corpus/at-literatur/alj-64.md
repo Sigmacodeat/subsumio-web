@@ -19,6 +19,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2016
   AUSTRIAN LAW JOURNAL
+content_hash: "0c7b0c994b90a5cb"
 ---
 
 # Allgemeine Handlungsfreiheit im System der österreichischen Bundesverfassung. Anmerkungen vor dem Hintergrund von VfGH 9. 12. 2015, E 50/2015 ua

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/brave-new-world/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0befe88c12490481"
 ---
 
 # Brave New World

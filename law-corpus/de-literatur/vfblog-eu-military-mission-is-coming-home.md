@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eu-military-mission-is-coming-home/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f82f23eef41ca3ce"
 ---
 
 # EU Military Mission Is Coming Home

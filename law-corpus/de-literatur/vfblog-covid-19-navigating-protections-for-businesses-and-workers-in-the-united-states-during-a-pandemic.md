@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e73bf8a3618158ee"
 ---
 
 # Fighting COVID 19 – Navigating Protections for Businesses and Workers in the United States

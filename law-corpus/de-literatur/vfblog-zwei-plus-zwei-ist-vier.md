@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zwei-plus-zwei-ist-vier/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "becf9d15e1a49db6"
 ---
 
 # Zwei plus zwei ist vier

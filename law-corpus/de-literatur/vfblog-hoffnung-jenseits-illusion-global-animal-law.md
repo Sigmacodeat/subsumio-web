@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hoffnung-jenseits-illusion-global-animal-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b03a3163cc663b4f"
 ---
 
 # Hoffnung jenseits der Illusion: Global Animal Law

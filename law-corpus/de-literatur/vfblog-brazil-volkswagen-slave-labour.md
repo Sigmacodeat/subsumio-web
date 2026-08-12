@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/brazil-volkswagen-slave-labour/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1776a564ce12fb9c"
 ---
 
 # The Realm of Good Intentions

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/heavy-artillery-light-reasoning/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0e66a4f58b68acf2"
 ---
 
 # Heavy Artillery, Light Reasoning

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nor-what-it-deserved/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "757ff5bcccc3fe6f"
 ---
 
 # Neither What Italy Needed, Nor What it Deserved

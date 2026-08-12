@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/signs-and-symbols/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d7286e46527322dd"
 ---
 
 # Signs and Symbols

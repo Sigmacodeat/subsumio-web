@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/roter-teppich-statt-handschellen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1c3b9a0fdf12d1b0"
 ---
 
 # Roter Teppich statt Handschellen

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/verwaltungsumbau-afd/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "59bc3dac318a37b9"
 ---
 
 # Einschüchtern statt entlassen

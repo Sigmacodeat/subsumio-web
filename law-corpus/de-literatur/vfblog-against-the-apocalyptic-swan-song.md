@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/against-the-apocalyptic-swan-song/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5c3193babc76d03c"
 ---
 
 # Against the Apocalyptic Swan Song

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bverfg-sippenhaft-im-auslnderrecht-nicht-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7d2c0f95b90f9d26"
 ---
 
 # BVerfG will Sippenhaft im Ausländerrecht nicht beenden

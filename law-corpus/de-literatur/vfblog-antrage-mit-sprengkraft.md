@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/antrage-mit-sprengkraft/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a2133e802a7bfd4a"
 ---
 
 # Anträge mit Sprengkraft

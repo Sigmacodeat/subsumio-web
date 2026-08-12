@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-republic-debate-in-australia/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "830206ab05d67681"
 ---
 
 # The Republic Debate in Australia

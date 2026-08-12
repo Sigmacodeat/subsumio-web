@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/drop-bothsideism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d2472d8132b15d70"
 ---
 
 # Drop Bothsideism

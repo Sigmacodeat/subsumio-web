@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bigtechs-efforts-to-derail-the-ai-act/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "117b0d4723126af8"
 ---
 
 # BigTech's Efforts to Derail the AI Act

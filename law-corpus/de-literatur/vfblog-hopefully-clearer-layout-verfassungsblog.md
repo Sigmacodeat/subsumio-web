@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hopefully-clearer-layout-verfassungsblog/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "414f4cf53d1aaa0f"
 ---
 
 # A (hopefully) clearer layout for Verfassungsblog

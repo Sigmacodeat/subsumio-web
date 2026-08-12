@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rechte-der-natur-erfurt-unabhangigkeit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "26248b2a84c91fd8"
 ---
 
 # Hier spricht der Richter

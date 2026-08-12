@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "564959a6fc2ed73e"
 ---
 
 # Verfassungswidriger Nobelpreis? oder: zu was Verfassungsrecht alles gut sein kann&#8230;

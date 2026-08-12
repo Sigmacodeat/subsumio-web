@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/world-lawyers-pledge-on-climate-action/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "71f984af63c57136"
 ---
 
 # World Lawyers’ Pledge on Climate Action

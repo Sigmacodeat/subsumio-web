@@ -15,6 +15,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "c6b4a968e4eb9832"
 ---
 
 § 22.3 Schule (Art. 7 GG) &#124; Inhaltsverzeichnis &#124; § 23.1 Kunstfreiheit (Art. 5 III GG) 

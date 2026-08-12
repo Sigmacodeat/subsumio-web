@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zeitenwendekreise/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0cf1cd5eeb6a7a15"
 ---
 
 # Zeitenwendekreise

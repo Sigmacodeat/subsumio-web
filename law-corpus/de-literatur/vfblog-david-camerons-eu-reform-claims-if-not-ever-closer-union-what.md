@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6312e0ccfebe2cd2"
 ---
 
 # David Cameron's EU reform claims: If not ‘ever closer union’, what?

@@ -170,12 +170,12 @@ describe("CLI integration", () => {
   });
 
   test("CLI_ONLY set contains integrations", () => {
-    expect(cliSource).toContain("'integrations'");
+    expect(cliSource).toMatch(/["']integrations["']/);
   });
 
   test("handleCliOnly routes integrations before connectEngine", () => {
     // integrations case must appear before "All remaining CLI-only commands need a DB"
-    const integrationsIdx = cliSource.indexOf("command === 'integrations'");
+    const integrationsIdx = cliSource.search(/command === ["']integrations["']/);
     const dbComment = cliSource.indexOf("All remaining CLI-only commands need a DB");
     expect(integrationsIdx).toBeGreaterThan(0);
     expect(dbComment).toBeGreaterThan(0);

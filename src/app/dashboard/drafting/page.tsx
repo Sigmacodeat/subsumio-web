@@ -16,6 +16,7 @@ import {
   Save,
   UserCheck,
   AlertTriangle,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -142,10 +143,46 @@ export default function DraftingPage() {
   const [savingDraft, setSavingDraft] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [draftSaved, setDraftSaved] = useState<string | null>(null);
+  const [enqueuing, setEnqueuing] = useState(false);
   const [cases, setCases] = useState<BrainPage[]>([]);
   const [casesError, setCasesError] = useState(false);
 
   const template = TEMPLATES.find((t) => t.key === selectedTemplate)!;
+
+  async function enqueueBackgroundDraft() {
+    const data = f.getValues();
+    if (!canGenerate) return;
+    setEnqueuing(true);
+    try {
+      const res = await fetch("/api/autonomous/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "legal_draft_generation",
+          title: `${template.label}: ${data.title || "Entwurf"}`,
+          payload: {
+            template_key: selectedTemplate,
+            form_data: data,
+            case_slug: data.selectedCaseSlug || undefined,
+          },
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      addToast({
+        type: "success",
+        title: t("drafting.enqueued_ok"),
+        description: t("drafting.enqueued_desc"),
+      });
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: t("drafting.enqueued_error"),
+        description: err instanceof Error ? err.message : undefined,
+      });
+    } finally {
+      setEnqueuing(false);
+    }
+  }
 
   const form = useDashboardForm({
     schema: draftingSchema,
@@ -516,17 +553,30 @@ export default function DraftingPage() {
             })}
           </select>
         </div>
-        <Button
-          type="submit"
-          variant="primary"
-          className="brand-bg brand-bg gap-2 text-white"
-          disabled={!canGenerate || generating}
-        >
-          {generating ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-          {generating
-            ? t("drafting.btn_generating")
-            : `${template.label} ${t("drafting.btn_generate_suffix")}`}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="submit"
+            variant="primary"
+            className="brand-bg brand-bg gap-2 text-white"
+            disabled={!canGenerate || generating}
+          >
+            {generating ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+            {generating
+              ? t("drafting.btn_generating")
+              : `${template.label} ${t("drafting.btn_generate_suffix")}`}
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={enqueueBackgroundDraft}
+            disabled={!canGenerate || enqueuing || generating}
+            className="gap-2 active:scale-[0.98]"
+            title={t("drafting.btn_background_hint")}
+          >
+            {enqueuing ? <Loader2 size={16} className="animate-spin" /> : <Clock size={16} />}
+            {t("drafting.btn_background")}
+          </Button>
+        </div>
       </form>
 
       {/* Result */}

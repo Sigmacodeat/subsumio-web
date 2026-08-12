@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/covid-19-and-the-crisis-in-indian-democra
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "768a426bfa4f38d6"
 ---
 
 # COVID-19 and the Crisis in Indian Democracy

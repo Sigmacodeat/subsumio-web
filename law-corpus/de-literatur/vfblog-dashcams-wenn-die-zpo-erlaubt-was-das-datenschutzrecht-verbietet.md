@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1d651030d0bc11ff"
 ---
 
 # Dashcams: Wenn die ZPO erlaubt, was das Datenschutzrecht verbietet

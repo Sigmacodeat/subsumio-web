@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/constitutional-but-criminal/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e0a456ecbac8b9a6"
 ---
 
 # Constitutional but Criminal

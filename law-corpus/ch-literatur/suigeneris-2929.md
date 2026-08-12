@@ -20,6 +20,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2021 Anne Bombay, Pieterjan
   Heynen; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "88d29cd4327c07c0"
 ---
 
 # The ECtHR’s Ilias and Ahmed and the CJEU’s FMS-case: a difficult reconciliation? A look at the divergent jurisprudence on the concept of detention in European Asylum Law

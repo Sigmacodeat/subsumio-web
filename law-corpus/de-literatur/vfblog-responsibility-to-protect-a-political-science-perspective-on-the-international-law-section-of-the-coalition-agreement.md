@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bd0e4368d81c6416"
 ---
 
 # Responsibility to Protect: A political science perspective on the international law section of the coalition agreement

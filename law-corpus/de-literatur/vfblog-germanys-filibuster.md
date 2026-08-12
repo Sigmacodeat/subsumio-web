@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/germanys-filibuster/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bf5c9618da5508cb"
 ---
 
 # Germany’s Filibuster

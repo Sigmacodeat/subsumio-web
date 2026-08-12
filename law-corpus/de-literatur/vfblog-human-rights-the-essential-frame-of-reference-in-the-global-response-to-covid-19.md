@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "484388289a3231d1"
 ---
 
 # Human Rights – The Essential Frame of Reference in the Global Response to COVID-19

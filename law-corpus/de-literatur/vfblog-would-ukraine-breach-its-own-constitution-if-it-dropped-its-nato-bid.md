@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2b15610e2a7b3966"
 ---
 
 # Would Ukraine Breach its own Constitution if it Dropped its NATO Bid?

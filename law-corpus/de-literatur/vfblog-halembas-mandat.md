@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/halembas-mandat/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "436d25d0c57c850d"
 ---
 
 # Halembas Mandat

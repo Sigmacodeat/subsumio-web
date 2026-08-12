@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-geringste-abweichung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3cc9c20354cfd1f2"
 ---
 
 # Die geringste Abweichung

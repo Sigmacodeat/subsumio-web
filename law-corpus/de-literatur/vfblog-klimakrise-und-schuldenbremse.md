@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/klimakrise-und-schuldenbremse/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "96d5b9cf36101570"
 ---
 
 # Klimakrise und Schuldenbremse

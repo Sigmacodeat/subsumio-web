@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/shells-climate-obligation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "421ef24fdc9bf404"
 ---
 
 # Shell's Climate Obligation

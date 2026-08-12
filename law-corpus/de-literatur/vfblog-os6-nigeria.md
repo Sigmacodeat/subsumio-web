@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/os6-nigeria/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6d4d6f6a3a7b997e"
 ---
 
 # Enabling Digital Authoritarianism in the Name of Counterterrorism

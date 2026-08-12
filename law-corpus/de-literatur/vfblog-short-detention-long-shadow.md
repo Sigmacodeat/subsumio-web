@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/short-detention-long-shadow/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "69f25c316d3983eb"
 ---
 
 # Short Detention, Long Shadow

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bolsonaro-dosimetry-bill/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d3d4c1c6a16a362e"
 ---
 
 # Bolsonaro’s Quasi-Amnesty

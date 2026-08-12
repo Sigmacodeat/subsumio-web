@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/this-was-not-just-another-ultra-vires-jud
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b40f5affbd1fe2f1"
 ---
 
 # This Was Not Just Another Ultra Vires Judgment!

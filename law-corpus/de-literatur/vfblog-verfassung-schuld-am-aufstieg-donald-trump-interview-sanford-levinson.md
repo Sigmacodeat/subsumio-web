@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a260765f71de56de"
 ---
 
 # Ist die US-Verfassung schuld am Aufstieg von Donald Trump? Ein Interview mit SANFORD LEVINSON

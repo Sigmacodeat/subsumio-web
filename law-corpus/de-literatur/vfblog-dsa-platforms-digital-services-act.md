@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dsa-platforms-digital-services-act/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "23acbe2b96d0d9ee"
 ---
 
 # Using the DSA to Study Platforms

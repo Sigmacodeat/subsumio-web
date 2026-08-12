@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/greenland-and-us-annexation-threats/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "661082cb4faf931f"
 ---
 
 # Greenland and US Annexation Threats

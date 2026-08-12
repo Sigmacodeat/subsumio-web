@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-bundesgesetzblatt-im-digitalen-zeital
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "41378e3896eac810"
 ---
 
 # Das Bundesgesetzblatt im digitalen Zeitalter

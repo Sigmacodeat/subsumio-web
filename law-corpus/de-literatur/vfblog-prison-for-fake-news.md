@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/prison-for-fake-news/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "06885cd35fc14ca8"
 ---
 
 # Prison for Fake News

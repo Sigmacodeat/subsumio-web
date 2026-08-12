@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-european-army-and-difficult-choices/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f3377ce3f1e1469e"
 ---
 
 # A European Army and Three Difficult Choices

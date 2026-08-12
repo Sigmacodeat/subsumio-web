@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/showdown-at-the-last-chance-saloon/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5c3111bc1c31dbfe"
 ---
 
 # Showdown at the Last Chance Saloon

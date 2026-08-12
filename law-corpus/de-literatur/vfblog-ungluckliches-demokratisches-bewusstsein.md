@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ungluckliches-demokratisches-bewusstsein/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a393c544d9c21e1b"
 ---
 
 # Unglückliches demokratisches Bewusstsein

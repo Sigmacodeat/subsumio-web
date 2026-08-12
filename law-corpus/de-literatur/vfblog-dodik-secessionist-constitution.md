@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dodik-secessionist-constitution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "78f108dc000feb88"
 ---
 
 # Dodik’s Defiant Secessionist Constitution

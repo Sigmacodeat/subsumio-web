@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "507f7c795bfc63c7"
 ---
 
 # OMT-Verfahren in der Kritik: Von Juristen, Ökonomen und wer wofür kompetent ist

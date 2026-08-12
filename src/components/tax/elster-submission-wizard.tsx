@@ -213,7 +213,7 @@ export function ElsterSubmissionWizard({ onSubmitted }: ElsterSubmissionWizardPr
               </Label>
               <Input
                 id="wiz-year"
-                type="number"
+                type="number" inputMode="numeric"
                 value={year}
                 onChange={(e) => setYear(Number(e.target.value))}
                 className="mt-1.5"
@@ -225,7 +225,7 @@ export function ElsterSubmissionWizard({ onSubmitted }: ElsterSubmissionWizardPr
               </Label>
               <Input
                 id="wiz-tax"
-                type="number"
+                type="number" inputMode="decimal"
                 step="0.01"
                 value={taxAmount}
                 onChange={(e) => setTaxAmount(e.target.value)}
@@ -238,7 +238,7 @@ export function ElsterSubmissionWizard({ onSubmitted }: ElsterSubmissionWizardPr
               </Label>
               <Input
                 id="wiz-refund"
-                type="number"
+                type="number" inputMode="decimal"
                 step="0.01"
                 value={refundAmount}
                 onChange={(e) => setRefundAmount(e.target.value)}

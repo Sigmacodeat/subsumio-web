@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "77eee6db7c9200a5"
 ---
 
 # Das Recht in der Eurokrise: Teil der Lösung oder Teil des Problems?

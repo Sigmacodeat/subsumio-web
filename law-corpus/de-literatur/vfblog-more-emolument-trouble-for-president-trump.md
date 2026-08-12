@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/more-emolument-trouble-for-president-trum
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cdeebbc7edebfe27"
 ---
 
 # More Emolument Trouble For President Trump?

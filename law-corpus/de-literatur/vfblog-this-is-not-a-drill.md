@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/this-is-not-a-drill/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bd1caf85ba5b3ff7"
 ---
 
 # This is not a drill

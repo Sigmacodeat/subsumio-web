@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/new-genomic-techniques/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5ec089b98a0d5092"
 ---
 
 # New Genomic Techniques in Food and Feed

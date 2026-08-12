@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/buergerraete_demokratie_belgien/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "baed19696bfd0e39"
 ---
 
 # Institutionalisierte Deliberation

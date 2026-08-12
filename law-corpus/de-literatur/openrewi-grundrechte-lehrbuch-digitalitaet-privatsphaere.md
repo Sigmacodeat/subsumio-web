@@ -15,6 +15,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "2556300b78d0b39d"
 ---
 
 § 23.2 Wissenschaftsfreiheit (Art. 5 III GG) &#124; Inhaltsverzeichnis &#124; § 24.1  Vertraulichkeit der Kommunikation (Art. 10 GG) 

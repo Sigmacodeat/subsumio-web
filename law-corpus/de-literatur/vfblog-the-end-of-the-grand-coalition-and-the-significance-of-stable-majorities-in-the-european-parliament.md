@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1d5b30ae170ca15a"
 ---
 
 # The End of the Grand Coalition and the Significance of Stable Majorities in the European Parliament

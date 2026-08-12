@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aeea16096c1ba55a"
 ---
 
 # RefLex and the Possibility of Transformative “North-South” Research Collaborations

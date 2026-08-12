@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/energy-transition-global-south-colonialis
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2348ca9b8cbbf732"
 ---
 
 # Who Decides, Who Pays, Who is Sacrificed

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/icj-climate-advisory-opinion-fossil-fuels
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "37529fc22b3cb48d"
 ---
 
 # The Struggle Against Fossil Sovereignty

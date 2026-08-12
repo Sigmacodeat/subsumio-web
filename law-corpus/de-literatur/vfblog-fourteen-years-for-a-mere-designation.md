@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fourteen-years-for-a-mere-designation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4c5674ebef996fb4"
 ---
 
 # Fourteen Years for a Mere Designation

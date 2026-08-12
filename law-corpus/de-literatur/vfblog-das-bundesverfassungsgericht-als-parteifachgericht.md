@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-bundesverfassungsgericht-als-parteifa
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cc500790bb3e3d4f"
 ---
 
 # Das Bundesverfassungsgericht als Parteifachgericht

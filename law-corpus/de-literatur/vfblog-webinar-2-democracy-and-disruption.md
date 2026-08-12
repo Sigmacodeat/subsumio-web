@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/webinar-2-democracy-and-disruption/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0d8ff1d2262c4229"
 ---
 
 # WEBINAR 2: “Democracy and Disruption”

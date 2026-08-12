@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/illiberal-democracy-beyond-hungary-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "99342734155b2dc0"
 ---
 
 # Illiberal Democracy and Beyond in Hungary

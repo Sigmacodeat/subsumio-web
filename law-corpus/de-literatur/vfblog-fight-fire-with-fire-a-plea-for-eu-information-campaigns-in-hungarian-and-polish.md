@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "90f38220d94cf540"
 ---
 
 # Fight Fire with Fire – a Plea for EU Information Campaigns in Hungarian and Polish

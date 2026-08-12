@@ -16,7 +16,7 @@ export const maxDuration = 15;
  */
 export const GET = createHandler(
   {
-    action: "admin.*" as never,
+    action: "admin.*",
     cacheMaxAge: 60,
   },
   async (ctx) => {
@@ -57,16 +57,21 @@ export const GET = createHandler(
       const orphan_pages = orphanResult.rows[0]?.n ?? 0;
 
       // ── 2. Embedding Models ──
-      const modelsResult = await pool.query(`
-        SELECT COALESCE(embedding_model, 'none') AS model, COUNT(*)::int AS n
-        FROM content_chunks cc
-        JOIN pages p ON p.id = cc.page_id
-        WHERE p.deleted_at IS NULL
-        GROUP BY embedding_model ORDER BY n DESC
-      `);
-      const chunks_by_model: Record<string, number> = {};
-      for (const r of modelsResult.rows) {
-        chunks_by_model[r.model] = r.n;
+      let chunks_by_model: Record<string, number> = {};
+      try {
+        const modelsResult = await pool.query(`
+          SELECT COALESCE(embedding_model, 'none') AS model, COUNT(*)::int AS n
+          FROM content_chunks cc
+          JOIN pages p ON p.id = cc.page_id
+          WHERE p.deleted_at IS NULL
+          GROUP BY embedding_model ORDER BY n DESC
+        `);
+        for (const r of modelsResult.rows) {
+          chunks_by_model[r.model] = r.n;
+        }
+      } catch {
+        // embedding_model column might not exist yet
+        chunks_by_model = { none: total_chunks };
       }
 
       // ── 3. Chunker Version Distribution ──

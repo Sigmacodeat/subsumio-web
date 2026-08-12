@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/towards-a-european-defence-union/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d908de3513fbd3ae"
 ---
 
 # A Proposal Towards a European Defence Union

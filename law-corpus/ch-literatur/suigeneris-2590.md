@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2021 Matthias Schwaibold;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "cc3ad9879a95e1b3"
 ---
 
 # Lausanner Nebelpetarden zu Facebook: Anmerkungen zum Urteil des Bundesgerichts 6B_440/2019 vom 18. November 2020 (zur Publikation vorgesehen)

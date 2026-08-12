@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/generationengerechtigkeit-und-fiskalpolit
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a7ab6f451de68789"
 ---
 
 # Generationengerechtigkeit und Fiskalpolitik

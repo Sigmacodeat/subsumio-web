@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/restitution-for-pushback-victims/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1f2ffcb29c5c780d"
 ---
 
 # Restitution for Pushback Victims

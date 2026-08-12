@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ausweispflicht-per-corona-verordnung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cc57d4dc7414afcb"
 ---
 
 # Ausweispflicht per Corona-Verordnung?

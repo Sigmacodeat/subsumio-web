@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6a8bdd4329566eb6"
 ---
 
 # The Hong Kong Judiciary and Beijing’s Temper Tantrum

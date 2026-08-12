@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ecocide-a-la-bruxelloise/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4df27fdeb1ff0f1c"
 ---
 
 # Ecocide à la Bruxelloise

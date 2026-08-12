@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/cutting-the-gordian-knot-in-bosnia-and-he
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4b3262161b4b6c3a"
 ---
 
 # Cutting the Gordian Knot in Bosnia and Herzegovina

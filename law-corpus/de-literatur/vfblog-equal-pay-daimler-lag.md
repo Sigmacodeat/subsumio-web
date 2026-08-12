@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/equal-pay-daimler-lag/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "85e326e2e5caf713"
 ---
 
 # Wie viel Pay ist Equal Pay?

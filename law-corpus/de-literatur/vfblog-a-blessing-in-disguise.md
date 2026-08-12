@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/a-blessing-in-disguise/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bbb37e62142bfb8f"
 ---
 
 # The Electoral Reform in New Caledonia as a Blessing in Disguise

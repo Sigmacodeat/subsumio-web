@@ -30,7 +30,7 @@ describe("autopilot auto-drain wiring", () => {
   });
 
   test("gates on pack NOT declaring extract_atoms (the silent-backlog condition)", () => {
-    expect(SRC).toContain("packDeclaresPhase(engine, 'extract_atoms')");
+    expect(SRC).toMatch(/packDeclaresPhase\(engine,\s*["']extract_atoms["']\)/);
   });
 
   test("gates on the enabled flag and a daily spend cap (DECISION 3C)", () => {
@@ -40,7 +40,7 @@ describe("autopilot auto-drain wiring", () => {
   });
 
   test("is Postgres-gated (PGLite has no worker surface)", () => {
-    expect(SRC).toMatch(/engine\.kind === 'postgres'[\s\S]{0,400}auto_drain/);
+    expect(SRC).toMatch(/engine\.kind === ["']postgres["'][\s\S]{0,400}auto_drain/);
   });
 
   test("CODEX impl #4: no maxWaiting (it coalesces by name+queue, not source)", () => {

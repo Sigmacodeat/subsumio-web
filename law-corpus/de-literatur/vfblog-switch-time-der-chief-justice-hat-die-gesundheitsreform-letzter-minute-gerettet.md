@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5ae9a88783b3033f"
 ---
 
 # A switch in time: Der Chief Justice hat die Gesundheitsreform in letzter Minute gerettet

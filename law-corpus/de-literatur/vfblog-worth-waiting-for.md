@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/worth-waiting-for/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e85f9bc86e72e729"
 ---
 
 # Worth Waiting For

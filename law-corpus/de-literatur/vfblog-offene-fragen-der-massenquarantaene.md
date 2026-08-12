@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/offene-fragen-der-massenquarantaene/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "175ac78d8b7cce32"
 ---
 
 # Offene Fragen der (Massen)Quarantäne

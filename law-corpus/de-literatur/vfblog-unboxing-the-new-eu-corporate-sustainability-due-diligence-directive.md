@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c8ed5a50beef8d0b"
 ---
 
 # Unboxing the New EU Corporate Sustainability Due Diligence Directive

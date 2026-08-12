@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/foreign-ideas-about-child-marriage/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e8d90d66ab6d6491"
 ---
 
 # Foreign Ideas about ‘Child Marriage’?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/angriff-im-deckmantel-der-selbstverteidig
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "566d204bde1ab259"
 ---
 
 # Angriff im Deckmantel der Selbstverteidigung

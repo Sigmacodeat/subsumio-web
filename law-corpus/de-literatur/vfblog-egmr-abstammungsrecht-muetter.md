@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/egmr-abstammungsrecht-muetter/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0f3a9d89aa0afbd3"
 ---
 
 # Stiefmütterliche Behandlung

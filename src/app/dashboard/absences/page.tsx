@@ -96,7 +96,7 @@ export default function AbsencePage() {
   const activeCount = absences.filter((a) => isAbsenceActive(a)).length;
 
   return (
-    <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("absence.title")}
         description={t("absence.desc")}
@@ -154,6 +154,8 @@ export default function AbsencePage() {
               </Label>
               <Input
                 type="email"
+                autoComplete="email"
+                inputMode="email"
                 value={form.user_email}
                 onChange={(e) => setForm({ ...form, user_email: e.target.value })}
                 placeholder="max@kanzlei.de"
@@ -176,6 +178,8 @@ export default function AbsencePage() {
               </Label>
               <Input
                 type="email"
+                autoComplete="email"
+                inputMode="email"
                 value={form.delegate_email}
                 onChange={(e) => setForm({ ...form, delegate_email: e.target.value })}
                 placeholder="anna@kanzlei.de"

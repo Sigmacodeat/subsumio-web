@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os2-control-device/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "930503d7580ea2ae"
 ---
 
 # Counterterrorism measures as a migration control device

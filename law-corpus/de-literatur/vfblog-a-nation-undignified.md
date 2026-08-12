@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-nation-undignified/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6ec5ef0cdadfe54f"
 ---
 
 # A Nation (Un)Dignified

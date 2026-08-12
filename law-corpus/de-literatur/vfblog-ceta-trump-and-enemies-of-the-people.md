@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ceta-trump-and-enemies-of-the-people/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "307a37ee2048cbd6"
 ---
 
 # CETA, Trump and “Enemies of the People”

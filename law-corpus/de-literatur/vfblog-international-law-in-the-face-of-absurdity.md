@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/international-law-in-the-face-of-absurdit
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a6a4a02a9f21da71"
 ---
 
 # International Law in the Face of Absurdity

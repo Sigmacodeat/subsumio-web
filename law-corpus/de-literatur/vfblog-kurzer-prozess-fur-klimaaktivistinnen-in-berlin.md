@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kurzer-prozess-fur-klimaaktivistinnen-in-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "65407a1b36e80dbf"
 ---
 
 # Kurzer Prozess für Klimaaktivist:innen in Berlin

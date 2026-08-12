@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "50f3cac6ae7b05a1"
 ---
 
 # Systemic Threat to the Rule of Law in Poland:  What should the Commission do next?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/constituent-process-and-constituent-power
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "02b2ad6d5f0c3e7f"
 ---
 
 # Constituent Process and Constituent Power

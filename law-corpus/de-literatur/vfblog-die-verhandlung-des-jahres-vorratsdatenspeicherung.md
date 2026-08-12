@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-verhandlung-des-jahres-vorratsdatensp
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f0cb32fc82bb73cb"
 ---
 
 # Die Verhandlung des Jahres: Vorratsdatenspeicherung

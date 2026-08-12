@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/safe-for-whom/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "38da5955f1a5396f"
 ---
 
 # Safe for whom?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/facing-the-music/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a330d2df240a2740"
 ---
 
 # Facing the Music

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-fond-embrace/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a0b896edf91d94ca"
 ---
 
 # A Fond Embrace?

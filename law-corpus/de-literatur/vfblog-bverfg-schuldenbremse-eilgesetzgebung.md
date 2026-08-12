@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bverfg-schuldenbremse-eilgesetzgebung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "98a2136a8f19e00b"
 ---
 
 # Ein Tempolimit aus Karlsruhe?

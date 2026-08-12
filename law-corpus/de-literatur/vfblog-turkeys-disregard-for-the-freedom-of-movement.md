@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/turkeys-disregard-for-the-freedom-of-move
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1a2aaa786ec2ef13"
 ---
 
 # Turkey’s Disregard for the Freedom of Movement

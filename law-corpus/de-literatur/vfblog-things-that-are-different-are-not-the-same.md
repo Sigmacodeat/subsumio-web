@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/things-that-are-different-are-not-the-sam
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1da16a79d214db58"
 ---
 
 # Things That Are Different Are Not the Same

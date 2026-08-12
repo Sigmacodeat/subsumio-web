@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/president-limit-zimbabwe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2127e9ce2ea09f54"
 ---
 
 # The No-Benefit-Rule’s Struggle for Survival

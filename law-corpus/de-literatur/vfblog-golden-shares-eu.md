@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/golden-shares-eu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "add5b9311b0efbc1"
 ---
 
 # The Return of Golden Shares and Global Politics

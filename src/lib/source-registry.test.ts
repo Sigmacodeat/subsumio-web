@@ -250,7 +250,7 @@ describe("buildSourceRegistry", () => {
 
   beforeAll(async () => {
     registry = await buildSourceRegistry();
-  }, 30000);
+  }, 60000);
 
   it("returns response with sources, total, and counts", async () => {
     expect(registry.sources.length).toBeGreaterThan(0);

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9db9e24bba100931"
 ---
 
 # Reden wir über Geld! Warum die Pläne der Großen Koalition zur Reform der Parteienfinanzierung verfassungswidrig sind

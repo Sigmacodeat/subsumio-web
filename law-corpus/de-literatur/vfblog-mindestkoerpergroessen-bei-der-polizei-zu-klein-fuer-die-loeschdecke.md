@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "50eb8b99efba114e"
 ---
 
 # Mindestkörpergrößen bei der Polizei: Zu klein für die Löschdecke?

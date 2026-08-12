@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-ende-der-mitte/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "19d20b9f77b78fd5"
 ---
 
 # Das Ende der Mitte

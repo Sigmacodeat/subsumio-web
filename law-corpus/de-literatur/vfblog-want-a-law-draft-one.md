@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/want-a-law-draft-one/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ffe6b8d831e0a268"
 ---
 
 # Want a law? Draft one

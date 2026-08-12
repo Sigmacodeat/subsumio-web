@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4671a8ccd9ff5728"
 ---
 
 # A Clever Compromise or a Tectonic Shift? The LM Jugment of the CJEU

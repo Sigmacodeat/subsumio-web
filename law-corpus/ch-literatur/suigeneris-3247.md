@@ -23,6 +23,7 @@ license: >-
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2021 Valérie Junod,
   Carole-Anne Baud , Barbara Broers, Caroline Schmitt-Koopmann, Olivier Simon;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "edf4871217929ba5"
 ---
 
 # Tests urinaires dans le traitement médical de la dépendance aux opioïdes : Fin d’une pratique anachronique ?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/jus-cogens-and-the-climate-crisis/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0ac459ddbd9ab0ef"
 ---
 
 # Jus Cogens and the Climate Crisis

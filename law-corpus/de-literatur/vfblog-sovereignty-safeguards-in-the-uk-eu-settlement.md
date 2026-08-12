@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sovereignty-safeguards-in-the-uk-eu-settl
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d1a93f12d0e4ec87"
 ---
 
 # Sovereignty Safeguards in the UK-EU Settlement

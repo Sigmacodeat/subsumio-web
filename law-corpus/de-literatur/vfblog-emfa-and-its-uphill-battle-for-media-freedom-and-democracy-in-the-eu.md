@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0d5e5ea4df3ee345"
 ---
 
 # EMFA and its Uphill Battle for Media Freedom and Democracy in the EU

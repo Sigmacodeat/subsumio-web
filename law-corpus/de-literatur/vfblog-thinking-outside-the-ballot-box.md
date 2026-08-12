@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/thinking-outside-the-ballot-box/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d52ebac7df12fe60"
 ---
 
 # Thinking Outside the (Ballot) Box

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/privacy-in-peril/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2c90e58a14a09e45"
 ---
 
 # Privacy in Peril

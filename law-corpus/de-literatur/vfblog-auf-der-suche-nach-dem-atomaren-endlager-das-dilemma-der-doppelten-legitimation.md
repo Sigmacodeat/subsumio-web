@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6a5ce93d579ec9cc"
 ---
 
 # Auf der Suche nach dem atomaren Endlager: das Dilemma der doppelten Legitimation

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bundesversammlung-als-quasi-parlament/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "80d122010ce50839"
 ---
 
 # Die Bundesversammlung als Quasi-Parlament?

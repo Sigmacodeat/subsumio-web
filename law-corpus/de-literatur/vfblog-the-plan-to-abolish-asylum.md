@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-plan-to-abolish-asylum/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "be1ddb18ba53ff18"
 ---
 
 # The Plan to Abolish Asylum

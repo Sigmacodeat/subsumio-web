@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kann-ein-gesetz-auf-eine-eurichtlinie-ver
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f3851f0a5a973fa5"
 ---
 
 # Kann ein Gesetz auf eine EU-Richtlinie verweisen?

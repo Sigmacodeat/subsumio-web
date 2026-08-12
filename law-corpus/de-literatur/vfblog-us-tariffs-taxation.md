@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/us-tariffs-taxation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c1305e539a7f6267"
 ---
 
 # Taxation Without Representation

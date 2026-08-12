@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/you-cant-forbid-judges-to-think/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1d1a6a74f32926e9"
 ---
 
 # You Can’t Forbid Judges to Think

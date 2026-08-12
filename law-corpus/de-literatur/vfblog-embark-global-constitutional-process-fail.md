@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/embark-global-constitutional-process-fail
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9916a8e74ea739c1"
 ---
 
 # „If We Embark On A Global Constitutional Process We Will Fail“

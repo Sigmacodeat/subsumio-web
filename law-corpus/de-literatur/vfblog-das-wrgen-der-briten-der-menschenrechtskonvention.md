@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-wrgen-der-briten-der-menschenrechtsko
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bff8e8c5768d29ea"
 ---
 
 # Das Würgen der Briten an der Menschenrechtskonvention

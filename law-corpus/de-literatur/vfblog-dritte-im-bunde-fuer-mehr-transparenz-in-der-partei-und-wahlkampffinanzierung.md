@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2aa8923f1fce58bd"
 ---
 
 # Dritte im Bunde: Für mehr Transparenz in der Partei- und Wahlkampf&shy;finanzierung

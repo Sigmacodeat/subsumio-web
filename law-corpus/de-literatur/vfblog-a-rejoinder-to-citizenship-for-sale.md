@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-rejoinder-to-citizenship-for-sale/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2ccab0d263a0cae7"
 ---
 
 # A Rejoinder to Citizenship for Sale (Commission v Malta)

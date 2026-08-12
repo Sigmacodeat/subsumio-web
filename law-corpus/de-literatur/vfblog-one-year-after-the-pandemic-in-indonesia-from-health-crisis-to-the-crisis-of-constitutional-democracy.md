@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "267e43b65093449b"
 ---
 
 # One Year After the Pandemic in Indonesia: From Health Crisis to the Crisis of Constitutional Democracy

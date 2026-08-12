@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/neue-droge-im-knast/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d15133551d1eb694"
 ---
 
 # Neue Droge im Knast

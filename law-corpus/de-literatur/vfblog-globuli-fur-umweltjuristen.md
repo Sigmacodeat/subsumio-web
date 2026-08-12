@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/globuli-fur-umweltjuristen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "41d515951c3665f9"
 ---
 
 # Globuli für Umweltjuristen

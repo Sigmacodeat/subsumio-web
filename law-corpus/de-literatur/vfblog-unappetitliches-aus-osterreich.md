@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/unappetitliches-aus-osterreich/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "42b5c694be5858e0"
 ---
 
 # Unappetitliches aus Österreich

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/direkte-demokratie-wir-muessen-reden/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "18a448263c1b7a83"
 ---
 
 # Direkte Demokratie: Wir müssen reden

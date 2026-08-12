@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/manow-unter-beobachtung-rezension/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "58e1e190314d6ab8"
 ---
 
 # Schrankenlos

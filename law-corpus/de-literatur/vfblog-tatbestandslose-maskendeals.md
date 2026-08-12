@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/tatbestandslose-maskendeals/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f16c6fb51d6744bb"
 ---
 
 # Tatbestandslose Maskendeals?

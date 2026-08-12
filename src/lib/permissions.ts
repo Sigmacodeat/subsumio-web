@@ -111,6 +111,7 @@ export type RouteAction =
   | "scim.read" // GET /api/scim/*
   | "scim.write" // POST/PUT/PATCH/DELETE /api/scim/*
   | "onboarding.complete" // POST /api/onboarding — all roles
+  | "onboarding.progress" // PATCH /api/onboarding — all roles
   | "copilot.tool" // POST /api/copilot/tools — all authenticated roles
   | "push.register" // POST /api/push/register — all authenticated roles
   | "push.unregister" // DELETE /api/push/register — all authenticated roles
@@ -180,6 +181,7 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "scim.read": ["admin"],
   "scim.write": ["admin"],
   "onboarding.complete": ["admin", "lawyer", "assistant", "client_viewer"],
+  "onboarding.progress": ["admin", "lawyer", "assistant", "client_viewer"],
   "copilot.tool": ["admin", "lawyer", "assistant"],
   "push.register": ["admin", "lawyer", "assistant", "client_viewer"],
   "push.unregister": ["admin", "lawyer", "assistant", "client_viewer"],
@@ -306,6 +308,7 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "scim.read": "settings.update",
     "scim.write": "settings.update",
     "onboarding.complete": "settings.update",
+    "onboarding.progress": "settings.update",
     "copilot.tool": "query.submit",
     "push.register": "settings.update",
     "push.unregister": "settings.update",

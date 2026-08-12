@@ -121,7 +121,7 @@ export default function LitigationAnalyticsPage() {
   const fmtDays = (n: number) => `${Math.round(n)}d`;
 
   return (
-    <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("analytics.title")}
         description={t("analytics.description")}
@@ -752,7 +752,7 @@ function CreateOutcomeModal({
                 {t("analytics.lawyer_hours")}
               </label>
               <input
-                type="number"
+                type="number" inputMode="numeric"
                 step="0.1"
                 value={form.lawyerHours}
                 onChange={(e) => setForm({ ...form, lawyerHours: e.target.value })}
@@ -764,7 +764,7 @@ function CreateOutcomeModal({
                 {t("analytics.amount_in_dispute")}
               </label>
               <input
-                type="number"
+                type="number" inputMode="decimal"
                 step="0.01"
                 value={form.amountInDispute}
                 onChange={(e) => setForm({ ...form, amountInDispute: e.target.value })}
@@ -776,7 +776,7 @@ function CreateOutcomeModal({
                 {t("analytics.amount_awarded")}
               </label>
               <input
-                type="number"
+                type="number" inputMode="decimal"
                 step="0.01"
                 value={form.amountAwarded}
                 onChange={(e) => setForm({ ...form, amountAwarded: e.target.value })}

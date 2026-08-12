@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/how-to-leave-the-euro-more-or-less-legall
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "57dae6c2fa39e098"
 ---
 
 # How to Leave the Euro More or Less Legally

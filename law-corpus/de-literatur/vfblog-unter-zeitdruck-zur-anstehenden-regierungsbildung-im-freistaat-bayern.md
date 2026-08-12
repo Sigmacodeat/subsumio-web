@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bc16f07784a110f1"
 ---
 
 # Unter Zeitdruck – Zur anstehenden Regierungsbildung im Freistaat Bayern

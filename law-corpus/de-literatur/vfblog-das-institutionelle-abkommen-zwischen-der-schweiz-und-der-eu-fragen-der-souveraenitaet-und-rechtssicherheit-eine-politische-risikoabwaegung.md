@@ -16,6 +16,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8c9faa067b90af8d"
 ---
 
 # Das Institutionelle Abkommen zwischen der Schweiz und der EU: Fragen der Souveränität und Rechtssicherheit- Eine politische Risikoabwägung

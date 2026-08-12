@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wir-starten-das-justiz-projekt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9e66884ff86aa144"
 ---
 
 # Wir starten das Justiz-Projekt

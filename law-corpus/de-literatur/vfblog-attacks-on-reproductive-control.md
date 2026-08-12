@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/attacks-on-reproductive-control/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c7a0e9ad151cff57"
 ---
 
 # Attacks on Reproductive Control

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/what-are-principles-and-how-do-they-work/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "05485cb15ae062ef"
 ---
 
 # What are Principles and How Do They Work?

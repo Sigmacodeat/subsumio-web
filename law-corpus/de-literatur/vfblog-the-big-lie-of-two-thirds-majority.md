@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-big-lie-of-two-thirds-majority/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ac68fed40f6f1ff0"
 ---
 
 # The Big Lie of Two Thirds Majority

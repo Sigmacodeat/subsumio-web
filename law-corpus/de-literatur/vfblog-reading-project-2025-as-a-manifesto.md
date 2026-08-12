@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/reading-project-2025-as-a-manifesto/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a7e1ab06417742cd"
 ---
 
 # Reading Project 2025 as a Manifesto

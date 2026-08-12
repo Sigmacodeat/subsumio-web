@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c3c218df69da69a3"
 ---
 
 # ‘Zombie Urbanism’ and the Search for New Sources of Solidarity

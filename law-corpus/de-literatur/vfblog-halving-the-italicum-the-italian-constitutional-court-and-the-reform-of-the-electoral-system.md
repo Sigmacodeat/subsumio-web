@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5173d18e57c2c677"
 ---
 
 # Halving the “Italicum”: The Italian Constitutional Court and the Reform of the Electoral System

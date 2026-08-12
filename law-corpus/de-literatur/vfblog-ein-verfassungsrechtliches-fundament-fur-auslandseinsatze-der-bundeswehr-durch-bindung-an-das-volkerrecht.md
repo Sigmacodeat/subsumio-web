@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "74a894ae202c39b8"
 ---
 
 # Ein verfassungsrechtliches Fundament für Auslandseinsätze der Bundeswehr durch Bindung an das Völkerrecht

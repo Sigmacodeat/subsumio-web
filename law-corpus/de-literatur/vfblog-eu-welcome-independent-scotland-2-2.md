@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eu-welcome-independent-scotland-2-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ed54e74802fc378e"
 ---
 
 # Why the EU should welcome an independent Scotland

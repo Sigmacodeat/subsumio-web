@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/karlsruhe-vermeidet-votum-zur-wehrgerecht
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "81a5f05c95e5b674"
 ---
 
 # Karlsruhe vermeidet Votum zur Wehrgerechtigkeit

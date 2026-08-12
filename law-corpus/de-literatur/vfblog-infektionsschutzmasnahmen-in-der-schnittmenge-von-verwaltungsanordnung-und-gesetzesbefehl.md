@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1e175f7c8eeea1ae"
 ---
 
 # Infektionsschutzmaßnahmen in der Schnittmenge von Verwaltungsanordnung und Gesetzesbefehl

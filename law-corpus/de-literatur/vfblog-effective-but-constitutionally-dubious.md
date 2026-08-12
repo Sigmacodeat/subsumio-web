@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/effective-but-constitutionally-dubious/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0fc7301d4bedd0f7"
 ---
 
 # Effective but Constitutionally Dubious

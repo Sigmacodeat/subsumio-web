@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "57d251d599aa8af6"
 ---
 
 # Courage to be wrong, or education to get it right? A response to Michaela Hailbronner

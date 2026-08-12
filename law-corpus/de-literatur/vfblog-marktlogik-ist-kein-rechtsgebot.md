@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/marktlogik-ist-kein-rechtsgebot/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d3ada0bd0fb22323"
 ---
 
 # Marktlogik ist kein Rechtsgebot

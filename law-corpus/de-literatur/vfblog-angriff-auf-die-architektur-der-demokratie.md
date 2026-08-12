@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/angriff-auf-die-architektur-der-demokrati
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e7fbd3a58f41bf6c"
 ---
 
 # Angriff auf die Architektur der Demokratie

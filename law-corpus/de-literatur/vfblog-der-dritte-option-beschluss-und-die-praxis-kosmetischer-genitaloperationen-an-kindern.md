@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b121a12a087b4adb"
 ---
 
 # Der Dritte-Option-Beschluss und die Praxis kosmetischer Genitaloperationen an Kindern

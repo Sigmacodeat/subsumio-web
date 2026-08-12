@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d690ea4c3b16a3a1"
 ---
 
 # An Unholy Relic in the Greek Constitution? On the Peculiar Obsolescence of Article 3 para. 3

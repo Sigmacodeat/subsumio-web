@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c02dd1b1a8be8f5d"
 ---
 
 # Wider das Recht auf Vergessen … des Bundes&shy;verfassungs&shy;gerichts!

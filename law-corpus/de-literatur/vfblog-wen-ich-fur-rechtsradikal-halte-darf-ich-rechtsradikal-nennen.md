@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d8343694b0069872"
 ---
 
 # Wen ich für rechtsradikal halte, den darf ich auch rechtsradikal nennen

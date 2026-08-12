@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-politics-of-forgetting-and-foreign-po
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3314c60ab4f062cf"
 ---
 
 # The Politics of Forgetting and Foreign Policy

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-return-of-mainstream-politics/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6ff40492025f523a"
 ---
 
 # A Return of Mainstream Politics?

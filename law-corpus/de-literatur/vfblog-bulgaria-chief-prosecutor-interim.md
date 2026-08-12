@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bulgaria-chief-prosecutor-interim/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "db6abb268e9f3867"
 ---
 
 # The Perpetual Interim

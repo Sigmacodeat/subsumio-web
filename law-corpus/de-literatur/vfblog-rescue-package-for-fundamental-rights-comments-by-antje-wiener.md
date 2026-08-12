@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b325b3b3a636417f"
 ---
 
 # Rescue Package For Fundamental Rights: Comments by ANTJE WIENER

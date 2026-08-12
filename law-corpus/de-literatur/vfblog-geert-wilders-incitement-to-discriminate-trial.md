@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/geert-wilders-incitement-to-discriminate-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "15f4383065c56458"
 ---
 
 # Geert Wilders’ “Incitement to Discriminate” Trial

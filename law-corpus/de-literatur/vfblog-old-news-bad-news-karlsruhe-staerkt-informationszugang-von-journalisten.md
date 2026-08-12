@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "db562c87f79bfd32"
 ---
 
 # Old News is Bad News: Karlsruhe stärkt Informationszugang von Journalisten

@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/ruffert-omt-bverfg/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "36146ccbc940b74a"
 ---
 
 # Das OMT-Urteil des BVerfG: Europa&shy;rechtlich überzeugend, verfassungs&shy;prozess&shy;rechtlich fragwürdig

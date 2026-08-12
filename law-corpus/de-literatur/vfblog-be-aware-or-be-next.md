@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/be-aware-or-be-next/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "023cff5fecf91f3d"
 ---
 
 # Be Aware or Be Next!

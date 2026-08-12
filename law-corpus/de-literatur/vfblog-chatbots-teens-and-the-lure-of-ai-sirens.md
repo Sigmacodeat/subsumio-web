@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/chatbots-teens-and-the-lure-of-ai-sirens/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a17835d6e3607bab"
 ---
 
 # Chatbots, Teens, and the Lure of AI Sirens

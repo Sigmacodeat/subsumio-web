@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "871565a0ecc982c3"
 ---
 
 # Die EU als wehrhafte Demokratie, oder: Warum Brüssel eine Kopenhagen-Kommission braucht

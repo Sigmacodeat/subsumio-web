@@ -189,7 +189,7 @@ describe("Sidebar restructured nav", () => {
     localStorage.setItem("sidebar-core-mode", "false");
   });
 
-  test("primary items: 5 items with Recherche replacing Chat", async () => {
+  test("primary items: Research and Assistant are primary items", async () => {
     renderSidebar();
 
     // Primary items should include Rechtsrecherche (Research Hub)
@@ -198,8 +198,11 @@ describe("Sidebar restructured nav", () => {
       "/dashboard/research"
     );
 
-    // Chat/Assistent should NOT be a primary item (it's in the Copilot panel)
-    expect(screen.queryByRole("link", { name: /^Assistent$/i })).not.toBeInTheDocument();
+    // Chat/Assistent is a primary item (AP6)
+    expect(screen.getByRole("link", { name: /^Assistent$/i })).toHaveAttribute(
+      "href",
+      "/dashboard/chat"
+    );
   });
 
   test("Verträge section exists with contracts and clause-library", async () => {

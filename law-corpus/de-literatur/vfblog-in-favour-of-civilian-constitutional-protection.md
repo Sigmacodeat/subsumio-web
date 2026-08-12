@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/in-favour-of-civilian-constitutional-prot
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4a4dc14fddc5e38b"
 ---
 
 # In Favour of Civilian Constitutional Protection

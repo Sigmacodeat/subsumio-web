@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/constitutional-awakening-of-values/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "501f5a7015cbda46"
 ---
 
 # Constitutional Awakening of Values

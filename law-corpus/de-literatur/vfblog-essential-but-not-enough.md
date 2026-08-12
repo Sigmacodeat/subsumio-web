@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/essential-but-not-enough/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "98857c931d4e19dd"
 ---
 
 # Two-Thirds Majority Is Essential but Not Enough

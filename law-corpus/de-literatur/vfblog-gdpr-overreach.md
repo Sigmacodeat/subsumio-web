@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gdpr-overreach/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2d9aa2c989fc4391"
 ---
 
 # GDPR Overreach?

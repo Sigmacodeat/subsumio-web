@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/schoolyard-bullies/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "29de431048bc19d7"
 ---
 
 # Schoolyard Bullies

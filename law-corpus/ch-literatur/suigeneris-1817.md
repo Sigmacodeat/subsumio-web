@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2017 Juana Vasella;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "05e2640755f4c580"
 ---
 
 # Vorteilsverbot bzw. Integritäts- und Transparenzgebot für den Vertrieb von Arzneimitteln der Traditionellen Chinesischen Medizin

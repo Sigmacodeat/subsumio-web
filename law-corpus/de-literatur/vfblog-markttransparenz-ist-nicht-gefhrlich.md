@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/markttransparenz-ist-nicht-gefhrlich/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a3e1075c37b37d63"
 ---
 
 # Markttransparenz ist nicht gefährlich

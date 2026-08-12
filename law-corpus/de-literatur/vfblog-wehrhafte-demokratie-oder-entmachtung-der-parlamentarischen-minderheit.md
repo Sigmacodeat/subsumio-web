@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b09e92f4faf9b374"
 ---
 
 # Wehrhafte Demokratie oder Entmachtung der parlamentarischen Minderheit?

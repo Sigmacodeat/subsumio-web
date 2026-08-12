@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bayerische-bedrangnis/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "077b462db984dc8f"
 ---
 
 # Bayerische Bedrängnis

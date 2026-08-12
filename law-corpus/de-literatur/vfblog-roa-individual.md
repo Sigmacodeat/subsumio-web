@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/roa-individual/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8a365ecc5b33b6f0"
 ---
 
 # Rule of Law, AI, and “the Individual”

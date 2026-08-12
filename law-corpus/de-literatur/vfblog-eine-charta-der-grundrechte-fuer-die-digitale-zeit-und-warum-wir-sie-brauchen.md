@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "608ae4439c813faa"
 ---
 
 # Eine “Charta der Grundrechte für die digitale Zeit”, und warum wir sie brauchen

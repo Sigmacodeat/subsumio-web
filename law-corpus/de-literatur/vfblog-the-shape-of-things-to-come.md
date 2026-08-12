@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-shape-of-things-to-come/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f678af4e2a3a4d5e"
 ---
 
 # The Shape of Things to Come

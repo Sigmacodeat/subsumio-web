@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e40c5b9c52eaacf9"
 ---
 
 # Ein paar Geburtstagsfragen an das Bundesverfassungsgericht

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/1989-and-me/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d1caeb0760eec6f5"
 ---
 
 # 1989 and me

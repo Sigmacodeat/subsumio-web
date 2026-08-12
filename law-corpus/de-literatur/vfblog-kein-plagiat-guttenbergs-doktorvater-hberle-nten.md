@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kein-plagiat-guttenbergs-doktorvater-hber
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "02ddb0760102461e"
 ---
 
 # “Kein Plagiat”? Guttenbergs Doktorvater Häberle in Nöten

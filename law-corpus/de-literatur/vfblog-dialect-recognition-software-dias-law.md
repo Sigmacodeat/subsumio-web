@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dialect-recognition-software-dias-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2443ec119735c932"
 ---
 
 # Where Are You Really From?

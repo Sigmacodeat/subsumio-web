@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "147f96b910ce227b"
 ---
 
 # Investment Screening in the Defence Industry – News from the Bermuda Triangle of EU Law

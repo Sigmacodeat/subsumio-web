@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0051522c7eafc854"
 ---
 
 # BVerfG erklärt Krankenhausvorbehalt bei ärztlichen Zwangsmaßnahmen teilweise für verfassungswidrig

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-homo-ehe-theres-no-stopping-it/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8db497865919bb47"
 ---
 
 # Die Homo-Ehe: There's no stopping it

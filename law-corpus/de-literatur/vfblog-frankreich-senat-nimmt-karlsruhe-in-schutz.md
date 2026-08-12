@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/frankreich-senat-nimmt-karlsruhe-in-schut
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ed007a832013ec71"
 ---
 
 # Frankreich: Senat nimmt Karlsruhe in Schutz

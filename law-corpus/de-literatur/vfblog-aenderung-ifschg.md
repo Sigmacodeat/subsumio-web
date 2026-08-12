@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/aenderung-ifschg/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "30e946048787b974"
 ---
 
 # Ganz so einfach ist es nicht

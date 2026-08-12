@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8b2ca3dfd8834cb2"
 ---
 
 # Freiheitsentziehung in der Freiheitsentziehung? Die BVerfGE-Entscheidung zur Fixierung in der öffentlich-rechtlichen Unterbringung

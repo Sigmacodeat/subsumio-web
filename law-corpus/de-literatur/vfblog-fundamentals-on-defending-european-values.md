@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fundamentals-on-defending-european-values
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "499fe0be51a13966"
 ---
 
 # Fundamentals on Defending European Values

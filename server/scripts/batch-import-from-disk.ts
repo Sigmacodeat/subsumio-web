@@ -36,7 +36,7 @@
 
 import { parseArgs } from "util";
 import { readdirSync, readFileSync, existsSync, statSync } from "fs";
-import { join, extname } from "path";
+import { join, extname, resolve } from "path";
 
 const { values } = parseArgs({
   args: Bun.argv.slice(2),
@@ -49,6 +49,7 @@ const { values } = parseArgs({
     "dry-run": { type: "boolean", default: false },
     "no-embed": { type: "boolean", default: false },
     "slug-prefix": { type: "string" },
+    "slug-from-path": { type: "boolean", default: false },
     "file-glob": { type: "string", default: "*.md" },
     "file-list": { type: "string" },
     "max-file-size": { type: "string", default: "2097152" },
@@ -105,6 +106,7 @@ const CURSOR_FILE =
 const DRY_RUN = values["dry-run"] as boolean;
 const NO_EMBED = values["no-embed"] as boolean;
 const SLUG_PREFIX = values["slug-prefix"] as string | undefined;
+const SLUG_FROM_PATH = values["slug-from-path"] as boolean;
 const FILE_GLOB = values["file-glob"] as string;
 const MAX_FILE_SIZE = parseInt(values["max-file-size"] as string, 10) || 2 * 1024 * 1024;
 const FORCE_RECHUNK = values["force-rechunk"] as boolean;
@@ -158,7 +160,60 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function deriveSlug(filePath: string, sourceId: string, slugPrefix?: string): string {
+/**
+ * Eigener Slug-Namensraum je AT-Gesetzesquelle.
+ *
+ * WARUM: Alle neun AT-Gesetzeskorpora teilten sich `legal/statutes/at/`.
+ * Bundes- und Landesrecht vergeben ihre Gesetzesnummern unabhängig und bilden
+ * beide `gnr-<nummer>/art-N` — 2.623 Slugs kollidierten, unter
+ * `gnr-10000476/art-1` lagen "Kompetenzfeststellung durch den VfGH"
+ * (Bundesrecht) und "Mattsee – Obertrum am See – Änderung der Gemeindegrenzen"
+ * (Salzburger Landesrecht). Dieselbe Klasse traf generische Titel: zwei
+ * verschiedene "Kundmachung"-Dokumente aus AVSV und Gemeinderecht landeten
+ * auf demselben Slug.
+ *
+ * Eine Fundstelle, die auf zwei Gesetze zeigt, ist für ein Zitat unbrauchbar
+ * und sieht dabei eindeutig aus — der gefährlichste Fehlertyp. Deshalb bekommt
+ * jede Rechtsquelle ihren eigenen Raum. `law-at-normen` (Bundesrecht) bleibt
+ * bewusst ohne Zusatz: es ist die Voreinstellung, und seine Slugs
+ * (`abgb/p-1044`) sind bereits eingebürgert.
+ */
+const AT_STATUTE_NAMESPACES: Record<string, string> = {
+  "law-at-landesrecht": "landesrecht",
+  "law-at-gemeinden": "gemeinden",
+  "law-at-bezirke": "bezirke",
+  "law-at-bmerl": "erlaesse",
+  "law-at-avn": "avn",
+  "law-at-avsv": "avsv",
+  "law-at-kmger": "kmger",
+  "law-at-spg": "spg",
+  "law-at-staatsvertraege": "staatsvertraege",
+};
+
+function deriveSlug(filePath: string, sourceId: string, slugPrefix?: string, diskRoot?: string): string {
+  // --slug-from-path: den Pfad UNTERHALB des Wurzelverzeichnisses in den Slug
+  // übernehmen. Nötig für verschachtelte Korpora wie at-normen/<abk>/<p-96>.md,
+  // wo der Dateiname allein nicht eindeutig ist (abgb/p-96 vs. stgb/p-96).
+  if (SLUG_FROM_PATH && diskRoot) {
+    // Beide Seiten auf absolute Pfade bringen, BEVOR der Wurzelpfad abgeschnitten
+    // wird. Ohne das schlägt der Abschnitt fehl, sobald --file-list relative
+    // Pfade liefert (diskRoot ist immer absolut) — der komplette Pfad landete
+    // dann im Slug: `legal/statutes/at/law-corpus/at-normen/uwg/p-1`. Das hat
+    // 1.529 Seiten unter falschen Slugs angelegt.
+    const absFile = filePath.startsWith("/") ? filePath : resolve(process.cwd(), filePath);
+    const absRoot = resolve(diskRoot);
+    const rel = (absFile.startsWith(`${absRoot}/`) ? absFile.slice(absRoot.length + 1) : absFile)
+      .replace(/\.[^.]+$/, "");
+    if (rel.startsWith("/") || rel.includes("..")) {
+      throw new Error(
+        `Slug-Ableitung fehlgeschlagen: ${filePath} liegt nicht unter ${diskRoot}. ` +
+          `Mit --slug-from-path müssen alle Dateien unterhalb von --disk-dir liegen.`
+      );
+    }
+    const prefix = slugPrefix ?? deriveSlugPrefix(sourceId);
+    return `${prefix}/${rel}`;
+  }
+
   const base = filePath.replace(/^.*\//, "").replace(/\.[^.]+$/, "");
 
   // Override prefix takes precedence
@@ -181,6 +236,21 @@ function deriveSlug(filePath: string, sourceId: string, slugPrefix?: string): st
   if (sourceId === "law-eu") {
     return `legal/regulations/eu/${base}`;
   }
+  // Eigener Namensraum je Rechtsquelle — siehe AT_STATUTE_NAMESPACES.
+  const eigenerRaum = AT_STATUTE_NAMESPACES[sourceId];
+  if (eigenerRaum) {
+    return `legal/statutes/at/${eigenerRaum}/${base}`;
+  }
+  // Verbleibend: law-at (konsolidiertes Bundesrecht) und law-at-normen
+  if (sourceId.startsWith("law-at-") || sourceId === "law-at") {
+    return `legal/statutes/at/${base}`;
+  }
+  if (sourceId.startsWith("law-de-") || sourceId === "law-de") {
+    return `legal/statutes/de/${base}`;
+  }
+  if (sourceId.startsWith("law-ch-") || sourceId === "law-ch") {
+    return `legal/statutes/ch/${base}`;
+  }
   // Generic fallback: legal/<jur>/<base>
   const jur = sourceId.replace("law-", "").split("-")[0];
   return `legal/${jur}/${base}`;
@@ -191,9 +261,19 @@ function deriveSlugPrefix(sourceId: string): string {
   if (sourceId.startsWith("law-de-judikatur")) return "legal/judikatur/de";
   if (sourceId.startsWith("law-ch-judikatur")) return "legal/judikatur/ch";
   if (sourceId === "law-eu") return "legal/regulations/eu";
-  if (sourceId === "law-at") return "legal/statutes/at";
-  if (sourceId === "law-de") return "legal/statutes/de";
-  if (sourceId === "law-ch") return "legal/statutes/ch";
+  // Landesrecht bekommt einen eigenen Namensraum. Bundes- und Landesrecht
+  // vergeben Gesetzesnummern unabhängig voneinander, und beide Korpora bilden
+  // ihre Pfade als `gnr-<nummer>/art-N`. Im gemeinsamen Namensraum
+  // `legal/statutes/at/` kollidierten dadurch 2.623 Slugs — unter
+  // `gnr-10000476/art-1` lagen "Kompetenzfeststellung durch den VfGH"
+  // (Bundesrecht) und "Mattsee – Obertrum am See – Änderung der
+  // Gemeindegrenzen" (Salzburger Landesrecht). Eine Fundstelle, zwei Gesetze.
+  const eigenerRaum = AT_STATUTE_NAMESPACES[sourceId];
+  if (eigenerRaum) return `legal/statutes/at/${eigenerRaum}`;
+  // All law-at-* (non-judikatur) are statutes
+  if (sourceId.startsWith("law-at-") || sourceId === "law-at") return "legal/statutes/at";
+  if (sourceId.startsWith("law-de-") || sourceId === "law-de") return "legal/statutes/de";
+  if (sourceId.startsWith("law-ch-") || sourceId === "law-ch") return "legal/statutes/ch";
   return `legal/${sourceId.replace("law-", "")}`;
 }
 
@@ -264,7 +344,7 @@ async function main() {
 
   // Filter out already-imported files unless force-rechunk is active
   const toImport = allFiles.filter((f) => {
-    const slug = deriveSlug(f, SOURCE_ID, SLUG_PREFIX);
+    const slug = deriveSlug(f, SOURCE_ID, SLUG_PREFIX, diskPath);
     return !alreadyImported.has(slug);
   });
   console.log(
@@ -273,13 +353,27 @@ async function main() {
 
   if (toImport.length === 0) {
     console.log("✅ Nothing to import — all files already in cursor.");
+    // Even with nothing to import, run the completeness check so the 1:1
+    // invariant is verified (all files on disk = already in cursor).
+    const totalOnDisk = allFiles.length;
+    const accountedFor = alreadyImported.size;
+    const complete = accountedFor === totalOnDisk;
+    console.log("");
+    console.log("═══════════════════════════════════════════════════════════");
+    console.log(`  Vollständigkeit: ${accountedFor}/${totalOnDisk} ` +
+      (complete ? "✓ 1:1" : `✗ ${totalOnDisk - accountedFor} FEHLEN`));
+    console.log("═══════════════════════════════════════════════════════════");
+    if (!complete) {
+      console.error(`! FEHLER: ${totalOnDisk - accountedFor} Dateien nicht zugeordnet — das ist ein Bug.`);
+      process.exit(1);
+    }
     return;
   }
 
   if (DRY_RUN) {
     console.log("\n[DRY-RUN] First 10 files that would be imported:");
     for (const f of toImport.slice(0, 10)) {
-      const slug = deriveSlug(f, SOURCE_ID, SLUG_PREFIX);
+      const slug = deriveSlug(f, SOURCE_ID, SLUG_PREFIX, diskPath);
       console.log(`  ${slug} ← ${f.replace(process.cwd() + "/", "")}`);
     }
     console.log(
@@ -358,7 +452,7 @@ async function main() {
     if (interrupted) break;
 
     const filePath = toImport[i];
-    const slug = deriveSlug(filePath, SOURCE_ID, SLUG_PREFIX);
+    const slug = deriveSlug(filePath, SOURCE_ID, SLUG_PREFIX, diskPath);
 
     try {
       const stats = statSync(filePath);
@@ -411,10 +505,16 @@ async function main() {
         cursor.qualityFailures.push({ file: filePath, reason: "encoding artifacts (mojibake)" });
         continue;
       }
-      // 4. Body must be substantial (extract body after frontmatter)
+      // 4. Body must be substantial (extract body after frontmatter).
+      // RIS-XML norm files (type: law, source_format: xml) are official
+      // legal sources — even a 11-char body like "§ 541. Wer" is a legitimate
+      // norm text from RIS, not a truncation. Skip the body-length check for
+      // these verified legal pages so short norms aren't silently lost.
       const bodyMatch = content.match(/^---\n[\s\S]*?\n---\n([\s\S]*)$/);
       const body = bodyMatch ? bodyMatch[1].trim() : content;
-      if (body.length < 50) {
+      const isRisLegalPage =
+        content.includes("type: law") && content.includes("source_format: xml");
+      if (body.length < 50 && !isRisLegalPage) {
         batchSkipped++;
         cursor.totalSkipped++;
         cursor.totalQualityFail++;
@@ -425,7 +525,7 @@ async function main() {
         continue;
       }
 
-      await importFromContent(engine, slug, content, {
+      const result = await importFromContent(engine, slug, content, {
         noEmbed: NO_EMBED,
         sourceId: SOURCE_ID,
         skipContentDuplicates: true,
@@ -433,8 +533,24 @@ async function main() {
       });
       alreadyImported.add(slug);
       cursor.importedSlugs.push(slug);
-      cursor.totalImported++;
-      batchImported++;
+      if (result.status === "skipped") {
+        // importFromContent detected a content duplicate (same content_hash,
+        // no frontmatter.id). Count it as skipped, not imported, so the
+        // 1:1 completeness accounting stays accurate.
+        cursor.totalSkipped++;
+        batchSkipped++;
+      } else if (result.status === "error") {
+        // Defensive: importFromContent returned an error status without
+        // throwing. Count it as an error, not imported.
+        cursor.totalErrors++;
+        batchErrors++;
+        if (batchErrors <= 10 || batchErrors % 100 === 0) {
+          console.error(`  ! [import error] ${slug}: ${result.error ?? "unknown"}`);
+        }
+      } else {
+        cursor.totalImported++;
+        batchImported++;
+      }
     } catch (e) {
       batchErrors++;
       cursor.totalErrors++;
@@ -475,16 +591,34 @@ async function main() {
   // Final cursor save
   await saveCursor(cursor);
 
+  // ── Vollständigkeitsprüfung (1:1) ──────────────────────────────────
+  // Jede Datei auf der Platte muss in genau einer Kategorie landen:
+  //   imported | skipped (bereits in DB) | quality-fail | error
+  // Wenn die Summe nicht aufgeht, sind Dateien stillschweigend verloren gegangen.
+  const totalOnDisk = allFiles.length;
+  const alreadyInCursor = allFiles.length - toImport.length;
+  const totalImported = cursor.totalImported;
+  const totalSkipped = cursor.totalSkipped;
+  const totalErrors = cursor.totalErrors;
+  const accountedFor = alreadyInCursor + totalImported + totalSkipped + totalErrors;
+  const complete = accountedFor === totalOnDisk;
+
   console.log("");
   console.log("═══════════════════════════════════════════════════════════");
   console.log(`  IMPORT COMPLETE`);
   console.log("═══════════════════════════════════════════════════════════");
-  console.log(`Total imported:  ${cursor.totalImported}`);
-  console.log(`Total errors:    ${cursor.totalErrors}`);
-  console.log(`Total skipped:   ${cursor.totalSkipped}`);
-  console.log(`Quality failures:${cursor.totalQualityFail}`);
-  console.log(`Duration:        ${((Date.now() - startTime) / 1000).toFixed(1)}s`);
-  console.log(`Cursor saved:    ${CURSOR_FILE}`);
+  console.log(`Total on disk:    ${totalOnDisk}`);
+  console.log(`Already in cursor:${alreadyInCursor}`);
+  console.log(`Total imported:   ${totalImported}`);
+  console.log(`Total errors:     ${totalErrors}`);
+  console.log(`Total skipped:    ${totalSkipped}`);
+  console.log(`Quality failures: ${cursor.totalQualityFail}`);
+  console.log(`Duration:         ${((Date.now() - startTime) / 1000).toFixed(1)}s`);
+  console.log(`Cursor saved:     ${CURSOR_FILE}`);
+  console.log(
+    `Vollständigkeit:  ${accountedFor}/${totalOnDisk} ` +
+      (complete ? "✓ 1:1" : `✗ ${totalOnDisk - accountedFor} FEHLEN`)
+  );
 
   if (cursor.qualityFailures.length > 0) {
     console.log(`\n⚠️  Quality failures (${cursor.qualityFailures.length}):`);
@@ -498,6 +632,11 @@ async function main() {
   if (NO_EMBED) {
     console.log(`\n⚠️  Embeddings were skipped. Run auto-embed-pending.ts to generate them:`);
     console.log(`  bun run server/scripts/auto-embed-pending.ts --source ${SOURCE_ID}`);
+  }
+
+  if (!complete) {
+    console.error(`\n! FEHLER: ${totalOnDisk - accountedFor} Dateien nicht zugeordnet — das ist ein Bug.`);
+    process.exit(1);
   }
 
   await engine.disconnect();

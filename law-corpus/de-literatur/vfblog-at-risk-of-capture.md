@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/at-risk-of-capture/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b9c66554d0204a1d"
 ---
 
 # At Risk of Capture?

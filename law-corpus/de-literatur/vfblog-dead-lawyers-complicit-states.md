@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dead-lawyers-complicit-states/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e4d5bbf08519da17"
 ---
 
 # Dead Lawyers, Complicit States

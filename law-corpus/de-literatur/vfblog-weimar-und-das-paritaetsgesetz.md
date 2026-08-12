@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/weimar-und-das-paritaetsgesetz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8258329026529492"
 ---
 
 # Weimar und das Paritätsgesetz

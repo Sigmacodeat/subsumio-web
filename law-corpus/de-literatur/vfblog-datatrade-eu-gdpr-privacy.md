@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/datatrade-eu-gdpr-privacy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bc1cdd053e051701"
 ---
 
 # In the Shadows

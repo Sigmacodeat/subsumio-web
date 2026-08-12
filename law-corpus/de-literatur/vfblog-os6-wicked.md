@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os6-wicked/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2be8f60e8d6d91e3"
 ---
 
 # Something Wicked This Way Comes

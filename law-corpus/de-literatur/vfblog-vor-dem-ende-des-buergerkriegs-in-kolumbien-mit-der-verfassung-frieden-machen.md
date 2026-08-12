@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fdc9d2c62e90be71"
 ---
 
 # Vor dem Ende des Bürgerkriegs in Kolumbien: mit der Verfassung Frieden machen?

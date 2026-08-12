@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5389df2dc5444194"
 ---
 
 # South Africa v Israel: A Solomonic Decision as “Constructive Ambiguity”

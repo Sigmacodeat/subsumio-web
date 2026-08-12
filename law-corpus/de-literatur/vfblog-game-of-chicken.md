@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/game-of-chicken/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1b96f788cbc48dd0"
 ---
 
 # Game of Chicken

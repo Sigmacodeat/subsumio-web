@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/vterrechte-familie-vor-abstammung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "02a7b7717a5d51e7"
 ---
 
 # Väterrechte I: Familie vor Abstammung

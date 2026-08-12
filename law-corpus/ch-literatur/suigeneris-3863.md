@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2022 Micha Herzog, Damian
   Wyss; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "509cd7ec19b4faf4"
 ---
 
 # Kollegialprinzip und Online-Wahlhilfen: Ein Blick auf Tragweite und Funktionen des Kollegialprinzips

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/taming-the-shrew/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "07d23465aaab1038"
 ---
 
 # Taming the Shrew

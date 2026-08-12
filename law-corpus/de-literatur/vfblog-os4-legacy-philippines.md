@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os4-legacy-philippines/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9af6bc2494355005"
 ---
 
 # The legacy of the War on Terror in the Philippines

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/p2b-contract/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3a07085c73f1d3c8"
 ---
 
 # A Non-Binary Approach to Platform-to-Business Transactions

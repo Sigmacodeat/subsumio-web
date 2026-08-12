@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/youtube-vs-netzdg/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f8a29a2dd8524955"
 ---
 
 # YouTube vs. das NetzDG

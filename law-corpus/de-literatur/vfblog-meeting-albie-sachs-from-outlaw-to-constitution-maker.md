@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dc0bb2f0ee7c15f6"
 ---
 
 # Meeting Albie Sachs: From Outlaw to Constitution Maker

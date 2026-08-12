@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/im-kreuzfeuer-des-zweiten-senats/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d6c0f4768236de73"
 ---
 
 # Im „Kreuzfeuer“ des Zweiten Senats

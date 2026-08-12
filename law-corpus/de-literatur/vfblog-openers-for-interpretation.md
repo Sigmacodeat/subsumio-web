@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/openers-for-interpretation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "04f7e8168f8ca3b9"
 ---
 
 # Openers for Interpretation

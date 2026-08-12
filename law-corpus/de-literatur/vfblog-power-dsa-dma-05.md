@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/power-dsa-dma-05/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6a2fc6d3e2155544"
 ---
 
 # Private enforcement and the Digital Markets Act

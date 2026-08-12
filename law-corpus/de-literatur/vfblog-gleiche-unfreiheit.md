@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gleiche-unfreiheit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0a87ac4770e7d6e0"
 ---
 
 # Gleiche Unfreiheit?

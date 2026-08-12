@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/on-osman-kavala-and-turkish-judicial-fail
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5c26404c6670c13b"
 ---
 
 # On Osman Kavala and Turkish Judicial Failures

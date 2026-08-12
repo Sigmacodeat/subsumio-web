@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/machtlos-an-der-regierung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "18771a5cfc942782"
 ---
 
 # Machtlos an der Regierung

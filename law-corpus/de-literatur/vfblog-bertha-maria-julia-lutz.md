@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bertha-maria-julia-lutz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0f7dfe1f9fd2477c"
 ---
 
 # Bertha Maria Júlia Lutz

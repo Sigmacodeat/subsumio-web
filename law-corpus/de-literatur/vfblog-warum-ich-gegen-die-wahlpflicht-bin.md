@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/warum-ich-gegen-die-wahlpflicht-bin/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5b18ae2d8513d3ee"
 ---
 
 # Warum ich gegen die Wahlpflicht bin

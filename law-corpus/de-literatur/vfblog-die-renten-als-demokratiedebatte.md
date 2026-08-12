@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-renten-als-demokratiedebatte/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9f4de5c671730ce5"
 ---
 
 # Die Renten- als Demokratiedebatte

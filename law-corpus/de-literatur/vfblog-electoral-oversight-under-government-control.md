@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/electoral-oversight-under-government-cont
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0927ef417f22d901"
 ---
 
 # Electoral Oversight under Government Control

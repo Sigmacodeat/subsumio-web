@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/we-were-just-cooperating/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f7a5e93095e0257d"
 ---
 
 # “We Were Just Cooperating!”

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cce9d61f51fbd463"
 ---
 
 # Nicaragua: Amtszeitbegrenzung für Präsident verfassungswidrig

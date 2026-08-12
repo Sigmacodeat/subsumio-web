@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/what-does-forgiveness-mean-anyway/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "64cfa008a0c27284"
 ---
 
 # What Does Forgiveness Mean Anyway?

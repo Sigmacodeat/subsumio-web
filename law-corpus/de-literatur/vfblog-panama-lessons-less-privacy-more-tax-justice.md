@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/panama-lessons-less-privacy-more-tax-just
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b0ef737d3828b4a3"
 ---
 
 # Panama Lessons: Less Privacy, More Tax Justice

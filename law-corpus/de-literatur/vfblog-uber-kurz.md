@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/uber-kurz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7a4555e8f6a767af"
 ---
 
 # Über Kurz

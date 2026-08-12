@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/loyalty-opportunism-and-fear/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8ad01628f34e36d2"
 ---
 
 # Loyalty, Opportunism and Fear

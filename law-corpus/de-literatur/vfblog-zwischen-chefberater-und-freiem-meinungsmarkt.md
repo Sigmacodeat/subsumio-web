@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zwischen-chefberater-und-freiem-meinungsm
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a99563f8599dea3c"
 ---
 
 # Zwischen Chefberater und freiem Meinungsmarkt

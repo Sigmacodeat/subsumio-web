@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eine-uberfallige-aber-unvollstandige-refo
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a42ba322cf9c6d69"
 ---
 
 # Eine überfällige, aber unvollständige Reform

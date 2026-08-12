@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/lies-in-politics/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ec40e5ada75d06d0"
 ---
 
 # Lies in Politics

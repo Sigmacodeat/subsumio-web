@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ai-is-eating-the-book-world/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "54f1ce01d2990c4e"
 ---
 
 # AI Is Eating the Book World

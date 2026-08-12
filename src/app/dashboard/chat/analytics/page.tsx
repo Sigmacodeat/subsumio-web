@@ -98,7 +98,7 @@ export default function ChatAnalyticsPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <div>
         <h1 className="text-xl font-bold text-[color:var(--ds-text)]">Chat Analytics</h1>
         <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-enemy-within/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b7fa47dcffc9c00b"
 ---
 
 # The Enemy Within

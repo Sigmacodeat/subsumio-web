@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/daten-sammeln-fur-den-umsturz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0c5256037bc8da9e"
 ---
 
 # Daten sammeln für den Umsturz

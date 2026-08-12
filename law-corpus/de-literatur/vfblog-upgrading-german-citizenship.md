@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/upgrading-german-citizenship/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b298edc147211b05"
 ---
 
 # Upgrading German Citizenship

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-groundhog-day-in-bruessels/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c685d87a013146ee"
 ---
 
 # A Groundhog Day in Brussels

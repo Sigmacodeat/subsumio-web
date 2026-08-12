@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/impfpflicht-oder-2g-minus-k/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2edd8207ca16aadf"
 ---
 
 # Impfpflicht oder „2G minus K“?

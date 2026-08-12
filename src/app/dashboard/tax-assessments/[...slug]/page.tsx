@@ -195,7 +195,7 @@ export default function TaxAssessmentDetailPage() {
   const locale = lang === "en" ? "en-GB" : "de-DE";
 
   return (
-    <div className="mx-auto max-w-[900px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <Link
         href="/dashboard/tax-assessments"
         className="inline-flex items-center gap-1 text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--brand-primary)]"
@@ -289,7 +289,7 @@ export default function TaxAssessmentDetailPage() {
                   {t("tax.detail.label_year")}
                 </label>
                 <Input
-                  type="number"
+                  type="number" inputMode="numeric"
                   value={form.year}
                   onChange={(e) => setForm((p) => ({ ...p, year: Number(e.target.value) }))}
                   min={2000}
@@ -330,7 +330,7 @@ export default function TaxAssessmentDetailPage() {
                   {t("tax.detail.label_amount")}
                 </label>
                 <Input
-                  type="number"
+                  type="number" inputMode="numeric"
                   value={form.amount}
                   onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))}
                   placeholder="0,00"

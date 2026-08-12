@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/uk-osb/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3131c888a57dac2e"
 ---
 
 # The UK’s Online Safety Bill: Safe, Harmful, Unworkable?

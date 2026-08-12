@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/disability-data-ai/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "88fe7a89ada223e7"
 ---
 
 # The Limits of Representation

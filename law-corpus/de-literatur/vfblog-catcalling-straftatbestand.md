@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/catcalling-straftatbestand/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "769dd33c7b13ab47"
 ---
 
 # Ein Straftatbestand verbaler sexueller Belästigung

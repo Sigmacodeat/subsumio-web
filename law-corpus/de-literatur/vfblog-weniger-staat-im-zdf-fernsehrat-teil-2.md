@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/weniger-staat-im-zdf-fernsehrat-teil-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "85b463a39218372b"
 ---
 
 # Weniger Staat im ZDF-Fernsehrat – Teil 2

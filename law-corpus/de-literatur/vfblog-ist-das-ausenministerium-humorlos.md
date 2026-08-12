@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ist-das-ausenministerium-humorlos/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7056a219302f24e1"
 ---
 
 # Ist das Außenministerium humorlos?

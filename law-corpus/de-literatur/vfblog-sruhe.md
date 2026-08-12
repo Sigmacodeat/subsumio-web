@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sruhe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "463a75ce4a6e5159"
 ---
 
 # Gentechnik-Urteil: Bahn frei dem Vorsorgestaat

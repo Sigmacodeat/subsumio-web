@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/points-and-vectors/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "070b98883e276f94"
 ---
 
 # Points and Vectors

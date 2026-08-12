@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/neues-vom-glossator-i-wozu-glossatoren/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8d2534badc220bff"
 ---
 
 # Neues vom Glossator I: Wozu Glossatoren?

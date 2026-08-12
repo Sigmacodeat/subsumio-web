@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/direktanstellungsgebot-bverfg/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0632846c3fa9dd4e"
 ---
 
 # Ein neues arbeitsrechtliches Regelungsinstrument

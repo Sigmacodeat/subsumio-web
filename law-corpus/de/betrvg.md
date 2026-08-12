@@ -7,6 +7,7 @@ version_date: "2024-07-24"
 retrieved_at: "2026-07-10"
 source_url: "https://www.gesetze-im-internet.de/betrvg/xml.zip"
 license: "Amtliches Werk, § 5 UrhG (gemeinfrei). Quelle: gesetze-im-internet.de, Bundesamt für Justiz."
+content_hash: "9881dad5a78c2f26"
 ---
 
 § 21a idF d. Art. 1 Nr. 51 G v. 23.7.2001 I 1852 dient der Umsetzung des Artikels 6 der Richtlinie 2001/23/EG des Rates vom 12. März 2001 zur Angleichung der Rechtsvorschriften der Mitgliedstaaten über die Wahrung von Ansprüchen der Arbeitnehmer beim Übergang von Unternehmen, Betrieben oder Betriebsteilen (ABl. EG Nr. L 82 S. 16). § 75 idF d. Art. 1 Nr. 51 G v. 23.7.2001 I 1852 dient teilweise der Umsetzung der Richtlinie 2000/78/EG des Rates vom 27. November 2000 zur Festlegung eines allgemeinen Rahmens für die Verwirklichung der Gleichbehandlung in Beschäftigung und Beruf (ABl. EG Nr. L 303 S. 16).

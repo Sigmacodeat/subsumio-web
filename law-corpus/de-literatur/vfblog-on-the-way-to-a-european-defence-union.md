@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/on-the-way-to-a-european-defence-union/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7f78f72e0832b07b"
 ---
 
 # On the Way to a European Defence Union

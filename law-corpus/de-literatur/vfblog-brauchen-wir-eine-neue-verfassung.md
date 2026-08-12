@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/brauchen-wir-eine-neue-verfassung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dbce968d5e3b5b75"
 ---
 
 # Europa in der Krise: Brauchen wir eine neue Verfassung?

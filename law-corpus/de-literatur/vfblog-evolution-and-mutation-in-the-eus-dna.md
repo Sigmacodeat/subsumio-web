@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/evolution-and-mutation-in-the-eus-dna/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aec254cf6d1e84a8"
 ---
 
 # Evolution and Mutation in the EU’s DNA

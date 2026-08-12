@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/from-values-to-european-society/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "12a2b583938e3dc9"
 ---
 
 # From Values to European Society

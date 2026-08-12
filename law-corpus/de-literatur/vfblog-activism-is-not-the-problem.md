@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/activism-is-not-the-problem/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f8a2906159997107"
 ---
 
 # ‘Activism’ Is Not the Problem

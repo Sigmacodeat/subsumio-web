@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-private-ist-politisch/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ead26c568cd74ade"
 ---
 
 # Das Private ist politisch

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/enforcement-of-the-digital-markets-act/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7f275949d70dbe12"
 ---
 
 # Enforcement of the Digital Markets Act

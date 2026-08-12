@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-paradox-of-israels-coronavirus-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d7a59638760a6d4a"
 ---
 
 # The Paradox of Israel’s Coronavirus Law

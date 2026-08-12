@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/on-the-right-to-compulsory-vaccination/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2b82f929cc8e30fa"
 ---
 
 # On the Right to Compulsory Vaccination

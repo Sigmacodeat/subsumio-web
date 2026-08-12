@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/greece-a-constitutionalists-two-eurocents
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1df2cbbea7e1581b"
 ---
 
 # Greece: a constitutionalist's two (euro)cents.

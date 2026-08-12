@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/japan-strebt-asiatische-union-an/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cdd455791fb5a297"
 ---
 
 # Japan strebt “Asiatische Union” an

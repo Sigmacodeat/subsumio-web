@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/power-dsa-dma-10/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d4a26609ec4a45de"
 ---
 
 # Enforcement of the DSA and the DMA

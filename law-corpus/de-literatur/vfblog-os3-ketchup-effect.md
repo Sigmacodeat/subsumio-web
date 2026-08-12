@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os3-ketchup-effect/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b68c91bea2ffaf52"
 ---
 
 # The ‘Ketchup Effect’

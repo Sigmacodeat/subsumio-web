@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/verfassungsgerichtshof-berlin-autofrei/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a28d6f2a2e163d62"
 ---
 
 # Weg frei für „Berlin autofrei“

@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a2f021d038c5b16d"
 ---
 
 # Der Fall Baltasar Garzón: Ein Vertrauenstest für die Justiz

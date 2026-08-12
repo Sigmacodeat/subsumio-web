@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/trumps-non-emergency-emergency/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bc8505c0029724ea"
 ---
 
 # Trump’s Non-Emergency Emergency

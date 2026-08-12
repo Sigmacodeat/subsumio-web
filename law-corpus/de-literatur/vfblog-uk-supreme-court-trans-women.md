@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/uk-supreme-court-trans-women/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b7a1876031489690"
 ---
 
 # Back to Binary Basics

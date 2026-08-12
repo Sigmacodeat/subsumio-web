@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/peter-huber-soll-nachfolger-von-di-fabio-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a743fb5fe1871ccb"
 ---
 
 # Peter M. Huber soll Nachfolger von Di Fabio werden

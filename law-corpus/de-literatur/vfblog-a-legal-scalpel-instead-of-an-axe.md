@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-legal-scalpel-instead-of-an-axe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cf3f75cff0dc5ad7"
 ---
 
 # A Legal Scalpel Instead of an Axe

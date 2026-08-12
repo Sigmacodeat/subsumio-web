@@ -16,6 +16,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2016 Andreas Heinemann;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "65989ab560a605d3"
 ---
 
 # Google als kartellrechtliches Problem?

@@ -15,6 +15,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "251c3b862fd18e46"
 ---
 
 § 17 Handlungsfreiheit (Art. 2 I GG) &#124; Inhaltsverzeichnis &#124; § 18.1  Menschenwürde (Art. 1 GG) 

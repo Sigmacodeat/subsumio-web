@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/doing-justice-to-polands-muzzle-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "79fab956c4ad11da"
 ---
 
 # Doing Justice to Poland’s Muzzle Law

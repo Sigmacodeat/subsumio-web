@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7f61d2a115595403"
 ---
 
 # Rescue Package for Fundamental Rights: Further Comments by DANIEL HALBERSTAM

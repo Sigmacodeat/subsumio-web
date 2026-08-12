@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "24fdc1d0ac0ed1a9"
 ---
 
 # Put it back: Ein Vorschlag für ein NetzDG, das die Meinungsfreiheit wahrt

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/an-early-christmas-gift-from-karlsruhe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f456de808aaf4c77"
 ---
 
 # An early Christmas Gift from Karlsruhe?

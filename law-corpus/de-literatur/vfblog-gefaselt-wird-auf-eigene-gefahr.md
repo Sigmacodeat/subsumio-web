@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gefaselt-wird-auf-eigene-gefahr/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5d09031910014b66"
 ---
 
 # Gefaselt wird auf eigene Gefahr

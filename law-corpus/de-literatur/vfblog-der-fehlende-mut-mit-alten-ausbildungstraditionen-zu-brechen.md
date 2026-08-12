@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9121447174532947"
 ---
 
 # Der fehlende Mut, mit alten Ausbildungs&shy;traditionen zu brechen

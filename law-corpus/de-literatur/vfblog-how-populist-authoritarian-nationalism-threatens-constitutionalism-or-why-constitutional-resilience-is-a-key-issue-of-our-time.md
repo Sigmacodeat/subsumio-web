@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "718a9a37771c4c9a"
 ---
 
 # How populist authoritarian nationalism threatens constitutionalism or: Why constitutional resilience is a key issue of our time

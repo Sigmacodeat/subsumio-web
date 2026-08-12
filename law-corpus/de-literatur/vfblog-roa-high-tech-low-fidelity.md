@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/roa-high-tech-low-fidelity/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ad2b4b7f6b04aa38"
 ---
 
 # High Tech, Low Fidelity? Statistical Legal Tech and the Rule of Law

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wettstreit-und-algorithmus/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0105ec459460d178"
 ---
 
 # Wettstreit und Algorithmus

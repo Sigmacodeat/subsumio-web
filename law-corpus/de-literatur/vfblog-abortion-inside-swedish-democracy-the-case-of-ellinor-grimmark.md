@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4bb5e91308f1c1a3"
 ---
 
 # Abortion Inside Swedish Democracy: the case of Ellinor Grimmark

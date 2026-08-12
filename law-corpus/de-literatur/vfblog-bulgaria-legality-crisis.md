@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bulgaria-legality-crisis/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aa29999c2eb44185"
 ---
 
 # Systemic Pathologies

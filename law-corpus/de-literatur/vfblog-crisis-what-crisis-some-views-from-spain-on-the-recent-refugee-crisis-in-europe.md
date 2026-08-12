@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0e4451543a886e5f"
 ---
 
 # Crisis, what Crisis? Some Views from Spain on the Recent Refugee Crisis in Europe

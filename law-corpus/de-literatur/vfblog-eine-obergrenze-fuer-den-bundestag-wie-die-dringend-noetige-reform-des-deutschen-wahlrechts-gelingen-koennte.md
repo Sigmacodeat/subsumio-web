@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1859c8e1e54c8dc0"
 ---
 
 # Eine Obergrenze für den Bundestag: Wie die dringend nötige Reform des deutschen Wahlrechts gelingen könnte

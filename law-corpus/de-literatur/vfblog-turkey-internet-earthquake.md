@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/turkey-internet-earthquake/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a31a19646e45cff3"
 ---
 
 # Shutting Down the Internet to Shut Down Criticism

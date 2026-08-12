@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fur-ein-update-der-wahlprufung-in-die-geg
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "543166a4dc762050"
 ---
 
 # Für ein Update der Wahlprüfung in die Gegenwart

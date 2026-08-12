@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7ff00478ecb8b09d"
 ---
 
 # Murder in the Name of Allah: Asia Bibi and Pakistan’s Blasphemy Law

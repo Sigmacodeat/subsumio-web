@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/divine-decision-making/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1a837e7084bf813a"
 ---
 
 # Divine Decision-Making

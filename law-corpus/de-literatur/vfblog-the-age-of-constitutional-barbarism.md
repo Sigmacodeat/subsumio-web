@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-age-of-constitutional-barbarism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0a1f03ed427c1fa0"
 ---
 
 # The Age of Constitutional Barbarism

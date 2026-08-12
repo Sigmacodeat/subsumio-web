@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fur-eine-evidenzbasierte-rationale-krimin
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bf803bb6d76948a2"
 ---
 
 # Für eine evidenzbasierte, rationale Kriminalpolitik

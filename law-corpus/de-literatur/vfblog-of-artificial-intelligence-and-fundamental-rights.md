@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/of-artificial-intelligence-and-fundamenta
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0e063a9ddeae569d"
 ---
 
 # Of Artificial Intelligence and Fundamental Rights Charters

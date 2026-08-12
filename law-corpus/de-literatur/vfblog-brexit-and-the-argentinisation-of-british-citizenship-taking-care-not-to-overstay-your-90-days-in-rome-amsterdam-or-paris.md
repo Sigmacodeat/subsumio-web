@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "63253a05ff7b5937"
 ---
 
 # Brexit and the Argentinisation of British citizenship: Taking care not to overstay your 90 days in Rome, Amsterdam or Paris

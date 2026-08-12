@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2192bc41eb014288"
 ---
 
 # Asymmetrie der Anpassungen des Bürgergelds und des steuerfreien Existenzminimums

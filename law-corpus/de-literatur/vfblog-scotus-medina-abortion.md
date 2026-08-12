@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/scotus-medina-abortion/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a056dcb285a22f2d"
 ---
 
 # Another Step in the Anti-Abortion Agenda

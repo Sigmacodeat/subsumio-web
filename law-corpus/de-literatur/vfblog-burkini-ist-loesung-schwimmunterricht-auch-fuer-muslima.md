@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0441dc743cdce095"
 ---
 
 # Der Burkini ist die Lösung: Schwimmunterricht auch für Muslima

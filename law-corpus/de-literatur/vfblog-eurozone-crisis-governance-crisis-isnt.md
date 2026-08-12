@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eurozone-crisis-governance-crisis-isnt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8c4d5508a460447b"
 ---
 
 # The Eurozone Crisis Is Also a Governance Crisis – Isn’t It?

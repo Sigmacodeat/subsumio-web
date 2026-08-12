@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b09b750cd3f41860"
 ---
 
 # Formal and Informal Elements of Institution-Building. A Comment on Armin von Bogdandy and Michael Ioannidis

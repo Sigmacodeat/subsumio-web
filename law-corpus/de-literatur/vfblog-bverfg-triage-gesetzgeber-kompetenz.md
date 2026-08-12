@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bverfg-triage-gesetzgeber-kompetenz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d9400aa60ffb96d7"
 ---
 
 # Schutzpflicht mit 16 Adressaten

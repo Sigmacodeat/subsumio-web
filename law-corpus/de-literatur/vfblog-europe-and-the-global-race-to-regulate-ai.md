@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/europe-and-the-global-race-to-regulate-ai
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4beb7ca2e04a4256"
 ---
 
 # Europe and the Global Race to Regulate AI

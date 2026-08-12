@@ -5,23 +5,23 @@ import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg font-medium outline-none select-none focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] disabled:pointer-events-none disabled:opacity-40",
+  "inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg font-medium outline-none select-none transition-all duration-200 active:scale-[0.97] focus-visible:ring-1 focus-visible:ring-[color:var(--ds-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[color:var(--ds-surface)] disabled:pointer-events-none disabled:opacity-40 disabled:active:scale-100",
   {
     variants: {
       variant: {
         primary:
-          "bg-[color:var(--brand-primary)] text-white shadow-sm transition-[background-color,box-shadow] duration-200 hover:bg-[color:var(--brand-primary-hover)] hover:shadow-md active:bg-[color:var(--brand-primary-hover)]",
+          "bg-[color:var(--brand-primary)] text-white shadow-sm hover:bg-[color:var(--brand-primary-hover)] hover:shadow-md active:bg-[color:var(--brand-primary-hover)]",
         secondary:
           "border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)]",
         ghost:
           "bg-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)]",
         danger:
-          "border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] hover:opacity-80",
+          "border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] hover:border-[color:var(--ds-danger-solid)] hover:bg-[color:var(--ds-danger-solid)] hover:text-white",
         success:
           "bg-[color:var(--ds-success-solid)] text-white shadow-sm hover:bg-[color:var(--ds-success-solid-hover)]",
-        glow: "bg-[color:var(--brand-primary)] text-white shadow-md shadow-[color:var(--brand-glow)] transition-[background-color,box-shadow] duration-200 hover:bg-[color:var(--brand-primary-hover)] hover:shadow-lg active:bg-[color:var(--brand-primary-hover)]",
+        glow: "bg-[color:var(--brand-primary)] text-white shadow-md shadow-[color:var(--brand-glow)] hover:bg-[color:var(--brand-primary-hover)] hover:shadow-lg active:bg-[color:var(--brand-primary-hover)]",
         outline:
-          "border border-[color:var(--brand-primary)] text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/10",
+          "border border-[color:var(--ds-border-strong)] bg-transparent text-[color:var(--ds-text-muted)] hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/[0.08] hover:text-[color:var(--brand-primary)]",
       },
       size: {
         sm: "px-3 py-1.5 text-xs",

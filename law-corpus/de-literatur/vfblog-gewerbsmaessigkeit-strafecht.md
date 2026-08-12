@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gewerbsmaessigkeit-strafecht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "700fb3e7bfecfd11"
 ---
 
 # Die Gewerbsmäßigkeit als Arme-Leute-Strafrecht

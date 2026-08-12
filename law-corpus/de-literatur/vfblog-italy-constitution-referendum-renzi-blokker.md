@@ -15,6 +15,7 @@ source_url: https://verfassungsblog.de/italy-constitution-referendum-renzi-blokk
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "519d0e1ba4da19b8"
 ---
 
 # “Vote Yes for a Safe Italy” or “Vote No to Defend the Constitution”: Italian Constitutional Politics between Majoritarianism and Civil Resistance

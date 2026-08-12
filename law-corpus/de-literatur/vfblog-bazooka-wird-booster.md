@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bazooka-wird-booster/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d6f65bfaa3a96090"
 ---
 
 # Bazooka wird Booster

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/scotland-brexit-and-independence/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a3f285adf80cad67"
 ---
 
 # Scotland, Brexit and Independence

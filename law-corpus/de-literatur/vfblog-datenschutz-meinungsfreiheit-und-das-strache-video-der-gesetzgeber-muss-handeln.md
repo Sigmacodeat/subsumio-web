@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2f471925205e78bb"
 ---
 
 # Datenschutz, Meinungsfreiheit und das Strache-Video: der Gesetzgeber muss handeln

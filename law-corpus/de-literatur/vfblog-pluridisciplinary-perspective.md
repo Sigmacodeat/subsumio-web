@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/pluridisciplinary-perspective/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9bf5136947f8c9de"
 ---
 
 # Studying Migrations and Borders from a Pluridisciplinary Perspective

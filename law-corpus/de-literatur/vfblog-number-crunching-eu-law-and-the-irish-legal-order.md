@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/number-crunching-eu-law-and-the-irish-leg
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1e1ce5a3a2e355b3"
 ---
 
 # Number Crunching EU Law and the Irish Legal Order

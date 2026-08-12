@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4dd567e9d3c0ff4b"
 ---
 
 # Re-Organizing Europe’s Judicial Power through the Backdoor?

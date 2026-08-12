@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/recognising-nuances/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bb92630b7e6bf97c"
 ---
 
 # Recognising Nuances

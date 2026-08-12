@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1181be7c7e634172"
 ---
 
 # Of Rhetoric and Reality: The Nobel Peace Prize and Conflict-Related Sexualized Violence

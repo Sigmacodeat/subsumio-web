@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/religiously-sensitive-union-law-fr-plural
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8151ed1fadae9c19"
 ---
 
 # Religiously Sensitive Union Law in Fundamental-Rights Pluralism

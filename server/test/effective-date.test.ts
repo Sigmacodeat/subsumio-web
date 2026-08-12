@@ -75,6 +75,22 @@ describe("computeEffectiveDate precedence chain (default order)", () => {
     expect(r.date?.toISOString().startsWith("2024-05-01")).toBe(true);
   });
 
+  test("inkrafttretensdatum wins when no event_date/date/published (RIS XML)", () => {
+    // RIS XML norm files carry `inkrafttretensdatum` as the official date the
+    // norm came into force. Without this, effective_date falls back to
+    // updated_at (the import timestamp), distorting recency boost.
+    const r = run({ fm: { inkrafttretensdatum: "2017-01-01" } });
+    expect(r.source).toBe("event_date");
+    expect(r.date?.toISOString().startsWith("2017-01-01")).toBe(true);
+  });
+
+  test("inkrafttretensdatum is lower priority than date/published", () => {
+    // If both `date` and `inkrafttretensdatum` are present, `date` wins.
+    const r = run({ fm: { date: "2024-04-01", inkrafttretensdatum: "2017-01-01" } });
+    expect(r.source).toBe("date");
+    expect(r.date?.toISOString().startsWith("2024-04-01")).toBe(true);
+  });
+
   test("filename wins when no frontmatter dates", () => {
     const r = run({ filename: "2024-06-15-some-meeting" });
     expect(r.source).toBe("filename");
@@ -153,9 +169,9 @@ describe("computeEffectiveDate parse failure fall-through", () => {
   });
 });
 
-describe("computeEffectiveDate range validation [1990, NOW + 1y]", () => {
-  test("pre-1990 frontmatter date drops to next chain element", () => {
-    const r = run({ fm: { event_date: "1985-01-01", date: "2024-04-01" } });
+describe("computeEffectiveDate range validation [1800, NOW + 1y]", () => {
+  test("pre-1800 frontmatter date drops to next chain element", () => {
+    const r = run({ fm: { event_date: "1799-01-01", date: "2024-04-01" } });
     expect(r.source).toBe("date");
   });
 
@@ -166,7 +182,13 @@ describe("computeEffectiveDate range validation [1990, NOW + 1y]", () => {
   });
 
   test("out-of-range filename date drops to fallback", () => {
-    const r = run({ filename: "1850-01-01-ancient" });
+    const r = run({ filename: "1799-01-01-ancient" });
     expect(r.source).toBe("fallback");
+  });
+
+  test("ABGB 1812 inkrafttretensdatum is in range (not dropped)", () => {
+    const r = run({ fm: { inkrafttretensdatum: "1812-01-01" } });
+    expect(r.source).toBe("event_date");
+    expect(r.date?.getUTCFullYear()).toBe(1812);
   });
 });

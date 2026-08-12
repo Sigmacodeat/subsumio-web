@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fae93401ea795ced"
 ---
 
 # ITLOS and the importance of (getting) external rules (right) in interpreting UNCLOS

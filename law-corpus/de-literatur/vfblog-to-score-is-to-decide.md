@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/to-score-is-to-decide/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "435bd48861a1d641"
 ---
 
 # To Score Is to Decide

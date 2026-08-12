@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ce28b8c20d4770b0"
 ---
 
 # The European Convention of Human Rights’ Colonial Clause and the End of Empire

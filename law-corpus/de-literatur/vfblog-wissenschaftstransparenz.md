@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wissenschaftstransparenz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f936c7132514516d"
 ---
 
 # Die unklare Zukunft der Wissenschaftstransparenz

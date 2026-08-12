@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/uk-labour-shortage/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "415c7095a9193083"
 ---
 
 # Brexit, Labour Shortages and Structures of Exploitation

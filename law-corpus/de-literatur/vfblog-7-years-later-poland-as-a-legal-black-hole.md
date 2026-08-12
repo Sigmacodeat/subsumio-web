@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/7-years-later-poland-as-a-legal-black-hol
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "edaddbd9277cd8a2"
 ---
 
 # 7 Years Later: Poland as a Legal Black Hole

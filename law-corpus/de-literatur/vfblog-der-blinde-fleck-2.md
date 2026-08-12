@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/der-blinde-fleck-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "73b96cc94fab078b"
 ---
 
 # Der blinde Fleck

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/access-to-knowledge-fifth-freedom/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f64993352141c358"
 ---
 
 # Access to Knowledge on the Move(ment)

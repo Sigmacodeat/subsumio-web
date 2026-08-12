@@ -508,7 +508,7 @@ export default function TaxAuditPage() {
                   {t("tax.audit.label_year")}
                 </label>
                 <Input
-                  type="number"
+                  type="number" inputMode="numeric"
                   value={createForm.year}
                   onChange={(e) => setCreateForm((p) => ({ ...p, year: Number(e.target.value) }))}
                   min={2000}

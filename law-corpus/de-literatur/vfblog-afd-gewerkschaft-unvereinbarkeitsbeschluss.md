@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/afd-gewerkschaft-unvereinbarkeitsbeschlus
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d63099e7f217c165"
 ---
 
 # (Noch) nicht verboten, aber unvereinbar (Teil I)

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-paths-of-european-legal-scholarship/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "95f298a5f8dc53b3"
 ---
 
 # The Paths of European Legal Scholarship

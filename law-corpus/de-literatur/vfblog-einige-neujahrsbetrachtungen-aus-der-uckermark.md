@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/einige-neujahrsbetrachtungen-aus-der-ucke
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "681a448e16cf2c2a"
 ---
 
 # Einige Neujahrsbetrachtungen aus der Uckermark

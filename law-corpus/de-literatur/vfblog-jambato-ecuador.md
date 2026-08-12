@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/jambato-ecuador/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f27b7a5be08e508b"
 ---
 
 # Jambato, the Harlequin Toad, the Plaintiff

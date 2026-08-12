@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3d56999db544ba83"
 ---
 
 # Die verspätete strafrechtliche Verfolgung der „Goldenen Morgenröte“ und ihre verfassungsrechtlichen Folgen

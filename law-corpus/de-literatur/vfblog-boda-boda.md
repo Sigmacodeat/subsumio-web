@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/boda-boda/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d58ebe06d8082307"
 ---
 
 # Boda boda registration in Kenya

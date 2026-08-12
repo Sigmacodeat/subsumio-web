@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/foreseeability-pnr/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0ce2908adcf2cd60"
 ---
 
 # Foreseeability and the Rule of Law in Data Protection after the PNR judgment

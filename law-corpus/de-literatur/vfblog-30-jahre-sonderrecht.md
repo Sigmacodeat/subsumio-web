@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/30-jahre-sonderrecht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e91e80ed93eb450c"
 ---
 
 # 30 Jahre Sonderrecht

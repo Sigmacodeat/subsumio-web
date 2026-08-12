@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/den-diskurs-offnen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "44d9cea3bd0d1814"
 ---
 
 # Den Diskurs öffnen

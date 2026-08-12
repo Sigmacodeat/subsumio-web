@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "537e7dffad971bb6"
 ---
 
 # The Kurdistan Independence Referendum and Constitutional Self-Determination

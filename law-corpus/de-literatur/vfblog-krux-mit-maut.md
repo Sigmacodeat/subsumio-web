@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/krux-mit-maut/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0ef6df180680be99"
 ---
 
 # Die Krux mit der Maut

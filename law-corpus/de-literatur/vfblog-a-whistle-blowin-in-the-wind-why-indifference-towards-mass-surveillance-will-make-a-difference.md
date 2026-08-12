@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "36a97d758ee1e7cd"
 ---
 
 # A whistle blowin’ in the wind? Why indifference towards mass surveillance will make a difference

@@ -18,6 +18,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2015
   AUSTRIAN LAW JOURNAL
+content_hash: "e483de7de4963d3c"
 ---
 
 # Völker- und europarechtliche Fragen des Beitritts Österreichs zur und der Mitgliedschaft in der Europäischen Union

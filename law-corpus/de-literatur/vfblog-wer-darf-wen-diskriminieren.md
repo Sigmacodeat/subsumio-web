@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wer-darf-wen-diskriminieren/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "99096a572619b91e"
 ---
 
 # Wer darf wen „diskriminieren“?

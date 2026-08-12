@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/how-to-paritatsgesetz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "49c2eef551081c98"
 ---
 
 # How to… Paritätsgesetz

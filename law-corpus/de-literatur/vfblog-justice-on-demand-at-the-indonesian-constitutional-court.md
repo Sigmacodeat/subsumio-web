@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "036f90dc6ee0ca00"
 ---
 
 # Justice-on-Demand at the Indonesian Constitutional Court?

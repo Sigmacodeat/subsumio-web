@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "06b8e75f53d46248"
 ---
 
 # The War in Ukraine, Fake News, and the Digital Epistemic Divide

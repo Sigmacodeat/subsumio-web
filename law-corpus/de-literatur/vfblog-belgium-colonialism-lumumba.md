@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/belgium-colonialism-lumumba/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6611538bdd3033c3"
 ---
 
 # Mistaking the Tree for the Forest

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os2-migration-security/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f022d0d390da7468"
 ---
 
 # The countering of migration with security

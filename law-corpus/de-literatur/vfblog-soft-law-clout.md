@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/soft-law-clout/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "463b2421307211f5"
 ---
 
 # Soft Law’s Increasing Clout

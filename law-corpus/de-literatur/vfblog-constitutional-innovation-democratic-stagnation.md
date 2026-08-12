@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/constitutional-innovation-democratic-stag
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "480103ef1ce5abb0"
 ---
 
 # Constitutional Innovation, Democratic Stagnation?

@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "15a2cf33e7e003b4"
 ---
 
 # EuGH pfeift erneut Transparenzbemühungen der EU zurück

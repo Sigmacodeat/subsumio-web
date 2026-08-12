@@ -142,7 +142,7 @@ export default function DRPage() {
   const drills = data?.recent_drills ?? [];
 
   return (
-    <div className="container mx-auto max-w-6xl space-y-6 p-6">
+    <div className="mx-0 w-full space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("admin.dr.title")}
         description={t("admin.dr.desc")}
@@ -154,7 +154,7 @@ export default function DRPage() {
       />
 
       <div className="flex items-center justify-between">
-        <p className="text-muted-foreground text-sm">
+        <p className="text-[color:var(--ds-text-muted)] text-sm">
           Auto-Refresh alle 30s ·{" "}
           {data ? `Aktualisiert: ${new Date(data.timestamp).toLocaleTimeString("de-AT")}` : "Lädt…"}
         </p>
@@ -194,7 +194,7 @@ export default function DRPage() {
       </div>
 
       {actionResult && (
-        <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">
+        <div className="rounded-md border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-3 text-sm text-[color:var(--ds-info-text)]">
           {actionResult}
         </div>
       )}
@@ -203,30 +203,30 @@ export default function DRPage() {
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
-            <Database className="h-8 w-8 text-blue-500" />
+            <Database className="h-8 w-8 text-[color:var(--ds-info-text)]" />
             <div>
               <p className="text-2xl font-bold">{status?.total_manifests ?? "—"}</p>
-              <p className="text-muted-foreground text-xs">Backups</p>
+              <p className="text-[color:var(--ds-text-muted)] text-xs">Backups</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
-            <PlayCircle className="h-8 w-8 text-purple-500" />
+            <PlayCircle className="h-8 w-8 text-[color:var(--ds-category-violet-text)]" />
             <div>
               <p className="text-2xl font-bold">{status?.total_drills ?? "—"}</p>
-              <p className="text-muted-foreground text-xs">Drills</p>
+              <p className="text-[color:var(--ds-text-muted)] text-xs">Drills</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
             {status?.last_drill_passed === false ? (
-              <XCircle className="h-8 w-8 text-red-500" />
+              <XCircle className="h-8 w-8 text-[color:var(--ds-danger-text)]" />
             ) : status?.last_drill_passed === true ? (
-              <CheckCircle2 className="h-8 w-8 text-green-500" />
+              <CheckCircle2 className="h-8 w-8 text-[color:var(--ds-success-text)]" />
             ) : (
-              <ShieldCheck className="text-muted-foreground h-8 w-8" />
+              <ShieldCheck className="text-[color:var(--ds-text-muted)] h-8 w-8" />
             )}
             <div>
               <p className="text-2xl font-bold">
@@ -236,16 +236,16 @@ export default function DRPage() {
                     ? "FAIL"
                     : "—"}
               </p>
-              <p className="text-muted-foreground text-xs">Letzter Drill</p>
+              <p className="text-[color:var(--ds-text-muted)] text-xs">Letzter Drill</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
-            <Server className="h-8 w-8 text-orange-500" />
+            <Server className="h-8 w-8 text-[color:var(--ds-warning-text)]" />
             <div>
               <p className="text-2xl font-bold">{status?.critical_targets ?? "—"}</p>
-              <p className="text-muted-foreground text-xs">Kritische Targets</p>
+              <p className="text-[color:var(--ds-text-muted)] text-xs">Kritische Targets</p>
             </div>
           </CardContent>
         </Card>
@@ -263,26 +263,26 @@ export default function DRPage() {
               <div key={t.type} className="flex items-center justify-between rounded-md border p-3">
                 <div className="flex items-center gap-3">
                   {t.critical ? (
-                    <AlertTriangle className="h-4 w-4 text-orange-500" />
+                    <AlertTriangle className="h-4 w-4 text-[color:var(--ds-warning-text)]" />
                   ) : (
-                    <Database className="h-4 w-4 text-blue-500" />
+                    <Database className="h-4 w-4 text-[color:var(--ds-info-text)]" />
                   )}
                   <div>
                     <p className="text-sm font-medium">{t.name}</p>
-                    <p className="text-muted-foreground text-xs">{t.description}</p>
+                    <p className="text-[color:var(--ds-text-muted)] text-xs">{t.description}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 text-xs">
                   <div className="text-center">
-                    <p className="text-muted-foreground">RPO</p>
+                    <p className="text-[color:var(--ds-text-muted)]">RPO</p>
                     <p className="font-mono font-medium">{t.rpo_hours}h</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-muted-foreground">RTO</p>
+                    <p className="text-[color:var(--ds-text-muted)]">RTO</p>
                     <p className="font-mono font-medium">{t.rto_hours}h</p>
                   </div>
                   <Badge variant="default">{t.tool}</Badge>
-                  {t.critical && <Badge className="bg-orange-100 text-orange-700">Kritisch</Badge>}
+                  {t.critical && <Badge className="bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]">Kritisch</Badge>}
                 </div>
               </div>
             ))}
@@ -298,7 +298,7 @@ export default function DRPage() {
             Letzte Backups
           </h3>
           {manifests.length === 0 ? (
-            <p className="text-muted-foreground py-4 text-center text-sm">
+            <p className="text-[color:var(--ds-text-muted)] py-4 text-center text-sm">
               Noch keine Backups erstellt. Klicke &ldquo;Backup erstellen&rdquo; um ein
               Simulations-Backup zu erzeugen.
             </p>
@@ -313,10 +313,10 @@ export default function DRPage() {
                     className="flex items-center justify-between rounded-md border p-3"
                   >
                     <div className="flex items-center gap-3">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      <CheckCircle2 className="h-4 w-4 text-[color:var(--ds-success-text)]" />
                       <div>
                         <p className="text-sm font-medium">{formatDate(m.created_at)}</p>
-                        <p className="text-muted-foreground text-xs">
+                        <p className="text-[color:var(--ds-text-muted)] text-xs">
                           {m.entries.length} Targets · {formatBytes(m.total_size_bytes)} · von{" "}
                           {m.created_by}
                         </p>
@@ -324,14 +324,14 @@ export default function DRPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       {m.rpo_met ? (
-                        <Badge className="bg-green-100 text-green-700">RPO ✓</Badge>
+                        <Badge className="bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]">RPO ✓</Badge>
                       ) : (
-                        <Badge className="bg-red-100 text-red-700">RPO ✗</Badge>
+                        <Badge className="bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]">RPO ✗</Badge>
                       )}
                       {m.rto_met ? (
-                        <Badge className="bg-green-100 text-green-700">RTO ✓</Badge>
+                        <Badge className="bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]">RTO ✓</Badge>
                       ) : (
-                        <Badge className="bg-red-100 text-red-700">RTO ✗</Badge>
+                        <Badge className="bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]">RTO ✗</Badge>
                       )}
                     </div>
                   </div>
@@ -349,7 +349,7 @@ export default function DRPage() {
             Letzte Restore-Drills
           </h3>
           {drills.length === 0 ? (
-            <p className="text-muted-foreground py-4 text-center text-sm">
+            <p className="text-[color:var(--ds-text-muted)] py-4 text-center text-sm">
               Noch keine Drills durchgeführt. Klicke &ldquo;Restore-Drill&rdquo; um einen
               Simulations-Drill zu starten.
             </p>
@@ -365,13 +365,13 @@ export default function DRPage() {
                   >
                     <div className="flex items-center gap-3">
                       {d.overall_passed ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        <CheckCircle2 className="h-4 w-4 text-[color:var(--ds-success-text)]" />
                       ) : (
-                        <XCircle className="h-4 w-4 text-red-500" />
+                        <XCircle className="h-4 w-4 text-[color:var(--ds-danger-text)]" />
                       )}
                       <div>
                         <p className="text-sm font-medium">{formatDate(d.completed_at)}</p>
-                        <p className="text-muted-foreground text-xs">
+                        <p className="text-[color:var(--ds-text-muted)] text-xs">
                           {d.targets_passed}/{d.targets_tested} Targets bestanden ·{" "}
                           {(d.duration_ms / 1000).toFixed(1)}s
                         </p>
@@ -383,9 +383,9 @@ export default function DRPage() {
                         <span className="font-mono">RTO: {d.rto_actual_hours.toFixed(2)}h</span>
                       </div>
                       {d.overall_passed ? (
-                        <Badge className="bg-green-100 text-green-700">PASS</Badge>
+                        <Badge className="bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]">PASS</Badge>
                       ) : (
-                        <Badge className="bg-red-100 text-red-700">FAIL</Badge>
+                        <Badge className="bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]">FAIL</Badge>
                       )}
                     </div>
                   </div>

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dsa-fine-x-research-data/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4c0fe094cc02f972"
 ---
 
 # The Stakes of “Publicly Accessible”

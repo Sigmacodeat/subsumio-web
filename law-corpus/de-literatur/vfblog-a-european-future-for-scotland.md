@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-european-future-for-scotland/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a1ca69a6cee0609a"
 ---
 
 # A European Future for Scotland?

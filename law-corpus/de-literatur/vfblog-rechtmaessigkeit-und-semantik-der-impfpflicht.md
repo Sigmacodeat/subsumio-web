@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rechtmaessigkeit-und-semantik-der-impfpfl
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e454c3f78708bdc6"
 ---
 
 # Rechtmäßigkeit und Semantik der Impfpflicht

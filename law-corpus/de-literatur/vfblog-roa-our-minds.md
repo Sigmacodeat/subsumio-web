@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/roa-our-minds/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9b13d56e7e87cfd6"
 ---
 
 # Our Minds, Monitored and Manipulated

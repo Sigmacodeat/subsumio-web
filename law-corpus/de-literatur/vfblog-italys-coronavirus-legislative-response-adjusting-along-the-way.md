@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6f08f1316fcb7f74"
 ---
 
 # Italy’s Coronavirus Legislative Response: Adjusting Along the Way

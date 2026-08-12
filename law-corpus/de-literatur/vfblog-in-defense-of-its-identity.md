@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/in-defense-of-its-identity/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "679910c8d41cf39a"
 ---
 
 # In Defense of Its Identity

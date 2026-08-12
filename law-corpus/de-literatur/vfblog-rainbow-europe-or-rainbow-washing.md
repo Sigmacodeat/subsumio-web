@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rainbow-europe-or-rainbow-washing/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b441c3ac8365d03a"
 ---
 
 # Rainbow Europe or Rainbow Washing?

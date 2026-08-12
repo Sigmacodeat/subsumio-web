@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-authoritarian-regime-survival-guide/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "544b75f4a6fd94c2"
 ---
 
 # The Authoritarian Regime Survival Guide

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "06a2df6cd90985fc"
 ---
 
 # Richterin in Rage, lernende Demokratie und positive Diskriminierung

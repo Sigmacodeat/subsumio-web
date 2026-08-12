@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/paritaet-und-asymmetrie-im-arbeitskampf/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9fe7b0dfcc3a64c3"
 ---
 
 # Parität und Asymmetrie im Arbeitskampf

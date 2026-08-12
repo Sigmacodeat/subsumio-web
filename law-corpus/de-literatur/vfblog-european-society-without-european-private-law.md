@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/european-society-without-european-private
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "58f581a2d41ad2a7"
 ---
 
 # European Society without European Private Law?

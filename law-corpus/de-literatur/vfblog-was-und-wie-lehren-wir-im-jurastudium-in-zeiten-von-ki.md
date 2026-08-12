@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "81db7a01989b67fd"
 ---
 
 # Was und wie lehren wir im Jurastudium in Zeiten von KI?

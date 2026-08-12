@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/berlin-hat-gewahlt-doch-der-senat-regiert
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "daed726facbe0f48"
 ---
 
 # Berlin hat gewählt, doch der Senat regiert weiter

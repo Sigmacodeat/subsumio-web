@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/antidiskriminierungsrecht-demokratie/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8defae3000ebf436"
 ---
 
 # Antidiskriminierungsrecht verteidigen, nicht nur gegen die AfD

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/urban-citizenship-threatens-democratic-eq
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1fc5526e2fa27fd3"
 ---
 
 # Urban Citizenship Threatens Democratic Equality

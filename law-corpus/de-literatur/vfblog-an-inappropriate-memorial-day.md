@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/an-inappropriate-memorial-day/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f592cd2c823127f0"
 ---
 
 # An Inappropriate Memorial Day

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/operation-car-wash-on-trial/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2bea84a403a8ea3c"
 ---
 
 # Operation Car Wash on Trial

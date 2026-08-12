@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/der-alte-wunsch-nach-einfachen-losungen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "28537ce5b95c0207"
 ---
 
 # Der alte Wunsch nach einfachen Lösungen

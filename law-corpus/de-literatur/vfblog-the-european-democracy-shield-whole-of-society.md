@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/the-european-democracy-shield-whole-of-so
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cc5034a6471339aa"
 ---
 
 # The European Democracy Shield and Its Whole-of-Society Approach

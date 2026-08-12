@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dissolving-diversity/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2486ac242dc978d2"
 ---
 
 # Ending Diversity without Debate

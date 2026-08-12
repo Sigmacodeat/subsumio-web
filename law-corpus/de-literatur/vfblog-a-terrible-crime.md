@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-terrible-crime/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "33798cc85d5b201d"
 ---
 
 # A Terrible Crime

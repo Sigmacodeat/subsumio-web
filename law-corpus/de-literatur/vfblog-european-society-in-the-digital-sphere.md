@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/european-society-in-the-digital-sphere/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "119c30db536c687d"
 ---
 
 # European Society in the Digital Sphere

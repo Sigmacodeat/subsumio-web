@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/time-for-military-integration-in-the-eu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a313bd15e7779afb"
 ---
 
 # Time for Military Integration in the EU?

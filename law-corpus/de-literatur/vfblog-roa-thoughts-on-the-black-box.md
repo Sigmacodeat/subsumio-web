@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/roa-thoughts-on-the-black-box/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ad055d538b01697e"
 ---
 
 # Thoughts on the Black Box: Getting to Cooperative Intelligence in Public Administration

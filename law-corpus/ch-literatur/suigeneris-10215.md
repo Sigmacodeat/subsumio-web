@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2026 Clara Brambilla;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "e0e89c8750967265"
 ---
 
 # Victimisation secondaire et droit pénal sexuel : l&#039;influence de la jurisprudence récente de la Cour européenne des droits de l&#039;homme sur le droit pénal national

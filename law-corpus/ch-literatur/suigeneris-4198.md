@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2023 Christina Joller, Bruno
   Pasquier, Daniel Kraus; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "80f876169b24a11a"
 ---
 
 # NFTs et droits d&#039;auteur

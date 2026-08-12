@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ifg-menschenrechte/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "26a8f0e212b1520b"
 ---
 
 # Unverhoffte Profiteure

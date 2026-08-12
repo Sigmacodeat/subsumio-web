@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gdpr-non-material/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "96487fb7a345ed96"
 ---
 
 # Compensation for non-material damages under the GDPR

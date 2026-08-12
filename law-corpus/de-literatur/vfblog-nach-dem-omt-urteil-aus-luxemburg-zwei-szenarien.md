@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nach-dem-omt-urteil-aus-luxemburg-zwei-sz
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "05a5fda308534338"
 ---
 
 # Nach dem OMT-Urteil aus Luxemburg: zwei Szenarien

@@ -50,7 +50,7 @@ describe("BRAIN_TOOL_ALLOWLIST", () => {
     // have ctx.remote=true, and the v0.29 trust gate rejects remote callers.
     // v114 (#1941) added list_link_sources (read-only provenance discovery);
     // the edge-WRITE ops add_link/remove_link stay out (separate trust call).
-    expect(BRAIN_TOOL_ALLOWLIST.size).toBe(14);
+    expect(BRAIN_TOOL_ALLOWLIST.size).toBe(15);
     expect(BRAIN_TOOL_ALLOWLIST.has("query")).toBe(true);
     expect(BRAIN_TOOL_ALLOWLIST.has("search")).toBe(true);
     expect(BRAIN_TOOL_ALLOWLIST.has("get_page")).toBe(true);

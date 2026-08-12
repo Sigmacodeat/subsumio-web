@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-hidden-battlefield/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "092fc43712d52835"
 ---
 
 # A Hidden Battlefield

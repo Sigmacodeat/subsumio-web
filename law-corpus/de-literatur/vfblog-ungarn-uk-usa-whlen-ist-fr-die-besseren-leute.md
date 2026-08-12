@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ungarn-uk-usa-whlen-ist-fr-die-besseren-l
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2e758eefbb8958e0"
 ---
 
 # Ungarn, UK, USA: Wählen ist was für die besseren Leute

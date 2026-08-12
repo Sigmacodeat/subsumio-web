@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/roots-of-the-eu-tree/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "60053dfdaca9043a"
 ---
 
 # Roots of the EU Tree

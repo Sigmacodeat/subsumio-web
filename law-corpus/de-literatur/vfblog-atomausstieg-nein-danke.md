@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/atomausstieg-nein-danke/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f9eedb3f7373f247"
 ---
 
 # Atomausstieg? – nein danke!

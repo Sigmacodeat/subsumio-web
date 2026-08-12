@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/parteien-grosspenden-transparenz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f5ea2d3a88463fbc"
 ---
 
 # Viel Heu und viel Stroh

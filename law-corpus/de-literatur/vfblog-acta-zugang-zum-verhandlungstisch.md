@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/acta-zugang-zum-verhandlungstisch/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "516a64f1a87fd6f5"
 ---
 
 # ACTA: Zugang zum Verhandlungstisch

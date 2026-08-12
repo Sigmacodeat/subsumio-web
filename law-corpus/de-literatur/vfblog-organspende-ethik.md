@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/organspende-ethik/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ff6ce1856c110fc2"
 ---
 
 # Von Zustimmung und Widersprüchen

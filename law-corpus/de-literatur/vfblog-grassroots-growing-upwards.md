@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/grassroots-growing-upwards/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a65b920d931de626"
 ---
 
 # Grassroots growing upwards

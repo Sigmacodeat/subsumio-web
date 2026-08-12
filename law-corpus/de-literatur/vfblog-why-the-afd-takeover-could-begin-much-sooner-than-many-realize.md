@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "49c820c4fd8d6f4c"
 ---
 
 # Why the AfD Takeover Could Begin Much Sooner Than Many Realize

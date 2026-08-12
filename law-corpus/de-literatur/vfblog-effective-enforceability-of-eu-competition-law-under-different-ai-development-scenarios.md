@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ef13cff75b4b7f62"
 ---
 
 # Effective Enforceability of EU Competition Law Under Different AI Development Scenarios

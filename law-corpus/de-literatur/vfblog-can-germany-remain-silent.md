@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/can-germany-remain-silent/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "938e153745818d89"
 ---
 
 # Can Germany Remain Silent?

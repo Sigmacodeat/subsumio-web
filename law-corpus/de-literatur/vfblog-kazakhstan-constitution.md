@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kazakhstan-constitution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7c8d342b1e8a0032"
 ---
 
 # New Old Kazakhstan

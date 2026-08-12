@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/geert-victor-lepynski-coming-to-your-town
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "254f8589e2e29fb2"
 ---
 
 # Geert-Victor LePynski, coming to your town too

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "263228fc0f2db470"
 ---
 
 # Administrative Enforcement of Corporate Human Rights Due Diligence Legislation

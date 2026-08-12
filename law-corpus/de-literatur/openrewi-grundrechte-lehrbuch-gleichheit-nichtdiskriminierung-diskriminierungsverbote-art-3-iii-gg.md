@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "269c19c377a85beb"
 ---
 
 § 19.2 Gleichberechtigungsauftrag (Art. 3 II GG) &#124; Inhaltsverzeichnis &#124; § 20 Kommunikation & Meinung 

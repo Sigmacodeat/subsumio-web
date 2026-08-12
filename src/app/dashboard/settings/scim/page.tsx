@@ -227,7 +227,7 @@ export default function ScimSettingsPage() {
   // RBAC: Only admin can access this page
   if (userRole !== "admin") {
     return (
-      <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+      <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8 md:p-6 lg:p-8">
         <PageHeader title={t("scim.title")} description={t("scim.description")} />
         <Card>
           <div className="p-10 text-center">

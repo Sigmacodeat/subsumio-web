@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ea3c19a2006e79c7"
 ---
 
 # Climate Change protection goes local – remarks on the Vienna Airport Case

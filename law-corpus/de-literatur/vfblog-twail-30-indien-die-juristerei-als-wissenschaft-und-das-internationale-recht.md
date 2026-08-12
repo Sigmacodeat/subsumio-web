@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "959068f2a264bf85"
 ---
 
 # TWAIL 3.0: Indien, die Juristerei als Wissenschaft und das internationale Recht

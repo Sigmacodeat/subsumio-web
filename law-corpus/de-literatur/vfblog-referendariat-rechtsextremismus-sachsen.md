@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/referendariat-rechtsextremismus-sachsen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0fbdaa871db609b7"
 ---
 
 # Sachsens Sonderweg

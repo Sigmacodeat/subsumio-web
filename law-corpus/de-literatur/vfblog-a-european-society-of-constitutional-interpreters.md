@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-european-society-of-constitutional-inte
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9e81aa7e6b44985e"
 ---
 
 # A European Society of Constitutional Interpreters

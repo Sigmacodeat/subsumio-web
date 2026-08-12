@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0f70cf67119a31c9"
 ---
 
 # Germany and the Erdogan Referendum: the Case for External Voting and Dual Citizenship

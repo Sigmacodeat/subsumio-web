@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3103725f87a328dc"
 ---
 
 # How to Quantify a Proportionate Financial Punishment in the New EU Rule of Law Mechanism?

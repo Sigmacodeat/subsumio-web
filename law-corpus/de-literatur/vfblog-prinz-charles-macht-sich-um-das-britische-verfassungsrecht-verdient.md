@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "06654238d73f79e8"
 ---
 
 # Prinz Charles macht sich um das britische Verfassungsrecht verdient &#8230;

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/demokratische-miet-bestimmung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5343ce3edab2fc45"
 ---
 
 # Demokratische Miet-Bestimmung

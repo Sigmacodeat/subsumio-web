@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ernst-wolfgang-boeckenfoerde-the-european
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c9da922eed83976c"
 ---
 
 # Ernst-Wolfgang Böckenförde, the European

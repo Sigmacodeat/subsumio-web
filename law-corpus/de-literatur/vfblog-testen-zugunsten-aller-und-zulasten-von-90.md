@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/testen-zugunsten-aller-und-zulasten-von-9
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "68d601184d493fbf"
 ---
 
 # Testen zugunsten aller – und zulasten von 90 %?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/unterbrochene-verweiskette/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b75cc171b33a72b3"
 ---
 
 # Unterbrochene Verweiskette

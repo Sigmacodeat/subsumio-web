@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/from-capacity-to-necessity/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "af2db42caf4573ab"
 ---
 
 # From Capacity to Necessity

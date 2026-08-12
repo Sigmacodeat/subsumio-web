@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/brexit-article-50-duff/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "62a9708c83d81d07"
 ---
 
 # Everything you need to know about Article 50 (but were afraid to ask)

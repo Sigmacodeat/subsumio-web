@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-zugangsrevolution-steht-noch-immer-au
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a9ec74c49cadcf9d"
 ---
 
 # Die Zugangsrevolution steht noch immer aus

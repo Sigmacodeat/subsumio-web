@@ -98,7 +98,7 @@ export function QuickTimeEntry({ caseSlug }: QuickTimeEntryProps) {
         <div>
           <Label className="text-xs">{lang === "en" ? "Minutes" : "Minuten"}</Label>
           <Input
-            type="number"
+            type="number" inputMode="numeric"
             min={1}
             value={minutes}
             onChange={(e) => setMinutes(e.target.value)}

@@ -90,7 +90,7 @@ describe("ConnectorManager admin API surface", () => {
     await expect(mgr.setEnabled("nonexistent", true)).rejects.toThrow("Connector not found");
   });
 
-  test("CONNECTOR_REGISTRY exports all 16 connectors", () => {
+  test("CONNECTOR_REGISTRY exports all 18 connectors", () => {
     expect(SUPPORTED_CONNECTORS).toContain("google-drive");
     expect(SUPPORTED_CONNECTORS).toContain("gmail");
     expect(SUPPORTED_CONNECTORS).toContain("notion");
@@ -102,12 +102,15 @@ describe("ConnectorManager admin API surface", () => {
     expect(SUPPORTED_CONNECTORS).toContain("jira");
     // v0.43 legal vertical:
     expect(SUPPORTED_CONNECTORS).toContain("legal-judgements");
+    expect(SUPPORTED_CONNECTORS).toContain("swiss-judgements");
     expect(SUPPORTED_CONNECTORS).toContain("bea-import");
+    expect(SUPPORTED_CONNECTORS).toContain("erv-import");
     expect(SUPPORTED_CONNECTORS).toContain("advokat-import");
+    expect(SUPPORTED_CONNECTORS).toContain("open-access-commentaries");
     // Microsoft 365 / Graph:
     expect(SUPPORTED_CONNECTORS).toContain("ms365-outlook");
     expect(SUPPORTED_CONNECTORS).toContain("ms365-onedrive");
     expect(SUPPORTED_CONNECTORS).toContain("ms365-sharepoint");
-    expect(Object.keys(CONNECTOR_REGISTRY)).toHaveLength(16);
+    expect(Object.keys(CONNECTOR_REGISTRY)).toHaveLength(18);
   });
 });

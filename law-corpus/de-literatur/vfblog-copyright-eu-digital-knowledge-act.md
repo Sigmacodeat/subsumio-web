@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/copyright-eu-digital-knowledge-act/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1d4e7416b08b90c5"
 ---
 
 # The Case for a EU Digital Knowledge Act

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/den-missbrauch-teurer-machen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b38a5d203762f0a8"
 ---
 
 # Den Missbrauch teurer machen

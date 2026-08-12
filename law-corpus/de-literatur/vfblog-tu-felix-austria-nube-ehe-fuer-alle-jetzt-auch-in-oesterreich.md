@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "90a57e0964ffe339"
 ---
 
 # Tu, felix Austria, nube! Ehe für alle – jetzt auch in Österreich

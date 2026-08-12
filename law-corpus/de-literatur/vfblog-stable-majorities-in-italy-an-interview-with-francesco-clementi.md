@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d55efe9451b2e5ca"
 ---
 
 # Stable Majorities in Italy: an Interview with FRANCESCO CLEMENTI

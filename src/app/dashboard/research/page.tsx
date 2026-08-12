@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
 import {
@@ -20,6 +21,21 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { api } from "@/lib/api";
 import { renderMarkdown } from "@/lib/markdown";
 import type { BrainPage } from "@/lib/types";
@@ -138,6 +154,14 @@ function ResearchPageInner() {
     "all"
   );
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
+  const [attachOpen, setAttachOpen] = useState(false);
+  const [attachCase, setAttachCase] = useState("");
+  const [attachSaving, setAttachSaving] = useState(false);
+
+  const { data: cases = [] } = useQuery({
+    queryKey: ["research-cases"],
+    queryFn: () => api.cases.list({ limit: 200 }),
+  });
 
   useEffect(() => {
     loadSavedResearch();
@@ -327,6 +351,42 @@ function ResearchPageInner() {
     } catch (err) {
       setError(err instanceof Error ? err.message : t("research.error_save"));
       addToast({ type: "error", description: t("research.error_save") });
+    }
+  }
+
+  async function attachToCase() {
+    if (!currentAnswer || !attachCase) return;
+    setAttachSaving(true);
+    try {
+      const slug = `cases/${attachCase}/research/${Date.now()}`;
+      const payload = {
+        slug,
+        title: `${t("research.title_prefix")}: ${query.slice(0, 80)}`,
+        type: "legal_note",
+        content: currentAnswer,
+        frontmatter: {
+          case_slug: attachCase,
+          query,
+          jurisdiction,
+          citations: currentCitations.map((c) => c.title),
+          gaps: currentGaps,
+          research_date: new Date().toISOString(),
+          source: "research",
+        },
+      };
+      if (isOnline()) {
+        await api.brain.createPage(payload);
+      } else {
+        await enqueueMutation({ type: "createPage", payload });
+      }
+      addToast({ type: "success", description: "Recherche an Akte angehängt" });
+      setAttachOpen(false);
+      setAttachCase("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("research.error_save"));
+      addToast({ type: "error", description: "Fehler beim Anhängen an Akte" });
+    } finally {
+      setAttachSaving(false);
     }
   }
 
@@ -697,6 +757,13 @@ function ResearchPageInner() {
                   </Badge>
                 </div>
                 <Button
+                  onClick={() => setAttachOpen(true)}
+                  variant="outline"
+                  className="gap-2 text-xs"
+                >
+                  <FolderOpen size={14} /> An Akte anhängen
+                </Button>
+                <Button
                   onClick={saveResearch}
                   className="gap-2 bg-[color:var(--ds-success-solid)] text-xs text-white hover:bg-[color:var(--ds-success-solid)]"
                 >
@@ -719,6 +786,40 @@ function ResearchPageInner() {
               />
             </div>
           )}
+
+          {/* Attach to Case Dialog */}
+          <Dialog open={attachOpen} onOpenChange={setAttachOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Recherche an Akte anhängen</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label>Akte auswählen</Label>
+                  <Select value={attachCase} onValueChange={setAttachCase}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Akte wählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cases.map((c: { slug: string; title: string }) => (
+                        <SelectItem key={c.slug} value={c.slug}>
+                          {c.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setAttachOpen(false)}>
+                  Abbrechen
+                </Button>
+                <Button onClick={attachToCase} disabled={attachSaving || !attachCase}>
+                  {attachSaving ? "Wird gespeichert…" : "Anhängen"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {/* Recent Sessions */}
           {sessions.length > 0 && (

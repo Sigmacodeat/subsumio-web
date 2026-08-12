@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/blogs-der-wissenschaft-denken-sie-daruebe
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fe8d4d6c2b839ab3"
 ---
 
 # Blogs in der Wissenschaft: Was denken Sie darüber?

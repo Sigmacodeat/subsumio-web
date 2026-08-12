@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/international-criminal-law-of-the-west/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e49e7c7221a4af3e"
 ---
 
 # International Criminal Law of “the West”?

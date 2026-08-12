@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/schweiz-diktatur-der-mehrheit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a1d4acce3813f6d1"
 ---
 
 # Schweiz: Diktatur der Mehrheit

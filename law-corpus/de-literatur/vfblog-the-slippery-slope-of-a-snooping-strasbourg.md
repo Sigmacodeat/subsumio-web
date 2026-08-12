@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-slippery-slope-of-a-snooping-strasbou
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0362e41a0865f80b"
 ---
 
 # The Slippery Slope of a Snooping Strasbourg

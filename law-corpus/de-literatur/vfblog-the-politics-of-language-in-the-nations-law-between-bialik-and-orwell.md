@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "317b4a9f725aa395"
 ---
 
 # The Politics of Language in the Nation’s Law – Between Bialik and Orwell

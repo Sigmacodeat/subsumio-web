@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zur-reform-der-verfassungsschutzkontrolle
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "729dd08efb5fe2ee"
 ---
 
 # Zur Reform der Verfassungsschutzkontrolle

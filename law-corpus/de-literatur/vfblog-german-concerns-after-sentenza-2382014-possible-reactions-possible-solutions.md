@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "85c5e7f1445b1e1e"
 ---
 
 # German concerns after Sentenza 238/2014: Possible reactions – possible solutions

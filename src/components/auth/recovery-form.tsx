@@ -196,10 +196,11 @@ export default function RecoveryForm({ mode, lang }: { mode: "forgot" | "reset";
                     <input
                       type="email"
                       autoComplete="email"
+                      inputMode="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full rounded-xl border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] focus:border-[var(--brand-primary)]/50 focus:ring-2 focus:ring-[var(--brand-primary)]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                      className="w-full rounded-xl border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-base sm:text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] focus:border-[var(--brand-primary)]/50 focus:ring-2 focus:ring-[var(--brand-primary)]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                     />
                   </div>
                 </label>

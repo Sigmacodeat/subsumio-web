@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/de-akpification/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "565b71fedc06e572"
 ---
 
 # De-AKPification

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "096d094d0b390915"
 ---
 
 # EU Law Scholarship in Crisis: A Quest for Consistent Theory and Workable Doctrine

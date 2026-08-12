@@ -20,7 +20,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "verify": "tsc --noEmit && npx tsx scripts/check-route-actions.ts",
+    "verify": "tsc --noEmit && npx tsx scripts/check-route-actions.ts && npx tsx scripts/check-design-tokens.ts",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test:lab": "npx vitest run --config vitest.config.lab.ts",

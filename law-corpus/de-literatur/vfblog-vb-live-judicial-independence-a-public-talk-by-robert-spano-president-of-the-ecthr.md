@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4ec1ef6dfa106ac1"
 ---
 
 # VB Live: Judicial Independence – a Public Talk by Robert Spano, President of the ECtHR

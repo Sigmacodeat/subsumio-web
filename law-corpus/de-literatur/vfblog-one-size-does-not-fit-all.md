@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/one-size-does-not-fit-all/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "193b2046ee3347ae"
 ---
 
 # One Size Does Not Fit All

@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/911-auftakt-veranstaltung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c4b7525432c5101f"
 ---
 
 # 9/11, 20 Jahre später: Verfassung und Recht im War against Terror

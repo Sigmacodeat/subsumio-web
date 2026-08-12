@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/is-a-social-credit-system-good-for-women/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dcdb17d7b90f7fbb"
 ---
 
 # Is a Social Credit System Good for Women?

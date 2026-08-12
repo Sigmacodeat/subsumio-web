@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/facebook-der-hass-und-seine-regeln/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "90badfb575540ef0"
 ---
 
 # Facebook, der Hass und seine Regeln

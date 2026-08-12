@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gasp-reden-oder-angst-haben/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3ef83c4944a16c6d"
 ---
 
 # GASP: Reden oder Angst haben?

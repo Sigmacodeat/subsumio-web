@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rechtswissenschaft-als-open-education/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "27c5a9cea06aae81"
 ---
 
 # Rechtswissenschaft als Open Education

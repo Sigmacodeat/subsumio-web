@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zweitveroffentlichungspflicht-bverfg-open
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "da0f7a706e28a7a7"
 ---
 
 # Open Access zwischen Zwang und Anreiz

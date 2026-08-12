@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "65b2041b9ce4e2a6"
 ---
 
 # “We are not in a Seminar”: Some Thoughts on the Legislative’s and Executive’s Prerogative in Determining International Law

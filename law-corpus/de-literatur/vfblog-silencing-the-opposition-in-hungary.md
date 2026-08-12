@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/silencing-the-opposition-in-hungary/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8b75912b5e5b2de4"
 ---
 
 # Silencing the Opposition in Hungary

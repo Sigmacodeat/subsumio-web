@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/who-is-afraid-of-actio-popularis/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b9b5d3de071cc77d"
 ---
 
 # Who is afraid of actio popularis?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ethiopia-transitional-justice/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7ea5f7c4cdde6db0"
 ---
 
 # A Sisyphean Task?

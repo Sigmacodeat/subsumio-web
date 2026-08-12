@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rejecting-lip-service/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "070141bd89d392d2"
 ---
 
 # Rejecting Lip Service or Validating 1930s Family Values?

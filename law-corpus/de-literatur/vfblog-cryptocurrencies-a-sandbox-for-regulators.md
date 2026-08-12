@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/cryptocurrencies-a-sandbox-for-regulators
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e18db1f6fd817968"
 ---
 
 # Cryptocurrencies: A ‘Sandbox for Regulators’?

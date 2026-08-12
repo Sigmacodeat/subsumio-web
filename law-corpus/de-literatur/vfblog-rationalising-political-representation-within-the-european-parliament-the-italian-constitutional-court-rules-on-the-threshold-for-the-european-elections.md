@@ -16,6 +16,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ff081e1d7366ed9a"
 ---
 
 # Rationalising political representation within the European Parliament: the Italian Constitutional Court rules on the threshold for the European elections

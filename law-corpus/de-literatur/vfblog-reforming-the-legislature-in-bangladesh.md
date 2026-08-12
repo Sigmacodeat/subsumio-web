@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/reforming-the-legislature-in-bangladesh/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c379277486a15eeb"
 ---
 
 # Reforming the Legislature in Bangladesh

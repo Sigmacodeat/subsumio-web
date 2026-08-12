@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/normenkontrolle-gba/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a7ef397ae3dc1fa4"
 ---
 
 # Klarheit für das Krankenhauswesen aus Karlsruhe?

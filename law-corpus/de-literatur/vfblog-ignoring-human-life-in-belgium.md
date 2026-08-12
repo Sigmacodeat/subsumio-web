@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ignoring-human-life-in-belgium/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3ff7df230d2d10eb"
 ---
 
 # Ignoring Human Life in Belgium

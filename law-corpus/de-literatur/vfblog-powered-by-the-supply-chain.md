@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/powered-by-the-supply-chain/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "23ea633da4b9da73"
 ---
 
 # “Powered by the Supply Chain”

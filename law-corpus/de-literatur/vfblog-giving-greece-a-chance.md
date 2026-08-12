@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/giving-greece-a-chance/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "02ae23145a3bbec3"
 ---
 
 # Giving Greece a chance

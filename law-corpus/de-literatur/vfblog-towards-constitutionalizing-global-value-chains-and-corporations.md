@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c858c797b79c0c9a"
 ---
 
 # Towards Consti&shy;tutionalizing Global Value Chains and Corporations

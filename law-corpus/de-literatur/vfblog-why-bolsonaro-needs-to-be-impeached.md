@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/why-bolsonaro-needs-to-be-impeached/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e2aa6629c407ad6c"
 ---
 
 # Why Bolsonaro Needs to Be Impeached

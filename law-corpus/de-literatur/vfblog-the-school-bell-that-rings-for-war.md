@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-school-bell-that-rings-for-war/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9301707dd362ec6a"
 ---
 
 # The School Bell That Rings for War

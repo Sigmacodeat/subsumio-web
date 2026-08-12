@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "28dacf1f9893fb86"
 ---
 
 # The German Network Enforcement Act and the Presumption in Favour of Freedom of Speech

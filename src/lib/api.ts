@@ -2404,6 +2404,15 @@ export const api = {
     },
   },
 
+  onboarding: {
+    get(): Promise<{ onboardingCompletedAt: string | null; industry: string | null; jurisdiction: string | null; progress: import("@/lib/types").OnboardingProgress }> {
+      return request("/api/onboarding");
+    },
+    updateProgress(progress: Partial<import("@/lib/types").OnboardingProgress>): Promise<{ ok: boolean; progress: import("@/lib/types").OnboardingProgress }> {
+      return request("/api/onboarding", { method: "PATCH", body: JSON.stringify({ progress }) });
+    },
+  },
+
   upload: {
     async file(
       file: File,

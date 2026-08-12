@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/whither-the-eu-charter-of-fundamental-rig
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eab1516c55609221"
 ---
 
 # Whither, the EU Charter of Fundamental Rights

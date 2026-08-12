@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/verfassungsblog-als-plagiatsopfer/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "66119ebbcc91e529"
 ---
 
 # Verfassungsblog als Plagiatsopfer?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/putinism-is-contagious/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "943c59655f514f58"
 ---
 
 # Putinism is Contagious

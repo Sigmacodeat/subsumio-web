@@ -15,6 +15,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "19e6dfbbf1541f3a"
 ---
 
 Der Sammelbegriff "geistige Güter" beschreibt, was die Beiträge dieses Sammelbandes vereint. Alle Beiträge betreffen Gegenstände, die immaterieller Natur sind und aus verschiedentlichen Gründen rechtliche Zuordnung zu einer Person erfahren - oder erfahren könnten.

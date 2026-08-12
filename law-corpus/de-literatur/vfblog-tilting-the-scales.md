@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/tilting-the-scales/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b4cb8684b0d602da"
 ---
 
 # Tilting the Scales

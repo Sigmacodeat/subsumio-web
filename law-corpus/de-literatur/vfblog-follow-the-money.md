@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/follow-the-money/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "08d12e742de56b8e"
 ---
 
 # Follow the Money

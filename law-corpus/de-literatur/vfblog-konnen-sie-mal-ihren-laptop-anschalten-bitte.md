@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/konnen-sie-mal-ihren-laptop-anschalten-bi
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "25e91ec7b1e448a0"
 ---
 
 # “Können Sie mal Ihren Laptop anschalten, bitte&#8230;”

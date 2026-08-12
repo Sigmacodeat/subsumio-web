@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "13ffc7512432c762"
 ---
 
 # How an EU Directive on Access to a Lawyer Became a Weapon for Secret Arrests

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mikropolitik-des-rechtsrucks/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c3f4661ebaba71e9"
 ---
 
 # Mikropolitik des Rechtsrucks

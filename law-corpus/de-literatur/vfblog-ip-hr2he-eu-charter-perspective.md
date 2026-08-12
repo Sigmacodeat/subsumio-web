@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/ip-hr2he-eu-charter-perspective/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4b10c4fbcf173fc0"
 ---
 
 # The Human Right to a Healthy Environment from an EU Charter Perspective

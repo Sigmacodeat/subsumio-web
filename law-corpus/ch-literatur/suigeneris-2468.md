@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Marc Wohlwend;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "e14300f467c2aaa6"
 ---
 
 # Gesundheitsschutz am Arbeitsplatz — oder die Krux mit den Lichtverhältnissen: Bemerkungen zum Urteil des Bundesgerichts 2C_1044/2019 vom 18. Mai 2020

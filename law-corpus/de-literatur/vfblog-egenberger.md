@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/egenberger/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "091ee6a33b8c6525"
 ---
 
 # Egenberger

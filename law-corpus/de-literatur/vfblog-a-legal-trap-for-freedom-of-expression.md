@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-legal-trap-for-freedom-of-expression/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3b1ed9c70c65bc66"
 ---
 
 # A Legal Trap for Freedom of Expression

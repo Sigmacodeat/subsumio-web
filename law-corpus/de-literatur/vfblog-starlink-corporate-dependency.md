@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/starlink-corporate-dependency/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7a843df7db3e1dfc"
 ---
 
 # Starlink, the Cloud, and Corporate Dependency

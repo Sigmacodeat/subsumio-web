@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/power-dsa-dma-08/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "49b12d4724e440c3"
 ---
 
 # Why End-User Consent Cannot Keep Markets Contestable

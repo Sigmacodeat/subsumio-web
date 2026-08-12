@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/make-it-consistent/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "06bfab121669910d"
 ---
 
 # Make It Consistent

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-ist-kunst-das-kommt-weg/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7428564f820c5a95"
 ---
 
 # Das ist Kunst, das kommt weg

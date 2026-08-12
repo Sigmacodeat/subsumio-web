@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/swedens-vital-interests/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6a6eb432a68b8cf7"
 ---
 
 # Sweden’s Vital Interests

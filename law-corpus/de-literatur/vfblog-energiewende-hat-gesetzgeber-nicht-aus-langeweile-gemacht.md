@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5e1e74dddc746bc6"
 ---
 
 # “Die Energiewende hat der Gesetzgeber nicht aus Langeweile gemacht”

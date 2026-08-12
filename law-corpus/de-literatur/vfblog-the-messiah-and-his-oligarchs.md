@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-messiah-and-his-oligarchs/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "65c2bf3d12b5bb54"
 ---
 
 # The Messiah and His Oligarchs

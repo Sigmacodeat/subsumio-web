@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/goat-cabbage-and-wolf/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b87d70e32858917e"
 ---
 
 # Goat, Cabbage and Wolf

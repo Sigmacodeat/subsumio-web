@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/more-than-formal-recognition/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b6af37ff49848a55"
 ---
 
 # More than Formal Recognition?

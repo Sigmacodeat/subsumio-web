@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/paritaet-in-deutschland-und-europa/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4fa60089c779119f"
 ---
 
 # Parität in Deutschland und Europa

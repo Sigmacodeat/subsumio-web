@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wer-hatte-nicht-gern-ein-sondervermogen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fe3143920e036d37"
 ---
 
 # Wer hätte nicht gern ein Sondervermögen?

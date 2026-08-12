@@ -22,6 +22,7 @@ license: >-
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2024 Damiano Canapa, Arthur
   Grisoni, Marine Antonoff, Daniela Gherciu;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "b96ce3bb876c770b"
 ---
 
 # Le droit suisse des sociétés en 2022 : Modifications législatives et jurisprudence partiellement commentée

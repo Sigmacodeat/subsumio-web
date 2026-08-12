@@ -9,6 +9,7 @@ description: |
   Does NOT access external databases — searches the brain corpus only.
 triggers:
   - "find precedent"
+  - "search precedent"
   - "Präzedenzfall"
   - "Leitentscheidung"
   - "BGH-Urteil"

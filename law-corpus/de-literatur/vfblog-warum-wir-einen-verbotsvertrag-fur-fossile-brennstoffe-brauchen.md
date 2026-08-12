@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1577b9e2717a13da"
 ---
 
 # Warum wir einen Verbotsvertrag für fossile Brennstoffe brauchen

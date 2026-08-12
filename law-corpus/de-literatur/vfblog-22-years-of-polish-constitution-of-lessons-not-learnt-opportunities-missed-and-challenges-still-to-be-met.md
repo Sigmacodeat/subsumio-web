@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7253491a486380c1"
 ---
 
 # 22 Years of Polish Constitution: Of Lessons not Learnt, Opportunities Missed, and Challenges still to be Met

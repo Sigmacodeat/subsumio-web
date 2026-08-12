@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/statehood-in-the-climate-crisis/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6d313b047b612022"
 ---
 
 # Statehood in the Climate Crisis

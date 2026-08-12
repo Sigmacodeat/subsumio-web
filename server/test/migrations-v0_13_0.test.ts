@@ -70,12 +70,11 @@ describe("v0.13.0 — Frontmatter relationship indexing migration", () => {
     expect(src).toContain("runMigrateOnlyCore()");
     expect(src).not.toContain("execSync('gbrain init --migrate-only'");
     // Backfill extract goes through the stderr-capturing wrapper (still bare
-    // `gbrain` so the canonical shim on PATH wins).
-    expect(src).toContain(
-      "runGbrainSubprocess('gbrain extract links --source db --include-frontmatter'"
-    );
+    // `gbrain` so the canonical shim on PATH wins). Quote-agnostic: Prettier
+    // may normalize single→double quotes.
+    expect(src).toMatch(/runGbrainSubprocess\(["']gbrain extract links --source db --include-frontmatter["']/);
     // Stats readback still shells out (reads stdout); bare gbrain.
-    expect(src).toContain("execSync('gbrain call get_stats'");
+    expect(src).toMatch(/execSync\(["']gbrain call get_stats["']/);
   });
 
   test("phase commands never reference `bun` or `.ts` paths (Bug 1 regression)", () => {

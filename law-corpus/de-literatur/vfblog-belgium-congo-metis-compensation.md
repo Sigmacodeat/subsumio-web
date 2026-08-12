@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/belgium-congo-metis-compensation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "29ac8f1a0c467fe8"
 ---
 
 # “For the Sole Reason of Being Born Mixed-Race”

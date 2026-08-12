@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wartime-elections-as-democratic-backslidi
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ac9377f230cdd88b"
 ---
 
 # Wartime Elections as Democratic Backsliding

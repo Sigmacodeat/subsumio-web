@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-kartellrecht-im-spritpreis-wahnsinn/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d0c6882b9f5abd35"
 ---
 
 # Das Kartellrecht im „Spritpreis-Wahnsinn“

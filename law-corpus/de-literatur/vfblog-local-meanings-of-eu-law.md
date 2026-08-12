@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/local-meanings-of-eu-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "61a198965fc0cccf"
 ---
 
 # Local Meanings of EU Law

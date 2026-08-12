@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-digital-public-square-meets-the-digit
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "36fd20f2f5b3cb81"
 ---
 
 # The Digital Public Square meets the Digital Baton

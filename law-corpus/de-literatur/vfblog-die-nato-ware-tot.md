@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-nato-ware-tot/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "96d2484afa75f9da"
 ---
 
 # „Die NATO wäre tot“

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/praying-at-school-anyplace-anywhere-anyti
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e158887bfd7c5c7d"
 ---
 
 # Praying at school? “Anyplace, anywhere, anytime!”

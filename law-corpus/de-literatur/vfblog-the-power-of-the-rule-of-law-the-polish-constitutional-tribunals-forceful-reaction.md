@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a5f5d1d51f7b9c7d"
 ---
 
 # The Power of the Rule of Law: The Polish Constitutional Tribunal’s Forceful Reaction

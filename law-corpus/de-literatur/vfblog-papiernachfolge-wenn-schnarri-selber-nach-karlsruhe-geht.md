@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e1981be47e89d49f"
 ---
 
 # Papier-Nachfolge: Was, wenn Schnarri selber nach Karlsruhe geht?

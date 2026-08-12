@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/os4-moderation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0c7c4b636839c873"
 ---
 
 # Die Moderation von extremistischen Inhalten ist fehleranfällig und verursacht reale Schäden

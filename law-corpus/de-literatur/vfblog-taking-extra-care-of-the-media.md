@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/taking-extra-care-of-the-media/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "36fe057e522cbf58"
 ---
 
 # Taking Extra Care of the Media?

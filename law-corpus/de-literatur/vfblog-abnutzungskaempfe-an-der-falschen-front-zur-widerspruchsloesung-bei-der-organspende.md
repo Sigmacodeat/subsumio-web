@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "879b20860fe6d96e"
 ---
 
 # Abnutzungskämpfe an der falschen Front: zur Widerspruchslösung bei der Organspende

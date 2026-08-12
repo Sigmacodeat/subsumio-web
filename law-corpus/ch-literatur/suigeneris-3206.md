@@ -16,6 +16,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2021 Elena Biaggini;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "f2884244d2cd27a8"
 ---
 
 # Strafrechtlicher Schutz des E-Mail-Verkehrs post mortem?

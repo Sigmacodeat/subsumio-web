@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/walking-out-on-us/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3ddf1f3f3f315f79"
 ---
 
 # Walking out on us

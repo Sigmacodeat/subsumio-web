@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9010541f09cf50b6"
 ---
 
 # VB Live: “Schaffen wir das?” – COVID-19 as a Crisis for German Law and Politics

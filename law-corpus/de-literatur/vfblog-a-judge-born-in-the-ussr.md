@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-judge-born-in-the-ussr/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "668c3b03f5a478c1"
 ---
 
 # A Judge Born in the USSR

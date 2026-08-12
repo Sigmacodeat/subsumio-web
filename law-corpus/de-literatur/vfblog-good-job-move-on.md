@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/good-job-move-on/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6554703ec5f8560c"
 ---
 
 # Good Job, Move On

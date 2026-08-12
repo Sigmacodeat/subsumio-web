@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-return-of-power-sharing-in-northern-i
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0bd3d3224820c99e"
 ---
 
 # The Return of Power-Sharing in Northern Ireland

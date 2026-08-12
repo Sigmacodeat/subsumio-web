@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os5-migration-restrictions/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2a0d44d537cc2e3a"
 ---
 
 # Does the Threat of Terrorism Justify Migration Restrictions?

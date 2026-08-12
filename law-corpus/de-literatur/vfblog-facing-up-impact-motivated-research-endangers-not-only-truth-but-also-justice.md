@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2812c6b598a350ff"
 ---
 
 # Facing Up: Impact-Motivated Research Endangers not only Truth, but also Justice

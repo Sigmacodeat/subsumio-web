@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eigentumsschutz-fr-digitale-vorlagen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d808e36d9e1627ba"
 ---
 
 # Eigentumsschutz für “digitale Vorlagen”

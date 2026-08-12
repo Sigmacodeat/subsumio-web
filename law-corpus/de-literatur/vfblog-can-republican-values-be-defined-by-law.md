@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/can-republican-values-be-defined-by-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9c45dfb564da82f3"
 ---
 
 # Can (Republican) Values be Defined by Law?

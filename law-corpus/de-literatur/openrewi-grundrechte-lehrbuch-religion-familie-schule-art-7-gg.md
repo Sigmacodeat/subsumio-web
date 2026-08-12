@@ -15,6 +15,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "da61b31b8df3b8d6"
 ---
 
 § 22.2 Ehe & Familie (Art. 6 GG) &#124; Inhaltsverzeichnis &#124; § 23 Kunst und Wissenschaft 

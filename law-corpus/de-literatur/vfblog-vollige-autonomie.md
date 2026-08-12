@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/vollige-autonomie/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5c9a3e5bd9f135da"
 ---
 
 # Völlige Autonomie

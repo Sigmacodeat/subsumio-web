@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pnr-pub-pri/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "98506478f880bb80"
 ---
 
 # EU Privacy and Public-Private Collaboration

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ad2dee2bc33dcc08"
 ---
 
 # Courts, Constitutions and Authoritarian Consolidation in Pakistan

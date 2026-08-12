@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6bc0289a0db68b3d"
 ---
 
 # “Brexit/Scot-in”: could a non-independent Scotland stay in the European Union in case of a Brexit?

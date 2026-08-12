@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4acfbcb5a92b25b5"
 ---
 
 # Corona and the Absence of a Real Constitutional Debate in Sweden

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f9b90f3f67184bd9"
 ---
 
 # Herkules oder Sisyphus? Vom Erbe des gesetzlichen Unrechts im post-autokratischen Polen

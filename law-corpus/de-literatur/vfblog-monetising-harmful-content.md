@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/monetising-harmful-content/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "40dadf88c9ee4342"
 ---
 
 # Monetising Harmful Content on Social Media

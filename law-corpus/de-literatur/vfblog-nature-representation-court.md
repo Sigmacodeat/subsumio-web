@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nature-representation-court/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3601ad28d0f89dc4"
 ---
 
 # A Voice for Nature

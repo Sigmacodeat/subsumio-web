@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/abusive-feminism-italy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b6a78f3a6dfce61e"
 ---
 
 # Abusive Feminism in Power

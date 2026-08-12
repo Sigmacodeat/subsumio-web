@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/egmr-rgt-bverfg-wegen-berlanger-verfahren
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ab26fbb494bacb40"
 ---
 
 # EGMR rügt BVerfG wegen überlanger Verfahrensdauer

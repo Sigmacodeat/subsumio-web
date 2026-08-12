@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/inklusion-menschen-mit-behinderungen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7f1b974e6e7707e4"
 ---
 
 # Höchst normal gefährlich

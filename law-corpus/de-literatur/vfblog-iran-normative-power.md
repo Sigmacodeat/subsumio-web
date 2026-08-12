@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/iran-normative-power/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9dc85e9e28d8bbfc"
 ---
 
 # Normative Power Through Protest

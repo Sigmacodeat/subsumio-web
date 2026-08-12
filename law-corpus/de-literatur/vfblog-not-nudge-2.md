@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/not-nudge-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0faab58b9bff2127"
 ---
 
 # Why not Nudge?

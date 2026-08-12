@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-eu-free-market-does-not-extend-to-cit
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7aaedd4708d6b16c"
 ---
 
 # The EU Free Market Does Not Extend to Citizenship

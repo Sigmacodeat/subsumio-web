@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/vergesellschaftungsverzogerungsgesetz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f9c0f64e55657660"
 ---
 
 # Vergesellschaftungsverzögerungsgesetz

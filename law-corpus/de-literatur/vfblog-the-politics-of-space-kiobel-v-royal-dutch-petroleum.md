@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "47425593fb9e3265"
 ---
 
 # The Politics of Space: Kiobel v. Royal Dutch Petroleum

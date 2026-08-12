@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/acht-thesen-zur-juristerei-als-wissenscha
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "df66c5562cebaf38"
 ---
 
 # Acht Thesen zur Juristerei als Wissenschaft

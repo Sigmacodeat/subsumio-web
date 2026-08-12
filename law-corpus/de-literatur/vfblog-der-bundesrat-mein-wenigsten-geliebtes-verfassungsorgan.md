@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b4621d445ff30d60"
 ---
 
 # Der Bundesrat, mein am wenigsten geliebtes Verfassungsorgan

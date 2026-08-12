@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/keine-rechtfertigung-fur-sperrklauseln/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "670bdb1678c47b29"
 ---
 
 # Keine Rechtfertigung für Sperrklauseln

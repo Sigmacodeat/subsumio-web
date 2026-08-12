@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f2d52123e1a190d3"
 ---
 
 # Passing Laws without a Vote: the French Labour Reform and Art. 49-3 of the Constitution

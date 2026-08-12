@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/money-is-time/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "371d054830f3f948"
 ---
 
 # Money is Time

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/teaching-law-in-times-of-overlapping-cris
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7ee575c50d89d20a"
 ---
 
 # Teaching Law in Times of Overlapping Crises

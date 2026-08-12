@@ -1,4 +1,6 @@
 ---
+jurisdiction: at
+title: "OGH 9 ObA 45/23s — Kündigung und Diskriminierung"
 type: court_decision
 court: "OGH"
 date: "2023-09-28"
@@ -8,6 +10,7 @@ legal_area: "Arbeitsrecht"
 keywords: ["Kündigung", "Unwirksamkeit", "Diskriminierung", "Beweislast"]
 source: "ris-ogd"
 source_url: "https://ris.bka.gv.at/Dokument.wxe?Abfrage=Justiz&Dokumentnummer=9ObA45/23s"
+content_hash: "397a92d8fbe47ae7"
 ---
 
 # OGH 9 ObA 45/23s — Kündigung und Diskriminierung

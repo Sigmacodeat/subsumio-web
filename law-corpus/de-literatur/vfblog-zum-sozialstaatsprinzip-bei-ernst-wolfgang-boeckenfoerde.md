@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fb0be7d2036c46a5"
 ---
 
 # Zum Sozialstaats&shy;prinzip bei Ernst-Wolfgang Böckenförde

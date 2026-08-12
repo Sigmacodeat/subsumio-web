@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "603bfd8d9eb5a3b9"
 ---
 
 # A Bridge over Troubled Water – a Criminal Lawyers’ Response to Taricco II

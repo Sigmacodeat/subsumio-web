@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/covid-19-in-latvia-precaution-above-all/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "45b5d25b8e8d41f4"
 ---
 
 # COVID-19 in Latvia: Precaution Above All

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/lawyers-the-constitution-needs-you/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "11b8c32e35f3e546"
 ---
 
 # Lawyers! The Constitution Needs You!

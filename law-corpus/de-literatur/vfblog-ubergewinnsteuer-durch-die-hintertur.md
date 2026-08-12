@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ubergewinnsteuer-durch-die-hintertur/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "594fd8a550e2c87a"
 ---
 
 # Übergewinnsteuer durch die Hintertür

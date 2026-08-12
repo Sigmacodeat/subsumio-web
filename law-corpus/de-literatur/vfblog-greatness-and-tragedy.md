@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/greatness-and-tragedy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c283ba0884f0e033"
 ---
 
 # Greatness and Tragedy

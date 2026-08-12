@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dealing-with-a-complex-family-tree/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0c07d7332e85b90e"
 ---
 
 # Dealing with a Complex Family Tree

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b3a4c819fd1aa905"
 ---
 
 # Investitionsschutz&shy;gericht in CETA: ein Schritt in die richtige Richtung

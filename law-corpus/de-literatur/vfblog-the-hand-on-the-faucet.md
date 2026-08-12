@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-hand-on-the-faucet/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cdab3b76b6cc310a"
 ---
 
 # The Hand on the Faucet

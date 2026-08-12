@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a05f3c7865948dc3"
 ---
 
 # EGMR stärkt Informationsfreiheit von NGOs gegenüber dem Staat

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/marktdominanz-bibliotheken-diamond-open-a
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2502b99c3c99c542"
 ---
 
 # Macht und Entscheidung im Publikationswesen

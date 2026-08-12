@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3272954b83b4d469"
 ---
 
 # Coronavirus Emergency and Public Law Issues: An Update on the Italian Situation

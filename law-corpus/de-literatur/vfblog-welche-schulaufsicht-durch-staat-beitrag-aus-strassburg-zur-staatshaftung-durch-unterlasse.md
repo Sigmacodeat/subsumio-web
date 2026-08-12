@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e0c93bdf56c7384f"
 ---
 
 # Welche Schulaufsicht durch den Staat? Ein Beitrag aus Straßburg zur Staatshaftung durch Unterlassen

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/demokratie-im-gegensatz-wozu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "31e9e8a4e76b5b4c"
 ---
 
 # Demokratie im Gegensatz wozu?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/on-europes-justice-deficit-and-how-to-red
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a883392259180618"
 ---
 
 # On Europe’s justice deficit, and how to reduce it

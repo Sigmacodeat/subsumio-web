@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/can-the-russian-constitution-still-strike
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2a2c051e8a7379ac"
 ---
 
 # Can the Russian Constitution Still Strike Back?

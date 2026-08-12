@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/power-grab-in-times-of-emergency/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f0b4227be46a7371"
 ---
 
 # Power Grab in Times of Emergency

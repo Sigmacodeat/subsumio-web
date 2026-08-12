@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/power-dsa-dma-09/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "55107bd19715bfb8"
 ---
 
 # Private Enforcement for the DSA/DGA/DMA Package

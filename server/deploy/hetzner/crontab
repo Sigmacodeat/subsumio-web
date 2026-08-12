@@ -7,6 +7,12 @@
 # If outdated laws are found, triggers /api/admin/law-sync to reimport updated corpus.
 45 2 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/statute-currency || true
 
+# ── 02:30 UTC (04:30 CEST) — RIS Delta-Watcher ──
+# Inkrementeller Sync: holt neue/geänderte Gesetze & Entscheidungen von RIS OGD API.
+# Setzt pipeline_config Trigger → corpus-pipeline startet ris-delta-watcher.ts.
+# Läuft vor law-sync (03:00) damit neue Dokumente gleich importiert werden.
+30 2 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/ris-delta-watcher || true
+
 # ── 03:00 UTC (05:00 CEST) — Law corpus sync ──
 0 3 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/law-sync || true
 

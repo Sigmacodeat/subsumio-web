@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "24a1724a6c9eaaf9"
 ---
 
 # Constitutionalism in a Time of Crisis: Botswana's Reaction to the COVID-19 Pandemic

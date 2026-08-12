@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1d01d9f3e2114717"
 ---
 
 # »Verfassungs&shy;positionen verteidigen«: Gedanken zur Debatte um die Vergesell&shy;schaftung von Wohn&shy;eigentum

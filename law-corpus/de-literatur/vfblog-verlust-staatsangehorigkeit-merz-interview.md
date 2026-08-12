@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/verlust-staatsangehorigkeit-merz-intervie
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bf75a040e538c93a"
 ---
 
 # „Das sägt am Gleichheitsversprechen“

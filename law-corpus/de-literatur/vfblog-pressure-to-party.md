@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pressure-to-party/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2d99d00c92cc4a29"
 ---
 
 # Pressure to Party?

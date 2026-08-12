@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c0a68fa216542507"
 ---
 
 # Von »Anti-Abschiebe-Industrie« zu gesetzlicher Repression – Flüchtlings&shy;organisationen sollen kriminalisiert werden

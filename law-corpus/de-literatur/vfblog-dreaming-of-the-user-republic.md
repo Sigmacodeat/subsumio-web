@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dreaming-of-the-user-republic/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8089a2fb6ee02ca2"
 ---
 
 # Dreaming of the User Republic

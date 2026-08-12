@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2019 Mathias Kaufmann;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "1518ca2d61711db3"
 ---
 
 # Kein Grundrechtsanspruch auf «Homeschooling»? Bemerkungen zum Urteil des Bundesgerichts 2C_1005/2018 vom 22. August 2019 (zur Publikation vorgesehen)

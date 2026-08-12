@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3e0153b579b20bee"
 ---
 
 # Impeaching Remnants of the Authoritarian Past: A Constitutional Moment in South Korea

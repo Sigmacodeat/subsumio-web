@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "59244bc2fcf4cd4b"
 ---
 
 # How the Destroyers of Academic Freedom Masquerade Themselves as Its Victims

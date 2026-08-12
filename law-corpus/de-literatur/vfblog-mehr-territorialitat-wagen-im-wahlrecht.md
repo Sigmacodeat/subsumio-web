@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mehr-territorialitat-wagen-im-wahlrecht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9e06e5951db48ed2"
 ---
 
 # Mehr Territorialität wagen im Wahlrecht

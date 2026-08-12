@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/poland-presidential-election-2025/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c9aa0d6fc188a447"
 ---
 
 # Anatomy of a Liberal Fall

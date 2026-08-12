@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fico-iv/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "afa6ef5c3bd8a5c2"
 ---
 
 # Hundred Days of Fico IV Administration

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "28a66b29aad4169f"
 ---
 
 # Open Letter to the President of the European Commission   regarding Poland’s “Muzzle Law”

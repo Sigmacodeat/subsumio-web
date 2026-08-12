@@ -2,6 +2,7 @@ import { z } from "zod";
 import { verifyPortalToken } from "@/lib/portal-token";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
+import { broadcastPortalVisit } from "@/lib/realtime-bus";
 
 const verifySchema = z.object({
   token: z.string().min(1, "token_required"),
@@ -19,6 +20,15 @@ export const GET = createPublicHandler(
     const payload = await verifyPortalToken(query.token);
     if (!payload) {
       return apiError("invalid_or_expired_token", "Token ungültig oder abgelaufen", 403);
+    }
+
+    // Broadcast portal visit to the firm (realtime SSE)
+    if (payload.brain_id) {
+      broadcastPortalVisit(payload.brain_id, {
+        caseSlug: payload.case_slug,
+        action: "view",
+        visitedAt: new Date().toISOString(),
+      });
     }
 
     return Response.json({

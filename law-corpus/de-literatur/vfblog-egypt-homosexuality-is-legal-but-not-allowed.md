@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/egypt-homosexuality-is-legal-but-not-allo
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2f905dc82fa803b3"
 ---
 
 # Egypt: Homosexuality is legal – but not allowed

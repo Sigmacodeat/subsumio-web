@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ff309a21d2a4904e"
 ---
 
 # Vom individuellen Unrechtskontext zum systematischen Umgang mit kolonialem Unrecht

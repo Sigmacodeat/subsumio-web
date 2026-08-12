@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/can-brexit-be-stopped-under-eu-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "378e11bb6d85c630"
 ---
 
 # Can Brexit be stopped under EU Law?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/an-offer-the-eu-and-uk-cannot-refuse-ii-f
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "386f49d69aa13ebe"
 ---
 
 # An Offer the EU and UK Cannot Refuse II: FAQ

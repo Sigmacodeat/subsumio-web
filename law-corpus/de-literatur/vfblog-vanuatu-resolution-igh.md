@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/vanuatu-resolution-igh/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1992028d97d559e6"
 ---
 
 # „Wenn die Juristen kommen, wird es ernst“

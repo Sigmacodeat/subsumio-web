@@ -205,7 +205,7 @@ export default function TaxReturnDetailPage() {
   const locale = lang === "en" ? "en-GB" : "de-DE";
 
   return (
-    <div className="mx-auto max-w-[900px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <Link
         href="/dashboard/tax-returns"
         className="inline-flex items-center gap-1 text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--brand-primary)]"
@@ -281,7 +281,7 @@ export default function TaxReturnDetailPage() {
                   {t("tax.detail.label_year")}
                 </label>
                 <Input
-                  type="number"
+                  type="number" inputMode="numeric"
                   value={form.year}
                   onChange={(e) => setForm((p) => ({ ...p, year: Number(e.target.value) }))}
                   min={2000}
@@ -321,7 +321,7 @@ export default function TaxReturnDetailPage() {
                   {t("tax.detail.label_tax_amount")}
                 </label>
                 <Input
-                  type="number"
+                  type="number" inputMode="numeric"
                   value={form.taxAmount}
                   onChange={(e) => setForm((p) => ({ ...p, taxAmount: e.target.value }))}
                   placeholder="0,00"
@@ -365,7 +365,7 @@ export default function TaxReturnDetailPage() {
                   {t("tax.detail.label_refund_amount")}
                 </label>
                 <Input
-                  type="number"
+                  type="number" inputMode="numeric"
                   value={form.refundAmount}
                   onChange={(e) => setForm((p) => ({ ...p, refundAmount: e.target.value }))}
                   placeholder="0,00"

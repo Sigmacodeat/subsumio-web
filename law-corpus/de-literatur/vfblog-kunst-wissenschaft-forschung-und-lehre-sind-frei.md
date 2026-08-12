@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kunst-wissenschaft-forschung-und-lehre-si
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c04604ee94c3507f"
 ---
 
 # Kunst, Wissenschaft, Forschung und Lehre sind frei

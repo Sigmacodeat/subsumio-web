@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/profs-und-richter-wie-hund-und-katz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c944b8f78b75c831"
 ---
 
 # Profs und Richter – wie Hund und Katz

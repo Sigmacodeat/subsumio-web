@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rechtsextreme-betriebspolitik-vor-gericht
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e681e83dee7d3e46"
 ---
 
 # Rechtsextreme Betriebspolitik vor Gericht

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/adapt-or-die/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c986f178239bc6e3"
 ---
 
 # Adapt or Die?

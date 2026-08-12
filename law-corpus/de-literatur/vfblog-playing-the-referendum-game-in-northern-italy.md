@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/playing-the-referendum-game-in-northern-i
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "828b640740ff2d83"
 ---
 
 # Playing the Referendum Game in Northern Italy

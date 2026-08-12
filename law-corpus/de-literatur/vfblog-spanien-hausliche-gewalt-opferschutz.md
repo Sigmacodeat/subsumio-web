@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/spanien-hausliche-gewalt-opferschutz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3bc0454c8d6f6f0c"
 ---
 
 # Von den Grenzen der Gewalt

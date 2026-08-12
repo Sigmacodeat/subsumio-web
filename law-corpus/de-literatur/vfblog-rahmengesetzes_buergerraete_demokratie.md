@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/rahmengesetzes_buergerraete_demokratie/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5898538a61e03fc6"
 ---
 
 # Grundpfeiler eines Rahmengesetzes für konsultative Bürgerräte

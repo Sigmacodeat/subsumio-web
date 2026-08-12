@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/preparing-for-the-pandemic-elections/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1274d0abf309b636"
 ---
 
 # Preparing for the Pandemic Elections

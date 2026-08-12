@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/was-quatsch-ist-wird-quatsch-bleiben/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ef63d35a169a5ead"
 ---
 
 # Was „Quatsch“ ist, wird Quatsch bleiben?

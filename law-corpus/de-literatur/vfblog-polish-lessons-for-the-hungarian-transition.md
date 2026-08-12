@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/polish-lessons-for-the-hungarian-transiti
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ea21c57f7de4d5d8"
 ---
 
 # Polish Lessons for the Hungarian Transition

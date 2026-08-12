@@ -15,6 +15,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "181360f9a29a9a9a"
 ---
 
 § 5.2 Wahlen und Abstimmungen &#124; Inhaltsverzeichnis &#124; § 5.2.2 Abstimmungen 

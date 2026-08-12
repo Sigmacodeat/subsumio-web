@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/an-impossible-trinity/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c794655f39286655"
 ---
 
 # An ‘Impossible Trinity’?

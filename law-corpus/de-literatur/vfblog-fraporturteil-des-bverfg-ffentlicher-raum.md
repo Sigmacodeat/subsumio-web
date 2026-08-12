@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fraporturteil-des-bverfg-ffentlicher-raum
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bd56a5d612783934"
 ---
 
 # Fraport-Urteil des BVerfG: Öffentlicher Raum

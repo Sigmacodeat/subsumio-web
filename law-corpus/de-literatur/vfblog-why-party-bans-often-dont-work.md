@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/why-party-bans-often-dont-work/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dc1da8af2a501485"
 ---
 
 # Why Party Bans Often Don’t Work

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/christian-schmidts-stabilitocracy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0ac91caa76c8c855"
 ---
 
 # Christian Schmidt’s Stabilitocracy

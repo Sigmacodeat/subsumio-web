@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "72c7f834bbe07be9"
 ---
 
 # Automated Decision-Making and the Challenge of Implementing Existing Laws

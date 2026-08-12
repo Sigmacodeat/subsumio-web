@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/narrow-rules-are-not-enough/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9490c7e781733a28"
 ---
 
 # Narrow Rules are not Enough

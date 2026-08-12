@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/not-a-return-rather-an-abduction/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "268d6f2e0c76777e"
 ---
 
 # Not a Return, Rather an Abduction

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ioc-adds-human-rights-punch-to-the-lex-ol
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bcfa195de75642fc"
 ---
 
 # IOC adds Human Rights Punch to the Lex Olympica

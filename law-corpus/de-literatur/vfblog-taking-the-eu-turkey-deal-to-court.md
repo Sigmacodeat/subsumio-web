@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/taking-the-eu-turkey-deal-to-court/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3c774791427c381c"
 ---
 
 # Taking the EU-Turkey Deal to Court?

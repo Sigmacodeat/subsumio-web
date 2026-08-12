@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "7fb994e3b7b73cbe"
 ---
 
 § 9.2 Tierschutz, Art. 20a GG &#124; Inhaltsverzeichnis &#124; § 9.4 Europäische Integration, Art. 23 I 1 GG 

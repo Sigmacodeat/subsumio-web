@@ -78,7 +78,7 @@ export default function DictationPage() {
   const pendingCount = entries.filter((e) => e.status === "transcribed").length;
 
   return (
-    <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("dictation.title")}
         description={t("dictation.description")}
@@ -113,41 +113,47 @@ export default function DictationPage() {
           <h2 className="text-sm font-semibold">{t("dictation.create_title")}</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">
+              <Label htmlFor="dict-lawyer" className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("dictation.lawyer")} *
               </Label>
               <Input
+                id="dict-lawyer"
                 value={form.lawyer_name}
                 onChange={(e) => setForm({ ...form, lawyer_name: e.target.value })}
                 required
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">
+              <Label htmlFor="dict-email" className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("dictation.email")} *
               </Label>
               <Input
+                id="dict-email"
                 type="email"
+                autoComplete="email"
+                inputMode="email"
                 value={form.lawyer_email}
                 onChange={(e) => setForm({ ...form, lawyer_email: e.target.value })}
                 required
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">
+              <Label htmlFor="dict-case" className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("dictation.case")}
               </Label>
               <Input
+                id="dict-case"
                 value={form.case_slug}
                 onChange={(e) => setForm({ ...form, case_slug: e.target.value })}
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">
+              <Label htmlFor="dict-duration" className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("dictation.duration_sec")} *
               </Label>
               <Input
-                type="number"
+                id="dict-duration"
+                type="number" inputMode="numeric"
                 min="1"
                 value={form.duration_seconds}
                 onChange={(e) => setForm({ ...form, duration_seconds: e.target.value })}
@@ -189,14 +195,14 @@ export default function DictationPage() {
                     className={`text-xs ${entry.status === "filed" ? "border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]" : entry.status === "failed" ? "border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]" : ""}`}
                   >
                     {entry.status === "recording"
-                      ? "Aufnahme"
+                      ? t("dictation.status_recording")
                       : entry.status === "transcribed"
-                        ? "Transkribiert"
+                        ? t("dictation.status_transcribed")
                         : entry.status === "corrected"
-                          ? "Korrigiert"
+                          ? t("dictation.status_corrected")
                           : entry.status === "filed"
-                            ? "Abgelegt"
-                            : "Fehler"}
+                            ? t("dictation.status_filed")
+                            : t("dictation.status_failed")}
                   </Badge>
                 </div>
                 <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/frontex-and-algorithmic-discretion-part-i
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e30b6c8462291c1f"
 ---
 
 # Frontex and ‘Algorithmic Discretion’ (Part I)

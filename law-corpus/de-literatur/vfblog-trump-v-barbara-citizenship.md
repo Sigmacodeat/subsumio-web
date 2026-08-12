@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/trump-v-barbara-citizenship/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2f8c3ec4a7a8654e"
 ---
 
 # (De)Valuing Citizenship

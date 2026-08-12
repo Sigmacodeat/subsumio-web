@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/no-institutional-upheaval-in-sight-in-ita
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a66eeddba4b95561"
 ---
 
 # No Institutional Upheaval in Sight in Italy

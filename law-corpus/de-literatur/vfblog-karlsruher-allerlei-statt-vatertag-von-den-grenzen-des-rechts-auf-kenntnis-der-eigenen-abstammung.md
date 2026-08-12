@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2324ba100bfe6d5c"
 ---
 
 # „Karlsruher Allerlei“ statt Vatertag: von den Grenzen des Rechts auf Kenntnis der eigenen Abstammung

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/abtreibung-weigerungsrecht-krankenhaus/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0a7076bdd28d849c"
 ---
 
 # Weigerung verweigert

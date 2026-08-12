@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Kaspar Gerber;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "f28961240252ce66"
 ---
 
 # Rechtsschutz bei Massnahmen des Bundesrats zur Bekämpfung der Covid-19-Pandemie: Am Beispiel der Schliessung von öffentlichen Einrichtungen für das Publikum und der Schutzkonzepte

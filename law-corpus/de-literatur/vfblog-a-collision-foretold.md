@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-collision-foretold/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f03db340a1bef8a9"
 ---
 
 # A Collision Foretold

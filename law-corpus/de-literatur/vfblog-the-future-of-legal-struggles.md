@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-future-of-legal-struggles/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4089f5a0d0e74e70"
 ---
 
 # The Future of Legal Struggles

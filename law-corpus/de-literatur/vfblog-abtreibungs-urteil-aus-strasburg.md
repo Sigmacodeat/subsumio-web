@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/abtreibungs-urteil-aus-strasburg/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f655c0cba13ce34d"
 ---
 
 # Abtreibungs-Urteil aus Straßburg?

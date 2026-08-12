@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-indian-supreme-courts-ncert-affair/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "85d53aa008d36f57"
 ---
 
 # When the Protector Becomes the Prosecutor

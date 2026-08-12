@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "331ba02f3ed3fa0c"
 ---
 
 # Japan’s Soft State of Emergency: Social Pressure Instead of Legal Penalty

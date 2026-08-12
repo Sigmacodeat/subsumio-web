@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-ende-des-daten-eldorados/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "493d06388e3423cd"
 ---
 
 # Das Ende des Daten-Eldorados

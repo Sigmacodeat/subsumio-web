@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "68dfefce36930597"
 ---
 
 # Beim Geld hört die Freiheit nicht auf – Kirchliche Freiheit und staatliche Finanzierung

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/was-nun-herr-vosskuhle/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "19995d117c609f62"
 ---
 
 # Was nun, Herr Voßkuhle?

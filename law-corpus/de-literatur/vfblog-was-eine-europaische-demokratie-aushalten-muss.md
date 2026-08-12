@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/was-eine-europaische-demokratie-aushalten
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e4be969d0cb2cfd6"
 ---
 
 # Was eine europäische Demokratie aushalten muss

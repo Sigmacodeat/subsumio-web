@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "848260af0d0dd20f"
 ---
 
 # The Proposed TTIP Tribunal and the Court of Justice: What Limits to Investor-State Dispute Settlement under EU Constitutional Law?

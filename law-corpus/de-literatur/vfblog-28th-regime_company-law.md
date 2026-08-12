@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/28th-regime_company-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bb39143a075e00d9"
 ---
 
 # The 28th Regime

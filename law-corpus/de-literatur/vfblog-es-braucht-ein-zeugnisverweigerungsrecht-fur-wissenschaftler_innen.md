@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "601580f0dd541799"
 ---
 
 # Es braucht ein Zeugnisverweigerungsrecht für Wissenschaftler_Innen

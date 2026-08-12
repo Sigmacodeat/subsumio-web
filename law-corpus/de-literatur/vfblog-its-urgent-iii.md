@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/its-urgent-iii/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dc811c14a05bac87"
 ---
 
 # It’s Urgent III

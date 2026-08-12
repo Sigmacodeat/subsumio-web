@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/answering-macron/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "28b3a4f00e505a60"
 ---
 
 # Answering Macron

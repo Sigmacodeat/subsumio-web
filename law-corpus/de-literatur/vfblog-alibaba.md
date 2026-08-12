@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/alibaba/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "46b023c2c2a81874"
 ---
 
 # Alibaba: Punishment and Collaboration

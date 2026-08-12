@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "8ac94d696515e035"
 ---
 
 2. Kapitel Staatsstrukturprinzipien &#124; Inhaltsverzeichnis &#124; § 4.1 Das Recht und seine Wirkung 

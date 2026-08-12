@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/everyone-agrees-that-freedom-is-kind-of-s
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6908eecdec981916"
 ---
 
 # Everyone Agrees That Freedom is Kind of Swell

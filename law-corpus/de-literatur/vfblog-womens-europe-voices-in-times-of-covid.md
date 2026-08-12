@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/womens-europe-voices-in-times-of-covid/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ca685d22c24a3243"
 ---
 
 # Women's Europe: Voices in Times of Covid

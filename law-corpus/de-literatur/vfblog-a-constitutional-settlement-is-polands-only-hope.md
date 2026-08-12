@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-constitutional-settlement-is-polands-on
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0f2ab16661fcc954"
 ---
 
 # A Constitutional Settlement Is Poland’s Only Hope

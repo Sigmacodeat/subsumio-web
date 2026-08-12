@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/justification-possibilities-soft-paternal
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3243827b0dca5a61"
 ---
 
 # On the justification and possibilities of soft paternalism

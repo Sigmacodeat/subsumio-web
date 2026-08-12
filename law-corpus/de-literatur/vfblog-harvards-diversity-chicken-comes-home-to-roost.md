@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/harvards-diversity-chicken-comes-home-to-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1087dd39939e8da3"
 ---
 
 # Harvard's Diversity Chicken Comes Home to Roost

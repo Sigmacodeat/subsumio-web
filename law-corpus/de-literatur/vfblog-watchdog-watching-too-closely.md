@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/watchdog-watching-too-closely/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "46ab7b13e62a51d5"
 ---
 
 # Watchdog Watching Too Closely

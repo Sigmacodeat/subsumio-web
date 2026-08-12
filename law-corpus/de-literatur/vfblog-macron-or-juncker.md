@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/macron-or-juncker/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b9d609b3b779b3fc"
 ---
 
 # Macron or Juncker

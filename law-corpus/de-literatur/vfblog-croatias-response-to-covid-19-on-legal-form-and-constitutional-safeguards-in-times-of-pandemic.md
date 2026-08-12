@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5d961e697a54e1bb"
 ---
 
 # Croatia’s Response to COVID-19: On Legal Form and Constitutional Safeguards in Times of Pandemic

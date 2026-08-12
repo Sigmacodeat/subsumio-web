@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/lithium-law-and-the-limits-of-eu-sustaina
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c1ce7972f8fef6c4"
 ---
 
 # Lithium, Law, and the Limits of EU Sustainability

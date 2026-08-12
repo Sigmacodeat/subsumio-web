@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/was-darf-eine-bundeskanzlerin-sagen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "23071c5f46cc0558"
 ---
 
 # Was darf eine Bundeskanzlerin sagen?

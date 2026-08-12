@@ -19,6 +19,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2015
   AUSTRIAN LAW JOURNAL
+content_hash: "fae20747c64f0cf4"
 ---
 
 # The Recent Shift from the Passive to the Active Consumer

@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/truth-independence-sectors-objected/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d7892426c1ae5572"
 ---
 
 # “There was truth in what the independence sectors objected to”

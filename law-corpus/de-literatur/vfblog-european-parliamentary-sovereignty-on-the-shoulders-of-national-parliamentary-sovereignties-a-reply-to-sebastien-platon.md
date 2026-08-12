@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "57dc185758df6fc9"
 ---
 
 # European parliamentary sovereignty on the shoulders of national parliamentary sovereignties: A Reply to Sébastien Platon

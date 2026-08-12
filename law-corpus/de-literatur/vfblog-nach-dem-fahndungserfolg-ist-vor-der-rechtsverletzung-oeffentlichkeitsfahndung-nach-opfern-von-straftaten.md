@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bcd57e1968cf8702"
 ---
 
 # Nach dem Fahndungserfolg ist vor der Rechtsverletzung: Öffentlichkeits&shy;fahndung nach Opfern von Straftaten

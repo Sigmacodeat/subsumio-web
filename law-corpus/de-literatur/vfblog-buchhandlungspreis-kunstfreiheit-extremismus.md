@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/buchhandlungspreis-kunstfreiheit-extremis
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d1f078128c03e35a"
 ---
 
 # Weimerer Verhältnisse

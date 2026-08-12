@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/de-constitutionalism-in-turkey/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c3c3c9b3887e510f"
 ---
 
 # “De-constitutionalism” in Turkey?

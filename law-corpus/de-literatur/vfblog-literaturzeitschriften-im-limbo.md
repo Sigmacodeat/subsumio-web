@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/literaturzeitschriften-im-limbo/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5a148c6e5b0e5935"
 ---
 
 # Literaturzeitschriften im Limbo

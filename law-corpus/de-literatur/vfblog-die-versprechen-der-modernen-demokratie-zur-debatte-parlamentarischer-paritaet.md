@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "820f3b60d22f594b"
 ---
 
 # Die Versprechen der modernen Demokratie: zur Debatte parla&shy;men&shy;tarischer Parität

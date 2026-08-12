@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3ed4802f26746f2e"
 ---
 
 # No Case for Legal Interventionism: Defending Democracy Through Protecting Pluralism and Parliamentarism

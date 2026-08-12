@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gewinnen-durch-verlieren/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "70a928715bd52292"
 ---
 
 # Gewinnen durch Verlieren

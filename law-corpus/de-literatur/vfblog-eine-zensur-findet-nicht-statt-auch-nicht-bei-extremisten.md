@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bc5c84d1b841f8ac"
 ---
 
 # Eine Zensur findet nicht statt – auch nicht bei Extremisten

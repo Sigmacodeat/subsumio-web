@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-really-really-bad-month-for-refugees/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "47e03002d2536886"
 ---
 
 # A really, really bad month for refugees

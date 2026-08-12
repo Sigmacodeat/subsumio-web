@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/os6-privacy-vs-security/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cc939004c6e7432a"
 ---
 
 # The legacy of the privacy versus security narrative in the ECtHR’s jurisprudence

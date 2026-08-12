@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/judging-fears-in-refugee-crisis/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7d6c894d5d0a00b7"
 ---
 
 # Judging Fears in Refugee Crisis

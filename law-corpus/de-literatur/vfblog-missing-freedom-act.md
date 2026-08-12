@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/missing-freedom-act/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "206a630ba70e77fc"
 ---
 
 # Missing Freedom Act

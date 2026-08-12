@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/unzulassige-entwertung-des-parteitags/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7f740ca9e2fc2090"
 ---
 
 # Unzulässige Entwertung des Parteitags?

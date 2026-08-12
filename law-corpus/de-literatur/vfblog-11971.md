@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/11971/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6f58b5f5e050f458"
 ---
 
 # The Unconstitutional Holiday: Bosnian Constitutional Court annuls Serb Republic Day

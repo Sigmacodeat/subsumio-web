@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/meat-free-nudging/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9baf8d2eac0cd5d7"
 ---
 
 # Meat-Free Nudging

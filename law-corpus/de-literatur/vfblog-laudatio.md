@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/laudatio/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8201a547f31670ab"
 ---
 
 # Eine Laudatio, ein Schnitt und ein bedauerlicher Fehler

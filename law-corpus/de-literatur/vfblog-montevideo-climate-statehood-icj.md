@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/montevideo-climate-statehood-icj/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b9e98881da9a94a1"
 ---
 
 # Is Montevideo Sinking?

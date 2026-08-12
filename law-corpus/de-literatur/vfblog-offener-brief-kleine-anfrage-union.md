@@ -15,6 +15,7 @@ source_url: https://verfassungsblog.de/offener-brief-kleine-anfrage-union/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "df65a92f7fcd80b3"
 ---
 
 # Offener Brief anlässlich der Kleinen Anfrage der CDU/CSU-Fraktion zur politischen Neutralität staatlich geförderter Organisationen

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/heribert-hirte-und-die-wissenschaft/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9770f124dde3dd8c"
 ---
 
 # Heribert Hirte und die Wissenschaft

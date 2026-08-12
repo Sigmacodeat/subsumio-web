@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/human-rights-of-the-mind/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "85eb323221cda3e7"
 ---
 
 # Litigating Human Rights of the Mind

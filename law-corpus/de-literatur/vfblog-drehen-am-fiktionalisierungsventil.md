@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/drehen-am-fiktionalisierungsventil/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cbfaffd4a5addc5a"
 ---
 
 # Drehen am Fiktionalisierungsventil

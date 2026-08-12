@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/experimenting-with-european-democracy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d3450d862f888730"
 ---
 
 # Experimenting with European Democracy

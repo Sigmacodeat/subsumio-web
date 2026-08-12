@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/slovenia-de-facto-failed-constitutional-d
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e0471b1d02b811a0"
 ---
 
 # Slovenia: a de facto failed constitutional democracy

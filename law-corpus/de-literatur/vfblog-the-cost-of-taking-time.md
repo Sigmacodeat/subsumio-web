@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-cost-of-taking-time/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f726d478df0d3e13"
 ---
 
 # The Cost of Taking Time

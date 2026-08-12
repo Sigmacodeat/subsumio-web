@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/einmal-top-einmal-flop/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "038298d3f9d82954"
 ---
 
 # Einmal Top, einmal Flop

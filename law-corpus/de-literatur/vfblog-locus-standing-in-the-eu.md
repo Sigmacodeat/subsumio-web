@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/locus-standing-in-the-eu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8721b871b121a0a7"
 ---
 
 # Taking Locus Standi of International Actors Seriously

@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Stéphane Abbet;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "be58762f44ec0105"
 ---
 
 # L’affaire Ryniker et l’abolition des peines corporelles en droit suisse

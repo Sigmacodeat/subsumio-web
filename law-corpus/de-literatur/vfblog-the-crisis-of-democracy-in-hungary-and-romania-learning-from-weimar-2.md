@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4fde752f768c9dd8"
 ---
 
 # The Crisis of Democracy in Hungary and Romania – Learning from Weimar?

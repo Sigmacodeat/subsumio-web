@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ki-als-neues-wahlkampfinstrument/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f04e79c54dc7648e"
 ---
 
 # KI als neues Wahlkampfinstrument

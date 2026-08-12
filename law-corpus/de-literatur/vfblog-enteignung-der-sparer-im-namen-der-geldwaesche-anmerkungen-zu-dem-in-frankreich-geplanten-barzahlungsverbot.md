@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "542bdd92b9bbe0fc"
 ---
 
 # Enteignung der Sparer im Namen der Geldwäsche? Anmerkungen zu dem in Frankreich geplanten Barzahlungsverbot

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/reflexive-globalisation-law-and-placemaki
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1b5607519d120ab0"
 ---
 
 # Reflexive Globalisation, Law and Placemaking

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/vertragsnderung-statt-effektiver-unterwan
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "71e199b08613251a"
 ---
 
 # Vertragsänderung statt effektiver Unterwanderung

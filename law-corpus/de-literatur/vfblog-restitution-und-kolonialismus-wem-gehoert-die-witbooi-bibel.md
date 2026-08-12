@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c64b5598ca545538"
 ---
 
 # Restitution und Kolonialismus: Wem gehört die Witbooi-Bibel?

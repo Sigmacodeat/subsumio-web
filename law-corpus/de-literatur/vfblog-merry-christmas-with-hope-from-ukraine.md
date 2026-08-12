@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/merry-christmas-with-hope-from-ukraine/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "68aa6987622dd448"
 ---
 
 # Merry Christmas, with Hope from Ukraine

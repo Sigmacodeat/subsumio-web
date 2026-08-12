@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6a245ad1700bd900"
 ---
 
 # Verantwortlichkeiten ausbürgern – Entzug der Staatsbürgerschaft zur Terrorismusbekämpfung in Großbritannien

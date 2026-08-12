@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kill-the-chickens-to-scare-the-monkeys/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "990bd6aeb3040891"
 ---
 
 # Kill the Chickens to Scare the Monkeys

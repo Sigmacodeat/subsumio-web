@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/judicial-acquiescence-to-presidential-imm
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "46b433dcd5897566"
 ---
 
 # Judicial Acquiescence to Presidential Immigration

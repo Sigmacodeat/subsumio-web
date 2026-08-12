@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/versammlungen-im-herzen-der-demokratie/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "45a9da230b167eaf"
 ---
 
 # Versammlungen im Herzen der Demokratie

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-curious-fate-of-the-false-claim-of-ge
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cb54caeae009da43"
 ---
 
 # The Curious Fate of the False Claim of Genocide

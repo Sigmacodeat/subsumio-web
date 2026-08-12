@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/klette-und-die-frucht-der-vergifteten-mas
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f3befc9478ac7dfc"
 ---
 
 # Daniela Klette und die Frucht der vergifteten Maschine

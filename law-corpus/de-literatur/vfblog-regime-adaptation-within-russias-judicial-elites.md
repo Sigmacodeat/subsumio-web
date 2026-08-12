@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/regime-adaptation-within-russias-judicial
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "77efa0240c99c4b0"
 ---
 
 # Regime Adaptation Within Russia’s Judicial Elites

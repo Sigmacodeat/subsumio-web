@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/juge-dinstruction-als-gemeineuropaeisches
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "12acce35d8b9c1ee"
 ---
 
 # Juge d'instruction als gemeineuropäisches Leitbild?

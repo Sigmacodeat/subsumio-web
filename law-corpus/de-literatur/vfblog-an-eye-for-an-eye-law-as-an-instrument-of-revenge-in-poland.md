@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d74ee08a4f2102bf"
 ---
 
 # An Eye for an Eye: Law as an Instrument of Revenge in Poland

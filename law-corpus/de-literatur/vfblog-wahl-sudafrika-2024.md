@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wahl-sudafrika-2024/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b204d88dd80c8d68"
 ---
 
 # Eine neue Verfassungsordnung in Südafrika

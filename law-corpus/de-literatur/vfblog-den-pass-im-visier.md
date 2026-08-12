@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/den-pass-im-visier/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "74530cc456623f67"
 ---
 
 # Den Pass im Visier

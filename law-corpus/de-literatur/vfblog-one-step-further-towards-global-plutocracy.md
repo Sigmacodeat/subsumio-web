@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/one-step-further-towards-global-plutocrac
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3b9ee99038cc2c92"
 ---
 
 # One Step Further Towards Global Plutocracy

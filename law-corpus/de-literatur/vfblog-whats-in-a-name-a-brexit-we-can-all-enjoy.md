@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/whats-in-a-name-a-brexit-we-can-all-enjoy
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "70ae046ce61a529b"
 ---
 
 # What’s in a name? A Brexit we can all enjoy

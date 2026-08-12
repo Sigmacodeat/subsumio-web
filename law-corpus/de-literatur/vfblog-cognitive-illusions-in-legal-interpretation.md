@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/cognitive-illusions-in-legal-interpretati
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e76c4834bab944bc"
 ---
 
 # Cognitive Illusions in Legal Interpretation

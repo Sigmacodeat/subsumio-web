@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a50a4bc02c99f768"
 ---
 
 # „Haircut“ für Griechenland? (Un-)mögliche Frisuren eines Schuldenschnitts

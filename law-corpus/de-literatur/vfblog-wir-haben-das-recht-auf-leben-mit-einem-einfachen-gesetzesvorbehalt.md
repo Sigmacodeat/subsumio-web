@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c972f41903c3f848"
 ---
 
 # „Wir haben das Recht auf Leben mit einem einfachen Gesetzesvorbehalt“

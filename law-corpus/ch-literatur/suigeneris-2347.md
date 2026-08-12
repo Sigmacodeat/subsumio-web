@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Stephan Bernard;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "2680397a3238225a"
 ---
 
 # Rezension: Thierry Urwyler, Das Teilnahmerecht der Verteidigung am Explorationsgespräch des psychiatrischen Sachverständigen mit der beschuldigten Person im Lichte der EMRK

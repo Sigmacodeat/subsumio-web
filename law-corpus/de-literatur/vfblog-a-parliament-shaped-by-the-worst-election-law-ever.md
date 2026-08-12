@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-parliament-shaped-by-the-worst-election
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c4e0b7f949f42a7e"
 ---
 
 # A Parliament Shaped by the ‘Worst Election Law Ever’

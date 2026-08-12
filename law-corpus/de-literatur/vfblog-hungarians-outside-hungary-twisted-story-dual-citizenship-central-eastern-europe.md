@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b14c79f8123336cb"
 ---
 
 # Hungarians outside Hungary – the twisted story of dual citizenship in Central and Eastern Europe

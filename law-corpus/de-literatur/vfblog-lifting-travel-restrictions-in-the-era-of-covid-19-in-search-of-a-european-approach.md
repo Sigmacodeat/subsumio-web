@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0eedeb2be4265d51"
 ---
 
 # Lifting Travel Restrictions in the Era of COVID-19: In Search of a European Approach

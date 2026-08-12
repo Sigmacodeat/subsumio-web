@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/party-bans-and-populism-in-europe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1d4795bb34b253b0"
 ---
 
 # Party Bans and Populism in Europe

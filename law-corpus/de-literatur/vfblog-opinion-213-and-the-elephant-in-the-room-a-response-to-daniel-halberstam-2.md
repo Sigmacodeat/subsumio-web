@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aec72a7b022162f7"
 ---
 
 # Opinion 2/13 and the ‘elephant in the room’: A response to Daniel Halberstam

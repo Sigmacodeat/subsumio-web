@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "64dd0d095d6ab865"
 ---
 
 # Parity laws in Germany – Caving in to Gender Backlash or Consolidating Women's Citizenship Status?

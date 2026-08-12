@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-opposition-erdogan-dem/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2617c001b9c312e6"
 ---
 
 # The Opposition Erdoğan Can Tolerate

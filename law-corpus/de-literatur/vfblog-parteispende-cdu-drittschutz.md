@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/parteispende-cdu-drittschutz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fb8f9e9ddcd19b82"
 ---
 
 # Klage verloren, Kontrollrechte gewonnen

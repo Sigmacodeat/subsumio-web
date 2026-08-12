@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sondervermogen-alt-bundestag/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "41fc658d04a26566"
 ---
 
 # Politisches Neuland, rechtliches Altgebiet

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-draconian-return-system/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "712d68c6fde33e7f"
 ---
 
 # A Draconian Return System

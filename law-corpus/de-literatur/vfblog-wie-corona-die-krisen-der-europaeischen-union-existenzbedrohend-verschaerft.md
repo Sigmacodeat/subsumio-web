@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9b7da05811128f54"
 ---
 
 # Wie Corona die Krisen der Europäischen Union existenzbedrohend verschärft

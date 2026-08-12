@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/german-police-controls-and-structural-rac
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2a260cc4f88235d8"
 ---
 
 # German Police Controls and Structural Racism

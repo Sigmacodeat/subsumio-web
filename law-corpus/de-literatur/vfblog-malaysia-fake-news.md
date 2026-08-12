@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/malaysia-fake-news/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "543272e13b8586c8"
 ---
 
 # The rebirth of Malaysia’s fake news law – and what the NetzDG has to do with it

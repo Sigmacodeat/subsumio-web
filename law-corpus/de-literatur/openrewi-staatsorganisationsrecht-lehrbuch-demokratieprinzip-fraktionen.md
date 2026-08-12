@@ -15,6 +15,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "1d5dd846b8a5a594"
 ---
 
 § 5.6 Politische Parteien &#124; Inhaltsverzeichnis &#124; § 5.8 Recht auf Demokratie 

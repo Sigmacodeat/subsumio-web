@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/steht-die-mindestlohnrichtlinie-vor-dem-a
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "00fffcc68c13dfa8"
 ---
 
 # Steht die Mindestlohnrichtlinie vor dem Aus?

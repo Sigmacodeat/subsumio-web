@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9ec0aeb0faee7397"
 ---
 
 # Corona-Bonds: zu kurz gesprungen und dann auch noch in die falsche Richtung

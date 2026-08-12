@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/being-a-good-dictator-is-not-so-easy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "87661e7244ae55f8"
 ---
 
 # Being a Good Dictator is not so Easy

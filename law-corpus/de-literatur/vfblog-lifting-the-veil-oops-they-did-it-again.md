@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/lifting-the-veil-oops-they-did-it-again/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "35ba7dd9b0a12b83"
 ---
 
 # Lifting the Veil? Oops, They Did it Again

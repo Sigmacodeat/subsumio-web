@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/my-voice-my-choice/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c3e7b84e68fdd7f2"
 ---
 
 # My Voice, My Choice

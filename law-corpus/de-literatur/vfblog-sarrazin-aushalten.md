@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sarrazin-aushalten/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "77052fc3ad87189f"
 ---
 
 # Sarrazin aushalten

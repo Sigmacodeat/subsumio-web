@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/warum-kinderrechte-ins-grundgesetz-gehoer
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2c414410cfb02872"
 ---
 
 # Warum Kinderrechte ins Grundgesetz gehören

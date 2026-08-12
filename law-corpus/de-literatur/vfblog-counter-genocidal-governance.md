@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/counter-genocidal-governance/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a99da7c9e42bffe0"
 ---
 
 # Counter-Genocidal Governance

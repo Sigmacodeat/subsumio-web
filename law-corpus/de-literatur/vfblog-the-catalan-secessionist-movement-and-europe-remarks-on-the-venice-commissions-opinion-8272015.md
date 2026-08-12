@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dddde2d5a0d7faf3"
 ---
 
 # The Catalan Secessionist Movement and Europe – Remarks on the Venice Commission's Opinion 827/2015

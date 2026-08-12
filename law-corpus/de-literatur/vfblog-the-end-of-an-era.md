@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-end-of-an-era/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "49c505f472387fdf"
 ---
 
 # The End of an Era?

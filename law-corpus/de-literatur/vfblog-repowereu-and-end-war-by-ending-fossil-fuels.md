@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/repowereu-and-end-war-by-ending-fossil-fu
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fd39a3a4fa7b2525"
 ---
 
 # RePowerEU and End War by Ending Fossil Fuels

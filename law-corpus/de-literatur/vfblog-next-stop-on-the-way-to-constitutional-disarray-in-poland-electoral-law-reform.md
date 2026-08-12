@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "64e45165edefccb1"
 ---
 
 # Next Stop on the Way to Constitutional Disarray in Poland: Electoral Law Reform

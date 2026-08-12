@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "117243cbddb611ae"
 ---
 
 # Is the European Central Bank Becoming a Central Bank for the People of Europe?

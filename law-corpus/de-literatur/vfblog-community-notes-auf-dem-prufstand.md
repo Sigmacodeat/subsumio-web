@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/community-notes-auf-dem-prufstand/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "feb5205ac113a80c"
 ---
 
 # Community Notes auf dem Prüfstand

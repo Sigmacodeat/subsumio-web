@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/copyright-ai-cjeu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "57746809d3c04e5d"
 ---
 
 # Copyright, AI, and the Future of Internet Search before the CJEU

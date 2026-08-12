@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-hidden-reach-of-the-eu-ai-act/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "362c62c80243e258"
 ---
 
 # The Hidden Reach of the EU AI Act

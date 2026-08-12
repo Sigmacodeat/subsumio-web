@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/soziale-gerechtigkeit-im-versailler-vertr
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dd399777e16c0305"
 ---
 
 # Soziale Gerechtigkeit im Versailler Vertrag

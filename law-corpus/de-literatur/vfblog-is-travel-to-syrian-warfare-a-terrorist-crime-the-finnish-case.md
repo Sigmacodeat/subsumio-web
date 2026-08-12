@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8fb8b30944af1533"
 ---
 
 # Is Travel to Syrian Warfare a Terrorist Crime? The Finnish Case

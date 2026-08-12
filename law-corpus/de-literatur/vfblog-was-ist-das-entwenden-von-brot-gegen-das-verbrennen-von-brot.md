@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "77326095e113a8c9"
 ---
 
 # Was ist das Entwenden von Brot gegen das Verbrennen von Brot?

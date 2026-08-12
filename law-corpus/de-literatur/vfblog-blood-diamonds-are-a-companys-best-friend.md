@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/blood-diamonds-are-a-companys-best-friend
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0965be18c6acadf2"
 ---
 
 # (Blood) Diamonds are a Company’s Best Friend?

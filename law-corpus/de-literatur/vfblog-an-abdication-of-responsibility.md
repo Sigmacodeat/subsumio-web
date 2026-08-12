@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/an-abdication-of-responsibility/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "01e2e115f3154f87"
 ---
 
 # An Abdication of Legal and Historical Responsibility

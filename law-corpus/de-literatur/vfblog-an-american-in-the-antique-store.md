@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/an-american-in-the-antique-store/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "71c0edeca5e4374c"
 ---
 
 # An American in the Antique Store

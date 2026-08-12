@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-conservative-party/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7140730756407efb"
 ---
 
 # The Conservative Party

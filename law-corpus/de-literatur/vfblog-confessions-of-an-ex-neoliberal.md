@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/confessions-of-an-ex-neoliberal/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f18efdca897b1f2f"
 ---
 
 # Confessions of an Ex-Neoliberal

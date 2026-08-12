@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cad20b870794ec71"
 ---
 
 # More Suffocating Bonds?! Conceptual and Legal Flaws of the Unnecessary Proposal

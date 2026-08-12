@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f9c4e202eb59c6ed"
 ---
 
 # Italy before the Constitutional Referendum: “I do not see any Armageddon Scenario”

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-novel-reinforced-cooperation-in-the-eu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0dbf1d7d6f290999"
 ---
 
 # A Novel “Reinforced Cooperation” in the EU

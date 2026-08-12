@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-vorlage-ware-die-saubere-losung-gewes
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1102ceadf1f5d2a5"
 ---
 
 # “Die Vorlage wäre die saubere Lösung gewesen”

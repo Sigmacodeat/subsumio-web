@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2021 Fabian Lütz;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "8afd2a02465ffb04"
 ---
 
 # Die Väterbeteiligung in Europa und der Schweiz — Die Rolle der Väter für mehr Gleichberechtigung

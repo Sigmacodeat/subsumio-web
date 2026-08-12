@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/exclusion-from-the-eu-is-possible-as-a-la
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "39f31408562ca720"
 ---
 
 # Exclusion from the EU is Possible as a Last Resort

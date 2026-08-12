@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/preserve-the-ashes-of-moria/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e4228e746c09270f"
 ---
 
 # Preserve the Ashes of Moria

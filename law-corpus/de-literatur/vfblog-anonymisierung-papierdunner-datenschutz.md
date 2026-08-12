@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/anonymisierung-papierdunner-datenschutz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f1dad11485a6b6bb"
 ---
 
 # Anonymisierung: papierdünner Datenschutz

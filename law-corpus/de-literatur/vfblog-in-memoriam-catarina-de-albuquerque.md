@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/in-memoriam-catarina-de-albuquerque/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2fc856984d83c591"
 ---
 
 # In memoriam Catarina de Albuquerque

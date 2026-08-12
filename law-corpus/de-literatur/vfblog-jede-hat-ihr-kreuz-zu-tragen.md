@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/jede-hat-ihr-kreuz-zu-tragen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "336877a31946c8e3"
 ---
 
 # Jede hat ihr Kreuz zu tragen

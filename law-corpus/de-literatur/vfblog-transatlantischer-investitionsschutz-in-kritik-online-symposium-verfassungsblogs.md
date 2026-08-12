@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4c1bc7e52be7b718"
 ---
 
 # Transatlantischer Investitionsschutz in der Kritik: Ein Online-Symposium des Verfassungsblogs

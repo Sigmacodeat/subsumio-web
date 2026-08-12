@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-national-case-for-reforming-the-eu-tr
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "91ea1b35ed67239b"
 ---
 
 # The National Case for Reforming the EU Treaties

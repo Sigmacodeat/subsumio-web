@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/uberlegungen-zur-zukunft-der-eu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7561487a929f5379"
 ---
 
 # Überlegungen zur Zukunft der EU

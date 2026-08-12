@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "823dd848c13e4b15"
 ---
 
 # Pandemic and Fragile Government: A Year of COVID-19 Fatigue and Disorder in Ukraine

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-downfall-of-a-constitutional-court/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7f83e09032cb2b6c"
 ---
 
 # The Downfall of a Constitutional Court

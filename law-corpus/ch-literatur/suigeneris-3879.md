@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2022 Aurélien Witzig;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "1c95a7158a840b09"
 ---
 
 # A la recherche des critères du contrat de travail. Réflexion à partir des arrêts Uber du 30 mai 2022

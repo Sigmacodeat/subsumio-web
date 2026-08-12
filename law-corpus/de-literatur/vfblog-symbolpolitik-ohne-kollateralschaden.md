@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/symbolpolitik-ohne-kollateralschaden/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4803f1040811d8f6"
 ---
 
 # Symbolpolitik ohne Kollateralschäden?

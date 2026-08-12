@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/governing-the-memory-of-the-present/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c772daa18267e3fb"
 ---
 
 # Governing the Memory of the Present

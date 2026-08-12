@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-state-duty-not-to-approve-new-fossil-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fc198d76aa243fb1"
 ---
 
 # The State Duty Not to Approve New Fossil Fuels

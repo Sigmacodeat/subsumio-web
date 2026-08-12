@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bundesverfassungsgericht-sicherungsverwah
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d21649fb379d3196"
 ---
 
 # Sicherungsverwahrung: Abschied von der Normenpyramide

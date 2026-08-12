@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/folgenlose-verstose/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7d636de4263d3a54"
 ---
 
 # Folgenlose Verstöße

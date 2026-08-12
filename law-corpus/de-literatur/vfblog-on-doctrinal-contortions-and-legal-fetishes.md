@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/on-doctrinal-contortions-and-legal-fetish
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2738607176d223b5"
 ---
 
 # On Doctrinal Contortions and Legal Fetishes

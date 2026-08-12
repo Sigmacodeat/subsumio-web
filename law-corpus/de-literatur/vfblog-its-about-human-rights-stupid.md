@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/its-about-human-rights-stupid/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "73d6aa5ae1035088"
 ---
 
 # It's about Human Rights, Stupid!

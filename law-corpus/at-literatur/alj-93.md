@@ -16,6 +16,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2021
   AUSTRIAN LAW JOURNAL
+content_hash: "f9cc928b916963d8"
 ---
 
 # § 871 ABGB, res integra und Redintegration

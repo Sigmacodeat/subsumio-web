@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "08d70d08560c2b03"
 ---
 
 # Hong Kong’s Basic Law at 30: A Constitutional Experiment under Stress

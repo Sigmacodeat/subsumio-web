@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/defeat-in-the-supreme-court/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9495050f289536d6"
 ---
 
 # Defeat in the Supreme Court

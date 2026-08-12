@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/no-more-excuses/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b8253cb0a316f4fc"
 ---
 
 # No More Excuses

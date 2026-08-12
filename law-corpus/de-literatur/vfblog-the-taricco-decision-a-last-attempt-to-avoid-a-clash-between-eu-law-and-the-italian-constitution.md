@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9141d19a3b8b42dc"
 ---
 
 # The Taricco Decision: A Last Attempt to Avoid a Clash between EU Law and the Italian Constitution

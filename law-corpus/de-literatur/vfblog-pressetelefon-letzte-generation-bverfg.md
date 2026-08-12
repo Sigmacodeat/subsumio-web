@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pressetelefon-letzte-generation-bverfg/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7c2d04fd51e799cb"
 ---
 
 # Der unsichtbare Dritte

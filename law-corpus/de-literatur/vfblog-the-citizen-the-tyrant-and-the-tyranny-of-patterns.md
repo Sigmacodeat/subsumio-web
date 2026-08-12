@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-citizen-the-tyrant-and-the-tyranny-of
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a7acb103fb8143a3"
 ---
 
 # The Citizen, the Tyrant, and the Tyranny of Patterns

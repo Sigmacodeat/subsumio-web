@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/not-the-time-for-carrots/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "da7b4b9711b943a6"
 ---
 
 # Not the Time for Carrots?

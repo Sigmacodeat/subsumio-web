@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/betverbot-der-schule-stop-obsessing-relig
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6ccff4589f3b06de"
 ---
 
 # Bet-Verbot in der Schule: Stop obsessing about religion!

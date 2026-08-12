@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/academic-freedom-humanright/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "67e8c3bf93c6a2a6"
 ---
 
 # Academic Freedom as a Human Right

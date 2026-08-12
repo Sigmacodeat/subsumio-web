@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/exxon-and-big-beef/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5308aa156d369531"
 ---
 
 # Exxon Knew. Did Big Beef, too?

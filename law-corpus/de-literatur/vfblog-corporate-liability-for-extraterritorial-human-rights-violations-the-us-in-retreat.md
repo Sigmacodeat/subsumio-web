@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f5dbed2bab98ba06"
 ---
 
 # Corporate Liability for Extraterritorial Human Rights Violations – the US in Retreat?

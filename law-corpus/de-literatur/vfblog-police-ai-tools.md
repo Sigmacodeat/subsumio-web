@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/police-ai-tools/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cdc95d9c5119b58a"
 ---
 
 # Patchwork Policing

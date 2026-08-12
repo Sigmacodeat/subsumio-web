@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-konig-zum-unabhangigkeitstag/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "386b476be77945dd"
 ---
 
 # Ein König zum Unabhängigkeitstag

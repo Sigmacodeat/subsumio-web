@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/harder-better-faster-stronger/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "306bd5f0f5a2d9cf"
 ---
 
 # Harder, Better, Faster, Stronger

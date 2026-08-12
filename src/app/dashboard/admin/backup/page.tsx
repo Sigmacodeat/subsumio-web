@@ -161,7 +161,7 @@ export default function BackupRestorePage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-0 w-full space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("admin.backup.title")}
         description={t("admin.backup.desc")}
@@ -184,7 +184,7 @@ export default function BackupRestorePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Backups</CardTitle>
-            <FileBox className="text-muted-foreground h-4 w-4" />
+            <FileBox className="text-[color:var(--ds-text-muted)] h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.totalBackups ?? 0}</div>
@@ -193,7 +193,7 @@ export default function BackupRestorePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Gesamtgröße</CardTitle>
-            <HardDrive className="text-muted-foreground h-4 w-4" />
+            <HardDrive className="text-[color:var(--ds-text-muted)] h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats ? formatBytes(stats.totalSize) : "—"}</div>
@@ -202,7 +202,7 @@ export default function BackupRestorePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Letztes Backup</CardTitle>
-            <Clock className="text-muted-foreground h-4 w-4" />
+            <Clock className="text-[color:var(--ds-text-muted)] h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-sm font-bold">
@@ -213,7 +213,7 @@ export default function BackupRestorePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Ältestes Backup</CardTitle>
-            <Clock className="text-muted-foreground h-4 w-4" />
+            <Clock className="text-[color:var(--ds-text-muted)] h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-sm font-bold">
@@ -231,7 +231,7 @@ export default function BackupRestorePage() {
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="text-muted-foreground p-8 text-center">Laden...</div>
+            <div className="text-[color:var(--ds-text-muted)] p-8 text-center">Laden...</div>
           ) : backups.length > 0 ? (
             <div className="divide-y divide-[color:var(--ds-border)]">
               {backups.map((backup) => (
@@ -323,7 +323,7 @@ export default function BackupRestorePage() {
 
       {/* Restore Dialog */}
       <Dialog open={!!restoreTarget} onOpenChange={(open) => !open && setRestoreTarget(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Backup einspielen</DialogTitle>
             <DialogDescription>
@@ -442,7 +442,7 @@ export default function BackupRestorePage() {
 
       {/* Delete Confirmation */}
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Backup löschen</DialogTitle>
             <DialogDescription>
@@ -486,7 +486,7 @@ function PreviewDialog({ backup, onClose }: { backup: BackupItem | null; onClose
 
   return (
     <Dialog open={!!backup} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Backup-Vorschau</DialogTitle>
           <DialogDescription>
@@ -499,7 +499,7 @@ function PreviewDialog({ backup, onClose }: { backup: BackupItem | null; onClose
           </DialogDescription>
         </DialogHeader>
         {isLoading ? (
-          <div className="text-muted-foreground py-8 text-center">Laden...</div>
+          <div className="text-[color:var(--ds-text-muted)] py-8 text-center">Laden...</div>
         ) : previewData ? (
           <div className="space-y-3">
             <div className="text-sm text-[color:var(--ds-text-muted)]">

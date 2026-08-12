@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kippt-die-kommission-die-braunkohle-entsc
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3a8cb8d6b8d96c3f"
 ---
 
 # Kippt die Kommission die Braunkohle-Entschädigung?

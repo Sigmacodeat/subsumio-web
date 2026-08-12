@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c166d6b468646e3d"
 ---
 
 # The CJEU in the Celmer case: One Step Forward, Two Steps Back for Upholding the Rule of Law Within the EU

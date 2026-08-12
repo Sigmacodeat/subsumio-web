@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/south-africa-election-2024/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6aca1cf679d7b07c"
 ---
 
 # A New Constitutional Order in South Africa

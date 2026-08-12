@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/lawrules-7-we-need-to-talk-about-legal-ed
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dfcb605778d2cbef"
 ---
 
 # LawRules #7: We need to talk about Legal Education

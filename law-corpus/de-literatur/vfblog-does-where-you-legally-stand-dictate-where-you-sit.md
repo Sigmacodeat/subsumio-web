@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/does-where-you-legally-stand-dictate-wher
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b9f73e4854189ab2"
 ---
 
 # Does Where You (Legally) Stand Depend On Where You Sit?

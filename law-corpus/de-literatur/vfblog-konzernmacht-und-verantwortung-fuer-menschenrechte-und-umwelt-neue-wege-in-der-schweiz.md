@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "736650a0eae99fb4"
 ---
 
 # Konzernmacht und Verantwortung für Menschenrechte und Umwelt: Neue Wege in der Schweiz

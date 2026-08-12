@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/evident-daneben-antwort-auf-holm-putzke/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e4ca3c967c2078dd"
 ---
 
 # Evident daneben: eine Antwort auf Holm Putzke

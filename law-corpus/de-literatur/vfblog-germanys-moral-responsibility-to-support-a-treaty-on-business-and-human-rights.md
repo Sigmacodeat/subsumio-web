@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c44a057d446c0bf0"
 ---
 
 # Germany’s Moral Responsibility to Support a Treaty  on Business and Human Rights

@@ -304,7 +304,7 @@ function TabularReviewPageInner() {
                   {t("tabular.max_docs")}
                 </label>
                 <input
-                  type="number"
+                  type="number" inputMode="numeric"
                   min={1}
                   max={MAX_LIMIT}
                   value={limit}

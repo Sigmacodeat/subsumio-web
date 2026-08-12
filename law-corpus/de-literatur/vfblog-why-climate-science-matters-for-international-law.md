@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/why-climate-science-matters-for-internati
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "522c70763d8a419a"
 ---
 
 # Why Climate Science Matters for International Law

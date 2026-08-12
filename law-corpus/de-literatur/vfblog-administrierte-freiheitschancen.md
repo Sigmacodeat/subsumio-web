@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/administrierte-freiheitschancen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1eda29864a09cfff"
 ---
 
 # Administrierte Freiheitschancen

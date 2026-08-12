@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/2020-turning-point/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ba6c5a164979d8c6"
 ---
 
 # 2020: Turning Point

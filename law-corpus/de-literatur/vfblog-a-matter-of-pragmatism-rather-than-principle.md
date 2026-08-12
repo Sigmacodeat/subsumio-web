@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-matter-of-pragmatism-rather-than-princi
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "44a208c884661d1f"
 ---
 
 # A Matter of Pragmatism rather than Principle

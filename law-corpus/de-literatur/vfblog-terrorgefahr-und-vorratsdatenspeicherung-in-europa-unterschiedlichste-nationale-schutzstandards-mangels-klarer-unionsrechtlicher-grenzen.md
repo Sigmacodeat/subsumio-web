@@ -16,6 +16,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b07211ddd0fdb812"
 ---
 
 # Terrorgefahr und Vorratsdatenspeicherung in Europa: unterschiedlichste nationale Schutzstandards mangels klarer unionsrechtlicher Grenzen

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b9c409c9216321dd"
 ---
 
 # Ehe für alle: Warum Mehrheitsentscheid auch bei Minderheitsrechten nichts Schlechtes sein muss

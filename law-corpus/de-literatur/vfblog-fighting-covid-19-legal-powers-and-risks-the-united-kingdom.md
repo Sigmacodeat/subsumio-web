@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e834d95899a0ae4e"
 ---
 
 # Fighting COVID 19 – Legal Powers and Risks: The United Kingdom

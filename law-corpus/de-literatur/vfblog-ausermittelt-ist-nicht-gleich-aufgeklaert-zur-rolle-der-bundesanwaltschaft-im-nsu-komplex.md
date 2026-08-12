@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "08e542f860fa1e83"
 ---
 
 # „Ausermittelt“ ist nicht gleich aufgeklärt – zur Rolle der Bundesanwaltschaft im NSU-Komplex

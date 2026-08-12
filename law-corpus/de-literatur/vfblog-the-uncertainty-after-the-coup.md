@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-uncertainty-after-the-coup/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c96549aab6a2b508"
 ---
 
 # The Uncertainty after the Coup

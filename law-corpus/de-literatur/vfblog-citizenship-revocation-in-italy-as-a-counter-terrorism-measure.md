@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c1f0ea2f604b58aa"
 ---
 
 # Citizenship Revocation in Italy as a Counter-Terrorism Measure

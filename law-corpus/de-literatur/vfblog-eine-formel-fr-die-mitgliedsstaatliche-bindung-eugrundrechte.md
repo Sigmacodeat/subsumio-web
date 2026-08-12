@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7667469ada55bf05"
 ---
 
 # Eine Formel für die mitgliedsstaatliche Bindung an EU-Grundrechte

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5c0174c8bf51f74d"
 ---
 
 # Reforming the European Court of Human Rights: The Draft Brighton Declaration

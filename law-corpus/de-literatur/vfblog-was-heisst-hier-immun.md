@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/was-heisst-hier-immun/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "60e3fa72b889b5fd"
 ---
 
 # Was heißt hier immun?

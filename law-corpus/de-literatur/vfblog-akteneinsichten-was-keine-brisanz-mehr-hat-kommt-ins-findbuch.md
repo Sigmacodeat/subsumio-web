@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2d709ef0f5f9aae3"
 ---
 
 # Akteneinsichten: Was keine Brisanz mehr hat, kommt ins Findbuch

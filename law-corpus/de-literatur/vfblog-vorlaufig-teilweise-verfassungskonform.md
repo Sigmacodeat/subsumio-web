@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/vorlaufig-teilweise-verfassungskonform/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aa6c8580cd86082e"
 ---
 
 # Vorläufig teilweise verfassungskonform

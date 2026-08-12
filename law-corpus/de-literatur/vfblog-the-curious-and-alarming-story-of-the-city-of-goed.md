@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-curious-and-alarming-story-of-the-cit
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5c7d9c4641e19904"
 ---
 
 # The Curious and Alarming Story of the City of Göd

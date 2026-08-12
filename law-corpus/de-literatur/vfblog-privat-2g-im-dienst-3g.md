@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/privat-2g-im-dienst-3g/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e14b8fcc03b19124"
 ---
 
 # Privat 2G, im Dienst 3G?

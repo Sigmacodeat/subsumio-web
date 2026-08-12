@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/self-protecting-democracy-and-electoral-r
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "757b7b169e7d216c"
 ---
 
 # Self-Protecting Democracy and Electoral Rights

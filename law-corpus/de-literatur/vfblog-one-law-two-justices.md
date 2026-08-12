@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/one-law-two-justices/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9ed7f403af1a39a9"
 ---
 
 # One Law, Two Justices

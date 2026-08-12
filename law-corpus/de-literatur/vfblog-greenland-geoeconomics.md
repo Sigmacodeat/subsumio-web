@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/greenland-geoeconomics/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "50202d9f9f7b099d"
 ---
 
 # “It’s Geoeconomics, Stupid”

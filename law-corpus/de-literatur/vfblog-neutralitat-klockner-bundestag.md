@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/neutralitat-klockner-bundestag/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "07512b8adac62fcf"
 ---
 
 # Eine Republik wird „neutralisiert“

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/media-pluralism-in-krrit-ical-condition/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5e2a352e68270e37"
 ---
 
 # Media Pluralism in KRRiT-ical Condition

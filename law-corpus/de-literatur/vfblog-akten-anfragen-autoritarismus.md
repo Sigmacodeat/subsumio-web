@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/akten-anfragen-autoritarismus/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7a60f64d4d0bd504"
 ---
 
 # Akten, Anfragen, Autoritarismus

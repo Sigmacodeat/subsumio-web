@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/is-meat-the-new-oil/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "73a998df1219fac5"
 ---
 
 # Is Meat the New Oil?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-hobgoblin-comes-for-internet-regulation
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "986e6abf88b55f5d"
 ---
 
 # A Hobgoblin Comes for Internet Regulation

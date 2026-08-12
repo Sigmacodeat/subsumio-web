@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/recht-jenseits-von-schrift/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "44b2d3a0e73a44b8"
 ---
 
 # Recht jenseits von Schrift

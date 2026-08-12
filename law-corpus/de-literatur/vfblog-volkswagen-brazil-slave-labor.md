@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/volkswagen-brazil-slave-labor/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e7b3a12dde451b87"
 ---
 
 # Volkswagen, Oxen, Timber, and Slave Labour in Brazil

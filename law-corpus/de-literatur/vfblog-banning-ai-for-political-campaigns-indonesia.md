@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/banning-ai-for-political-campaigns-indone
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "39391db0e3fe99a3"
 ---
 
 # Banning AI for Political Campaigns

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ab848d8f34823bf1"
 ---
 
 # From Constitutional to Political Justice: The Tragic Trajectories of the Polish Constitutional Court

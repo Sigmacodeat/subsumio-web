@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ed00eb66c535b6f7"
 ---
 
 # Menschenrecht auf Klimaschutz als „lebensrettende Behandlung“?

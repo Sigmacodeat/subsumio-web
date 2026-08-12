@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/suppressing-political-dissent-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cdc3de9c12f851a1"
 ---
 
 # Suppressing Political Dissent

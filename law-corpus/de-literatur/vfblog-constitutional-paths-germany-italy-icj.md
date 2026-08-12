@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/constitutional-paths-germany-italy-icj/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "578973ebabd9e127"
 ---
 
 # Constitutional paths not taken: Germany vs. Italy before the ICJ

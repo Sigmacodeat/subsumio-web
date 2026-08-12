@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-referendum-ob-unser-wahlrecht-etwas-t
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "35acbd4d835ae2a8"
 ---
 
 # Ein Referendum, ob unser Wahlrecht etwas taugt

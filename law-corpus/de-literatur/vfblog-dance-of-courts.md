@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dance-of-courts/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e893d0c3d487f50f"
 ---
 
 # Dance of Courts

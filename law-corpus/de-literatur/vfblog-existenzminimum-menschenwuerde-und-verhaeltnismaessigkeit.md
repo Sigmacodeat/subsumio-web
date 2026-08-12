@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ea268f0c4de57df1"
 ---
 
 # Existenzminimum, Menschen&shy;würde und Verhältnis&shy;mäßigkeit

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4194a44e6e047df8"
 ---
 
 # History with a Future? The Relevance of the 1989 Round Table Experience for Today

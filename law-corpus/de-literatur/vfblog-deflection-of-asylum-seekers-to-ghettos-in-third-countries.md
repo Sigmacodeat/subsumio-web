@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3c56f060d6d7f2a9"
 ---
 
 # Deflection of Asylum Seekers to Ghettos in Third Countries?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rewarding-virtuous-citizens/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b9e8ca3e7adbefe2"
 ---
 
 # Rewarding Virtuous Citizens

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f1e68c620cc81978"
 ---
 
 # 1095 Days Later: From Bad to Worse Regarding the Rule of Law in Poland (Part II)

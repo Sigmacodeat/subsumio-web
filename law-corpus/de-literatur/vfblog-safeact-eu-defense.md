@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/safeact-eu-defense/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b74404853e384e1c"
 ---
 
 # Moving towards a SAFE Defense Policy in Europe

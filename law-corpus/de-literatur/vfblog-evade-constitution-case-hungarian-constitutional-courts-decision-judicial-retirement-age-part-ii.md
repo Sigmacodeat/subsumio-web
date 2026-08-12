@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c4159704028b488a"
 ---
 
 # How to Evade the Constitution: The Hungarian Constitutional Court’s Decision on Judicial Retirement Age, Part II

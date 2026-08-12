@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/poland-and-hungary-are-withdrawing-from-t
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "de1a06e20ab351a0"
 ---
 
 # Poland and Hungary are withdrawing from the EU

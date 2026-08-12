@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "97adebc43c780575"
 ---
 
 # Das Solms-Trilemma: Wie sich die Neuregelung des § 1 Abs. 2 GO-BT am eigenen Schopfe aus dem Sumpf zog

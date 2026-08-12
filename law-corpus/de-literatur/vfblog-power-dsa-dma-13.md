@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/power-dsa-dma-13/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e2373d71ea4a6795"
 ---
 
 # Re-Subjecting State-Like Actors to the State

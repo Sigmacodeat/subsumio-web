@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/lean-authoritarianism-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fde7992be4755b9e"
 ---
 
 # Lean Authoritarianism

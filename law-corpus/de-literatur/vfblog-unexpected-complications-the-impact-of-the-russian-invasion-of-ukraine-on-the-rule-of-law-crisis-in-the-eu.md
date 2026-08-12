@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9915a1b912b2ede8"
 ---
 
 # Unexpected Complications: The impact of the Russian invasion of Ukraine on the rule of law crisis in the EU

@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2026 Alexia Blanchet;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "681540a100f991c2"
 ---
 
 # Poser une question à un fonctionnaire : une instigation à violation du secret de fonction ? Réflexions sur une conception restrictive de l&#039;instigation

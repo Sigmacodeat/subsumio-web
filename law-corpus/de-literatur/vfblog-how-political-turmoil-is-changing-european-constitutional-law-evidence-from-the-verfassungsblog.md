@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dd0749b818b9a774"
 ---
 
 # How Political Turmoil is Changing European Constitutional Law: Evidence from the Verfassungsblog

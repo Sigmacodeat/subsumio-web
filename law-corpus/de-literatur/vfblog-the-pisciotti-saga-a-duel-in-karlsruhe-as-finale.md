@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-pisciotti-saga-a-duel-in-karlsruhe-as
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "04c2479bba54a414"
 ---
 
 # The Pisciotti Saga: A Duel in Karlsruhe as Finale?

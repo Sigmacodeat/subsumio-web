@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/reconfiguration-of-religious-freedom/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "435e93758be5a068"
 ---
 
 # Winning by Losing

@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "49c6b2c970e3b5a6"
 ---
 
 # Ein Wahlrechtsurteil und ein paar unangenehme Fragen

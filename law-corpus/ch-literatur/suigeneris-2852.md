@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2021 Véronique Boillet,
   Clémence Demay; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "290fefc6369eed91"
 ---
 
 # Access to Political Rights in Switzerland: Critique of the Naturalisation Process as a Source of Exclusion

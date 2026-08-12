@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4014a3c20898f527"
 ---
 
 # Elon Musk Wants to Buy Twitter to Create a Free Speech Utopia: Now What?

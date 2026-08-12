@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/whom-is-citizenship-for/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "db77c8de8f21c204"
 ---
 
 # Whom Is Citizenship For?

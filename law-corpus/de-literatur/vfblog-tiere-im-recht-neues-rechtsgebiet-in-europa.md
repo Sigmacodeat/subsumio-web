@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/tiere-im-recht-neues-rechtsgebiet-in-euro
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d595e75cd89f5b7a"
 ---
 
 # Tiere im Recht – ein neues Rechtsgebiet in Europa?

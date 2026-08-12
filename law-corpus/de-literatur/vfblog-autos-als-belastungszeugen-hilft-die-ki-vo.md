@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/autos-als-belastungszeugen-hilft-die-ki-v
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d63f31a00f7f509e"
 ---
 
 # Autos als Belastungszeugen – hilft die KI-VO?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kein-bier-der-tanke-und-karlsruhe-schweig
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eabed2aa7778bacb"
 ---
 
 # Kein Bier an der Tanke, und Karlsruhe schweigt dazu

@@ -18,6 +18,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2015
   AUSTRIAN LAW JOURNAL
+content_hash: "55447dfa88a9e15b"
 ---
 
 # Eigentumsvorbehalt und Publizität - Zwischen wirtschaftlichem Bedürfnis und dogmatischer Wertungskohärenz

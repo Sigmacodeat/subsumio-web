@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/von-der-wiege-bis-zur-bahre/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eb8cde8c4ce8a98e"
 ---
 
 # Von der Wiege bis zur Bahre?

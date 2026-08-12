@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mehrheiten-trotz-minderheitsregierung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "20a7bc0fd04c5f24"
 ---
 
 # Mehrheiten trotz Minderheitsregierung

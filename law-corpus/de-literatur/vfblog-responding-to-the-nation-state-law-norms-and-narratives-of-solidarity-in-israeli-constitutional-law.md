@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f71dae48c6fb5a0e"
 ---
 
 # Responding to the Nation-State Law: Norms and Narratives of Solidarity in Israeli Constitutional Law

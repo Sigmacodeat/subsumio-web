@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/animal-welfare-levy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ee2f194eb785d9b3"
 ---
 
 # The Case for an Animal Welfare Levy

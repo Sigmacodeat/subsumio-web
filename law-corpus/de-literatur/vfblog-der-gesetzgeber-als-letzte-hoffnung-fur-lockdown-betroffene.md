@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ade9cc481b78a3d9"
 ---
 
 # Der Gesetzgeber als letzte Hoffnung für Lockdown-Betroffene

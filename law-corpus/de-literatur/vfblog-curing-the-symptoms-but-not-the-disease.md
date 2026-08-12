@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/curing-the-symptoms-but-not-the-disease/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1948523d30083272"
 ---
 
 # Curing the Symptoms but not the Disease

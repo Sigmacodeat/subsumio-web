@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/not-striking-down-surrogate-motherhood-in
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ae57dd3a4b8e075e"
 ---
 
 # (Not) Striking Down Surrogate Motherhood in Portugal

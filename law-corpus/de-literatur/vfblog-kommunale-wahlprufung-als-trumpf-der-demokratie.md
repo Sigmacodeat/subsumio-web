@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kommunale-wahlprufung-als-trumpf-der-demo
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7b2298b4070cfaad"
 ---
 
 # Kommunale Wahlprüfung als Trumpf der Demokratie?

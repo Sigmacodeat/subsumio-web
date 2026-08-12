@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/conclusion-to-the-symposium-constitutions
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2ec7b940207905f3"
 ---
 
 # Conclusion to the Symposium “Constitutions of Value”

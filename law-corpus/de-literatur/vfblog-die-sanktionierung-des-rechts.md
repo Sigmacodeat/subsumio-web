@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-sanktionierung-des-rechts/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bd8e85e7b6e8f9f7"
 ---
 
 # Die Sanktionierung des Rechts

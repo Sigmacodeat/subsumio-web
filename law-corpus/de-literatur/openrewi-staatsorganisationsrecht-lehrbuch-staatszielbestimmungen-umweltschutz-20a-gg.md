@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "b43998a106cbea18"
 ---
 
 § 9 Einzelne Staatszielbestimmungen &#124; Inhaltsverzeichnis &#124; § 9.2 Tierschutz, Art. 20a GG 

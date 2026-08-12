@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-white-paper-readines-2030/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ce5552f67473909b"
 ---
 
 # The White Paper Within the Institutional Constraints

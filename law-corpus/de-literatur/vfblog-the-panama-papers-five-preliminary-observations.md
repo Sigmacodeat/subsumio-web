@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-panama-papers-five-preliminary-observ
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d87d366d372f17aa"
 ---
 
 # The Panama Papers: Six Preliminary Observations

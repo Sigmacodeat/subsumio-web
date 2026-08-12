@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0bc5f20b1e4b9bcc"
 ---
 
 # Kolevi: Bulgaria’s 10-Year Cat-and-Mouse Game with the Council of Europe and the Venice Commission

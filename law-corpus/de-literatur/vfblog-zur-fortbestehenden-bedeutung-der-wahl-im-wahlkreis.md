@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d2ef58c8220e1812"
 ---
 
 # Zur fortbestehenden Bedeutung der Wahl im Wahlkreis

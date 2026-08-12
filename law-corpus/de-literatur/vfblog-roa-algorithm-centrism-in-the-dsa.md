@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/roa-algorithm-centrism-in-the-dsa/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1b770e46f57ee317"
 ---
 
 # Algorithm Centrism in the DSA’s Regulation of Recommender Systems

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/podium-rechtswissenschaft-und-medienwande
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0adb51cb46a6d25b"
 ---
 
 # Unser Podium zu Rechtswissenschaft und Medienwandel

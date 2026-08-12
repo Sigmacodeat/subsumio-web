@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/justifying-a-coup-detat-in-the-name-of-de
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0041683184eb5b43"
 ---
 
 # Justifying a Coup d’État in the Name of Democracy?

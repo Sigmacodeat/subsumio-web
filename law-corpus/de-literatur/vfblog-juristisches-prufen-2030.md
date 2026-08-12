@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/juristisches-prufen-2030/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "04d58e5029e0024f"
 ---
 
 # Juristisches Prüfen 2030

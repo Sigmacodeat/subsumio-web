@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "454dbc5b89f79ae2"
 ---
 
 # Der lange Weg zur Konzern&shy;verantwortung und Konzern&shy;haftung in der Schweiz

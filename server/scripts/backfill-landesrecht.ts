@@ -453,6 +453,18 @@ async function main() {
       }
 
       if (!dryRun) {
+        // parseFrontmatter liefert fm="" wenn die Regex nicht greift (etwa bei
+        // CRLF oder fehlendem Zeilenumbruch nach dem schließenden ---). Früher
+        // wurde dann `---\n\ncontent_hash: …\n---\n<ganze Originaldatei>`
+        // geschrieben: das echte Frontmatter rutschte in den Body und die Seite
+        // verlor Typ, Titel und Quelle. Das hat 100 Landesrecht-Dateien
+        // beschädigt. Lieber überspringen als still zerstören.
+        if (fm.trim() === "") {
+          console.error(`  ⚠️ ${filename}: Frontmatter nicht lesbar — übersprungen (nicht überschrieben)`);
+          fail++;
+          await new Promise((r) => setTimeout(r, DELAY_MS));
+          continue;
+        }
         // Inject content_hash into frontmatter
         const hash = contentHash(cleanText);
         const fmWithHash = fm.includes("content_hash:")

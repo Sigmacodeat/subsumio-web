@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5182db744651bc5d"
 ---
 
 # Maaßen bleibt Seehofers Sache: Warum die Beförderung zum Staatssekretär keiner Kabinetts&shy;entscheidung unterliegt

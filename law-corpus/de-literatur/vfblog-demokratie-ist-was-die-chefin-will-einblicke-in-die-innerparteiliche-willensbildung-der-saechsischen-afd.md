@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "df9d38fed148132c"
 ---
 
 # Demokratie ist, was die Chefin will? Einblicke in die innerparteiliche Willensbildung der sächsischen AfD

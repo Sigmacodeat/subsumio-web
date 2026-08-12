@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "bb688ea11ea9926b"
 ---
 
 § 18.1  Menschenwürde (Art. 1 GG) &#124; Inhaltsverzeichnis &#124; § 18.3 Leben, körperliche Unversehrtheit (Art. 2 II GG) 

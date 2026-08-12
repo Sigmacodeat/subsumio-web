@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/cjeu-opinion-213-three-mitigating-circums
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "09a513e5f9b8f583"
 ---
 
 # CJEU Opinion 2/13 – Three Mitigating Circumstances

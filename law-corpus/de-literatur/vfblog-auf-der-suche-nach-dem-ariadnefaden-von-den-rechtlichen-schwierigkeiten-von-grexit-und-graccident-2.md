@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "95475cb909f821f1"
 ---
 
 # Searching for the Ariadne‘s thread – The Legal Complexities of “Grexit” and “Graccident”

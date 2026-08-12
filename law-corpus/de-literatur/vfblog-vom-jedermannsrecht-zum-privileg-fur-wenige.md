@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/vom-jedermannsrecht-zum-privileg-fur-weni
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6f50256de80df846"
 ---
 
 # Vom „Jedermannsrecht“ zum Privileg für Wenige

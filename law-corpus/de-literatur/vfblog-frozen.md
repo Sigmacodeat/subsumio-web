@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/frozen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a216f1e265d2d1d1"
 ---
 
 # Frozen

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/in-brief/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b9a78262768236fc"
 ---
 
 # In Brief

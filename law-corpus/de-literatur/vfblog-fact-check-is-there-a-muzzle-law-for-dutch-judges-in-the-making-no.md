@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "55942a7b8eb4b08a"
 ---
 
 # Fact Check: Is there a ‘Muzzle Law’ for Dutch Judges in the Making? No!

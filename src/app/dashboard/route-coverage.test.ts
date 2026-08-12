@@ -28,6 +28,7 @@ const EMBEDDED_ROUTES = new Set([
   "commentaries", // redirect → research hub tab (component: components/research/commentaries-tab)
   "rechtsprechung", // redirect → research hub tab (component: components/research/rechtsprechung-tab)
   "adoption-analytics", // linked from analytics hub page + settings hub
+  "time-tracking", // redirect → /dashboard/time (merged into single time page)
 ]);
 
 // Routes that are sub-pages of other routes (not standalone pages needing nav entry).

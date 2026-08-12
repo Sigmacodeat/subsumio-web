@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pandering-to-peoples-emotions-is-no-solut
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "945bddc52e36d82b"
 ---
 
 # Pandering to peoples’ emotions is no solution

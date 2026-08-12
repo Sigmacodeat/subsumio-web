@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/verfassungsbarbarei-budapest-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4c635c0f24359a0c"
 ---
 
 # Verfassungs-Barbarei in Budapest

@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "832b5830446367ed"
 ---
 
 # Der Fiskalpakt – eine Sprosse auf der Integrationsleiter

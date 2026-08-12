@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "658a9d52dc4b06e9"
 ---
 
 § 11 Bundesrat &#124; Inhaltsverzeichnis &#124; § 13 Bundespräsident:in 

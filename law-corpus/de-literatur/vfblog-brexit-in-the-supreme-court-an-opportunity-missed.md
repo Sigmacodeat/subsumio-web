@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/brexit-in-the-supreme-court-an-opportunit
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "813c725888812c61"
 ---
 
 # Brexit in the Supreme Court: An Opportunity Missed?

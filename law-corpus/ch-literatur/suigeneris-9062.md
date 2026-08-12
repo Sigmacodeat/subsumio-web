@@ -20,6 +20,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2025 Nina Lasbleiz, Liliane
   Obrecht; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "952068ce29006562"
 ---
 
 # Le droit d&#039;accès aux codes sources des systèmes algorithmiques utilisés par l&#039;administration publique: Une approche comparée franco-suisse

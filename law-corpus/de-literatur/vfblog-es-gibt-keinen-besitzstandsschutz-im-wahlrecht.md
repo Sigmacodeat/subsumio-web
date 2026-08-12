@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/es-gibt-keinen-besitzstandsschutz-im-wahl
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6be2614b56302b68"
 ---
 
 # Es gibt keinen Besitzstandsschutz im Wahlrecht

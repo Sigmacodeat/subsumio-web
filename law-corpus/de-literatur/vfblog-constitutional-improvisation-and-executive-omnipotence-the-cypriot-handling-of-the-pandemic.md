@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1d95f22939e3915b"
 ---
 
 # Constitutional Improvisation and Executive Omnipotence: the Cypriot Handling of the Pandemic

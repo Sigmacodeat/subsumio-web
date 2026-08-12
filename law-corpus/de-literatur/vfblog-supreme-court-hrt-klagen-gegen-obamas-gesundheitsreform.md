@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "408ec2bb48b934ea"
 ---
 
 # US Supreme Court hört Klagen gegen Obamas Gesundheitsreform

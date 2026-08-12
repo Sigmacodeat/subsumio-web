@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c89d8bec9ad09802"
 ---
 
 # Including the Arms Sector in the EU Corporate Due Diligence Directive

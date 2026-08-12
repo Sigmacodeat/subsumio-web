@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9645be7e34e687bc"
 ---
 
 # Criticizing the new President of the Polish Constitutional Court: A Crime against the State?

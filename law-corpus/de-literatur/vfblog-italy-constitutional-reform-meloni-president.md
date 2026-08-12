@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/italy-constitutional-reform-meloni-presid
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9d0e187de99cf115"
 ---
 
 # A Constitutional Reform in Italy to the Detriment of Systemic Balance

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/is-compulsory-vaccination-compulsory/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "410c2e59dba4c0f3"
 ---
 
 # Is Compulsory Vaccination Compulsory?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-people-have-voted-now-let-the-people-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "35508a74fcb496f6"
 ---
 
 # The People Have Voted, Now Let the People Speak

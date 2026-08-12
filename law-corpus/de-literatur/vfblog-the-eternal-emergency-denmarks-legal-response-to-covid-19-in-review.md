@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "22dacb178d03085a"
 ---
 
 # The Eternal Emergency? Denmark’s Legal Response to COVID-19 in Review

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a55db6f95867fa30"
 ---
 
 # The Role of Citizen Emotions in Constitutional Backsliding – Mapping Out Frontiers of New Research

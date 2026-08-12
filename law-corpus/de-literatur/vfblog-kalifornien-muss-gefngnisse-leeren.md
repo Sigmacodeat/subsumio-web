@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kalifornien-muss-gefngnisse-leeren/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a0ba10061172dde4"
 ---
 
 # Kalifornien muss Gefängnisse leeren

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cce1332d93a26e24"
 ---
 
 # Memory Wars of Commercial Worth – The Legal Status of the Red Star in Hungary

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/tertium-datur/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1878f12a9509ee7e"
 ---
 
 # Tertium Datur

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/control-through-intervention/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0bfc07ad7d4e55c5"
 ---
 
 # Control through Intervention

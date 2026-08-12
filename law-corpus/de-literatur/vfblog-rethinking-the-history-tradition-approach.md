@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rethinking-the-history-tradition-approach
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9a336e5f10154684"
 ---
 
 # Rethinking the History &#038; Tradition Approach

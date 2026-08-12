@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3fc2c8b768ab59eb"
 ---
 
 # Die Nationale Sicherheitsstrategie im Zeichen der außenpolitischen Zeitenwende

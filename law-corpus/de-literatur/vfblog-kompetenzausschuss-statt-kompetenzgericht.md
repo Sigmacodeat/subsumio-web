@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kompetenzausschuss-statt-kompetenzgericht
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5373a733e1b0f1fc"
 ---
 
 # Kompetenzausschuss statt Kompetenzgericht

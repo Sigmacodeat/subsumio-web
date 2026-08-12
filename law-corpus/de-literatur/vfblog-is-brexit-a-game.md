@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/is-brexit-a-game/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5f0b5a02ad7a9a4d"
 ---
 
 # Is Brexit a Game?

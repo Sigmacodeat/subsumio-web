@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/kumm-wrong-law-duty-appoint-juncker/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6c9ad7b9cf56010a"
 ---
 
 # Why Kumm is Wrong and there is not in LAW a duty to appoint Juncker

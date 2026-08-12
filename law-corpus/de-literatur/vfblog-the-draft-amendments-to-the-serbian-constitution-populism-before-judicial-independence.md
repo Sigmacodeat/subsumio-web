@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "45b43c023f6c476c"
 ---
 
 # The Draft Amendments to the Serbian Constitution: Populism before Judicial Independence

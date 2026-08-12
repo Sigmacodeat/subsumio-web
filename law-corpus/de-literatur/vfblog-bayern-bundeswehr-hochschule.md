@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bayern-bundeswehr-hochschule/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "409f1c590d9a77af"
 ---
 
 # Bayerns Weg zur Förderung der Bundeswehr

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/blaming-the-people-is-not-a-good-starting
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "81c8fe85ae90ad31"
 ---
 
 # Blaming the People is not a Good Starting Point

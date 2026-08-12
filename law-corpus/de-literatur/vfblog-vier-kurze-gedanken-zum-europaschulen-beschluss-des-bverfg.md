@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "484a705e9b0f10bd"
 ---
 
 # VB vom Blatt: Vier kurze Gedanken zum Europaschulen-Beschluss des BVerfG

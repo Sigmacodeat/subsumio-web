@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8fe7c05248798385"
 ---
 
 # Nun sag’, wie hast du’s mit Kaiserreich und Kolonialismus?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/iraq-lost-century/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c04e83be55f89551"
 ---
 
 # Iraq’s Lost Century

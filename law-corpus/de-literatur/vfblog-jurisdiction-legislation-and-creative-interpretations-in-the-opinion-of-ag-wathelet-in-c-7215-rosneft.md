@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8bd1363758478e29"
 ---
 
 # Jurisdiction, legislation, and creative interpretations in the Opinion of AG Wathelet in C-72/15 Rosneft

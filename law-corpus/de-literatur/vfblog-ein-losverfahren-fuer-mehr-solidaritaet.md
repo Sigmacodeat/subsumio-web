@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-losverfahren-fuer-mehr-solidaritaet/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "09490c762e7f5d63"
 ---
 
 # Ein Losverfahren für mehr Solidarität

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-ende-des-parlamentarischen-konsenspri
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "44a9a3e9103a7ed5"
 ---
 
 # Das Ende des parlamentarischen Konsensprinzips?

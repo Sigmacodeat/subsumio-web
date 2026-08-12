@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ist-deutschland-zu-nett-zu-folterknechten
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c0d132a20f5699b5"
 ---
 
 # Ist Deutschland zu nett zu Folterknechten?

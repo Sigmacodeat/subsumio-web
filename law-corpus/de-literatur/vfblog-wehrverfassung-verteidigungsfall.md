@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wehrverfassung-verteidigungsfall/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "313c46e0ecdb2534"
 ---
 
 # Verteidigungsfähigkeit als Verfassungsauftrag

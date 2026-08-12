@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4ccbf48a8415affa"
 ---
 
 # Fast-Tracking Law Enforcement at the Expense of Fundamental Rights

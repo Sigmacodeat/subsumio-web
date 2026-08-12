@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "52f3b658bba6f831"
 ---
 
 # #Aufstehen statt sitzen bleiben: Kann eine Sammlungsbewegung den Parteien Beine machen?

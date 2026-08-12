@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hat-mein-wahlrecht-mit-eurobonds-zu-tun/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cc04e338c451e1b3"
 ---
 
 # Was hat mein Wahlrecht mit Eurobonds zu tun?

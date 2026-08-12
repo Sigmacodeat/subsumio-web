@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "58ba99ce9337855e"
 ---
 
 # The New Normal? – Emergency Measures in Response to the Second COVID-19 Wave in Poland

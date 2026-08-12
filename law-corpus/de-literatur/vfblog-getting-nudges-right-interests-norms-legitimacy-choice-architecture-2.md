@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ddbe39e50c49e5eb"
 ---
 
 # Getting nudges right – interests, norms and the legitimacy of choice architecture

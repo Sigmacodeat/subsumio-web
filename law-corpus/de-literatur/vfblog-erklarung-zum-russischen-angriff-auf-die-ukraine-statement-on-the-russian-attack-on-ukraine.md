@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6fb23e032ae44e73"
 ---
 
 # Erklärung zum russischen Angriff auf die Ukraine /  Statement on the Russian attack on Ukraine

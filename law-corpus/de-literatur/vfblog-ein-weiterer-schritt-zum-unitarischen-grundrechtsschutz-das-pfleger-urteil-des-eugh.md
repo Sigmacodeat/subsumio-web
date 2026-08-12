@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "22e84985de3c9179"
 ---
 
 # Ein weiterer Schritt zum unitarischen Grundrechtsschutz? Das Pfleger-Urteil des EuGH

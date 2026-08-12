@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/special-edition-south-of-the-border/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "711179a135d72de7"
 ---
 
 # Special Edition: South of the Border

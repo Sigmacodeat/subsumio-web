@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "68b9b8db669df6cb"
 ---
 
 # Die AfD und ihr Rechtsbruch-Mythos: im Felde unbesiegt

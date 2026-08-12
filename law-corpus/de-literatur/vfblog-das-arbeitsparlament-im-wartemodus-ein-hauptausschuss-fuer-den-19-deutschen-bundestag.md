@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "32a156dad05b9b21"
 ---
 
 # Das Arbeitsparlament im Wartemodus – ein Hauptausschuss für den 19. Deutschen Bundestag?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/is-something-better-than-nothing/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "942cb39fcc09a0ec"
 ---
 
 # Is Something Better Than Nothing?

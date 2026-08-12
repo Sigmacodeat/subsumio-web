@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wehrpflicht-demnachst-auch-fur-frauen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e799be952cd81bd2"
 ---
 
 # Wehrpflicht – demnächst auch für Frauen?

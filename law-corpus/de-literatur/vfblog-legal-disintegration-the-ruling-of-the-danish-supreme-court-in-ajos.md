@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c4c15b253cc4c948"
 ---
 
 # Legal Disintegration? The Ruling of the Danish Supreme Court in AJOS

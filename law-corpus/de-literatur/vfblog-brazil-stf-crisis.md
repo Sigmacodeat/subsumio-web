@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/brazil-stf-crisis/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6f6ecf771f83b6b9"
 ---
 
 # When Courts Turn Into Justices

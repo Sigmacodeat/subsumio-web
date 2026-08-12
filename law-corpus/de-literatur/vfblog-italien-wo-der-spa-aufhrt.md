@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/italien-wo-der-spa-aufhrt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e13a814007d866c0"
 ---
 
 # Italien: Wo der Spaß aufhört

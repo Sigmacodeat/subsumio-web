@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d5f7c191f8d68956"
 ---
 
 # Peace and Security for Ukraine and Europe are not Created on the Drawing Board of the West

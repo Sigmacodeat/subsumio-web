@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "53ba5a6c43d74378"
 ---
 
 # Failing Efforts to Delegitimize the Incoming Biden Administration

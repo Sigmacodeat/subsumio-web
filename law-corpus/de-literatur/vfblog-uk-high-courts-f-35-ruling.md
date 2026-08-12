@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/uk-high-courts-f-35-ruling/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3967120bd35648ba"
 ---
 
 # On the “Whims of Foreign Courts”

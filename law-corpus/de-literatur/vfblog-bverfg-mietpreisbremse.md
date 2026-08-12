@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bverfg-mietpreisbremse/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d4250bb48530215f"
 ---
 
 # Missverständnisse zur Mietpreisbremse

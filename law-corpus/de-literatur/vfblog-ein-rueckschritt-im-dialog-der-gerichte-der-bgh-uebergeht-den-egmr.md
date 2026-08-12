@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "15f47b87d2067960"
 ---
 
 # Ein Rückschritt im Dialog der Gerichte: Der BGH übergeht den EGMR

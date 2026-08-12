@@ -110,6 +110,11 @@ export const POST = createHandler(
   {
     action: "connector.write",
     rateTier: "standard",
+    audit: (ctx, body) => ({
+      action: "admin.fine_tuning_gate" as const,
+      entityType: "fine_tuning",
+      details: { action: ((body as unknown as Record<string, unknown>)?.action), user: ctx.user.email },
+    }),
   },
   async (ctx, body) => {
     if (ctx.user.role !== "admin") {

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f03f57ae54f1dad4"
 ---
 
 # Offence Intended – Virgin Mary With a Rainbow Halo as Freedom of Expression

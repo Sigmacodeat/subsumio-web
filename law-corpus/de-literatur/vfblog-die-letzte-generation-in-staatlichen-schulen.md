@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-letzte-generation-in-staatlichen-schu
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fa7e42fa41119fd1"
 ---
 
 # Die “Letzte Generation” in staatlichen Schulen?

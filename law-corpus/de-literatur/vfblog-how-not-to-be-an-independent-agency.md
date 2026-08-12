@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/how-not-to-be-an-independent-agency/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6c8005d381a028df"
 ---
 
 # How NOT to Be an Independent Agency

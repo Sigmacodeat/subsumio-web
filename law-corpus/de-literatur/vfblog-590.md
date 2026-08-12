@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/590/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1c3c2db02c979b35"
 ---
 
 # Diskriminierungsverbot für Schwule und Lesben ins Grundgesetz

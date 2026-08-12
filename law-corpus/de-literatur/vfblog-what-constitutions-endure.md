@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/what-constitutions-endure/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9817d97770453791"
 ---
 
 # What Constitutions Endure

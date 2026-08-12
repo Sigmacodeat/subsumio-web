@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zwei-toechter-bussgeld-und-amtsgericht-da
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c77f8f0b038242b6"
 ---
 
 # Zwei Töchter, ein Bußgeld und das Amtsgericht Darmstadt

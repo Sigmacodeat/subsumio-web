@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-law-cant-always-fix-it/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a38a4962e81a9408"
 ---
 
 # The Law Can’t Always Fix It

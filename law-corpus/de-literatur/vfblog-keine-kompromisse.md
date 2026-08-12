@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/keine-kompromisse/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5b8cfe8042f2042d"
 ---
 
 # Keine Kompromisse

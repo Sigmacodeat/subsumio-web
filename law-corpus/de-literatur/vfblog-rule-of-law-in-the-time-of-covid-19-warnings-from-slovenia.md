@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b1fef9fd33214ce4"
 ---
 
 # (Rule of) Law in the Time of Covid-19: Warnings from Slovenia

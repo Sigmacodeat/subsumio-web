@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-legal-art-of-judging-art/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9d490e29dbdaedcf"
 ---
 
 # The Legal Art of Judging Art

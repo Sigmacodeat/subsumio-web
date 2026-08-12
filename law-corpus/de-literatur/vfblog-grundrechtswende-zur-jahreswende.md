@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/grundrechtswende-zur-jahreswende/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "79f7eecf8a719093"
 ---
 
 # Grundrechtswende zur Jahreswende

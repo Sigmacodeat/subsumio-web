@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zahnrzte-drfen-zahnrztehaus-grnden/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d40453da0e355cbc"
 ---
 
 # Zahnärzte dürfen “Zahnärztehaus” gründen

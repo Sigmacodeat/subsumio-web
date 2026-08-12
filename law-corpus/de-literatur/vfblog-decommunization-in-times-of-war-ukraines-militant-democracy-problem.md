@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1298057aa9869f6f"
 ---
 
 # Decommunization in Times of War: Ukraine’s Militant Democracy Problem

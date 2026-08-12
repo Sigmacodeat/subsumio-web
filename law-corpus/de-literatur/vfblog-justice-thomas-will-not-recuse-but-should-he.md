@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/justice-thomas-will-not-recuse-but-should
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "be872fa5dceddabc"
 ---
 
 # Justice Thomas Will Not Recuse. But Should He?

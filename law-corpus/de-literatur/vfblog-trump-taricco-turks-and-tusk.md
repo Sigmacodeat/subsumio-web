@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/trump-taricco-turks-and-tusk/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "17fb09a1ba0dd0b0"
 ---
 
 # Trump, Taricco, Turks and Tusk

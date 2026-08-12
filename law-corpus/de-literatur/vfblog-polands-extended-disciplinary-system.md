@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/polands-extended-disciplinary-system/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "005a1b925cd73cbc"
 ---
 
 # Poland's Extended Disciplinary System

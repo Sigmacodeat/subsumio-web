@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7c78104bcb92ecb7"
 ---
 
 # A Do-Over for Istanbul: Gripping Electoral Law and Democratic Resilience

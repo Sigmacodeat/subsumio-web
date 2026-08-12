@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/urban-citizenship-a-status-or-a-practice/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "31101924ed3e3a6f"
 ---
 
 # Urban Citizenship – a Status or a Practice?

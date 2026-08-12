@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zur-gestalt-europas/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fd9bb090ed646f5f"
 ---
 
 # Zur Gestalt Europas

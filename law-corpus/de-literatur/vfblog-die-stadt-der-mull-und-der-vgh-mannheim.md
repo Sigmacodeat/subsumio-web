@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-stadt-der-mull-und-der-vgh-mannheim/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5740ee45e180c61b"
 ---
 
 # Die Stadt, der Müll und der VGH Mannheim

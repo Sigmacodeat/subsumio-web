@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/civil-disobedience-on-trial-in-switzerlan
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5441a42be9cbc1d5"
 ---
 
 # Civil Disobedience on Trial in Switzerland

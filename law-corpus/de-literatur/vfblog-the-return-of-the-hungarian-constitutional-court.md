@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-return-of-the-hungarian-constitutiona
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b5fefa5476d16652"
 ---
 
 # The Return of the Hungarian Constitutional Court

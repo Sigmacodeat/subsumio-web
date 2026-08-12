@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nudging-human-dignity-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b500abeecbc1f69b"
 ---
 
 # Nudging and human dignity

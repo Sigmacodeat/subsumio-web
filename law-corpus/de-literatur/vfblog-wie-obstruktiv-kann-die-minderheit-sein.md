@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wie-obstruktiv-kann-die-minderheit-sein/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "12d082638d60df01"
 ---
 
 # Wie obstruktiv kann die Minderheit sein?

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "653fe1737a797dce"
 ---
 
 # Of course you can still turn back! On the revocability of the Article 50 notification and post-truth politics

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nichts-weniger-als-ein-formenmissbrauch/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "354436dbf57f2652"
 ---
 
 # Nichts weniger als ein Formenmissbrauch

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2ecbeb8bcc59e77c"
 ---
 
 # The Remains of the Days of Crisis: The Second Wave of Legislative COVID-19 Measures in Luxembourg

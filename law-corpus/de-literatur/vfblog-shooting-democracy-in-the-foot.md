@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/shooting-democracy-in-the-foot/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bd87b250f0995d44"
 ---
 
 # Shooting Democracy in the Foot?

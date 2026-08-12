@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/power-dsa-dma-11/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7324b9be10874a65"
 ---
 
 # Human Ads Beyond Targeted Advertising

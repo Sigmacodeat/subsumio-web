@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "035e3a56bd266fa0"
 ---
 
 § 13 Bundespräsident:in &#124; Inhaltsverzeichnis &#124; § 15 Gesetzgebungskompetenzen 

@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "805fbfb0b2d33b3d"
 ---
 
 # Selbstbestimmung schließt Vertretung nicht aus:﻿ Die Mär von der demokratie&shy;notwendigen Höchst&shy;persönlichkeit der Wahl

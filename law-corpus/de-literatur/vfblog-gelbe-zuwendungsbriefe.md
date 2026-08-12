@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gelbe-zuwendungsbriefe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1504e3af5fd66c9b"
 ---
 
 # Gelbe Zuwendungsbriefe

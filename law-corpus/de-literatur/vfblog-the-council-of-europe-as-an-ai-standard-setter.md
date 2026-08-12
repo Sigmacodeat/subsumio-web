@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-council-of-europe-as-an-ai-standard-s
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "26c85e2cf3380459"
 ---
 
 # The Council of Europe as an AI Standard Setter

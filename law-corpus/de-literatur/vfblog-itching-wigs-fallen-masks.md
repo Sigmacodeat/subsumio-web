@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/itching-wigs-fallen-masks/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a0d9ea3cca1c54a8"
 ---
 
 # Itching Wigs, Fallen Masks

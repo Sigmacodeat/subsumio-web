@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/polands-sham-migration-referendum/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f77946f45ca9e218"
 ---
 
 # Poland’s Sham ‘Migration’ Referendum

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ff549d7fae48d192"
 ---
 
 # Mit den eigenen Waffen geschlagen: Die Reaktion des EuGH auf den unbedingten Vorrang der Menschenwürde vor dem Unionsrecht nach dem BVerfG

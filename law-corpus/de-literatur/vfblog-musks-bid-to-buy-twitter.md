@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/musks-bid-to-buy-twitter/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "594859749f640b5e"
 ---
 
 # Shareholder Power as a Constitutionalising Force: Elon Musk’s Bid to Buy Twitter

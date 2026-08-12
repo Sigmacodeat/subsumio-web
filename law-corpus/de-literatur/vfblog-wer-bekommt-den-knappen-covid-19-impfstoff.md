@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wer-bekommt-den-knappen-covid-19-impfstof
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5b953d63253db1bf"
 ---
 
 # Wer bekommt den knappen Covid-19-Impfstoff?

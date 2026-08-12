@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/british-bare-necessities/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b7b22ad9ec019a0f"
 ---
 
 # British Bare Necessities

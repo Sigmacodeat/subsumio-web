@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/greenwashing-global-commodity-chains/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9a874aafe13d77b5"
 ---
 
 # Green(wash)ing Global Commodity Chains

@@ -38,7 +38,7 @@ const cycleSource = readFileSync(new URL("../src/core/cycle.ts", import.meta.url
 describe("autopilot cycle-failure classification — only 'failed' trips the circuit breaker", () => {
   test("the inline-cycle path does NOT treat 'partial' as cycleOk=false", () => {
     // Find the inline-cycle block (the catch-and-inspect on `report`)
-    const inlineBlockStart = autopilotSource.indexOf("event: 'cycle-inline'");
+    const inlineBlockStart = autopilotSource.search(/event:\s*["']cycle-inline["']/);
     expect(inlineBlockStart).toBeGreaterThan(0);
 
     // Look at the 800 chars before the JSON event line — that's where the

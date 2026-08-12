@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fight-flight-or-fudge/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8128aed9da19f594"
 ---
 
 # Fight, flight or fudge?

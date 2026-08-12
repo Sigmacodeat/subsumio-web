@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3971018d212deb01"
 ---
 
 # The Missing Link: Direct Effect, CETA/TIIP and Investor-State-Dispute Settlement

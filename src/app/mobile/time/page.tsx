@@ -301,9 +301,9 @@ export default function MobileTimePage() {
                     style={{
                       padding: "14px 24px",
                       background: "var(--ds-border)",
-                      border: "1px solid hsl(230, 10%, 30%)",
+                      border: "1px solid var(--ds-border-strong)",
                       borderRadius: 50,
-                      color: "hsl(230, 8%, 80%)",
+                      color: "var(--ds-text-muted)",
                       fontSize: 15,
                       cursor: "pointer",
                       display: "flex",
@@ -338,8 +338,8 @@ export default function MobileTimePage() {
                       onClick={stop}
                       style={{
                         padding: "14px 24px",
-                        background: "hsla(0, 60%, 50%, 0.13)",
-                        border: "1px solid hsla(0, 60%, 50%, 0.19)",
+                        background: "var(--ds-danger-bg)",
+                        border: "1px solid var(--ds-danger-border)",
                         borderRadius: 50,
                         color: "var(--signal-danger-500)",
                         fontSize: 15,
@@ -372,6 +372,7 @@ export default function MobileTimePage() {
                 </label>
                 <input
                   type="number"
+                  inputMode="decimal"
                   min="0"
                   max="24"
                   value={manualHours}
@@ -390,7 +391,7 @@ export default function MobileTimePage() {
                   }}
                 />
               </div>
-              <span style={{ fontSize: 28, color: "hsl(230, 8%, 35%)", marginTop: 16 }}>:</span>
+              <span style={{ fontSize: 28, color: "var(--ds-text-subtle)", marginTop: 16 }}>:</span>
               <div>
                 <label
                   style={{
@@ -404,6 +405,7 @@ export default function MobileTimePage() {
                 </label>
                 <input
                   type="number"
+                  inputMode="numeric"
                   min="0"
                   max="59"
                   value={manualMinutes}
@@ -436,8 +438,8 @@ export default function MobileTimePage() {
                   alignItems: "center",
                   gap: 8,
                   padding: "10px 12px",
-                  background: "hsla(0, 60%, 50%, 0.13)",
-                  border: "1px solid hsla(0, 60%, 50%, 0.19)",
+                  background: "var(--ds-danger-bg)",
+                  border: "1px solid var(--ds-danger-border)",
                   borderRadius: 10,
                   fontSize: 13,
                   color: "var(--signal-danger-500)",
@@ -472,8 +474,8 @@ export default function MobileTimePage() {
                   alignItems: "center",
                   gap: 8,
                   padding: "10px 12px",
-                  background: "hsla(40, 70%, 45%, 0.13)",
-                  border: "1px solid hsla(40, 70%, 45%, 0.19)",
+                  background: "var(--ds-warning-bg)",
+                  border: "1px solid var(--ds-warning-border)",
                   borderRadius: 10,
                   fontSize: 12,
                   color: "var(--signal-warning-500)",
@@ -593,12 +595,12 @@ export default function MobileTimePage() {
                   justifyContent: "space-between",
                   alignItems: "center",
                   padding: "8px 0",
-                  borderBottom: "1px solid hsl(230, 10%, 12%)",
+                  borderBottom: "1px solid var(--ds-border)",
                   fontSize: 13,
                 }}
               >
                 <div>
-                  <span style={{ color: "hsl(230, 8%, 80%)" }}>{e.description}</span>
+                  <span style={{ color: "var(--ds-text-muted)" }}>{e.description}</span>
                   {e.matter && (
                     <span style={{ color: "var(--ds-text-muted)", fontSize: 11 }}>
                       {" "}

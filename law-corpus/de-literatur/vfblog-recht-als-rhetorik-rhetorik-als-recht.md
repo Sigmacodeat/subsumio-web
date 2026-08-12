@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/recht-als-rhetorik-rhetorik-als-recht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3769d447308cce00"
 ---
 
 # Dieter Simon über das Argumentieren der Juristen und die schöne Zukunft des Rechts: Recht als Rhetorik – Rhetorik als Recht

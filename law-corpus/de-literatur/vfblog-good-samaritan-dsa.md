@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/good-samaritan-dsa/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "21772f398bb97430"
 ---
 
 # The Good Samaritan that wasn’t: voluntary monitoring under the (draft) Digital Services Act

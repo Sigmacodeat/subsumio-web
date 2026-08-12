@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "30ab25f234e56bf7"
 ---
 
 # Some Thoughts on Facultative and Obligatory Mixity  after Singapore and COTIF, and before CETA

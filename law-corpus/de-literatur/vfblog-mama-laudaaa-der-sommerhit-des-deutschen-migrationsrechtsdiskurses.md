@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "46e6f55cb7ad4118"
 ---
 
 # „Mama Laudaaa“: der Sommerhit des deutschen Migrationsrechts&shy;diskurses

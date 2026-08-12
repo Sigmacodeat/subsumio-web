@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/breaking-bad-allitaliana/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "17c36e51ed2b83b7"
 ---
 
 # Breaking Bad all’Italiana

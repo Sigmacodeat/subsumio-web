@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wehrpflicht-genehimigungspflicht-musterun
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c210edff10af11f4"
 ---
 
 # Nachlässig modernisiert

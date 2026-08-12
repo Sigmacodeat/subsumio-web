@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/verfassungsaltre-allen-ungarischen-rathus
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f0db44e392377fec"
 ---
 
 # Verfassungsaltäre in allen ungarischen Rathäusern

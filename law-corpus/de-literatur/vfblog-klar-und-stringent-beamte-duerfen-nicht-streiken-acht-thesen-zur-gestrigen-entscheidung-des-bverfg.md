@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5b13624524796fe8"
 ---
 
 # Klar und stringent: Beamte dürfen nicht streiken – acht Thesen zur gestrigen Entscheidung des BVerfG

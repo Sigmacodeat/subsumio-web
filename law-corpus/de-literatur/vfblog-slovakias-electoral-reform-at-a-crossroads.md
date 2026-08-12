@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/slovakias-electoral-reform-at-a-crossroad
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9225dcb58f9d640f"
 ---
 
 # Slovakia’s Electoral Reform at a Crossroads

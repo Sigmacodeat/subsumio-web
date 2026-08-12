@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/majority/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "918ce9e6a35cec57"
 ---
 
 # Majority

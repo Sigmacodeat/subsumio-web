@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/data-after-life/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a3d3046a47cc9dc8"
 ---
 
 # Data After Life

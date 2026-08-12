@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/verticality-and-struggles-over-human-righ
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0a53137d9bfd60cb"
 ---
 
 # Verticality and Struggles over Human Rights

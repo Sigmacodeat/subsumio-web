@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/squaring-the-circle/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7055e711be07f092"
 ---
 
 # Squaring the Circle

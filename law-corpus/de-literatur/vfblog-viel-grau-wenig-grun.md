@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/viel-grau-wenig-grun/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1b9b16ba0f4ea636"
 ---
 
 # Viel Grau, wenig Grün

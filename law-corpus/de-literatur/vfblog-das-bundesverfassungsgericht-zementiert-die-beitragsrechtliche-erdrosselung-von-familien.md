@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "42d2bd535d75f0ff"
 ---
 
 # Das Bundesverfassungsgericht zementiert die beitragsrechtliche Erdrosselung von Familien

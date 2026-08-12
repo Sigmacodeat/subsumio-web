@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/democracy-under-total-war/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d5b7731f0343b763"
 ---
 
 # Democracy Under Total War

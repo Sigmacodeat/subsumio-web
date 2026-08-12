@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mourning-the-dead-while-securitizing-the-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9782e49731528240"
 ---
 
 # Mourning the Dead While Securitizing the Sea

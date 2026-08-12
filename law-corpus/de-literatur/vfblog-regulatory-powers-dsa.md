@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/regulatory-powers-dsa/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6bce3b49890a4e74"
 ---
 
 # A first impression of regulatory powers in the Digital Services Act

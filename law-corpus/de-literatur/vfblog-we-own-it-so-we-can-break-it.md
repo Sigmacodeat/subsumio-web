@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/we-own-it-so-we-can-break-it/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9bdc138fd35eafa9"
 ---
 
 # We Own It, So We Can Break It

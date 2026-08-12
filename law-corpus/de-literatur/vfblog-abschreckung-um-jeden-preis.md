@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/abschreckung-um-jeden-preis/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "33904b98e395b7bf"
 ---
 
 # Abschreckung um jeden Preis?

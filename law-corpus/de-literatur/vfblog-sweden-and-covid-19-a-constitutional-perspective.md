@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sweden-and-covid-19-a-constitutional-pers
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e54d57d16a882563"
 ---
 
 # Sweden and COVID 19: A Constitutional Perspective

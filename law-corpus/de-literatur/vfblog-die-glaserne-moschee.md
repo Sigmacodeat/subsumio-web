@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-glaserne-moschee/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5d6c4ced3cc273f8"
 ---
 
 # Die gläserne Moschee

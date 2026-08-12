@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "79c79a2dda6c5f06"
 ---
 
 # Wehrdienst unter einem verfassungsfeindlichen Verteidigungsminister

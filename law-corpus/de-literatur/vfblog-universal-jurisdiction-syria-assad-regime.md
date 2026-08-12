@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/universal-jurisdiction-syria-assad-regime
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "14257b739e73b15d"
 ---
 
 # The Future of International Criminal Law is Domestic

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/everybodys-business/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "55d98bb99ad8c1f8"
 ---
 
 # Everybody’s Business

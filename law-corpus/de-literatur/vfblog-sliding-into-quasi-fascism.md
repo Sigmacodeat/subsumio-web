@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sliding-into-quasi-fascism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "66b78ca206775565"
 ---
 
 # Sliding into Quasi-Fascism?

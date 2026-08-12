@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/who-gets-to-define-jewish-identity-in-ger
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "48f403dec0eac26f"
 ---
 
 # Who Gets to Define Jewish Identity in Germany?

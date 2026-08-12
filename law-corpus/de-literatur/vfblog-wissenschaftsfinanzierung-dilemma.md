@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wissenschaftsfinanzierung-dilemma/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eeab7dd61dae87b7"
 ---
 
 # Das Dilemma der Verrechtlichung

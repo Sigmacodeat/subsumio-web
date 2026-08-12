@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/translating-ideas-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "507504fcde74ad78"
 ---
 
 # Translating Ideas

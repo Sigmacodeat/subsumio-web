@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eine-umstrittene-generalklausel-vor-geric
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4e03a625e1a3f33d"
 ---
 
 # Eine umstrittene Generalklausel vor Gericht

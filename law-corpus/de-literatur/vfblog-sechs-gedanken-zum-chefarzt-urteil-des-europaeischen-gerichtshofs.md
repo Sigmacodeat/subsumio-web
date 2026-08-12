@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d22328a3335d9e7c"
 ---
 
 # VB vom Blatt: Sechs Gedanken zum Chefarzt-Urteil des Europäischen Gerichtshofs

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "baa1e767303c953c"
 ---
 
 # No Expropriation without Compensation in South-Africa’s Constitution – for the Time Being

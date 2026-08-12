@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/departing-from-hostile-refugee-landscapes
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "51a83c9f15563c78"
 ---
 
 # Departing from Hostile Refugee Landscapes

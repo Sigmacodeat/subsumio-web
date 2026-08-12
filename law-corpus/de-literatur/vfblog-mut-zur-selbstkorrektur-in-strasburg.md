@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mut-zur-selbstkorrektur-in-strasburg/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8d4bb17fd0dbc08f"
 ---
 
 # Mut zur Selbstkorrektur in Straßburg

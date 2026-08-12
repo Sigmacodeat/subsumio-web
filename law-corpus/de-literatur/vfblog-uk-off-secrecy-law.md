@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/uk-off-secrecy-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "213b16d80b7a1946"
 ---
 
 # Modernising the United Kingdom’s Official Secrecy Laws

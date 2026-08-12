@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3b8f1f4fc58b8083"
 ---
 
 # A Further Step to a Unitarian Protection of Fundamental Rights: The CJEU's Pfleger Decision

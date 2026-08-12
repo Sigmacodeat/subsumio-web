@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/this-is-not-a-foreign-agents-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c16c858f1eaebb0a"
 ---
 
 # “This Is Not a Foreign Agents Law”

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/constitutional-reset-as-the-only-choice/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "38ecc43e9a529469"
 ---
 
 # Constitutional Reset As the Only Choice

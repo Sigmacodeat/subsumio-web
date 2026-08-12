@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/decolonization-through-decolonial-reformi
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f152c40aa8600e7f"
 ---
 
 # Decolonization Through Decolonial Reforming

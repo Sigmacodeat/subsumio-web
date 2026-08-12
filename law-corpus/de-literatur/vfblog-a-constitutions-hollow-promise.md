@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-constitutions-hollow-promise/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "de0d2a180740c70a"
 ---
 
 # A Constitution’s Hollow Promise

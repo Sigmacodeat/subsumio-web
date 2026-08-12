@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b8b7a09a5c07a890"
 ---
 
 # The Return of the Sovereign: A Look at the Rule of Law in Hungary – and in Europe

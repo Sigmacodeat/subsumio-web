@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8372bbb085b131ef"
 ---
 
 # Why EU Countries Should Open Their Borders to Russian Draft-Evaders

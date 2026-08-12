@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nein-elon-musk/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "32a3e05bbb7292d9"
 ---
 
 # Nein, Elon Musk, so geht Plattformdemokratie nicht

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1ca378fb34e6d21a"
 ---
 
 # Auf halben Wegen und zu halber Tat mit halben Mitteln zauderhaft zu streben

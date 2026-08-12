@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/eugh-generalanwalt-grundrechte-gesetzesvo
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "949171ed9b5eba51"
 ---
 
 # EuGH-Generalanwalt: Wie muss eine Grundrechtsschranke beschaffen sein?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/koffer-auspacken-2013-dean-spielmann/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "75d8447ff3be48db"
 ---
 
 # Koffer auspacken 2013: Dean Spielmann

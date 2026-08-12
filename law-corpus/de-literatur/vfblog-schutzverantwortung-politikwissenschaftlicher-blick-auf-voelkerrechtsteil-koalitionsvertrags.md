@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "782ccf7c9e6d0d15"
 ---
 
 # Schutzverantwortung: Ein politikwissenschaftlicher Blick auf den Völkerrechtsteil des Koalitionsvertrags

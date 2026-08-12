@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-end-of-the-european-union-as-we-know-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f685fab34bde0fa8"
 ---
 
 # The End of the European Union as We Know It

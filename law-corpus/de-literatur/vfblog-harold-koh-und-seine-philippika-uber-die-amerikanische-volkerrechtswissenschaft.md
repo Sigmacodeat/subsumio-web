@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ee8c6c0e2186c4c8"
 ---
 
 # Harold Koh und seine Philippika über die US-Völkerrechtswissenschaft

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rechtliche-stolpersteine-eine-replik/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d03532c8b8bbab53"
 ---
 
 # Rechtliche Stolpersteine – eine Replik

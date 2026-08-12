@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-neocons-zeitenwende/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d5e658c0a5c1869f"
 ---
 
 # Rehabilitating the “Neocons” is no Zeitenwende

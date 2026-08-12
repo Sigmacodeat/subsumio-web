@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/dsa-meta-regulation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f100e706e992172d"
 ---
 
 # The DSA as a paradigm shift for online intermediaries’ due diligence

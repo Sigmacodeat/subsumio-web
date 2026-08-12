@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/having-the-pudding-and-eating-it/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c5f9c48f353b5767"
 ---
 
 # Having the Pudding and Eating It

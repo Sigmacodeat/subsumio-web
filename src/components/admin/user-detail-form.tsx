@@ -84,40 +84,40 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
         </div>
       )}
 
-      <div className="rounded-xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)]">
-        <h2 className="mb-4 text-sm font-semibold [color:var(--mk-text)]">Benutzer bearbeiten</h2>
+      <div className="rounded-xl border border-[color:var(--ds-border)] p-6 bg-[color:var(--ds-surface)]">
+        <h2 className="mb-4 text-sm font-semibold text-[color:var(--ds-text)]">Benutzer bearbeiten</h2>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-xs font-medium [color:var(--mk-text-muted)]">
+            <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
               Name
             </label>
             <input
               type="text"
               value={user.name}
               disabled
-              className="w-full rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text-muted)] [background:var(--mk-surface-2)]"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text-muted)] bg-[color:var(--ds-surface-2)]"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium [color:var(--mk-text-muted)]">
+            <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
               E-Mail
             </label>
             <input
               type="text"
               value={user.email}
               disabled
-              className="w-full rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text-muted)] [background:var(--mk-surface-2)]"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text-muted)] bg-[color:var(--ds-surface-2)]"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium [color:var(--mk-text-muted)]">
+            <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
               Plan
             </label>
             <select
               value={plan}
               onChange={(e) => setPlan(e.target.value as typeof plan)}
-              className="w-full rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text)] bg-[color:var(--ds-surface-2)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             >
               <option value="free">Free</option>
               <option value="pro">Pro</option>
@@ -126,13 +126,13 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium [color:var(--mk-text-muted)]">
+            <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
               Rolle
             </label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as typeof role)}
-              className="w-full rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text)] bg-[color:var(--ds-surface-2)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             >
               <option value="admin">Admin</option>
               <option value="lawyer">Lawyer</option>
@@ -141,13 +141,13 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium [color:var(--mk-text-muted)]">
+            <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
               Branche
             </label>
             <select
               value={industry}
               onChange={(e) => setIndustry(e.target.value)}
-              className="w-full rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text)] bg-[color:var(--ds-surface-2)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             >
               <option value="">— Keine —</option>
               <option value="legal">Legal</option>

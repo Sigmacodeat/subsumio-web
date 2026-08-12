@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/schulden-statt-notbremse/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a0a0dcb1352ea436"
 ---
 
 # Schulden- statt Notbremse

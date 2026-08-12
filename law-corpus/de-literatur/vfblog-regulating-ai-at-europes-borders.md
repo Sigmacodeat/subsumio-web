@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/regulating-ai-at-europes-borders/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ef4c30e77dd6b31c"
 ---
 
 # Regulating AI at Europe's Borders

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/shot-itself-in-the-foot/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bf41be1691483f45"
 ---
 
 # Has the European Parliament Shot Itself in the Foot?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ungarn-was-tun/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d8ae9d21862a4e2a"
 ---
 
 # Ungarn – was tun?

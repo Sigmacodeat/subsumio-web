@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/free-lunch/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c38a41bd26160118"
 ---
 
 # Digesting the (Not So) Free Lunches of Social Media

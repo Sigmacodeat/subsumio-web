@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eeb58c6425e465b2"
 ---
 
 # Kann der SPD-Parteivorstand Andrea Nahles zur kommissarischen Vorsitzenden ernennen?

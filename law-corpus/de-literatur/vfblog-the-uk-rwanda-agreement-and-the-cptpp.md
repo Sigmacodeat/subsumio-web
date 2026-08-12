@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-uk-rwanda-agreement-and-the-cptpp/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b17e258c5b8f7eae"
 ---
 
 # The UK Parliament, the UK-Rwanda Agreement and the CPTPP

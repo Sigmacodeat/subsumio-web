@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f24c2795af40d15e"
 ---
 
 # Choice Architecture in Democracy: Verfassungsblog-Konferenz am 12.-14. Januar 2015

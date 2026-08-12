@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/barroso-leader-free-world/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d6566c1646f799bb"
 ---
 
 # Barroso, Leader of the Free World

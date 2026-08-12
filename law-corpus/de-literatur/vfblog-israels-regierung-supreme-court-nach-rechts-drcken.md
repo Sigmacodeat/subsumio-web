@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/israels-regierung-supreme-court-nach-rech
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "30873f10144dba3c"
 ---
 
 # Israels Regierung will Supreme Court nach rechts drücken

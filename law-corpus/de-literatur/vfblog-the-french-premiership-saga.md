@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-french-premiership-saga/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "82411fe1f5b3a2cb"
 ---
 
 # The French Premiership Saga

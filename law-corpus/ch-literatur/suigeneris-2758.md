@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2021 Martin Widrig;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "b0c71f6cdfb009ff"
 ---
 
 # «Das Bundesgericht erhebt die alternierende Obhut zur Regel»: Besprechung der Urteile des Bundesgerichts 5A_367/2020 vom 19. Oktober 2020 und 5A_629/2019 vom 13. November 2020

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a8bb50cc048bcb7f"
 ---
 
 # What Schrems, Delvigne and Celaj tell us about the state of fundamental rights in the EU

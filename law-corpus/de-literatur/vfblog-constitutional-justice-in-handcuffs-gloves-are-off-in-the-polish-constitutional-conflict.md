@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e32b64512e2ee4ba"
 ---
 
 # Constitutional justice in Handcuffs? Gloves are off in the Polish Constitutional Conflict

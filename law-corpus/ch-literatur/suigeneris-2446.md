@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Daniela Thurnherr;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "67e4bd15560d4f2d"
 ---
 
 # Rechtliches Gehör in Administrativuntersuchungen : Kommentar zum Zwischenentscheid des Bundesverwaltungsgerichts A-7102/2017 vom 14. Mai 2018, zum Urteil des Bundesgerichts 1C_297/2018 vom 28. März 2019, zum Urteil des Bundesverwaltungsgerichts A-7102/2017 vom 27. August 2019 sowie zum Urteil des Bundesgerichts 1C_527/2019 vom 14. April 2020.

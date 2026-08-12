@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3779a3fef6aa56c3"
 ---
 
 # VB Live: “Universally respected but temporarily neglected?” – COVID-19 as a crisis for human rights and multilateralism

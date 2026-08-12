@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/no-more-manels/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f212177b229a1bbc"
 ---
 
 # No More Manels

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/protecting-victims-without-mass-surveilla
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a60e03fb358d898d"
 ---
 
 # Protecting Victims Without Mass Surveillance

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "244bd967fc1d0ff4"
 ---
 
 # ‘We need to talk about the kids': FIFA’s children's rights obligations

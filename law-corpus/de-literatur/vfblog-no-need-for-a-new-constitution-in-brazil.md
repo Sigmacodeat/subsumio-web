@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/no-need-for-a-new-constitution-in-brazil/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7b76cb03ebbf57b0"
 ---
 
 # No Need for a New Constitution in Brazil

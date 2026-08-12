@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dcb5a025d013f4fd"
 ---
 
 # Zugang für die Erben gesichert, aber viele Fragen offen: Das BGH-Urteil zu digitalen Hinterlassenschaften

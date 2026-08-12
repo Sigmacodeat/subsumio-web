@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/moral-grundmandatsklausel/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "08150225a78aa915"
 ---
 
 # Die Moral und die Grundmandatsklausel

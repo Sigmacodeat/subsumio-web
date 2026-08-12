@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/connective-and-disjunctive-memory/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "45eeb676171463a8"
 ---
 
 # Connective and Disjunctive Memory

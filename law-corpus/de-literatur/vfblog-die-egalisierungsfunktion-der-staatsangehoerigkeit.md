@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-egalisierungsfunktion-der-staatsangeh
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3ae9183da15e5e9a"
 ---
 
 # Die Egalisierungsfunktion der Staatsangehörigkeit

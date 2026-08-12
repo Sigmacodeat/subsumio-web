@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/probieren-geht-uber-studieren/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "78329c30cf554606"
 ---
 
 # Probieren geht über Studieren!

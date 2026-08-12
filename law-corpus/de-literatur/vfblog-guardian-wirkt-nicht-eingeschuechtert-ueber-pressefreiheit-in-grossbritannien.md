@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c496df1a15711962"
 ---
 
 # “Der Guardian wirkt nicht eingeschüchtert”: Über die Pressefreiheit in Großbritannien

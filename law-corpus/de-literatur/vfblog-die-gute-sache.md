@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-gute-sache/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c48ab587e084a634"
 ---
 
 # Die gute Sache

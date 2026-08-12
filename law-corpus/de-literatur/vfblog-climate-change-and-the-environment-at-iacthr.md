@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/climate-change-and-the-environment-at-iac
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9c6461b50398ddce"
 ---
 
 # Climate Change and the Environment at the Inter-American Court of Human Rights

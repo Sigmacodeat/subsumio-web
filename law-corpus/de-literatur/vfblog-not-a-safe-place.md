@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/not-a-safe-place/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "57093a4011d7a80e"
 ---
 
 # Not a Safe Place?

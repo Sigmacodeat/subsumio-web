@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/restoring-constitutionalism-in-hungary/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e2f7dc512fe9ed86"
 ---
 
 # Restoring Constitutionalism in Hungary

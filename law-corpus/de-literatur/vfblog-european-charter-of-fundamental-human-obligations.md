@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/european-charter-of-fundamental-human-obl
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5c918203ee0b90a9"
 ---
 
 # A European Charter of Fundamental Human Obligations

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/der-prsident-der-nicht-gehen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7a11017b2ce4469d"
 ---
 
 # Der Präsident, der nicht gehen will

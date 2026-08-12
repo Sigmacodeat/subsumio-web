@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-draft-is-no-infringement/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b322fc6f07953af7"
 ---
 
 # A Draft is no Infringement

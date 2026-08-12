@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/from-paper-to-practice-csddd-implementati
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4fc991cc19159e2c"
 ---
 
 # From Paper to Practice

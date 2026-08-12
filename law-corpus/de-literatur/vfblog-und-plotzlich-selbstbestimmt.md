@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/und-plotzlich-selbstbestimmt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fcf1746f38f7399f"
 ---
 
 # Und plötzlich selbstbestimmt

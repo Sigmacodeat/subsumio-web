@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/luom-di-sasso-luomo-bianco/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a12fae4c3ce30979"
 ---
 
 # L'Uom di Sasso! L'Uomo Bianco!

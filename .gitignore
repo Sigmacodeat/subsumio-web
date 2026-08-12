@@ -25,6 +25,10 @@ package-lock.json
 .data/
 /export/
 
+# Devin DoD-Gate runtime markers (nicht committen — pro Session)
+.devin/.last-edit
+.devin/.dod-gate-passed
+
 # Test artifacts
 test/.cache/
 test-results/

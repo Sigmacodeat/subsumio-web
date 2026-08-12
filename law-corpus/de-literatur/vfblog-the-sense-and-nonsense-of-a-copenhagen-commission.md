@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-sense-and-nonsense-of-a-copenhagen-co
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "02d68cd8f1bdda1b"
 ---
 
 # The Sense and Nonsense of a Copenhagen Commission

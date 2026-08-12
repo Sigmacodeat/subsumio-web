@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/intersexuell-dritte-option-bgh-verfassung
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "583e397a9b5bf3e4"
 ---
 
 # Die „Dritte Option“ vor dem BGH – Zwischenstopp auf dem Weg zum Verfassungsgericht

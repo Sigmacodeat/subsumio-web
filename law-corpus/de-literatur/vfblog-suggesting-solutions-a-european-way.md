@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/suggesting-solutions-a-european-way/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ec0c431673aeb9f2"
 ---
 
 # Suggesting Solutions: A European Way?

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "07771472fd29861c"
 ---
 
 # Freiheit der (Auslands-)Wahl: Musste Deutschland der Türkei die Durchführung des Verfassungsreferendums gestatten?

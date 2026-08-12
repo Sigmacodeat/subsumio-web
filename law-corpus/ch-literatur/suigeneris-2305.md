@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Andrés Payer;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "c98db5fa2dc2aa3e"
 ---
 
 # Klimawandel als strafrechtlicher Notstand: Zugleich Besprechung des Urteils des Bezirksgerichts Lausanne PE19.000742/PCL/llb vom 13. Januar 2020

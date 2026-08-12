@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/open-letter-to-vice-president-frans-timme
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a8bf45ba8deaa4cf"
 ---
 
 # Open Letter to Vice-President Frans Timmermans

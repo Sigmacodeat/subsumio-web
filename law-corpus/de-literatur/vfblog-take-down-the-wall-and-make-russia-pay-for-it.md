@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/take-down-the-wall-and-make-russia-pay-fo
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2b461d2f1476b9b5"
 ---
 
 # Take Down the Wall. And Make Russia Pay for It

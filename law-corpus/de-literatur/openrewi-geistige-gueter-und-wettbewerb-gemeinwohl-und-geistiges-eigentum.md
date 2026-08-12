@@ -15,6 +15,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "996d6c2a4730cd80"
 ---
 
 Hier entsteht das Kapitel „Gemeinwohl und Geistiges Eigentum“

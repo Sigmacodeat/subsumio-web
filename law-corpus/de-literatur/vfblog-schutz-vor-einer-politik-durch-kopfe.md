@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/schutz-vor-einer-politik-durch-kopfe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bb4d55ec62b063fb"
 ---
 
 # Schutz vor einer Politik durch Köpfe

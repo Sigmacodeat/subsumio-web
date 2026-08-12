@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-stille-transformation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "db69980fc2739362"
 ---
 
 # Die stille Transformation

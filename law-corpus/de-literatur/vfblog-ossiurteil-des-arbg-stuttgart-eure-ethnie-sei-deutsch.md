@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8c95d91755dd33de"
 ---
 
 # Ossi-Urteil des ArbG Stuttgart: Eure Ethnie sei deutsch

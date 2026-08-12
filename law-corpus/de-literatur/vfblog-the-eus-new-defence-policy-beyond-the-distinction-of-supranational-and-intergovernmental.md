@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0f7985e59f7d7e2e"
 ---
 
 # The EU’s New Defence Policy – Beyond the Distinction Supranational / Intergovernmental

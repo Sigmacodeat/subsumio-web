@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b993a99d717b3315"
 ---
 
 # For Central Europe’s Illiberal Democracies, the Worst is yet to Come

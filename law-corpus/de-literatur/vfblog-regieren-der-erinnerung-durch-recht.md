@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/regieren-der-erinnerung-durch-recht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3a25d29678ffa53c"
 ---
 
 # Regieren der Erinnerung durch Recht

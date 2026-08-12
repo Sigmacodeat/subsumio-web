@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-resilientes-strafrecht-braucht-starke
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "793f3c6531470baf"
 ---
 
 # Ein resilientes Strafrecht braucht starke Grenzen

@@ -20,6 +20,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2021 Marc Thommen, Jascha
   Mattmann; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "769764420a660820"
 ---
 
 # Whistleblowing für das Weltklima: Besprechung des Urteils des Bezirksgerichts Lausanne (Tribunal de Police) PE19.000742/PCL/IIb vom 13. Januar 2020

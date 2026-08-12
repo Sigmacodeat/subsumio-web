@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3425596c81022ae1"
 ---
 
 # Die Numerierung der Bürger: Effizienzdenken versus Überwachungsangst

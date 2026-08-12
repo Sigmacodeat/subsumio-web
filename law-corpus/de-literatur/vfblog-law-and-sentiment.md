@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/law-and-sentiment/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a88b2146c890313a"
 ---
 
 # Law and Sentiment

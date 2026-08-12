@@ -188,7 +188,7 @@ function MetricCard({
           ? "text-red-600"
           : "text-slate-700";
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-lg border border-slate-200 bg-[color:var(--ds-surface)] p-4 shadow-sm">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-slate-500">{label}</span>
         <Icon className={cn("h-4 w-4", colorClass)} />
@@ -363,7 +363,7 @@ function OverviewTab({ report, onRefresh }: { report: QualityReport; onRefresh: 
             icon={Activity}
             status="neutral"
           />
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="rounded-lg border border-slate-200 bg-[color:var(--ds-surface)] p-4 shadow-sm">
             <div className="text-sm font-medium text-slate-500">ECE-Interpretation</div>
             <div className="mt-2 text-sm text-slate-600">
               {c && c.sample_count === 0 ? (
@@ -388,7 +388,7 @@ function OverviewTab({ report, onRefresh }: { report: QualityReport; onRefresh: 
           <Target className="h-5 w-5 text-amber-600" />
           Attorney-Feedback (ECE-Kalibrierung)
         </h2>
-        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-lg border border-slate-200 bg-[color:var(--ds-surface)] p-4 shadow-sm">
           <p className="mb-4 text-sm text-slate-500">
             Bewerte eine KI-Antwort als korrekt oder inkorrekt. Dies speichert ein
             Calibration-Sample für die ECE-Berechnung und verbessert die Confidence-Kalibrierung.
@@ -409,7 +409,7 @@ function OverviewTab({ report, onRefresh }: { report: QualityReport; onRefresh: 
                 Predicted Confidence (0–1)
               </label>
               <input
-                type="number"
+                type="number" inputMode="decimal"
                 step="0.01"
                 min="0"
                 max="1"
@@ -611,7 +611,7 @@ function TracesTab() {
       </div>
 
       {/* Trace Table */}
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-[color:var(--ds-surface)] shadow-sm">
         <table className="w-full text-sm">
           <thead className="border-b border-slate-200 bg-slate-50">
             <tr>
@@ -693,7 +693,7 @@ function TracesTab() {
             if (e.target === e.currentTarget && !detailLoading) setSelectedTrace(null);
           }}
         >
-          <div className="max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+          <div className="max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-[color:var(--ds-surface)] p-6 shadow-xl">
             {detailLoading ? (
               <div
                 className="flex items-center justify-center py-12"
@@ -946,28 +946,28 @@ function TrendTab({ days }: { days: number }) {
           <TrendingUp className="h-5 w-5 text-violet-600" />
           Qualitäts-Trend ({days} Tage)
         </h2>
-        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-lg border border-slate-200 bg-[color:var(--ds-surface)] p-4 shadow-sm">
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#94a3b8" />
-                <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" domain={[0, 100]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--ds-border)" />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--ds-text-subtle)" }} stroke="var(--ds-text-subtle)" />
+                <YAxis tick={{ fontSize: 11, fill: "var(--ds-text-subtle)" }} stroke="var(--ds-text-subtle)" domain={[0, 100]} />
                 <Tooltip
-                  contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}
-                  labelStyle={{ fontWeight: 600 }}
+                  contentStyle={{ background: "var(--ds-surface)", borderRadius: 8, border: "1px solid var(--ds-border)", color: "var(--ds-text)", fontSize: 12 }}
+                  labelStyle={{ fontWeight: 600, color: "var(--ds-text)" }}
                 />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <ReferenceLine
                   y={90}
-                  stroke="#10b981"
+                  stroke="var(--signal-success-500)"
                   strokeDasharray="5 5"
-                  label={{ value: "Target 90%", fontSize: 10, fill: "#10b981" }}
+                  label={{ value: "Target 90%", fontSize: 10, fill: "var(--signal-success-500)" }}
                 />
                 <Line
                   type="monotone"
                   dataKey="Guardrail-Pass %"
-                  stroke="#3b82f6"
+                  stroke="var(--brand-primary)"
                   strokeWidth={2}
                   dot={{ r: 3 }}
                   connectNulls
@@ -975,7 +975,7 @@ function TrendTab({ days }: { days: number }) {
                 <Line
                   type="monotone"
                   dataKey="Cross-Verify %"
-                  stroke="#8b5cf6"
+                  stroke="var(--accent-premium)"
                   strokeWidth={2}
                   dot={{ r: 3 }}
                   connectNulls
@@ -983,7 +983,7 @@ function TrendTab({ days }: { days: number }) {
                 <Line
                   type="monotone"
                   dataKey="Hallucination %"
-                  stroke="#ef4444"
+                  stroke="var(--signal-danger-500)"
                   strokeWidth={2}
                   dot={{ r: 3 }}
                   connectNulls
@@ -1002,29 +1002,29 @@ function TrendTab({ days }: { days: number }) {
           <Gauge className="h-5 w-5 text-amber-600" />
           Confidence & Trace-Volume
         </h2>
-        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-lg border border-slate-200 bg-[color:var(--ds-surface)] p-4 shadow-sm">
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#94a3b8" />
-                <YAxis yAxisId="left" tick={{ fontSize: 11 }} stroke="#94a3b8" domain={[0, 100]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--ds-border)" />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--ds-text-subtle)" }} stroke="var(--ds-text-subtle)" />
+                <YAxis yAxisId="left" tick={{ fontSize: 11, fill: "var(--ds-text-subtle)" }} stroke="var(--ds-text-subtle)" domain={[0, 100]} />
                 <YAxis
                   yAxisId="right"
                   orientation="right"
-                  tick={{ fontSize: 11 }}
-                  stroke="#94a3b8"
+                  tick={{ fontSize: 11, fill: "var(--ds-text-subtle)" }}
+                  stroke="var(--ds-text-subtle)"
                 />
                 <Tooltip
-                  contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}
-                  labelStyle={{ fontWeight: 600 }}
+                  contentStyle={{ background: "var(--ds-surface)", borderRadius: 8, border: "1px solid var(--ds-border)", color: "var(--ds-text)", fontSize: 12 }}
+                  labelStyle={{ fontWeight: 600, color: "var(--ds-text)" }}
                 />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Line
                   yAxisId="left"
                   type="monotone"
                   dataKey="Ø Confidence"
-                  stroke="#f59e0b"
+                  stroke="var(--signal-warning-500)"
                   strokeWidth={2}
                   dot={{ r: 3 }}
                   connectNulls
@@ -1033,7 +1033,7 @@ function TrendTab({ days }: { days: number }) {
                   yAxisId="right"
                   type="monotone"
                   dataKey="Traces"
-                  stroke="#64748b"
+                  stroke="var(--ds-text-muted)"
                   strokeWidth={1.5}
                   dot={{ r: 2 }}
                   connectNulls
@@ -1052,36 +1052,36 @@ function TrendTab({ days }: { days: number }) {
           <Target className="h-5 w-5 text-emerald-600" />
           ECE-Kalibrierung Trend
         </h2>
-        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-lg border border-slate-200 bg-[color:var(--ds-surface)] p-4 shadow-sm">
           {calibChartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={calibChartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#94a3b8" />
-                <YAxis yAxisId="left" tick={{ fontSize: 11 }} stroke="#94a3b8" domain={[0, 1]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--ds-border)" />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--ds-text-subtle)" }} stroke="var(--ds-text-subtle)" />
+                <YAxis yAxisId="left" tick={{ fontSize: 11, fill: "var(--ds-text-subtle)" }} stroke="var(--ds-text-subtle)" domain={[0, 1]} />
                 <YAxis
                   yAxisId="right"
                   orientation="right"
-                  tick={{ fontSize: 11 }}
-                  stroke="#94a3b8"
+                  tick={{ fontSize: 11, fill: "var(--ds-text-subtle)" }}
+                  stroke="var(--ds-text-subtle)"
                 />
                 <Tooltip
-                  contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}
-                  labelStyle={{ fontWeight: 600 }}
+                  contentStyle={{ background: "var(--ds-surface)", borderRadius: 8, border: "1px solid var(--ds-border)", color: "var(--ds-text)", fontSize: 12 }}
+                  labelStyle={{ fontWeight: 600, color: "var(--ds-text)" }}
                 />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <ReferenceLine
                   yAxisId="left"
                   y={0.05}
-                  stroke="#10b981"
+                  stroke="var(--signal-success-500)"
                   strokeDasharray="5 5"
-                  label={{ value: "ECE 0.05", fontSize: 10, fill: "#10b981" }}
+                  label={{ value: "ECE 0.05", fontSize: 10, fill: "var(--signal-success-500)" }}
                 />
                 <Line
                   yAxisId="left"
                   type="monotone"
                   dataKey="ECE (MAE)"
-                  stroke="#10b981"
+                  stroke="var(--signal-success-500)"
                   strokeWidth={2}
                   dot={{ r: 3 }}
                   connectNulls
@@ -1090,7 +1090,7 @@ function TrendTab({ days }: { days: number }) {
                   yAxisId="right"
                   type="monotone"
                   dataKey="Samples"
-                  stroke="#64748b"
+                  stroke="var(--ds-text-muted)"
                   strokeWidth={1.5}
                   dot={{ r: 2 }}
                   connectNulls

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mr-pringle-goes-to-luxembourg/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d03301be3f291878"
 ---
 
 # Mr Pringle goes to Luxembourg…

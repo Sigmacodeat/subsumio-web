@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aadcc0f802da848e"
 ---
 
 # Carl Schmitt, the Arbitrary Character of Constituent Power, and the Tradition of European Public Law

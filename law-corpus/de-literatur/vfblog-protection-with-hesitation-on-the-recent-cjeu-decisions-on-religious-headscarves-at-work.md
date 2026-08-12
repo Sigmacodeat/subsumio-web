@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f5c6c30334ffb664"
 ---
 
 # Protection with Hesitation: on the recent CJEU Decisions on Religious Headscarves at Work

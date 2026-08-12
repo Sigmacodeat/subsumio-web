@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Eric Clément;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "06ad0fabbda28249"
 ---
 
 # L’absence annoncée du défendeur à l’audience de conciliation : une tare pour le demandeur ? Commentaire de l’arrêt du Tribunal fédéral 4A_416/2019 du 5 février 2020 (destiné à publication)

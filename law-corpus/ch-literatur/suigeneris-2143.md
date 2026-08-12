@@ -20,6 +20,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2019 Damiano Canapa, Arthur
   Grisoni, Line Elodie Derungs; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "569c0e9f9ac1fa5f"
 ---
 
 # Le Droit Suisse des Sociétés en 2018: Modifications législatives, jurisprudence et doctrine

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/trump-tariffs-legal-ieepa/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0d383d8855f5615e"
 ---
 
 # The Legal Authority (or Lack Thereof) for Trump’s Tariffs

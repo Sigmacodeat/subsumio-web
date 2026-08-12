@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/protect-civilians/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fdfc4fe2c6d296f4"
 ---
 
 # Hamas’ Atrocities, Israel’s Response, and the Primacy of International Law to Protect Civilians

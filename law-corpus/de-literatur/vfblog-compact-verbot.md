@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/compact-verbot/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4eb44ffed09b76b7"
 ---
 
 # Zeitungsverbot durch die Hintertür?

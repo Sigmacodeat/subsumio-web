@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kein-guter-kompromiss/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "819f79a2edd86616"
 ---
 
 # (K)ein guter Kompromiss

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c11f8a9b217b1ae1"
 ---
 
 # The French Loi de Vigilance: Prospects and Limitations of a Pioneer Mandatory Corporate Due Diligence

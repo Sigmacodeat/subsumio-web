@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6b2a509d63f92e17"
 ---
 
 # Japanische Unterhauswahl 2017: Gedanken über eine mögliche Verfassungsänderung

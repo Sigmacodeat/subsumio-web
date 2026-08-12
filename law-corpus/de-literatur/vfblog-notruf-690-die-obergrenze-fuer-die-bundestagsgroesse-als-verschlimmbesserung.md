@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3091857f96b297f1"
 ---
 
 # Notruf 690: Die Obergrenze für die Bundestagsgröße als Verschlimm&shy;besserung

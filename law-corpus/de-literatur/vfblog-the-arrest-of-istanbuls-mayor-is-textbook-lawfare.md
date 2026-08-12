@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-arrest-of-istanbuls-mayor-is-textbook
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "96b7764756fa36fd"
 ---
 
 # The Arrest of Istanbul’s Mayor is Textbook Lawfare

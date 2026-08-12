@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2026 Florian Brunner;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "650ae1a4a9f36135"
 ---
 
 # Der elektronische Rechtsverkehr im öffentlichen Recht im Kanton Zürich - Ein Praktikerblick auf die Revision des Zürcher VRG

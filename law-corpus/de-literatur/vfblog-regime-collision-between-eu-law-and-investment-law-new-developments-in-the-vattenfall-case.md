@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8ff091c940b5648e"
 ---
 
 # Regime Collision between EU Law and Investment Law: New Developments in the Vattenfall Case

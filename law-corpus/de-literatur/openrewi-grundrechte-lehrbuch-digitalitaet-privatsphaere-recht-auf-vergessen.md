@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "814b8f1ea62fd2d6"
 ---
 
 § 24.4 Informationstechnische Systeme &#124; Inhaltsverzeichnis &#124; § 25 Freiheit & Mobilität 

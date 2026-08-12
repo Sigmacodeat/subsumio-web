@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/doppelfolge-der-double-standards/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "104fd3fe2e5c1135"
 ---
 
 # Doppelfolge der „Double Standards“

@@ -20,6 +20,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2024 Claudia Y. Roth, Lorenz
   Raess; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "6789bf8d03d20123"
 ---
 
 # Touchscreen-Unterschrift und qualifizierte elektronische Signaturen (QES) via DocuSign im Gesellschaftsrecht: Eine Übersicht zu aktuellen Entwicklungen mit Bemerkungen zum Urteil des Obergerichts des Kantons Zug Z2 2023 67 vom 14. Dezember 2023 (rechtskräftig)

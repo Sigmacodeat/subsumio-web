@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c9bfc676d0415c58"
 ---
 
 # Five Scenarios for Europe –  Understanding the EU Commission's White Paper on the Future of Europe

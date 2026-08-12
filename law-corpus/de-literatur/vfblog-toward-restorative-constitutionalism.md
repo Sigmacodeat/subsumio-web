@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/toward-restorative-constitutionalism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "be0a5793f003329d"
 ---
 
 # Toward Restorative Constitutionalism?

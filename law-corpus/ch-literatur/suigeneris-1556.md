@@ -17,6 +17,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2017 Sarah Progin-Theuerkauf,
   Salome Schmid; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "941f5bf446086239"
 ---
 
 # Grenzen der Dublin-Haft von Familien im Fokus des Bundesgerichts

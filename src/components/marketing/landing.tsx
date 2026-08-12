@@ -145,7 +145,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 initial={reduce ? false : { opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={
-                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.1 }
+                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.05 }
                 }
                 className="flex justify-center lg:justify-start"
               >
@@ -157,7 +157,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 className="mb-5 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-bold tracking-tight text-balance [color:var(--mk-text)]"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                <SplitTextReveal as="span" delay={0.2} stagger={0.06} useAnimate className="block">
+                <SplitTextReveal as="span" delay={0.12} stagger={0.035} useAnimate className="block">
                   {`${t.h1a}\n${t.h1b}`}
                 </SplitTextReveal>
               </h1>
@@ -167,7 +167,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 initial={reduce ? false : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={
-                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.35 }
+                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.16 }
                 }
                 className="mb-3 text-lg font-semibold [color:var(--brand-text)] md:text-xl"
               >
@@ -179,7 +179,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 initial={reduce ? false : { opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={
-                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.45 }
+                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.21 }
                 }
               >
                 <p className="mx-auto mb-8 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg lg:mx-0">
@@ -192,7 +192,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 initial={reduce ? false : { opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={
-                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.out, delay: 0.55 }
+                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.out, delay: 0.26 }
                 }
                 className="mb-6 flex flex-col items-center gap-3 sm:flex-row lg:items-start"
               >
@@ -215,7 +215,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 initial={reduce ? false : { opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={
-                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.out, delay: 0.65 }
+                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.out, delay: 0.3 }
                 }
                 className="mb-8 flex justify-center lg:justify-start"
               >
@@ -233,7 +233,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 initial={reduce ? false : { opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={
-                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.dramatic, delay: 0.75 }
+                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.dramatic, delay: 0.34 }
                 }
                 className="flex flex-wrap justify-center gap-3 lg:justify-start"
               >
@@ -247,7 +247,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                       transition={
                         reduce
                           ? { duration: 0 }
-                          : { delay: 0.8 + i * 0.08, duration: 0.3, ease: EASE.out }
+                          : { delay: 0.36 + i * 0.04, duration: 0.3, ease: EASE.out }
                       }
                       className="inline-flex items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 text-sm [color:var(--mk-text-muted)] [background:var(--mk-surface)]"
                     >
@@ -263,7 +263,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 initial={reduce ? false : { opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={
-                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.out, delay: 0.85 }
+                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.out, delay: 0.38 }
                 }
                 className="mt-6 text-sm [color:var(--mk-text-subtle)]"
               >
@@ -287,7 +287,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           <motion.div
             initial={reduce ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 1 }}
+            transition={reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.42 }}
             className="relative z-10 mx-auto mt-12 max-w-4xl pt-8"
           >
             {/* gradient divider — fades from transparent to border to transparent */}

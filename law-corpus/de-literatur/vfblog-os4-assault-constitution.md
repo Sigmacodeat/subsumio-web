@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os4-assault-constitution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d62c3c971cefd226"
 ---
 
 # ‘An assault on the constitution’

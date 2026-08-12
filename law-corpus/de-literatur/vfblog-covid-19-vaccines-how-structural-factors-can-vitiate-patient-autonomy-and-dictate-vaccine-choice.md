@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ea8c0eea7c9664a2"
 ---
 
 # COVID-19 vaccines: How Structural Factors Can Vitiate Patient Autonomy and Dictate Vaccine Choice

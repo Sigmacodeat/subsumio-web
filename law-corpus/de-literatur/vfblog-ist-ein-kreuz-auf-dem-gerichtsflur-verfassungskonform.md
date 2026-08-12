@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f21a7e6e7391c899"
 ---
 
 # Ist ein Kreuz auf dem Gerichtsflur verfassungskonform?

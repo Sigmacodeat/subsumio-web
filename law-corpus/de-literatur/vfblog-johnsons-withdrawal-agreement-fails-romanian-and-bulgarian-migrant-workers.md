@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c8f6e0da4f1a992d"
 ---
 
 # Johnson’s Withdrawal Agreement Fails Romanian and Bulgarian Migrant Workers

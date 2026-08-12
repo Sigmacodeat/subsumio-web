@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eurobonds-episode-vi-return-jedi-projektb
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "51f852cfed637c95"
 ---
 
 # Eurobonds, Episode VI – The Return of the Jedi: Projektbonds

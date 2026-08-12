@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bavarian-krampf/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6c0ece1af1acb35e"
 ---
 
 # Bavarian Krampf

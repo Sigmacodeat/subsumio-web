@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/monstrse-frsorge/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cac2aa3016806b89"
 ---
 
 # Monströse Fürsorge

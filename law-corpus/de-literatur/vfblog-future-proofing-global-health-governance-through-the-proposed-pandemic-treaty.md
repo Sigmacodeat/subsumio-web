@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5002eb80af9febeb"
 ---
 
 # Future-Proofing Global Health Governance Through the Proposed Pandemic Treaty

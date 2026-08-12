@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/media-reform-hungary-poland/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b9a5ee62895a912e"
 ---
 
 # Learning from Poland’s Imperfect Reform

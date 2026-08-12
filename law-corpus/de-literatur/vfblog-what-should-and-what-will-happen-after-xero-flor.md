@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/what-should-and-what-will-happen-after-xe
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "516475944326d00c"
 ---
 
 # What Should and What Will Happen After Xero Flor

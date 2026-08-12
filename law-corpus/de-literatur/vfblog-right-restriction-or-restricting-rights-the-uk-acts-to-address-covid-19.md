@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8fdaf0669f3f2331"
 ---
 
 # Right Restriction or Restricting Rights? The UK Acts to Address COVID-19

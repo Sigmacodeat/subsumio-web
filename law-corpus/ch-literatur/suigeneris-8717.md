@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2024 Luca Schoop;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "2de79cbd9deb1c3d"
 ---
 
 # Finanzielle Folgen des Schwarzfahrens: Mittels Strafprozess auf das Abstellgleis oder im Schnellzug zum Ziel?

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f34751561b2fb746"
 ---
 
 # Why the Announced Constitutional Referendum in Poland is not a Constitutional Referendum after all

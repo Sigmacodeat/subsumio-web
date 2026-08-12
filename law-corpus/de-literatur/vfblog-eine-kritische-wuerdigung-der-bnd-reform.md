@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eine-kritische-wuerdigung-der-bnd-reform/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b4e05ed55d87f5be"
 ---
 
 # Eine kritische Würdigung der BND-Reform

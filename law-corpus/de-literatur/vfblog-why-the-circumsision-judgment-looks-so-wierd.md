@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/why-the-circumsision-judgment-looks-so-wi
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8deaedb37138ee7d"
 ---
 
 # Why the Circumcision Judgment looks so weird to American Eyes

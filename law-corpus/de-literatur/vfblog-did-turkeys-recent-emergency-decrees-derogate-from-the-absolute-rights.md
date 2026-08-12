@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5577325a6e3ba531"
 ---
 
 # Did Turkey’s Recent Emergency Decrees Derogate from the Absolute Rights?

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "536f4ceca4dc7cb9"
 ---
 
 # Memory Laws: Historical Evidence in Support of the “Slippery Slope” Argument

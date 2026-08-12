@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/one-year-after-walesa-v-poland/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "12b2681551e75789"
 ---
 
 # One Year After Wałęsa v. Poland

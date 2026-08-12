@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/juristocracy-strikes-back/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "49dcf2f2b031d7ee"
 ---
 
 # Juristocracy Strikes Back

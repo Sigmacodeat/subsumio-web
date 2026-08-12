@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e21ff5dc13d4df2d"
 ---
 
 # Kirchliche Selbst&shy;bestimmung und deutsche Verfassungs&shy;identität: Überlegungen zum Fall „Egenberger“

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/klimaschutz-als-rechtfertigender-notstand
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "80e4bdf40afc5740"
 ---
 
 # Klimaschutz als rechtfertigender Notstand

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sleeping-on-bills/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "076cded9f5e9bebb"
 ---
 
 # Sleeping on Bills

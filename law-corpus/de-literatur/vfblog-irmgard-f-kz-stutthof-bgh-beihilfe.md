@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/irmgard-f-kz-stutthof-bgh-beihilfe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e7a5fb39feb9434c"
 ---
 
 # Die Grenzen der „Neutralität“

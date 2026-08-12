@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "16ad0e7d76a46c19"
 ---
 
 # Ukrainisches Versammlungsrecht: Rechtslücke als Menschenrechtsverstoß

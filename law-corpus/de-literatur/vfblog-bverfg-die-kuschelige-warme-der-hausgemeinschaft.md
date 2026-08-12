@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bverfg-die-kuschelige-warme-der-hausgemei
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7aa3380453e8cf08"
 ---
 
 # BVerfG: Die kuschelige Wärme der Hausgemeinschaft

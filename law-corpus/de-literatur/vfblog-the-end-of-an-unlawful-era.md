@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-end-of-an-unlawful-era/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9058cd16ea69e61c"
 ---
 
 # The End of an (Unlawful) Era

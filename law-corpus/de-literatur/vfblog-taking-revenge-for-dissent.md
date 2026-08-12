@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/taking-revenge-for-dissent/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bf8f5f350febe556"
 ---
 
 # Taking Revenge for Dissent

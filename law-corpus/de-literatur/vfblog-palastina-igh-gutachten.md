@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/palastina-igh-gutachten/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ee0cef44957b491c"
 ---
 
 # Power to the People

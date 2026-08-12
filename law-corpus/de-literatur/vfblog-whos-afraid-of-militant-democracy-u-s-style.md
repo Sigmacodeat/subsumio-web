@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/whos-afraid-of-militant-democracy-u-s-sty
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "99ad43d4fd9dd61b"
 ---
 
 # Who's Afraid of Militant Democracy, U.S. Style

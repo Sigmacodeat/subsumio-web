@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/law-and-political-economy-beyond-the-stat
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3d0444d977a5b5a5"
 ---
 
 # Law and Political Economy Beyond the State

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f6fb6260b293cf2a"
 ---
 
 # Israel’s Nation-State Law – What Now for Equality, Self-Determination, and Social Solidarity?

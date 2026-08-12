@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3b271de971ae9976"
 ---
 
 # Gemeinsam verantwortlich: Interview mit PETER SCHAAR zum Facebook-Urteil des EuGH

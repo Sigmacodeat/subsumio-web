@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/meine-sache/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5616eb39c6531f29"
 ---
 
 # Meine Sache

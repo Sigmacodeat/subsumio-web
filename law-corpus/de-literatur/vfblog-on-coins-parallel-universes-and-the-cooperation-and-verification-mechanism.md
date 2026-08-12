@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8452997678d0f0e3"
 ---
 
 # On Coins, Parallel Universes and the Cooperation and Verification Mechanism

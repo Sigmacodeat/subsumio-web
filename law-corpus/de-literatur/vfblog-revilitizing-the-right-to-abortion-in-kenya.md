@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/revilitizing-the-right-to-abortion-in-ken
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7f96f12807f8deb3"
 ---
 
 # Revitalizing the Right to Abortion in Kenya

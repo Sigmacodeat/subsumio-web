@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/what-comes-to-mind/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d2b8ef11e1c99e3b"
 ---
 
 # What Comes to Mind

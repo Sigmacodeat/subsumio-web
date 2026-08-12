@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "81e39a4ecb8afed2"
 ---
 
 # Warum der erneute Angriff der USA und Israels auf den Iran offenkundig völkerrechtswidrig ist

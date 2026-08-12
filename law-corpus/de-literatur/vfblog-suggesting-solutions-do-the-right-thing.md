@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/suggesting-solutions-do-the-right-thing/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1cd83f1af46883ea"
 ---
 
 # Suggesting Solutions: Do the Right Thing

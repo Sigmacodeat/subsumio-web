@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zur-freiheit-in-der-freiheitsentziehung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "84ba35811d623351"
 ---
 
 # Zur Freiheit in der Freiheitsentziehung

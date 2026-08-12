@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a8e0d7c46cff2e8f"
 ---
 
 # Studiengebühren für Schwache: Baden-Württemberg und das Verfassungs- und Völkerrecht

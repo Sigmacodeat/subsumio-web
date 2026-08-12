@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8e53334ca4d66d22"
 ---
 
 # Not the Meaningful Vote: a Guide to the Role of the Commons on Tuesday

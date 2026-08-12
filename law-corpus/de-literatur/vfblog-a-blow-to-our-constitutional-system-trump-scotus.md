@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-blow-to-our-constitutional-system-trump
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "19d578384c196782"
 ---
 
 # A Blow to Our Constitutional System

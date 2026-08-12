@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hungary-preliminary-reference/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b26fae6cb9bc8414"
 ---
 
 # To Uniformity and Beyond

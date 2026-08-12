@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2018 Salome Schmid;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "c8a0457f7d8624e2"
 ---
 
 # Zwischen Kriminalisierung und Regulierung: Der schwindende Aktionsradius der zivilen Seenotrettungsorganisationen im Mittelmeer – ein Eingriff in die Vereinigungsfreiheit?

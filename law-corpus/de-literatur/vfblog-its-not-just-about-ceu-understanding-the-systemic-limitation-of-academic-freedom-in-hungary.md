@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5ac612bd306164b9"
 ---
 
 # It’s Not Just About CEU: Understanding the Systemic Limitation of Academic Freedom in Hungary

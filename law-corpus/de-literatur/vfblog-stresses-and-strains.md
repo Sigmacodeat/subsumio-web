@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/stresses-and-strains/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fa1d0aa261492bad"
 ---
 
 # Stresses and Strains

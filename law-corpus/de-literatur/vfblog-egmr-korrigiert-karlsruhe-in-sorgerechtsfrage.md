@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/egmr-korrigiert-karlsruhe-in-sorgerechtsf
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5e1a1042a3ea5e92"
 ---
 
 # EGMR korrigiert Karlsruhe in Sorgerechtsfrage

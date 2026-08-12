@@ -19,6 +19,7 @@ import {
   X,
   CalendarPlus,
   Gavel,
+  FilePlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageSkeleton } from "@/components/dashboard/skeleton";
@@ -328,6 +329,7 @@ function DashboardQuickActions() {
   const actions = [
     { label: t("dashboard.quick_deadline"), icon: CalendarPlus, event: "subsumio:create-deadline" },
     { label: t("cockpit.action_case"), icon: Briefcase, event: "subsumio:create-case" },
+    { label: "Neue Mandatsannahme", icon: FilePlus, href: "/dashboard/intake?new=1" },
     { label: t("dashboard.quick_upload"), icon: Upload, href: "/dashboard/upload" },
     { label: t("dashboard.quick_drafting"), icon: FileText, href: "/dashboard/drafting" },
     { label: t("dashboard.quick_research"), icon: Gavel, href: "/dashboard/research" },
@@ -427,7 +429,7 @@ export default function DashboardPage() {
   const isTax = industry === "tax";
 
   return (
-    <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       {!isFirstTime && <ProactiveActionBanner />}
       <WeeklyReview />
 

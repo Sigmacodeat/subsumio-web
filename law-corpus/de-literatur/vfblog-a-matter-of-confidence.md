@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-matter-of-confidence/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f57aa6e902817062"
 ---
 
 # A Matter of Confidence

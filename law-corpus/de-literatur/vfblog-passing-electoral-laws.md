@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/passing-electoral-laws/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d1270184a34891dd"
 ---
 
 # Passing Electoral Laws

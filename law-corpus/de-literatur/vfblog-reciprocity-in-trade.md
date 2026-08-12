@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/reciprocity-in-trade/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "696a4a3923c3dc6f"
 ---
 
 # Reciprocity in Trade?

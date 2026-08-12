@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-damaged-court-causing-a-constitutional-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "55b7a4f816dffb90"
 ---
 
 # A Damaged Court Causing a Constitutional Crisis

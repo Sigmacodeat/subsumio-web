@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/to-speak-or-not-to-speak/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4bf1ca12e2aefd2f"
 ---
 
 # To Speak, or not to Speak

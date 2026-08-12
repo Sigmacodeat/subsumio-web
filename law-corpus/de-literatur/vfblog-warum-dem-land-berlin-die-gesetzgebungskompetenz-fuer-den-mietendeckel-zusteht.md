@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "183b90772d176517"
 ---
 
 # Warum dem Land Berlin die Gesetzgebungs&shy;kompetenz für den „Mietendeckel“ zusteht

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/der-gesetzgeber-ist-zu-weit-gegangen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3bbffb94b8e6219f"
 ---
 
 # Der Gesetzgeber ist zu weit gegangen

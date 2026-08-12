@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/disinfo-censorship/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "80e16d2f545f2157"
 ---
 
 # Fighting Platforms and the People, not the Pandemic

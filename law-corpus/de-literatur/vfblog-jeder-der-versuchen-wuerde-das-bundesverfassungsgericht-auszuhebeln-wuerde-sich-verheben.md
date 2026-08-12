@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b5acaa98f6fb1e26"
 ---
 
 # “Jeder, der versuchen würde, das Bundesverfassungs&shy;gericht auszuhebeln, würde sich verheben”

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/brazilian-judges-oversee-elections-and-ai
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bcc38086c86fc49d"
 ---
 
 # Brazilian Judges Regulate Elections &#8230; and AI

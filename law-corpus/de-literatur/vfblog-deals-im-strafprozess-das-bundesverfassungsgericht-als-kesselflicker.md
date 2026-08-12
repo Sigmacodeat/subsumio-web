@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b22e5f6967eadd61"
 ---
 
 # Deals im Strafprozess: Das Verfassungsgericht als Kesselflicker

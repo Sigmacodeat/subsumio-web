@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/blogschau-debatten-der-woche-21-06-27-06-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "941f0066c27d4290"
 ---
 
 # Blogschau // Debatten der Woche // 21.06.-27.06.2014

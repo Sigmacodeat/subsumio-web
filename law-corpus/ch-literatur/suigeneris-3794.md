@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2022 Evamaria Hunziker;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "bd6644960fdd3371"
 ---
 
 # Reform des Schengen-Systems: Beurteilung der Vorschläge der EU-Kommission vom 14. Dezember 2021

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "db90d9281f793807"
 ---
 
 # Warum die Direktwahl des Bundespräsidenten nichts kuschelweich Demokratisches ist

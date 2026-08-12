@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/of-punks-and-nerds/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6297305d22222004"
 ---
 
 # Of Punks and Nerds

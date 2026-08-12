@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/1984-hungarian-edition-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7babe5407ec2f19e"
 ---
 
 # 1984, Hungarian Edition

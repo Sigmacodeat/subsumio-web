@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6b856714f43a0b4b"
 ---
 
 # What will happen if the Dutch vote ‘No’ in the Referendum on the EU-Ukraine Association Agreement?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/corona-triage-and-human-dignity/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "23dd1ec2d252af26"
 ---
 
 # Corona-Triage and Human Dignity

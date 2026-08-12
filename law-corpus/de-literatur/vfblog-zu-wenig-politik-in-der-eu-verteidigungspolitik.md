@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zu-wenig-politik-in-der-eu-verteidigungsp
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1fe0e89e131c4958"
 ---
 
 # Zu wenig Politik in der EU-Verteidigungspolitik

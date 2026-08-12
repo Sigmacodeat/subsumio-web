@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-fifth-republic-under-strain/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "020128b2c88d2e09"
 ---
 
 # The Fifth Republic Under Strain

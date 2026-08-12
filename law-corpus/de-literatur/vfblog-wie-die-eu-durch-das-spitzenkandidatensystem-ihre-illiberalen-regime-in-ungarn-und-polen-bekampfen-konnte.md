@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "35d186a667d73d93"
 ---
 
 # Wie die EU durch das Spitzenkandidatensystem ihre illiberalen Regime in Ungarn und Polen bekämpfen könnte

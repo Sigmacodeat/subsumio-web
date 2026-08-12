@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/military-actions-on-dubious-legal-bases/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0f182b2ceed0d2b2"
 ---
 
 # Military Actions on Dubious Legal Bases

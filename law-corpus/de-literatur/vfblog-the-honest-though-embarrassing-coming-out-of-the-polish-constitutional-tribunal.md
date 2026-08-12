@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d50df3807a61f857"
 ---
 
 # The Honest (though Embarrassing) Coming-out of the Polish Constitutional Tribunal

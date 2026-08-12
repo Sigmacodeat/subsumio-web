@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/populist-constitutions-a-contradiction-in
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3b3390c7a37e6bfa"
 ---
 
 # Populist Constitutions – A Contradiction in Terms?

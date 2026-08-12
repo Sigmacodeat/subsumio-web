@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "48f64ffa9e679540"
 ---
 
 # Die neue ägyptische Verfassung: Eine vorläufige Beurteilung ihrer Vorzüge und ihrer Fehler

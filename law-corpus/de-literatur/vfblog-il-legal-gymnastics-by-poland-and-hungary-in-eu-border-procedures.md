@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5aa5b9e6d2c33697"
 ---
 
 # (Il-)Legal Gymnastics by Poland and Hungary in EU Border Procedures

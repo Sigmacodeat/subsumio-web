@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/du-bist-gebunden/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "02593b2b08e96d59"
 ---
 
 # Du bist gebunden

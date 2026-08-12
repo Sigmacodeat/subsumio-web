@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-zwiespaltiges-urteil/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a8e9552086b4dc91"
 ---
 
 # Ein zwiespältiges Urteil

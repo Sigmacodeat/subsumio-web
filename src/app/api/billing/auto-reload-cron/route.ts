@@ -10,6 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { createPublicHandler } from "@/lib/api-handler";
 import { env } from "@/lib/env";
 import { getCreditPack, type OwnerType } from "@/lib/billing/credits";
 import { isBillingConfigured } from "@/lib/billing/plans";
@@ -26,7 +27,7 @@ interface AutoReloadCandidate {
   packId: string;
 }
 
-export async function GET(req: NextRequest) {
+export const GET = createPublicHandler({ maxDuration: 60 }, async (req: NextRequest) => {
   const cronSecret = req.headers.get("x-cron-secret");
   const expected = env("CRON_SECRET");
   if (!expected || cronSecret !== expected) {
@@ -179,4 +180,4 @@ export async function GET(req: NextRequest) {
     triggered,
     errors: errors.length > 0 ? errors : undefined,
   });
-}
+});

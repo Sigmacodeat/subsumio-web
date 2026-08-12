@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/no-more-business-as-usual/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "194ddf0e48aa6d1a"
 ---
 
 # No more “Business as Usual”

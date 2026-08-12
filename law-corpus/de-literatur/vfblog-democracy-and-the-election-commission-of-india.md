@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/democracy-and-the-election-commission-of-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5aa28af8960a20bf"
 ---
 
 # Democracy and the Election Commission of India

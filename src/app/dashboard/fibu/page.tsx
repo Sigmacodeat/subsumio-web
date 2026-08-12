@@ -304,7 +304,7 @@ export default function FibuPage() {
             <div className="space-y-1">
               <Label className="text-xs text-[color:var(--ds-text-muted)]">Betrag (€) *</Label>
               <Input
-                type="number"
+                type="number" inputMode="decimal"
                 step="0.01"
                 value={importForm.amount}
                 onChange={(e) => setImportForm({ ...importForm, amount: e.target.value })}
@@ -402,7 +402,7 @@ export default function FibuPage() {
             <div className="space-y-1">
               <Label className="text-xs text-[color:var(--ds-text-muted)]">Betrag (€) *</Label>
               <Input
-                type="number"
+                type="number" inputMode="decimal"
                 step="0.01"
                 value={linkForm.amount}
                 onChange={(e) => setLinkForm({ ...linkForm, amount: e.target.value })}
@@ -421,6 +421,8 @@ export default function FibuPage() {
               <Label className="text-xs text-[color:var(--ds-text-muted)]">Mandant E-Mail</Label>
               <Input
                 type="email"
+                autoComplete="email"
+                inputMode="email"
                 value={linkForm.client_email}
                 onChange={(e) => setLinkForm({ ...linkForm, client_email: e.target.value })}
               />

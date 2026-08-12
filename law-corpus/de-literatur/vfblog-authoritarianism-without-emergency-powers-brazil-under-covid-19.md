@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "78c0d5df98d72d4f"
 ---
 
 # Authoritarianism Without Emergency Powers: Brazil Under COVID-19

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0b334043c12110d2"
 ---
 
 # Singapore’s Legislative Approach to the COVID-19 Public Health ‘Emergency’

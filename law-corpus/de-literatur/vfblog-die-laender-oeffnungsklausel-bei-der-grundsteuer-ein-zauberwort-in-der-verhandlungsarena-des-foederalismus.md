@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "61a51e4ce5c89eb7"
 ---
 
 # Die Länder-Öffnungsklausel bei der Grundsteuer – ein Zauberwort in der Verhandlungsarena des Föderalismus

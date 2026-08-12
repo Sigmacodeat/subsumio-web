@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "72d71e53fefd8f24"
 ---
 
 # The Rule of Arbitrariness as the New Constitutional Order in Turkey

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9d0dc424f3155f82"
 ---
 
 # Fleisch ist kein Gemüse: Die Schlussanträge zum Bio-Gütesiegel für Fleisch aus ritueller Schlachtung

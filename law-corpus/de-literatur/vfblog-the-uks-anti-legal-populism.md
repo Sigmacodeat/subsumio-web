@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-uks-anti-legal-populism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ea645ad381e7b187"
 ---
 
 # The UK's anti-legal populism

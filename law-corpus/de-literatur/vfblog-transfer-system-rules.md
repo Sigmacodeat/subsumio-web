@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/transfer-system-rules/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a0f92134c9917b69"
 ---
 
 # FIFA Transfer System Rules in front of the Court

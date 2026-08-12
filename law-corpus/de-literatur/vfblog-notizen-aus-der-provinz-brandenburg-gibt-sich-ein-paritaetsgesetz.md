@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "13520fe0abc13f4f"
 ---
 
 # Notizen aus der Provinz: Brandenburg gibt sich ein Paritätsgesetz

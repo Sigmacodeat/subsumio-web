@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kein-geld-fur-verfassungsfeinde-beim-parl
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "17d9beb8f4879701"
 ---
 
 # Kein Geld für Verfassungsfeinde beim Parlament?

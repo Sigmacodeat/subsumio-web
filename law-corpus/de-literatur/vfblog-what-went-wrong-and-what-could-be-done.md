@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/what-went-wrong-and-what-could-be-done/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "91923ba2f1f808ac"
 ---
 
 # What Went Wrong and What Could be Done?

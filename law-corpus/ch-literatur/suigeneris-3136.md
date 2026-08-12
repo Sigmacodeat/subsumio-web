@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2021 Stefan Schlegel;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "22fdca71d8301795"
 ---
 
 # Rezension: Jürg Fisch, Eigentumsgarantie und Nichtersatzfähigkeit reiner Vermögensschäden

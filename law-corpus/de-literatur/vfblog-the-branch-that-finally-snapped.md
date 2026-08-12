@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-branch-that-finally-snapped/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "259dc9515dd33708"
 ---
 
 # The Branch That Finally Snapped

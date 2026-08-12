@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cff88ade362b71db"
 ---
 
 # The Advisory Opinion on Israel’s Policies and Practices in the Occupied Palestinian Territory

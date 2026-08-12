@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/transparenz-ja-aber-bitte-nicht-fur-alle/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6d4c77e38c880de6"
 ---
 
 # Transparenz? Ja, aber bitte nicht für alle

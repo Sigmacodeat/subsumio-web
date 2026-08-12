@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "81bb57e004d1bf00"
 ---
 
 # Das Kölner Beschneidungsurteil und das Judentum, Teil 2: Jüdische Beschneidungspraxis

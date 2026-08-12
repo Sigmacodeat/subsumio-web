@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/on-the-state-of-academia-in-india/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f6624715e421e993"
 ---
 
 # On the State of Academia in India

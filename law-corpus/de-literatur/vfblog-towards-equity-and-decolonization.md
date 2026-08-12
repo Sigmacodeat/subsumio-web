@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/towards-equity-and-decolonization/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7aa9b7a171e36bea"
 ---
 
 # Towards Equity and Decolonization?

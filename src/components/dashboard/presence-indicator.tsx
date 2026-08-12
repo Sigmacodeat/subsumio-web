@@ -15,9 +15,9 @@ const AVATAR_COLORS = [
   "bg-[color:var(--ds-success-solid)]",
   "bg-[color:var(--ds-warning-solid)]",
   "bg-[color:var(--ds-danger-solid)]",
-  "bg-sky-500",
-  "bg-violet-500",
-  "bg-teal-500",
+  "bg-[color:var(--ds-info-solid)]",
+  "bg-[color:var(--ds-category-violet-text)]",
+  "bg-[color:var(--ds-category-teal-text)]",
   "bg-[color:var(--ds-attention-solid)]",
 ];
 

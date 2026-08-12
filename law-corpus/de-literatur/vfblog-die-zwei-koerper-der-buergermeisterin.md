@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-zwei-koerper-der-buergermeisterin/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4dd81a46f2c8a80c"
 ---
 
 # Die Zwei Körper der Bürgermeisterin

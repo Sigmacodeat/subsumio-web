@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-deutsche-mitte/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1b18f6929c8e0f2f"
 ---
 
 # Die deutsche Mitte

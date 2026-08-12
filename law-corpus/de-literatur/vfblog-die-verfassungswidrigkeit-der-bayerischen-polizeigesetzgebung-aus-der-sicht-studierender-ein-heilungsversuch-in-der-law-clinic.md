@@ -16,6 +16,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2c55a348968e96f7"
 ---
 
 # Die Verfassungs&shy;widrigkeit der bayerischen Polizei&shy;gesetz&shy;gebung aus der Sicht Studierender – ein Heilungsversuch in der Law Clinic

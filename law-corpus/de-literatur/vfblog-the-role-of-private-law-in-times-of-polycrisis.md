@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-role-of-private-law-in-times-of-polyc
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "be9f3b23bc39d1f6"
 ---
 
 # The Role of Private Law in Times of Polycrisis

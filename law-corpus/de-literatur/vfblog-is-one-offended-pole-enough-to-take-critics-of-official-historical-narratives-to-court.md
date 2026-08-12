@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6ef74e8312394071"
 ---
 
 # Is One Offended Pole Enough to Take Critics of Official Historical Narratives to Court?

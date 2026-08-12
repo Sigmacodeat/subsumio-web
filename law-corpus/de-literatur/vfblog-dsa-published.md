@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dsa-published/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d7b8bb9324a7ff7f"
 ---
 
 # The DSA has been published – now the difficult bit begins

@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5160500f2b4a725b"
 ---
 
 # Aufnahme in die ENA: Gehorsam ist ein raues Geschäft

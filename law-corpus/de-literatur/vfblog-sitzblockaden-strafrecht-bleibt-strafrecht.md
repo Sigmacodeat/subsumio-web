@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sitzblockaden-strafrecht-bleibt-strafrech
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "17f970a086e23754"
 ---
 
 # Sitzblockaden: Strafrecht bleibt Strafrecht

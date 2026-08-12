@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-collective-memory-of-trauma/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b24154499a19f48e"
 ---
 
 # The Collective Memory of Trauma and Why it Still Matters

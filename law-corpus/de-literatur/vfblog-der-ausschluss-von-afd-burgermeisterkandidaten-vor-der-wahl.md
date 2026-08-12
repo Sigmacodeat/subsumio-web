@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0a50460c6e95ad24"
 ---
 
 # Der Ausschluss von AfD-Bürgermeisterkandidaten vor der Wahl

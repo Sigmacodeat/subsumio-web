@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a2d-for-researchers-in-digital-platforms/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d9e4c07db8a3f8a9"
 ---
 
 # A2D for Researchers in Digital Platforms

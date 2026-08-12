@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/so-that-the-name-hungarian-regain-its-dig
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "24f9e96406a22596"
 ---
 
 # So that the Name Hungarian Regain its Dignity

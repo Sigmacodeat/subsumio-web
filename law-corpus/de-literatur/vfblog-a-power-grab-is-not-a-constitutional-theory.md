@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-power-grab-is-not-a-constitutional-theo
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "46c33aa882a5530c"
 ---
 
 # A Power Grab Is Not a Constitutional Theory

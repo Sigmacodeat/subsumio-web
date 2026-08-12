@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/exacerbating-the-public-health-emergency-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "32bdb62234863c78"
 ---
 
 # Exacerbating the Public Health Emergency in Iran

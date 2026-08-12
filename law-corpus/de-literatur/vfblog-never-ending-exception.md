@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/never-ending-exception/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a5fc36849ab3795f"
 ---
 
 # Never-Ending Exception

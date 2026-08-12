@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/uber-wahlfehlerfolgen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "74e8448464d9d9ef"
 ---
 
 # Über Wahlfehlerfolgen

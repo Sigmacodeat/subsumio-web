@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/schufa-dsgvo/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a115726138e9e44c"
 ---
 
 # Schufa und die DSGVO

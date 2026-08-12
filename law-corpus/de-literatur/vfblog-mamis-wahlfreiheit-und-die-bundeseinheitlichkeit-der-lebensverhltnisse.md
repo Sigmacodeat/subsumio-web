@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3d586bfb0dbc0c05"
 ---
 
 # Mamis Wahlfreiheit und die Bundeseinheitlichkeit der Lebensverhältnisse

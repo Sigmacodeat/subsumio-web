@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/usa-supreme-court-antidiskriminierung-equ
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "738b24371aa38c5f"
 ---
 
 # Statistisch diskriminiert

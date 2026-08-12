@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/downstream-emissions-as-climate-impacts/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a57bb3591fe005ee"
 ---
 
 # Downstream Emissions as Climate Impacts

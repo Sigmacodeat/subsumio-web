@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "066dc4fce6297af4"
 ---
 
 # „Der III. Weg“ in Plauen und das Militanzverbot des Versammlungs&shy;rechts

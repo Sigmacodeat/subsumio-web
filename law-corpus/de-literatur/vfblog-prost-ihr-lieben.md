@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/prost-ihr-lieben/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8f79cdf02edbfdd6"
 ---
 
 # Prost, ihr Lieben!

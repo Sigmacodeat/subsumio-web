@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2022 Alfred Früh, Nadja Braun
   Binder, Robert Schibli; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "d8d8fcf3d280d3a8"
 ---
 
 # Data Governance für Smart Mobility aus rechtlicher Perspektive

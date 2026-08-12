@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bayreuther-manifest-recht-und-moral/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1929d69f7576bf89"
 ---
 
 # Bayreuther Manifest zu Recht und Moral

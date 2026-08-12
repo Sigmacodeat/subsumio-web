@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/right-to-democracy-iacthr/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7a141b14f68440f9"
 ---
 
 # The Question of Democracy Before the Inter-American Court

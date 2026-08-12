@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/freiberuflergmbh-bleibt-gewerbesteuerpfli
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ac79534b32e7d1e4"
 ---
 
 # Freiberufler-GmbH bleibt gewerbesteuerpflichtig

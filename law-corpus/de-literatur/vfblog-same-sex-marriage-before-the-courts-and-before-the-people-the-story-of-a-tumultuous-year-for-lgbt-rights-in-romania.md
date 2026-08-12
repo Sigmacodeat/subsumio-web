@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e5f78d0261abd9a8"
 ---
 
 # Same-sex marriage before the courts and before the people: the story of a tumultuous year for LGBT rights in Romania

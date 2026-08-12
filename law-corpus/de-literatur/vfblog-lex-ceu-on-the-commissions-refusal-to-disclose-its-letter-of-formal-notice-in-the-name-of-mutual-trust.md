@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ccf46f5e037642c7"
 ---
 
 # Lex CEU: On the Commission’s Refusal to Disclose its Letter of Formal Notice in the Name of Mutual Trust

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/richter-und-staatsanaelte-besser-in-zwei-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "615b4b7476d77fba"
 ---
 
 # Richter und Staatsanwälte – besser in zwei Vereinen

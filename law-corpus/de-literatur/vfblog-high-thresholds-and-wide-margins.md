@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/high-thresholds-and-wide-margins/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0cb13329f8d50038"
 ---
 
 # High Thresholds and Wide Margins

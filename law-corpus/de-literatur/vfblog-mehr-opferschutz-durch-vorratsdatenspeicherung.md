@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mehr-opferschutz-durch-vorratsdatenspeich
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "46566cbb786b1feb"
 ---
 
 # Mehr Opferschutz durch Vorratsdatenspeicherung

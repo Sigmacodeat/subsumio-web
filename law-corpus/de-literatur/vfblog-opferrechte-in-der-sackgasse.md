@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/opferrechte-in-der-sackgasse/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a8388880c675e6be"
 ---
 
 # Opferrechte in der Sackgasse

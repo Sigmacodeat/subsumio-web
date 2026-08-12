@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/reflexive-law-as-anti-colonial-practice/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "47653ff98494bdbb"
 ---
 
 # Reflexive Law as Anti-Colonial Practice

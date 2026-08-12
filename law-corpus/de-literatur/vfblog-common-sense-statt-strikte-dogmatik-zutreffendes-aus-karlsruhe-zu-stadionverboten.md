@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e2e49004f559ce66"
 ---
 
 # Common sense statt strikte Dogmatik? Zutreffendes aus Karlsruhe zu Stadionverboten

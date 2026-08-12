@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rebuilding-markets-restoring-democracy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fe43d2f1d6b91f90"
 ---
 
 # Rebuilding Markets, Restoring Democracy

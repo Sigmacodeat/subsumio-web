@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/des-kaisers-neue-kleider/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bac43dc390021b83"
 ---
 
 # Des Kaisers neue Kleider

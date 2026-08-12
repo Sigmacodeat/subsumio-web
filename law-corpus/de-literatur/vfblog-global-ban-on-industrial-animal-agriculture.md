@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/global-ban-on-industrial-animal-agricultu
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b1c089e8cf5388d6"
 ---
 
 # The Case for a Global Ban on Industrial Animal Agriculture by 2050

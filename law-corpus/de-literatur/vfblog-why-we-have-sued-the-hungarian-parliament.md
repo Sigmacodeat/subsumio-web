@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/why-we-have-sued-the-hungarian-parliament
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e8127e98349d8b39"
 ---
 
 # Why We Have Sued the Hungarian Parliament

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/of-vampires-and-enemies/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "31a6ae3e25f5a62e"
 ---
 
 # Of Vampires and Enemies

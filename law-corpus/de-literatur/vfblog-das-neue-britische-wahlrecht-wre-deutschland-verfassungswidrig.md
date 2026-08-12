@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "256c76b892bc54e8"
 ---
 
 # Das neue britische Wahlrecht wäre in Deutschland verfassungswidrig

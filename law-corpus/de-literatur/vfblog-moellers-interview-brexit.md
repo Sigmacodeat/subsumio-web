@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/moellers-interview-brexit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4f043095c4cde6b0"
 ---
 
 # “Wir sollten sagen: Wer nicht will, der hat schon”

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "80853393941b7c9a"
 ---
 
 # Hic Rhodus, hic salta: The ECJ Hearing of the Landmark “Celmer” Case

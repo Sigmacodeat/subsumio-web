@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0a05fead0686e920"
 ---
 
 # Grenzen der Universalität – Was das Nachdenken über Tierrechte deutlich macht

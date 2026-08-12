@@ -299,7 +299,7 @@ export default function WorkflowBuilderPage() {
   const stepConfig = selected ? getStepConfig(selected.type) : null;
 
   return (
-    <div
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8"
       style={{
         display: "flex",
         flexDirection: "column",

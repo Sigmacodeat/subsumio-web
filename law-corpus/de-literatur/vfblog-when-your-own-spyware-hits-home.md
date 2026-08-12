@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/when-your-own-spyware-hits-home/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a3b0e81f0b0d46c7"
 ---
 
 # When Your Own Spyware Hits Home

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-hard-year/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d28c5b3d7e205e93"
 ---
 
 # A Hard Year

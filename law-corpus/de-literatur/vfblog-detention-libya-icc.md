@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/detention-libya-icc/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "14995d038e13370e"
 ---
 
 # “Detention Has Become an Industry in Libya”

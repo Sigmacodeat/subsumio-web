@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9c32a09f59e871b8"
 ---
 
 # Toward Political Economic and Euro Governance? Assessing the Political Performance of Moscovici and Dombrovskis

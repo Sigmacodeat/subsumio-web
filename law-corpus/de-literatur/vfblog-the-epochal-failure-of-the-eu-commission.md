@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-epochal-failure-of-the-eu-commission/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "08811b38c364d04a"
 ---
 
 # The Epochal Failure of the EU Commission

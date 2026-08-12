@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/venezuela-lessons-of-a-crisis-written-on-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "91c2f85967fcc182"
 ---
 
 # Venezuela: Lessons of a Crisis Written on the Wall

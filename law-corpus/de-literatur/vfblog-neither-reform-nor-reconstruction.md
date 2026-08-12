@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/neither-reform-nor-reconstruction/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1a58117ba9393065"
 ---
 
 # Neither Reform nor Reconstruction

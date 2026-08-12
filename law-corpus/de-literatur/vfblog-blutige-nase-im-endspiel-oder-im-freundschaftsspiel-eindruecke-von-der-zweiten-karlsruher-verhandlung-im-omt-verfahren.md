@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6b37f91aaf6547e8"
 ---
 
 # Blutige Nase im Endspiel oder im Freundschaftsspiel?  Eindrücke von der zweiten Karlsruher Verhandlung im OMT-Verfahren

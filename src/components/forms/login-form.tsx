@@ -113,13 +113,13 @@ export function LoginForm() {
     >
       <div className="space-y-1.5">
         <Label htmlFor="email">E-Mail</Label>
-        <Input id="email" type="email" {...register("email")} placeholder="name@kanzlei.de" />
+        <Input id="email" type="email" autoComplete="email" inputMode="email" {...register("email")} placeholder="name@kanzlei.de" />
         {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="password">Passwort</Label>
-        <Input id="password" type="password" {...register("password")} placeholder="••••••••" />
+        <Input id="password" type="password" autoComplete="current-password" {...register("password")} placeholder="••••••••" />
         {errors.password && <p className="text-xs text-red-400">{errors.password.message}</p>}
       </div>
 

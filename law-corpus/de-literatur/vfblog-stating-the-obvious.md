@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/stating-the-obvious/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "697b7b3c1ddf62f5"
 ---
 
 # Stating the Obvious

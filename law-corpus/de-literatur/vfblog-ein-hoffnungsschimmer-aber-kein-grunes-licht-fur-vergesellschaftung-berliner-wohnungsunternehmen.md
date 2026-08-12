@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "22bb0885f675aa81"
 ---
 
 # Ein Hoffnungsschimmer, aber kein grünes Licht für Vergesellschaftung Berliner Wohnungsunternehmen

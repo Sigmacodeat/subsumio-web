@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dce7d47b90b1df2d"
 ---
 
 # What does a Bolsonaro Presidency mean for Brazilian Law? Part 1: Reforms from the Far Right

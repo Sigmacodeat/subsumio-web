@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nachhaltigkeit-durch-vermogensbindung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1df5fb5376a8ad02"
 ---
 
 # Nachhaltigkeit durch Vermögensbindung

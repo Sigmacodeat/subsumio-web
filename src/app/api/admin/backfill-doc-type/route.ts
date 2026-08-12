@@ -9,6 +9,11 @@ export const POST = createHandler(
   {
     action: "admin.*",
     rateTier: "heavy",
+    audit: (ctx) => ({
+      action: "admin.backfill_doc_type" as const,
+      entityType: "corpus",
+      details: { triggeredBy: ctx.user.id },
+    }),
   },
   async (ctx) => {
     if (ctx.user.role !== "admin") {

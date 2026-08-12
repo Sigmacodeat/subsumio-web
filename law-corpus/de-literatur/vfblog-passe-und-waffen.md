@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/passe-und-waffen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f2d22fc10fa4f7d9"
 ---
 
 # Pässe und Waffen

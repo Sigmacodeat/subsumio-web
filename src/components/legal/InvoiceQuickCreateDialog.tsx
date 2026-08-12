@@ -633,7 +633,7 @@ export function InvoiceQuickCreateDialog({
                 </Label>
                 <Input
                   id="quick-advance"
-                  type="number"
+                  type="number" inputMode="decimal"
                   step="0.01"
                   value={advancePayment}
                   onChange={(e) => setAdvancePayment(e.target.value)}
@@ -695,7 +695,7 @@ export function InvoiceQuickCreateDialog({
                   </Label>
                   <Input
                     id="quick-rvg-sw"
-                    type="number"
+                    type="number" inputMode="numeric"
                     value={streitwert}
                     onChange={(e) => {
                       setStreitwert(e.target.value);

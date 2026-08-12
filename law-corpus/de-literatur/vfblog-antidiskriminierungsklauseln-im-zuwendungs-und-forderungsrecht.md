@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2dd34d265f4f751e"
 ---
 
 # Antidiskriminierungsklauseln im Zuwendungs- und Förderungsrecht

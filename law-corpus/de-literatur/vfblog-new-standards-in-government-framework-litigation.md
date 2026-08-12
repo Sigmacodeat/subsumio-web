@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/new-standards-in-government-framework-lit
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2134a41fb854ebd3"
 ---
 
 # New Standards in Government Framework Litigation

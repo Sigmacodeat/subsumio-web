@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wie-privat-ist-der-staat-an-der-spitze/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b329800d23faa48e"
 ---
 
 # Wie privat ist der Staat an der Spitze?

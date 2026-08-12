@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-maer-von-den-maennerquoten/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "56a9833e34e3dfd4"
 ---
 
 # Die Mär von den Männerquoten

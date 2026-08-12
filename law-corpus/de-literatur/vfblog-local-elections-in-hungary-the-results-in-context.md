@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/local-elections-in-hungary-the-results-in
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e399720d97c51890"
 ---
 
 # Local Elections in Hungary: the Results in Context

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "97411204fee040a9"
 ---
 
 # Education as Indoctrination: Mnemonic Constitutionalism and History Teaching in Russia

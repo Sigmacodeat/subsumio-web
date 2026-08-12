@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/banking-union-cross-border-consolidation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eece0cb857f085ae"
 ---
 
 # The European Banking Union Also Means Cross-Border Bank Consolidation

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "da9a181e8cc89bde"
 ---
 
 # Back to Bush? The US air strikes in Syria against the ‘Khorasan group’ in the light of ‘preventive’ self-defence

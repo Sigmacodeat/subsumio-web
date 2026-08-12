@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mff_ngeu_leaked-and-loaded/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b5462eed9cb788dd"
 ---
 
 # Leaked and Loaded

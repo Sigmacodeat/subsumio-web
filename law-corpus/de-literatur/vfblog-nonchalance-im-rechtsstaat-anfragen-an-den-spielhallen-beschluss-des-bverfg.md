@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "faedd56eb81846df"
 ---
 
 # Nonchalance im Rechtsstaat? Anfragen an den Spielhallen-Beschluss des BVerfG

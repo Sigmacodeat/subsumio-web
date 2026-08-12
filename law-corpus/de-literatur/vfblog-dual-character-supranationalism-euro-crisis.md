@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dual-character-supranationalism-euro-cris
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "58cac6e2c3b41fa8"
 ---
 
 # The Dual Character of Supra-Nationalism and the Euro Crisis

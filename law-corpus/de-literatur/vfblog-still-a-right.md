@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/still-a-right/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "02a9d32f8851d4f9"
 ---
 
 # Still a right?

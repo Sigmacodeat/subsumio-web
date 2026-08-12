@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "2de16c3c7cd3ae66"
 ---
 
 § 24 Digitalität & Privatsphäre &#124; Inhaltsverzeichnis &#124; § 24.2 Wohnung (Art. 13 GG) 

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "328cbd82c5fa2545"
 ---
 
 # “There is no explicit rule that prohibits espionage. But that doesn’t mean it’s allowed.”

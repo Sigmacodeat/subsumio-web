@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a38e79c6f2f9c1a5"
 ---
 
 # What is the Situation of Constitutional Jurisdiction in Europe? Worrying News from Spain

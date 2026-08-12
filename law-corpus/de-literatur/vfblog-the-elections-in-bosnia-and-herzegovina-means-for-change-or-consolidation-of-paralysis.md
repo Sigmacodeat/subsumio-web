@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "370d3ea4d27f8993"
 ---
 
 # The Elections in Bosnia and Herzegovina: Means for Change or Consolidation of Paralysis?

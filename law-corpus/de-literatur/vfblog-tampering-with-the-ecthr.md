@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/tampering-with-the-ecthr/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "48137468c3c31173"
 ---
 
 # Tampering with the ECtHR

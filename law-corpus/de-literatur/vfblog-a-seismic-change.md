@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-seismic-change/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ac4f94d47d2a53ab"
 ---
 
 # A Seismic Change

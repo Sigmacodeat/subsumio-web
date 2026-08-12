@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9210d8ded8870360"
 ---
 
 # Sukzessivadoption: Karlsruhe schiebt den schwarz-gelben Peter zurück

@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/orbns-counter-revolution-voting-booth/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7fb6d3211584d29c"
 ---
 
 # Orbán’s (Counter-)Revolution of the Voting Booth and How it was Made Possible

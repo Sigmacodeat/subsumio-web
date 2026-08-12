@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-freiheit-der-zukunft/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "131589c6f3341716"
 ---
 
 # Die Freiheit der Zukunft

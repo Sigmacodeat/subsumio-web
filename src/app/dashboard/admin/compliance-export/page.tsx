@@ -49,7 +49,7 @@ interface ReasoningTrace {
   prev_trace_hash: string | null;
   warnings: string[];
   retrieved_chunks: Array<{ slug: string; score: number; rank: number; source: string }>;
-  citations: unknown[];
+  Citations: unknown[];
   retrieved_chunks_count: number;
   citations_count: number;
 }
@@ -123,7 +123,7 @@ export default function ComplianceExportPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="mx-0 w-full space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("admin.compliance_export.title")}
         description={t("admin.compliance_export.desc")}
@@ -153,45 +153,45 @@ export default function ComplianceExportPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Traces</CardTitle>
-            <FileText className="text-muted-foreground h-4 w-4" />
+            <CardTitle className="text-sm font-medium">Traces gesamt</CardTitle>
+            <FileText className="text-[color:var(--ds-text-muted)] h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-muted-foreground text-xs">AI outputs logged</p>
+            <p className="text-[color:var(--ds-text-muted)] text-xs">KI-Ausgaben protokolliert</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Guardrail Pass</CardTitle>
-            <ShieldCheck className="h-4 w-4 text-green-600" />
+            <CardTitle className="text-sm font-medium">Guardrail bestanden</CardTitle>
+            <ShieldCheck className="h-4 w-4 text-[color:var(--ds-success-text)]" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.guardrailPassed}</div>
-            <p className="text-muted-foreground text-xs">{stats.guardrailFailed} failed</p>
+            <div className="text-2xl font-bold text-[color:var(--ds-success-text)]">{stats.guardrailPassed}</div>
+            <p className="text-[color:var(--ds-text-muted)] text-xs">{stats.guardrailFailed} fehlgeschlagen</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Injection Detected</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-orange-600" />
+            <CardTitle className="text-sm font-medium">Injection erkannt</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-[color:var(--ds-warning-text)]" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{stats.injectionDetected}</div>
-            <p className="text-muted-foreground text-xs">{stats.injectionBlocked} blocked</p>
+            <div className="text-2xl font-bold text-[color:var(--ds-warning-text)]">{stats.injectionDetected}</div>
+            <p className="text-[color:var(--ds-text-muted)] text-xs">{stats.injectionBlocked} blockiert</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Confidence</CardTitle>
-            <Hash className="text-muted-foreground h-4 w-4" />
+            <CardTitle className="text-sm font-medium">Ø Konfidenz</CardTitle>
+            <Hash className="text-[color:var(--ds-text-muted)] h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.avgConfidence}</div>
-            <p className="text-muted-foreground text-xs">{stats.regenerations} regenerations</p>
+            <p className="text-[color:var(--ds-text-muted)] text-xs">{stats.regenerations} Regenerationen</p>
           </CardContent>
         </Card>
       </div>
@@ -199,30 +199,28 @@ export default function ComplianceExportPage() {
       {/* Info Panel */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">EU AI Act Art. 12 Compliance</CardTitle>
+          <CardTitle className="text-base">EU-KI-Verordnung Art. 12 Compliance</CardTitle>
         </CardHeader>
-        <CardContent className="text-muted-foreground space-y-2 text-sm">
+        <CardContent className="text-[color:var(--ds-text-muted)] space-y-2 text-sm">
           <p>
-            Every AI output is captured as an immutable, hash-chained reasoning trace. Traces
-            include retrieval context, guardrail results, ensemble verification, adversarial defense
-            scans, and confidence scores.
+            Jede KI-Ausgabe wird als unveränderlicher, hash-verketteter Reasoning-Trace erfasst. Traces umfassen den Retrieval-Kontext, Guardrail-Ergebnisse, Ensemble-Verifizierung, adversariale Defense-Scans und Konfidenzwerte.
           </p>
           <div className="flex flex-wrap gap-2 pt-2">
             <Badge variant="default" className="text-xs">
               <Hash className="mr-1 h-3 w-3" />
-              Hash-chained
+              Hash-verkettet
             </Badge>
             <Badge variant="default" className="text-xs">
               <ShieldCheck className="mr-1 h-3 w-3" />
-              Immutable
+              Unveränderlich
             </Badge>
             <Badge variant="default" className="text-xs">
               <FileText className="mr-1 h-3 w-3" />
-              CSV / JSON Export
+              CSV / JSON-Export
             </Badge>
             <Badge variant="default" className="text-xs">
               <Clock className="mr-1 h-3 w-3" />
-              10-year retention
+              10-Jahres-Aufbewahrung
             </Badge>
           </div>
         </CardContent>
@@ -231,19 +229,19 @@ export default function ComplianceExportPage() {
       {/* Trace List */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Recent Reasoning Traces</CardTitle>
+          <CardTitle className="text-base">Letzte Reasoning-Traces</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-muted-foreground flex items-center justify-center py-8">
+            <div className="text-[color:var(--ds-text-muted)] flex items-center justify-center py-8">
               <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              Loading traces...
+              Lade Traces…
             </div>
           ) : traces.length === 0 ? (
-            <div className="text-muted-foreground flex flex-col items-center justify-center py-8">
+            <div className="text-[color:var(--ds-text-muted)] flex flex-col items-center justify-center py-8">
               <FileText className="mb-2 h-8 w-8" />
-              <p>No reasoning traces found.</p>
-              <p className="text-xs">Traces are created when AI outputs are generated.</p>
+              <p>Keine Reasoning-Traces gefunden.</p>
+              <p className="text-xs">Traces entstehen bei jeder KI-Ausgabe.</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -271,7 +269,7 @@ function TraceRow({ trace }: { trace: ReasoningTrace }) {
       role="button"
       tabIndex={0}
       aria-expanded={expanded}
-      className="hover:bg-muted/50 cursor-pointer rounded-lg border p-3 transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+      className="hover:bg-[color:var(--ds-surface-hover)] cursor-pointer rounded-lg border p-3 transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
       onClick={() => setExpanded(!expanded)}
       onKeyDown={(e) => {
         if (e.target !== e.currentTarget) return;
@@ -284,16 +282,16 @@ function TraceRow({ trace }: { trace: ReasoningTrace }) {
       <div className="flex items-center justify-between">
         <div className="flex min-w-0 items-center gap-3">
           <ChevronRight
-            className={`text-muted-foreground h-4 w-4 shrink-0 transition-transform ${
+            className={`text-[color:var(--ds-text-muted)] h-4 w-4 shrink-0 transition-transform ${
               expanded ? "rotate-90" : ""
             }`}
           />
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-muted-foreground max-w-[120px] truncate font-mono text-xs">
+              <span className="text-[color:var(--ds-text-muted)] max-w-[120px] truncate font-mono text-xs">
                 {trace.trace_id.slice(0, 8)}...
               </span>
-              <span className="text-muted-foreground text-xs">{time}</span>
+              <span className="text-[color:var(--ds-text-muted)] text-xs">{time}</span>
             </div>
             <div className="mt-1 flex items-center gap-2">
               {trace.guardrail_passed === true && (
@@ -323,7 +321,7 @@ function TraceRow({ trace }: { trace: ReasoningTrace }) {
               {trace.injection_blocked && (
                 <Badge variant="danger" className="text-xs">
                   <XCircle className="mr-1 h-3 w-3" />
-                  Blocked
+                  Blockiert
                 </Badge>
               )}
               {trace.confidence_level && (
@@ -334,7 +332,7 @@ function TraceRow({ trace }: { trace: ReasoningTrace }) {
             </div>
           </div>
         </div>
-        <div className="text-muted-foreground flex shrink-0 items-center gap-4 text-xs">
+        <div className="text-[color:var(--ds-text-muted)] flex shrink-0 items-center gap-4 text-xs">
           <span className="flex items-center gap-1">
             <Cpu className="h-3 w-3" />
             {trace.model_used.split(":").pop()}
@@ -343,8 +341,8 @@ function TraceRow({ trace }: { trace: ReasoningTrace }) {
             <Clock className="h-3 w-3" />
             {trace.latency_ms ? `${(trace.latency_ms / 1000).toFixed(1)}s` : "—"}
           </span>
-          <span>{trace.retrieved_chunks_count} chunks</span>
-          <span>{trace.citations_count} citations</span>
+          <span>{trace.retrieved_chunks_count} Chunks</span>
+          <span>{trace.citations_count} Citations</span>
         </div>
       </div>
 
@@ -352,49 +350,49 @@ function TraceRow({ trace }: { trace: ReasoningTrace }) {
         <div className="mt-3 space-y-2 border-t pt-3 text-xs">
           <div className="grid grid-cols-2 gap-x-4 gap-y-1">
             <div>
-              <span className="text-muted-foreground">Trace ID:</span>{" "}
+              <span className="text-[color:var(--ds-text-muted)]">Trace-ID:</span>{" "}
               <code className="font-mono">{trace.trace_id}</code>
             </div>
             <div>
-              <span className="text-muted-foreground">Model:</span>{" "}
+              <span className="text-[color:var(--ds-text-muted)]">Modell:</span>{" "}
               <code className="font-mono">{trace.model_used}</code>
             </div>
             <div>
-              <span className="text-muted-foreground">Query Hash:</span>{" "}
+              <span className="text-[color:var(--ds-text-muted)]">Query-Hash:</span>{" "}
               <code className="font-mono">{trace.query_hash.slice(0, 16)}...</code>
             </div>
             <div>
-              <span className="text-muted-foreground">Answer Hash:</span>{" "}
+              <span className="text-[color:var(--ds-text-muted)]">Answer-Hash:</span>{" "}
               <code className="font-mono">{trace.final_answer_hash.slice(0, 16)}...</code>
             </div>
             <div>
-              <span className="text-muted-foreground">Trace Hash:</span>{" "}
+              <span className="text-[color:var(--ds-text-muted)]">Trace-Hash:</span>{" "}
               <code className="font-mono">{trace.trace_hash.slice(0, 16)}...</code>
             </div>
             <div>
-              <span className="text-muted-foreground">Prev Hash:</span>{" "}
+              <span className="text-[color:var(--ds-text-muted)]">Vorheriger Hash:</span>{" "}
               <code className="font-mono">
                 {trace.prev_trace_hash ? trace.prev_trace_hash.slice(0, 16) + "..." : "—"}
               </code>
             </div>
             <div>
-              <span className="text-muted-foreground">Answer Length:</span> {trace.answer_length}{" "}
-              chars
+              <span className="text-[color:var(--ds-text-muted)]">Antwortlänge:</span> {trace.answer_length}{" "}
+              Zeichen
             </div>
             <div>
-              <span className="text-muted-foreground">Regenerations:</span>{" "}
+              <span className="text-[color:var(--ds-text-muted)]">Regenerations:</span>{" "}
               {trace.regeneration_count}
             </div>
             <div>
-              <span className="text-muted-foreground">Pages Gathered:</span> {trace.pages_gathered}
+              <span className="text-[color:var(--ds-text-muted)]">Seiten gesammelt:</span> {trace.pages_gathered}
             </div>
             <div>
-              <span className="text-muted-foreground">Graph Hits:</span> {trace.graph_hits}
+              <span className="text-[color:var(--ds-text-muted)]">Graph-Hits:</span> {trace.graph_hits}
             </div>
           </div>
           {trace.warnings.length > 0 && (
             <div className="mt-2">
-              <span className="text-muted-foreground">Warnings:</span>
+              <span className="text-[color:var(--ds-text-muted)]">Warnungen:</span>
               <div className="mt-1 flex flex-wrap gap-1">
                 {trace.warnings.map((w, i) => (
                   <Badge key={i} variant="default" className="font-mono text-xs">

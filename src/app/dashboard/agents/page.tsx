@@ -725,7 +725,7 @@ export default function AgentsPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] flex-col">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8 flex h-[calc(100vh-3.5rem)] flex-col">
       {/* Tab Bar */}
       <div className="flex items-center gap-1 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-2">
         <button

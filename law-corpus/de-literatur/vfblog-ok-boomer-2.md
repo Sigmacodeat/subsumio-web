@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ok-boomer-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3ea1f19d8f7ffde1"
 ---
 
 # Ok, Boomer

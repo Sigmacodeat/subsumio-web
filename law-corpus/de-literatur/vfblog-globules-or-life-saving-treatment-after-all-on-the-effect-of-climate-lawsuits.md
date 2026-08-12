@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e166ca6f06bd9909"
 ---
 
 # Globules or Life-Saving Treatment after all? On the Effect of Climate Lawsuits

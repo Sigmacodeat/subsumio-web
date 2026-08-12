@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/how-many-times-can-the-ecthr-turn-its-hea
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "da2cc10d88dc2d33"
 ---
 
 # How Many Times Can the ECtHR Turn its Head

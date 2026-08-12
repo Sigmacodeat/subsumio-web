@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wegsperren-fur-immer-ist-in-ganz-europa-v
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "097cdbebf0f626b8"
 ---
 
 # “Wegsperren für immer” ist in ganz Europa verboten

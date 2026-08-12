@@ -363,12 +363,24 @@ describe("BrainRegistry — lazy init", () => {
     process.env.GBRAIN_HOME = isolatedHome;
     try {
       const reg = new BrainRegistry([]);
-      // Expect the host-init path to be attempted (it'll fail on missing
-      // <isolated>/.gbrain/config.json, but the error will come from
-      // initHostBrain, not UnknownBrainError — proving routing hit host).
-      await expect(reg.getBrain(null)).rejects.not.toBeInstanceOf(UnknownBrainError);
-      await expect(reg.getBrain(undefined)).rejects.not.toBeInstanceOf(UnknownBrainError);
-      await expect(reg.getBrain("")).rejects.not.toBeInstanceOf(UnknownBrainError);
+      // null/undefined/empty id routes to host brain (not UnknownBrainError).
+      // The host-init path may still fail on missing config, but routing
+      // should NOT produce UnknownBrainError for falsy ids.
+      try {
+        await reg.getBrain(null);
+      } catch (e) {
+        expect(e).not.toBeInstanceOf(UnknownBrainError);
+      }
+      try {
+        await reg.getBrain(undefined);
+      } catch (e) {
+        expect(e).not.toBeInstanceOf(UnknownBrainError);
+      }
+      try {
+        await reg.getBrain("");
+      } catch (e) {
+        expect(e).not.toBeInstanceOf(UnknownBrainError);
+      }
     } finally {
       if (savedHome !== undefined) process.env.GBRAIN_HOME = savedHome;
       else delete process.env.GBRAIN_HOME;

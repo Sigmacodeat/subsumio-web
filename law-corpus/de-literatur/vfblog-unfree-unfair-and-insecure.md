@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/unfree-unfair-and-insecure/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8dafe0299fe43305"
 ---
 
 # Unfree, Unfair, and Insecure

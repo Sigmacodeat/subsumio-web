@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b55175d03cc3d5ee"
 ---
 
 # Wie eine aussichtslose Verfassungsklage Berlusconi die Karriere retten könnte

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ozor-in-bern/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "66d3840595f30614"
 ---
 
 # OZOR in Bern

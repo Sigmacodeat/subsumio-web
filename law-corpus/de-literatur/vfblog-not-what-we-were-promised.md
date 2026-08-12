@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/not-what-we-were-promised/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ccb4fc0f0b8d0783"
 ---
 
 # “Not What We Were Promised”

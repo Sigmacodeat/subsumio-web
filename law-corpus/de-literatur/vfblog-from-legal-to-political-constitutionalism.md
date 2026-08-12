@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/from-legal-to-political-constitutionalism
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5b53ae714160cf70"
 ---
 
 # From legal to political constitutionalism?

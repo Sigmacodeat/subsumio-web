@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/abusive-feminism-argentina/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fd381b46432f8e93"
 ---
 
 # “Do(n’t) Cry for Me Argentina”

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hansa-mehta/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fa66c6a728c19c4e"
 ---
 
 # Hansa Mehta

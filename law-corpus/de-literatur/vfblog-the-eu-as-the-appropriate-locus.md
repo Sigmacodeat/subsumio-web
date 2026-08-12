@@ -15,6 +15,7 @@ source_url: https://verfassungsblog.de/the-eu-as-the-appropriate-locus/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "086810567cd5ad68"
 ---
 
 # The EU as the Appropriate Locus of Power for Tackling Crises: Interpretation of Article 78(3) TFEU in the case Slovakia and Hungary v Council

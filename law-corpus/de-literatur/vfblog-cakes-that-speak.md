@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/cakes-that-speak/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c045bafc53b5cea4"
 ---
 
 # Cakes that Speak

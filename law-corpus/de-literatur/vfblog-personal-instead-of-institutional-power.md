@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/personal-instead-of-institutional-power/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2351785e20d51419"
 ---
 
 # Personal instead of Institutional Power

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gibt-es-einen-trend-zum-fotofinish/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b88c834a8bbd1a12"
 ---
 
 # Gibt es einen Trend zum Foto-Finish?

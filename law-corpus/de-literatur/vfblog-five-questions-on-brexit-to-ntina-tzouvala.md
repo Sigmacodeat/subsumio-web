@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/five-questions-on-brexit-to-ntina-tzouval
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9c8a40825147553b"
 ---
 
 # Five Questions on Brexit to NTINA TZOUVALA

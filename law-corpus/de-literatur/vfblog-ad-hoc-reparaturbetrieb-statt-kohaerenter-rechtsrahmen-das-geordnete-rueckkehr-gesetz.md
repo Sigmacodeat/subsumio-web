@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1c8024f449fae187"
 ---
 
 # Ad-Hoc-Reparatur&shy;betrieb statt kohärenter Rechts&shy;rahmen: das “Geordnete-Rückkehr-Gesetz”

@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/meat-industry-environmental-litigation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e39ee4a208d8a1bf"
 ---
 
 # Transforming the Meat and Dairy Industry through Environmental Litigation

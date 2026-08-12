@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-eurozone-crisis-a-book-debate/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d5f199e5d6aeb1a7"
 ---
 
 # “The Eurozone Crisis” – A Book Debate

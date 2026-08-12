@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/manovrieren-an-den-grenzen-des-%c2%a7-129
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ff1815673f4f1f5e"
 ---
 
 # Manövrieren an den Grenzen des § 129 StGB

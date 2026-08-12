@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/betrayal/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "59c64dc292c404a5"
 ---
 
 # Betrayal

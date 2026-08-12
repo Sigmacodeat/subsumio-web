@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/politik-recht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bd4490e6d65d56b6"
 ---
 
 # Politik > Recht

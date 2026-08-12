@@ -312,6 +312,12 @@ export async function middleware(req: NextRequest) {
     if (pathname.startsWith("/admin") && session.role !== "admin") {
       return applyCsp(NextResponse.redirect(new URL("/dashboard", req.url)));
     }
+    // /dashboard/admin/* — ebenfalls Admin-only (separate vom /admin Bereich).
+    // Die Middleware prüft beide Pfade, weil /dashboard/admin nicht unter /admin
+    // liegt und deshalb der Check oben nicht greift.
+    if (pathname.startsWith("/dashboard/admin") && session.role !== "admin") {
+      return applyCsp(NextResponse.redirect(new URL("/dashboard", req.url)));
+    }
 
     // Set CSRF cookie if not present
     const res = NextResponse.next({ request: { headers: requestHeaders } });

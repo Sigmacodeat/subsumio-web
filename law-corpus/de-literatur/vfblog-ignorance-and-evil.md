@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ignorance-and-evil/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cf753958e5c67091"
 ---
 
 # Ignorance and Evil

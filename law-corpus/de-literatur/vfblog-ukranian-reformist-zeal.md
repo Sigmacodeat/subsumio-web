@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ukranian-reformist-zeal/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "327a6c0e031d6dfa"
 ---
 
 # The Pathologies of the Reformist Zeal

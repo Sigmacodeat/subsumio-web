@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rechte-der-natur-erfurt-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "27c82eb6e3e9a555"
 ---
 
 # Fruchtbare Irritationen

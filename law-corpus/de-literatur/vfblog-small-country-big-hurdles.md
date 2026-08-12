@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/small-country-big-hurdles/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b27c53e2a0b222b9"
 ---
 
 # Small Country, Big Hurdles

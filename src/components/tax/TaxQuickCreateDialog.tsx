@@ -156,7 +156,7 @@ export function TaxQuickCreateDialog({ open, onOpenChange, onCreated }: TaxQuick
               <Label htmlFor="tax-year">Jahr</Label>
               <Input
                 id="tax-year"
-                type="number"
+                type="number" inputMode="numeric"
                 value={year}
                 onChange={(e) => setYear(parseInt(e.target.value) || new Date().getFullYear() - 1)}
                 min={2000}

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/uber-knows-do-you/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c0f6efaa494e54c2"
 ---
 
 # Uber knows. Do you?

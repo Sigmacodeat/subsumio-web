@@ -16,6 +16,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1a2a8bfad72c0dbb"
 ---
 
 # How Constitutional Courts talk to each other: The Potential of the Preliminary Reference Procedure for Europe’s pluralist Verfassungsverbund

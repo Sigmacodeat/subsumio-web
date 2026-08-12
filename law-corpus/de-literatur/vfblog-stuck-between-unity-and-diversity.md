@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/stuck-between-unity-and-diversity/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eecd44ac01fea852"
 ---
 
 # Stuck Between Unity and Diversity

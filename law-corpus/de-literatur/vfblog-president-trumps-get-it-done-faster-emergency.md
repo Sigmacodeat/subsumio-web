@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/president-trumps-get-it-done-faster-emerg
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0f2fe24c67f05b93"
 ---
 
 # President Trump’s ‘Get it Done Faster’ Emergency

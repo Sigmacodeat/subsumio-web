@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0937084ee5ce4aa6"
 ---
 
 # Lessons Learned – Die EU Holz&shy;handels&shy;verordnung als Beispiel für umweltbezogene Sorgfaltspflichten

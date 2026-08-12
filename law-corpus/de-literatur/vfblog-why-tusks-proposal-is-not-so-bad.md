@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/why-tusks-proposal-is-not-so-bad/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5f8c319a12011ad1"
 ---
 
 # Why Tusk's Proposal is not so Bad

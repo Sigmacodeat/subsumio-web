@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-delhi-killings-and-the-making-of-viol
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7741f40414492137"
 ---
 
 # The Delhi Killings and the Making of Violence

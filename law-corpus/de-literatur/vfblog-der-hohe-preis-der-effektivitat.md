@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/der-hohe-preis-der-effektivitat/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5fdc29df67380015"
 ---
 
 # Der hohe Preis der Effektivität

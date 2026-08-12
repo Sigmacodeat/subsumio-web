@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/impfpflicht-arbeitslosengeld-i-und-sperrz
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a86d95eb6d4787aa"
 ---
 
 # Impfpflicht, Arbeitslosengeld I und Sperrzeit

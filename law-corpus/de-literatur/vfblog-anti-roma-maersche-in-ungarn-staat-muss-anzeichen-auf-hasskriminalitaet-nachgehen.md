@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b31f6168c41a2b4c"
 ---
 
 # Anti-Roma-Märsche in Ungarn: Staat muss Anzeichen auf Hasskriminalität nachgehen

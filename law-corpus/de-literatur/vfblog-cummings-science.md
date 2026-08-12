@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/cummings-science/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e813e604cf36643d"
 ---
 
 # &#8216;Religiously' following science

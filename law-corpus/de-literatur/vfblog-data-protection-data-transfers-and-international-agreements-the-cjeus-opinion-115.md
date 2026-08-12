@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4fa570611da2a279"
 ---
 
 # Data Protection, Data Transfers, and International Agreements: the CJEU’s Opinion 1/15

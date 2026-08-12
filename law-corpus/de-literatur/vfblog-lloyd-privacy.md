@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/lloyd-privacy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "61b4ae0651b558f8"
 ---
 
 # Lloyd v Google: towards a more restrictive approach on privacy protection in the UK?

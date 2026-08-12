@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/constitutional-perhaps-democratic-not-so-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f2f4a8d78abc44a4"
 ---
 
 # Constitutional? Perhaps. Democratic? Not so much

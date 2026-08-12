@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/di-fabio-ist-befangen-na-klar-na-und/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "79c7f207d36d5248"
 ---
 
 # Di Fabio ist befangen? Na klar. Na und.

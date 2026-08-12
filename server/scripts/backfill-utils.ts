@@ -40,6 +40,11 @@ export function stripHtmlComplete(html: string): string {
   text = text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
   text = text.replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, "");
 
+  // 1b. Remove screen-reader-only duplicate text (RIS HTML has both
+  // aria-hidden="true" spans with § symbols and sr-only spans with
+  // spelled-out "Paragraph", "römisch 40" etc. — keep only the real text).
+  text = text.replace(/<span[^>]*class="[^"]*sr-only[^"]*"[^>]*>[\s\S]*?<\/span>/gi, "");
+
   // 2. Remove HTML comments
   text = text.replace(/<!--[\s\S]*?-->/g, "");
 

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fundamental-rights-come-off-the-bench/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "74c7cddcffd7da56"
 ---
 
 # Fundamental Rights Come Off the Bench

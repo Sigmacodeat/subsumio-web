@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/afd-parteiverbot-verfassungsrecht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "37d08e994f020a14"
 ---
 
 # Parteiverbotsverfahren in der öffentlichen Debatte

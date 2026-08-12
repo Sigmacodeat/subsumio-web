@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2422e4d93141f19e"
 ---
 
 # Mango Scented Sovereignty: Pakistan’s Chief Justice Saqib Nisar and Baba-justice

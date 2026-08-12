@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "040b414a0dc9f907"
 ---
 
 # Einmal Kanzler, immer Kanzler? Warum eine Amtszeitbegrenzung für den Bundeskanzler nötig ist

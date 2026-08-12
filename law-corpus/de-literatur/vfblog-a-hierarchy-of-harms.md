@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-hierarchy-of-harms/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c047b9aae4355877"
 ---
 
 # A Hierarchy of Harms

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/brexit-lawsuits-but-not-as-you-know-them/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "43867d6e25028676"
 ---
 
 # Brexit Lawsuits, But Not As You Know Them

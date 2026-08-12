@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/handeln-erlaubt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6ad8d19e4e03d4bb"
 ---
 
 # Handeln erlaubt!

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3b1d95f8a81ad21d"
 ---
 
 # Protecting the Independence of National Councils of the Judiciary on the EU Level

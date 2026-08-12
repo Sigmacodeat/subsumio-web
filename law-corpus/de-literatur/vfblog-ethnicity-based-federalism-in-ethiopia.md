@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ethnicity-based-federalism-in-ethiopia/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "228b0cf3220d6c7f"
 ---
 
 # Voting for Internal Secession

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d937363533e3d08d"
 ---
 
 # Ernst-Wolfgang Böckenförde: Historisierung als Schlüssel zum Verständnis des Verfassungsstaates

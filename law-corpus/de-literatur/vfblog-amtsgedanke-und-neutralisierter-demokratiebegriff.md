@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/amtsgedanke-und-neutralisierter-demokrati
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ca6c0b2c31a6529e"
 ---
 
 # Amtsgedanke und neutralisierter Demokratiebegriff

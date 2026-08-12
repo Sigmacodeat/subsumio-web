@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "40c2e66f60daef90"
 ---
 
 # The Deal on Greek Debt: Political Gamechanger for Europe, Tactical Retreat (not Surrender) by Tsipras

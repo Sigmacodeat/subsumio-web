@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2021 Reto Heizmann, Leander
   D. Loacker; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "c70a9510a7947c42"
 ---
 
 # Rufausnutzung zwischen Lauterkeitsrecht und Markenschutz: Umwege und Auswege

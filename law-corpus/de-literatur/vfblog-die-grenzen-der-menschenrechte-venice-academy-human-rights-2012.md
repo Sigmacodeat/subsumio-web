@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "78cf78b8f9b4f1f9"
 ---
 
 # Die Grenzen der Menschenrechte: Venice Academy of Human Rights 2012

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fake-oder-fiktion-ki-kunstfreiheit-deepfa
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0f7d32a9e0da7e26"
 ---
 
 # Fake oder Fiktion?

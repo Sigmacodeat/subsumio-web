@@ -20,6 +20,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2021 Damiano Canapa, Arthur
   Grisoni, Marine Antonoff; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "f83a30d9745711ee"
 ---
 
 # Le droit suisse des sociétés en 2020 : Modifications législatives et jurisprudence

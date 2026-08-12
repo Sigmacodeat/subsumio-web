@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2b0adb1e980b5c98"
 ---
 
 # Der Einfluss des bayrischen Nichtwählers auf die Größe des Bundestages

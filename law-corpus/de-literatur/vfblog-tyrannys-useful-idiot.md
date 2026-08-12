@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/tyrannys-useful-idiot/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2233c19952e2dc93"
 ---
 
 # Tyranny’s Useful Idiot

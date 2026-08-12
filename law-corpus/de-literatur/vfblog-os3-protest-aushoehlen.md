@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/os3-protest-aushoehlen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4e188b05f8e509f0"
 ---
 
 # Wie die Überwachung des öffentlichen Raums den politischen Protest in Australien aushöhlt

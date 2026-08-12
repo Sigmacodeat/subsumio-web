@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/leading-the-way/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "08d0fd6d76712b3a"
 ---
 
 # Leading the Way

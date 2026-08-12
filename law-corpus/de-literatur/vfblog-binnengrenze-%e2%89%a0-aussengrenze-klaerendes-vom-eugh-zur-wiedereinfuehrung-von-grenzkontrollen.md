@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1d4ec231643b303d"
 ---
 
 # Binnengrenze ≠ Außengrenze: Klärendes vom EuGH zur Wiedereinführung von Grenzkontrollen

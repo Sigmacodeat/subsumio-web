@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cc07472752b22705"
 ---
 
 # Selbstbestimmung oder Pathologisierung?  Österreichs Konflikte um die dritte Option

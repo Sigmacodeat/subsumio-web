@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/heatwaves-legal-adaptation-rights/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f22822f2cc385188"
 ---
 
 # Heatwaves and Legal Remedies

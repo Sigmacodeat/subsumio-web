@@ -18,6 +18,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2015
   AUSTRIAN LAW JOURNAL
+content_hash: "e24079d9401b41fb"
 ---
 
 # Ausgleich von Personenschäden – Rechtsvergleichende Anregungen für das Zusammenspiel von Schadenersatz- und Versicherungsrecht

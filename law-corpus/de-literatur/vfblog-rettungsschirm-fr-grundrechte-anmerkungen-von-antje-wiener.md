@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a4d71366a00ad230"
 ---
 
 # Rettungsschirm für Grundrechte: Anmerkungen von ANTJE WIENER

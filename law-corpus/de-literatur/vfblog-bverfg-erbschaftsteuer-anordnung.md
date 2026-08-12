@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/bverfg-erbschaftsteuer-anordnung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5fba5a945e6ff5ba"
 ---
 
 # Karlsruhe zur Erbschaftsteuer: Sonst machen wir's halt selber

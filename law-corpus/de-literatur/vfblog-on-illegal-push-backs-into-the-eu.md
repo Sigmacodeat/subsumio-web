@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/on-illegal-push-backs-into-the-eu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1bb9b0b3b5d62952"
 ---
 
 # On illegal push-backs into the EU

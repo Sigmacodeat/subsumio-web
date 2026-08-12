@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3a8c08595e4bbead"
 ---
 
 # French Constitutional Council Strikes Down “Blank Check” Provision in the 2015 Intelligence Act

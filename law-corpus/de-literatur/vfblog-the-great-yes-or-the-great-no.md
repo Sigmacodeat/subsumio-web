@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-great-yes-or-the-great-no/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "09f722a5451b3592"
 ---
 
 # The Great Yes or the Great No

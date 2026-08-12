@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/treating-china-as-a-normal-country/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7fbed21df41673de"
 ---
 
 # Treating China as a ‘Normal’ Country

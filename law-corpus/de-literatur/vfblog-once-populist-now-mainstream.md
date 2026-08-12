@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/once-populist-now-mainstream/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "161180624c260a04"
 ---
 
 # Once Populist, Now Mainstream?

@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -12,9 +13,15 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, X, CheckCircle2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createT, type Lang, type TFunc } from "@/content/dashboard";
+
+// SSR-safe useLayoutEffect — falls back to useEffect during server rendering
+// to avoid the "useLayoutEffect does nothing on the server" warning.
+const useIsoLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 function useTourTranslation(): TFunc {
   const [lang, setLang] = useState<Lang>("de");
@@ -45,8 +52,6 @@ export interface TourStep {
   placement?: "top" | "bottom" | "left" | "right" | "center";
   /** Optional: route to navigate to before showing this step. */
   route?: string;
-  /** Optional: wait for selector to appear before showing (for async content). */
-  waitFor?: string;
   /** Optional: if false, skip this step on mobile (screen width < 768px). Default: true. */
   mobile?: boolean;
 }
@@ -145,7 +150,6 @@ function getTourSteps(t: TFunc): TourStep[] {
       body: t("tour.step10.body"),
       placement: "top",
       route: "/dashboard/workflows",
-      waitFor: '[data-tour="workflows-list"]',
     },
     {
       target: '[data-tour="copilot-panel"]',
@@ -240,9 +244,15 @@ export function TourProvider({ children }: { children: ReactNode }) {
     setCurrentStep((prev) => Math.max(0, prev - 1));
   }, []);
 
+  const goToStep = useCallback(
+    (index: number) => {
+      setCurrentStep(Math.max(0, Math.min(index, visibleSteps.length - 1)));
+    },
+    [visibleSteps.length]
+  );
+
   const skipTour = useCallback(() => {
     completeTour();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const value = useMemo<TourContextValue>(
@@ -259,17 +269,233 @@ export function TourProvider({ children }: { children: ReactNode }) {
   return (
     <TourContext.Provider value={value}>
       {children}
-      {mounted && isOpen && (
-        <TourOverlay
-          steps={visibleSteps}
-          currentStep={currentStep}
-          onNext={nextStep}
-          onPrev={prevStep}
-          onClose={skipTour}
-          onComplete={completeTour}
-        />
+      {mounted && (
+        <AnimatePresence>
+          {isOpen && (
+            <TourOverlay
+              steps={visibleSteps}
+              currentStep={currentStep}
+              onNext={nextStep}
+              onPrev={prevStep}
+              onGoTo={goToStep}
+              onClose={skipTour}
+              onComplete={completeTour}
+            />
+          )}
+        </AnimatePresence>
       )}
     </TourContext.Provider>
+  );
+}
+
+// ── Spotlight SVG Overlay ──────────────────────────────────────────────
+
+/**
+ * SVG-based spotlight overlay: dims the entire screen except the target rect.
+ * Uses an SVG <mask> with a white rect (visible) and a black rect (hidden)
+ * to "cut out" the target area. The target stays fully visible while the
+ * rest of the page is dimmed.
+ *
+ * The cutout MORPHS smoothly between steps — framer-motion animates the
+ * x/y/width/height of the mask rect with spring physics so the spotlight
+ * glides from one target to the next instead of jumping.
+ *
+ * AI-character visual layers:
+ *  1. Solid ring — clean brand-color border around the target
+ *  2. Soft glow — blurred duplicate of the ring for a halo effect
+ *  3. Radar pulse — expanding ring that fades out (infinite repeat)
+ *  4. Scan line — thin horizontal line sweeping across the cutout
+ *
+ * All layers morph in sync via the same spring config.
+ */
+function SpotlightOverlay({
+  rect,
+  padding,
+  onClick,
+  reducedMotion,
+}: {
+  rect: DOMRect;
+  padding: number;
+  onClick?: () => void;
+  reducedMotion?: boolean;
+}) {
+  const x = rect.left - padding;
+  const y = rect.top - padding;
+  const w = rect.width + padding * 2;
+  const h = rect.height + padding * 2;
+  const rx = 12;
+
+  // Spring config: snappy but organic — feels like the spotlight "flows".
+  // When prefers-reduced-motion is set, use instant transitions instead.
+  const spring = reducedMotion
+    ? { duration: 0 }
+    : { type: "spring" as const, stiffness: 260, damping: 28, mass: 0.8 };
+
+  return (
+    <motion.svg
+      className="fixed inset-0 z-[100] h-full w-full cursor-default"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.25 }}
+      onClick={onClick}
+      aria-hidden="true"
+    >
+      <defs>
+        {/* Mask: white = dimmed, black = cutout (target stays visible) */}
+        <mask id="tour-spotlight-mask">
+          <rect x="0" y="0" width="100%" height="100%" fill="white" />
+          <motion.rect
+            initial={false}
+            animate={{ x, y, width: w, height: h }}
+            transition={spring}
+            rx={rx}
+            fill="black"
+          />
+        </mask>
+        {/* Blur filter for the soft glow halo */}
+        <filter id="tour-glow-blur" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="6" />
+        </filter>
+        {/* Clip path for the scan line — keeps it inside the cutout */}
+        <clipPath id="tour-scan-clip">
+          <motion.rect
+            initial={false}
+            animate={{ x, y, width: w, height: h }}
+            transition={spring}
+            rx={rx}
+          />
+        </clipPath>
+      </defs>
+
+      {/* Dimmed overlay with morphing cutout */}
+      <rect
+        x="0"
+        y="0"
+        width="100%"
+        height="100%"
+        fill="black"
+        opacity={0.5}
+        mask="url(#tour-spotlight-mask)"
+      />
+
+      {/* Soft glow halo — blurred ring, breathing opacity */}
+      <motion.rect
+        initial={false}
+        animate={{ x, y, width: w, height: h }}
+        transition={spring}
+        rx={rx}
+        fill="none"
+        stroke="var(--brand-primary)"
+        strokeWidth={4}
+        filter="url(#tour-glow-blur)"
+        opacity={0.4}
+      />
+
+      {/* Solid ring around the cutout — morphs with the target */}
+      <motion.rect
+        initial={false}
+        animate={{ x, y, width: w, height: h }}
+        transition={spring}
+        rx={rx}
+        fill="none"
+        stroke="var(--brand-primary)"
+        strokeWidth={2}
+        opacity={0.9}
+      />
+
+      {/* Radar pulse — expanding ring that fades out, repeats infinitely.
+          Gives the "AI is scanning here" feel.
+          Disabled when prefers-reduced-motion is set. */}
+      {!reducedMotion && (
+        <motion.rect
+          initial={{ x, y, width: w, height: h, opacity: 0.5 }}
+          animate={{
+            x: [x, x - 10],
+            y: [y, y - 10],
+            width: [w, w + 20],
+            height: [h, h + 20],
+            opacity: [0.5, 0],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeOut",
+            delay: 0.4,
+          }}
+          rx={rx}
+          fill="none"
+          stroke="var(--brand-primary)"
+          strokeWidth={1.5}
+        />
+      )}
+
+      {/* Scan line — thin horizontal line sweeping across the cutout.
+          Clipped to the cutout shape. AI "analyzing" feel.
+          Disabled when prefers-reduced-motion is set. */}
+      {!reducedMotion && (
+        <g clipPath="url(#tour-scan-clip)">
+          <motion.line
+            initial={{ y1: y, y2: y }}
+            animate={{ y1: [y, y + h, y], y2: [y, y + h, y] }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            x1={x}
+            x2={x + w}
+            stroke="var(--brand-primary)"
+            strokeWidth={1}
+            opacity={0.35}
+          />
+        </g>
+      )}
+    </motion.svg>
+  );
+}
+
+// ── Arrow ──────────────────────────────────────────────────────────────
+
+/**
+ * Small SVG triangle pointing from the tooltip towards the target.
+ * Uses SVG (not CSS borders) so the arrow has both a fill AND a stroke
+ * that seamlessly matches the tooltip's border — no visible gap.
+ */
+function TourArrow({ placement }: { placement: TourStep["placement"] }) {
+  const size = 9;
+  const fill = "var(--ds-surface)";
+  const stroke = "var(--ds-border)";
+
+  if (!placement || placement === "center") return null;
+
+  // SVG triangle points: tip faces the target, base sits on the tooltip edge
+  const points: Record<string, string> = {
+    top: `${size / 2},${size} 0,0 ${size},0`,        // tip down (tooltip above target)
+    bottom: `${size / 2},0 0,${size} ${size},${size}`, // tip up (tooltip below target)
+    left: `${size},${size / 2} 0,0 0,${size}`,        // tip right (tooltip left of target)
+    right: `0,${size / 2} ${size},0 ${size},${size}`, // tip left (tooltip right of target)
+  };
+
+  const wrapperPos: Record<string, React.CSSProperties> = {
+    top: { bottom: -(size - 1), left: "50%", transform: "translateX(-50%)" },
+    bottom: { top: -(size - 1), left: "50%", transform: "translateX(-50%)" },
+    left: { right: -(size - 1), top: "50%", transform: "translateY(-50%)" },
+    right: { left: -(size - 1), top: "50%", transform: "translateY(-50%)" },
+  };
+
+  return (
+    <div className="absolute z-[0]" style={wrapperPos[placement]}>
+      <svg width={size} height={size} className="block">
+        <polygon
+          points={points[placement]}
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={1}
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
   );
 }
 
@@ -280,6 +506,7 @@ interface TourOverlayProps {
   currentStep: number;
   onNext: () => void;
   onPrev: () => void;
+  onGoTo: (index: number) => void;
   onClose: () => void;
   onComplete: () => void;
 }
@@ -289,12 +516,33 @@ function TourOverlay({
   currentStep,
   onNext,
   onPrev,
+  onGoTo,
   onClose,
   onComplete,
 }: TourOverlayProps) {
   const t = useTourTranslation();
   const router = useRouter();
   const step = steps[currentStep];
+
+  // All hooks must be called before any early return (Rules of Hooks).
+  const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{
+    top: number;
+    left: number;
+  }>({ top: 0, left: 0 });
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const tooltipId = useRef(`tour-tooltip-${Date.now()}`).current;
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  // Respect prefers-reduced-motion — disable spring/infinite animations.
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   // Guard: if step is undefined (e.g. after mobile filtering), skip to complete
   useEffect(() => {
@@ -303,25 +551,32 @@ function TourOverlay({
     }
   }, [step, onComplete]);
 
-  const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-  const [tooltipPos, setTooltipPos] = useState<{
-    top: number;
-    left: number;
-  }>({ top: 0, left: 0 });
-  const tooltipRef = useRef<HTMLDivElement>(null);
-  const tooltipId = useRef(`tour-tooltip-${Date.now()}`).current;
-  const [retryCount, setRetryCount] = useState(0);
+  // Reset target rect on step change — prevents the spotlight from
+  // showing at the previous step's position while the new target loads.
+  useEffect(() => {
+    setTargetRect(null);
+  }, [currentStep]);
+
+  // Scroll lock — prevent body scroll while tour is active
+  useEffect(() => {
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = original;
+    };
+  }, []);
 
   // Navigate to route if step requires it — client-side navigation, no full reload
   useEffect(() => {
+    if (!step) return;
     if (step.route) {
       router.push(step.route);
     }
-  }, [step.route, router]);
+  }, [step, step?.route, router]);
 
-  // Scroll target element into view once found
+  // Scroll target into view once on step change (not on every rect update)
   useEffect(() => {
-    if (!targetRect) return;
+    if (!step) return;
     const el = document.querySelector(step.target);
     if (!el) return;
     const rect = el.getBoundingClientRect();
@@ -333,57 +588,70 @@ function TourOverlay({
     if (!isInViewport) {
       el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
     }
-  }, [targetRect, step.target]);
+  }, [step]);
 
-  // Find target element and compute positions
+  // Find target element + continuous scroll-following via rAF loop.
+  // The rAF loop updates targetRect every frame so the spotlight tracks
+  // the target during smooth scroll, layout shifts, and CSS animations.
   useEffect(() => {
+    if (!step) return;
     let cancelled = false;
+    let rafId: number | undefined;
+    let lastRect: DOMRect | null = null;
 
-    const findTarget = () => {
+    const updateRect = () => {
       if (cancelled) return;
-
       const el = document.querySelector(step.target);
-      if (!el) {
-        // Retry up to 10 times with 200ms delay (for async content / route transitions)
-        if (retryCount < 10) {
-          setTimeout(() => setRetryCount((c) => c + 1), 200);
-        }
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0) return;
+      // Only update state if the rect actually changed — avoids 60
+      // unnecessary re-renders per second when the target is stationary.
+      if (
+        lastRect &&
+        lastRect.left === rect.left &&
+        lastRect.top === rect.top &&
+        lastRect.width === rect.width &&
+        lastRect.height === rect.height
+      ) {
         return;
       }
-
-      const rect = el.getBoundingClientRect();
+      lastRect = rect;
       setTargetRect(rect);
-      setRetryCount(0);
     };
 
-    findTarget();
+    // rAF loop — tracks the target during scroll, layout shifts, animations.
+    const tick = () => {
+      if (cancelled) return;
+      updateRect();
+      rafId = requestAnimationFrame(tick);
+    };
 
-    // Recompute on resize / scroll
-    window.addEventListener("resize", findTarget);
-    window.addEventListener("scroll", findTarget, true);
+    updateRect();
+    rafId = requestAnimationFrame(tick);
 
-    // Poll for target until found, then stop
-    let interval: ReturnType<typeof setInterval> | undefined;
-    if (!document.querySelector(step.target)) {
-      interval = setInterval(findTarget, 500);
-    }
+    // MutationObserver catches DOM insertions (route transitions, async content)
+    const observer = new MutationObserver(() => updateRect());
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
 
     return () => {
       cancelled = true;
-      window.removeEventListener("resize", findTarget);
-      window.removeEventListener("scroll", findTarget, true);
-      if (interval) clearInterval(interval);
+      observer?.disconnect();
+      if (rafId) cancelAnimationFrame(rafId);
     };
-  }, [step.target, retryCount]);
+  }, [step]);
 
-  // Compute tooltip position based on placement
-  useEffect(() => {
-    if (!targetRect) return;
+  // Compute tooltip position based on placement.
+  // useLayoutEffect runs synchronously after DOM mutation but before paint,
+  // so the tooltip is positioned correctly on first render (no flash at 0,0).
+  useIsoLayoutEffect(() => {
+    if (!targetRect || !step) return;
 
     const tooltip = tooltipRef.current;
-    const tooltipWidth = tooltip?.offsetWidth ?? 320;
-    const tooltipHeight = tooltip?.offsetHeight ?? 200;
-    const margin = 12;
+    if (!tooltip) return;
+    const tooltipWidth = tooltip.offsetWidth;
+    const tooltipHeight = tooltip.offsetHeight;
+    const margin = 16;
     const placement = step.placement ?? "bottom";
 
     let top: number;
@@ -412,12 +680,12 @@ function TourOverlay({
         break;
     }
 
-    // Clamp to viewport
+    // Clamp to viewport with margin
     top = Math.max(margin, Math.min(top, window.innerHeight - tooltipHeight - margin));
     left = Math.max(margin, Math.min(left, window.innerWidth - tooltipWidth - margin));
 
     setTooltipPos({ top, left });
-  }, [targetRect, step.placement]);
+  }, [targetRect, step]);
 
   // Focus management — move focus into tooltip on step change
   useEffect(() => {
@@ -446,93 +714,127 @@ function TourOverlay({
     return () => window.removeEventListener("keydown", handleKey);
   }, [onClose, onNext, onPrev]);
 
+  // Early return if step is undefined — prevents crash when all steps
+  // are filtered out (e.g. on mobile). Must be AFTER all hooks.
+  if (!step) return null;
+
   const isLastStep = currentStep >= steps.length - 1;
-  const highlightStyle = targetRect
-    ? {
-        top: targetRect.top - 4,
-        left: targetRect.left - 4,
-        width: targetRect.width + 8,
-        height: targetRect.height + 8,
-      }
-    : null;
+  const padding = 6;
 
   return createPortal(
     <>
-      {/* Dark overlay */}
-      <div
-        className="fixed inset-0 z-[100] bg-black/50 transition-opacity duration-200"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Highlight ring around target element */}
-      {highlightStyle && (
-        <div
-          className="fixed z-[100] rounded-lg ring-2 ring-[color:var(--brand-primary)] transition-all duration-200 ease-out"
-          style={{
-            ...highlightStyle,
-            pointerEvents: "none",
-          }}
+      {/* SVG Spotlight overlay with cutout.
+          Click-outside-to-close: the SVG catches clicks on the dimmed area.
+          The cutout (masked-out) area has no painted pixels, so with
+          pointer-events: visiblePainted (SVG default) clicks pass through
+          to the target element below. */}
+      {targetRect ? (
+        <SpotlightOverlay
+          rect={targetRect}
+          padding={padding}
+          onClick={onClose}
+          reducedMotion={prefersReducedMotion}
+        />
+      ) : (
+        <motion.div
+          className="fixed inset-0 z-[100] bg-black/55"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          onClick={onClose}
+          aria-hidden="true"
         />
       )}
 
-      {/* Tooltip */}
-      <div
+      {/* Tooltip — glides smoothly between positions (no remount).
+          Content cross-fades inside via AnimatePresence.
+          Position is controlled via `animate` only (not `style`) to avoid
+          conflicts between framer-motion's animation and React's inline style. */}
+      <motion.div
         ref={tooltipRef}
         role="dialog"
         aria-modal="false"
         aria-labelledby={`${tooltipId}-title`}
         aria-describedby={`${tooltipId}-body`}
         tabIndex={-1}
-        className="fixed z-[101] w-80 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 shadow-2xl transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-        style={{
+        initial={{ opacity: 0, scale: 0.92, top: tooltipPos.top, left: tooltipPos.left }}
+        animate={{
+          opacity: 1,
+          scale: 1,
           top: tooltipPos.top,
           left: tooltipPos.left,
         }}
+        exit={{ opacity: 0, scale: 0.92 }}
+        transition={{
+          opacity: { duration: 0.2 },
+          scale: { duration: 0.25, ease: [0.16, 1, 0.3, 1] },
+          top: prefersReducedMotion
+            ? { duration: 0 }
+            : { type: "spring", stiffness: 260, damping: 28, mass: 0.8 },
+          left: prefersReducedMotion
+            ? { duration: 0 }
+            : { type: "spring", stiffness: 260, damping: 28, mass: 0.8 },
+        }}
+        className="fixed z-[101] w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 shadow-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2"
       >
-        {/* Header */}
-        <div className="mb-3 flex items-start justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[color:var(--brand-primary)]/10">
-              <Sparkles size={16} className="brand-text" />
-            </div>
-            <h3
-              id={`${tooltipId}-title`}
-              className="text-sm font-semibold text-[color:var(--ds-text)]"
-            >
-              {step.title}
-            </h3>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-md p-1 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-            aria-label={t("tour.close")}
+        <TourArrow placement={step.placement} />
+
+        {/* Content cross-fades on step change — title + body swap smoothly */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentStep}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
           >
-            <X size={16} />
-          </button>
-        </div>
+            {/* Header */}
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[color:var(--brand-primary)]/10">
+                  <Sparkles size={16} className="brand-text" />
+                </div>
+                <h3
+                  id={`${tooltipId}-title`}
+                  className="text-sm font-semibold text-[color:var(--ds-text)]"
+                >
+                  {step.title}
+                </h3>
+              </div>
+              <button
+                onClick={onClose}
+                className="rounded-md p-1 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                aria-label={t("tour.close")}
+              >
+                <X size={16} />
+              </button>
+            </div>
 
-        {/* Body */}
-        <p
-          id={`${tooltipId}-body`}
-          className="mb-4 text-xs leading-relaxed text-[color:var(--ds-text-muted)]"
-        >
-          {step.body}
-        </p>
+            {/* Body */}
+            <p
+              id={`${tooltipId}-body`}
+              className="mb-4 text-xs leading-relaxed text-[color:var(--ds-text-muted)]"
+            >
+              {step.body}
+            </p>
+          </motion.div>
+        </AnimatePresence>
 
-        {/* Progress dots */}
+        {/* Progress dots — clickable to jump to step */}
         <div
           className="mb-4 flex items-center gap-1.5"
           role="tablist"
           aria-label={t("tour.progress_label")}
         >
           {steps.map((_, i) => (
-            <div
+            <button
               key={i}
               role="tab"
               aria-selected={i === currentStep}
               aria-label={t("tour.step_label").replace("{current}", String(i + 1))}
-              className={`h-1.5 rounded-full transition-all duration-200 ${
+              onClick={() => onGoTo(i)}
+              className={`h-1.5 rounded-full transition-all duration-200 hover:opacity-80 ${
                 i === currentStep
                   ? "w-6 bg-[color:var(--brand-primary)]"
                   : i < currentStep
@@ -575,7 +877,7 @@ function TourOverlay({
         >
           {t("tour.skip")}
         </button>
-      </div>
+      </motion.div>
     </>,
     document.body
   );

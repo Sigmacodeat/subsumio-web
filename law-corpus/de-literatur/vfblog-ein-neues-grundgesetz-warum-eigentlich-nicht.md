@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-neues-grundgesetz-warum-eigentlich-ni
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1e48e465ef0fb208"
 ---
 
 # Ein neues Grundgesetz: Warum eigentlich nicht?

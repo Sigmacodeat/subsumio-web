@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/constitutional-courts-in-decline/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1bfe7e5072e22845"
 ---
 
 # Constitutional Courts in Decline

@@ -18,6 +18,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2015
   AUSTRIAN LAW JOURNAL
+content_hash: "7e99109206d09d27"
 ---
 
 # Eigentumsschutz und Verkehrsschutz bei Kunstgegenständen im österreichischen Kollisions- und Privatrecht

@@ -20,6 +20,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2022 Nadja Capus, Basilio
   Nunnari; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "22842bdd026474dc"
 ---
 
 # Les faits établis par des accords étrangers et des rapports internes - une base valide pour une décision pénale suisse ? Commentaire de l&#039;ordonnance de la Cour des affaires pénales du Tribunal pénal fédéral SK.2020.49 et de la décision de recours de la Cour des plaintes du Tribunal pénal fédéral BB.2022.3

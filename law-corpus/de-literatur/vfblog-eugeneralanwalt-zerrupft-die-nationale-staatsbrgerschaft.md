@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5535cccb1a878d8d"
 ---
 
 # EU-Generalanwalt zerrupft die nationale Staatsbürgerschaft

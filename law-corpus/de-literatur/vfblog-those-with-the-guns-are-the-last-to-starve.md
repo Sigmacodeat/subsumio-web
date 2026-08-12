@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/those-with-the-guns-are-the-last-to-starv
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "391c89e429f92786"
 ---
 
 # “Those with the Guns Are the Last to Starve”

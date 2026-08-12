@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "beee8e875244cefa"
 ---
 
 # DEM-DEC Research Update Editorial: Global Democracy and the Fierce Urgency of 2020

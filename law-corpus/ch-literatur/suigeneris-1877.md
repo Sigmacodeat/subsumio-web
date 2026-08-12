@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2018 Anne-Christine Fornage;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "366fc413a08ddb7c"
 ---
 
 # Sécurité des produits, respect des normes techniques et conformité aux exigences essentielles: les précisions du Tribunal fédéral

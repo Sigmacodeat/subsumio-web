@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/progressives-and-the-supreme-court/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8121ced569bd1e65"
 ---
 
 # Progressives and the Supreme Court

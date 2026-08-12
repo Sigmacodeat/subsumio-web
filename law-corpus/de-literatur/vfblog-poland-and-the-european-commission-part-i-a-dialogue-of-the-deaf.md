@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e3f45bb048d76c8c"
 ---
 
 # Poland and the European Commission, Part I: A Dialogue of the Deaf?

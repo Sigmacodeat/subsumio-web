@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/critical-race-theory-in-deutschland/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bf87d0cac60ebe01"
 ---
 
 # Critical Race Theory in Deutschland

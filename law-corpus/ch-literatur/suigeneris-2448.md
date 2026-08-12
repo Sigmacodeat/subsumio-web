@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Marc Nufer, Lorenz
   Raess; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "55e56d8720d03dd3"
 ---
 
 # Die berufliche Vorsorge im Rahmen von M&A Transaktionen - eine Übersicht

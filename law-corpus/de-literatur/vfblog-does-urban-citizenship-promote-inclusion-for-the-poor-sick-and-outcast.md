@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5de6b10f244b4850"
 ---
 
 # Does Urban Citizenship Promote Inclusion for the Poor, Sick, and Outcast?

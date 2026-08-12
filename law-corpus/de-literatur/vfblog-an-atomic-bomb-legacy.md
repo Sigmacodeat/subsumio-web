@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/an-atomic-bomb-legacy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bb303fcbc2f00742"
 ---
 
 # How To Dismantle an Atomic Bomb Legacy

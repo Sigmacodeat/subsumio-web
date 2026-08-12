@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/klima-raf-herbeireden/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d7bb7f8bad17e465"
 ---
 
 # „Klima-RAF“ herbeireden

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "385612bd370c9a8a"
 ---
 
 # Strategic Decoration in the Persianate and Latinate Worlds c. 1500-1700

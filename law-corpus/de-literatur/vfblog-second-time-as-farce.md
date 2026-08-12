@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/second-time-as-farce/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3f0ccdc7f99d9f55"
 ---
 
 # First Time as Tragedy, Second Time as Farce

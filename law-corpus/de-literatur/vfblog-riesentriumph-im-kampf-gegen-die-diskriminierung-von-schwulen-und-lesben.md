@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9f3d0d592f3741c7"
 ---
 
 # Riesentriumph im Kampf gegen die Diskriminierung von Schwulen und Lesben

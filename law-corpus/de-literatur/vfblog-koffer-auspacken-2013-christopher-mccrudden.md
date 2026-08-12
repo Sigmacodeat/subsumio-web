@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/koffer-auspacken-2013-christopher-mccrudd
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f847706d0d312d36"
 ---
 
 # Koffer auspacken 2013: Christopher McCrudden

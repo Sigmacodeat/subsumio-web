@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gibt-es-eine-ethik-des-nudging-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "68450d93d639345d"
 ---
 
 # Is there an Ethics of Nudging?

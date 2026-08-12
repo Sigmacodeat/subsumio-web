@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/provisional-measures-as-tools-of-american
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7978a5a12bc430cf"
 ---
 
 # Provisional Measures as Tools of American Empire

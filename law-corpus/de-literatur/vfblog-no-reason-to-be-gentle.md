@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/no-reason-to-be-gentle/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7b3798ad6d7ac197"
 ---
 
 # No reason to be gentle

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "650a9eef8a835c11"
 ---
 
 # The 2024 ICJ Advisory Opinion on the Occupied Palestinian Territory – An Introduction

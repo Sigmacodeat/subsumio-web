@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3d9f53861231c672"
 ---
 
 # Genauer hinschauen: Der Beschluss des BVerfG zu einer Abschiebung nach Griechenland

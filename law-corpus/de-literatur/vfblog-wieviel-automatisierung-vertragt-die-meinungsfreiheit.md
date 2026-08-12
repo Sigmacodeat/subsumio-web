@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "99eddc9ce2529bf8"
 ---
 
 # Wieviel Automatisierung verträgt die Meinungsfreiheit?

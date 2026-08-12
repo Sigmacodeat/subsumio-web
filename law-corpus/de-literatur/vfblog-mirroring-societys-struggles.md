@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mirroring-societys-struggles/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9639820228bf3060"
 ---
 
 # Mirroring Society’s Struggles

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/buergerraete_grundgesetz_demokratie/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6011cdef134322b2"
 ---
 
 # Die Frage nach dem Warum

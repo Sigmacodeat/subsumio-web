@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fiktive-einheit-vor-pluralitat/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "be15ddf5534cf1d8"
 ---
 
 # Fiktive Einheit vor Pluralität

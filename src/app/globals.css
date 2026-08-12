@@ -1,7 +1,17 @@
 /* Fonts are self-hosted via next/font (layout.tsx) — no runtime requests
    to Google (GDPR) and no render-blocking @import. The --font-inter,
    --font-grotesk and --font-jetbrains variables are set on <html>. */
-@import "tailwindcss";
+/* source(none) disables Tailwind v4's automatic content detection, which walks
+   the whole project tree and only skips .gitignore'd paths. law-corpus/ is
+   committed (772k files / 18 GB of statute markdown), so auto-detection scanned
+   all of it looking for class names and `next build` died with
+   "Reached heap limit Allocation failed - JavaScript heap out of memory"
+   (native frame: node::fs::AfterScanDir) after ~6 minutes, even at
+   --max-old-space-size=8192. The sources below are the 2043 files that
+   actually carry classes — a 378x reduction in scanned files. */
+@import "tailwindcss" source(none);
+@source "../../src";
+@source "../../.storybook";
 
 /* ── BrainAvatar animations — Copilot identity ─────────────────────────
    Modern AI-style motion:
@@ -640,6 +650,7 @@
   --ds-text: var(--neutral-100);
   --ds-text-muted: var(--neutral-300);
   --ds-text-subtle: var(--neutral-400);
+  --ds-text-secondary: var(--ds-text-muted);
   --ds-ring: var(--brand-primary);
   --ds-accent: var(--brand-primary);
 
@@ -861,22 +872,21 @@
   --mk-text-muted: var(--ds-text-muted);
   --mk-text-subtle: var(--ds-text-subtle);
 
-  --ds-bg: var(--neutral-50);
+  /* Premium warm grayscale — warm white surfaces, charcoal text, blue accent.
+     Contrast goals: text ≥ 4.5:1 on surfaces, borders ≥ 3:1 on surfaces. */
+  --ds-bg: hsl(40, 8%, 98%);
   --ds-surface: #ffffff;
-  --ds-surface-2: var(--neutral-100);
-  --ds-hover: var(--neutral-200);
+  --ds-surface-2: hsl(40, 7%, 96%);
+  --ds-hover: hsl(40, 7%, 92%);
   --ds-surface-hover: var(--ds-hover);
-  --ds-border: var(--neutral-200);
-  --ds-border-strong: var(--neutral-300);
-  --ds-border-hover: var(--neutral-300);
-  --ds-control-border: var(--neutral-400);
-  --ds-text: var(--neutral-900);
-  --ds-text-muted: var(--neutral-600);
-  /* neutral-500 measured 3.74:1 on --ds-surface-2 (neutral-100) — under WCAG
-     AA 4.5:1 (axe color-contrast, Playwright a11y suite). neutral-600 is the
-     smallest bump that clears it (5.35:1); same fix already applied to the
-     marketing [data-tone] --mk-text-subtle above. */
-  --ds-text-subtle: var(--neutral-600);
+  --ds-border: hsl(40, 6%, 88%);
+  --ds-border-strong: hsl(40, 5%, 80%);
+  --ds-border-hover: hsl(40, 6%, 82%);
+  --ds-control-border: hsl(40, 4%, 70%);
+  --ds-text: hsl(40, 15%, 8%);
+  --ds-text-muted: hsl(40, 6%, 40%);
+  --ds-text-subtle: hsl(40, 5%, 42%);
+  --ds-text-secondary: var(--ds-text-muted);
   --ds-ring: var(--brand-600);
   --ds-accent: var(--brand-primary);
   --brand-primary: var(--brand-600);
@@ -891,10 +901,10 @@
   --accent-premium: var(--brand-500);
   --accent-premium-soft: color-mix(in srgb, var(--accent-premium) 10%, transparent);
   --accent-premium-border: color-mix(in srgb, var(--accent-premium) 22%, transparent);
-  --card-shadow: 0 1px 1px hsla(225, 20%, 12%, 0.035), 0 8px 24px hsla(225, 20%, 12%, 0.035);
-  --card-shadow-hover: 0 1px 2px hsla(225, 20%, 12%, 0.05), 0 14px 34px hsla(225, 20%, 12%, 0.065);
-  --card-shadow-elevated: 0 1px 2px hsla(225, 20%, 12%, 0.06), 0 18px 48px hsla(225, 20%, 12%, 0.1);
-  --sidebar-shadow: 1px 0 0 var(--ds-border), 10px 0 36px hsla(225, 20%, 12%, 0.035);
+  --card-shadow: 0 1px 1px hsla(40, 15%, 10%, 0.03), 0 8px 24px hsla(40, 15%, 10%, 0.03);
+  --card-shadow-hover: 0 1px 2px hsla(40, 15%, 10%, 0.045), 0 14px 34px hsla(40, 15%, 10%, 0.055);
+  --card-shadow-elevated: 0 1px 2px hsla(40, 15%, 10%, 0.06), 0 18px 48px hsla(40, 15%, 10%, 0.1);
+  --sidebar-shadow: 1px 0 0 var(--ds-border), 10px 0 36px hsla(40, 15%, 10%, 0.035);
 
   /* Signal ramps — modern, accessible, with icon redundancy required. */
   --ds-success-text: var(--signal-success-700);
@@ -931,6 +941,9 @@
   --ds-category-teal-text: hsl(180, 50%, 32%);
   --ds-category-teal-bg: hsla(180, 50%, 32%, 0.1);
   --ds-category-teal-border: hsla(180, 50%, 32%, 0.22);
+  --ds-category-violet-text: hsl(260, 60%, 38%);
+  --ds-category-violet-bg: hsla(260, 60%, 38%, 0.1);
+  --ds-category-violet-border: hsla(260, 60%, 38%, 0.22);
 
   /* Chart categorical tokens — colorblind-aware sequence */
   --ds-chart-zivil: var(--brand-primary);
@@ -974,18 +987,23 @@
   --mk-text-muted: var(--ds-text-muted);
   --mk-text-subtle: var(--ds-text-subtle);
 
-  --ds-bg: var(--neutral-900);
-  --ds-surface: var(--neutral-800);
-  --ds-surface-2: var(--neutral-700);
-  --ds-hover: var(--neutral-600);
+  /* Dark dashboard canvas — deep, near-black blue-gray.
+     Linear / Supabase / Vercel school: minimal chroma, elevation via lightness. */
+  --ds-bg: hsl(220, 13%, 6%);
+  --ds-surface: hsl(220, 12%, 13%);
+  --ds-surface-2: hsl(220, 12%, 17%);
+  --ds-hover: hsl(220, 12%, 22%);
   --ds-surface-hover: var(--ds-hover);
-  --ds-border: var(--neutral-700);
-  --ds-border-strong: var(--neutral-600);
-  --ds-border-hover: var(--neutral-600);
-  --ds-control-border: var(--neutral-400);
-  --ds-text: var(--neutral-100);
-  --ds-text-muted: var(--neutral-300);
-  --ds-text-subtle: var(--neutral-400);
+  --ds-border: hsla(220, 10%, 50%, 0.14);
+  --ds-border-strong: hsla(220, 10%, 60%, 0.22);
+  --ds-border-hover: hsla(220, 10%, 70%, 0.28);
+  --ds-control-border: hsla(220, 10%, 55%, 0.24);
+  /* Text hierarchy — verified ≥4.5:1 on --ds-surface and --ds-surface-2.
+     Kept intentionally brighter for comfortable small-table legibility. */
+  --ds-text: hsl(220, 10%, 94%);
+  --ds-text-muted: hsl(220, 9%, 78%);
+  --ds-text-subtle: hsl(220, 9%, 70%);
+  --ds-text-secondary: var(--ds-text-muted);
   --ds-ring: var(--brand-400);
   --ds-accent: var(--brand-primary);
   --brand-primary: var(--brand-400);
@@ -1000,44 +1018,54 @@
   --accent-premium: var(--brand-300);
   --accent-premium-soft: color-mix(in srgb, var(--accent-premium) 12%, transparent);
   --accent-premium-border: color-mix(in srgb, var(--accent-premium) 24%, transparent);
-  --card-shadow: 0 1px 0 hsla(0, 0%, 100%, 0.025) inset, 0 12px 34px rgba(0, 0, 0, 0.18);
-  --card-shadow-hover: 0 1px 0 hsla(0, 0%, 100%, 0.035) inset, 0 18px 48px rgba(0, 0, 0, 0.24);
-  --card-shadow-elevated: 0 1px 0 hsla(0, 0%, 100%, 0.04) inset, 0 24px 72px rgba(0, 0, 0, 0.34);
+  --card-shadow:
+    0 1px 0 hsla(0, 0%, 100%, 0.03) inset,
+    0 12px 34px rgba(0, 0, 0, 0.22);
+  --card-shadow-hover:
+    0 1px 0 hsla(0, 0%, 100%, 0.04) inset,
+    0 18px 48px rgba(0, 0, 0, 0.28);
+  --card-shadow-elevated:
+    0 1px 0 hsla(0, 0%, 100%, 0.05) inset,
+    0 24px 72px rgba(0, 0, 0, 0.38);
   --sidebar-shadow:
-    1px 0 0 var(--ds-border), 14px 0 48px rgba(0, 0, 0, 0.2), 1px 0 0 hsla(0, 0%, 100%, 0.025) inset;
+    1px 0 0 var(--ds-border), 14px 0 48px rgba(0, 0, 0, 0.25), 1px 0 0 hsla(0, 0%, 100%, 0.03) inset;
 
-  /* Signal ramps — dark mode, accessible on neutral surfaces. */
-  --ds-success-text: var(--signal-success-300);
-  --ds-success-bg: color-mix(in srgb, var(--signal-success-500) 12%, transparent);
-  --ds-success-border: color-mix(in srgb, var(--signal-success-500) 22%, transparent);
-  --ds-success-solid: var(--signal-success-500);
-  --ds-success-solid-hover: var(--signal-success-400);
-  --ds-warning-text: var(--signal-warning-300);
-  --ds-warning-bg: color-mix(in srgb, var(--signal-warning-500) 12%, transparent);
-  --ds-warning-border: color-mix(in srgb, var(--signal-warning-500) 22%, transparent);
-  --ds-warning-solid: var(--signal-warning-600);
-  --ds-warning-solid-hover: var(--signal-warning-500);
-  --ds-danger-text: var(--signal-danger-300);
-  --ds-danger-bg: color-mix(in srgb, var(--signal-danger-500) 12%, transparent);
-  --ds-danger-border: color-mix(in srgb, var(--signal-danger-500) 22%, transparent);
-  --ds-danger-solid: var(--signal-danger-500);
-  --ds-danger-solid-hover: var(--signal-danger-400);
-  --ds-info-text: var(--signal-info-300);
-  --ds-info-bg: color-mix(in srgb, var(--signal-info-500) 12%, transparent);
-  --ds-info-border: color-mix(in srgb, var(--signal-info-500) 22%, transparent);
-  --ds-info-solid: var(--signal-info-500);
-  --ds-info-solid-hover: var(--signal-info-400);
-  --ds-attention-text: var(--signal-attention-300);
-  --ds-attention-bg: color-mix(in srgb, var(--signal-attention-500) 12%, transparent);
-  --ds-attention-border: color-mix(in srgb, var(--signal-attention-500) 24%, transparent);
-  --ds-attention-solid: var(--signal-attention-600);
-  --ds-attention-solid-hover: var(--signal-attention-500);
-  --ds-category-pink-text: hsl(330, 60%, 68%);
-  --ds-category-pink-bg: hsla(330, 60%, 50%, 0.11);
-  --ds-category-pink-border: hsla(330, 60%, 50%, 0.22);
-  --ds-category-teal-text: hsl(180, 55%, 60%);
-  --ds-category-teal-bg: hsla(180, 50%, 42%, 0.1);
-  --ds-category-teal-border: hsla(180, 50%, 42%, 0.22);
+  /* Signal ramps — MUTED, desaturated for dark dashboards.
+     Numbers are lower chroma so they don't vibrate on near-black surfaces. */
+  --ds-success-text: hsl(150, 40%, 72%);
+  --ds-success-bg: hsla(150, 35%, 55%, 0.12);
+  --ds-success-border: hsla(150, 35%, 55%, 0.22);
+  --ds-success-solid: hsl(150, 45%, 58%);
+  --ds-success-solid-hover: hsl(150, 45%, 66%);
+  --ds-warning-text: hsl(38, 60%, 70%);
+  --ds-warning-bg: hsla(38, 55%, 55%, 0.12);
+  --ds-warning-border: hsla(38, 55%, 55%, 0.22);
+  --ds-warning-solid: hsl(38, 60%, 58%);
+  --ds-warning-solid-hover: hsl(38, 60%, 66%);
+  --ds-danger-text: hsl(0, 50%, 72%);
+  --ds-danger-bg: hsla(0, 45%, 55%, 0.12);
+  --ds-danger-border: hsla(0, 45%, 55%, 0.22);
+  --ds-danger-solid: hsl(0, 55%, 58%);
+  --ds-danger-solid-hover: hsl(0, 55%, 66%);
+  --ds-info-text: hsl(210, 55%, 72%);
+  --ds-info-bg: hsla(210, 50%, 55%, 0.12);
+  --ds-info-border: hsla(210, 50%, 55%, 0.22);
+  --ds-info-solid: hsl(210, 55%, 58%);
+  --ds-info-solid-hover: hsl(210, 55%, 66%);
+  --ds-attention-text: hsl(32, 55%, 70%);
+  --ds-attention-bg: hsla(32, 50%, 55%, 0.12);
+  --ds-attention-border: hsla(32, 50%, 55%, 0.22);
+  --ds-attention-solid: hsl(32, 55%, 58%);
+  --ds-attention-solid-hover: hsl(32, 55%, 66%);
+  --ds-category-pink-text: hsl(330, 45%, 74%);
+  --ds-category-pink-bg: hsla(330, 40%, 55%, 0.11);
+  --ds-category-pink-border: hsla(330, 40%, 55%, 0.22);
+  --ds-category-teal-text: hsl(180, 45%, 70%);
+  --ds-category-teal-bg: hsla(180, 40%, 50%, 0.11);
+  --ds-category-teal-border: hsla(180, 40%, 50%, 0.22);
+  --ds-category-violet-text: hsl(260, 45%, 74%);
+  --ds-category-violet-bg: hsla(260, 40%, 55%, 0.11);
+  --ds-category-violet-border: hsla(260, 40%, 55%, 0.22);
 
   /* Chart categorical tokens */
   --ds-chart-zivil: var(--brand-primary);
@@ -1046,25 +1074,25 @@
   --ds-chart-finanz: var(--ds-success-text);
   --ds-chart-arbeits: var(--accent-premium);
   --ds-chart-sozial: var(--ds-info-text);
-  --ds-chart-familie: hsl(330, 60%, 60%);
+  --ds-chart-familie: hsl(330, 45%, 70%);
 
   /* Nav category icon tints */
   --nav-cat-cases: var(--brand-primary);
-  --nav-cat-comm: hsl(180, 55%, 60%);
+  --nav-cat-comm: hsl(180, 45%, 70%);
   --nav-cat-docs: var(--accent-premium);
-  --nav-cat-research: hsl(260, 60%, 72%);
-  --nav-cat-ops: var(--neutral-300);
-  --nav-cat-billing: hsl(150, 45%, 58%);
-  --nav-cat-admin: var(--neutral-300);
+  --nav-cat-research: hsl(260, 45%, 70%);
+  --nav-cat-ops: var(--ds-text-subtle);
+  --nav-cat-billing: hsl(150, 40%, 68%);
+  --nav-cat-admin: var(--ds-text-subtle);
 
   /* Graph palette */
   --graph-person: var(--brand-300);
-  --graph-company: var(--signal-success-300);
+  --graph-company: var(--ds-success-text);
   --graph-idea: var(--accent-premium);
-  --graph-document: var(--signal-warning-300);
-  --graph-event: var(--signal-attention-300);
+  --graph-document: var(--ds-warning-text);
+  --graph-event: var(--ds-attention-text);
   --graph-place: var(--tax-300);
-  --graph-fallback: var(--neutral-300);
+  --graph-fallback: var(--ds-text-muted);
   color-scheme: dark;
 }
 

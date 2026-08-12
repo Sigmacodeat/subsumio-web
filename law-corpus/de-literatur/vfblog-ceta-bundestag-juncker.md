@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/ceta-bundestag-juncker/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a996954f19feacdb"
 ---
 
 # Keine Ratifikation des CETA ohne den Deutschen Bundestag – so oder so &#8230;

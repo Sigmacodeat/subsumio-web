@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-functional-approach-as-lex-lata/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7924131e4cfe6b64"
 ---
 
 # The Functional Approach as Lex Lata

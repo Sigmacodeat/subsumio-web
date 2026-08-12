@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/all-needs-to-stay-as-it-is-so-all-can-cha
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "826ffa11bd70d6d3"
 ---
 
 # All Needs to Stay As It Is so All Can Change

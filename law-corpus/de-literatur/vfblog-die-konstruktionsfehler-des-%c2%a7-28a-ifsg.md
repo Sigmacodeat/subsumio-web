@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-konstruktionsfehler-des-%c2%a7-28a-if
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e75ac2fb3c64450f"
 ---
 
 # Die Konstruktionsfehler des § 28a IfSG

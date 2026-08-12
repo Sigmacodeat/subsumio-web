@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wehrdienst-losverfahren-wesentlichkeit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fa70179f5713478e"
 ---
 
 # Was dem Parlament zufällt

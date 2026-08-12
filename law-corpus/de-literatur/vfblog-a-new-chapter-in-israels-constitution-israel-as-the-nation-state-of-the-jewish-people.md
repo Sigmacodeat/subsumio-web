@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c6897a3e0afc6176"
 ---
 
 # A new chapter in Israel’s “constitution”: Israel as the Nation State of the Jewish People

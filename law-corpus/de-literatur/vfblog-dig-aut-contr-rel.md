@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dig-aut-contr-rel/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f74d3ce7a442a724"
 ---
 
 # Digital Autonomy in Contractual Relationships

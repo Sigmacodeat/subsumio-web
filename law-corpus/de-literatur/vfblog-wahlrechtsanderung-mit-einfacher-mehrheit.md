@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wahlrechtsanderung-mit-einfacher-mehrheit
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "933c5fed0469e3a4"
 ---
 
 # Wahlrechtsänderung mit einfacher Mehrheit?

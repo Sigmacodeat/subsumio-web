@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/widerstandsdelikte-reform-strafrahmen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a1c3bf394ab0a726"
 ---
 
 # Widerstand zwecklos

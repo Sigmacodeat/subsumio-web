@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/accountability-aus-crisis/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "043f966feac84340"
 ---
 
 # Effective Accountability Mechanisms in Austrian Constitutional Culture

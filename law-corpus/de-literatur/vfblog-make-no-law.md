@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/make-no-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e6153f9f9f22a09a"
 ---
 
 # Congress shall make no law

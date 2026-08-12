@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/basu-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e70e2f91ddd73669"
 ---
 
 # Ohne Beweislastumkehr doch kein Knaller für Racial-Profiling Prozesse

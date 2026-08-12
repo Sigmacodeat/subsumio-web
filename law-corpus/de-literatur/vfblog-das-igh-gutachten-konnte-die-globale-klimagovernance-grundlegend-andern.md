@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "289cad8a7ae32ab9"
 ---
 
 # „Das IGH-Gutachten könnte die globale Klimagovernance grundlegend ändern.“

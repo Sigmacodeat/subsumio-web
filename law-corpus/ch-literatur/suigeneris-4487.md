@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2023 Micaela Vaerini;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "f28e2cdc0b46d867"
 ---
 
 # Le changement du lieu de résidence de l&#039;enfant par l&#039;autorité de protection de l&#039;enfant: Analyse de l&#039;arrêt de la Cour européenne des droits de l&#039;homme 69444/17 du 8 février 2022 (Roth c. Suisse)

@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/radical-reforms/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4618c278ef07c255"
 ---
 
 # Social Media Contracts – The Quest for Fairness and the Need for Reform

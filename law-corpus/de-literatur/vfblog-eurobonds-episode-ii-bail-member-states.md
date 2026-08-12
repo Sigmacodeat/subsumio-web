@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/eurobonds-episode-ii-bail-member-states/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cd290b3ad4b6149a"
 ---
 
 # Eurobonds, Episode II: “Bail out Member States you not must!”

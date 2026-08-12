@@ -26,10 +26,12 @@ vi.mock("pg", () => ({
 import {
   generateReferralCode,
   buildNewOrg,
+  buildNewUser,
   toPublic,
   getStore,
   getOrgStore,
   getSharedPgPool,
+  markOnboardingProgress,
   type User,
   type Org,
   type KanzleiRole,
@@ -460,6 +462,86 @@ describe("getSharedPgPool", () => {
 
   test("returns null when no DB URL is configured", () => {
     expect(getSharedPgPool()).toBeNull();
+  });
+});
+
+describe("Onboarding progress", () => {
+  beforeEach(() => {
+    process.env.NODE_ENV = "development";
+    process.env.SUBSUMIO_DATA_DIR = path.join(process.cwd(), ".data-test-" + Date.now());
+  });
+
+  afterEach(async () => {
+    try {
+      await fs.rm(process.env.SUBSUMIO_DATA_DIR as string, { recursive: true, force: true });
+    } catch {}
+  });
+
+  test("buildNewUser seeds default onboarding progress", async () => {
+    const user = await buildNewUser({
+      email: "onboarding@example.com",
+      name: "Onboarding Tester",
+      passwordHash: "hash",
+    });
+    expect(user.onboardingProgress).toEqual({
+      firm: false,
+      firstCase: false,
+      firstDeadline: false,
+      teamInvited: false,
+      firstQuery: false,
+    });
+  });
+
+  test("markOnboardingProgress merges partial fields without losing others", async () => {
+    const store = getStore();
+    const uid = `test-onboarding-${Date.now()}`;
+    const user = makeUser({
+      id: uid,
+      email: `onboarding${Date.now()}@test.com`,
+      onboardingProgress: {
+        firm: false,
+        firstCase: false,
+        firstDeadline: false,
+        teamInvited: false,
+        firstQuery: false,
+      },
+    });
+    await store.create(user);
+
+    await markOnboardingProgress(uid, { firm: true });
+    let found = await store.getById(uid);
+    expect(found?.onboardingProgress).toEqual({
+      firm: true,
+      firstCase: false,
+      firstDeadline: false,
+      teamInvited: false,
+      firstQuery: false,
+    });
+
+    await markOnboardingProgress(uid, { firstCase: true });
+    found = await store.getById(uid);
+    expect(found?.onboardingProgress).toEqual({
+      firm: true,
+      firstCase: true,
+      firstDeadline: false,
+      teamInvited: false,
+      firstQuery: false,
+    });
+  });
+
+  test("toPublic exposes onboarding progress", () => {
+    const user = makeUser({
+      id: "test-public-onboarding",
+      onboardingProgress: { firm: true, firstCase: true, firstDeadline: false, teamInvited: false, firstQuery: false },
+    });
+    const pub = toPublic(user);
+    expect(pub.onboardingProgress).toEqual({
+      firm: true,
+      firstCase: true,
+      firstDeadline: false,
+      teamInvited: false,
+      firstQuery: false,
+    });
   });
 });
 

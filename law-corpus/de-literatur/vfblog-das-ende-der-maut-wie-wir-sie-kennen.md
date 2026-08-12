@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-ende-der-maut-wie-wir-sie-kennen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f0b3fa9359f00bee"
 ---
 
 # Das Ende der Maut, wie wir sie kennen

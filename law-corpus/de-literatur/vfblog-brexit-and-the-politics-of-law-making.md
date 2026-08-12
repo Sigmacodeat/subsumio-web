@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/brexit-and-the-politics-of-law-making/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dfd2dba1cfb17a60"
 ---
 
 # Brexit and the Politics of Law-Making

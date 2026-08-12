@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/e-government-upside-down/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c533d8e46dd3aa86"
 ---
 
 # E-Government upside down

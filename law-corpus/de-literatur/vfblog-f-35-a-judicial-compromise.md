@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/f-35-a-judicial-compromise/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8ac674a4f5363c76"
 ---
 
 # A Judicial Compromise

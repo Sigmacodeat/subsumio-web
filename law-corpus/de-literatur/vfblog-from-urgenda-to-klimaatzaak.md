@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/from-urgenda-to-klimaatzaak/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "103cf1152c6cee9a"
 ---
 
 # From Urgenda to Klimaatzaak

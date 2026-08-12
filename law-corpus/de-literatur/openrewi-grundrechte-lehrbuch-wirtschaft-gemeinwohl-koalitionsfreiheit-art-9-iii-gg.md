@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "22a6863026e661c2"
 ---
 
 § 21.2 Berufsfreiheit (Art. 12 GG) &#124; Inhaltsverzeichnis &#124; § 22 Religion & Familie 

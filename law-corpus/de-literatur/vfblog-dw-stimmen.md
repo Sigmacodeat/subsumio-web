@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/dw-stimmen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dd6e3921a713d4bb"
 ---
 
 # Scheitert „Deutsche Wohnen &#038; Co enteignen“ an ungültigen Stimmen?

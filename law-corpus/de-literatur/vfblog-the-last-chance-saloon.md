@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-last-chance-saloon/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "11f04bfb4e7b2641"
 ---
 
 # The Last Chance Saloon

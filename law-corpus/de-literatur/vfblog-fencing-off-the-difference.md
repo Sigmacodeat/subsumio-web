@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fencing-off-the-difference/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5c82cc4bf9594287"
 ---
 
 # Fencing Off the Difference

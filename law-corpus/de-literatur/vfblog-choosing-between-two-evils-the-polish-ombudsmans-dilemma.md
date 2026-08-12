@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a74eee08c810b8f8"
 ---
 
 # Choosing between two Evils: the Polish Ombudsman's Dilemma

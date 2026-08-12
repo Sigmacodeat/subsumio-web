@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mexicos-constitutional-democracy-under-th
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d510475801e61175"
 ---
 
 # Mexico’s Constitutional Democracy Under Threat

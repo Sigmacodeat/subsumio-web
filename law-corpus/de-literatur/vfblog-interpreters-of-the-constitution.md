@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/interpreters-of-the-constitution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5977a9bfe790bb40"
 ---
 
 # Interpreters of the Constitution

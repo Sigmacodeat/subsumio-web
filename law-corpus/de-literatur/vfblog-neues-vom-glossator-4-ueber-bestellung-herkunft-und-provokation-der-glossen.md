@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "36ce174432406fac"
 ---
 
 # Neues vom Glossator 4: Über Bestellung, Herkunft und Provokation der Glossen

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-climate-warrior-for-the-global-south/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "42def40eb4729b44"
 ---
 
 # A Climate Warrior for the Global South

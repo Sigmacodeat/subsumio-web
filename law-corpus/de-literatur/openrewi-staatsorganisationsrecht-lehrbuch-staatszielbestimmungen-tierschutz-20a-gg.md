@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "957b3b04ee4461ab"
 ---
 
 § 9.1 Umweltschutz, Art. 20a GG &#124; Inhaltsverzeichnis &#124; § 9.3  Gleichstellung von Mann und Frau, Art. 3 II 2 GG 

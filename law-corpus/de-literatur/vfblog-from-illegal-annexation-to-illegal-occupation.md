@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/from-illegal-annexation-to-illegal-occupa
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a1a2bc7fe2acb374"
 ---
 
 # From Illegal Annexation to Illegal Occupation: The Missing Link in the Reasoning of the International Court of Justice

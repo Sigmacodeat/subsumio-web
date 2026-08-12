@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/intransparenz-fuhrt-zu-mehr-intransparenz
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d6ea4e18e540baa0"
 ---
 
 # Intransparenz führt zu mehr Intransparenz

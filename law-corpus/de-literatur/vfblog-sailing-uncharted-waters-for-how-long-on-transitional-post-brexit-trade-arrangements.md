@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8a9c9d9b7f033ceb"
 ---
 
 # Sailing uncharted waters – for how long?  On transitional post-Brexit trade arrangements

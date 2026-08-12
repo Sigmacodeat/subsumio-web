@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/lg-munchen-gema-open-ai/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bb02a3c462cd1b18"
 ---
 
 # If It Looks Like a Duck

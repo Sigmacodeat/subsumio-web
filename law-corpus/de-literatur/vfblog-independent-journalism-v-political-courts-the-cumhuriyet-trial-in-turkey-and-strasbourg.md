@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3e42c3abf45370d9"
 ---
 
 # Independent Journalism v. Political Courts: The Cumhuriyet Trial in Turkey and Strasbourg

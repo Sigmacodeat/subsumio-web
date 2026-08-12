@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/democracy-as-opposed-to-what/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aea63ab909d2233a"
 ---
 
 # Democracy as opposed to what?

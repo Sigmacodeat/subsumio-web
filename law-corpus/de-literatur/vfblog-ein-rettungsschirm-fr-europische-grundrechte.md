@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/ein-rettungsschirm-fr-europische-grundrec
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b43f6baf0569b88f"
 ---
 
 # Ein Rettungsschirm für europäische Grundrechte – dargestellt am Beispiel der Medienfreiheit

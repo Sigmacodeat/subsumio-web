@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "be270d9dd545f19c"
 ---
 
 # My Body, the Majority’s Choice?  A Comparative Overview of Abortion Laws in Ireland and Argentina

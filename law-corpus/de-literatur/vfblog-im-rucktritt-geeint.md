@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/im-rucktritt-geeint/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f1618338fab10b70"
 ---
 
 # Im Rücktritt geeint

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/urban-citizenship-a-path-to-migrant-inclu
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "88dfa2a1dbc741e9"
 ---
 
 # Urban Citizenship: A Path to Migrant Inclusion

@@ -19,6 +19,7 @@ license: >-
   CC BY 4.0 (https://onlinekommentar.ch/de/creative-commons-license).
   Namensnennung erforderlich — Autor:innen und Zitiervorschlag siehe
   Frontmatter.
+content_hash: "cb2d3ab4d82b0ba7"
 ---
 
 - 

@@ -1,0 +1,988 @@
+{
+  "label": "vorher-pdf",
+  "timestamp": "2026-07-31T21:37:20.830Z",
+  "methode": "postgres websearch_to_tsquery('german') über pages.search_vector, source_id=law-at",
+  "hinweis": "Nur lexikalisch — nicht die produktive Hybrid-Suche. Vergleichbar nur mit Läufen derselben Methode.",
+  "fixture": "/Users/msc/subsumio-web/server/test/fixtures/at-legal-retrieval.jsonl",
+  "fragen": 80,
+  "topk": 8,
+  "metrics": {
+    "hit_at_1": 0,
+    "hit_at_3": 2,
+    "hit_at_5": 3,
+    "hit_at_8": 6,
+    "mrr": 0.02095238095238095,
+    "ohne_treffer": 15
+  },
+  "results": [
+    {
+      "question_id": "at-001",
+      "legal_area": "abgb",
+      "expected_slug": "legal/statutes/at/abgb/p-1295",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/ahg",
+        "legal/statutes/at/ahg/p-1",
+        "legal/statutes/at/eo/p-321",
+        "legal/at/gog",
+        "legal/statutes/at/gog/p-14"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-002",
+      "legal_area": "abgb",
+      "expected_slug": "legal/statutes/at/abgb/p-1489",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/kartg",
+        "legal/at/abgb",
+        "legal/at/weg",
+        "legal/statutes/at/kartg/p-55",
+        "legal/at/eo"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-003",
+      "legal_area": "abgb",
+      "expected_slug": "legal/statutes/at/abgb/p-933",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/abgb",
+        "legal/at/kschg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-004",
+      "legal_area": "abgb",
+      "expected_slug": "legal/statutes/at/abgb/p-861",
+      "rank": null,
+      "top_slugs": [],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-005",
+      "legal_area": "abgb",
+      "expected_slug": "legal/statutes/at/abgb/p-871",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/eo",
+        "legal/at/bao",
+        "legal/at/stpo-at",
+        "legal/at/asvg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-006",
+      "legal_area": "abgb",
+      "expected_slug": "legal/statutes/at/abgb/p-432",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/abgb"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-007",
+      "legal_area": "stgb_at",
+      "expected_slug": "legal/statutes/at/stgb/p-75",
+      "rank": null,
+      "top_slugs": [],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-008",
+      "legal_area": "stgb_at",
+      "expected_slug": "legal/statutes/at/stgb/p-128",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/gewo-at"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-009",
+      "legal_area": "stgb_at",
+      "expected_slug": "legal/statutes/at/stgb/p-146",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/stgb-at",
+        "legal/at/abgb",
+        "legal/at/bvergg",
+        "legal/at/zpo-at"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-010",
+      "legal_area": "stgb_at",
+      "expected_slug": "legal/statutes/at/stgb/p-83",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/bewg",
+        "legal/at/stgb-at",
+        "legal/at/gewo-at",
+        "legal/at/stpo-at",
+        "legal/at/gukg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-011",
+      "legal_area": "stgb_at",
+      "expected_slug": "legal/statutes/at/stgb/p-80",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/gwg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-012",
+      "legal_area": "jn",
+      "expected_slug": "legal/statutes/at/jn/p-65",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/zpo-at",
+        "legal/at/jn",
+        "legal/at/eo",
+        "legal/at/urhg-at",
+        "legal/at/io"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-013",
+      "legal_area": "zpo_at",
+      "expected_slug": "legal/statutes/at/zpo/p-226",
+      "rank": 2,
+      "top_slugs": [
+        "legal/at/zpo-at",
+        "legal/statutes/at/zpo/p-226"
+      ],
+      "mrr": 0.5
+    },
+    {
+      "question_id": "at-014",
+      "legal_area": "zpo_at",
+      "expected_slug": "legal/statutes/at/zpo/p-464",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/mschg",
+        "legal/at/medieng",
+        "legal/at/patg",
+        "legal/at/jgg-at",
+        "legal/at/kartg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-015",
+      "legal_area": "zpo_at",
+      "expected_slug": "legal/statutes/at/zpo/p-41",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/zpo-at"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-016",
+      "legal_area": "ugb",
+      "expected_slug": "legal/statutes/at/ugb/p-17",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/ugb",
+        "legal/at/gewo-at",
+        "legal/at/e-govg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-017",
+      "legal_area": "ugb",
+      "expected_slug": "legal/statutes/at/ugb/p-8",
+      "rank": null,
+      "top_slugs": [
+        "legal/statutes/at/estg/p-106-2",
+        "legal/at/ugb",
+        "legal/at/estg-at",
+        "legal/at/eo"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-018",
+      "legal_area": "ugb",
+      "expected_slug": "legal/statutes/at/ugb/p-369",
+      "rank": null,
+      "top_slugs": [],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-019",
+      "legal_area": "io",
+      "expected_slug": "legal/statutes/at/io/p-71",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/io",
+        "legal/at/weg",
+        "legal/statutes/at/io/p-69",
+        "legal/statutes/at/weg/p-41",
+        "legal/statutes/at/weg/p-44"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-020",
+      "legal_area": "io",
+      "expected_slug": "legal/statutes/at/io/p-140",
+      "rank": null,
+      "top_slugs": [
+        "legal/statutes/at/estg/p-36",
+        "legal/statutes/at/kstg/p-23a",
+        "legal/statutes/at/bao/p-14",
+        "legal/at/bao",
+        "legal/statutes/at/io/p-275"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-021",
+      "legal_area": "gmbhg_at",
+      "expected_slug": "legal/statutes/at/gmbhg/p-6",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/aktg-at"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-022",
+      "legal_area": "gmbhg_at",
+      "expected_slug": "legal/statutes/at/gmbhg/p-25",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/io",
+        "legal/at/ugb",
+        "legal/at/gmbhg-at",
+        "legal/at/gwg",
+        "legal/at/awg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-023",
+      "legal_area": "aktg_at",
+      "expected_slug": "legal/statutes/at/aktg/p-7",
+      "rank": null,
+      "top_slugs": [
+        "legal/statutes/at/ugb/p-4-2",
+        "legal/statutes/at/aktg/p-4",
+        "legal/statutes/at/aktg/p-8-2",
+        "legal/statutes/at/ugb/p-3",
+        "legal/statutes/at/aktg/p-3-2"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-024",
+      "legal_area": "aktg_at",
+      "expected_slug": "legal/statutes/at/aktg/p-70",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/aktg-at",
+        "legal/at/gwg",
+        "legal/at/bao",
+        "legal/at/ugb",
+        "legal/at/gmbhg-at"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-025",
+      "legal_area": "eheg",
+      "expected_slug": "legal/statutes/at/eheg/p-55",
+      "rank": null,
+      "top_slugs": [],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-026",
+      "legal_area": "au_strg",
+      "expected_slug": "legal/statutes/at/au-strg/p-13",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/mrg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-027",
+      "legal_area": "estg_at",
+      "expected_slug": "legal/statutes/at/estg/p-2",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/kstg-at",
+        "legal/at/estg-at",
+        "legal/statutes/at/estg/p-93",
+        "legal/at/alvg",
+        "legal/statutes/at/estg/p-124b-2"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-028",
+      "legal_area": "estg_at",
+      "expected_slug": "legal/statutes/at/estg/p-23",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/estg-at",
+        "legal/at/kstg-at",
+        "legal/statutes/at/estg/p-106-2",
+        "legal/statutes/at/kstg/p-13-2",
+        "legal/statutes/at/estg/p-29"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-029",
+      "legal_area": "ustg_at",
+      "expected_slug": "legal/statutes/at/ustg/p-1",
+      "rank": null,
+      "top_slugs": [
+        "legal/statutes/at/estg/p-109b",
+        "legal/statutes/at/estg/p-82a",
+        "legal/at/bvergg",
+        "legal/at/ecg",
+        "legal/statutes/at/asvg/p-67a"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-030",
+      "legal_area": "bao",
+      "expected_slug": "legal/statutes/at/bao/p-207",
+      "rank": null,
+      "top_slugs": [
+        "legal/statutes/at/bao/p-323a",
+        "legal/at/bao",
+        "legal/at/grstg",
+        "legal/statutes/at/bao/p-324"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-031",
+      "legal_area": "arbvg",
+      "expected_slug": "legal/statutes/at/arbvg/p-105",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/asvg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-032",
+      "legal_area": "avrag",
+      "expected_slug": "legal/statutes/at/avrag/p-15",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/avrag",
+        "legal/at/arbvg",
+        "legal/at/alvg",
+        "legal/at/abkommen-uber-eine-umfassende-und-verstarkte-partnerschaft-zwischen-der-eu-euratom-und-ihren-mitgliedstaaten-armenien",
+        "legal/at/stpo-at"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-033",
+      "legal_area": "vkgg",
+      "expected_slug": "legal/statutes/at/vkgg/p-2",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/bdg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-034",
+      "legal_area": "buag",
+      "expected_slug": "legal/statutes/at/buag/p-12",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/alvg",
+        "legal/at/arg",
+        "legal/at/asvg",
+        "legal/statutes/at/estg/p-106-2",
+        "legal/at/arbvg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-035",
+      "legal_area": "arbvg",
+      "expected_slug": "legal/statutes/at/arbvg/p-105",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/abschlussprufungs-qualitatssicherungsgesetz",
+        "legal/at/abschlussprufer-aufsichtsgesetz",
+        "legal/at/alvg",
+        "legal/at/abschaffung-der-ein-und-ausfuhrverbote-und-beschrankungen",
+        "legal/statutes/at/abschaffung-der-ein-und-ausfuhrverbote-und-beschrankungen/full"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-036",
+      "legal_area": "asvg",
+      "expected_slug": "legal/statutes/at/asvg/p-116",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/asvg",
+        "legal/at/alvg",
+        "legal/at/aufenthg",
+        "legal/at/asylg",
+        "legal/at/fpg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-037",
+      "legal_area": "asvg",
+      "expected_slug": "legal/statutes/at/asvg/p-116",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/asvg",
+        "legal/statutes/at/asvg/p-822-anhang",
+        "legal/statutes/at/asvg/p-2",
+        "legal/statutes/at/ugb/p-553",
+        "legal/statutes/at/asvg/p-7"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-038",
+      "legal_area": "mschg_at",
+      "expected_slug": "legal/statutes/at/mschg-at/p-5",
+      "rank": null,
+      "top_slugs": [],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-039",
+      "legal_area": "asvg",
+      "expected_slug": "legal/statutes/at/asvg/p-253",
+      "rank": null,
+      "top_slugs": [
+        "legal/statutes/at/asvg/p-822-anhang",
+        "legal/at/estg-at",
+        "legal/statutes/at/estg/p-106-2",
+        "legal/statutes/at/estg/p-124b-2",
+        "legal/at/asvg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-040",
+      "legal_area": "asvg",
+      "expected_slug": "legal/statutes/at/asvg/p-253",
+      "rank": null,
+      "top_slugs": [
+        "legal/statutes/at/estg/p-93",
+        "legal/statutes/at/estg/p-124b-2",
+        "legal/statutes/at/estg/p-106-2",
+        "legal/at/estg-at",
+        "legal/statutes/at/asvg/p-607"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-041",
+      "legal_area": "avg",
+      "expected_slug": "legal/statutes/at/avg/p-1",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/aufenthg",
+        "legal/at/vvg",
+        "legal/statutes/at/wrg/p-101",
+        "legal/statutes/at/aufenthg/p-3",
+        "legal/statutes/at/awg/p-42"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-042",
+      "legal_area": "avg",
+      "expected_slug": "legal/statutes/at/avg/p-73",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/zpo-at",
+        "legal/at/spg",
+        "legal/at/patg",
+        "legal/at/forstg",
+        "legal/at/avg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-043",
+      "legal_area": "avg",
+      "expected_slug": "legal/statutes/at/avg/p-56",
+      "rank": null,
+      "top_slugs": [
+        "legal/statutes/at/azg/p-32c",
+        "legal/at/abschlussprufungs-qualitatssicherungsgesetz",
+        "legal/statutes/at/tkg/p-133",
+        "legal/statutes/at/tkg/p-133-2",
+        "legal/at/avg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-044",
+      "legal_area": "avg",
+      "expected_slug": "legal/statutes/at/avg/p-62",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/rao"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-045",
+      "legal_area": "avg",
+      "expected_slug": "legal/statutes/at/avg/p-8",
+      "rank": null,
+      "top_slugs": [],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-046",
+      "legal_area": "eheg",
+      "expected_slug": "legal/statutes/at/eheg/p-55",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/aufenthg",
+        "legal/at/au-strg",
+        "legal/at/zpo-at",
+        "legal/at/abgb",
+        "legal/statutes/at/aufenthg/p-27"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-047",
+      "legal_area": "eheg",
+      "expected_slug": "legal/statutes/at/eheg/p-66",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/eheg",
+        "legal/statutes/at/eheg/p-68a",
+        "legal/statutes/at/eheg/p-69b",
+        "legal/at/au-strg",
+        "legal/at/abgb"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-048",
+      "legal_area": "eheg",
+      "expected_slug": "legal/statutes/at/eheg/p-87",
+      "rank": null,
+      "top_slugs": [],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-049",
+      "legal_area": "eheg",
+      "expected_slug": "legal/statutes/at/eheg/p-1",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/au-strg",
+        "legal/at/stbg",
+        "legal/statutes/at/stbg/p-58c",
+        "legal/statutes/at/asvg/p-822-anhang",
+        "legal/at/gewo-at"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-050",
+      "legal_area": "eheg",
+      "expected_slug": "legal/statutes/at/eheg/p-81",
+      "rank": null,
+      "top_slugs": [],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-051",
+      "legal_area": "kartg",
+      "expected_slug": "legal/statutes/at/kartg/p-1",
+      "rank": null,
+      "top_slugs": [],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-052",
+      "legal_area": "kartg",
+      "expected_slug": "legal/statutes/at/kartg/p-5",
+      "rank": 2,
+      "top_slugs": [
+        "legal/at/kartg",
+        "legal/statutes/at/kartg/p-5",
+        "legal/statutes/at/abkommen-uber-eine-umfassende-und-verstarkte-partnerschaft-zwischen-der-eu-euratom-und-ihren-mitgliedstaaten-armenien/art-287",
+        "legal/statutes/at/kartg/p-6",
+        "legal/statutes/at/kartg/p-34"
+      ],
+      "mrr": 0.5
+    },
+    {
+      "question_id": "at-053",
+      "legal_area": "kartg",
+      "expected_slug": "legal/statutes/at/kartg/p-7",
+      "rank": null,
+      "top_slugs": [],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-054",
+      "legal_area": "gewo",
+      "expected_slug": "legal/statutes/at/gewo/p-1",
+      "rank": null,
+      "top_slugs": [
+        "legal/statutes/at/gewo/p-376",
+        "legal/at/waffg",
+        "legal/statutes/at/waffg/p-47",
+        "legal/at/bao",
+        "legal/at/gewo-at"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-055",
+      "legal_area": "gewo",
+      "expected_slug": "legal/statutes/at/gewo/p-15",
+      "rank": null,
+      "top_slugs": [],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-056",
+      "legal_area": "gewo",
+      "expected_slug": "legal/statutes/at/gewo/p-87",
+      "rank": null,
+      "top_slugs": [],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-057",
+      "legal_area": "dsg",
+      "expected_slug": "legal/statutes/at/dsg/art-2-21",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/spg",
+        "legal/at/dsg-at",
+        "legal/at/stpo-at",
+        "legal/statutes/at/abkommen-uber-die-ruckubernahme-und-durchbeforderung-von-personen-die-sich-rechtswidrig-aufhalten-kasachstan/art-12",
+        "legal/at/abkommen-uber-die-ruckubernahme-und-durchbeforderung-von-personen-die-sich-rechtswidrig-aufhalten-kasachstan"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-058",
+      "legal_area": "dsg",
+      "expected_slug": "legal/statutes/at/dsg/art-2-4",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/e-govg",
+        "legal/at/dsg-at",
+        "legal/at/spg",
+        "legal/statutes/at/bdg/p-280",
+        "legal/at/smg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-059",
+      "legal_area": "asylg",
+      "expected_slug": "legal/statutes/at/asylg/p-1",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/asylg",
+        "legal/at/fpg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-060",
+      "legal_area": "asylg",
+      "expected_slug": "legal/statutes/at/asylg/p-1",
+      "rank": null,
+      "top_slugs": [
+        "legal/statutes/at/asylg/p-75",
+        "legal/statutes/at/fpg/p-125",
+        "legal/at/asylg",
+        "legal/at/fpg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-061",
+      "legal_area": "eheg",
+      "expected_slug": "legal/statutes/at/eheg/p-43",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/eheg",
+        "legal/at/au-strg",
+        "legal/at/zpo-at",
+        "legal/at/asvg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-062",
+      "legal_area": "eheg",
+      "expected_slug": "legal/statutes/at/eheg/p-66",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/eheg",
+        "legal/at/abgb",
+        "legal/statutes/at/eheg/p-69b",
+        "legal/statutes/at/abgb/p-94",
+        "legal/statutes/at/eheg/p-68a"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-063",
+      "legal_area": "eheg",
+      "expected_slug": "legal/statutes/at/eheg/p-81",
+      "rank": null,
+      "top_slugs": [],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-064",
+      "legal_area": "io",
+      "expected_slug": "legal/statutes/at/io/p-69",
+      "rank": 5,
+      "top_slugs": [
+        "legal/at/io",
+        "legal/statutes/at/io/p-20",
+        "legal/statutes/at/io/p-221",
+        "legal/statutes/at/io/p-70",
+        "legal/statutes/at/io/p-69"
+      ],
+      "mrr": 0.2
+    },
+    {
+      "question_id": "at-065",
+      "legal_area": "io",
+      "expected_slug": "legal/statutes/at/io/p-140",
+      "rank": 6,
+      "top_slugs": [
+        "legal/at/io",
+        "legal/statutes/at/io/p-160",
+        "legal/statutes/at/io/p-156",
+        "legal/statutes/at/io/p-221",
+        "legal/statutes/at/io/p-163"
+      ],
+      "mrr": 0.16666666666666666
+    },
+    {
+      "question_id": "at-066",
+      "legal_area": "gewo",
+      "expected_slug": "legal/statutes/at/gewo/p-7",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/bewg",
+        "legal/statutes/at/gewo/p-376",
+        "legal/at/gewo-at",
+        "legal/statutes/at/gewo/p-2",
+        "legal/statutes/at/gewo/p-135"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-067",
+      "legal_area": "gewo",
+      "expected_slug": "legal/statutes/at/gewo/p-87",
+      "rank": null,
+      "top_slugs": [],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-068",
+      "legal_area": "kartg",
+      "expected_slug": "legal/statutes/at/kartg/p-7",
+      "rank": null,
+      "top_slugs": [],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-069",
+      "legal_area": "kartg",
+      "expected_slug": "legal/statutes/at/kartg/p-5",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/kartg",
+        "legal/statutes/at/kartg/p-55",
+        "legal/at/abkommen-uber-eine-umfassende-und-verstarkte-partnerschaft-zwischen-der-eu-euratom-und-ihren-mitgliedstaaten-armenien",
+        "legal/at/abkommen-uber-eine-verstarkte-partnerschaft-und-zusammenarbeit-eu-und-ihren-mitgliedstaaten-kasachstan",
+        "legal/at/tkg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-070",
+      "legal_area": "asvg",
+      "expected_slug": "legal/statutes/at/asvg/p-102",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/eheg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-071",
+      "legal_area": "asvg",
+      "expected_slug": "legal/statutes/at/asvg/p-245",
+      "rank": null,
+      "top_slugs": [
+        "legal/statutes/at/asvg/p-822-anhang",
+        "legal/at/asvg",
+        "legal/at/estg-at",
+        "legal/statutes/at/estg/p-106-2"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-072",
+      "legal_area": "arbvg",
+      "expected_slug": "legal/statutes/at/arbvg/p-105",
+      "rank": 6,
+      "top_slugs": [
+        "legal/at/avrag",
+        "legal/at/buag",
+        "legal/statutes/at/arbvg/p-121",
+        "legal/at/vkgg",
+        "legal/statutes/at/buag/p-13q"
+      ],
+      "mrr": 0.16666666666666666
+    },
+    {
+      "question_id": "at-073",
+      "legal_area": "arbvg",
+      "expected_slug": "legal/statutes/at/arbvg/p-105",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/mschg-at",
+        "legal/at/angg",
+        "legal/at/stgb-at",
+        "legal/at/abgb",
+        "legal/at/alvg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-074",
+      "legal_area": "arbvg",
+      "expected_slug": "legal/statutes/at/arbvg/p-97",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/buag",
+        "legal/at/angg",
+        "legal/at/avrag",
+        "legal/at/asvg",
+        "legal/statutes/at/avrag/p-11"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-075",
+      "legal_area": "aktg",
+      "expected_slug": "legal/statutes/at/aktg/p-84",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/aktg-at",
+        "legal/statutes/at/aktg/p-234",
+        "legal/statutes/at/aktg/p-234a",
+        "legal/at/gmbhg-at",
+        "legal/at/ugb"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-076",
+      "legal_area": "aktg",
+      "expected_slug": "legal/statutes/at/aktg/p-101",
+      "rank": 7,
+      "top_slugs": [
+        "legal/at/aktg-at",
+        "legal/statutes/at/aktg/p-129",
+        "legal/statutes/at/aktg/p-159",
+        "legal/statutes/at/aktg/p-211",
+        "legal/statutes/at/aktg/p-65"
+      ],
+      "mrr": 0.14285714285714285
+    },
+    {
+      "question_id": "at-077",
+      "legal_area": "jn",
+      "expected_slug": "legal/statutes/at/jn/p-1",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/jn",
+        "legal/at/stpo-at",
+        "legal/at/eo",
+        "legal/at/jgg-at",
+        "legal/at/avg"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-078",
+      "legal_area": "jn",
+      "expected_slug": "legal/statutes/at/jn/p-7a",
+      "rank": null,
+      "top_slugs": [
+        "legal/statutes/at/adv-form-verordnung/full",
+        "legal/at/adv-form-verordnung"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-079",
+      "legal_area": "ugb",
+      "expected_slug": "legal/statutes/at/ugb/p-189",
+      "rank": null,
+      "top_slugs": [
+        "legal/at/ugb",
+        "legal/statutes/at/estg/p-106-2",
+        "legal/statutes/at/estg/p-5",
+        "legal/statutes/at/ugb/p-8",
+        "legal/statutes/at/ugb/p-120"
+      ],
+      "mrr": 0
+    },
+    {
+      "question_id": "at-080",
+      "legal_area": "ugb",
+      "expected_slug": "legal/statutes/at/ugb/p-343",
+      "rank": null,
+      "top_slugs": [
+        "legal/statutes/at/estg/p-106-2",
+        "legal/at/gewo-at",
+        "legal/at/estg-at",
+        "legal/at/bvergg",
+        "legal/at/asvg"
+      ],
+      "mrr": 0
+    }
+  ]
+}

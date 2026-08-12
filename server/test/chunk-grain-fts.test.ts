@@ -37,14 +37,15 @@ describe("Cathedral II v28 migration — search_vector backfill", () => {
     const v28 = MIGRATIONS.find((m) => m.version === 28)!;
     // Same A/A/B weighting as v27 trigger — critical that re-runs produce
     // identical vectors to freshly-inserted rows.
+    // v118 (fts_config_german) changed 'english' → 'german' for all FTS.
     expect(v28.sql).toMatch(
-      /setweight\(to_tsvector\('english', COALESCE\(doc_comment, ''\)\), 'A'\)/
+      /setweight\(to_tsvector\('german', COALESCE\(doc_comment, ''\)\), 'A'\)/
     );
     expect(v28.sql).toMatch(
-      /setweight\(to_tsvector\('english', COALESCE\(symbol_name_qualified, ''\)\), 'A'\)/
+      /setweight\(to_tsvector\('german', COALESCE\(symbol_name_qualified, ''\)\), 'A'\)/
     );
     expect(v28.sql).toMatch(
-      /setweight\(to_tsvector\('english', COALESCE\(chunk_text, ''\)\), 'B'\)/
+      /setweight\(to_tsvector\('german', COALESCE\(chunk_text, ''\)\), 'B'\)/
     );
   });
 });

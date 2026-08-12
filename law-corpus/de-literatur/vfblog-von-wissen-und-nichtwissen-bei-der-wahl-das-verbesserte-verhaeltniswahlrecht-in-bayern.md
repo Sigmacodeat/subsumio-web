@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c948c33f6e3f27f8"
 ---
 
 # Von Wissen und Nichtwissen bei der Wahl: Das „verbesserte Verhältniswahlrecht“ in Bayern

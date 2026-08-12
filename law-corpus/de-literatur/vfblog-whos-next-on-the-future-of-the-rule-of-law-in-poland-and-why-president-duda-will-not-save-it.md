@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a7fc89b77c54f1d2"
 ---
 
 # Who's next? On the Future of the Rule of Law in Poland, and why President Duda will not save it

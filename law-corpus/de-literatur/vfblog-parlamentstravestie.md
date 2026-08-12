@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/parlamentstravestie/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c39eaa61b7f3e1c6"
 ---
 
 # Parlaments-Travestie

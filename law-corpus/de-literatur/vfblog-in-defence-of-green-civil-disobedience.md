@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/in-defence-of-green-civil-disobedience/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5b00b5eb78768d05"
 ---
 
 # In Defence of Green Civil Disobedience

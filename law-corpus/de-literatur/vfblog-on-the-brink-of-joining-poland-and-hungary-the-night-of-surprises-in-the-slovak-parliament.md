@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "07c6b93bc09e7784"
 ---
 
 # On the Brink of Joining Poland and Hungary: The Night of Surprises in the Slovak Parliament

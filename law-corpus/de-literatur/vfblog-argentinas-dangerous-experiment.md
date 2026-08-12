@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/argentinas-dangerous-experiment/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "90f8698f567daf26"
 ---
 
 # Argentina’s Dangerous Experiment

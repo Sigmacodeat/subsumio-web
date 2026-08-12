@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/voting-in-russia-please-dont-call-it-elec
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "950acd828d438631"
 ---
 
 # Voting in Russia: Please Don't Call it “Elections”

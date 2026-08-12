@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f0a98796703cf174"
 ---
 
 # Beyond the Spectacle: The European Parliament's Article 7 TEU Decision on Hungary

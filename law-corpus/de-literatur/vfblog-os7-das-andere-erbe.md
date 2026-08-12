@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os7-das-andere-erbe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b485a3b81fc99252"
 ---
 
 # Das andere Erbe

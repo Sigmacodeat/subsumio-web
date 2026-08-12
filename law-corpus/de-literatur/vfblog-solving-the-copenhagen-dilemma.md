@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/solving-the-copenhagen-dilemma/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "013d9faf5d9c833e"
 ---
 
 # Solving the Copenhagen Dilemma

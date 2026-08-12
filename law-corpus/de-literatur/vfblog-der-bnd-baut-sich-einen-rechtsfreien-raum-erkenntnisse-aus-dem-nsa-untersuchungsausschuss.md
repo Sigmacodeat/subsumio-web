@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a1a8849b2d4bb815"
 ---
 
 # Der BND baut sich einen rechtsfreien Raum: Erkenntnisse aus dem NSA-Untersuchungsausschuss

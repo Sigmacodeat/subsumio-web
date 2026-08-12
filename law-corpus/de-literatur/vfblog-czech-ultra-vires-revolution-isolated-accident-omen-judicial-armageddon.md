@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1ee0ce59377cce3a"
 ---
 
 # The Czech Ultra Vires Revolution: Isolated Accident or Omen of Judicial Armageddon?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/putting-good-citizens-in-the-good-place/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "62f4fca71e506f32"
 ---
 
 # Putting ‘Good Citizens’ in ‘The Good Place’?

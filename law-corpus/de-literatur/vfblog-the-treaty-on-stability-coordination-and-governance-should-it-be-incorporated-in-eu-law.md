@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7439f41609c77093"
 ---
 
 # The Treaty on Stability, Coordination and Governance: should it be incorporated in EU law?

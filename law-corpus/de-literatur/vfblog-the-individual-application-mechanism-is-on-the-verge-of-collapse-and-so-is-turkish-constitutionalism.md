@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2d6aae98adc354f2"
 ---
 
 # The Individual Application Mechanism is on the Verge of Collapse, and so is Turkish Constitutionalism

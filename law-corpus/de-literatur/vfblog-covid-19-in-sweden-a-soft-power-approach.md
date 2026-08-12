@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/covid-19-in-sweden-a-soft-power-approach/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1611608cdff0f475"
 ---
 
 # COVID-19 in Sweden: A Soft Power Approach

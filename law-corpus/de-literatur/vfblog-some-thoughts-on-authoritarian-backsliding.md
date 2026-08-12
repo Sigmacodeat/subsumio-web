@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/some-thoughts-on-authoritarian-backslidin
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "014517ce71956598"
 ---
 
 # Some Thoughts on Authoritarian Backsliding

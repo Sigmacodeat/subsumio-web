@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/on-perus-constitutional-crisis/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "952ffce1d6c116da"
 ---
 
 # On Peru’s Constitutional Crisis

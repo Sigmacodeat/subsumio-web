@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/more-of-the-same-or-true-evolution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dcc4f9e200459351"
 ---
 
 # More of the same or true evolution?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/verfassungsaenderung-ausbremsen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b6b75f3713c2a669"
 ---
 
 # Verfassungsänderung ausbremsen?

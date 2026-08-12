@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/india-fact-checking-unit-fake-news/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6465097cb09eb271"
 ---
 
 # The Bombay High Court Dismisses the Ministry of Truth

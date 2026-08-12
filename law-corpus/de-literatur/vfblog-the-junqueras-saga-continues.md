@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-junqueras-saga-continues/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4a630466ea6c3fb2"
 ---
 
 # The Junqueras Saga Continues

@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2017 Melanie Graf, Kirsten
   Johanna Schmidt; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "9929d39222a95c1c"
 ---
 
 # Data Mining und wissenschaftliche Forschung – de lege lata und de lege ferenda

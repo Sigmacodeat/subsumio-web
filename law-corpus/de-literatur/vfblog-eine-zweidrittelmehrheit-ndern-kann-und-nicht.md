@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eine-zweidrittelmehrheit-ndern-kann-und-n
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b857984ad8baec85"
 ---
 
 # Was eine Zweidrittelmehrheit ändern kann, und was nicht

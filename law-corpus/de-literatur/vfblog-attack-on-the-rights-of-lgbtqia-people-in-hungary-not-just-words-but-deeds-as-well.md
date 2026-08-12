@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "62749290f0ec10f4"
 ---
 
 # Attack on the Rights of LGBTQIA+ People in Hungary: Not Just Words, but Deeds as Well?

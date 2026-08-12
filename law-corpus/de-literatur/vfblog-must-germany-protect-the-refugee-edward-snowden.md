@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/must-germany-protect-the-refugee-edward-s
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "135c1b0063cb33dd"
 ---
 
 # Must Germany protect the refugee Edward Snowden?

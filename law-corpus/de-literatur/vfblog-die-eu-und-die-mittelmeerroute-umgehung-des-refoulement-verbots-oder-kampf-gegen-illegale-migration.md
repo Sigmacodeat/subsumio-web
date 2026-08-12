@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4da15e3427605427"
 ---
 
 # Die EU und die Mittelmeerroute: Umgehung des Refoulement-Verbots oder Kampf gegen ‚illegale Migration'?

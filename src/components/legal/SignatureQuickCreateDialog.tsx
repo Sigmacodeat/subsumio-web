@@ -205,6 +205,8 @@ export function SignatureQuickCreateDialog({
                 <Input
                   id="quick-sig-email"
                   type="email"
+                  autoComplete="email"
+                  inputMode="email"
                   {...sigForm.register("recipientEmail")}
                   placeholder="max@example.com"
                 />
@@ -221,7 +223,7 @@ export function SignatureQuickCreateDialog({
               <Label htmlFor="quick-sig-expires" className="text-xs">
                 {t("signature.quick_expires" as DashboardKey)}
               </Label>
-              <Input id="quick-sig-expires" type="number" {...sigForm.register("expiresDays")} />
+              <Input id="quick-sig-expires" type="number" inputMode="numeric" {...sigForm.register("expiresDays")} />
               {sigForm.formState.errors.expiresDays && (
                 <p className="text-xs text-[color:var(--ds-danger-text)]">
                   {sigForm.formState.errors.expiresDays.message}

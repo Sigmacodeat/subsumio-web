@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/standpunktlosigkeit-ist-keine-option/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "59e6e8d5e91b29ba"
 ---
 
 # Standpunktlosigkeit ist keine Option

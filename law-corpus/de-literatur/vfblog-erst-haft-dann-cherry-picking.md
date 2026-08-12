@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/erst-haft-dann-cherry-picking/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "994fc5183a213ee6"
 ---
 
 # Erst Haft, dann „Cherry-Picking“?

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7a5e69ca99ed7d56"
 ---
 
 # Mitch McConnell, The Supreme Court, and The Specter of Politicization

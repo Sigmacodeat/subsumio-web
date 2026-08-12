@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/karlsruher-tursteher/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f95efb330f1dd79a"
 ---
 
 # Karlsruher Türsteher

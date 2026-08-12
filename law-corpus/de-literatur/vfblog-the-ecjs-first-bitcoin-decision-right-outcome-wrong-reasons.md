@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a2e84c712099eac3"
 ---
 
 # The ECJ’s First Bitcoin Decision: Right Outcome, Wrong Reasons?

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7d38ac23342eb897"
 ---
 
 # Safety Net, Trap or Trampoline – Will the Backstop Lead to a No Deal Brexit?

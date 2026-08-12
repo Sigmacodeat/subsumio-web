@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d58a6b1a7e0ff59d"
 ---
 
 # Brexit and the CJEU: why the Opinion of the Court Should be Sought as a Matter of Emergency

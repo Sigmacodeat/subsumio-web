@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/canadian-senate-impossibilities-reform/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e8dde807b50776bd"
 ---
 
 # The Canadian Senate and the (Im)Possibilities of Reform

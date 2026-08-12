@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/court-packing-on-the-table-in-the-united-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4b60b42fcd4f807c"
 ---
 
 # Court-Packing On the Table in the United States?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-problem-mit-den-gefalligkeitsattesten
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cca89b4e5abd638f"
 ---
 
 # Das Problem mit den Gefälligkeitsattesten

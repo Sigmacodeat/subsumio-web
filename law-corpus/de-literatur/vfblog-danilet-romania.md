@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/danilet-romania/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8d79738186a8bff0"
 ---
 
 # Judging Independence

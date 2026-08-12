@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "87f00e3f36efe2e8"
 ---
 
 # Appell für eine gesamtgesellschaftliche Aufarbeitung des Kolonialismus

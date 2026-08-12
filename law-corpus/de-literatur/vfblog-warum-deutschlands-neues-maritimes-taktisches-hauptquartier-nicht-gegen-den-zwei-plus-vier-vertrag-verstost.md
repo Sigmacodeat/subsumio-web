@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "826c6a7445004414"
 ---
 
 # Warum Deutschlands neues maritimes taktisches Hauptquartier nicht gegen den Zwei-plus-Vier Vertrag verstößt

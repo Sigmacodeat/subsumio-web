@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-eus-pacing-problem/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "21045805ed072180"
 ---
 
 # The EU's Pacing Problem

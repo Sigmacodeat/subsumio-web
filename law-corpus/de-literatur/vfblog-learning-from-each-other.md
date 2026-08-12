@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/learning-from-each-other/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1c9779f6e1fa57ec"
 ---
 
 # Learning from Each Other

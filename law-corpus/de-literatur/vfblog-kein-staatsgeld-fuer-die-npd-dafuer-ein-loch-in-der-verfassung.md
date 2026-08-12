@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "de1e53e1f3dc774a"
 ---
 
 # Kein Staatsgeld für die NPD, dafür ein Loch in der Verfassung

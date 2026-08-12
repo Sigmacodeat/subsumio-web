@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/no-consensus-but-hope-at-villa-vigoni/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "461836347e534972"
 ---
 
 # No Consensus – but Hope at Villa Vigoni

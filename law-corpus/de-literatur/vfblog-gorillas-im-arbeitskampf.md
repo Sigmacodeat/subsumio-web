@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gorillas-im-arbeitskampf/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "788e3154f02304cf"
 ---
 
 # Gorillas im Arbeitskampf

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/democracy-and-work/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dd13269c5a184f58"
 ---
 
 # Democracy and Work

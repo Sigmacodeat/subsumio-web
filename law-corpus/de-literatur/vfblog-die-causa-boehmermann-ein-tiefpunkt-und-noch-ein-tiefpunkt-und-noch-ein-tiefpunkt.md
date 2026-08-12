@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ce0b04072668afbf"
 ---
 
 # Die Causa Böhmermann: Ein Tiefpunkt und noch ein Tiefpunkt und noch ein Tiefpunkt

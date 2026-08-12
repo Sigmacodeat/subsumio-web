@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7e8498373e360fed"
 ---
 
 # Undemocratic but Formally Lawful: The Suspension of the Polish Parliament

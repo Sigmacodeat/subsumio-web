@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/who-we-are-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "70d6073ec66e82a7"
 ---
 
 # Who we are

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/tailoring-the-jurisdiction-of-the-echr/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a72daa50154f4b8a"
 ---
 
 # Tailoring the Jurisdiction of the ECHR

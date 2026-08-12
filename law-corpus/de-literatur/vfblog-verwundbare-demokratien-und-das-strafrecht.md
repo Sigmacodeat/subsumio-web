@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/verwundbare-demokratien-und-das-strafrech
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "18c3b7570e16f4ee"
 ---
 
 # Verwundbare Demokratien und das Strafrecht

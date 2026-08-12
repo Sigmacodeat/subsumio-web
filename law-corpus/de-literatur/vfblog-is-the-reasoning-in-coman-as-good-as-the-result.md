@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/is-the-reasoning-in-coman-as-good-as-the-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e80987406970939e"
 ---
 
 # Is the Reasoning in “Coman” as Good as the Result?

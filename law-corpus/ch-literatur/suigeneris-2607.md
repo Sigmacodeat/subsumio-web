@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2021 Goran Seferovic;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "d3c2bc2eade8ed3c"
 ---
 
 # Rückzug einer Volksinitiative nach aufgehobener Volksabstimmung: Besprechung des Urteils des Bundesgerichts 1C_105/2020, 1C_129/2020 vom 7. Oktober 2020 i.S. Rückzug der Volksinitiative «Für Ehe und Familie — gegen die Heiratsstrafe» (zur Publikation bestimmt)

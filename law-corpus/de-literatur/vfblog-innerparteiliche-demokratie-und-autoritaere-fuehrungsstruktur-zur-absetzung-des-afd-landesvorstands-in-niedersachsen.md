@@ -16,6 +16,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4b637307452e2a39"
 ---
 
 # Innerparteiliche Demokratie und autoritäre Führungs&shy;struktur: zur Absetzung des AfD-Landes&shy;vorstands in Nieder&shy;sachsen

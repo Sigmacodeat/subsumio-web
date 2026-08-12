@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "39f906cec5b9c2f7"
 ---
 
 # Wie die EU ihre Souveränität, ihre Werte und Flüchtlinge schützen kann

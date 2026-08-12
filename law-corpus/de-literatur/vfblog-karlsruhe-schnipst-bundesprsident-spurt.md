@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/karlsruhe-schnipst-bundesprsident-spurt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "039361b2638650e3"
 ---
 
 # Karlsruhe schnipst, Bundespräsident spurt

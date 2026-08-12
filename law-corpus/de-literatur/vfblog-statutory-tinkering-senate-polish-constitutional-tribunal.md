@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "43de4c69be2557b3"
 ---
 
 # Statutory tinkering: on the Senate’s changes to the Law on the Polish Constitutional Tribunal

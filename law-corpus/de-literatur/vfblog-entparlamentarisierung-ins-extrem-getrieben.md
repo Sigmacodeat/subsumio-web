@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/entparlamentarisierung-ins-extrem-getrieb
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ee109e099671e9e3"
 ---
 
 # Entparlamentarisierung ins Extrem getrieben

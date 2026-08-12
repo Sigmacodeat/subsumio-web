@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/democratizing-switzerland/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "38d0737e6d32ac90"
 ---
 
 # Democratizing Switzerland

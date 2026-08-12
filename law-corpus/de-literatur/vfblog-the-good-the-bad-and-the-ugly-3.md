@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-good-the-bad-and-the-ugly-3/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eea9f62518d85050"
 ---
 
 # The Good, the Bad and the Ugly

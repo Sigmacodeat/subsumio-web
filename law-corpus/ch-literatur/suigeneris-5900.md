@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2024 Alfred Früh, Rika Koch;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "dc9e5a07e6ed710e"
 ---
 
 # Ein neuer Blick auf Open Access: Wissenschaftliches Publizieren aus Sicht des öffentlichen Beschaffungsrechts

@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2025 Felix Bommer;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "62a36405d6d59ae9"
 ---
 
 # Abschied von nachträglichen stationären Massnahmen (Art. 65 StGB)?

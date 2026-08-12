@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/tiefseebodenbergbau-und-planetares-denken
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "40e2ed1860f86a1e"
 ---
 
 # Tiefseebodenbergbau und Planetares Denken

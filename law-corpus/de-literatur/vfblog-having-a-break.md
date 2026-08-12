@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/having-a-break/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "195951bc4025e7e6"
 ---
 
 # Having a Break

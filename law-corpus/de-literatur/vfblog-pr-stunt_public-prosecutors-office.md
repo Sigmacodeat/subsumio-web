@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pr-stunt_public-prosecutors-office/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "755e65b37f1b8d7e"
 ---
 
 # A PR Stunt Over Accountability

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8bbfa3818a0b0ea2"
 ---
 
 # Der Wallrabenstein-Beschluss und die politische Dimension des Verfassungsprozessrechts

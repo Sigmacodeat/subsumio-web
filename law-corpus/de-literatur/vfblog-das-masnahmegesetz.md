@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-masnahmegesetz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "13d1ae37801c702a"
 ---
 
 # Das Maßnahmegesetz

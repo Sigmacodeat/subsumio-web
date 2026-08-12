@@ -18,6 +18,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2016
   AUSTRIAN LAW JOURNAL
+content_hash: "d66eaee9d9a61def"
 ---
 
 # Semantische Analyse unstrukturierter Daten. Review und Analyse: Big-Data Ansatz bei internen Untersuchungen anhand eines Beispiels

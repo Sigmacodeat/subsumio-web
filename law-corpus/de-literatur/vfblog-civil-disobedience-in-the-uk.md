@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/civil-disobedience-in-the-uk/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d36fb12db8720512"
 ---
 
 # (In)tolerance to Civil Disobedience in the UK

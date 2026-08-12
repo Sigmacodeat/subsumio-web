@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/delegitimierung-als-strategie/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3b4aa2e1cc10fa4f"
 ---
 
 # Delegitimierung als Strategie

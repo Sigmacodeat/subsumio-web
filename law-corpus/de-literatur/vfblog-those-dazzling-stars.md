@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/those-dazzling-stars/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9c758f22dde87788"
 ---
 
 # Those Dazzling Stars of Peace, Democracy and Freedom

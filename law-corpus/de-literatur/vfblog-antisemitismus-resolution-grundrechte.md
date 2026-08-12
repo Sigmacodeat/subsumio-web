@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/antisemitismus-resolution-grundrechte/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6fad7e2466e6e169"
 ---
 
 # Resolution auf Kosten der Grundrechte

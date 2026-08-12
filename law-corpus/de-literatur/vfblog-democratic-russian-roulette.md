@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/democratic-russian-roulette/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e7357f227282b70e"
 ---
 
 # Democratic Russian Roulette

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bangladesh-through-the-prism-of-doctrine/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1b12f7527c32521c"
 ---
 
 # Bangladesh Through the Prism of Doctrine

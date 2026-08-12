@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bundesgericht-pfeift-schweizermacher-zuru
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "41c450a2da9e4518"
 ---
 
 # Bundesgericht pfeift “Schweizermacher” zurück

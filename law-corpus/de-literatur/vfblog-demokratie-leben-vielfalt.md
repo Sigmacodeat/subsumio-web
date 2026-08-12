@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/demokratie-leben-vielfalt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d536c2bf3be29f8e"
 ---
 
 # Demokratie ohne Vielfalt

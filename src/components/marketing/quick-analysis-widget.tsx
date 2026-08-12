@@ -230,6 +230,8 @@ export function QuickAnalysisWidget({
                 <input
                   id="email"
                   type="email"
+                  autoComplete="email"
+                  inputMode="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="ihre@email.de"

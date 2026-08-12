@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "883ca500ed8a7c3d"
 ---
 
 # Staatliche Schutzpflichten im Kontext der Vorratsdatenspeicherung

@@ -20,7 +20,7 @@ export const maxDuration = 10;
 
 export const GET = createHandler(
   {
-    action: "admin.*" as never,
+    action: "admin.*",
     cacheMaxAge: 0,
   },
   async (_ctx, _body, _query, req) => {

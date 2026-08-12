@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zurueck-zu-den-wurzeln-der-wesentlichkeit
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2071b53f7f61b8ce"
 ---
 
 # Zurück zu den Wurzeln der Wesentlichkeitslehre!

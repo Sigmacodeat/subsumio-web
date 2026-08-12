@@ -167,7 +167,7 @@ export default function MobileCasesPage() {
                   display: "flex",
                   alignItems: "center",
                   padding: "13px 16px",
-                  borderBottom: "1px solid hsl(230, 10%, 12%)",
+                  borderBottom: "1px solid var(--ds-border)",
                   textDecoration: "none",
                   WebkitTapHighlightColor: "transparent",
                 } as React.CSSProperties
@@ -227,7 +227,7 @@ export default function MobileCasesPage() {
                   }}
                 />
                 {m.updatedAt && (
-                  <span style={{ fontSize: 10, color: "hsl(230, 8%, 35%)" }}>
+                  <span style={{ fontSize: 10, color: "var(--ds-text-subtle)" }}>
                     {new Date(m.updatedAt).toLocaleDateString("de-AT", {
                       day: "2-digit",
                       month: "2-digit",
@@ -237,7 +237,7 @@ export default function MobileCasesPage() {
               </div>
               <ChevronRight
                 size={16}
-                style={{ color: "hsl(230, 10%, 30%)", marginLeft: 6, flexShrink: 0 }}
+                style={{ color: "var(--ds-text-subtle)", marginLeft: 6, flexShrink: 0 }}
               />
             </a>
           ))

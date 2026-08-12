@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-political-promise-or-a-hollow-hope/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d15ea9a017ce7c3c"
 ---
 
 # A Political Promise or a Hollow Hope?

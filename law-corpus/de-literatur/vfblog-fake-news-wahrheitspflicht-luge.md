@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fake-news-wahrheitspflicht-luge/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5badfc6974e7c362"
 ---
 
 # Fake News, Wahrheitspflicht, Lüge

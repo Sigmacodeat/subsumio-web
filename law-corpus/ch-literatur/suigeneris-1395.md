@@ -16,6 +16,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2015 sui-generis Redaktion;
   https://creativecommons.org/licenses/by-nc-sa/4.0
+content_hash: "e8dc48a83144d0c1"
 ---
 
 # Editorial

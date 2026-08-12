@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3a4ba47007915cc6"
 ---
 
 # Humanizing Warfare as a Project of Power Politics and Colonial Exclusion

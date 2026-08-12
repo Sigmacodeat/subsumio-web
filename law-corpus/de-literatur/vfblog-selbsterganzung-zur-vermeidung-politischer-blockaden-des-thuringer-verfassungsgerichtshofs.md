@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b6d2a0b35993d3b1"
 ---
 
 # Selbstergänzung zur Vermeidung politischer Blockaden des Thüringer Verfassungsgerichtshofs

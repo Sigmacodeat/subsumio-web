@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "783438a351050e37"
 ---
 
 # Sternstunde innerparteilicher Demokratie?  Gedanken zur „offenen“ Wahl der nächsten CDU-Parteivorsitzenden

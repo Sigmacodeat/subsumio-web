@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bougnaoui-diskriminierung-sharpston-kopft
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d1c2beb5fe45493c"
 ---
 
 # Kopftuchverbot am Arbeitsplatz als Diskriminierung

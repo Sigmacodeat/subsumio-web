@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-eurozone-crisis-introduction-by-the-a
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "05c18959c87db5e4"
 ---
 
 # “The Eurozone Crisis”: Introduction by the Authors

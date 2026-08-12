@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8e915ce3ba2c2388"
 ---
 
 # Nicht nur eine Frage der Finanzierung: Karlsruhe verhandelt zum Rundfunkbeitrag

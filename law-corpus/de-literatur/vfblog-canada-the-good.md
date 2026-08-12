@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/canada-the-good/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "464a25a3cd46f91b"
 ---
 
 # Canada the Good?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/political-terror-in-the-shade-of-bolsonar
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "58ac5d433c731c35"
 ---
 
 # Political Terror in the Shade of Bolsonarism

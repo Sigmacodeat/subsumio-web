@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/whatever-it-takes-ii/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8ad7d056f6482833"
 ---
 
 # Whatever it takes II?

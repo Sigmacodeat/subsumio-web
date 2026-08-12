@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4e0089f2b137f273"
 ---
 
 # Täglich grüßt das Murmeltier: Rechtmäßigkeit von Grenzschließungen aus Regierungssicht

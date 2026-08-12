@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "deee43c5c32d495a"
 ---
 
 # Unsere Verfassungspflicht, Katholizismus auszuhalten

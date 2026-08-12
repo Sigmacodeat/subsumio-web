@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0131260740613ebc"
 ---
 
 # Wege aus dem Brexit-Chaos: Weshalb die EU die Initiative ergreifen sollte

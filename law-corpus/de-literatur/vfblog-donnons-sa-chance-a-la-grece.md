@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/donnons-sa-chance-a-la-grece/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c27d1985987c65c8"
 ---
 
 # Donnons sa chance à la Grèce

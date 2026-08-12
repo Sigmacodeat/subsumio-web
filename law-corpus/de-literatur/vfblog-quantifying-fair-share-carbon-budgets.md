@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/quantifying-fair-share-carbon-budgets/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d7168d3111180baf"
 ---
 
 # Quantifying Fair Share Carbon Budgets

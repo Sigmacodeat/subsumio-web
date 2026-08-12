@@ -38,7 +38,7 @@ export default function WiedervorlagenPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("practice.followup.title")}
         description={t("practice.followup.page_description")}

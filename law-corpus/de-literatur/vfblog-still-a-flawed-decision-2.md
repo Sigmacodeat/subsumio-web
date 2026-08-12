@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/still-a-flawed-decision-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ed1f36f7b0e27420"
 ---
 
 # Still a flawed decision

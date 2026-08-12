@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/why-they-win/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d71ddd0e7a5d9851"
 ---
 
 # Why They Win

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/its-not-propaganda-if-its-true/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "08bbabf6375f1ce1"
 ---
 
 # It’s Not Propaganda If It’s True

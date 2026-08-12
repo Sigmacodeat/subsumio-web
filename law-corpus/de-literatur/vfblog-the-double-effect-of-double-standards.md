@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-double-effect-of-double-standards/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "566c0f701a117cd3"
 ---
 
 # The Double Effect of “Double Standards”

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/authoritarians-who-hate-judicial-accounta
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b7c529e107f85d64"
 ---
 
 # Authoritarians Who Hate Judicial Accountability

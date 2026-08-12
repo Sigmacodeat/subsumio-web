@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/two-plus-two-equals-four/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "298a7fd97f45b579"
 ---
 
 # Two Plus Two Equals Four

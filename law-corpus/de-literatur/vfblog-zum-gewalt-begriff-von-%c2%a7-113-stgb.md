@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zum-gewalt-begriff-von-%c2%a7-113-stgb/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5592f2dd081ec4d8"
 ---
 
 # Zum Gewalt-Begriff von § 113 StGB

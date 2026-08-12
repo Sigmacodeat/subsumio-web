@@ -1,0 +1,1151 @@
+"use client";
+
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
+import {
+  Database, HardDrive, Zap, AlertTriangle, CheckCircle2, XCircle,
+  RefreshCw, Pause, Play, Activity, FileText, Layers, ShieldCheck,
+  ArrowRight, Inbox, TrendingUp, Archive, Globe,
+} from "lucide-react";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/toast";
+
+const API_BASE = "/api/admin/corpus-command-center";
+
+interface CorpusSyncRow {
+  corpus: string;
+  sourceId: string;
+  diskFiles: number;
+  dbPages: number;
+  dbChunks: number;
+  embeddedChunks: number;
+  staleChunks: number;
+  coveragePct: number;
+  notImported: number;
+  orphanDb: number;
+  syncStatus: "synced" | "import_pending" | "orphan_in_db" | "no_db";
+  fullyComplete: boolean;
+  risTotal: number | null;
+}
+
+interface WorkQueueItem {
+  path: string;
+  corpus: string;
+  flag: "defective" | "needs_review";
+  note: string;
+  flaggedBy: string;
+  flaggedAt: string;
+}
+
+interface PipelineStateRow {
+  source: string;
+  stage: string;
+  status: string;
+  pid: number | null;
+  pidCmd: string | null;
+  startedAt: string | null;
+  lastUpdated: string | null;
+  diskCount: number;
+  dbPages: number;
+  risTotal: number | null;
+  alertFlags: Array<{ type: string; severity: string; message: string; raised_at: string }>;
+}
+
+interface TrustRow {
+  corpus: string;
+  verified: number;
+  needsReview: number;
+  defective: number;
+  archived: number;
+  unreviewed: number;
+  total: number;
+}
+
+interface RisDeltaRow {
+  applikation: string;
+  label: string;
+  lastSync: string | null;
+  stage: string;
+  alerts: Array<{ type: string; severity: string; message: string; raised_at: string }>;
+  running: boolean;
+}
+
+interface CommandCenterData {
+  dbAvailable: boolean;
+  sync: {
+    rows: CorpusSyncRow[];
+    totals: {
+      totalDisk: number;
+      totalDbPages: number;
+      totalEmbedded: number;
+      totalNotImported: number;
+      totalStale: number;
+      coveragePct: number;
+      totalRis: number;
+    };
+  };
+  workQueue: {
+    items: WorkQueueItem[];
+    total: number;
+    defective: number;
+    needsReview: number;
+    verified: number;
+  };
+  pipeline: {
+    paused: boolean;
+    states: PipelineStateRow[];
+  };
+  trust: {
+    rows: TrustRow[];
+    totals: {
+      verified: number;
+      needsReview: number;
+      defective: number;
+      archived: number;
+      unreviewed: number;
+    };
+  };
+  risDelta?: {
+    rows: RisDeltaRow[];
+    triggerPending: boolean;
+  };
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────
+
+const fmt = (n: number) => n.toLocaleString("de-DE");
+const pct = (n: number) => `${n.toFixed(1)}%`;
+
+const SYNC_STATUS_CONFIG: Record<CorpusSyncRow["syncStatus"], { variant: "success" | "warning" | "danger" | "default"; label: string }> = {
+  synced: { variant: "success", label: "Synchron" },
+  import_pending: { variant: "warning", label: "Import offen" },
+  orphan_in_db: { variant: "danger", label: "DB-Orphane" },
+  no_db: { variant: "default", label: "Keine DB" },
+};
+
+// ── Coverage Indicator (statt Sparkline — keine Hooks, TDZ-safe) ─────────
+
+function CoverageIndicator({ coveragePct }: { coveragePct: number }) {
+  const color = coveragePct >= 90 ? "var(--ds-success-text)" : coveragePct >= 50 ? "var(--ds-warning-text)" : "var(--ds-danger-text)";
+  return (
+    <div className="flex items-center gap-1" aria-label={`Embedding-Coverage: ${coveragePct.toFixed(1)}%`}>
+      <svg width={36} height={16} className="overflow-visible" role="img" aria-hidden="true">
+        <circle cx={8} cy={8} r={5} fill="none" stroke="var(--ds-surface-hover)" strokeWidth={2} />
+        <circle
+          cx={8} cy={8} r={5}
+          fill="none"
+          stroke={color}
+          strokeWidth={2}
+          strokeDasharray={`${(coveragePct / 100) * 31.4} 31.4`}
+          strokeLinecap="round"
+          transform="rotate(-90 8 8)"
+        />
+      </svg>
+      {coveragePct >= 90 && <TrendingUp className="h-3 w-3 text-[color:var(--ds-success-text)]" />}
+    </div>
+  );
+}
+
+// ── Section 1: Sync-Status ───────────────────────────────────────────────
+
+function SyncStatusSection({ rows, totals, onSelectCorpus }: { rows: CorpusSyncRow[]; totals: CommandCenterData["sync"]["totals"]; onSelectCorpus?: (sourceId: string) => void }) {
+  const [hideComplete, setHideComplete] = useState(true);
+
+  const completeCount = rows.filter((r) => r.fullyComplete).length;
+  const displayRows = rows
+    .filter((r) => !hideComplete || !r.fullyComplete)
+    .sort((a, b) => {
+      if (a.fullyComplete === b.fullyComplete) return 0;
+      return a.fullyComplete ? 1 : -1;
+    });
+
+  return (
+    <div className="space-y-4">
+      {/* Summary Cards — neutral numbers, icon-only color accent */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <Globe className="h-7 w-7 text-[color:var(--ds-info-text)]" />
+            <div>
+              <p className="text-xl font-bold tabular-nums text-[color:var(--ds-text)]">{fmt(totals.totalRis)}</p>
+              <p className="text-xs text-[color:var(--ds-text-subtle)]">RIS OGD</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <HardDrive className="h-7 w-7 text-[color:var(--ds-text-muted)]" />
+            <div>
+              <p className="text-xl font-bold tabular-nums text-[color:var(--ds-text)]">{fmt(totals.totalDisk)}</p>
+              <p className="text-xs text-[color:var(--ds-text-subtle)]">Disk-Dateien</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <Database className="h-7 w-7 text-[color:var(--ds-info-text)]" />
+            <div>
+              <p className="text-xl font-bold tabular-nums text-[color:var(--ds-text)]">{fmt(totals.totalDbPages)}</p>
+              <p className="text-xs text-[color:var(--ds-text-subtle)]">DB-Seiten</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <Zap className="h-7 w-7 text-[color:var(--ds-success-text)]" />
+            <div>
+              <p className="text-xl font-bold tabular-nums text-[color:var(--ds-text)]">{fmt(totals.totalEmbedded)}</p>
+              <p className="text-xs text-[color:var(--ds-text-subtle)]">Embedded</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <ArrowRight className="h-7 w-7 text-[color:var(--ds-warning-text)]" />
+            <div>
+              <p className="text-xl font-bold tabular-nums text-[color:var(--ds-text)]">{fmt(totals.totalNotImported)}</p>
+              <p className="text-xs text-[color:var(--ds-text-subtle)]">Import-Lücke</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <AlertTriangle className="h-7 w-7 text-[color:var(--ds-attention-text)]" />
+            <div>
+              <p className="text-xl font-bold tabular-nums text-[color:var(--ds-text)]">{fmt(totals.totalStale)}</p>
+              <p className="text-xs text-[color:var(--ds-text-subtle)]">Stale Chunks</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Per-Corpus Table */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Layers className="h-4 w-4" />
+              Sync-Status pro Korpus
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setHideComplete(!hideComplete)}
+              disabled={completeCount === 0}
+              title={hideComplete ? "Vollständige Corpora werden ausgeblendet" : "Vollständige Corpora werden angezeigt"}
+              className="h-8 text-xs"
+            >
+              <Archive className="h-3.5 w-3.5 mr-1.5" />
+              {hideComplete ? `${completeCount} fertige anzeigen` : "Fertige ausblenden"}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-1.5">
+            {/* Header */}
+            <div className="grid grid-cols-12 gap-2 text-xs font-medium text-[color:var(--ds-text-subtle)] pb-2 border-b">
+              <div className="col-span-2">Korpus</div>
+              <div className="col-span-1 text-right" title="RIS OGD Total (live/letzter Check)">RIS</div>
+              <div className="col-span-2 text-right">Disk</div>
+              <div className="col-span-2 text-right">DB</div>
+              <div className="col-span-2 text-right">Embedded</div>
+              <div className="col-span-1 text-right">Lücke</div>
+              <div className="col-span-1 text-center">Trend</div>
+              <div className="col-span-1 text-center">Status</div>
+            </div>
+            {displayRows.map((r) => {
+              const config = r.fullyComplete
+                ? { variant: "success" as const, label: "Vollständig" }
+                : SYNC_STATUS_CONFIG[r.syncStatus];
+              return (
+                <div
+                  key={r.corpus}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${r.corpus} im Chunk-Inspector öffnen`}
+                  onClick={() => onSelectCorpus?.(r.sourceId)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onSelectCorpus?.(r.sourceId);
+                    }
+                  }}
+                  className={cn(
+                    "grid grid-cols-12 gap-2 text-xs items-center py-1.5 rounded px-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)]",
+                    r.fullyComplete
+                      ? "text-[color:var(--ds-text-subtle)] opacity-70 hover:bg-[color:var(--ds-surface-2)]"
+                      : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-hover)]"
+                  )}
+                >
+                  <div className={cn("col-span-2 font-mono truncate", r.fullyComplete && "text-[color:var(--ds-success-text)]")} title={r.corpus}>{r.corpus}</div>
+                  <div className="col-span-1 text-right tabular-nums" title={r.risTotal ? `RIS OGD: ${fmt(r.risTotal)} Dokumente` : "RIS Total unbekannt"}>
+                    {r.risTotal ? (
+                      <span className={r.diskFiles >= r.risTotal * 0.95 ? "text-[color:var(--ds-success-text)]" : r.diskFiles >= r.risTotal * 0.8 ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-danger-text)]"}>
+                        {fmt(r.risTotal)}
+                      </span>
+                    ) : (
+                      <span className="text-[color:var(--ds-text-subtle)]">—</span>
+                    )}
+                  </div>
+                  <div className="col-span-2 text-right tabular-nums">{fmt(r.diskFiles)}</div>
+                  <div className="col-span-2 text-right tabular-nums">{fmt(r.dbPages)}</div>
+                  <div className="col-span-2 text-right tabular-nums">
+                    <span className={r.fullyComplete ? "text-[color:var(--ds-success-text)] font-medium" : r.coveragePct >= 90 ? "text-[color:var(--ds-success-text)]" : r.coveragePct >= 50 ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-danger-text)]"}>
+                      {fmt(r.embeddedChunks)}
+                    </span>
+                    <span className="text-[color:var(--ds-text-subtle)] text-[10px] ml-1">({pct(r.coveragePct)})</span>
+                  </div>
+                  <div className="col-span-1 text-right tabular-nums">
+                    {r.fullyComplete ? (
+                      <CheckCircle2 className="h-3.5 w-3.5 inline text-[color:var(--ds-success-text)]" />
+                    ) : r.notImported > 0 ? (
+                      <span className="text-[color:var(--ds-warning-text)] font-medium">{fmt(r.notImported)}</span>
+                    ) : (
+                      <span className="text-[color:var(--ds-text-subtle)]">—</span>
+                    )}
+                  </div>
+                  <div className="col-span-1 flex justify-center">
+                    <CoverageIndicator coveragePct={r.coveragePct} />
+                  </div>
+                  <div className="col-span-1 text-center">
+                    <Badge variant={config.variant} className="text-[10px]">{config.label}</Badge>
+                  </div>
+                </div>
+              );
+            })}
+            {displayRows.length === 0 && (
+              <p className="text-xs text-[color:var(--ds-text-subtle)] text-center py-4">Alle Corpora sind vollständig.</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ── Section 2: Work Queue ────────────────────────────────────────────────
+
+function WorkQueueSection({ items, total, defective, needsReview, verified }: {
+  items: WorkQueueItem[]; total: number; defective: number; needsReview: number; verified: number;
+}) {
+  const [filter, setFilter] = useState<"all" | "defective" | "needs_review">("defective");
+  const [corpusFilter, setCorpusFilter] = useState<string>("");
+
+  const filtered = items.filter((i) => {
+    if (filter !== "all" && i.flag !== filter) return false;
+    if (corpusFilter && i.corpus !== corpusFilter) return false;
+    return true;
+  });
+
+  const corpora = [...new Set(items.map((i) => i.corpus))].sort();
+  const progress = total > 0 ? ((verified) / (total + verified)) * 100 : 0;
+
+  return (
+    <div className="space-y-4">
+      {/* Summary */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <Inbox className="h-5 w-5 text-[color:var(--ds-text-subtle)]" />
+              <span className="text-2xl font-bold tabular-nums">{fmt(total)}</span>
+            </div>
+            <p className="text-xs text-[color:var(--ds-text-subtle)] mt-1">Offen</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <XCircle className="h-5 w-5 text-[color:var(--ds-danger-text)]" />
+              <span className="text-2xl font-bold tabular-nums text-[color:var(--ds-danger-text)]">{fmt(defective)}</span>
+            </div>
+            <p className="text-xs text-[color:var(--ds-text-subtle)] mt-1">Defective</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <AlertTriangle className="h-5 w-5 text-[color:var(--ds-warning-text)]" />
+              <span className="text-2xl font-bold tabular-nums text-[color:var(--ds-warning-text)]">{fmt(needsReview)}</span>
+            </div>
+            <p className="text-xs text-[color:var(--ds-text-subtle)] mt-1">Needs Review</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <CheckCircle2 className="h-5 w-5 text-[color:var(--ds-success-text)]" />
+              <span className="text-2xl font-bold tabular-nums text-[color:var(--ds-success-text)]">{fmt(verified)}</span>
+            </div>
+            <p className="text-xs text-[color:var(--ds-text-subtle)] mt-1">Verified</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Progress */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium">Bearbeitungs-Fortschritt</span>
+            <span className="text-sm text-[color:var(--ds-text-subtle)]">{fmt(verified)} / {fmt(total + verified)} ({progress.toFixed(1)}%)</span>
+          </div>
+          <Progress value={progress} className="h-2" />
+        </CardContent>
+      </Card>
+
+      {/* Filter + List */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm flex items-center justify-between">
+            <span className="flex items-center gap-2"><Inbox className="h-4 w-4" /> Work Queue</span>
+            <div className="flex items-center gap-2">
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value as typeof filter)}
+                className="text-xs border border-[color:var(--ds-border)] rounded px-2 py-1 bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
+                aria-label="Filter nach Flag"
+              >
+                <option value="defective">Defective ({defective})</option>
+                <option value="needs_review">Needs Review ({needsReview})</option>
+                <option value="all">Alle ({total})</option>
+              </select>
+              <select
+                value={corpusFilter}
+                onChange={(e) => setCorpusFilter(e.target.value)}
+                className="text-xs border border-[color:var(--ds-border)] rounded px-2 py-1 bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
+                aria-label="Filter nach Korpus"
+              >
+                <option value="">Alle Korpora</option>
+                {corpora.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {filtered.length === 0 ? (
+            <div className="text-center py-8 text-[color:var(--ds-text-subtle)] text-sm">
+              <CheckCircle2 className="h-10 w-10 mx-auto mb-2 text-[color:var(--ds-success-text)]/40" />
+              Keine Auffälligkeiten in diesem Filter
+            </div>
+          ) : (
+            <div className="space-y-1 max-h-[500px] overflow-y-auto">
+              {filtered.map((item) => (
+                <div
+                  key={item.path}
+                  className="flex items-start gap-3 p-2.5 rounded border border-[color:var(--ds-border)] hover:bg-[color:var(--ds-surface-hover)]"
+                >
+                  <Badge
+                    variant={item.flag === "defective" ? "danger" : "warning"}
+                    className="text-[10px] flex-shrink-0 mt-0.5"
+                  >
+                    {item.flag === "defective" ? "DEFECT" : "REVIEW"}
+                  </Badge>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-mono text-xs truncate" title={item.path}>{item.path}</div>
+                    <div className="text-xs text-[color:var(--ds-text-subtle)] mt-0.5 line-clamp-2" title={item.note}>
+                      {item.note}
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0 text-[10px] text-[color:var(--ds-text-subtle)] text-right">
+                    {item.flaggedBy === "auto-scan" && <Badge variant="default" className="text-[9px] mb-1">AUTO</Badge>}
+                    <div>{item.flaggedAt ? new Date(item.flaggedAt).toLocaleDateString("de-DE") : ""}</div>
+                  </div>
+                </div>
+              ))}
+              {total > items.length && (
+                <div className="text-center py-3 text-xs text-[color:var(--ds-text-subtle)] border-t mt-2">
+                  Erste {items.length} von {fmt(total)} angezeigt — weitere via Pagination
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ── Section 3: Pipeline Live ─────────────────────────────────────────────
+
+function PipelineSection({ paused, states, onActionComplete }: { paused: boolean; states: PipelineStateRow[]; onActionComplete?: () => void }) {
+  const { addToast } = useToast();
+
+  const pipelineAction = useMutation({
+    mutationFn: async (payload: Record<string, unknown>) => {
+      const res = await fetch("/api/admin/corpus-pipeline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Pipeline-Aktion fehlgeschlagen");
+      }
+      return res.json();
+    },
+    onSuccess: (_d, payload) => {
+      const action = payload.action as string;
+      const labels: Record<string, string> = {
+        pause: "Pipeline pausiert",
+        resume: "Pipeline fortgesetzt",
+        reembed: "Re-Embed angestoßen",
+        fetch_missing: "Fetch angestoßen",
+        clear_alerts: "Alerts geleert",
+      };
+      addToast({ title: labels[action] || "Pipeline-Aktion ausgeführt", type: "success" });
+      onActionComplete?.();
+    },
+    onError: (err: Error) => {
+      addToast({ title: "Pipeline-Fehler", description: err.message, type: "error" });
+    },
+  });
+
+  // Map source_key → sourceId for re-embed
+  const sourceKeyToSourceId: Record<string, string> = {
+    "statutes-at": "law-at",
+    "statutes-de": "law-de",
+    "statutes-ch": "law-ch",
+    "landesrecht": "law-at-landesrecht",
+    "staatsvertraege": "law-at-staatsvertraege",
+    "materialien-de": "law-de-materialien",
+    "literatur-de": "law-de-literatur",
+    "literatur-at": "law-at-literatur",
+    "literatur-ch": "law-ch-literatur",
+    "eu-directives": "law-eu-directives",
+    "eu-regulations": "law-eu",
+    "jud-ogh": "law-at-judikatur-ogh",
+    "jud-vfgh": "law-at-judikatur-vfgh",
+    "jud-vwgh": "law-at-judikatur-vwgh",
+    "jud-bvwg": "law-at-judikatur-bvwg",
+    "jud-lvwg": "law-at-judikatur-lvwg",
+  };
+
+  const running = states.filter((s) => s.pid !== null);
+  const alertStates = states.filter((s) => s.alertFlags.length > 0);
+  const gapStates = states.filter((s) => s.risTotal && s.diskCount > 0 && s.diskCount < s.risTotal * 0.95);
+
+  return (
+    <div className="space-y-4">
+      {/* Status Bar */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Activity className={`h-6 w-6 ${paused ? "text-[color:var(--ds-text-subtle)]" : "text-[color:var(--ds-success-text)] animate-pulse"}`} />
+              <div>
+                <p className="text-sm font-medium">
+                  {paused ? "Pipeline pausiert" : "Pipeline aktiv"}
+                </p>
+                <p className="text-xs text-[color:var(--ds-text-subtle)]">
+                  {running.length} laufende Stage{running.length !== 1 ? "s" : ""}
+                  {alertStates.length > 0 && ` · ${alertStates.length} Alert${alertStates.length !== 1 ? "s" : ""}`}
+                  {gapStates.length > 0 && ` · ${gapStates.length} Gap${gapStates.length !== 1 ? "s" : ""}`}
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant={paused ? "primary" : "outline"}
+              onClick={() => pipelineAction.mutate({ action: paused ? "resume" : "pause" })}
+              disabled={pipelineAction.isPending}
+            >
+              {paused ? <Play className="h-4 w-4 mr-1" /> : <Pause className="h-4 w-4 mr-1" />}
+              {paused ? "Fortsetzen" : "Pausieren"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Discovery Gap Report */}
+      {gapStates.length > 0 && (
+        <Card className="border-[color:var(--ds-warning-border)]">
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-[color:var(--ds-warning-text)]" />
+              Discovery-Gap ({gapStates.length} Quellen)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1.5">
+              {gapStates.map((s) => {
+                const gap = s.risTotal! - s.diskCount;
+                const gapPct = ((gap / s.risTotal!) * 100).toFixed(1);
+                return (
+                  <div key={s.source} className="flex items-center gap-3 p-2 rounded border border-[color:var(--ds-border)] text-xs">
+                    <div className="flex-1 min-w-0">
+                      <span className="font-mono">{s.source}</span>
+                      <span className="text-[color:var(--ds-text-subtle)] ml-2">
+                        Disk: {fmt(s.diskCount)} / RIS: {fmt(s.risTotal!)} — <span className="text-[color:var(--ds-warning-text)] font-medium">{gapPct}% fehlen</span>
+                      </span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-[10px] gap-1"
+                      onClick={() => pipelineAction.mutate({ action: "fetch_missing", source_key: s.source })}
+                      disabled={pipelineAction.isPending}
+                      aria-label={`Fehlende Dateien für ${s.source} fetchen`}
+                    >
+                      <ArrowRight className="h-3 w-3" /> Fetch
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* States */}
+      {states.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Pipeline-States ({states.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-h-[500px] overflow-y-auto">
+              {states.map((s, i) => {
+                const isRunning = s.pid !== null;
+                const hasAlerts = s.alertFlags.length > 0;
+                const sourceId = sourceKeyToSourceId[s.source] || s.source;
+                return (
+                  <div key={i} className="p-2.5 rounded border border-[color:var(--ds-border)] text-xs space-y-1.5">
+                    <div className="flex items-center gap-3">
+                      <Badge
+                        variant={
+                          isRunning ? "success" :
+                          s.stage === "done" || s.stage === "ok" ? "default" :
+                          s.stage === "failed" ? "danger" :
+                          s.stage === "idle" || s.stage === "empty" ? "default" : "warning"
+                        }
+                        className="text-[10px] flex-shrink-0"
+                      >
+                        {s.stage}
+                      </Badge>
+                      <div className="flex-1 min-w-0">
+                        <span className="font-mono">{s.source}</span>
+                        {s.pidCmd && (
+                          <span className="text-[color:var(--ds-text-subtle)] ml-2 truncate" title={s.pidCmd}>
+                            · PID {s.pid}
+                          </span>
+                        )}
+                      </div>
+                      {hasAlerts && (
+                        <AlertTriangle className="h-3 w-3 text-[color:var(--ds-warning-text)] flex-shrink-0" />
+                      )}
+                      {s.lastUpdated && (
+                        <span className="text-[10px] text-[color:var(--ds-text-subtle)] flex-shrink-0">
+                          {new Date(s.lastUpdated).toLocaleTimeString("de-DE")}
+                        </span>
+                      )}
+                    </div>
+                    {/* Alert details */}
+                    {hasAlerts && (
+                      <div className="pl-2 space-y-1 border-l-2 border-[color:var(--ds-warning-border)]">
+                        {s.alertFlags.map((a, j) => (
+                          <div key={j} className="flex items-start gap-2 text-[10px]">
+                            <Badge
+                              variant={a.severity === "error" ? "danger" : "warning"}
+                              className="text-[9px] flex-shrink-0"
+                            >
+                              {a.type}
+                            </Badge>
+                            <span className="text-[color:var(--ds-text-subtle)] flex-1">{a.message}</span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-5 text-[9px] px-1"
+                              onClick={() => pipelineAction.mutate({ action: "clear_alerts", source_key: s.source })}
+                              disabled={pipelineAction.isPending}
+                              aria-label={`Alerts für ${s.source} leeren`}
+                            >
+                              Clear
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {/* Re-Embed action for sources with low coverage */}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 text-[10px] gap-1"
+                        onClick={() => pipelineAction.mutate({ action: "reembed", source: sourceId })}
+                        disabled={pipelineAction.isPending}
+                        aria-label={`Re-Embed für ${s.source} anstoßen`}
+                      >
+                        <RefreshCw className="h-3 w-3" /> Re-Embed
+                      </Button>
+                      {s.risTotal !== null && s.diskCount > 0 && (
+                        <span className="text-[10px] text-[color:var(--ds-text-subtle)]">
+                          Disk: {fmt(s.diskCount)} · DB: {fmt(s.dbPages)} · RIS: {fmt(s.risTotal)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-8 text-center text-sm text-[color:var(--ds-text-subtle)]">
+            <Activity className="h-10 w-10 mx-auto mb-2 text-[color:var(--ds-text-subtle)]/40" />
+            Keine Pipeline-States in der DB
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ── Section 4: Trust Status ──────────────────────────────────────────────
+
+function TrustSection({ rows, totals }: { rows: TrustRow[]; totals: CommandCenterData["trust"]["totals"] }) {
+  const total = totals.verified + totals.needsReview + totals.defective + totals.archived + totals.unreviewed;
+  const verifiedPct = total > 0 ? (totals.verified / total) * 100 : 0;
+  const archivedPct = total > 0 ? (totals.archived / total) * 100 : 0;
+
+  return (
+    <div className="space-y-4">
+      {/* Donut Summary */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <ShieldCheck className="h-5 w-5 text-[color:var(--ds-success-text)]" />
+              <span className="text-2xl font-bold text-[color:var(--ds-success-text)]">{fmt(totals.verified)}</span>
+            </div>
+            <p className="text-xs text-[color:var(--ds-text-subtle)] mt-1">Verified ({verifiedPct.toFixed(1)}%)</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <Archive className="h-5 w-5 text-[color:var(--ds-text-muted)]" />
+              <span className="text-2xl font-bold text-[color:var(--ds-text-muted)]">{fmt(totals.archived)}</span>
+            </div>
+            <p className="text-xs text-[color:var(--ds-text-subtle)] mt-1">Archiviert ({archivedPct.toFixed(1)}%)</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <AlertTriangle className="h-5 w-5 text-[color:var(--ds-warning-text)]" />
+              <span className="text-2xl font-bold text-[color:var(--ds-warning-text)]">{fmt(totals.needsReview)}</span>
+            </div>
+            <p className="text-xs text-[color:var(--ds-text-subtle)] mt-1">Needs Review</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <XCircle className="h-5 w-5 text-[color:var(--ds-danger-text)]" />
+              <span className="text-2xl font-bold text-[color:var(--ds-danger-text)]">{fmt(totals.defective)}</span>
+            </div>
+            <p className="text-xs text-[color:var(--ds-text-subtle)] mt-1">Defective</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <FileText className="h-5 w-5 text-[color:var(--ds-text-subtle)]" />
+              <span className="text-2xl font-bold">{fmt(totals.unreviewed)}</span>
+            </div>
+            <p className="text-xs text-[color:var(--ds-text-subtle)] mt-1">Unreviewed</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Per-Corpus Trust */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4" />
+            Trust pro Korpus
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
+            {rows.map((r) => {
+              const total = r.total + r.unreviewed;
+              const verifiedPct = total > 0 ? (r.verified / total) * 100 : 0;
+              const reviewPct = total > 0 ? (r.needsReview / total) * 100 : 0;
+              const defectPct = total > 0 ? (r.defective / total) * 100 : 0;
+              const archivedPct = total > 0 ? (r.archived / total) * 100 : 0;
+              return (
+                <div key={r.corpus} className="p-2 rounded border border-[color:var(--ds-border)]">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-mono text-xs">{r.corpus}</span>
+                    <span className="text-xs text-[color:var(--ds-text-subtle)]">{fmt(r.total + r.unreviewed)} Dateien</span>
+                  </div>
+                  {/* Stacked Progress Bar */}
+                  <div className="flex h-2 rounded-full overflow-hidden bg-[color:var(--ds-surface-2)]">
+                    {r.verified > 0 && (
+                      <div className="bg-[color:var(--ds-success-solid)]" style={{ width: `${verifiedPct}%` }} title={`Verified: ${r.verified}`} />
+                    )}
+                    {r.archived > 0 && (
+                      <div className="bg-[color:var(--ds-text-muted)]" style={{ width: `${archivedPct}%` }} title={`Archiviert: ${r.archived}`} />
+                    )}
+                    {r.needsReview > 0 && (
+                      <div className="bg-[color:var(--ds-warning-solid)]" style={{ width: `${reviewPct}%` }} title={`Needs Review: ${r.needsReview}`} />
+                    )}
+                    {r.defective > 0 && (
+                      <div className="bg-[color:var(--ds-danger-solid)]" style={{ width: `${defectPct}%` }} title={`Defective: ${r.defective}`} />
+                    )}
+                  </div>
+                  {(r.verified > 0 || r.needsReview > 0 || r.defective > 0 || r.archived > 0) && (
+                    <div className="flex items-center gap-3 mt-1 text-[10px] text-[color:var(--ds-text-subtle)]">
+                      {r.verified > 0 && <span className="text-[color:var(--ds-success-text)]">✓ {fmt(r.verified)}</span>}
+                      {r.archived > 0 && <span className="text-[color:var(--ds-text-muted)]">📦 {fmt(r.archived)}</span>}
+                      {r.needsReview > 0 && <span className="text-[color:var(--ds-warning-text)]">⚠ {fmt(r.needsReview)}</span>}
+                      {r.defective > 0 && <span className="text-[color:var(--ds-danger-text)]">✗ {fmt(r.defective)}</span>}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ── Section 5: RIS Delta-Watcher ─────────────────────────────────────────
+
+function RisDeltaSection({
+  rows,
+  triggerPending,
+  onActionComplete,
+}: {
+  rows: RisDeltaRow[];
+  triggerPending: boolean;
+  onActionComplete: () => void;
+}) {
+  const { addToast } = useToast();
+  const triggerMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/admin/corpus-command-center/trigger-delta", { method: "POST" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      addToast({ title: "Delta-Sync ausgelöst", description: "Der corpus-pipeline wird den Watcher im nächsten Zyklus starten.", type: "success" });
+      onActionComplete();
+    },
+    onError: (err: Error) => {
+      addToast({ title: "Trigger fehlgeschlagen", description: err.message, type: "error" });
+    },
+  });
+
+  const runningCount = rows.filter((r) => r.running).length;
+  const alertCount = rows.reduce((s, r) => s + r.alerts.length, 0);
+  const syncedCount = rows.filter((r) => r.stage === "ok" && !r.running).length;
+  const idleCount = rows.filter((r) => r.stage === "idle" || !r.lastSync).length;
+
+  const STAGE_CONFIG: Record<string, { variant: "success" | "warning" | "danger" | "default"; label: string }> = {
+    idle: { variant: "default", label: "Nie gesynced" },
+    running: { variant: "warning", label: "Läuft" },
+    ok: { variant: "success", label: "Aktuell" },
+    alerts: { variant: "warning", label: "Mit Alerts" },
+    failed: { variant: "danger", label: "Fehlgeschlagen" },
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card className="border-[color:var(--ds-success-border)]">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-[color:var(--ds-success-text)]" />
+              <span className="text-xs text-[color:var(--ds-text-muted)]">Aktuell</span>
+            </div>
+            <p className="text-2xl font-semibold mt-1">{syncedCount}</p>
+          </CardContent>
+        </Card>
+        <Card className={runningCount > 0 ? "border-[color:var(--ds-warning-border)]" : ""}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Activity className={cn("h-4 w-4", runningCount > 0 ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-text-muted)]")} />
+              <span className="text-xs text-[color:var(--ds-text-muted)]">Läuft</span>
+            </div>
+            <p className="text-2xl font-semibold mt-1">{runningCount}</p>
+          </CardContent>
+        </Card>
+        <Card className={alertCount > 0 ? "border-[color:var(--ds-danger-border)]" : ""}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className={cn("h-4 w-4", alertCount > 0 ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-text-muted)]")} />
+              <span className="text-xs text-[color:var(--ds-text-muted)]">Alerts</span>
+            </div>
+            <p className="text-2xl font-semibold mt-1">{alertCount}</p>
+          </CardContent>
+        </Card>
+        <Card className={idleCount > 0 ? "border-[color:var(--ds-warning-border)]" : ""}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Zap className={cn("h-4 w-4", idleCount > 0 ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-text-muted)]")} />
+              <span className="text-xs text-[color:var(--ds-text-muted)]">Nie gesynced</span>
+            </div>
+            <p className="text-2xl font-semibold mt-1">{idleCount}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Trigger Button */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-[color:var(--brand-primary)]" />
+                <span className="text-sm font-medium">RIS Delta-Sync</span>
+                {triggerPending && (
+                  <Badge variant="warning" className="text-xs">
+                    <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                    Trigger anstehend
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                Inkrementeller Sync: holt neue &amp; geänderte Dokumente von RIS OGD API.
+                Läuft täglich um 04:30 CEST automatisch.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => triggerMutation.mutate()}
+              disabled={triggerMutation.isPending || triggerPending}
+            >
+              {triggerMutation.isPending ? (
+                <><RefreshCw className="h-3 w-3 mr-1 animate-spin" /> Wird ausgelöst…</>
+              ) : triggerPending ? (
+                <><Activity className="h-3 w-3 mr-1" /> Trigger aktiv</>
+              ) : (
+                <><Zap className="h-3 w-3 mr-1" /> Jetzt syncen</>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Per-Applikation Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            Applikationen ({rows.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {rows.length === 0 ? (
+            <div className="p-8 text-center text-sm text-[color:var(--ds-text-muted)]">
+              <Zap className="h-8 w-8 mx-auto mb-2 opacity-40" />
+              Keine Delta-Watcher-Daten verfügbar.
+              <br />
+              <span className="text-xs">Der Watcher wird beim ersten Pipeline-Zyklus initialisiert.</span>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-xs text-[color:var(--ds-text-muted)]">
+                    <th className="px-4 py-2 font-medium">Applikation</th>
+                    <th className="px-4 py-2 font-medium">Status</th>
+                    <th className="px-4 py-2 font-medium">Letzter Sync</th>
+                    <th className="px-4 py-2 font-medium">Alerts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => {
+                    const stageCfg = STAGE_CONFIG[row.stage] || STAGE_CONFIG.idle;
+                    return (
+                      <tr key={row.applikation} className="border-b last:border-0 hover:bg-[color:var(--ds-surface-hover)] transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="font-medium">{row.label}</div>
+                          <div className="text-xs text-[color:var(--ds-text-muted)] font-mono">{row.applikation}</div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            {row.running && <RefreshCw className="h-3 w-3 animate-spin text-[color:var(--ds-warning-text)]" />}
+                            <Badge variant={stageCfg.variant} className="text-xs">{stageCfg.label}</Badge>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-[color:var(--ds-text-muted)]">
+                          {row.lastSync ? (
+                            <span title={row.lastSync}>
+                              {new Date(row.lastSync).toLocaleDateString("de-AT", { day: "2-digit", month: "short", year: "numeric" })}
+                              {" "}
+                              {new Date(row.lastSync).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          ) : (
+                            <span className="opacity-50">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {row.alerts.length > 0 ? (
+                            <div className="space-y-1">
+                              {row.alerts.slice(0, 3).map((a, i) => (
+                                <div key={i} className="flex items-start gap-1 text-xs">
+                                  <Badge variant={a.severity === "error" ? "danger" : "warning"} className="text-[10px] shrink-0">
+                                    {a.severity}
+                                  </Badge>
+                                  <span className="text-[color:var(--ds-text-muted)] truncate max-w-xs" title={a.message}>
+                                    {a.message}
+                                  </span>
+                                </div>
+                              ))}
+                              {row.alerts.length > 3 && (
+                                <span className="text-xs text-[color:var(--ds-text-muted)]">+{row.alerts.length - 3} weitere</span>
+                              )}
+                            </div>
+                          ) : (
+                            <CheckCircle2 className="h-4 w-4 text-[color:var(--ds-success-text)]" />
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ── Main Component ───────────────────────────────────────────────────────
+
+export function CorpusCommandCenter({ onSelectCorpus }: { onSelectCorpus?: (sourceId: string) => void } = {}) {
+  const [section, setSection] = useState<"sync" | "work" | "pipeline" | "trust" | "delta">("sync");
+
+  const { data, isLoading, isError, error, refetch } = useQuery<CommandCenterData>({
+    queryKey: ["corpus-command-center"],
+    queryFn: async () => {
+      const res = await fetch(API_BASE);
+      if (!res.ok) throw new Error("Command Center Daten nicht ladbar");
+      return res.json().then((d) => d.data);
+    },
+    refetchInterval: 30_000,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+          {[...Array(5)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <Skeleton className="h-7 w-7 rounded" />
+                <Skeleton className="h-5 w-20 mt-2" />
+                <Skeleton className="h-3 w-14 mt-1" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card>
+          <CardContent className="p-8">
+            <Skeleton className="h-64 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]">
+        <CardContent className="pt-4">
+          <div className="flex items-center gap-2 text-[color:var(--ds-danger-text)]">
+            <XCircle className="h-5 w-5" />
+            <span className="text-sm font-medium">Command Center nicht ladbar</span>
+          </div>
+          <p className="text-xs text-[color:var(--ds-danger-text)] mt-1 ml-7">{(error as Error)?.message}</p>
+          <Button size="sm" variant="outline" className="mt-3 ml-7" onClick={() => refetch()}>
+            <RefreshCw className="h-3 w-3 mr-1" /> Erneut versuchen
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!data) return null;
+
+  const sections = [
+    { id: "sync" as const, label: "Sync-Status", icon: Layers, count: data.sync.rows.length },
+    { id: "work" as const, label: "Work Queue", icon: Inbox, count: data.workQueue.total },
+    { id: "pipeline" as const, label: "Pipeline", icon: Activity, count: data.pipeline.states.length },
+    { id: "trust" as const, label: "Trust", icon: ShieldCheck, count: data.trust.rows.length },
+    { id: "delta" as const, label: "RIS Delta", icon: Zap, count: data.risDelta?.rows.length ?? 0 },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Section Tabs */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {sections.map((s) => {
+          const Icon = s.icon;
+          const active = section === s.id;
+          return (
+            <Button
+              key={s.id}
+              size="sm"
+              variant={active ? "primary" : "outline"}
+              onClick={() => setSection(s.id)}
+              className="gap-2"
+            >
+              <Icon className="h-4 w-4" />
+              {s.label}
+              {s.count > 0 && (
+                <Badge variant={active ? "default" : "accent"} className="text-[10px] ml-1">
+                  {fmt(s.count)}
+                </Badge>
+              )}
+            </Button>
+          );
+        })}
+        <div className="flex-1" />
+        {!data.dbAvailable && (
+          <Badge variant="warning" className="text-xs">
+            <AlertTriangle className="h-3 w-3 mr-1" /> DB nicht verbunden
+          </Badge>
+        )}
+        <Button size="sm" variant="ghost" onClick={() => refetch()} aria-label="Aktualisieren">
+          <RefreshCw className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Section Content */}
+      {section === "sync" && <SyncStatusSection rows={data.sync.rows} totals={data.sync.totals} onSelectCorpus={onSelectCorpus} />}
+      {section === "work" && (
+        <WorkQueueSection
+          items={data.workQueue.items}
+          total={data.workQueue.total}
+          defective={data.workQueue.defective}
+          needsReview={data.workQueue.needsReview}
+          verified={data.workQueue.verified}
+        />
+      )}
+      {section === "pipeline" && <PipelineSection paused={data.pipeline.paused} states={data.pipeline.states} onActionComplete={() => refetch()} />}
+      {section === "trust" && <TrustSection rows={data.trust.rows} totals={data.trust.totals} />}
+      {section === "delta" && data.risDelta && (
+        <RisDeltaSection rows={data.risDelta.rows} triggerPending={data.risDelta.triggerPending} onActionComplete={() => refetch()} />
+      )}
+    </div>
+  );
+}

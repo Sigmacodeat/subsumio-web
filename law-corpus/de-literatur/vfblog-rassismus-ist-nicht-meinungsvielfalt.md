@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rassismus-ist-nicht-meinungsvielfalt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "57d2a83c445f71e7"
 ---
 
 # Rassismus ist nicht „Meinungsvielfalt“!

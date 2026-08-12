@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/klimakrise-schuldenbremse-bremen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d6ade6f68d7f7058"
 ---
 
 # Bremer Türöffner zur klimaresilienten Finanzverfassung

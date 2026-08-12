@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/humanitarian-externalisation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ec5828fe7c168c56"
 ---
 
 # Humanitarian Externalisation

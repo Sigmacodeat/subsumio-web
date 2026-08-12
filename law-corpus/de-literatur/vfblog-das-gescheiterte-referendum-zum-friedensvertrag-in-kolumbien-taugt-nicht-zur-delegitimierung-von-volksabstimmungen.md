@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "34542bf5c2cd414c"
 ---
 
 # Das gescheiterte Referendum zum Friedensvertrag in Kolumbien taugt nicht zur Delegitimierung von Volksabstimmungen

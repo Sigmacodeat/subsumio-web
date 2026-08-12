@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "87453be2ec9d1f20"
 ---
 
 # Geistige Behinderung ist kein Grund für Wahlrechtsausschluss

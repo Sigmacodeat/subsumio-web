@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bfbd6b5594b71713"
 ---
 
 # Awakening dormant law – or the invocation of the European mutual assistance clause after the Paris attacks

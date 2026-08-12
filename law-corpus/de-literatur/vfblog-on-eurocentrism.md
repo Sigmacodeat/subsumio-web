@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/on-eurocentrism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e1af15289ae9c47d"
 ---
 
 # On Eurocentrism

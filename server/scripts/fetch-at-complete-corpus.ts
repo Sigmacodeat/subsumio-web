@@ -13,11 +13,11 @@
  *   bun run server/scripts/fetch-at-complete-corpus.ts [--dry-run] [--phase judikatur|staatsvertraege|landesrecht|all]
  *
  * Output directories:
- *   server/law-corpus/at-judikatur-bvwg/   — BVwG decisions
- *   server/law-corpus/at-judikatur-bfg/    — BFG decisions
- *   server/law-corpus/at-judikatur-lvwg/   — LVwG decisions
- *   law-corpus/at-staatsvertraege/          — Staatsverträge
- *   law-corpus/at-landesrecht/              — Landesrecht (per-state subdirs)
+ *   law-corpus/at-judikatur-bvwg/   — BVwG decisions
+ *   law-corpus/at-judikatur-bfg/    — BFG decisions
+ *   law-corpus/at-judikatur-lvwg/   — LVwG decisions
+ *   law-corpus/at-staatsvertraege/  — Staatsverträge
+ *   law-corpus/at-landesrecht/      — Landesrecht (per-state subdirs)
  *
  * RIS OGD API: https://data.bka.gv.at/ris/api/v2.6
  * No auth required (public OGD).

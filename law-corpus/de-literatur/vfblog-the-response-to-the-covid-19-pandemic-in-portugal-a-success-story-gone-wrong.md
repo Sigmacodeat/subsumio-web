@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5b836f2a80cb073d"
 ---
 
 # The Response to the COVID-19 pandemic in Portugal: A success story gone wrong.

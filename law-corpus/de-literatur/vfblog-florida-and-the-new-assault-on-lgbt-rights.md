@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/florida-and-the-new-assault-on-lgbt-right
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d2d370004170a0f1"
 ---
 
 # Florida and the New Assault on LGBT Rights

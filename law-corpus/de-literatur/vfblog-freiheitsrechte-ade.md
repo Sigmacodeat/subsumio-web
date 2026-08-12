@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/freiheitsrechte-ade/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ffa5e8f0ae8b6441"
 ---
 
 # Freiheitsrechte ade?

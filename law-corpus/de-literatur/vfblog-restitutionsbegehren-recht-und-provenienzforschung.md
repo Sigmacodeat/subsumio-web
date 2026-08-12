@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/restitutionsbegehren-recht-und-provenienz
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "769dec9a3f700fcc"
 ---
 
 # Restitutionsbegehren, Recht und Provenienzforschung

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/death-penalty-populism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "16ef8576de10790d"
 ---
 
 # Capital Punishment Revivalism

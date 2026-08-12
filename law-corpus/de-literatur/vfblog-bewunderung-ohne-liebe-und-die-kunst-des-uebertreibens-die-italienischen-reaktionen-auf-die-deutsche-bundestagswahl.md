@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bf98ea92b26435a7"
 ---
 
 # Bewunderung ohne Liebe und die Kunst des Übertreibens: die italienischen Reaktionen auf die deutsche Bundestagswahl

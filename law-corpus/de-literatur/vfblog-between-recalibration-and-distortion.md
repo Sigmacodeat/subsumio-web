@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/between-recalibration-and-distortion/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "08fa2fefaf0d9fd5"
 ---
 
 # Between Recalibration and Distortion

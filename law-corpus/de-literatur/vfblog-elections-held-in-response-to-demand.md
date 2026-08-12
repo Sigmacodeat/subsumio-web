@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/elections-held-in-response-to-demand/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9cff0aea2baa700c"
 ---
 
 # Elections Held in Response to Demand

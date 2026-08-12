@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8b8298fd3279ab1e"
 ---
 
 # Heidelberger Salon digital: “Vaccine Nationalism” and Distributive Justice

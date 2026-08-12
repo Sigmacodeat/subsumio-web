@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sensible-and-serious-yet-hardly-supreme/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "61c47be4cc22de41"
 ---
 
 # ‘Sensible and Serious’ – Yet Hardly Supreme

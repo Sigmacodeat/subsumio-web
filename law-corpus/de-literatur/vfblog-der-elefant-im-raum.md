@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/der-elefant-im-raum/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c4eb4fb428802564"
 ---
 
 # Der Elefant im Raum

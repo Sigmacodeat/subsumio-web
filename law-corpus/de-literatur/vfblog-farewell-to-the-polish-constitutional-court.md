@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/farewell-to-the-polish-constitutional-cou
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2d0dc69b9e1362fa"
 ---
 
 # Farewell to the Polish Constitutional Court

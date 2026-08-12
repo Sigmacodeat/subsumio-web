@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/armenias-catch-22/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "79c2df3ee6123413"
 ---
 
 # Armenia’s Constitutional Catch-22

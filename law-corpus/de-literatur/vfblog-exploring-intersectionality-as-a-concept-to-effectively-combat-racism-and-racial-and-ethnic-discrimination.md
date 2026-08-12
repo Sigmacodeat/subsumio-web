@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "11dd2759e4dc8d7e"
 ---
 
 # Exploring Intersectionality as a Concept to Effectively Combat Racism and Racial and Ethnic Discrimination

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ac641ddfc4b90035"
 ---
 
 # Laudatio für Gertrude Lübbe-Wolff aus Anlass der Verleihung des Hegel-Preises am 24. Juli 2012 in Stuttgart

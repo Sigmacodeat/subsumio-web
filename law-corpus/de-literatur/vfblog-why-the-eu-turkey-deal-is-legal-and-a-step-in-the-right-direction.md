@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "00accf9c6126c32f"
 ---
 
 # Why the EU-Turkey Deal is Legal and a Step in the Right Direction

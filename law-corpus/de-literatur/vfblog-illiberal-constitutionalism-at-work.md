@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/illiberal-constitutionalism-at-work/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ff2cf5dde89fa900"
 ---
 
 # Illiberal Consti&shy;tutionalism at Work

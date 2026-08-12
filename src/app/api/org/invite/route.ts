@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getStore, getOrgStore } from "@/lib/auth/store";
+import { getStore, getOrgStore, markOnboardingProgress } from "@/lib/auth/store";
 import { signActionToken, bindFragment, INVITE_TOKEN_TTL_SECONDS } from "@/lib/auth/tokens";
 import { limitsFor } from "@/lib/plans";
 import { sendMail, siteUrl } from "@/lib/mail";
@@ -63,8 +63,10 @@ export const POST = createHandler(
     });
 
     if (!result.sent && process.env.NODE_ENV !== "production") {
+      void markOnboardingProgress(ctx.user.id, { teamInvited: true });
       return Response.json({ ok: true, devJoinUrl: joinUrl });
     }
+    void markOnboardingProgress(ctx.user.id, { teamInvited: true });
     return Response.json({ ok: true });
   }
 );

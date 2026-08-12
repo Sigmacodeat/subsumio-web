@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2017 Ines Meier;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "e3ccf20aa4bf0dd1"
 ---
 
 # Die fachtechnisch verantwortliche Person im Verwaltungsstrafverfahren von Swissmedic

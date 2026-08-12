@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gelenkte-demokratie-und-der-protest-der-g
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "83e800977789623c"
 ---
 
 # “Gelenkte Demokratie” und der Protest der Gelenkten

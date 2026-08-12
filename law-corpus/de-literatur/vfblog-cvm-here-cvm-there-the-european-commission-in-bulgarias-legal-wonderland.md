@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5b8b131bfb0a5453"
 ---
 
 # CVM Here, CVM There: The European Commission in Bulgaria’s Legal Wonderland

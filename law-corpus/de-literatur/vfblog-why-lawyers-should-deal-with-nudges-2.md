@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/why-lawyers-should-deal-with-nudges-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c6a8117e54c955c4"
 ---
 
 # Warum Juristen sich mit „Nudges” beschäftigen sollten

@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2021 Sandra Hotz, Meret Lüdi;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "c7c1a15dc2156d80"
 ---
 
 # Vertraglich vereinbarter Sex gegen Entgelt ist nicht sittenwidrig: Anmerkungen zu BGE 147 IV 73

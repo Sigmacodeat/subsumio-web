@@ -7,6 +7,7 @@ version_date: "2026-06-21"
 retrieved_at: "2026-06-21"
 source_url: "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX:32016L0680"
 license: "Quelle: EUR-Lex (eur-lex.europa.eu) — Amtliche Veröffentlichung der Europäischen Union."
+content_hash: "9b812915b8583dfe"
 ---
 
 - L_2016119DE.01008901.xml

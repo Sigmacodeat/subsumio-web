@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/entscheiden-muessen-ist-besser-als-spende
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "258ea5944337348d"
 ---
 
 # Entscheiden müssen ist besser als spenden müssen

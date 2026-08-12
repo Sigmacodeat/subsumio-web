@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/an-inconvenient-constraint/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a939d41a2c2e4391"
 ---
 
 # An Inconvenient Constraint

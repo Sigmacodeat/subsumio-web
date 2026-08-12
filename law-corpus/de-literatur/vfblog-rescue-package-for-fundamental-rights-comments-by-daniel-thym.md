@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dbf5e5096fe084a0"
 ---
 
 # Rescue Package for Fundamental Rights: Comments by DANIEL THYM

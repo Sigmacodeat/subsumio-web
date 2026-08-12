@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "801c596826685efc"
 ---
 
 # The State of Emergency, Non-Refoulement and the Turkish Constitutional Court

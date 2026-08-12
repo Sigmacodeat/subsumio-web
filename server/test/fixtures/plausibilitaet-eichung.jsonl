@@ -1,0 +1,10 @@
+{"slug":"legal/statutes/at/zpo/p-525","erwartet":"ok","warum":"Vollständiger Normtext zur einstweiligen Vorkehrung im Besitzstörungsverfahren. DeepSeek meldete faelschlich 'kein Inhalt, nur Paragraphentitel'."}
+{"slug":"legal/statutes/at/abgb/p-1044","erwartet":"ok","warum":"Legitim kurzer Paragraph (128 Zeichen) in altertuemlicher Schreibweise: 'Die Vertheilung der Kriegsschaeden…'"}
+{"slug":"legal/statutes/at/landesrecht/gnr-10000050/p-6","erwartet":"ok","warum":"Lebensrettungsmedaille Salzburg § 6 zur Geldbelohnung. DeepSeek meldete faelschlich 'Fundstelle passt nicht zum Titel'."}
+{"slug":"legal/statutes/at/2-ausswv-2019/anl-1","erwartet":"ok","warum":"Anlage mit reiner Laenderliste (Waffenembargo) — normativ, aber ohne Paragraphenbezug."}
+{"slug":"legal/statutes/at/eheg/p-1","erwartet":"ok","warum":"Regulaerer Paragraph des Ehegesetzes."}
+{"slug":"legal/statutes/at/estg-1988/p-2","erwartet":"ok","warum":"Kernparagraph des Einkommensteuergesetzes (Einkommensbegriff)."}
+{"slug":"legal/statutes/at/b-vg/art-18","erwartet":"ok","warum":"Legalitaetsprinzip der Bundesverfassung."}
+{"slug":"legal/statutes/at/stgb/p-75","erwartet":"ok","warum":"Mord — kurzer, vollstaendiger Straftatbestand."}
+{"slug":"legal/statutes/at/ergaenzung-des-berichtspflichtenerlasses-2021-idf-2023-gz-2023-0-246-514-berichtspflicht-ueber-strafsachen-wegen-vorsaet","erwartet":"defekt","warum":"PDF-Seitenumbruch mitten im Text, Beginn mitten im Satz, Seiten in falscher Reihenfolge."}
+{"slug":"legal/statutes/at/richtlinie-taxikostenzuschuss-3","erwartet":"defekt","warum":"Enthaelt 'GemeinderechtGrazGrazwww.ris.bka.gv.atSeite 2 von 2' — Kopfzeile der Druckfassung im Fliesstext."}

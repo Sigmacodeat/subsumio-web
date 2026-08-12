@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/three-crises-and-one-waiver/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "138f034cc5837357"
 ---
 
 # Three Crises and One Waiver

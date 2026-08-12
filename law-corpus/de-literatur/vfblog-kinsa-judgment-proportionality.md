@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kinsa-judgment-proportionality/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3ca24f1e154966de"
 ---
 
 # The Legacy of Kinsa

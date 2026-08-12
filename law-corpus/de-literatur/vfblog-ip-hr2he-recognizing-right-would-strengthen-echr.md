@@ -15,6 +15,7 @@ source_url: https://verfassungsblog.de/ip-hr2he-recognizing-right-would-strength
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a19100ff0df2b8b1"
 ---
 
 # Why Recognizing the Right to a Healthy Environment Would Strengthen the Environmental Human Rights Framework under the European Convention on Human Rights

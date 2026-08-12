@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sale-of-nationality-as-a-violation-human-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9c0c6afa2d6aab4a"
 ---
 
 # Sale of Nationality as a Violation of Human Dignity

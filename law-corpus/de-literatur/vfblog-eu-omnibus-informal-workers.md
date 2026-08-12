@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eu-omnibus-informal-workers/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "77562cefdf264178"
 ---
 
 # Left Behind

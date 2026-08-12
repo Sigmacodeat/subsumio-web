@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/you-are-bound/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8cf1f9ae9b0e290f"
 ---
 
 # You are bound

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "528aa49a3d696ce1"
 ---
 
 # Freedom of Religion vs Islamophobia: Lombardy’s “Anti-Mosque Law” is Unconstitutional

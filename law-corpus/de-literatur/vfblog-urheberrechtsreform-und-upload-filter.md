@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/urheberrechtsreform-und-upload-filter/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "94caae5fccc66eea"
 ---
 
 # Urheberrechtsreform und Upload-Filter: Eine Gefahr für die Meinungspluralität?

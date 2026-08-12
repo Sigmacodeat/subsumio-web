@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/congress-war-powers/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e27aaa8a261a6d96"
 ---
 
 # The Constitution’s Midnight

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ungarn-der-entwurf-der-neuen-verfassung-l
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5c8f3b9e828fc9a7"
 ---
 
 # Ungarn: Der Entwurf der neuen Verfassung liegt vor

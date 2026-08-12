@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/making-abuse-more-costly/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b35843601a6d1ab4"
 ---
 
 # Making Abuse More Costly

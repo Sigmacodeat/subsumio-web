@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0c7316fa59423e25"
 ---
 
 # Is This President Erdogan’s Last Term in Office? A Note on Constitutional Interpretive Possibilities

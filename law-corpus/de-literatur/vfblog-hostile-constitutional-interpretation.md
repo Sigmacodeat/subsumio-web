@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hostile-constitutional-interpretation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0d151181b7467a72"
 ---
 
 # Hostile Constitutional Interpretation

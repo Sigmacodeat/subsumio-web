@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/melonis-illiberal-anti-rave-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b64078c5305b540a"
 ---
 
 # Meloni’s Illiberal Anti-Rave Law

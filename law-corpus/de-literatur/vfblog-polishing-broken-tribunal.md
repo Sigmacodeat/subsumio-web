@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/polishing-broken-tribunal/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6bf41d90749306e5"
 ---
 
 # Polish(ing) Broken Tribunal

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-rules-of-the-game/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2f06be3aa5a80fd0"
 ---
 
 # The Rules of the Game

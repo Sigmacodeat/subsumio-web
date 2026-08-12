@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/towards-planetary-boundaries-for-business
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ba69217bff068131"
 ---
 
 # Towards Planetary Boundaries for Business?

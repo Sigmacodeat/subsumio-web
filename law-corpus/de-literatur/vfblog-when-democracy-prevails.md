@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/when-democracy-prevails/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f9837b66a53c0769"
 ---
 
 # When Democracy Prevails

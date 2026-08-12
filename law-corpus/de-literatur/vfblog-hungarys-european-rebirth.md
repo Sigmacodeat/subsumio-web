@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hungarys-european-rebirth/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "12aa80bf00bfc21d"
 ---
 
 # Hungary’s European Rebirth

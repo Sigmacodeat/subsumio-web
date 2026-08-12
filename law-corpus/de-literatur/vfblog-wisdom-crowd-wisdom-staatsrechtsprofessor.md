@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wisdom-crowd-wisdom-staatsrechtsprofessor
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "86a416624ca203ec"
 ---
 
 # Wisdom of the Crowd vs. Wisdom of the Staatsrechtsprofessor

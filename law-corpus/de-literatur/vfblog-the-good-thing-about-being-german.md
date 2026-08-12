@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-good-thing-about-being-german/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f1d143d88bf2cb5d"
 ---
 
 # The Good Thing about Being German

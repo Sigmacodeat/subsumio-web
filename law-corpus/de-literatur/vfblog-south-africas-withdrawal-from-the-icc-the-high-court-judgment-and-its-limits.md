@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d5563dcec81e80a4"
 ---
 
 # South Africa’s Withdrawal from the ICC: The High Court Judgment and its Limits

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/takes-brit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5f534f3be3ab1dd8"
 ---
 
 # It takes a Brit&#8230;

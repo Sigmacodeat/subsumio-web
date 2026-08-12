@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/who-is-violating-whom/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2cac6bb6e7de49ab"
 ---
 
 # Who is violating whom

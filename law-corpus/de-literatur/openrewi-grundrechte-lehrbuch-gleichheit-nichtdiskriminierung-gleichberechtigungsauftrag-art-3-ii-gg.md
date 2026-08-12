@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "c22003e5604f7a00"
 ---
 
 § 19.1  Gleichheit (Art. 3 I GG) &#124; Inhaltsverzeichnis &#124; § 19.3 Diskriminierungsverbote (Art. 3 III GG) 

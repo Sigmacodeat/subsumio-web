@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/argumentation-expertise-normen-demokratie
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2e414007b790803e"
 ---
 
 # Mit Wahrheit oder mit Mehrheit?

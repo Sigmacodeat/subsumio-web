@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d16db92adcf0417b"
 ---
 
 # The European Commission Cedes its Crucial Leverage vis-à-vis the Rule of Law in Poland

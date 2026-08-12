@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7e4086d1ab83afb0"
 ---
 
 # Nein sagen können: zur AfD und ihrem Anspruch auf einen Platz im Bundes&shy;tags&shy;präsidium

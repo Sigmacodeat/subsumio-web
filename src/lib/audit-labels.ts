@@ -108,6 +108,7 @@ export type AuditAction =
   | "billing.credit_consumption"
   | "billing.credit_refund"
   | "onboarding.complete"
+  | "onboarding.progress"
   | "team.invite"
   | "team.remove"
   | "team.role_change"
@@ -142,6 +143,21 @@ export type AuditAction =
   | "admin.data_delete"
   | "admin.data_export"
   | "admin.audit_export"
+  | "admin.backup"
+  | "admin.dr"
+  | "admin.feature_flag"
+  | "admin.feedback_triage"
+  | "admin.fine_tuning_gate"
+  | "admin.ip_allowlist"
+  | "admin.model_vetting"
+  | "admin.regression_mining"
+  | "admin.backfill_doc_type"
+  | "admin.corpus_pipeline"
+  | "admin.chunk_edit"
+  | "admin.chunk_delete"
+  | "admin.chunk_reembed"
+  | "admin.chunk_flag"
+  | "admin.chunk_clear_flag"
   | "acl.add_member"
   | "acl.remove_member"
   | "acl.delete_group"
@@ -187,7 +203,9 @@ export type AuditAction =
   | "verification.policy_allowed"
   | "verification.policy_denied"
   | "verification.override_granted"
-  | "verification.receipt_invalidated";
+  | "verification.receipt_invalidated"
+  | "signature.capture"
+  | "poa.generate_pdf";
 
 const ACTION_LABELS: Record<string, string> = {
   "user.login": "Login",
@@ -247,6 +265,7 @@ const ACTION_LABELS: Record<string, string> = {
   "billing.credit_consumption": "Credits verbraucht",
   "billing.credit_refund": "Credits erstattet",
   "onboarding.complete": "Onboarding abgeschlossen",
+  "onboarding.progress": "Onboarding-Fortschritt aktualisiert",
   "team.invite": "Team-Einladung",
   "team.remove": "Team-Mitglied entfernt",
   "connector.add": "Konnektor hinzugefügt",
@@ -280,6 +299,21 @@ const ACTION_LABELS: Record<string, string> = {
   "admin.data_delete": "Admin: Benutzerdaten gelöscht",
   "admin.data_export": "Admin: Benutzerdaten exportiert",
   "admin.audit_export": "Admin: Audit-Log exportiert",
+  "admin.backup": "Admin: Backup erstellt/wiederhergestellt",
+  "admin.dr": "Admin: Disaster Recovery",
+  "admin.feature_flag": "Admin: Feature-Flag geändert",
+  "admin.feedback_triage": "Admin: Feedback triagiert",
+  "admin.fine_tuning_gate": "Admin: Fine-Tuning Gate",
+  "admin.ip_allowlist": "Admin: IP-Allowlist geändert",
+  "admin.model_vetting": "Admin: Modell geprüft/befördert",
+  "admin.regression_mining": "Admin: Regression-Mining",
+  "admin.backfill_doc_type": "Admin: Doc-Type Backfill",
+  "admin.corpus_pipeline": "Admin: Corpus-Pipeline gesteuert",
+  "admin.chunk_edit": "Admin: Chunk bearbeitet",
+  "admin.chunk_delete": "Admin: Chunk gelöscht",
+  "admin.chunk_reembed": "Admin: Chunk Re-Embed angestoßen",
+  "admin.chunk_flag": "Admin: Chunk markiert",
+  "admin.chunk_clear_flag": "Admin: Chunk-Markierung entfernt",
   "dms.push": "Dokument an DMS gepusht",
   "space.update": "Shared Space aktualisiert",
   "space.delete": "Shared Space gelöscht",
@@ -339,6 +373,8 @@ const ACTION_LABELS: Record<string, string> = {
   "verification.policy_denied": "Verifikations-Policy: Aktion verweigert",
   "verification.override_granted": "Verifikations-Policy: Anwaltlicher Override erteilt",
   "verification.receipt_invalidated": "Verifikations-Policy: Receipt invalidiert (Inhaltsänderung)",
+  "signature.capture": "Signatur erfasst",
+  "poa.generate_pdf": "Vollmacht-PDF generiert",
 };
 
 export function auditLabel(action: string): string {

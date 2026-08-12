@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/stirb-an-einem-anderen-tag/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c4deb2938621c8ac"
 ---
 
 # Stirb an einem anderen Tag

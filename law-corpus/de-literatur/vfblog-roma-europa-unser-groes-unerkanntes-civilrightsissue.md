@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1225a5879e924c73"
 ---
 
 # Roma in Europa: Unser großes unerkanntes Civil-Rights-Issue

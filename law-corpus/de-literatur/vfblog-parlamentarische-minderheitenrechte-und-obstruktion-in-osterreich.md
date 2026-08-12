@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2df10b7b415ef5b7"
 ---
 
 # Parlamentarische Minderheitenrechte und Obstruktion in Österreich

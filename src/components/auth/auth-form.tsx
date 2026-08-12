@@ -307,11 +307,12 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
                   type="email"
                   name="email"
                   autoComplete="email"
+                  inputMode="email"
                   required
                   placeholder={t.emailPlaceholder}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-lg border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                  className="w-full rounded-lg border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-base sm:text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
               </div>
             </label>

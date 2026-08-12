@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/thats-just-how-its-built/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "318dfae298ba9f51"
 ---
 
 # That's Just How It's Built

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/money-talks/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9adb3011feff9792"
 ---
 
 # Money Talks

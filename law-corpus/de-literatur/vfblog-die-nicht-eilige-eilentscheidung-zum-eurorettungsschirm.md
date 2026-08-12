@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "489fc1b6fcd48ab0"
 ---
 
 # Die nicht so eilige Eilentscheidung zum Euro-Rettungsschirm

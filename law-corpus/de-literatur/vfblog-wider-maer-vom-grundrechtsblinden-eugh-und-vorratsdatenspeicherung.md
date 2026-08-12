@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "77c6bfe2a0b5f64b"
 ---
 
 # Wider die Mär vom Grundrechtsblinden: Der EuGH und die Vorratsdatenspeicherung

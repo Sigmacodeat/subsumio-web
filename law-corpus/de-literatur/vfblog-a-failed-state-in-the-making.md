@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-failed-state-in-the-making/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a1184b9035bc1ab1"
 ---
 
 # A Failed State in the Making

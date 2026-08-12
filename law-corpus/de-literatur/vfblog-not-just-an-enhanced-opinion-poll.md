@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/not-just-an-enhanced-opinion-poll/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cedd6264d4429b2c"
 ---
 
 # Not Just an Enhanced Opinion Poll

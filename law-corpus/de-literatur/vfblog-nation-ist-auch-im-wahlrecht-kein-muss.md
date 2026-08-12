@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nation-ist-auch-im-wahlrecht-kein-muss/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "591412598466d246"
 ---
 
 # Nation ist auch im Wahlrecht kein Muss

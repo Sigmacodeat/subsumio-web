@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "633e958142fc081b"
 ---
 
 # Die Menschenwürde als normatives Prinzip – und ihre Bedeutung für den Embryonenschutz

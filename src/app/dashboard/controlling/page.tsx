@@ -92,7 +92,7 @@ export default function ControllingPage() {
   const totalHours = stats.reduce((s, l) => s + l.totalHours, 0);
 
   return (
-    <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("controlling.title")}
         description={t("controlling.desc")}

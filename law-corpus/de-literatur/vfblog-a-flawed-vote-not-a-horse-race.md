@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-flawed-vote-not-a-horse-race/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4dc1b5907cf79ccb"
 ---
 
 # A Flawed Vote, Not a Horse Race

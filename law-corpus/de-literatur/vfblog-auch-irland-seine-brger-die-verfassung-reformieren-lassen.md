@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9c6bbdc32a6deaa0"
 ---
 
 # Auch Irland will seine Bürger die Verfassung reformieren lassen

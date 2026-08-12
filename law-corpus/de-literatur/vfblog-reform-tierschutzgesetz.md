@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/reform-tierschutzgesetz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f3760f42c213d525"
 ---
 
 # Halbgare Würste

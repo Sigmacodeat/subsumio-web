@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-time-to-speak-up/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0fbe7e9c01e7aaeb"
 ---
 
 # The Time to Speak Up

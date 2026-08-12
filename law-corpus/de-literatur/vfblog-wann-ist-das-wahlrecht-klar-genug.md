@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wann-ist-das-wahlrecht-klar-genug/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7d2f69e0b7eb97b4"
 ---
 
 # Wann ist das Wahlrecht klar genug?

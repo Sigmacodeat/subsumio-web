@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/paritaet-in-parlamenten-eine-einfuehrung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f912ca8af308d608"
 ---
 
 # Parität in Parlamenten – eine Einführung

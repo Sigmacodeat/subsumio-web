@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/power-dsa-dma-07/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "85cb05c879dc55b5"
 ---
 
 # General and specific monitoring obligations in the Digital Services Act

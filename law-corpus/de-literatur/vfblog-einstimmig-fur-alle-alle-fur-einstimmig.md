@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/einstimmig-fur-alle-alle-fur-einstimmig/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e50a840c6fdea4c6"
 ---
 
 # Einstimmig für alle, alle für einstimmig?

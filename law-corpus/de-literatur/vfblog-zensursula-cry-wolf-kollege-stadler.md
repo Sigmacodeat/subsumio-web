@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zensursula-cry-wolf-kollege-stadler/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "603e12565014b120"
 ---
 
 # Zensursula: Cry wolf, Kollege Stadler

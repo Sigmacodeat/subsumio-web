@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/frankensteins-court/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "27f86fc6b09b55b3"
 ---
 
 # Frankenstein’s Court

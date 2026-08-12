@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ab24d750e72228cd"
 ---
 
 # Defenceless Formalists: on Abuse of Law and the Weakness of the Polish Judiciary

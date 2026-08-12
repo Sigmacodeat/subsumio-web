@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/entkriminalisierung-schwangerschaftsabbru
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8d3427749b40ecf9"
 ---
 
 # Die Würde der Schwangeren ist unantastbar

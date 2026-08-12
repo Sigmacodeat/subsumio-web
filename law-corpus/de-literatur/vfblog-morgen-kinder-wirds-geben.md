@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/morgen-kinder-wirds-geben/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "977c0b2468175ae5"
 ---
 
 # Morgen, Kinder, wird's was geben

@@ -16,6 +16,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2019 Aurelia Tamò-Larrieux;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "8fd3c43c01d6a751"
 ---
 
 # Excerpt of «Designing for Privacy and its Legal Framework»

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fea0553394021464"
 ---
 
 # The Catalan Self-Determination Referendum Draft Bill: A New Form of Transitional Constitutional Regime

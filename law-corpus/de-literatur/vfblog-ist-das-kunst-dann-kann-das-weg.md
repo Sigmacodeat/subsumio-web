@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ist-das-kunst-dann-kann-das-weg/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1b680cdd8e3e953f"
 ---
 
 # Ist das Kunst? Dann kann das weg!

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pardons-criminal-theory-and-political-soc
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "93a3db72583a696d"
 ---
 
 # Pardons, Criminal Theory, and Political Sociology

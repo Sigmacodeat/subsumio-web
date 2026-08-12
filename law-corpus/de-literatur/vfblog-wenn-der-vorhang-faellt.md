@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wenn-der-vorhang-faellt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "20bb1375bebd2af7"
 ---
 
 # Wenn der Vorhang fällt

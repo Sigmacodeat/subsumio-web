@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8b1e590396bf7f7c"
 ---
 
 # „Il y a une vraie complémentarité entre les blogs et les articles de fond publiés dans les revues.“ – Entretien avec Serge Slama

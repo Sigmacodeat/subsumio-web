@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/where-is-the-pulse-of-europe-when-its-nee
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fcf1885871067d0b"
 ---
 
 # Where is the Pulse of Europe when it's needed?

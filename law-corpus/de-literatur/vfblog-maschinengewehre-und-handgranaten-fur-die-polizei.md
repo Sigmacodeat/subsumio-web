@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/maschinengewehre-und-handgranaten-fur-die
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "87872fb1b1efc7d7"
 ---
 
 # Maschinengewehre und Handgranaten für die Polizei

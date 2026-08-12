@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c900abfbbd965806"
 ---
 
 # In Search of a Role for the Member States and the EU to Establish an Investment Screening Mechanism

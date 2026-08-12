@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/restrisiken-der-kultur/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2c36b6c65494c591"
 ---
 
 # Restrisiken der Kultur

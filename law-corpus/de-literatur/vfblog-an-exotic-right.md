@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/an-exotic-right/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b8ab478aa12a297f"
 ---
 
 # An Exotic Right

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/strengthening-the-president-betraying-mai
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b0d31659d9ac8629"
 ---
 
 # Strengthening the President – Betraying Maidan?

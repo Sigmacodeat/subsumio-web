@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "51e1ba1a0a603935"
 ---
 
 # ESM/Fiskalpakt in Karlsruhe, Teil 2: Parlamentarier und ihre Verantwortung

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/slapps-daphnes-law-and-the-future-of-jour
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6861da9cee28ecb7"
 ---
 
 # SLAPPs, Daphne’s Law, and the Future of Journalism

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bulgarias-mafia-state-and-the-failure-of-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "14a506649fe9bbda"
 ---
 
 # Bulgaria's Mafia State and the Failure of the CVM

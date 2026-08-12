@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/saufen-in-der-seuche-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "434c4b28970b7db2"
 ---
 
 # Saufen in der Seuche

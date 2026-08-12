@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-end-of-the-eurocrats-dream/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a2adec25e0d756b1"
 ---
 
 # The End of the Eurocrats’ Dream

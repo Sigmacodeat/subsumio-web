@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/no-more-need-for-doublespeak/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cb7f09aa6ae92b0c"
 ---
 
 # No More Need for Doublespeak

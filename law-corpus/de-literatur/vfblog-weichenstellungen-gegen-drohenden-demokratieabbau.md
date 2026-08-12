@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/weichenstellungen-gegen-drohenden-demokra
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "63b944523766b8dc"
 ---
 
 # Weichenstellungen gegen drohenden Demokratieabbau

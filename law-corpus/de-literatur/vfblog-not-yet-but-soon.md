@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/not-yet-but-soon/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "89996407c7d83454"
 ---
 
 # Not Yet but Soon

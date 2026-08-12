@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/the-case-of-abortion/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "67a67edfb00bad3c"
 ---
 
 # How EU Membership Transformed Ireland’s Socio-Legal Norms: The Case of Abortion

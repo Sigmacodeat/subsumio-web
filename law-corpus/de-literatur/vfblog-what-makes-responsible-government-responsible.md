@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/what-makes-responsible-government-respons
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c052eeae208fad0f"
 ---
 
 # What Makes Responsible Government Responsible?

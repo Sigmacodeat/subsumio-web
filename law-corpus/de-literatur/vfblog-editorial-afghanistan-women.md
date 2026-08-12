@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/editorial-afghanistan-women/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "790d1a9847878c02"
 ---
 
 # The Battle Against Gender Apartheid

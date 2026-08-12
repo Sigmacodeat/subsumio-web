@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kanaks-and-caldoches/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "14a31778083871ce"
 ---
 
 # On Kanaks and Caldoches

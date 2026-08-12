@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wer-sind-die-regierungsbeauftragten/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "701681a4da477354"
 ---
 
 # Wer sind die Regierungsbeauftragten?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fixed-terms-are-not-the-solution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c6cc0bcc74807d00"
 ---
 
 # Fixed Terms Are Not the Solution

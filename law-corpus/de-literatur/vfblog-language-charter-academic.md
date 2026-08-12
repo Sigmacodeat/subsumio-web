@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/language-charter-academic/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "95408679bd8657b9"
 ---
 
 # Accent on the Language of Instruction

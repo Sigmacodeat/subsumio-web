@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ca8e95d6bbb2cf55"
 ---
 
 # Age is the limit? Background of the CJEU case C-619/18 Commission v Poland

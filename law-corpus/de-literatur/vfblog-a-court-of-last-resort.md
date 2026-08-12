@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-court-of-last-resort/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4acf4f4b93bec181"
 ---
 
 # A Court of Last Resort

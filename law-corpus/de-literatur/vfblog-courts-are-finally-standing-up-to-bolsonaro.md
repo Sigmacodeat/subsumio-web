@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/courts-are-finally-standing-up-to-bolsona
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "31f29fd23299d24e"
 ---
 
 # Courts are Finally Standing up to Bolsonaro

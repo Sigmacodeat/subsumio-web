@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/uk-silence-protest/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8a09326df17c51b9"
 ---
 
 # “Yes, you can… but only if you’re quiet”

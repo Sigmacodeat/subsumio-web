@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/von-theorie-und-praxis/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f36f8a4f14ccd24b"
 ---
 
 # Von Theorie und Praxis

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/politicians-dont-dance-ai-doesnt-either/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a0cb82a1c9c9b2e1"
 ---
 
 # Politicians don’t dance? AI doesn’t either!

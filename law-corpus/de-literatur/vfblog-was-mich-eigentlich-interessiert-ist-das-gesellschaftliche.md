@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "47ef562b1e52e8e6"
 ---
 
 # „Was mich eigentlich interessiert, ist das Gesellschaftliche“

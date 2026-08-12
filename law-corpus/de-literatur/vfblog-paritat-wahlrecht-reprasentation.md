@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/paritat-wahlrecht-reprasentation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9c05261e03fe2bd1"
 ---
 
 # Abwägung statt Alarmismus

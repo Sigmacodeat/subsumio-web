@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-philosophers-dinner/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "45aa3543dbb11f87"
 ---
 
 # The Philosophers’ Dinner, or the Difficulty of Dissent

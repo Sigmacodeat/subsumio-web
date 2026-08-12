@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3d46587822ae13ac"
 ---
 
 # Frankreich: Internet-Sperren-Gesetz verfassungsgemäß

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/standing-in-the-face-of-illiberal-electio
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f1592d625500cbfa"
 ---
 
 # Standing in the Face of Illiberal Elections

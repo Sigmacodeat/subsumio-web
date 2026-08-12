@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2019 Nina Burri;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "0c81feec2e1ee7a7"
 ---
 
 # Landesverweisung und Freizügigkeitsabkommen – Bundesgericht vertagt Entscheid über Normenkonflikt

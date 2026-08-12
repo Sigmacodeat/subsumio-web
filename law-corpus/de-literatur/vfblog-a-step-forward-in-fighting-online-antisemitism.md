@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-step-forward-in-fighting-online-antisem
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e1b60343d4b39231"
 ---
 
 # A Step Forward in Fighting Online Antisemitism

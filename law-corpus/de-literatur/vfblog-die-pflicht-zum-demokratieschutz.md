@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-pflicht-zum-demokratieschutz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d3162e1a36791f7d"
 ---
 
 # Die Pflicht zum Demokratieschutz

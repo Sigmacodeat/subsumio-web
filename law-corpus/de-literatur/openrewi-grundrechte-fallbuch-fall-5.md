@@ -14,6 +14,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "48364641ab385e61"
 ---
 
 Fall 4 Lösung &#124; Inhaltsverzeichnis &#124; Fall 5 Lösung 

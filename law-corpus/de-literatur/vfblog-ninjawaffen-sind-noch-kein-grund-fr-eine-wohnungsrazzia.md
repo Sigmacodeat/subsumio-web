@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "10d39b1a384811d7"
 ---
 
 # Ninja-Waffen sind noch kein Grund für eine Wohnungs-Razzia

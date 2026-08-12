@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/der-wahlrechtsbrei-koechelt-weiter/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "41f9c517ac1564c5"
 ---
 
 # Der Wahlrechtsbrei köchelt weiter

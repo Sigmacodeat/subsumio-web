@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-ruckkehr-der-jedi-ritter/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1880f3e96b5d6518"
 ---
 
 # Die Rückkehr der Jedi-Ritter?

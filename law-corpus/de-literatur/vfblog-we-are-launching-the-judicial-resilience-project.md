@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/we-are-launching-the-judicial-resilience-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9e09afa098f0eb7e"
 ---
 
 # We Are Launching the Judicial Resilience Project

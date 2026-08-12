@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "637263b5a033178a"
 ---
 
 # The Court is dead, long live the courts? On judicial review in Poland in 2017 and „judicial space” beyond

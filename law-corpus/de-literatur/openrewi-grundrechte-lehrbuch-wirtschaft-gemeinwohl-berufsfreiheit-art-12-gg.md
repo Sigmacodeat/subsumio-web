@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "771a4eb9f563592c"
 ---
 
 § 21.1 Eigentumsfreiheit (Art. 14, 15 GG) &#124; Inhaltsverzeichnis &#124; § 21.3 Koalitionsfreiheit (Art. 9 III GG) 

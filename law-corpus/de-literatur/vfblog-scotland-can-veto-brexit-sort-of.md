@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/scotland-can-veto-brexit-sort-of/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "10e562a982046f2c"
 ---
 
 # Scotland Can Veto Brexit (sort of …).

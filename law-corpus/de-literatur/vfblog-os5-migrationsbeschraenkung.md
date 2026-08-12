@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/os5-migrationsbeschraenkung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e1ab92acc6f2eae9"
 ---
 
 # Rechtfertigt die Bedrohung durch den Terrorismus Migrationsbeschränkungen?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-rise-of-article-122-tfeu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a188875a3b6abec3"
 ---
 
 # The rise of Article 122 TFEU

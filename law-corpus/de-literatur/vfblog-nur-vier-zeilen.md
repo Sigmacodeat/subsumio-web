@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nur-vier-zeilen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1e1665fe3dd8e9d9"
 ---
 
 # Nur vier Zeilen

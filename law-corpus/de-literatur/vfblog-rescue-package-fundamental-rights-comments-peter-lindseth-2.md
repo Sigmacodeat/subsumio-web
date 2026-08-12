@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eca5b312ff08d8f7"
 ---
 
 # Rescue Package for Fundamental Rights:  Further Comments from PETER LINDSETH

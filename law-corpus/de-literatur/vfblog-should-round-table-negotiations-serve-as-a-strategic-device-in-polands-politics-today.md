@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a0bbb5a62148d254"
 ---
 
 # Should Round Table Negotiations Serve as a Strategic Device in Poland’s Politics Today?

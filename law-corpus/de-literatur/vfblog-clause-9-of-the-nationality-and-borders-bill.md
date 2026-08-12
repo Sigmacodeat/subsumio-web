@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/clause-9-of-the-nationality-and-borders-b
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cb99df3fc393b1f8"
 ---
 
 # Clause 9 of the Nationality and Borders Bill

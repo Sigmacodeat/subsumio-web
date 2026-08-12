@@ -115,7 +115,7 @@ export default function KYCPage() {
   const highRiskCount = verifications.filter((v) => v.risk_level === "high").length;
 
   return (
-    <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("kyc.title")}
         description={t("kyc.description")}
@@ -170,6 +170,8 @@ export default function KYCPage() {
               <Label className="text-xs text-[color:var(--ds-text-muted)]">E-Mail</Label>
               <Input
                 type="email"
+                autoComplete="email"
+                inputMode="email"
                 value={form.client_email}
                 onChange={(e) => setForm({ ...form, client_email: e.target.value })}
               />

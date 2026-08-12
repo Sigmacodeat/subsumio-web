@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/enlarging-the-hole-in-the-fence-of-migran
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0728c45f3f8aee38"
 ---
 
 # Enlarging the Hole in the Fence of Migrants’ Rights

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "736da72e5acbe674"
 ---
 
 # How the Data Retention Legislation Led to a National Constitutional Crisis in Portugal

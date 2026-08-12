@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kein-bailoutstop-aus-karlsruhe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6979ed13c698de17"
 ---
 
 # Kein Bailout-Stop aus Karlsruhe

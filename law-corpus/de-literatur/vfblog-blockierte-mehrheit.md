@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/blockierte-mehrheit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7d5e0144202c0e92"
 ---
 
 # Blockierte Mehrheit

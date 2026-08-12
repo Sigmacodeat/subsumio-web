@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "939aa37b097379b3"
 ---
 
 # Human Rights and Global Responses to the Pandemic in the Age of Hyper-globalization

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-verfassungsverstos-nicht-unbedingt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b456825d4ae628f5"
 ---
 
 # Ein Verfassungsverstoß? Nicht unbedingt

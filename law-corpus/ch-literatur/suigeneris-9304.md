@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2025 Cristina Cayo Ascencio;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "8a724105dbb754aa"
 ---
 
 # Sex Work Between Paternalism and Autonomy: A Critical Analysis of the ECtHR Judgment in "M.A. and Others v. France"

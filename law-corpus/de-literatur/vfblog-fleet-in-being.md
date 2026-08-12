@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fleet-in-being/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "11254a8c8cefc7ea"
 ---
 
 # Fleet In Being

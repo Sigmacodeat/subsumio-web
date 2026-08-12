@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/lulas-power-is-brazils-arm/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dfd684f8bd58fa5b"
 ---
 
 # Lula’s Power is Brazil’s Arm

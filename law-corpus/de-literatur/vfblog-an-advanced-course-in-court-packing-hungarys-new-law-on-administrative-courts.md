@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fedb5939e6a33781"
 ---
 
 # An Advanced Course in Court Packing: Hungary’s New Law on Administrative Courts

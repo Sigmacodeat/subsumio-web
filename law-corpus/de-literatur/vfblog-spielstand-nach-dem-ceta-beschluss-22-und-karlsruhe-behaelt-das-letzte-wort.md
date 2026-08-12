@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7019dc2b1f9cb9c8"
 ---
 
 # Spielstand nach dem CETA-Beschluss: 2:2, und Karlsruhe behält das letzte Wort

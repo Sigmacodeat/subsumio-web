@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-german-netzdg-a-risk-worth-taking/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "69e2573e017600a1"
 ---
 
 # The German NetzDG: A Risk Worth Taking?

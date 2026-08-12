@@ -75,16 +75,17 @@ describe("v0.21.0 Cathedral II — Layer 1 Foundation", () => {
     expect(v27!.sql).toMatch(/LANGUAGE plpgsql/);
   });
 
-  test("trigger weights doc_comment + symbol_name_qualified at A, chunk_text at B", () => {
+  test("trigger weight doc_comment + symbol_name_qualified at A, chunk_text at B", () => {
     // Doc-comment weight A (above body) means NL queries hit docstrings first.
+    // v118 (fts_config_german) changed 'english' → 'german' for all FTS.
     expect(v27!.sql).toMatch(
-      /setweight\(to_tsvector\('english', COALESCE\(NEW\.doc_comment, ''\)\), 'A'\)/
+      /setweight\(to_tsvector\('german', COALESCE\(NEW\.doc_comment, ''\)\), 'A'\)/
     );
     expect(v27!.sql).toMatch(
-      /setweight\(to_tsvector\('english', COALESCE\(NEW\.symbol_name_qualified, ''\)\), 'A'\)/
+      /setweight\(to_tsvector\('german', COALESCE\(NEW\.symbol_name_qualified, ''\)\), 'A'\)/
     );
     expect(v27!.sql).toMatch(
-      /setweight\(to_tsvector\('english', COALESCE\(NEW\.chunk_text, ''\)\), 'B'\)/
+      /setweight\(to_tsvector\('german', COALESCE\(NEW\.chunk_text, ''\)\), 'B'\)/
     );
   });
 

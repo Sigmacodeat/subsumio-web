@@ -8,6 +8,7 @@ import { chunkText, MARKDOWN_CHUNKER_VERSION } from "./chunkers/recursive.ts";
 import {
   chunkLegalSection,
   formatLegalSectionEmbeddingContext,
+  formatStatuteRef,
   LEGAL_CHUNKER_VERSION,
   type LegalChunkMetadata,
 } from "./chunkers/legal-statute.ts";
@@ -104,31 +105,126 @@ import { warnOnEmbeddingMismatch } from "./embedding-consistency-guard.ts";
 const _configCache = new WeakMap<object, { cfg: any; ts: number }>();
 const CONFIG_CACHE_TTL_MS = 60_000;
 
+/**
+ * Frontmatter-Feld als Text lesen — erster Schlüssel, der etwas liefert, gewinnt.
+ *
+ * WARUM: Das kanonische Korpus-Schema v1 benennt Felder um (`paragraph` →
+ * `paragraph_ref`, `abbreviation` → `abbr`, `indizes` → `legal_area`) und
+ * schreibt Mehrfachwerte als echte YAML-Liste statt als Semikolon-String.
+ * Die frühere Prüfung `typeof x === "string"` lieferte für eine Liste "" —
+ * `legal_area: [60/02 Arbeitnehmerschutz]` wäre also stillschweigend verloren
+ * gegangen. Diese Funktion nimmt beide Schreibweisen und beide Namensstände an,
+ * damit normalisierte und noch nicht normalisierte Korpora nebeneinander
+ * importierbar bleiben.
+ */
+function fmText(fm: Record<string, unknown>, ...keys: string[]): string {
+  for (const k of keys) {
+    const v = fm?.[k];
+    if (typeof v === "string") {
+      const s = v.trim();
+      if (s !== "" && s !== "null") return s;
+    } else if (Array.isArray(v)) {
+      const s = v
+        .filter((x): x is string => typeof x === "string")
+        .map((x) => x.trim())
+        .filter(Boolean)
+        .join("; ");
+      if (s !== "") return s;
+    }
+  }
+  return "";
+}
+
 // v0.43.0 (INDUSTRIENIVEAU): Poly-Vector canonical label builders for legal chunks.
-function buildStatuteLabel(m: LegalChunkMetadata): string {
-  const ref = m.paragraph_ref ? `§ ${m.paragraph_ref}` : "Norm";
+/**
+ * Zitierform der Geschäftszahl.
+ *
+ * Rechtssätze führen im Feld `case_number` ALLE Entscheidungen auf, die den
+ * Satz anwenden — bei OGH/EGMR-Sätzen werden daraus Labels von über 500
+ * Zeichen ("AUSL EGMR, OGH Bsw35865/03; Bsw46827/99; Bsw13284/04; …").
+ * Das ist eine Liste, keine Fundstelle. Zitiert wird die führende
+ * Entscheidung mit "u.a."; die vollständige Liste bleibt unangetastet in
+ * der Spalte `case_number` und damit exakt durchsuchbar.
+ *
+ * Getrennt wird an Semikolon UND Komma: OGH nutzt ";", die Landes-
+ * verwaltungsgerichte ",". An 40.649 Chunks mit Komma gegenüber 35.786 mit
+ * Semikolon geprüft — ein Komma trennt dort immer mehrere Geschäftszahlen
+ * ("10Bkd2/93, 22Os4/15a") und steht nie innerhalb einer einzelnen.
+ */
+function citationCaseNumber(caseNumber: string): string {
+  const parts = caseNumber.split(/[;,]/).map((s) => s.trim()).filter(Boolean);
+  if (parts.length <= 1) return caseNumber.trim();
+  return `${parts[0]} u.a.`;
+}
+
+/**
+ * Zitierfähige Fundstelle für einen Gesetzes-Chunk.
+ *
+ * `title` ist der Dokumenttitel und wird gebraucht, weil nicht jedes Gesetz
+ * eine Paragraphen-Ebene hat: Gemeinderecht, Erlässe, AVSV und Staatsverträge
+ * liefern in RIS weder Abkürzung noch `paragraph`. Die frühere Fassung fiel
+ * dort auf `"unbekannt"` und `"Norm"` zurück und erzeugte Labels wie
+ * "unbekannt Norm" — für einen Anwalt keine Fundstelle, sondern Rauschen,
+ * das wie eine Fundstelle aussieht. Bei diesen Dokument-Gesetzen IST der
+ * Titel die Fundstelle ("Kurzparkzonengebührenverordnung 2025").
+ *
+ * Gibt `undefined` zurück, wenn nichts Zitierfähiges vorliegt — ein leeres
+ * Label ist ehrlicher als ein erfundenes.
+ */
+/**
+ * Fundstellen-Länge begrenzen. Amtliche Verordnungstitel werden extrem lang —
+ * der längste im Bestand hat 836 Zeichen, weil die Verordnung jede betroffene
+ * Apotheke mit Adresse aufzählt. Das ist korrekt, aber als Zitierfeld
+ * unbrauchbar. Gekappt wird an der Wortgrenze; der vollständige Titel bleibt
+ * in `pages.title` und geht nicht verloren.
+ */
+function capLabel(s: string, max = 200): string {
+  if (s.length <= max) return s;
+  const cut = s.slice(0, max);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${(lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
+}
+
+function buildStatuteLabel(m: LegalChunkMetadata, title?: string): string | undefined {
   const abs = m.absatz ? ` Abs. ${m.absatz}` : "";
-  return `${m.statute_abbr || "unbekannt"} ${ref}${abs}`.trim();
+  const name = (title ?? "").trim();
+
+  // Paragraphen-Ebene vorhanden → "ABGB § 1044 Abs. 2"
+  if (m.paragraph_ref) {
+    const ref = formatStatuteRef(m.paragraph_ref, m.jurisdiction);
+    // Der Paragraph muss die Kappung überleben — er ist der präzise Teil der
+    // Fundstelle. Deshalb wird nur der Namensteil gekürzt, nicht das Ganze.
+    const prefix = capLabel(m.statute_abbr || name, 160);
+    return `${prefix} ${ref}${abs}`.trim() || undefined;
+  }
+
+  // Dokument-Gesetz → Titel als Fundstelle, Abkürzung nur als Rückfall
+  const label = capLabel(`${name || m.statute_abbr || ""}${abs}`.trim());
+  return label || undefined;
 }
 function buildStatuteLabels(
-  m: LegalChunkMetadata
+  m: LegalChunkMetadata,
+  title?: string
 ): { type: string; text: string; display: string }[] {
   const labels: { type: string; text: string; display: string }[] = [];
-  if (m.statute_abbr && m.paragraph_ref) {
+  const name = m.statute_abbr || (title ?? "").trim();
+  if (name && m.paragraph_ref) {
+    const ref = formatStatuteRef(m.paragraph_ref, m.jurisdiction);
     labels.push({
       type: "statute",
-      text: `${m.statute_abbr} § ${m.paragraph_ref}`,
-      display: `${m.statute_abbr} § ${m.paragraph_ref}`,
+      text: `${name} ${ref}`,
+      display: `${name} ${ref}`,
     });
     if (m.absatz) {
       labels.push({
         type: "paragraph",
-        text: `${m.statute_abbr} § ${m.paragraph_ref} Abs. ${m.absatz}`,
-        display: `${m.statute_abbr} § ${m.paragraph_ref} Abs. ${m.absatz}`,
+        text: `${name} ${ref} Abs. ${m.absatz}`,
+        display: `${name} ${ref} Abs. ${m.absatz}`,
       });
     }
-  } else if (m.statute_abbr) {
-    labels.push({ type: "statute", text: m.statute_abbr, display: m.statute_abbr });
+  } else if (name) {
+    // Dokument-Gesetz ohne Paragraphen-Ebene: der Name ist die Fundstelle.
+    labels.push({ type: "statute", text: name, display: name });
   }
   return labels;
 }
@@ -137,10 +233,12 @@ function buildDecisionLabels(
 ): { type: string; text: string; display: string }[] {
   const labels: { type: string; text: string; display: string }[] = [];
   if (m.court && m.case_number) {
+    // `text` behält die volle Liste (Treffer auf jede einzelne Geschäftszahl),
+    // `display` zeigt die zitierfähige Kurzform.
     labels.push({
       type: "court_case",
       text: `${m.court} ${m.case_number}`,
-      display: `${m.court} ${m.case_number}`,
+      display: `${m.court} ${citationCaseNumber(m.case_number)}`,
     });
   }
   if (m.ecli) {
@@ -417,6 +515,14 @@ export async function importFromContent(
      * the splitter produces different section IDs on re-import.
      */
     skipContentDuplicates?: boolean;
+    /** Bulk import optimizations — skip per-page work that's unnecessary for
+     *  trusted bulk legal corpus imports (judikatur, statutes). Each flag
+     *  is independently safe: they skip optional work, never core writes. */
+    skipVersions?: boolean;
+    skipCodeRefs?: boolean;
+    skipAliases?: boolean;
+    skipDedup?: boolean;
+    skipSanity?: boolean;
   } = {}
 ): Promise<ImportResult> {
   // v0.18.0+ multi-source: when caller is syncing under a non-default source,
@@ -487,6 +593,11 @@ export async function importFromContent(
   // mutates frontmatter (sets `embed_skip`) reaches the existing hash
   // calculation and the page write doesn't short-circuit on hash equality.
   //
+  // Bulk import fast-path: skip the entire sanity gate when the caller
+  // opts in (opts.skipSanity) — trusted corpus content (judikatur,
+  // statutes) doesn't need junk-pattern screening, and the gate's DB
+  // config lookup + assessment adds per-page overhead on 100k+ imports.
+  //
   // Three outcomes:
   //   - kill-switch active (`content_sanity.disabled === true` /
   //     `GBRAIN_NO_SANITY=1`) → assess + audit with bypass flag, emit
@@ -511,7 +622,7 @@ export async function importFromContent(
   let pageQuarantined = false;
   let pageFlagged = false;
   let pageFlagReason: "markup_heavy" | "oversized" | undefined;
-  {
+  if (!opts.skipSanity) {
     const baseCfg = loadConfig();
     let effectiveCfg = baseCfg;
     try {
@@ -734,7 +845,7 @@ export async function importFromContent(
   // via the `?.` shape — no failure mode for fake engines.
   const fmId = (parsed.frontmatter as Record<string, unknown> | undefined)?.id;
   const fmIdStr = typeof fmId === "string" && fmId.length > 0 ? fmId : null;
-  if (!opts.forceRechunk && engine.findDuplicatePage) {
+  if (!opts.forceRechunk && !opts.skipDedup && engine.findDuplicatePage) {
     let dup: { slug: string; id: number } | null = null;
     try {
       dup = await engine.findDuplicatePage(sourceId ?? "default", {
@@ -812,20 +923,12 @@ export async function importFromContent(
         parsed.type === "court_decision" ||
         parsed.type === "judgement";
       if (courtDecision) {
-        const court = typeof parsed.frontmatter.court === "string" ? parsed.frontmatter.court : "";
-        const caseNumber =
-          typeof parsed.frontmatter.case_number === "string" ? parsed.frontmatter.case_number : "";
-        const decisionDate =
-          typeof parsed.frontmatter.decision_date === "string"
-            ? parsed.frontmatter.decision_date
-            : "";
-        const ecli = typeof parsed.frontmatter.ecli === "string" ? parsed.frontmatter.ecli : "";
-        const legalArea =
-          typeof parsed.frontmatter.legal_area === "string" ? parsed.frontmatter.legal_area : "";
-        const jurisdiction =
-          typeof parsed.frontmatter.jurisdiction === "string"
-            ? parsed.frontmatter.jurisdiction
-            : "";
+        const court = fmText(parsed.frontmatter, "court");
+        const caseNumber = fmText(parsed.frontmatter, "case_number");
+        const decisionDate = fmText(parsed.frontmatter, "decision_date");
+        const ecli = fmText(parsed.frontmatter, "ecli");
+        const legalArea = fmText(parsed.frontmatter, "legal_area");
+        const jurisdiction = fmText(parsed.frontmatter, "jurisdiction");
         const decisionChunks = chunkLegalDecision(parsed.compiled_truth, {
           court,
           case_number: caseNumber,
@@ -850,22 +953,28 @@ export async function importFromContent(
             chunk_role: c.metadata.chunk_role || undefined,
             canonical_label:
               c.metadata.court && c.metadata.case_number
-                ? `${c.metadata.court} ${c.metadata.case_number}`
+                ? `${c.metadata.court} ${citationCaseNumber(c.metadata.case_number)}`
                 : undefined,
             labels: buildDecisionLabels(c.metadata),
           });
         }
       } else if (legalPage) {
-        const paragraphRef =
-          typeof parsed.frontmatter.paragraph === "string" ? parsed.frontmatter.paragraph : "";
-        const statuteAbbr =
-          typeof parsed.frontmatter.abbreviation === "string"
-            ? parsed.frontmatter.abbreviation
-            : "";
-        const jurisdiction =
-          typeof parsed.frontmatter.jurisdiction === "string"
-            ? parsed.frontmatter.jurisdiction
-            : "";
+        // Kanonisch zuerst (`paragraph_ref`, `abbr`, `legal_area`), dann die
+        // historischen Namen (`paragraph`, `abbreviation`, `indizes`).
+        const paragraphRef = fmText(parsed.frontmatter, "paragraph_ref", "paragraph");
+        const statuteAbbr = fmText(parsed.frontmatter, "abbr", "abbreviation", "statute");
+        const jurisdiction = fmText(parsed.frontmatter, "jurisdiction");
+        const legalAreaFromIndizes = fmText(parsed.frontmatter, "legal_area", "indizes");
+        // Titel als Fundstelle für Gesetze ohne Paragraphen-Ebene
+        // (Gemeinderecht, Erlässe, AVSV, Staatsverträge, Bezirke). Kurztitel
+        // zuerst, er zitiert sich kürzer als der Langtitel.
+        //
+        // `parsed.title` als Rückfall ist zwingend: parseMarkdown hebt `title`
+        // aus dem Frontmatter in die eigene Spalte und ENTFERNT es dort.
+        // Ohne diesen Zweig blieben z.B. 3.664 der 4.766 Bezirke-Chunks ohne
+        // Fundstelle, obwohl die Datei einen Titel trägt.
+        const statuteTitle =
+          fmText(parsed.frontmatter, "short_title", "kurztitel") || (parsed.title ?? "").trim();
         const legalChunks = chunkLegalSection(parsed.compiled_truth, {
           paragraph_ref: paragraphRef,
           statute_abbr: statuteAbbr,
@@ -883,8 +992,9 @@ export async function importFromContent(
             paragraph_ref: c.metadata.paragraph_ref || undefined,
             absatz: c.metadata.absatz || undefined,
             chunk_role: c.metadata.chunk_role || undefined,
-            canonical_label: buildStatuteLabel(c.metadata),
-            labels: buildStatuteLabels(c.metadata),
+            canonical_label: buildStatuteLabel(c.metadata, statuteTitle),
+            labels: buildStatuteLabels(c.metadata, statuteTitle),
+            legal_area: legalAreaFromIndizes || undefined,
           });
         }
       } else {
@@ -1120,7 +1230,10 @@ export async function importFromContent(
     // this in v0.18.x), so we wrap each pair in try/catch — guides imported
     // before their code repo syncs are common, and the missing edges land
     // later via `gbrain reconcile-links` (Layer 8 D3, v0.21.0).
-    const codeRefs = extractCodeRefs(parsed.compiled_truth + "\n" + (parsed.timeline || ""));
+    //
+    // Bulk import fast-path: skip code-ref extraction for legal corpus
+    // (judikatur, statutes) — these never cite source code paths.
+    const codeRefs = opts.skipCodeRefs ? [] : extractCodeRefs(parsed.compiled_truth + "\n" + (parsed.timeline || ""));
     // For doc↔impl edges, both endpoints are within the same source as the
     // markdown page being imported. Cross-source edges (markdown in one
     // source, code in another) currently fail with "page not found" — a
@@ -1172,7 +1285,10 @@ export async function importFromContent(
   // import. Always called (even with []) so REMOVING an alias from frontmatter
   // clears its row — the content_hash includes non-timestamp frontmatter, so
   // an alias edit changes the hash and reaches this path (not the skip branch).
-  try {
+  //
+  // Bulk import fast-path: skip alias projection for legal corpus content
+  // that never carries frontmatter aliases.
+  if (!opts.skipAliases) try {
     const aliasNorms = normalizeAliasList((parsed.frontmatter as Record<string, unknown>).aliases);
     await engine.setPageAliases(slug, sourceId ?? "default", aliasNorms);
   } catch (e) {

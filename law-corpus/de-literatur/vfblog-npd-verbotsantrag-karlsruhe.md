@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/npd-verbotsantrag-karlsruhe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "96ec81062f87b7dc"
 ---
 
 # NPD-Verbotsantrag: Karlsruhe fordert mehr Beweise

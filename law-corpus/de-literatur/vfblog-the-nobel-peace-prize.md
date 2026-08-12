@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-nobel-peace-prize/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "39661bc0a5c821b2"
 ---
 
 # The Nobel Peace Prize

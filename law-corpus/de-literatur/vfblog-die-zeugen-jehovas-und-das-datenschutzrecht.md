@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-zeugen-jehovas-und-das-datenschutzrec
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "70c824d274d8d070"
 ---
 
 # Die Zeugen Jehovas und das Datenschutzrecht

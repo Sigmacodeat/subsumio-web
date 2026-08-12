@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/europe-needs-a-civil-society-strategy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a8bc49c26304a655"
 ---
 
 # Europe Needs a Civil Society Strategy

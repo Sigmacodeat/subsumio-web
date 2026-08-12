@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e3033f0a2a95dd78"
 ---
 
 # Hercules or Sisyphus? On the legacy of statutory lawlessness in post-autocratic Poland

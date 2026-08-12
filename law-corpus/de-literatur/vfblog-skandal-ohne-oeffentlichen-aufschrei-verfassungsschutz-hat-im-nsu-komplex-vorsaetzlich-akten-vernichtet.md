@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2664c65515f84a7e"
 ---
 
 # Skandal ohne öffentlichen Aufschrei: Verfassungsschutz hat im NSU-Komplex vorsätzlich Akten vernichtet

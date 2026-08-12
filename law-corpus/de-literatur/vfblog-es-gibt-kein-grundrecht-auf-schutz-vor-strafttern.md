@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/es-gibt-kein-grundrecht-auf-schutz-vor-st
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b0969cd3453f8953"
 ---
 
 # Es gibt kein Grundrecht auf Schutz vor Straftätern

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "55a238a91717f300"
 ---
 
 # The Covid-19 Measures in Madrid, and why they Suffered Defeat in Court

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "488615c0c6dbc7b6"
 ---
 
 # The Case Law of the Bundesverfassungsgericht on Counterterrorist Measures

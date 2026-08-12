@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/public-debt-transparency-and-global-publi
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e4972f1db6dea422"
 ---
 
 # Public Debt Transparency and Global Public Law

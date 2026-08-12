@@ -1,4 +1,6 @@
 ---
+jurisdiction: at
+title: "OGH 1 Ob 123/24d — Haftung bei Verschulden"
 type: court_decision
 court: "OGH"
 date: "2024-03-15"
@@ -8,6 +10,7 @@ legal_area: "Zivilrecht"
 keywords: ["Haftung", "Schadensersatz", "Verschulden", "Kausalität"]
 source: "ris-ogd"
 source_url: "https://ris.bka.gv.at/Dokument.wxe?Abfrage=Justiz&Dokumentnummer=1Ob123/24d"
+content_hash: "acfa4c203a2ff95b"
 ---
 
 # OGH 1 Ob 123/24d — Haftung bei Verschulden

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-deutsche-ohr-im-globalen-kommunikatio
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7ce7fd271fbc8cd9"
 ---
 
 # Das deutsche Ohr im globalen Kommunikations&shy;strom

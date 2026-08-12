@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/veto-player-greek-constitution-part-4-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "74f7ae95e863a45e"
 ---
 
 # Veto Player and the Greek Constitution, Part 4

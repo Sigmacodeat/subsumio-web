@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "191a28eaad4c9aab"
 ---
 
 # Brücken für die Diaspora: ein Interview mit RAINER BAUBÖCK

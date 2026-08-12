@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/vergesellschaftungsgesetz-berlin/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8b00644f73eb4b6c"
 ---
 
 # Ein Gesetz aus der Gesellschaft

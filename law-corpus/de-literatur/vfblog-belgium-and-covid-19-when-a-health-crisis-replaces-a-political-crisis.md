@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "895f9edf2d68f311"
 ---
 
 # Belgium and COVID-19:  When a Health Crisis Replaces a Political Crisis

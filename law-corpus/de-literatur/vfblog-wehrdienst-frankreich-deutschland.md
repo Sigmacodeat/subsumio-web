@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wehrdienst-frankreich-deutschland/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "635544b800176cf6"
 ---
 
 # Freiwillig heute, Pflicht morgen

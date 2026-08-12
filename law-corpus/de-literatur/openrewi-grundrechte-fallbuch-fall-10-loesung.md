@@ -15,6 +15,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "73b2112b31f5f763"
 ---
 
 Fall 10 Sachverhalt &#124; Inhaltsverzeichnis &#124; Hinweise zur Klausurkonzeption 

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/constitution-reforms-turkey/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f2757d3c94f633bd"
 ---
 
 # Shades of Unconstitutionality

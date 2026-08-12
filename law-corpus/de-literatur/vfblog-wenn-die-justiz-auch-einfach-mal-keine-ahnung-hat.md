@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wenn-die-justiz-auch-einfach-mal-keine-ah
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cdc6fe53e1d016c9"
 ---
 
 # Wenn die Justiz auch einfach mal keine Ahnung hat

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/50-years-on/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f50548e261a3f37b"
 ---
 
 # 50 Years On

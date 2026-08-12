@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4f25a5df58ea71c3"
 ---
 
 # Safeguarding European Fundamental Rights or Creating a Patchwork of National Data Protection?

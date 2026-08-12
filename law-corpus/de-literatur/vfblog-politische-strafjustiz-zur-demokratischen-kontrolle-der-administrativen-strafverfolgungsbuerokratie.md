@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aa5fad839137baf0"
 ---
 
 # Politische Strafjustiz? Zur demo&shy;kratischen Kontrolle der adminis&shy;trativen Straf&shy;verfolgungs&shy;bürokratie

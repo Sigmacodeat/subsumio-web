@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/harvard-under-attack/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "33dabbcad9aa491e"
 ---
 
 # Harvard Under Attack

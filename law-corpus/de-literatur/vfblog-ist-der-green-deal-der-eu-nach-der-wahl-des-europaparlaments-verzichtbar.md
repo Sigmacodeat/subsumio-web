@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ca2eddeccadd9834"
 ---
 
 # Ist der Green Deal der EU nach der Wahl des Europaparlaments verzichtbar?

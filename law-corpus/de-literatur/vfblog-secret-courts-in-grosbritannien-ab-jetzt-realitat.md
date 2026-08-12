@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/secret-courts-in-grosbritannien-ab-jetzt-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "26eae7b93665a789"
 ---
 
 # “Secret Courts” in Großbritannien: Ab jetzt Realität

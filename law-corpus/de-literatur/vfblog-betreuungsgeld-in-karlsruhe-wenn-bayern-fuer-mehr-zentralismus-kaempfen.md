@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4bfdead7ebbf6d58"
 ---
 
 # Betreuungsgeld in Karlsruhe: Wenn Bayern für mehr Zentralismus kämpfen

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/regierungsopposition-und-oppositionsregie
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5296038c347a6b7c"
 ---
 
 # Regierungsopposition und Oppositionsregierung

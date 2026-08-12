@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/slovakia-fara-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "77329d8c570b9c0c"
 ---
 
 # The NGO’s Guide to Authoritarianism

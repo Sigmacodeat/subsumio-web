@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/crossroads-russia-echr-aftermath-markin-2
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8bc1bd78fde78d59"
 ---
 
 # At a crossroads: Russia and the ECHR in the aftermath of Markin

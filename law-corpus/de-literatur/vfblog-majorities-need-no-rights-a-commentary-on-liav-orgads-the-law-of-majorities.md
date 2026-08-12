@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "db0e4a6b53ec497d"
 ---
 
 # Majorities Need No Rights: A Commentary on Liav Orgad`s “The Law of Majorities”

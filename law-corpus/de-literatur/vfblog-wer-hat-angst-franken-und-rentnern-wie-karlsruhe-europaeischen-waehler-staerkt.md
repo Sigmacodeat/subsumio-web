@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "09b55e3a1fe29515"
 ---
 
 # Wer hat Angst vor Franken und Rentnern? Wie Karlsruhe den europäischen Wähler stärkt

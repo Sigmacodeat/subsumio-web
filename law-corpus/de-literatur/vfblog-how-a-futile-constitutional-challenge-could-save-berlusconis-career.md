@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bbb1b22248f28a81"
 ---
 
 # How a Futile Constitutional Challenge Could Save Berlusconi’s Career

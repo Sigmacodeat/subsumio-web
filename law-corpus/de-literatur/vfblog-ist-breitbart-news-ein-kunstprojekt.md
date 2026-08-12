@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ist-breitbart-news-ein-kunstprojekt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6a7f41e98b6b291c"
 ---
 
 # Ist Breitbart News ein Kunstprojekt?

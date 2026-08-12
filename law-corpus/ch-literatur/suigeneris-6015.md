@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2024 Maya Hertig Randall;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "bf22a0abd5414a89"
 ---
 
 # La responsabilité pénale des personnalités politiques pour les commentaires haineux publiés sur le mur de leur compte Facebook - un regard vers Lausanne et Strasbourg

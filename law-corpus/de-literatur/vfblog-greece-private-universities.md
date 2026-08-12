@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/greece-private-universities/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "825d2205ae1b0eab"
 ---
 
 # Between Scylla and Charybdis

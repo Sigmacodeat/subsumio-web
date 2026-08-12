@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/luxleaks-and-the-good-faith-whistleblower
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a9432606de7052b1"
 ---
 
 # Luxleaks and the Good Faith Whistleblower

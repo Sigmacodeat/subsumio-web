@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/besser-gesetze-nicht-andern-als-schlecht-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "11db0e60642e624a"
 ---
 
 # Besser Gesetze nicht ändern als schlecht ändern

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/defending-the-open-society-against-its-en
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "842e7e023c265cbd"
 ---
 
 # Defending the Open Society against its Enemies

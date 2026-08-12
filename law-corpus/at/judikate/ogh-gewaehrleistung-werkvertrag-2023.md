@@ -1,4 +1,6 @@
 ---
+jurisdiction: at
+title: "OGH 3 Ob 78/23s — Gewährleistung beim Werkvertrag"
 type: court_decision
 court: "OGH"
 date: "2023-06-20"
@@ -8,6 +10,7 @@ legal_area: "Zivilrecht"
 keywords: ["Gewährleistung", "Werkvertrag", "Mangel", "Rügefrist"]
 source: "ris-ogd"
 source_url: "https://ris.bka.gv.at/Dokument.wxe?Abfrage=Justiz&Dokumentnummer=3Ob78/23s"
+content_hash: "e07751a0ce94c7b3"
 ---
 
 # OGH 3 Ob 78/23s — Gewährleistung beim Werkvertrag

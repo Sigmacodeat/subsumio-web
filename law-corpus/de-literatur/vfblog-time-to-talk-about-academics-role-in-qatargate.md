@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/time-to-talk-about-academics-role-in-qata
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3a2c6d236dfb6c61"
 ---
 
 # Time to talk about academics’ role in Qatargate

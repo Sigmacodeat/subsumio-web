@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/der-tankrabatt-verstost-gegen-art-20a-gg/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e05e84d8e4c27a73"
 ---
 
 # Der „Tankrabatt“ verstößt gegen Art. 20a GG

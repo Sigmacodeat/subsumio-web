@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "469721bb98b2b84c"
 ---
 
 # Trapped in the Age of Trump: the American Supreme Court and 21st Century Populism

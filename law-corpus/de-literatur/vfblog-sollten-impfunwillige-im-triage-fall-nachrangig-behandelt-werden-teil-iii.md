@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "028fb5faba45c6dd"
 ---
 
 # Sollten Impfunwillige im Triage-Fall nachrangig behandelt werden? Teil III

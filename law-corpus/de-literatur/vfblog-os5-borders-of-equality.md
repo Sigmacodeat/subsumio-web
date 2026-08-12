@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os5-borders-of-equality/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ab4072f0b5c90663"
 ---
 
 # Borders of Equality

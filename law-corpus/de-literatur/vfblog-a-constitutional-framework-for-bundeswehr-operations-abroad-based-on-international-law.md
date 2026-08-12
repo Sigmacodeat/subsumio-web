@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e8ae58fdf3bbf1dd"
 ---
 
 # A Constitutional Framework for Bundeswehr Operations Abroad Based on International Law

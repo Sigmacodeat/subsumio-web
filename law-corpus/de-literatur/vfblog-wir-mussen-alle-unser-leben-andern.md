@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wir-mussen-alle-unser-leben-andern/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7e6694caca18aac3"
 ---
 
 # Wir müssen alle unser Leben ändern

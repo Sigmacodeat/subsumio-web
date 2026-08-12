@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2efcf6489ed4ad6d"
 ---
 
 # BVerfG erfindet Grundrecht auf freie Wahl der Staatsnähe des Arbeitsplatzes

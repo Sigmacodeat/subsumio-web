@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/parteiverbotsverfahren-zum-schutz-vor-ras
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "748790554da4cb45"
 ---
 
 # Parteiverbotsverfahren zum Schutz vor Rassismus

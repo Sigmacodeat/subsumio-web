@@ -16,13 +16,13 @@
  * chunks with metadata (court, case_number, decision_date, ecli, legal_area,
  * jurisdiction, chunk_role).
  *
- * BUMP: LEGAL_DECISION_CHUNKER_VERSION = 4 (same as statute chunker —
+ * BUMP: LEGAL_DECISION_CHUNKER_VERSION = 6 (same as statute chunker —
  * both are "legal chunker v2" and force re-chunk of existing legal pages).
  */
 
 import { countCJKAwareWords } from "../cjk.ts";
 
-export const LEGAL_DECISION_CHUNKER_VERSION = 5;
+export const LEGAL_DECISION_CHUNKER_VERSION = 6;
 
 /** Target words per chunk for long sections. */
 const DECISION_CHUNK_SIZE = 600;
@@ -41,10 +41,35 @@ const SECTION_PATTERNS = {
   rechtssatznummer: /^Rechtssatznummer$/i,
   entscheidungsdatum: /^Entscheidungsdatum$/i,
   geschaeftszahl: /^(Geschäftszahl|Geschaeftszahl)$/i,
-  ecli: /^European Case Law Identifier$/i,
+  ecli: /^(European Case Law Identifier|European Case Law Identifier \(ECLI\))$/i,
   sachverhalt: /^(Sachverhalt|Tatbestand|Feststellungen)$/i,
   entscheidungsgruende: /^(Entscheidungsgründe|Entscheidungsgruende|Begründung|Begruendung)$/i,
   tenor: /^(Tenor|Spruch|Ausspruch)$/i,
+  // Generic content section used by lower courts (LVwG, GBK, DSK, PVAK, AsylGH, etc.)
+  // "## Text" is the main body content when no structured sections are present.
+  text: /^Text$/i,
+  // VwGH uses "Stammrechtssatz" for root legal principles (same role as Rechtssatz)
+  stammrechtssatz: /^Stammrechtssatz$/i,
+  // Metadata-only sections (skipped from chunking, used for context)
+  entscheidende_behoerde: /^Entscheidende Behörde$/i,
+  disziplinarbehoerde: /^Disziplinarbehörde$/i,
+  entscheidende_kommission: /^Entscheidende Kommission$/i,
+  entscheidungsart: /^Entscheidungsart$/i,
+  diskriminierungsgrund: /^Diskriminierungsgrund$/i,
+  diskriminierungstatbestand: /^Diskriminierungstatbestand$/i,
+  anfechtung: /^Anfechtung beim BVwG\/VwGH\/VfGH$/i,
+  senat: /^Senat$/i,
+  // VfGH/VwGH metadata sections
+  sammlungsnummer: /^Sammlungsnummer$/i,
+  hinweis_stammrechtssatz: /^Hinweis auf Stammrechtssatz$/i,
+  dokumenttyp: /^Dokumenttyp$/i,
+  index: /^Index$/i,
+  schlagworte: /^Schlagworte$/i,
+  kurzbezeichnung: /^Kurzbezeichnung$/i,
+  // `norm` ist bereits oben definiert — die Dublette hier war ein TS1117-Fehler.
+  // "## Beachte" contains cross-references (Miterledigung, Besprechung in Fachzeitschriften)
+  // — metadata only, not relevant for semantic search
+  beachte: /^Beachte$/i,
 };
 
 /** TE entry marker within Entscheidungstexte: "TE OGH 2025-04-08 12 Ds 6/24p" */
@@ -113,7 +138,17 @@ export function chunkLegalDecision(
     jurisdiction: string;
   }
 ): LegalDecisionChunk[] {
-  const trimmed = body.trim();
+  // Strip RIS-OGD boilerplate footer that fetchers append to every document.
+  // Pattern: "\n---\n*Quelle: [RIS-OGD](https://www.ris.bka.gv.at/...)*"
+  // This URL noise pollutes embeddings and chunk text — remove before chunking.
+  const stripped = body.replace(
+    /\n---\n\*Quelle:\s*\[RIS-OGD\]\([^)]*\)\*\s*$/i,
+    ""
+  ).replace(
+    /\n---\n\*Quelle:\s*\[[^\]]*\]\([^)]*\)\*\s*$/i,
+    ""
+  );
+  const trimmed = stripped.trim();
   if (!trimmed) return [];
 
   const sections = parseDecisionSections(trimmed);
@@ -133,12 +168,14 @@ export function chunkLegalDecision(
   let chunkIndex = 0;
 
   // 1. Emit metadata chunk (combine short metadata sections + Norm section).
+  // EXPERT: Skip metadata that is only punctuation (RIS anonymization artifacts).
   const metaParts: string[] = [];
   for (const sec of sections) {
     if (
       (sec.role === "metadata" || sec.role === "norm") &&
       sec.text.trim() &&
-      countCJKAwareWords(sec.text) < 80
+      countCJKAwareWords(sec.text) < 80 &&
+      !/^[,;\s.]+$/.test(sec.text.trim())
     ) {
       metaParts.push(sec.text.trim());
     }
@@ -183,13 +220,22 @@ export function chunkLegalDecision(
     }
   }
 
-  // 3. Emit Sachverhalt, Entscheidungsgründe, Tenor chunks.
+  // 3. Emit Sachverhalt, Entscheidungsgründe, Tenor, Text chunks.
+  // "text" (## Text) is the generic body section used by lower courts (LVwG, GBK,
+  // DSK, PVAK, AsylGH, etc.) when no structured sections are present.
+  // We map it to "entscheidungsgruende" so it gets chunked properly instead of
+  // falling through to the "full" fallback.
+  // EXPERT: Skip sections that are only punctuation/whitespace (RIS anonymization
+  // artifacts where case numbers are replaced with commas, e.g. "## Spruch\n, ,").
   for (const sec of sections) {
     if (
-      (sec.role === "sachverhalt" || sec.role === "entscheidungsgruende" || sec.role === "tenor") &&
+      (sec.role === "sachverhalt" || sec.role === "entscheidungsgruende" || sec.role === "tenor" || sec.role === "text") &&
       sec.text.trim()
     ) {
-      const role = sec.role as LegalDecisionChunkMetadata["chunk_role"];
+      // Skip sections that are only punctuation/commas/whitespace (RIS anonymization)
+      if (/^[,;\s.]+$/.test(sec.text.trim())) continue;
+      // Map "text" role to "entscheidungsgruende" for the chunk_role
+      const role = (sec.role === "text" ? "entscheidungsgruende" : sec.role) as LegalDecisionChunkMetadata["chunk_role"];
       const text = sec.text.trim();
       if (text.length <= DECISION_MAX_CHARS && countCJKAwareWords(text) <= DECISION_CHUNK_SIZE) {
         chunks.push({
@@ -374,6 +420,7 @@ interface ParsedSection {
     | "sachverhalt"
     | "entscheidungsgruende"
     | "tenor"
+    | "text"
     | "other";
   heading: string;
   text: string;
@@ -438,17 +485,34 @@ function parseDecisionSections(body: string): ParsedSection[] {
  */
 function classifyHeading(heading: string): ParsedSection["role"] {
   if (SECTION_PATTERNS.rechtssatz.test(heading)) return "leitsatz";
+  if (SECTION_PATTERNS.stammrechtssatz?.test(heading)) return "leitsatz";
   if (SECTION_PATTERNS.norm.test(heading)) return "norm";
   if (SECTION_PATTERNS.entscheidungstexte.test(heading)) return "entscheidungstexte";
   if (SECTION_PATTERNS.sachverhalt.test(heading)) return "sachverhalt";
   if (SECTION_PATTERNS.entscheidungsgruende.test(heading)) return "entscheidungsgruende";
   if (SECTION_PATTERNS.tenor.test(heading)) return "tenor";
+  if (SECTION_PATTERNS.text.test(heading)) return "text";
   if (
     SECTION_PATTERNS.gericht.test(heading) ||
     SECTION_PATTERNS.rechtssatznummer.test(heading) ||
     SECTION_PATTERNS.entscheidungsdatum.test(heading) ||
     SECTION_PATTERNS.geschaeftszahl.test(heading) ||
-    SECTION_PATTERNS.ecli.test(heading)
+    SECTION_PATTERNS.ecli.test(heading) ||
+    SECTION_PATTERNS.entscheidende_behoerde?.test(heading) ||
+    SECTION_PATTERNS.disziplinarbehoerde?.test(heading) ||
+    SECTION_PATTERNS.entscheidende_kommission?.test(heading) ||
+    SECTION_PATTERNS.entscheidungsart?.test(heading) ||
+    SECTION_PATTERNS.diskriminierungsgrund?.test(heading) ||
+    SECTION_PATTERNS.diskriminierungstatbestand?.test(heading) ||
+    SECTION_PATTERNS.anfechtung?.test(heading) ||
+    SECTION_PATTERNS.senat?.test(heading) ||
+    SECTION_PATTERNS.beachte?.test(heading) ||
+    SECTION_PATTERNS.sammlungsnummer?.test(heading) ||
+    SECTION_PATTERNS.hinweis_stammrechtssatz?.test(heading) ||
+    SECTION_PATTERNS.dokumenttyp?.test(heading) ||
+    SECTION_PATTERNS.index?.test(heading) ||
+    SECTION_PATTERNS.schlagworte?.test(heading) ||
+    SECTION_PATTERNS.kurzbezeichnung?.test(heading)
   ) {
     return "metadata";
   }

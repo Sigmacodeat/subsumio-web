@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/parlamentsvorbehalt-zeitenwende-vorratsbe
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e3c61dcc7aabf47c"
 ---
 
 # Vorrat für den Ernstfall

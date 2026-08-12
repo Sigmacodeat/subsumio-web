@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/heizungsgesetz-gesetzgebung-bverfg/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8e46358e97c0b139"
 ---
 
 # Schnell ist nicht zu schnell

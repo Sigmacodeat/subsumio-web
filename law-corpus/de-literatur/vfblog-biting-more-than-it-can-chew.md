@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/biting-more-than-it-can-chew/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ca5bbc534581009c"
 ---
 
 # Biting More Than It Can Chew

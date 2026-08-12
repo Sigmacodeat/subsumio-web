@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "baf73fcbfdbc9a73"
 ---
 
 # Die TTIP- Verhandlungsposition der EU-Kommission – ein überzeugender Reformansatz mit leichten Schwächen im Detail

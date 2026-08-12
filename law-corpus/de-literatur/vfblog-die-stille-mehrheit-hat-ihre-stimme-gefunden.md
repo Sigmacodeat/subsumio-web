@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-stille-mehrheit-hat-ihre-stimme-gefun
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c5ec0099c1bb9ff9"
 ---
 
 # Die stille Mehrheit hat ihre Stimme gefunden

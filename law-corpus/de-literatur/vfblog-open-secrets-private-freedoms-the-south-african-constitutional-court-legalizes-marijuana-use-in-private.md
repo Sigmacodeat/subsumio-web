@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4d161a293f0125a6"
 ---
 
 # Open Secrets, Private Freedoms – The South African Constitutional Court Legalizes Marijuana Use in Private

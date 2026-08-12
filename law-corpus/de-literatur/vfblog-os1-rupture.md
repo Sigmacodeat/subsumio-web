@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/os1-rupture/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0bfc28c6d5067144"
 ---
 
 # The Afghanistan Saga did not Rupture the Orientation of International Law and Relations

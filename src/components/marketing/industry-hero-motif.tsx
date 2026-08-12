@@ -69,7 +69,7 @@ export default function IndustryHeroMotif({
             y1={POS[a].y}
             x2={POS[b].x}
             y2={POS[b].y}
-            stroke="var(--brand-primary, #7c3aed)"
+            stroke="var(--brand-primary, #455ac4)"
             strokeWidth={1}
             vectorEffect="non-scaling-stroke"
             initial={{ pathLength: 0, opacity: 0 }}
@@ -91,25 +91,22 @@ export default function IndustryHeroMotif({
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 + i * 0.09, type: "spring", stiffness: 180 }}
           >
-            <motion.div
-              animate={{ y: [0, i % 2 ? 7 : -7, 0] }}
-              transition={{
-                duration: 4.5 + i * 0.4,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: i * 0.3,
-              }}
+            {/* No perpetual float here: the wrapper in landing.tsx already gives
+                this motif scroll-linked parallax, so it moves when the reader
+                moves. Drifting on its own on top of that was ambient noise
+                competing with the proof card for attention. */}
+            <div
               className="flex items-center justify-center rounded-2xl border"
               style={{
                 width: 52,
                 height: 52,
-                color: "var(--brand-secondary, #a78bfa)",
-                borderColor: "color-mix(in srgb, var(--brand-primary, #7c3aed) 30%, transparent)",
-                background: "color-mix(in srgb, var(--brand-primary, #7c3aed) 8%, transparent)",
+                color: "var(--brand-secondary, #7282d5)",
+                borderColor: "color-mix(in srgb, var(--brand-primary, #455ac4) 30%, transparent)",
+                background: "color-mix(in srgb, var(--brand-primary, #455ac4) 8%, transparent)",
               }}
             >
               {Icon && <Icon size={22} strokeWidth={1.6} />}
-            </motion.div>
+            </div>
           </motion.div>
         );
       })}

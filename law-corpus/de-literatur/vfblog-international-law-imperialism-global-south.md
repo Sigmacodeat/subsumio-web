@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/international-law-imperialism-global-sout
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "882db4e149b5a6a2"
 ---
 
 # International Law and the Imperial Ordering of the International

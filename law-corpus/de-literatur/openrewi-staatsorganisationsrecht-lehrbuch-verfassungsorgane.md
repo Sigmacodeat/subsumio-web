@@ -15,6 +15,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "6a29761ab71bd58d"
 ---
 
 § 9.4 Europäische Integration, Art. 23 I 1 GG &#124; Inhaltsverzeichnis &#124; § 10 Bundestag 

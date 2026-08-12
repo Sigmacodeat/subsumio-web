@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "42ef1635beffd035"
 ---
 
 # Nothing left to do but vote – The (almost) untold story of the Italian constitutional reform and the aftermath of the referendum

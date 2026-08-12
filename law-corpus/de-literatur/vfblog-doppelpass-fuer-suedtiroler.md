@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/doppelpass-fuer-suedtiroler/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2e2ee2831301e7b0"
 ---
 
 # Doppelpass in Südtirol?

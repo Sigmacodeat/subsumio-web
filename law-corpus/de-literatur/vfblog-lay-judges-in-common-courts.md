@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/lay-judges-in-common-courts/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "24051c819699dca0"
 ---
 
 # Lay Judges in Common Courts

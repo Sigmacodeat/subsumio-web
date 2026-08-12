@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "10edfc8b764b21ef"
 ---
 
 # 1460 Days Later: Rule of Law in Poland R.I.P. (Part II)

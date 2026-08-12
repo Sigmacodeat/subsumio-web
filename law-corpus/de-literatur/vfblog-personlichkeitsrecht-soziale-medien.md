@@ -15,6 +15,7 @@ source_url: https://verfassungsblog.de/personlichkeitsrecht-soziale-medien/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cba7f1a323232a3c"
 ---
 
 # Schutz vor Verletzung von Persönlichkeitsrechten und „Desinformation“ in sozialen Medien unter Bedingungen der politischen Polarisierung

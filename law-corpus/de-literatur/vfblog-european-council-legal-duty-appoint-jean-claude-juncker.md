@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "959b706d039bd9a9"
 ---
 
 # Why the European Council is NOT under a legal duty to appoint Jean-Claude Juncker

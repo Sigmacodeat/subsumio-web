@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gender-disparity-cjeu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9f35c8e0b2411048"
 ---
 
 # Rising Gender Disparity at the CJEU

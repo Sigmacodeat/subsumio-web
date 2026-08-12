@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ed24fff18e7ec372"
 ---
 
 # The Stakes of the Unwritten Constitutional Norms and Principles Debate in the UK

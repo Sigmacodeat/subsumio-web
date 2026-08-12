@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dba089c8ae2e8756"
 ---
 
 # The ABC of the OPT: Mobilizing the Untapped Capacity of International Law

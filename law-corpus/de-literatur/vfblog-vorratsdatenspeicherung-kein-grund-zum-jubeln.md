@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/vorratsdatenspeicherung-kein-grund-zum-ju
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e09827ee4f9a6e5d"
 ---
 
 # Vorratsdatenspeicherung: Kein Grund zum Jubeln

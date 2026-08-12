@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-ende-der-alternativlosigkeit/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "577aaf438eb73d33"
 ---
 
 # Das Ende der Alternativlosigkeit

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/controlling-knowledge-infrastructures/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2bf6ac941e5d0fac"
 ---
 
 # State-Approved Information

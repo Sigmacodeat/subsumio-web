@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ac466643a182107f"
 ---
 
 # The Italian Constitutional Court in re Taricco: “Gauweiler in the Roman Campagna”

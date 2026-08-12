@@ -471,7 +471,7 @@ export default function InvoicingPage() {
     <div class="total-row grand"><span>Gesamtbetrag</span><span>${inv.total.toFixed(2)} €</span></div>
   </div>
 
-  ${inv.notes ? `<p style="margin-top: 30px; color: #666;">${escapeHtml(inv.notes)}</p>` : ""}
+  ${inv.notes ? `<p style="margin-top: 30px; color: hsl(230, 8%, 40%);">${escapeHtml(inv.notes)}</p>` : ""}
 
   <div class="footer">
     <p>Zahlungsbedingungen: ${escapeHtml(inv.paymentTerms || "14 Tage netto")}</p>

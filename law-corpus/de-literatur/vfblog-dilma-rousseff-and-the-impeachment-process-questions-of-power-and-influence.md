@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ed6125ceadba91ff"
 ---
 
 # Dilma Rousseff and the Impeachment Process: Questions of Power and Influence

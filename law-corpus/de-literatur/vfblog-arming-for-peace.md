@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/arming-for-peace/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "acfbf263eecf2dd5"
 ---
 
 # Arming for Peace

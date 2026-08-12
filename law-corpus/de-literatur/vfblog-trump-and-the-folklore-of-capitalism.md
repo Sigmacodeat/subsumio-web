@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/trump-and-the-folklore-of-capitalism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e4f4d8c2996d9983"
 ---
 
 # Trump and the Folklore of Capitalism

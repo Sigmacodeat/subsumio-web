@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5c812dd7c0e2f029"
 ---
 
 # Zum Verhältnis von Völkerrecht und innerstaatlichem Recht in der Schweiz: status quo und aktuelle Diskussionslinien

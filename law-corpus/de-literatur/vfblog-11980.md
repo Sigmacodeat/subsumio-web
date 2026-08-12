@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/11980/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2bf426cd4bdc194d"
 ---
 
 # Why the British demands on national parliaments must be resisted

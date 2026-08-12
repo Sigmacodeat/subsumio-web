@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/schulschliesung-ist-nicht-gleich-schulsch
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "94e2f6ab7e57d292"
 ---
 
 # Schulschließung ist nicht gleich Schulschließung

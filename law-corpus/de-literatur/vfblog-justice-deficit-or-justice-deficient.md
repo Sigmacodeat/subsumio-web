@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/justice-deficit-or-justice-deficient/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "81885e783e1b3bde"
 ---
 
 # Justice Deficit or Justice Deficient?

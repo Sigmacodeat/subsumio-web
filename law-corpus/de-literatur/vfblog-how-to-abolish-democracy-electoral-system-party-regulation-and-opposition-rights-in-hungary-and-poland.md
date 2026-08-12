@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7c79d131df5b9dfa"
 ---
 
 # How to Abolish Democracy: Electoral System, Party Regulation and Opposition Rights in Hungary and Poland

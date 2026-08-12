@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fe927eaf96e717e8"
 ---
 
 # Allgemeine Impfpflicht II – und die Abwehr des Subjektiven

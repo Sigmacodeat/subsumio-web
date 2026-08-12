@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d34823da99b27856"
 ---
 
 # Warum Fehlinformation, Desinformation und Hassrede nicht gleich behandelt werden sollten

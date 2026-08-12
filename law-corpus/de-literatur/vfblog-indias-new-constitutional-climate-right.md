@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/indias-new-constitutional-climate-right/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9c12da393470f203"
 ---
 
 # India’s New Constitutional Climate Right

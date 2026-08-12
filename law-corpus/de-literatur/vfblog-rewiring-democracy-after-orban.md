@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rewiring-democracy-after-orban/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3fbd34ae75fb39c1"
 ---
 
 # Rewiring Democracy After Orbán

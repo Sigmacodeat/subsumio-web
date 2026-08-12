@@ -15,6 +15,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "2818766a755833ce"
 ---
 
 § 3.1 Staatsstrukturprinzipien und Staatszielbestimmungen &#124; Inhaltsverzeichnis &#124; § 3.3 Grundzüge des Staatskirchenrechts 

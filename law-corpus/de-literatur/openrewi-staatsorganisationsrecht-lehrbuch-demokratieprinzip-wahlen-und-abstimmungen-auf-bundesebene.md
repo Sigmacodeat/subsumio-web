@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "b848a5adae0bfc75"
 ---
 
 § 5.1 Prinzip der Volkssouveränität &#124; Inhaltsverzeichnis &#124; § 5.2.1 Wahlen 

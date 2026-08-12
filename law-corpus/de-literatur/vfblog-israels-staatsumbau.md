@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/israels-staatsumbau/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7a71b61893235410"
 ---
 
 # Israels Staatsumbau

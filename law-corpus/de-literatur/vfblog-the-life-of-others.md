@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-life-of-others/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "175c898a1190c037"
 ---
 
 # The Life of Others

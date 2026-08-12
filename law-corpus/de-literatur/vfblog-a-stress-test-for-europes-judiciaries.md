@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-stress-test-for-europes-judiciaries/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "428b7c5df5fa0c85"
 ---
 
 # A Stress Test for Europe’s Judiciaries

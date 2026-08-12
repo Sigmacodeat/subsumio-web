@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "807b13ebc1ba1ca9"
 ---
 
 # Balancing Intellectual Property Protection with the Human Right to a Healthy Environment

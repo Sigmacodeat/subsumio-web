@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6b9087f9334e9c1b"
 ---
 
 # The Catalan Self-Determination Referendum Act: A New Legal Order in Europe

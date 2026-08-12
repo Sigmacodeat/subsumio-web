@@ -101,8 +101,8 @@ function MetricCard({
         <div className="text-2xl font-bold text-[var(--ds-text)]">{value}</div>
         {trend && (
           <div className="mt-1 flex items-center gap-1 text-xs">
-            {trend === "up" && <TrendingUp className="h-3 w-3 text-green-500" />}
-            {trend === "down" && <TrendingDown className="h-3 w-3 text-red-500" />}
+            {trend === "up" && <TrendingUp className="h-3 w-3 text-[color:var(--ds-success-text)]" />}
+            {trend === "down" && <TrendingDown className="h-3 w-3 text-[color:var(--ds-danger-text)]" />}
             {trend === "neutral" && <Activity className="h-3 w-3 text-[var(--ds-text-muted)]" />}
           </div>
         )}
@@ -175,11 +175,10 @@ export default function RagOptimizerDashboardPage() {
   const activeParams = active?.active?.params as Record<string, unknown> | undefined;
 
   return (
-    <div className="min-h-screen bg-[var(--ds-background)] text-[var(--ds-text)]">
+    <div className="mx-0 w-full space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader title={t("admin.ragopt.title")} description={t("admin.ragopt.desc")} />
 
-      <div className="mx-auto max-w-7xl space-y-6 p-6">
-        <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3">
           <Button
             onClick={() => trigger("baseline", { action: "baseline" })}
             disabled={!!actionLoading}
@@ -250,7 +249,7 @@ export default function RagOptimizerDashboardPage() {
         <Card className="border-[var(--ds-border)] bg-[var(--ds-surface-1)]">
           <CardContent className="p-6">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-              <CheckCircle className="h-5 w-5 text-green-500" />
+              <CheckCircle className="h-5 w-5 text-[color:var(--ds-success-text)]" />
               Aktive Konfiguration
             </h2>
             {activeParams ? (
@@ -288,7 +287,7 @@ export default function RagOptimizerDashboardPage() {
           <CardContent className="p-6">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
               <Activity className="h-5 w-5" />
-              Optimierungs-History
+              Optimierungshistorie
             </h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -325,7 +324,7 @@ export default function RagOptimizerDashboardPage() {
                         <td className="py-3 pr-4">${run.cost_estimate_usd?.toFixed(4) ?? "—"}</td>
                         <td className="py-3 pr-4">
                           {run.applied_at ? (
-                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <CheckCircle className="h-4 w-4 text-[color:var(--ds-success-text)]" />
                           ) : (
                             <XCircle className="h-4 w-4 text-[var(--ds-text-muted)]" />
                           )}
@@ -353,14 +352,14 @@ export default function RagOptimizerDashboardPage() {
           <CardContent className="p-6">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
               <Database className="h-5 w-5" />
-              Gesetzes-Ingestion Queue
+              Gesetzes-Ingestion-Warteschlange
             </h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-[var(--ds-border)] text-left text-[var(--ds-text-muted)]">
-                    <th className="pr-4 pb-2">Slug</th>
-                    <th className="pr-4 pb-2">Jurisdiction</th>
+                    <th className="pr-4 pb-2">Kurzname</th>
+                    <th className="pr-4 pb-2">Rechtsgebiet</th>
                     <th className="pr-4 pb-2">Status</th>
                     <th className="pr-4 pb-2">Priorität</th>
                     <th className="pr-4 pb-2">Fehler</th>
@@ -376,7 +375,7 @@ export default function RagOptimizerDashboardPage() {
                         <Badge variant={statusColor(item.status)}>{item.status}</Badge>
                       </td>
                       <td className="py-3 pr-4">{item.priority}</td>
-                      <td className="py-3 pr-4 text-xs text-red-400">{item.error ?? "—"}</td>
+                      <td className="py-3 pr-4 text-xs text-[color:var(--ds-danger-text)]">{item.error ?? "—"}</td>
                       <td className="py-3 text-[var(--ds-text-muted)]">
                         {formatDate(item.scheduled_at)}
                       </td>
@@ -385,7 +384,7 @@ export default function RagOptimizerDashboardPage() {
                   {(!queue?.queue || queue.queue.length === 0) && (
                     <tr>
                       <td colSpan={6} className="py-6 text-center text-[var(--ds-text-muted)]">
-                        Queue ist leer.
+                        Warteschlange ist leer.
                       </td>
                     </tr>
                   )}
@@ -394,7 +393,6 @@ export default function RagOptimizerDashboardPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
     </div>
   );
 }

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-u-s-presidents-electoral-power-play/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e825a7a5a065b78c"
 ---
 
 # The U.S. President’s Electoral Power Play

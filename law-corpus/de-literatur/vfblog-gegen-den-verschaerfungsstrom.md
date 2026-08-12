@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gegen-den-verschaerfungsstrom/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a6f58a7b3b7d21e4"
 ---
 
 # Gegen den Verschärfungsstrom?

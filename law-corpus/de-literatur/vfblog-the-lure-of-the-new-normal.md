@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-lure-of-the-new-normal/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eb95f48f51fcd222"
 ---
 
 # The Lure of the New Normal

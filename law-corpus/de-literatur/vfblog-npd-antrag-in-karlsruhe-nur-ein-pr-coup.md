@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/npd-antrag-in-karlsruhe-nur-ein-pr-coup/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6174881863a37de2"
 ---
 
 # NPD-Antrag in Karlsruhe: Nur ein PR-Coup

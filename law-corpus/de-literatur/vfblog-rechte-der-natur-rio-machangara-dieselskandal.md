@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rechte-der-natur-rio-machangara-dieselska
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5173ca0db70b8510"
 ---
 
 # Von Flüssen und Dieselabgasen

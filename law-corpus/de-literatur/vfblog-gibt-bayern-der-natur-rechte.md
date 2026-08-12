@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gibt-bayern-der-natur-rechte/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f51fbc1632d8b746"
 ---
 
 # Gibt Bayern der Natur Rechte?

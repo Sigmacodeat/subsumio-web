@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/institutionalisierte-solidaritat-geas/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d1c58657856883dd"
 ---
 
 # Institutionalisierte Solidarität

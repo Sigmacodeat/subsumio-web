@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/two-non-constitutional-non-democracies/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "503079613d9683ed"
 ---
 
 # Two Non-Constitutional Non-Democracies

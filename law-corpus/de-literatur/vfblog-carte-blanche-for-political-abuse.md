@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/carte-blanche-for-political-abuse/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cdd2716b13eacc40"
 ---
 
 # Carte Blanche for Political Abuse

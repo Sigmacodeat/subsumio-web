@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/drawing-red-lines/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "497a4abe334b1e52"
 ---
 
 # Drawing Red Lines

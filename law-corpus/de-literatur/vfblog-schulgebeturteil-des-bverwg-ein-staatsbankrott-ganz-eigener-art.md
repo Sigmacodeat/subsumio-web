@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "dd6eecca5580d9df"
 ---
 
 # Schulgebet-Urteil des BVerwG: Ein Staatsbankrott ganz eigener Art

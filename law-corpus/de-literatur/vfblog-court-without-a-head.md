@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/court-without-a-head/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bfc3fea855962f9c"
 ---
 
 # Court without a Head

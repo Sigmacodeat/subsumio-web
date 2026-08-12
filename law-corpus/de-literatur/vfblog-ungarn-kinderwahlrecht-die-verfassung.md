@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ungarn-kinderwahlrecht-die-verfassung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0249bc2c5ea2c68f"
 ---
 
 # Ungarn: Kinderwahlrecht in die Verfassung?

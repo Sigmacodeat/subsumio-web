@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/partizipation_demokratie_buergerraete/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "541d6a91ea2cde97"
 ---
 
 # Plädoyer für eine Stiftung für Partizipative Demokratie

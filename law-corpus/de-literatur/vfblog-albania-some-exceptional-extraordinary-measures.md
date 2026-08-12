@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/albania-some-exceptional-extraordinary-me
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fb480585d9178c35"
 ---
 
 # Albania – Some Exceptional Extraordinary Measures

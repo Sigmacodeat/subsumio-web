@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b66a8fcd24abf16c"
 ---
 
 # Democracy and the Global Emergency – Shared Experiences, Starkly Uneven Impacts

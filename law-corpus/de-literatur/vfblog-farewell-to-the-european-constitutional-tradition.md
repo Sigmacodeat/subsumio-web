@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/farewell-to-the-european-constitutional-t
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fbf87a8bec2e14e5"
 ---
 
 # Farewell to the European Constitutional Tradition

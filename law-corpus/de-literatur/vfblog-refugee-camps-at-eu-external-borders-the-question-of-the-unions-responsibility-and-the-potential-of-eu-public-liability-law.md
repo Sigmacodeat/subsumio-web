@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c5b966f257aaed1e"
 ---
 
 # Refugee Camps at EU External Borders, the Question of the Union’s Responsibility, and the Potential of EU Public Liability Law

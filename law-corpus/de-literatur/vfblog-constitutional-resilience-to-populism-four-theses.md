@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/constitutional-resilience-to-populism-fou
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e1a5e60173a8c53a"
 ---
 
 # Constitutional Resilience to Populism: Four Theses

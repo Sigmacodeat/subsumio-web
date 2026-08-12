@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/guardian-of-the-amazon/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0c5c174bcebe116f"
 ---
 
 # Guardian of the Amazon

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "280507224697eb31"
 ---
 
 # “Gezielte Tötung kann die legalste Art der Kriegsführung sein”

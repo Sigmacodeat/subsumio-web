@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fighting-on-the-business-front/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "df216397ef8981f9"
 ---
 
 # Fighting on the Business Front

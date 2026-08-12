@@ -425,7 +425,9 @@ describe("knobsHash determinism + cross-mode separation (CDX-4)", () => {
     // Hard jurisdiction isolation: bumped 11→12 for the statute jurisdiction
     // scope (jur=) — an at-scoped read must not be served a de/unscoped row.
     // 12→13: as-of-date (asof=) for historical legal cutoff isolation.
-    expect(KNOBS_HASH_VERSION).toBe(14);
+    // 13→14: legal-class isolation (jurisdiction-scoped statute reads).
+    // 14→15: v0.48 legal metadata filters (court/legalArea/decisionDate).
+    expect(KNOBS_HASH_VERSION).toBe(15);
   });
 
   test("T1 (codex): floor_ratio set vs unset produces DIFFERENT hashes (cache contamination prevention)", () => {
@@ -608,8 +610,8 @@ describe("v0.40.4 — graph_signals knob", () => {
 });
 
 describe("v0.42.3.0 — autocut knobs", () => {
-  test("KNOBS_HASH_VERSION is 14 (12→13 as-of-date; 13→14 legal-class isolation)", () => {
-    expect(KNOBS_HASH_VERSION).toBe(14);
+  test("KNOBS_HASH_VERSION is 15 (12→13 as-of-date; 13→14 legal-class isolation; 14→15 legal metadata filters)", () => {
+    expect(KNOBS_HASH_VERSION).toBe(15);
   });
 
   test("bundle defaults: conservative off, balanced/tokenmax on @0.20", () => {

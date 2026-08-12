@@ -863,7 +863,7 @@ export function OverviewTab() {
           />
           <input
             {...ctx.expenseForm.register("amount")}
-            type="number"
+            type="number" inputMode="decimal"
             step="0.01"
             placeholder={t("cases.detail_exp_amount_ph")}
             aria-label={t("cases.amount")}

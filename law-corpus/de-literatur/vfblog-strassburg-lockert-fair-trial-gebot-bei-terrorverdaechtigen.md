@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7087151e5cf6e895"
 ---
 
 # Straßburg lockert Fair-Trial-Gebot bei Terrorverdächtigen

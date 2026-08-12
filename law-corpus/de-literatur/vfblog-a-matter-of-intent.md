@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-matter-of-intent/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bb35970cabc8f6fb"
 ---
 
 # A Matter of Intent

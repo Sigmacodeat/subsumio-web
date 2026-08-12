@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9933b31c70ccbf9f"
 ---
 
 # Rechtswissenschaft in Japan: Interessiert an uns, interessant für uns

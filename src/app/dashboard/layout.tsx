@@ -248,7 +248,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   // Persist copilot panel state
   useEffect(() => {
     const stored = localStorage.getItem("subsumio-copilot-open");
-    setCopilotOpen(stored !== null ? stored === "true" : window.innerWidth >= 1024);
+    setCopilotOpen(stored !== null ? stored === "true" : window.innerWidth >= 768);
   }, [setCopilotOpen]);
   useEffect(() => {
     if (!copilotPersistenceReady.current) {
@@ -332,7 +332,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkOverlay = () => {
       const copilotMobileOpen =
-        copilotOpen && typeof window !== "undefined" && window.innerWidth < 1024;
+        copilotOpen && typeof window !== "undefined" && window.innerWidth < 768;
       const anyOverlayOpen =
         mobileOpen ||
         cmdOpen ||
@@ -614,7 +614,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
   return (
     <div
-      className="flex h-screen overflow-hidden bg-[color:var(--ds-bg)]"
+      className="flex h-screen overflow-hidden bg-[color:var(--ds-bg)] text-[color:var(--ds-text)]"
       style={styleForIndustry(industry)}
       data-industry={industry ?? "core"}
       data-app="dashboard"

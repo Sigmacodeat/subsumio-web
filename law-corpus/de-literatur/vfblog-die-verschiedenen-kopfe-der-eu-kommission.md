@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/die-verschiedenen-kopfe-der-eu-kommission
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8b438f445e07b3c1"
 ---
 
 # Die verschiedenen Köpfe der EU-Kommission

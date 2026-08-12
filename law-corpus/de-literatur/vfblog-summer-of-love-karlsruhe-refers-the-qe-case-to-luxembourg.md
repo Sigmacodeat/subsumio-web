@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "49fbe249decb4f10"
 ---
 
 # Summer of Love: Karlsruhe Refers the QE Case to Luxembourg

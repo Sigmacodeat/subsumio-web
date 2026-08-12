@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mine-and-yours/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "abaa55a9f86faba8"
 ---
 
 # Mine and Your's

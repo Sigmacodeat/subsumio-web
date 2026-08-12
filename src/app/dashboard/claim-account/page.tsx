@@ -149,7 +149,7 @@ export default function ClaimAccountPage() {
   const totalOpen = claims.reduce((sum, c) => sum + c.open_amount, 0);
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("claim.title")}
         description={t("claim.description")}
@@ -225,7 +225,7 @@ export default function ClaimAccountPage() {
             <div>
               <Label>{t("claim.principal")} *</Label>
               <Input
-                type="number"
+                type="number" inputMode="numeric"
                 value={form.principal_amount}
                 onChange={(e) => setForm({ ...form, principal_amount: e.target.value })}
               />
@@ -233,7 +233,7 @@ export default function ClaimAccountPage() {
             <div>
               <Label>{t("claim.interest")}</Label>
               <Input
-                type="number"
+                type="number" inputMode="numeric"
                 value={form.interest_amount}
                 onChange={(e) => setForm({ ...form, interest_amount: e.target.value })}
               />
@@ -241,7 +241,7 @@ export default function ClaimAccountPage() {
             <div>
               <Label>{t("claim.costs")}</Label>
               <Input
-                type="number"
+                type="number" inputMode="numeric"
                 value={form.costs_amount}
                 onChange={(e) => setForm({ ...form, costs_amount: e.target.value })}
               />
@@ -293,7 +293,7 @@ export default function ClaimAccountPage() {
           <div>
             <Label>{t("claim.payment_amount")}</Label>
             <Input
-              type="number"
+              type="number" inputMode="numeric"
               value={paymentAmount}
               onChange={(e) => setPaymentAmount(e.target.value)}
             />

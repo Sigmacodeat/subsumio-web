@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/power-dsa-dma-03/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "388390b6eb14eaa4"
 ---
 
 # The European Constitutional Road to Address Platform Power

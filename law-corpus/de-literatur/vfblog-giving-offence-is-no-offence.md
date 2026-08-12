@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/giving-offence-is-no-offence/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ab88b17ebad57633"
 ---
 
 # Giving Offence is no Offence

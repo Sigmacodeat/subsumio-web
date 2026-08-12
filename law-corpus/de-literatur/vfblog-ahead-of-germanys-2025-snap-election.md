@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ahead-of-germanys-2025-snap-election/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0b4d09dde82b1af1"
 ---
 
 # Voting from Abroad Ahead of Germany’s 2025 Snap Election

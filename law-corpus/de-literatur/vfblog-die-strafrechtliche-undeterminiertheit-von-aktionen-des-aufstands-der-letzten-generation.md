@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4c13bcd97dd95855"
 ---
 
 # Die strafrechtliche Undeterminiertheit von Aktionen des ‚Aufstands der Letzten Generation‘ und wie damit umzugehen ist

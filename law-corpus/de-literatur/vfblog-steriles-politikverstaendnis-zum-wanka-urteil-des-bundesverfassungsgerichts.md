@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0fb1e95851266404"
 ---
 
 # Steriles Politik&shy;verständnis: Zum Wanka-Urteil des Bundesverfassungs&shy;gerichts

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bc903466604f3615"
 ---
 
 # Schweizer Bundesgericht: “Sauausländer” ist nicht diskriminierend

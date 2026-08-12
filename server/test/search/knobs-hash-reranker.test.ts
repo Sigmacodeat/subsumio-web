@@ -62,7 +62,7 @@ describe("KNOBS_HASH_VERSION + version invariants", () => {
     // Hard jurisdiction isolation: 11→12 folds the statute jurisdiction scope
     // (jur=) so an at-scoped read is never served a de/unscoped cache row.
     // 12→13 folds the as-of-date (asof=) for historical legal cutoff isolation.
-    expect(KNOBS_HASH_VERSION).toBe(14);
+    expect(KNOBS_HASH_VERSION).toBe(15);
   });
 
   test("hash is 16 hex chars regardless of reranker config", () => {

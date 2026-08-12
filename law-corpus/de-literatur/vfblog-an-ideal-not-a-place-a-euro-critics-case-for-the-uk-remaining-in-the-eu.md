@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c1a859b506589393"
 ---
 
 # An Ideal, not a Place: A Euro-Critic’s Case for the UK Remaining in the EU

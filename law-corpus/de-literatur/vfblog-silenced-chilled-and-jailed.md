@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/silenced-chilled-and-jailed/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "db5175eeff395318"
 ---
 
 # Silenced, Chilled, and Jailed

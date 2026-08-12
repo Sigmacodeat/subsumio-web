@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/zur-notwendigen-annahme-der-csddd-durch-d
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ab4ba6dcf63f429a"
 ---
 
 # Zur notwendigen Annahme der CSDDD durch den EU-Rat

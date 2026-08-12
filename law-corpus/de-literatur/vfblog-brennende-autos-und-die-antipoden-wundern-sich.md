@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/brennende-autos-und-die-antipoden-wundern
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7b852997c250e291"
 ---
 
 # Brennende Autos, und die Antipoden wundern sich

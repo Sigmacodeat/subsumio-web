@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os2-irregularisierung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c4dc39546de98ee4"
 ---
 
 # Irregularisierung der Staatsbürgerschaft in Indien

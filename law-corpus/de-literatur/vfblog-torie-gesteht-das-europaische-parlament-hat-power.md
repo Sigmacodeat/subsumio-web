@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/torie-gesteht-das-europaische-parlament-h
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fd5c98bb2c2c0b76"
 ---
 
 # Torie gesteht: das Europäische Parlament hat Power

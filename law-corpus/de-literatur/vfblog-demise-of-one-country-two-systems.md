@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/demise-of-one-country-two-systems/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "40f06aaf2fd596e8"
 ---
 
 # Demise of “One Country, Two Systems”?

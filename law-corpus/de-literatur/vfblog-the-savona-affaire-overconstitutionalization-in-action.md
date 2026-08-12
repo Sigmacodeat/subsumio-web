@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5d8d6a135e66961e"
 ---
 
 # The “Savona Affaire”: Over&shy;constitutionali&shy;zation in Action?

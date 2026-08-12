@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/britains-neverendum-on-europe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e0c1f290e41a0e8b"
 ---
 
 # Britain’s Neverendum on Europe

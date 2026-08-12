@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/schengens-paper-pushbacks/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6a2a31e37f982c67"
 ---
 
 # Schengen’s Paper Pushbacks

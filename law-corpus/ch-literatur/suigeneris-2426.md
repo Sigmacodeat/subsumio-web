@@ -16,6 +16,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Nadja Capus;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "6fae0a5b1b7541d9"
 ---
 
 # L’attribution de la qualité de preuve - une action négligée

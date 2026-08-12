@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-armed-forces-and-the-constitution-in-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1ed69448f556eef8"
 ---
 
 # The Armed Forces and the Constitution in Brazil

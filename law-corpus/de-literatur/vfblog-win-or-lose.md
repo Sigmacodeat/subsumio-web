@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/win-or-lose/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f8381b491854c365"
 ---
 
 # Win or Lose, Chile’s Draft Constitution Heralds a New Era of Climate Constitutionalism

@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/fluechtlinge-fressen-befoerderungsverbot/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "65bed3508d039adf"
 ---
 
 # Flucht aus der Grundrechtsbindung: „Flüchtlinge fressen“ und das ausländerrechtliche Beförderungsverbot

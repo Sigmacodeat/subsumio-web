@@ -15,7 +15,6 @@ import {
   Shield,
   PenTool,
   Send,
-  X,
 } from "lucide-react";
 import {
   Dialog,
@@ -28,7 +27,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
-import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import { encodeSlugPath } from "@/lib/utils";
 import {
@@ -80,7 +78,6 @@ export function IntakeAcceptanceWizard({
   onUpdated,
   onConverted,
 }: IntakeAcceptanceWizardProps) {
-  const { t } = useLang();
   const router = useRouter();
   const { addToast } = useToast();
 
@@ -100,6 +97,7 @@ export function IntakeAcceptanceWizard({
   const [checkResult, setCheckResult] = useState<ConflictCheckResponse | null>(null);
   const [waiverReason, setWaiverReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [generatingLetter, setGeneratingLetter] = useState(false);
   const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
@@ -174,6 +172,50 @@ export function IntakeAcceptanceWizard({
       });
     } finally {
       setChecking(false);
+    }
+  }
+
+  async function generateEngagementLetter() {
+    const clientName = item.frontmatter.client_name?.trim() || "Mandant";
+    const legalArea = item.frontmatter.legal_area?.trim() || item.title;
+    const summary = item.frontmatter.summary?.trim() || "";
+    const today = new Date().toLocaleDateString("de-DE");
+    const content = `Mandatsannahme-Schreiben\n\nDatum: ${today}\n\n${clientName}\n\nSehr geehrte Damen und Herren,\n\nhiermit bestätigen wir die Übernahme Ihres Mandates betreffend ${legalArea}.\n\nZusammenfassung:\n${summary}\n\nRechtsgebiet: ${legalArea}\nMandant: ${clientName}\n\nWir werden die anwaltliche Vertretung gemäß den uns bekannten Umständen übernehmen und Sie über den Fortgang informieren.\n\nMit freundlichen Grüßen\nIhre Kanzlei`;
+
+    setGeneratingLetter(true);
+    try {
+      const slugBase = `intake/${item.slug}/engagement-letter`;
+      const slug = `${slugBase}-${Date.now()}`;
+      const page = {
+        slug,
+        title: `Mandatsannahme-Schreiben – ${clientName}`,
+        type: "legal_document",
+        content,
+        frontmatter: {
+          document_type: "engagement_letter",
+          intake_slug: item.slug,
+          client_name: clientName,
+          legal_area: legalArea,
+          generated_at: new Date().toISOString(),
+        },
+      };
+      await api.brain.createPage(page);
+      updateWorkflow({
+        engagement_letter: {
+          status: "draft",
+          document_slug: slug,
+          generated_at: new Date().toISOString(),
+        },
+      });
+      addToast({ type: "success", title: "Mandatsbrief-Entwurf erstellt" });
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: "Fehler",
+        description: err instanceof Error ? err.message : "Erstellung fehlgeschlagen",
+      });
+    } finally {
+      setGeneratingLetter(false);
     }
   }
 
@@ -575,16 +617,34 @@ export function IntakeAcceptanceWizard({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() =>
-                      updateWorkflow({
-                        engagement_letter: { status: "draft" },
-                      })
-                    }
+                    onClick={() => void generateEngagementLetter()}
+                    disabled={generatingLetter}
                     className="gap-2"
                   >
-                    <Send size={14} />
+                    {generatingLetter ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Send size={14} />
+                    )}
                     Entwurf generieren
                   </Button>
+                  {workflow.engagement_letter.document_slug && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        window.open(
+                          `/dashboard/brain/${encodeURIComponent(workflow.engagement_letter.document_slug!)}`,
+                          "_blank"
+                        )
+                      }
+                      className="gap-2"
+                    >
+                      <FileText size={14} />
+                      Entwurf anzeigen
+                    </Button>
+                  )}
                 </div>
               </div>
             )}

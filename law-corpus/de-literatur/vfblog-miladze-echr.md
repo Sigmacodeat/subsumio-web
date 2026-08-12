@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/miladze-echr/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f18638091db11818"
 ---
 
 # The Politics of Provocation

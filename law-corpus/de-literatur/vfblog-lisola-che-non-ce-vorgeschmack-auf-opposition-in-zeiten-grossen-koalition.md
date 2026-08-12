@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "46d9c08a08c7ed45"
 ---
 
 # L’isola che non c’è – ein Vorgeschmack auf Opposition in Zeiten der Großen Koalition

@@ -82,23 +82,23 @@ interface Labels {
 }
 
 const STATE_COLORS: Record<string, string> = {
-  candidate: "bg-blue-100 text-blue-800 border-blue-200",
-  confirmed: "bg-green-100 text-green-800 border-green-200",
-  rejected: "bg-gray-100 text-gray-800 border-gray-200",
-  needs_info: "bg-amber-100 text-amber-800 border-amber-200",
+  candidate: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
+  confirmed: "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
+  rejected: "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)] border-[color:var(--ds-border)]",
+  needs_info: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
-  low: "bg-blue-100 text-blue-800",
-  medium: "bg-yellow-100 text-yellow-800",
-  high: "bg-orange-100 text-orange-800",
-  critical: "bg-red-100 text-red-800",
+  low: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
+  medium: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+  high: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+  critical: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
 };
 
 const VERDICT_COLORS: Record<string, string> = {
-  correct: "bg-green-100 text-green-800",
-  incorrect: "bg-red-100 text-red-800",
-  incomplete: "bg-yellow-100 text-yellow-800",
+  correct: "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
+  incorrect: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+  incomplete: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
 };
 
 // ── Page ──────────────────────────────────────────────────────────────
@@ -212,7 +212,7 @@ export default function FeedbackTriagePage() {
   const entries = queueData?.entries ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="mx-0 w-full space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("admin.feedback.title")}
         description={t("admin.feedback.desc")}
@@ -229,10 +229,10 @@ export default function FeedbackTriagePage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm">Gesamt</p>
+                <p className="text-[color:var(--ds-text-muted)] text-sm">Gesamt</p>
                 <p className="text-2xl font-bold">{stats?.total ?? "—"}</p>
               </div>
-              <ClipboardList className="text-muted-foreground h-8 w-8" />
+              <ClipboardList className="text-[color:var(--ds-text-muted)] h-8 w-8" />
             </div>
           </CardContent>
         </Card>
@@ -240,10 +240,10 @@ export default function FeedbackTriagePage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm">Wartend</p>
+                <p className="text-[color:var(--ds-text-muted)] text-sm">Wartend</p>
                 <p className="text-2xl font-bold">{stats?.pending_count ?? "—"}</p>
               </div>
-              <Inbox className="h-8 w-8 text-blue-500" />
+              <Inbox className="h-8 w-8 text-[color:var(--ds-info-text)]" />
             </div>
           </CardContent>
         </Card>
@@ -251,12 +251,12 @@ export default function FeedbackTriagePage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm">Bestätigt</p>
+                <p className="text-[color:var(--ds-text-muted)] text-sm">Bestätigt</p>
                 <p className="text-2xl font-bold">
                   {stats ? `${(stats.confirmation_rate * 100).toFixed(0)}%` : "—"}
                 </p>
               </div>
-              <CheckCircle2 className="h-8 w-8 text-green-500" />
+              <CheckCircle2 className="h-8 w-8 text-[color:var(--ds-success-text)]" />
             </div>
           </CardContent>
         </Card>
@@ -264,10 +264,10 @@ export default function FeedbackTriagePage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm">Unmined Fixtures</p>
+                <p className="text-[color:var(--ds-text-muted)] text-sm">Offene Fixtures</p>
                 <p className="text-2xl font-bold">{stats?.unmined_confirmed ?? "—"}</p>
               </div>
-              <AlertCircle className="h-8 w-8 text-amber-500" />
+              <AlertCircle className="h-8 w-8 text-[color:var(--ds-warning-text)]" />
             </div>
           </CardContent>
         </Card>
@@ -275,7 +275,7 @@ export default function FeedbackTriagePage() {
 
       {/* Filter Bar */}
       <div className="flex items-center gap-3">
-        <Filter className="text-muted-foreground h-4 w-4" />
+        <Filter className="text-[color:var(--ds-text-muted)] h-4 w-4" />
         <Select value={filterState} onValueChange={setFilterState}>
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder={t("admin.feedback.filter_status")} />
@@ -302,11 +302,11 @@ export default function FeedbackTriagePage() {
       <div className="space-y-3">
         {queueLoading ? (
           <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
-            <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+            <Loader2 className="text-[color:var(--ds-text-muted)] h-6 w-6 animate-spin" />
           </div>
         ) : entries.length === 0 ? (
           <Card>
-            <CardContent className="text-muted-foreground py-12 text-center">
+            <CardContent className="text-[color:var(--ds-text-muted)] py-12 text-center">
               Keine Einträge in diesem Filter
             </CardContent>
           </Card>
@@ -337,27 +337,27 @@ export default function FeedbackTriagePage() {
                       )}
                     </div>
                     <p className="truncate text-sm font-medium">{entry.query}</p>
-                    <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
+                    <p className="text-[color:var(--ds-text-muted)] mt-1 line-clamp-2 text-xs">
                       {entry.answer_excerpt}
                     </p>
                     {entry.user_comment && (
-                      <p className="text-muted-foreground mt-1 text-xs italic">
+                      <p className="text-[color:var(--ds-text-muted)] mt-1 text-xs italic">
                         &ldquo;{entry.user_comment}&rdquo;
                       </p>
                     )}
                     {entry.error_class && labels && (
                       <p className="mt-1 text-xs">
-                        <span className="text-muted-foreground">Fehlerklasse:</span>{" "}
+                        <span className="text-[color:var(--ds-text-muted)]">Fehlerklasse:</span>{" "}
                         {labels.error_classes[entry.error_class] ?? entry.error_class}
                       </p>
                     )}
                     {entry.root_cause && labels && (
                       <p className="text-xs">
-                        <span className="text-muted-foreground">Root Cause:</span>{" "}
+                        <span className="text-[color:var(--ds-text-muted)]">Ursache:</span>{" "}
                         {labels.root_causes[entry.root_cause] ?? entry.root_cause}
                       </p>
                     )}
-                    <p className="text-muted-foreground mt-1 text-xs">
+                    <p className="text-[color:var(--ds-text-muted)] mt-1 text-xs">
                       {new Date(entry.created_at).toLocaleString("de-DE")}
                     </p>
                   </div>
@@ -386,20 +386,20 @@ export default function FeedbackTriagePage() {
             <div className="space-y-4">
               <div>
                 <p className="mb-1 text-sm font-medium">Query:</p>
-                <p className="text-muted-foreground bg-muted rounded p-2 text-sm">
+                <p className="text-[color:var(--ds-text-muted)] bg-[color:var(--ds-surface-2)] rounded p-2 text-sm">
                   {selectedEntry.query}
                 </p>
               </div>
               <div>
                 <p className="mb-1 text-sm font-medium">AI-Antwort:</p>
-                <p className="text-muted-foreground bg-muted rounded p-2 text-sm">
+                <p className="text-[color:var(--ds-text-muted)] bg-[color:var(--ds-surface-2)] rounded p-2 text-sm">
                   {selectedEntry.answer_excerpt}
                 </p>
               </div>
               {selectedEntry.user_comment && (
                 <div>
                   <p className="mb-1 text-sm font-medium">Nutzer-Kommentar:</p>
-                  <p className="text-muted-foreground text-sm italic">
+                  <p className="text-[color:var(--ds-text-muted)] text-sm italic">
                     &ldquo;{selectedEntry.user_comment}&rdquo;
                   </p>
                 </div>
@@ -451,7 +451,7 @@ export default function FeedbackTriagePage() {
                       </Select>
                     </div>
                     <div>
-                      <label className="text-xs font-medium">Root Cause</label>
+                      <label className="text-xs font-medium">Ursache</label>
                       <Select value={rootCause} onValueChange={setRootCause}>
                         <SelectTrigger>
                           <SelectValue placeholder={t("admin.feedback.choose")} />
@@ -504,7 +504,7 @@ export default function FeedbackTriagePage() {
               </div>
 
               {decideMutation.isError && (
-                <p className="text-sm text-red-600">
+                <p className="text-sm text-[color:var(--ds-danger-text)]">
                   {decideMutation.error instanceof Error
                     ? decideMutation.error.message
                     : t("admin.feedback.error_occurred")}

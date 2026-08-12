@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7a99e081513557c9"
 ---
 
 # The ‘Brexit’ Referendum: We Need to Talk about the (General Election) Franchise

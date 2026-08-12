@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-omnibus-package-of-the-eu-commission/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "321e9c3522259843"
 ---
 
 # The Omnibus Package of the EU Commission

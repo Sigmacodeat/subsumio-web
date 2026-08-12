@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2022 Anne-Sophie Morand,
   Liliane Obrecht; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "d794778790385354"
 ---
 
 # Datenschutz und Umweltschutz - ein Dilemma? Gedanken zur Problematik und zu Regulierungsansätzen am Beispiel von Rechenzentren

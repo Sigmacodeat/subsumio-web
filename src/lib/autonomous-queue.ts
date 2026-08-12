@@ -27,7 +27,8 @@ export type AutonomousTaskType =
   | "workflow_start" // Workflow autonom starten
   | "email_draft" // E-Mail Entwurf generieren
   | "client_update" // Mandanten-Update generieren
-  | "report_generation"; // Report generieren
+  | "report_generation" // Report generieren
+  | "legal_draft_generation"; // Schriftsatz im Hintergrund generieren
 
 export type TaskPriority = "urgent" | "normal" | "low";
 

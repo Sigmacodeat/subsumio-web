@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "166c3d0d7a0b8b85"
 ---
 
 # Mit „Bayern zuerst“ in den Bundestag? – Gedankenspiele zur Sonderrolle der CSU in der Bundespolitik

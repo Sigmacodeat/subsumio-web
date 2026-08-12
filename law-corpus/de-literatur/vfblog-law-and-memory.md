@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/law-and-memory/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "23042767b90e12fa"
 ---
 
 # Law and Memory

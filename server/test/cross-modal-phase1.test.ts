@@ -145,7 +145,7 @@ describe("D2 — knobsHash differs across cross-modal knob values", () => {
     // T2: 6→7 title_boost. v0.42.3.0: 7→8 autocut. issue #1777: 8→9 archive/ demote.
     // v0.43: 9→10 relational recall arm.
     // v0.46: 10→11 cognitive tier cascade (ct=/ct3=/ct2=/ct1=/ct0=).
-    expect(KNOBS_HASH_VERSION).toBe(14);
+    expect(KNOBS_HASH_VERSION).toBe(15);
   });
 
   test("flipping unified_multimodal changes the hash", () => {

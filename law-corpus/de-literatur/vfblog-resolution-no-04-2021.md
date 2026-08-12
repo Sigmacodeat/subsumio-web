@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/resolution-no-04-2021/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "344a4686a5082cbf"
 ---
 
 # Resolution No. 04/2021

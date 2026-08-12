@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/five-questions-on-brexit-to-jo-shaw/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f7b8dc0dd162768d"
 ---
 
 # Five Questions on Brexit to JO SHAW

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/oecd-deutsches-wahlrecht-ist-revisionsbed
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fa1637aefd37b2a7"
 ---
 
 # OSCE: Deutsches Wahlrecht ist revisionsbedürftig

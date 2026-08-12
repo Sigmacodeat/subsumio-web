@@ -170,6 +170,7 @@ export default function OnboardingPage() {
       }
       const finalText = result.answer || queryAnswer || "";
       if (finalText) groundQuery(finalText).catch(() => {});
+      if (finalText) api.onboarding.updateProgress({ firstQuery: true }).catch(() => {});
     } catch {
       setError(t("onboarding.error_query"));
     }
@@ -201,6 +202,8 @@ export default function OnboardingPage() {
         }, {}),
     });
     await saveKanzleiSettings(settings);
+    // Mark firm setup as progressed; best-effort, not blocking
+    api.onboarding.updateProgress({ firm: true }).catch(() => {});
   }, [profile, userEmail, userName, billing]);
 
   const finish = useCallback(async () => {
@@ -242,7 +245,7 @@ export default function OnboardingPage() {
 
   return (
     <div
-      className="flex min-h-full items-center justify-center p-4 md:p-8"
+      className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8 flex min-h-full items-center justify-center"
       style={{
         background:
           "linear-gradient(135deg, var(--brand-gradient-from, hsl(230, 60%, 36%)) 0%, var(--brand-gradient-via, hsl(230, 60%, 64%)) 50%, var(--brand-gradient-to, hsl(260, 60%, 65%)) 100%)",
@@ -656,7 +659,7 @@ export default function OnboardingPage() {
                     </Label>
                     <Input
                       id="ob-rate"
-                      type="number"
+                      type="number" inputMode="numeric"
                       value={billing.stundensatz}
                       onChange={(e) => setBilling((b) => ({ ...b, stundensatz: e.target.value }))}
                       placeholder="220"

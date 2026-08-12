@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9f715d4da3cb7047"
 ---
 
 # Formlos verfassungsändernde &#8216;Staatspraxis' und Gesetzesauslegung nach Parlamentsrede

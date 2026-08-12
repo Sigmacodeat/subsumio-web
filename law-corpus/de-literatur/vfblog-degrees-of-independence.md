@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/degrees-of-independence/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "afc62088be5c875b"
 ---
 
 # Degrees of (In)Dependence

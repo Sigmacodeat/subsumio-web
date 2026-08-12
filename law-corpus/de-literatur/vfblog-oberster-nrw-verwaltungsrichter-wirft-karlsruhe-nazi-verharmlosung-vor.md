@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a55b64a0ebb93be7"
 ---
 
 # Oberster NRW- Verfassungsrichter wirft Karlsruhe Nazi- Verharmlosung vor

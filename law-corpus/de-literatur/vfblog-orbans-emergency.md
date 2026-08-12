@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/orbans-emergency/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cea087a8b430f5c4"
 ---
 
 # Orban’s Emergency

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/passports-and-weapons/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2761cdc081542b7f"
 ---
 
 # Passports and Weapons

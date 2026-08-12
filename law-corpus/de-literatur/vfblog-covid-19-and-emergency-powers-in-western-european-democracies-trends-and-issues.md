@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d1dfa79303486ed6"
 ---
 
 # COVID-19 and Emergency Powers in Western European Democracies: Trends and Issues

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/warum-ich-mir-das-tv-duell-nicht-angesehe
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5c8980e44ee596d9"
 ---
 
 # Warum ich mir das “TV-Duell” nicht angesehen habe

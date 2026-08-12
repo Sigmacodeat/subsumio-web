@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/pseudo-legal-justice/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5a20c369f04d11f7"
 ---
 
 # Pseudo-Legal Justice

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/football-transfer-system/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "79efd001cc83e056"
 ---
 
 # Misjudging the Football Transfer System

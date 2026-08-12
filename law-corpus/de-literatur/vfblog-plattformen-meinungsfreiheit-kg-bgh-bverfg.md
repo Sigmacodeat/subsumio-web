@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/plattformen-meinungsfreiheit-kg-bgh-bverf
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f1745abe7b823e9a"
 ---
 
 # Wovon wollen uns die Plattformen bloß überzeugen?

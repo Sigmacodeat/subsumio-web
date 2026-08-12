@@ -154,7 +154,7 @@ describe("Skill example-name validator (D13)", () => {
   const opNames: string[] = (() => {
     if (!existsSync(OPERATIONS_PATH)) return [];
     const content = readFileSync(OPERATIONS_PATH, "utf-8");
-    return Array.from(content.matchAll(/^\s+name:\s*'([a-z_]+)',/gm)).map((m) => m[1]);
+    return Array.from(content.matchAll(/^\s+name:\s*["']([a-z_]+)["'],/gm)).map((m) => m[1]);
   })();
 
   const knownNames = new Set<string>([...opNames, ...PROTECTED_JOB_NAMES]);

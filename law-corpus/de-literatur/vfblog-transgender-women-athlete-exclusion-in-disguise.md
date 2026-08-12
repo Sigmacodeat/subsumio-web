@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/transgender-women-athlete-exclusion-in-di
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3cb5aa01a22cbf1e"
 ---
 
 # Transgender Women Athlete Exclusion in Disguise

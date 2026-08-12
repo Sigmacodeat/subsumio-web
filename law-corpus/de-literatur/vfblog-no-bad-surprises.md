@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/no-bad-surprises/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9fc3da150f722989"
 ---
 
 # No Bad Surprises

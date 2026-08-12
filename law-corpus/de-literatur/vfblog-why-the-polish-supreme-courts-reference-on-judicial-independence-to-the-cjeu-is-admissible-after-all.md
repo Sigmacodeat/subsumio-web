@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4a7eda0f669f9b16"
 ---
 
 # Why the Polish Supreme Court’s Reference on Judicial Independence to the CJEU is Admissible after all

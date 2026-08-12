@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sbgg-geschlechtseintrag-melderecht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8a9d8b42585ff19d"
 ---
 
 # Niemals normal

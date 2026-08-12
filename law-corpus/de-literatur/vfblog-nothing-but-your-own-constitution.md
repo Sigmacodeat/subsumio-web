@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nothing-but-your-own-constitution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f33311dee74e9688"
 ---
 
 # Nothing but your own Constitution?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/privatisierung-fur-wen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9010facede5f4fab"
 ---
 
 # Privatisierung für wen?

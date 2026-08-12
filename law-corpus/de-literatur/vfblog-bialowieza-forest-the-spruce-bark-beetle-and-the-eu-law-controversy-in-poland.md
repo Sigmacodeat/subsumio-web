@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "34ee5e5b63b15d05"
 ---
 
 # Bialowieza Forest, the Spruce Bark Beetle and the EU Law Controversy in Poland

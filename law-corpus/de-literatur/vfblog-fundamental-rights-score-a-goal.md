@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/fundamental-rights-score-a-goal/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "31cdf3e2067ed5ad"
 ---
 
 # Fundamental Rights Score a Goal

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-never-ending-story-die-vorratsdatenspei
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6201ac9bd869e09c"
 ---
 
 # A Never-Ending Story : Die Vorratsdatenspeicherung

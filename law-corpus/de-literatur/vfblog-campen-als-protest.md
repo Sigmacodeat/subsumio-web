@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/campen-als-protest/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "652f49c8f0df5b7a"
 ---
 
 # Campen als Protest

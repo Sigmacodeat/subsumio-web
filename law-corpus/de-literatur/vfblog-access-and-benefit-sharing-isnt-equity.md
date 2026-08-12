@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/access-and-benefit-sharing-isnt-equity/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0aea8649701a317e"
 ---
 
 # Access and Benefit-Sharing Isn’t Equity

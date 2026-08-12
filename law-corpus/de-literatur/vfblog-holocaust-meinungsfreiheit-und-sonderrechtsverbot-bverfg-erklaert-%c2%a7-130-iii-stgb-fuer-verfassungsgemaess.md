@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b3fe6d31f52392f8"
 ---
 
 # Holocaust, Meinungsfreiheit und Sonderrechtsverbot – BVerfG erklärt § 130 III StGB für verfassungsgemäß

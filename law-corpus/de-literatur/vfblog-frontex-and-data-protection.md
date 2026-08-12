@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/frontex-and-data-protection/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8f818b602903de73"
 ---
 
 # Frontex and Data Protection

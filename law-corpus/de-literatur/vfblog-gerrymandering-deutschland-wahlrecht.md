@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/gerrymandering-deutschland-wahlrecht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8e01511a3a3a4e11"
 ---
 
 # Die feinen Linien des Wahlrechts

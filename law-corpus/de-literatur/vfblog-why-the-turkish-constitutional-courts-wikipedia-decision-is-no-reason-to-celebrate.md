@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2aa6521a10954537"
 ---
 
 # Why the Turkish Constitutional Court’s Wikipedia Decision is No Reason to Celebrate

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "620e34c1202dc3b3"
 ---
 
 # Das Bundes&shy;verfassungs&shy;gericht und die „Direktionskraft“ der Normen?

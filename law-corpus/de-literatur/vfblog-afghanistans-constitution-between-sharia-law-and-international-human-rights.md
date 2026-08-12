@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a5aaaf761f58fcfd"
 ---
 
 # Afghanistan’s Constitution between Sharia Law and International Human Rights

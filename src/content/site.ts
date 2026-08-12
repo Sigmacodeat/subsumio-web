@@ -2544,6 +2544,11 @@ const _uiStringsDe: Record<string, string> = {
   youLabel: "Du",
   sourcesLabel: "Quellen:",
   thinkingLabel: "Durchsuche Wissensgraph…",
+  // Hero card verification pass — the answer is shown at once, only the
+  // proof-checking is animated (see hero-qa-card.tsx).
+  verifyingLabel: "Belege werden geprüft",
+  verifiedLabel: "Belege im Korpus gefunden",
+  citePendingLabel: "wird geprüft",
   scrollToExplore: "Scrollen zum Erkunden",
   certificationsEyebrow: "Zertifizierungen & Integrationen",
   trustHeading: "Vertrauen, das man belegen kann",
@@ -2746,6 +2751,10 @@ const _uiStringsEn: Record<string, string> = {
   youLabel: "You",
   sourcesLabel: "Sources:",
   thinkingLabel: "Searching knowledge graph…",
+  // Hero card verification pass — see the German block above.
+  verifyingLabel: "Checking citations",
+  verifiedLabel: "citations found in corpus",
+  citePendingLabel: "checking",
   scrollToExplore: "Scroll to explore",
   certificationsEyebrow: "Certifications & Integrations",
   trustHeading: "Trust you can verify",

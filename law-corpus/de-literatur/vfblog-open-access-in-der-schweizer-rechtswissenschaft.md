@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/open-access-in-der-schweizer-rechtswissen
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7698c1c8ef04da51"
 ---
 
 # Open Access in der Schweizer Rechtswissenschaft

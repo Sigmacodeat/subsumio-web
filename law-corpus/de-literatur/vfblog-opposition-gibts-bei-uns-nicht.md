@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/opposition-gibts-bei-uns-nicht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "61c71d19cd53d4e6"
 ---
 
 # Opposition? Gibt's bei uns nicht.

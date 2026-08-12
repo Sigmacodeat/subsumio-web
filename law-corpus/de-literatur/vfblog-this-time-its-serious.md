@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/this-time-its-serious/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2b65fb3058aadf39"
 ---
 
 # This Time it's Serious

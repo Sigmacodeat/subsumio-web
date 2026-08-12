@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kummern-und-spalten/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "12d9ac54d1be8f8e"
 ---
 
 # Kümmern und spalten

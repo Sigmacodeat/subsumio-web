@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/disaster-law-as-methodology/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2717b2cae34f73c4"
 ---
 
 # Disaster Law as Methodology

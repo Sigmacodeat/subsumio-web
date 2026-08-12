@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "60da5a23dd587a0f"
 ---
 
 # Gelegenheit macht Diebe: Von V-Männern, Strafrechtsdogmatik und dem Recht auf ein faires Verfahren

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-erosion-of-italian-regionalism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "65351856ea0dd305"
 ---
 
 # The Erosion of Italian Regionalism

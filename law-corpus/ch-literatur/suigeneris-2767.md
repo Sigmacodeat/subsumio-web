@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2021 Sofie Steller;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "141c22f316f57e2f"
 ---
 
 # Der Wegfall der Personenfreizügigkeit aufgrund des Brexits — Bestandesaufnahme der Beziehung Schweiz-UK

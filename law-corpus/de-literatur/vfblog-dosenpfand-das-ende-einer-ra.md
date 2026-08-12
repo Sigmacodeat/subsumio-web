@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dosenpfand-das-ende-einer-ra/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "baafb3842257ccd5"
 ---
 
 # Dosenpfand – das Ende einer Ära

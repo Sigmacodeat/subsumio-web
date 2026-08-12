@@ -253,7 +253,7 @@ export default function GraphPage() {
   };
 
   return (
-    <div className="flex h-full min-w-0 flex-col p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8 flex h-full min-w-0 flex-col">
       <div className="flex h-full min-w-0 overflow-hidden">
         <div className="relative min-w-0 flex-1 bg-[color:var(--ds-bg)]">
           {loading ? (

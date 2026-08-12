@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/culture-and-law-commission-v-hungary/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9e88c762467e8905"
 ---
 
 # Culture and Law in European Society after Commission v Hungary

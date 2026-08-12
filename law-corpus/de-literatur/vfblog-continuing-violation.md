@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/continuing-violation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e5842f4877888986"
 ---
 
 # Continuing Violation

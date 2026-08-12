@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-human-right-to-be-fossil-fuel-free/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ddf1c0f92109d298"
 ---
 
 # A Human Right to be Fossil Fuel Free?

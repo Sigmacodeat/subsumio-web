@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-recht-auf-gute-und-schlechte-oppositi
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "71f60d1b95eba8f2"
 ---
 
 # Das Recht auf gute und schlechte Opposition

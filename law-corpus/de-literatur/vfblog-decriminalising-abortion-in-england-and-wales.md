@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/decriminalising-abortion-in-england-and-w
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ff67251a6cdbe406"
 ---
 
 # Decriminalising Abortion in England and Wales

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sprachkenntnis-bei-familiennachzug-zumutb
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a07d84884f502afc"
 ---
 
 # Sprachkenntnis bei Familiennachzug zumutbar

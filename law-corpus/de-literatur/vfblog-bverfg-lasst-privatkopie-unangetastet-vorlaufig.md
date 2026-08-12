@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bverfg-lasst-privatkopie-unangetastet-vor
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c3133651e861a6fc"
 ---
 
 # BVerfG lässt Privatkopie unangetastet (vorläufig)

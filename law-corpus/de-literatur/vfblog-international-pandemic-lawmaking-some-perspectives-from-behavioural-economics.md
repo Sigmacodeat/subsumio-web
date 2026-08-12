@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c112d45c2eff3428"
 ---
 
 # International Pandemic Lawmaking: Some Perspectives from Behavioural Economics

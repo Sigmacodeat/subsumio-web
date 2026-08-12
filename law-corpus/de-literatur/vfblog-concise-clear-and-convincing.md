@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/concise-clear-and-convincing/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d6fe70f2a76a1bf9"
 ---
 
 # Concise, Clear, and Convincing

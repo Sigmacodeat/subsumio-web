@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eu-kommission-will-beschuldigtenrechte-st
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e0ab216c2fd66163"
 ---
 
 # EU-Kommission will Beschuldigtenrechte stärken

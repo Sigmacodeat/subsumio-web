@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "98fb83a634cc443e"
 ---
 
 # The Polish Crisis as a European Crisis: A Letter to Mr Jean-Claude Juncker

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-animal-turn-what-is-it-and-why-now/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "849052d14e3be19d"
 ---
 
 # The Animal Turn – what is it and why now?

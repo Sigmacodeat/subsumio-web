@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/os2-mexiko-mauer/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d90a6c98b7e84a9d"
 ---
 
 # Vom Widerstand gegen die Mauer zur Mauer selbst

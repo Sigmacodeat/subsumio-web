@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-hartes-jahr/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d77de7623af8cc2d"
 ---
 
 # Ein hartes Jahr

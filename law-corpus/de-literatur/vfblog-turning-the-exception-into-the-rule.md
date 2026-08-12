@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/turning-the-exception-into-the-rule/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2f1778176b7a2eb3"
 ---
 
 # Turning the Exception into the Rule

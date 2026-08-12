@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9622c07c55d15b54"
 ---
 
 # Soll sie halt ins Heim: Pflege für gelähmte alte Mutter ist kein geschütztes Familienleben

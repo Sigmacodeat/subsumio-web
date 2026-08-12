@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/why-proceduralism-wont-save-us-from-trump
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "788793e7fd5c3b34"
 ---
 
 # Why Proceduralism Won’t Save Us from Trump

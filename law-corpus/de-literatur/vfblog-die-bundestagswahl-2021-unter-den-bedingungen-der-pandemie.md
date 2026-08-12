@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ea64d34a07fb7b29"
 ---
 
 # Die Bundestagswahl 2021 unter den Bedingungen der Pandemie

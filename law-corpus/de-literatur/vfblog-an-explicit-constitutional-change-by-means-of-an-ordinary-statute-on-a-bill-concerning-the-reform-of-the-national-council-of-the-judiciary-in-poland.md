@@ -16,6 +16,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "62b3cd9fe3fb6e51"
 ---
 
 # An Explicit Constitutional Change by Means of an Ordinary Statute? On a Bill Concerning the Reform of the National Council of the Judiciary in Poland

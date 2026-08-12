@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/colorblindness-is-the-norm/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1f927f76d4361ec6"
 ---
 
 # „Colorblindness is the norm“

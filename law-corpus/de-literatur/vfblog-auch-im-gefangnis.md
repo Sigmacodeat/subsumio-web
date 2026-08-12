@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/auch-im-gefangnis/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0be53b75da93a2f6"
 ---
 
 # Auch im Gefängnis

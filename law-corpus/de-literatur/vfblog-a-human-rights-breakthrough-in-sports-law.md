@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-human-rights-breakthrough-in-sports-law
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "69a3802e04a4288f"
 ---
 
 # A Human Rights Breakthrough in Sports Law?

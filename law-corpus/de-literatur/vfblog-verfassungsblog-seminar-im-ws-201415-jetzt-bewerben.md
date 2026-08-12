@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "06f30d3d7dd40fe6"
 ---
 
 # Verfassungsblog-Seminar im WS 2015/16: Jetzt bewerben!

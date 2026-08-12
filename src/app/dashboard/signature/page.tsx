@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   FileSignature,
   Send,
@@ -20,13 +21,18 @@ import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
+import { usePortalVisitEvents } from "@/lib/use-portal-visit-events";
 import { SignatureQuickCreateDialog } from "@/components/legal/SignatureQuickCreateDialog";
+import { SendLinkDialog } from "@/components/legal/SendLinkDialog";
 
 interface SignatureRequest {
   id: string;
   documentName: string;
   recipientName: string;
   recipientEmail: string;
+  recipientPhone?: string;
+  caseSlug?: string;
+  contactSlug?: string;
   status: "draft" | "sent" | "signed" | "declined" | "expired";
   sentAt?: string;
   signedAt?: string;
@@ -86,41 +92,45 @@ const STATUS_CONFIG: Record<
 
 export default function SignaturePage() {
   const { t, lang } = useLang();
+  usePortalVisitEvents();
   const [requests, setRequests] = useState<SignatureRequest[]>([]);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
+  const [sendReq, setSendReq] = useState<SignatureRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
 
+  async function loadRequests() {
+    setLoading(true);
+    try {
+      const sigPages = await api.brain.listPages({ type: "signature_request", limit: 100 });
+      setRequests(
+        sigPages.map((p) => {
+          const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+          return {
+            id: p.slug,
+            documentName: String(fm.document_name ?? p.title),
+            recipientName: String(fm.recipient_name ?? "—"),
+            recipientEmail: String(fm.recipient_email ?? "—"),
+            recipientPhone: fm.recipient_phone ? String(fm.recipient_phone) : undefined,
+            caseSlug: fm.case_slug ? String(fm.case_slug) : undefined,
+            contactSlug: fm.contact_slug ? String(fm.contact_slug) : undefined,
+            status: String(fm.status ?? "draft") as SignatureRequest["status"],
+            sentAt: fm.sent_at ? String(fm.sent_at) : undefined,
+            signedAt: fm.signed_at ? String(fm.signed_at) : undefined,
+            expiresAt: String(fm.expires_at ?? p.created_at),
+          };
+        })
+      );
+    } catch {
+      setNotice(t("sig.err_load"));
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const sigPages = await api.brain.listPages({ type: "signature_request", limit: 100 });
-        if (cancelled) return;
-        setRequests(
-          sigPages.map((p) => {
-            const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
-            return {
-              id: p.slug,
-              documentName: String(fm.document_name ?? p.title),
-              recipientName: String(fm.recipient_name ?? "—"),
-              recipientEmail: String(fm.recipient_email ?? "—"),
-              status: String(fm.status ?? "draft") as SignatureRequest["status"],
-              sentAt: fm.sent_at ? String(fm.sent_at) : undefined,
-              signedAt: fm.signed_at ? String(fm.signed_at) : undefined,
-              expiresAt: String(fm.expires_at ?? p.created_at),
-            };
-          })
-        );
-      } catch {
-        setNotice(t("sig.err_load"));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    void loadRequests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -128,30 +138,6 @@ export default function SignaturePage() {
     window.addEventListener("subsumio:create-signature", handler);
     return () => window.removeEventListener("subsumio:create-signature", handler);
   }, []);
-
-  async function markPrepared(req: SignatureRequest) {
-    const sentAt = new Date().toISOString();
-    const updated = { ...req, status: "sent" as const, sentAt };
-    setRequests(requests.map((r) => (r.id === req.id ? updated : r)));
-    try {
-      await api.brain.updatePage({
-        slug: req.id,
-        frontmatter: {
-          type: "signature_request",
-          document_name: req.documentName,
-          recipient_name: req.recipientName,
-          recipient_email: req.recipientEmail,
-          status: "sent",
-          sent_at: sentAt,
-          expires_at: req.expiresAt,
-          provider: "external",
-        },
-      });
-      setNotice(t("sig.ext_sent"));
-    } catch (e) {
-      setNotice(e instanceof Error ? `${t("sig.err_status")}: ${e.message}` : t("sig.err_status"));
-    }
-  }
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
@@ -164,16 +150,16 @@ export default function SignaturePage() {
         ]}
         actions={
           <div className="flex items-center gap-2">
-            <a
+            <Link
               href="/dashboard/settings"
-              className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-warning-bg)]"
+              className="flex min-h-11 items-center gap-2 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-warning-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:ring-offset-2 sm:min-h-0"
             >
               <Settings size={14} />
-              Anbieter konfigurieren
-            </a>
+              {t("sig.btn_configure")}
+            </Link>
             <Button
               variant="primary"
-              className="gap-2 bg-indigo-600 text-sm text-white hover:bg-indigo-500"
+              className="brand-bg gap-2 text-sm text-white"
               onClick={() => setQuickCreateOpen(true)}
             >
               <Plus size={14} />
@@ -192,20 +178,10 @@ export default function SignaturePage() {
           />
           <div>
             <p className="text-sm font-medium text-[color:var(--ds-warning-text)]">
-              Externer Signatur-Provider erforderlich
+              {t("sig.setup_hint_title")}
             </p>
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-              Subsumio speichert Signatur-Anfragen revisionsfähig im Brain und verfolgt Status. Der
-              rechtlich wirksame Versand erfolgt über einen Anbieter wie{" "}
-              <a
-                href="https://developers.docusign.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-indigo-600 underline underline-offset-2"
-              >
-                Docusign
-              </a>{" "}
-              oder ein Kanzlei-Signaturportal. Kein Demo-Versand wird vorgetäuscht.
+              {t("sig.setup_hint_body")}
             </p>
           </div>
         </div>
@@ -250,16 +226,14 @@ export default function SignaturePage() {
       {/* List */}
       {loading ? (
         <div className="flex justify-center py-20" role="status" aria-live="polite">
-          <Loader2 size={24} className="animate-spin text-indigo-600" />
+          <Loader2 size={24} className="animate-spin text-[color:var(--brand-primary)]" />
         </div>
       ) : requests.length === 0 ? (
         <div className="space-y-4 py-20 text-center">
           <FileSignature size={48} className="mx-auto text-[color:var(--ds-border)]" />
           <div>
-            <p className="text-[color:var(--ds-text-muted)]">Noch keine Unterschriften-Anfragen.</p>
-            <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-              Erstelle eine Anfrage, um Dokumente digital unterschreiben zu lassen.
-            </p>
+            <p className="text-[color:var(--ds-text-muted)]">{t("sig.empty")}</p>
+            <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">{t("sig.empty_hint")}</p>
           </div>
         </div>
       ) : (
@@ -270,7 +244,7 @@ export default function SignaturePage() {
             return (
               <div
                 key={req.id}
-                className="flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-indigo-500/30"
+                className="flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--brand-primary)]/30"
               >
                 <div
                   className={cn(
@@ -290,32 +264,53 @@ export default function SignaturePage() {
                     </Badge>
                   </div>
                   <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                    {req.recipientName} · {req.recipientEmail} · Gültig bis{" "}
+                    {req.recipientName} · {req.recipientEmail} · {t("sig.valid_until")}{" "}
                     {new Date(req.expiresAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   {req.status === "draft" && (
                     <button
-                      onClick={() => markPrepared(req)}
-                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-indigo-500/10 hover:text-indigo-600"
-                      title={t("sig.aria_ext_sent")}
+                      onClick={() => setSendReq(req)}
+                      disabled={!req.caseSlug}
+                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--brand-primary)]/10 hover:text-[color:var(--brand-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] disabled:opacity-40"
+                      title={req.caseSlug ? t("sig.aria_ext_sent") : t("sig.no_case")}
+                      aria-label={t("sig.aria_ext_sent")}
                     >
                       <Send size={14} />
                     </button>
                   )}
-                  <a
+                  <Link
                     href={`/dashboard/brain/${encodeURIComponent(req.id)}`}
-                    className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text-muted)]"
+                    className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)]"
                     title={t("sig.aria_brain")}
+                    aria-label={t("sig.aria_brain")}
                   >
                     <ExternalLink size={14} />
-                  </a>
+                  </Link>
                 </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {sendReq && sendReq.caseSlug && (
+        <SendLinkDialog
+          open={!!sendReq}
+          onOpenChange={(open) => {
+            if (!open) setSendReq(null);
+          }}
+          onSent={() => void loadRequests()}
+          caseSlug={sendReq.caseSlug}
+          documentSlug={sendReq.id}
+          documentTitle={sendReq.documentName}
+          documentType="signature_request"
+          recipientName={sendReq.recipientName}
+          recipientEmail={sendReq.recipientEmail !== "—" ? sendReq.recipientEmail : undefined}
+          recipientPhone={sendReq.recipientPhone}
+          contactSlug={sendReq.contactSlug}
+        />
       )}
     </div>
   );

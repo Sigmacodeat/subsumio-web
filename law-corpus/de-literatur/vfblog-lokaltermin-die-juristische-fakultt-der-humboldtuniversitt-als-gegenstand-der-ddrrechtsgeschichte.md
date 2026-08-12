@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2372043d51a43ffd"
 ---
 
 # Lokaltermin: Die Juristische Fakultät der Humboldt-Universität als Gegenstand der DDR-Rechtsgeschichte

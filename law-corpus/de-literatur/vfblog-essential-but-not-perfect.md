@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/essential-but-not-perfect/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d8ce8129e75a7ab9"
 ---
 
 # “Essential, but not perfect”

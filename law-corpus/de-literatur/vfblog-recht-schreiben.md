@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/recht-schreiben/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3ea0a7abb6c5c633"
 ---
 
 # Recht schreiben

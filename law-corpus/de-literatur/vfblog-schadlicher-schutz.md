@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/schadlicher-schutz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7accff241f752f2a"
 ---
 
 # Schädlicher Schutz?

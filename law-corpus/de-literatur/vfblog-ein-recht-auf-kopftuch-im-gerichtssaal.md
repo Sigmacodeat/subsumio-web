@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ein-recht-auf-kopftuch-im-gerichtssaal/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4f99bd2b70f5d428"
 ---
 
 # Ein Recht auf Kopftuch im Gerichtssaal

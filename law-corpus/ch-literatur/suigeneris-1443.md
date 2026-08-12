@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2017 Sarah Progin-Theuerkauf;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "bd2af78dc1e3f51c"
 ---
 
 # Zur obligatorischen Teilnahme von muslimischen Schülerinnen am gemischten Schwimmunterricht

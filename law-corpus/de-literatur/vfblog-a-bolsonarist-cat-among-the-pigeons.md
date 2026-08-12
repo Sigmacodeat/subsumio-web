@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-bolsonarist-cat-among-the-pigeons/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5e8c0da00bc19218"
 ---
 
 # A Bolsonarist Cat Among the Pigeons

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "af498b019e73310b"
 ---
 
 # Toward Hominid and Other Humanoid Rights: Are We Witnessing a Legal Revolution?

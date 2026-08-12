@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5efa45c712f39d85"
 ---
 
 # Eine stille Föderalismusreform III: die Ausweitung der Bundes&shy;kompetenzen für Investitionshilfen

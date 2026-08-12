@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/climate-protests-and-city-bans/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eb5bdf7c9f16a568"
 ---
 
 # Climate Protests and City Bans

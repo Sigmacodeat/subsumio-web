@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/der-effektivitatsgedanke-im-wahlprufungsv
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0a516b2929b7d53c"
 ---
 
 # Der Effektivitätsgedanke im Wahlprüfungsverfahren

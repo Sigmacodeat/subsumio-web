@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/paving-the-way-for-violence/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "229d2ee98db99fab"
 ---
 
 # Paving the Way for Violence

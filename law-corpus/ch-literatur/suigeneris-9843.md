@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2026 Jonas Gasche;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "5f29f3e1946fdc36"
 ---
 
 # Verantwortung statt Wahrheit - ein legitimer Paradigmenwechsel im kurzen Strafprozess?

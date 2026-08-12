@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2019 Pranvera Këllezi;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "0bb70ec60fa17e36"
 ---
 
 # Protection des données et droit de la concurrence: la non-conformité en tant qu&#039;abus de position dominante

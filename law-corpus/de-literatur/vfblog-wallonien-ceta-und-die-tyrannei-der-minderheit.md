@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wallonien-ceta-und-die-tyrannei-der-minde
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3bbcdc41a0086f5e"
 ---
 
 # Wallonien, CETA und die Tyrannei der Minderheit

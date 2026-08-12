@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/roa-regulating-news-recommender-systems/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "93d5e46aa39798d1"
 ---
 
 # Regulating News Recommender Systems in Light of the Rule of Law

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/defending-democracy-with-authoritarian-me
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9c39b8be4de1ee58"
 ---
 
 # Defending Democracy with Authoritarian Means

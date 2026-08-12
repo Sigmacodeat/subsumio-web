@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "867b3640173b096f"
 ---
 
 # Rule of Law Retail and Rule of Law Wholesale:  The ECJ’s (Alarming) “Celmer” Decision

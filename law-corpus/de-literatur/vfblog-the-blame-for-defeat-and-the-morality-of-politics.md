@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-blame-for-defeat-and-the-morality-of-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "abf3f9aefda2cf4e"
 ---
 
 # The Blame for Defeat and the Morality of Politics

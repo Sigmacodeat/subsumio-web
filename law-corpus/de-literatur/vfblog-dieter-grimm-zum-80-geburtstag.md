@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/dieter-grimm-zum-80-geburtstag/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c8c2d734f2944b42"
 ---
 
 # Ursprung, Wandel und Zukunft der Verfassung: Dieter Grimm zum 80. Geburtstag

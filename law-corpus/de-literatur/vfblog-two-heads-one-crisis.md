@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/two-heads-one-crisis/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c4a5252b6661dc8b"
 ---
 
 # Two Heads, One Crisis

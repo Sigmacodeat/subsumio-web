@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/weniger-ist-mehr/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f29f2d63bb38026b"
 ---
 
 # Weniger ist mehr

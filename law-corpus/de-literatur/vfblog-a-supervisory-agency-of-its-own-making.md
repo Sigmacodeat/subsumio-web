@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-supervisory-agency-of-its-own-making/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "605fc7d1bb6fe0a8"
 ---
 
 # ”A Supervisory Agency of Its Own Making”?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/demokratische-tragoedie-in-sachsen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e5beb820d9aeacef"
 ---
 
 # Demokratische Tragödie in Sachsen

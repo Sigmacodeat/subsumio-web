@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/on-the-slippery-slope-to-a-peoples-court/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c47da2c5114f476b"
 ---
 
 # On the Slippery Slope to a ,People's Court'

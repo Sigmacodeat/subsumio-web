@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/data-retention-laws-and-la-quadrature-du-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b2923b6fc53480f9"
 ---
 
 # Data Retention Laws and La Quadrature du Net II

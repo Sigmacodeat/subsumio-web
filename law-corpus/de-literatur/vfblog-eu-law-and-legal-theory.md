@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eu-law-and-legal-theory/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f29ddf0354d33d15"
 ---
 
 # EU Law and Legal Theory

@@ -16,6 +16,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "14dc2ad88f602885"
 ---
 
 # Damage-assessment on the building of international law after the Italian Constitutional Court’s decision no. 238 of 2014: no structural damage, just wear and tear.

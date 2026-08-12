@@ -139,8 +139,8 @@ describe("orchestrator entry-point wrap (CV11 single-point classification)", () 
   // this test fails because the imports drift.
   test("orchestrator.ts imports classifyBrainstormError + StructuredAgentError", async () => {
     const src = await Bun.file("src/core/brainstorm/orchestrator.ts").text();
-    expect(src).toContain("import { StructuredAgentError } from '../errors.ts'");
-    expect(src).toContain("import { classifyBrainstormError } from './error-classify.ts'");
+    expect(src).toMatch(/import\s+\{\s*StructuredAgentError\s*\}\s+from\s+["']\.\.\/errors\.ts["']/);
+    expect(src).toMatch(/import\s+\{\s*classifyBrainstormError\s*\}\s+from\s+["']\.\/error-classify\.ts["']/);
     expect(src).toContain("classifyBrainstormError(err)");
     // The wrap must be at the PUBLIC entry point, NOT a per-call wrap
     expect(src).toMatch(
@@ -150,7 +150,7 @@ describe("orchestrator entry-point wrap (CV11 single-point classification)", () 
 
   test("commands/brainstorm.ts has the CLI formatter for StructuredAgentError", async () => {
     const src = await Bun.file("src/commands/brainstorm.ts").text();
-    expect(src).toContain("import { StructuredAgentError } from '../core/errors.ts'");
+    expect(src).toMatch(/import\s+\{\s*StructuredAgentError\s*\}\s+from\s+["']\.\.\/core\/errors\.ts["']/);
     expect(src).toContain("err instanceof StructuredAgentError");
     expect(src).toContain("Error [");
     expect(src).toContain("Hint:");

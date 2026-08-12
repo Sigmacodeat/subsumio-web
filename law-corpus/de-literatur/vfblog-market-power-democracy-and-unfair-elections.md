@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/market-power-democracy-and-unfair-electio
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "425d10dd186b826e"
 ---
 
 # Market Power, Democracy and (Un)Fair Elections

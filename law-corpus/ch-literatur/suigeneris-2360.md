@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Sarah Progin-Theuerkauf;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "16aaac866e0e19ae"
 ---
 
 # Grenzen des Verbots von Kollektivausweisungen: Das Urteil des EGMR im Fall N.D. und N.T. gegen Spanien

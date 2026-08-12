@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cf2d5e8c97b3f09a"
 ---
 
 # Von wegen Würde des Bundestages: Demo im Plenarsaal ist Meinungsfreiheit

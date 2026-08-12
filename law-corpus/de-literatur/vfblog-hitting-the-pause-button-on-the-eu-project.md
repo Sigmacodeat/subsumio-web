@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hitting-the-pause-button-on-the-eu-projec
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c267f73dfb304aeb"
 ---
 
 # Hitting the Pause Button on the EU Project?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/public-broadcasting-trump/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9e114ce387e7797b"
 ---
 
 # An Elusive Touchdown with a Political Football

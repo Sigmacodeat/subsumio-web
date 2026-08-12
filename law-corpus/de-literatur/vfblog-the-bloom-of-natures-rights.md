@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-bloom-of-natures-rights/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ab0698888eaad7f7"
 ---
 
 # The Bloom of Nature’s Rights

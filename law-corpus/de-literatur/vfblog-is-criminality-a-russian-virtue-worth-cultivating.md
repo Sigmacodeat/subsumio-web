@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/is-criminality-a-russian-virtue-worth-cul
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e828e494e5fdc1f7"
 ---
 
 # Is Criminality a Russian Virtue Worth Cultivating?

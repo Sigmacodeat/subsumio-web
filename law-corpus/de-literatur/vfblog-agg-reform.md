@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/agg-reform/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6298ad3180e7d88d"
 ---
 
 # Ein Reförmchen zum Geburtstag

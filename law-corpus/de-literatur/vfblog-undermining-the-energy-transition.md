@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/undermining-the-energy-transition/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e94ba28a8128df79"
 ---
 
 # Undermining the Energy Transition

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/koalitionen-aktivitaten-strategien/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "74e18453a4208d0c"
 ---
 
 # Koalitionen, Aktivitäten, Strategien

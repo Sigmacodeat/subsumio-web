@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/verfassungskonsenskultur-in-gefahr/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "06eb58c6309c648e"
 ---
 
 # Verfassungskonsenskultur in Gefahr

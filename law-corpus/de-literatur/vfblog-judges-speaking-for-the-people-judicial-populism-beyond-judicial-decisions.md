@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a1fad459f9d61818"
 ---
 
 # Judges Speaking for the People: Judicial Populism beyond Judicial Decisions

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/burgerrate_demokratie_deutschland/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c3c75bd2f70f71dc"
 ---
 
 # Mit oder ohne Entscheidungsmacht?

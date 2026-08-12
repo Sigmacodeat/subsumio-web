@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d0e23956e452a0e1"
 ---
 
 # “For the Court, it could be…”: Electing Constitutional Judges in the US and Germany

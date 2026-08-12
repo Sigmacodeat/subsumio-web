@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ko-tropfen-referentenentwurf-177-250/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "53a2a3300c81fe5e"
 ---
 
 # Müssen stete Tropfen hier einen Stein höhlen?

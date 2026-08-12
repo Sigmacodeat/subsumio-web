@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d2ac305894bcb28a"
 ---
 
 # Intertemporal Freedom in the Historic Climate Protection Ruling of the German Federal Constitutional Court

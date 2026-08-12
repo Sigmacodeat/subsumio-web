@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eigentumsverhaltnisse-sind-antastbar/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d6e8161955d4ecd5"
 ---
 
 # Eigentumsverhältnisse sind antastbar

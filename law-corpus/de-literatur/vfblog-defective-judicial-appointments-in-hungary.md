@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/defective-judicial-appointments-in-hungar
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "280a127a39e28494"
 ---
 
 # Defective Judicial Appointments in Hungary

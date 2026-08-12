@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/im-sog-der-burokratierhetorik/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ad8e08729e5f4460"
 ---
 
 # Im Sog der Bürokratierhetorik

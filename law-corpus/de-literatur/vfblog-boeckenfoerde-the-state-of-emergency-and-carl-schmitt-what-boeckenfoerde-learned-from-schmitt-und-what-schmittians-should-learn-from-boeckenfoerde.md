@@ -16,6 +16,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9b4ccd78b223e76a"
 ---
 
 # Böckenförde, the state of emergency and Carl Schmitt: What Böckenförde learned from Schmitt – und what Schmittians should learn from Böckenförde

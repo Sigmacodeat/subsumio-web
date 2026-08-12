@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/legalizing-disinformation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c63c6598876928ed"
 ---
 
 # Legalizing Disinformation

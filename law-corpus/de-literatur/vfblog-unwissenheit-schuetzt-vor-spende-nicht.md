@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/unwissenheit-schuetzt-vor-spende-nicht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b0704399f19491e5"
 ---
 
 # Unwissenheit schützt vor Spende nicht?

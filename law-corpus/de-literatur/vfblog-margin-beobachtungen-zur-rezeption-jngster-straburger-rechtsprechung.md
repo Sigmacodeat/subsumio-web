@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "635c460dbd197a49"
 ---
 
 # On the Margin: Beobachtungen zu Rezeption, Ratio und Reform der Straßburger Rechtsprechung

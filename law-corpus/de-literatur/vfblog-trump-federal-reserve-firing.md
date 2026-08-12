@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/trump-federal-reserve-firing/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b9fa3eddb7c75abb"
 ---
 
 # Compound Interest

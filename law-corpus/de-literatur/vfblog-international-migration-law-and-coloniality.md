@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/international-migration-law-and-coloniali
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1029ed6d20ebf18d"
 ---
 
 # International Migration Law and Coloniality

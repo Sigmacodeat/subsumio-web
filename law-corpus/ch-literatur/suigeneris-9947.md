@@ -24,6 +24,7 @@ license: >-
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2026 Gian Ege, Dirk Baier,
   Volker Schmidt, Leonardo Vertone, Patrick Zobrist;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "27face7bcef7b69c"
 ---
 
 # «Wer nur den Hammer kennt, macht aus Jugendlichen Nägel»: Eine interdisziplinäre Beurteilung der aktuellen Verschärfungsvorhaben im Jugendstrafrecht

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "86bd520f16dd0a98"
 ---
 
 # Fast Random-Access Memory (Laws) – The June 2018 Amendments to the Polish “Holocaust Law”

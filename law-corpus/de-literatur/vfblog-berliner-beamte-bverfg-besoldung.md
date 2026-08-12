@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/berliner-beamte-bverfg-besoldung/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "15bdd4ad3f0c5d0e"
 ---
 
 # (K)ein Befreiungsschlag im Besoldungsrecht

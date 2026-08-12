@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/staatsangehoerigkeit-in-geiselhaft/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "75e09a93c6bcd7ad"
 ---
 
 # Staatsangehörigkeit in Geiselhaft

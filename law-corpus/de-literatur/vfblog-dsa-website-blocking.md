@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/dsa-website-blocking/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2eb0d9e532d485a0"
 ---
 
 # Digital Services Act: European Parliament discusses website blocking against platforms

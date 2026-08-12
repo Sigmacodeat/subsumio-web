@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "60999e3de4a23786"
 ---
 
 # Von Angstklauseln und Schwarze-Peter-Gesetzgebung: der Kindergeld-Gesetzentwurf des BMF

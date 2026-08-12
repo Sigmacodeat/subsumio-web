@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-more-democratic-supreme-court-not-so-fa
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ac229c72bcb1a4c5"
 ---
 
 # A More Democratic Supreme Court? Not So Fast

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/neurechte-verfassungskatholiken/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5a54dea37b35768d"
 ---
 
 # Neurechte Verfassungskatholiken

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "588fa90b46c00dbd"
 ---
 
 # Do(n’t) think twice, it’s all right: der EuGH beerdigt die Vorratsdatenspeicherung

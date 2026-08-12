@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2019 Matthias Schwaibold;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "1cfef2a0c51c7017"
 ---
 
 # Das Bundesgericht weist die Filmverleiher in die Urheberrechtsschranken: Bemerkungen zum Urteil des Bundesgerichts 4A_433/2018 (BGE 145 III 72)

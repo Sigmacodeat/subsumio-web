@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dsa-auditing/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "757f3a43cc96071b"
 ---
 
 # The next step towards auditing intermediaries

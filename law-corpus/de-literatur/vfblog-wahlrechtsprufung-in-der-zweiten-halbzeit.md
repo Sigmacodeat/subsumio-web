@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wahlrechtsprufung-in-der-zweiten-halbzeit
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ae39fb61a7752035"
 ---
 
 # Wahlrechtsprüfung in der zweiten Halbzeit

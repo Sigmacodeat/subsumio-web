@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/es-gibt-noch-mehr-sture-richter-in-bayern
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "75ff0f4704186488"
 ---
 
 # Es gibt noch mehr sture Richter in Bayern

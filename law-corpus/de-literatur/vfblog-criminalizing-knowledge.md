@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/criminalizing-knowledge/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4fecfcb9cc0d429b"
 ---
 
 # Criminalizing Knowledge

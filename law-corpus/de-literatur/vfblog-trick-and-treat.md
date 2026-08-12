@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/trick-and-treat/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fa82b22016dd2506"
 ---
 
 # Trick and Treat?

@@ -16,6 +16,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2019 Sabine Steiger-Sackmann;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "7039daf1ba4008de"
 ---
 
 # Transparentere Justiz

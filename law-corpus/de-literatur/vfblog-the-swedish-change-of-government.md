@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-swedish-change-of-government/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "65ae0d519286574a"
 ---
 
 # The Swedish Change of Government

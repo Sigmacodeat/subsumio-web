@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/new-media-new-data-and-a-dark-foreboding/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "910901f6ec76e5a1"
 ---
 
 # New Media, New Data and a Dark Foreboding

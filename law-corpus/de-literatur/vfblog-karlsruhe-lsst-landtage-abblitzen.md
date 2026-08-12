@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/karlsruhe-lsst-landtage-abblitzen/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b174a96fb8783c29"
 ---
 
 # Karlsruhe lässt Landtage abblitzen

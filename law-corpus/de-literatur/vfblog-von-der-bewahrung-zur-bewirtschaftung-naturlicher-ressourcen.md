@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f50aa3c5dbfd22d1"
 ---
 
 # Von der Bewahrung zur Bewirtschaftung natürlicher Ressourcen

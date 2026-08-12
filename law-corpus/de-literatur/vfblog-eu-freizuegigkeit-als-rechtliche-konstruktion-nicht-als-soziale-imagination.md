@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8849ed1a48ef5851"
 ---
 
 # EU-Freizügigkeit als rechtliche Konstruktion – nicht als soziale Imagination

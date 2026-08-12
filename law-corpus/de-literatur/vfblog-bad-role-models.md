@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bad-role-models/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "03c8cfa2e7c6e0fe"
 ---
 
 # Bad Role Models

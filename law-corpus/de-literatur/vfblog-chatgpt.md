@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/chatgpt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "49a7f5eb361587d4"
 ---
 
 # Understanding and Regulating ChatGPT, and Other Large Generative AI Models

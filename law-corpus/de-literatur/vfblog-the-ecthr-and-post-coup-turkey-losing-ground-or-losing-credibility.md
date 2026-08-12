@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3b58c992dc067896"
 ---
 
 # The ECtHR and Post-coup Turkey: Losing Ground or  Losing Credibility?

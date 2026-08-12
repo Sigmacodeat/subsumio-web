@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/das-islndische-volk-spricht-aber-sagt-es/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "699a0fa4a4a8f77e"
 ---
 
 # Das isländische Volk spricht – aber was sagt es?

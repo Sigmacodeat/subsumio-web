@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/internet-collapse-europe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a68a4fce8ee31b0d"
 ---
 
 # Internet collapse made in Europe

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-democratic-mandate-to-overhaul-mexicos-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "61cc4087ef673f58"
 ---
 
 # A Democratic Mandate to Overhaul Mexico’s Judiciary?

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/regressive-sexist-and-unconstitutional/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d98e3e805013956f"
 ---
 
 # Regressive, Sexist, and Unconstitutional

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rechts-viel-auswahl/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7aa8933059cf4253"
 ---
 
 # Recht(s) viel Auswahl

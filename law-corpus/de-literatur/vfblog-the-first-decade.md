@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-first-decade/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e5ba52e1082d46a3"
 ---
 
 # The First Decade

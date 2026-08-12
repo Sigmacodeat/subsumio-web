@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/deregulating-better-regulation/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0989ba584c81ee75"
 ---
 
 # Deregulating Better Regulation

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/up-against-it/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "334a93b277c78a8f"
 ---
 
 # Up Against It

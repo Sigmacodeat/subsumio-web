@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c265ce52db8763cb"
 ---
 
 # Feminist Foreign Trade Policy is a Demand of the EU Treaties

@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/saugmandsgaard-mass-data-retention-cjeu-p
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "268f01b880fe870a"
 ---
 
 # AG Saugmandsgaard Øe on Mass Data Retention: No Clear Victory for Privacy Rights

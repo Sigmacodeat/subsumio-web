@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/auch-schlechte-eltern-sind-eltern/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "df0dfb6549fe72dc"
 ---
 
 # Auch schlechte Eltern sind Eltern

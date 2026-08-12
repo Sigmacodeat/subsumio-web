@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "991d7f8eb44edeb2"
 ---
 
 # Die OMT-Schlussanträge als Anfang vom Ende der Troika?

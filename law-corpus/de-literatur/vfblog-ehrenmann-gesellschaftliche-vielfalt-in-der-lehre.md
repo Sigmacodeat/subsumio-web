@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ehrenmann-gesellschaftliche-vielfalt-in-d
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "178fe8c06ad91ab6"
 ---
 
 # #Ehrenmann: Gesellschaftliche Vielfalt in der Lehre

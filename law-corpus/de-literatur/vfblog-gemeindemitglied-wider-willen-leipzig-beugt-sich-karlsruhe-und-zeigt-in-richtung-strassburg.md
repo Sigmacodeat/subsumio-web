@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "028f7c1013066504"
 ---
 
 # Gemeindemitglied wider Willen: Leipzig beugt sich Karlsruhe und zeigt in Richtung Straßburg

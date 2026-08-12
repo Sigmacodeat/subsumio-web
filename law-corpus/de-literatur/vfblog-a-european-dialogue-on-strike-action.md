@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-european-dialogue-on-strike-action/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "913c82079bc59046"
 ---
 
 # A European Dialogue on Strike Action

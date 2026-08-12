@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a68d1e558a6ee1b0"
 ---
 
 # Bulgaria’s Constitutional Drama and the EU Commission’s Rose-Colored Glasses

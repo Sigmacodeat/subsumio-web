@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/in-the-name-of-primacy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e425316a154aef91"
 ---
 
 # In the Name of Primacy

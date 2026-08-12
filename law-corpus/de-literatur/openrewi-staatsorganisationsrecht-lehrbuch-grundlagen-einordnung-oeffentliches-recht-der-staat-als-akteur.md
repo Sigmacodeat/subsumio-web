@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "54e2eb5e82293fd6"
 ---
 
 § 1 Der Staat und das Verfassungsrecht &#124; Inhaltsverzeichnis &#124; § 1.2 Die Verfassung als Grundlage des staatlichen Handelns 

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/net-neutrality-eu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e6ce4beefe6aefd9"
 ---
 
 # The Re-Emergence of the Net Neutrality Debate in Europe

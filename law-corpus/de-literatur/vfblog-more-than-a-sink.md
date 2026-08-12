@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/more-than-a-sink/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "134bf17abe7e470a"
 ---
 
 # More than a Sink

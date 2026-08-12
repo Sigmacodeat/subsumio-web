@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bombe-ohne-sprengkraft/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7212c86309781244"
 ---
 
 # Bombe ohne Sprengkraft

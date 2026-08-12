@@ -215,7 +215,7 @@ export function TaxAuditFindingsTable({
               </Label>
               <Input
                 id="finding-amount"
-                type="number"
+                type="number" inputMode="numeric"
                 min={0}
                 step={0.01}
                 value={newAmount}

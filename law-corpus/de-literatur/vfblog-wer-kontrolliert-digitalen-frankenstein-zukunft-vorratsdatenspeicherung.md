@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "437610c09dd16843"
 ---
 
 # Wer kontrolliert den digitalen Frankenstein? Die Zukunft der Vorratsdatenspeicherung

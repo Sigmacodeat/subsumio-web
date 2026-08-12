@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eu-inc-and-the-myth-of-the-perfect-legal-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "739e4fc99f4a3f59"
 ---
 
 # EU Inc. and the Myth of the Perfect Legal Basis

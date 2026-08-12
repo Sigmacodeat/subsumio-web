@@ -7,6 +7,7 @@ version_date: "2026-06-26"
 retrieved_at: "2026-07-10"
 source_url: "https://www.gesetze-im-internet.de/bbaug/xml.zip"
 license: "Amtliches Werk, § 5 UrhG (gemeinfrei). Quelle: gesetze-im-internet.de, Bundesamt für Justiz."
+content_hash: "05a398c8714b7c6a"
 ---
 
 Dieses Gesetz dient der Umsetzung folgender Richtlinien:1.Richtlinie 92/43/EWG des Rates vom 21. Mai 1992 zur Erhaltung der natürlichen Lebensräume sowie der wild lebenden Tiere und Pflanzen (ABl. L 206 vom 22.7.1992, S. 7), die zuletzt durch die Richtlinie 2013/17/EU (ABl. L 158 vom 10.6.2013, S. 193) geändert worden ist,2.Richtlinie 2001/42/EG des Europäischen Parlaments und des Rates vom 27. Juni 2001 über die Prüfung der Umweltauswirkungen bestimmter Pläne und Programme (ABl. L 197 vom 21.7.2001, S. 30),3.Richtlinie 2009/147/EG des Europäischen Parlaments und des Rates vom 30. November 2009 über die Erhaltung der wildlebenden Vogelarten (ABl. L 20 vom 26.1.2010, S. 7), die zuletzt durch die Richtlinie 2013/17/EU (ABl. L 158 vom 10.6.2013, S. 193) geändert worden ist,4.Richtlinie 2011/92/EU des Europäischen Parlaments und des Rates vom 13. Dezember 2011 über die Umweltverträglichkeitsprüfung bei bestimmten öffentlichen und privaten Projekten (ABl. L 26 vom 28.1.2012, S. 1), die zuletzt durch die Richtlinie 2014/52/EU (ABl. L 124 vom 25.4.2014, S. 1) geändert worden ist.

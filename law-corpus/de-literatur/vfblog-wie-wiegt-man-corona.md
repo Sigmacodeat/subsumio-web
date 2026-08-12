@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wie-wiegt-man-corona/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "652f9d96f2282a8e"
 ---
 
 # Wie wiegt man Corona?

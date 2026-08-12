@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3585ea6accfce45f"
 ---
 
 # Twenty Years ‘One Country, Two Systems’ in Hong Kong: A Reason to Celebrate?

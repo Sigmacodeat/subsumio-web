@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-bialowieza-case-a-tragedy-in-six-acts
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1678b85aab58b561"
 ---
 
 # The Białowieża case.  A Tragedy in Six Acts

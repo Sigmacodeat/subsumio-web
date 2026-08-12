@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/studieren-wie-kafka/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b031f451784f8443"
 ---
 
 # Studieren wie Kafka

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/competition-and-algorithm/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2aa1748fc014e41f"
 ---
 
 # Competition and Algorithm

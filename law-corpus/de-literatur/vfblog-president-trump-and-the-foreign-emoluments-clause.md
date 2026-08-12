@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/president-trump-and-the-foreign-emolument
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "df5859556cb44f30"
 ---
 
 # President Trump and the Foreign Emoluments Clause

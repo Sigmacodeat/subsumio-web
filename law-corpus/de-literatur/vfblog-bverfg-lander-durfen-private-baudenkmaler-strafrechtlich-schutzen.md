@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "be6e73a5a06867f9"
 ---
 
 # BVerfG: Länder dürfen private Baudenkmäler strafrechtlich schützen

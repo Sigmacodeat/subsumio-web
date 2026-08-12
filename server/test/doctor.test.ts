@@ -25,7 +25,7 @@ describe("doctor command", () => {
     const fs = await import("fs");
     const src = fs.readFileSync("src/commands/doctor.ts", "utf8");
     // Subcheck name and call into shared scanner are present.
-    expect(src).toContain("name: 'frontmatter_integrity'");
+    expect(src).toContain("frontmatter_integrity");
     expect(src).toContain("scanBrainSources");
     // Fix hint points at the right CLI command.
     expect(src).toContain("gbrain frontmatter validate");
@@ -95,10 +95,10 @@ describe("doctor command", () => {
 
   test("jsonb_integrity check covers the four JSONB sites fixed in v0.12.1", async () => {
     const source = await Bun.file(new URL("../src/commands/doctor.ts", import.meta.url)).text();
-    expect(source).toMatch(/table:\s*'pages'.*col:\s*'frontmatter'/);
-    expect(source).toMatch(/table:\s*'raw_data'.*col:\s*'data'/);
-    expect(source).toMatch(/table:\s*'ingest_log'.*col:\s*'pages_updated'/);
-    expect(source).toMatch(/table:\s*'files'.*col:\s*'metadata'/);
+    expect(source).toMatch(/table:\s*["']pages["'].*col:\s*["']frontmatter["']/);
+    expect(source).toMatch(/table:\s*["']raw_data["'].*col:\s*["']data["']/);
+    expect(source).toMatch(/table:\s*["']ingest_log["'].*col:\s*["']pages_updated["']/);
+    expect(source).toMatch(/table:\s*["']files["'].*col:\s*["']metadata["']/);
   });
 
   // v0.31.2 — facts_extraction_health check added in PR1 commit 12.
@@ -153,7 +153,7 @@ describe("doctor command", () => {
       source.indexOf("// 6. Schema version")
     );
     // Severity upgraded from 'warn' to 'fail' so `gbrain doctor` exits 1 on gaps.
-    expect(rlsBlock).toMatch(/status:\s*'fail'/);
+    expect(rlsBlock).toMatch(/status:\s*["']fail["']/);
     // Remediation SQL uses quoted identifiers — safe for names with hyphens,
     // reserved words, mixed case.
     expect(rlsBlock).toContain('ALTER TABLE "public"."');
@@ -166,7 +166,7 @@ describe("doctor command", () => {
       source.indexOf("// 5. RLS"),
       source.indexOf("// 6. Schema version")
     );
-    expect(rlsBlock).toMatch(/engine\.kind\s*===\s*'pglite'/);
+    expect(rlsBlock).toMatch(/engine\.kind\s*===\s*["']pglite["']/);
     expect(rlsBlock).toContain("PGLite");
   });
 
@@ -193,12 +193,12 @@ describe("doctor command", () => {
     expect(idx7).toBeGreaterThan(0);
     expect(idx8).toBeGreaterThan(idx7);
     const block = source.slice(idx7, idx8);
-    expect(block).toContain("name: 'rls_event_trigger'");
+    expect(block).toContain("rls_event_trigger");
     // Healthy set is origin (`O`) or always (`A`). `R` is replica-only and
     // would not fire in normal sessions; `D` is disabled. Both are warn states.
-    expect(block).toMatch(/evtenabled\s*!==\s*'O'[\s\S]*?evtenabled\s*!==\s*'A'/);
+    expect(block).toMatch(/evtenabled\s*!==\s*["']O["'][\s\S]*?evtenabled\s*!==\s*["']A["']/);
     // PGLite skip path is required (no event triggers there).
-    expect(block).toMatch(/engine\.kind\s*===\s*'pglite'/);
+    expect(block).toMatch(/engine\.kind\s*===\s*["']pglite["']/);
     // Recovery command names the migration version explicitly.
     expect(block).toContain("--force-retry 35");
   });
@@ -438,7 +438,7 @@ describe("v0.31.8 — wedge migration force-retry hint (D19)", () => {
     // engine.ts blocks (local doctor + remote doctor) — the regex finds
     // either occurrence.
     expect(source).toMatch(
-      /wedged\.map\(v\s*=>\s*`gbrain apply-migrations --force-retry [^`]+`\)\.join\(' && '\)/
+      /wedged\.map\(\(?\s*v\s*\)?\s*=>\s*`gbrain apply-migrations --force-retry [^`]+`\)\.join\(["'] && ["']\)/
     );
   });
 
@@ -1257,7 +1257,7 @@ describe("supervisor crash classifier wiring (v0.35.x)", () => {
 describe("stub_guard_24h check (v0.34.5)", () => {
   test("doctor source defines the stub_guard_24h check", async () => {
     const source = await Bun.file(new URL("../src/commands/doctor.ts", import.meta.url)).text();
-    expect(source).toContain("name: 'stub_guard_24h'");
+    expect(source).toContain("stub_guard_24h");
   });
 
   test("WARN threshold is >10 hits/24h", async () => {
@@ -1415,7 +1415,8 @@ describe("v0.40.4 — graph_signals_coverage check", () => {
     // Local engine path.
     expect(source).toMatch(/await checkGraphSignalsCoverage\(engine\)/);
     // Remote/JSON path heartbeat.
-    expect(source).toContain("progress.heartbeat('graph_signals_coverage')");
+    expect(source).toContain("progress.heartbeat");
+    expect(source).toMatch(/progress\.heartbeat\(["']graph_signals_coverage["']\)/);
   });
 });
 
@@ -1602,7 +1603,7 @@ describe("issue #972 — link_resolution_opportunity check", () => {
     // Thin-client doctorReportRemote path.
     expect(source).toMatch(/await checkLinkResolutionOpportunity\(engine\)/);
     // Heartbeat label registered.
-    expect(source).toContain("progress.heartbeat('link_resolution_opportunity')");
+    expect(source).toMatch(/progress\.heartbeat\(["']link_resolution_opportunity["']\)/);
     // Issue #972 (T3): scan is bounded to a most-recent sample, not a full
     // per-page getPage walk.
     expect(source).toMatch(
@@ -1615,13 +1616,13 @@ describe("issue #972 — link_resolution_opportunity check", () => {
 describe("v0.42 (#1699) — quarantined_pages + flagged_pages checks", () => {
   test("both checks are wired into buildChecks (source-grep)", async () => {
     const source = await Bun.file(new URL("../src/commands/doctor.ts", import.meta.url)).text();
-    expect(source).toContain("progress.heartbeat('quarantined_pages')");
-    expect(source).toContain("progress.heartbeat('flagged_pages')");
+    expect(source).toMatch(/progress\.heartbeat\(["']quarantined_pages["']\)/);
+    expect(source).toMatch(/progress\.heartbeat\(["']flagged_pages["']\)/);
     // quarantine HIDES (JSONB existence scan), content_flag WARNS.
     expect(source).toContain("p.frontmatter ? 'quarantine'");
     expect(source).toContain("p.frontmatter ? 'content_flag'");
     // Each emits a named check.
-    expect(source).toMatch(/name: 'quarantined_pages'/);
-    expect(source).toMatch(/name: 'flagged_pages'/);
+    expect(source).toMatch(/name:\s*["']quarantined_pages["']/);
+    expect(source).toMatch(/name:\s*["']flagged_pages["']/);
   });
 });

@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/uk-unilateralism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6664a84c487f0855"
 ---
 
 # The Bill of Rights Bill and the damages of UK’s unilateralism

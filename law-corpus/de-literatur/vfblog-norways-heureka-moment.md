@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/norways-heureka-moment/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "062027d9f2b6584d"
 ---
 
 # Norway’s Heureka Moment?

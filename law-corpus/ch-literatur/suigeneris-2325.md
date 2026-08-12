@@ -18,6 +18,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Raphaela Cueni;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "57abff07132bfd20"
 ---
 
 # Rezension: Odile Ammann, Domestic Courts and the Interpretation of International Law. Methods and Reasoning Based on the Swiss Example

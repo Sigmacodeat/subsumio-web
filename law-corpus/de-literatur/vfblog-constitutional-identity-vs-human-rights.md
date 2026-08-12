@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/constitutional-identity-vs-human-rights/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e69eb06eee8199d7"
 ---
 
 # Constitutional Identity vs. Human Rights

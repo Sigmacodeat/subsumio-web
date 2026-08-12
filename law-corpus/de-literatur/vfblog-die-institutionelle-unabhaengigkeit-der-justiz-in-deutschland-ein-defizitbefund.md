@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "34680e7e254b4679"
 ---
 
 # Die institutionelle Unabhängigkeit der Justiz in Deutschland – ein Defizitbefund

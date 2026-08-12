@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-patriots-for-europe/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6c277172bb4a4335"
 ---
 
 # The Patriots for Europe

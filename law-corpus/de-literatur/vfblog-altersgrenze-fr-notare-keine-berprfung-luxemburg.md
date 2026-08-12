@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/altersgrenze-fr-notare-keine-berprfung-lu
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ed3e08c27d83b7a4"
 ---
 
 # Altersgrenze für Notare: Keine Überprüfung in Luxemburg

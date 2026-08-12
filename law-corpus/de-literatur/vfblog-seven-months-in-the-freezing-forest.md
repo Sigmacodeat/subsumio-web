@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/seven-months-in-the-freezing-forest/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "36d599c12195a687"
 ---
 
 # Seven Months in the Freezing Forest

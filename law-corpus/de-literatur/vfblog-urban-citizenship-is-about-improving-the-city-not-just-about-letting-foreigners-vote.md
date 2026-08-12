@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "26779c1b8c279a4e"
 ---
 
 # Urban Citizenship is About Improving the City – not Just About Letting Foreigners Vote

@@ -18,6 +18,7 @@ license: >-
   Diamond Open Access (DOAJ). Phase 1: Metadaten + Abstract via OAI-PMH;
   Volltext-PDF nur nach Lizenzprüfung pro Artikel. Rights: Copyright (c) 2014
   AUSTRIAN LAW JOURNAL
+content_hash: "5c74a988ebc80769"
 ---
 
 # Empiricism and Private Law: Behavioral Research as Part of a Legal-Empirical Governance Analysis and a Form of New Legal Realism

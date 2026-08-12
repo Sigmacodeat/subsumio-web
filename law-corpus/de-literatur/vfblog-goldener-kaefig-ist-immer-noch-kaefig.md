@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/goldener-kaefig-ist-immer-noch-kaefig/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3b6c1f7722c5d875"
 ---
 
 # “Ein goldener Käfig ist immer noch ein Käfig”

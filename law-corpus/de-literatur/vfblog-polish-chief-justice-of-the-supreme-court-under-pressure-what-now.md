@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4c2ba7a95cede656"
 ---
 
 # Polish Chief Justice of the Supreme Court Under Pressure: What Now?

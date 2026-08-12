@@ -16,6 +16,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ded4aa3ba223cb9d"
 ---
 
 # “We had something in mind, which then changed and became something different” – interview with Oreste Pollicino, co-founder of Diritti Comparati

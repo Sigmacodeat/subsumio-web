@@ -221,7 +221,12 @@ export function buildLegalContextualPrefix(
   const parts: string[] = [];
   if (jurisdiction) parts.push(jurisdiction.toUpperCase());
   if (abbreviation) parts.push(abbreviation.toUpperCase());
-  if (paragraph) parts.push(`§ ${paragraph}`);
+  if (paragraph) {
+    // RIS XML norm files store the full designation in `paragraph` ("§ 1",
+    // "Art. 5", "Anl. 2"). Don't prepend another § — that produces "§ § 1".
+    // Match markers with or without trailing whitespace (§ 1, §1, Art. 5).
+    parts.push(/^(§+|Art\.?|Anl\.?)(\s|\d|[a-zA-Z])/i.test(paragraph) ? paragraph : `§ ${paragraph}`);
+  }
 
   const header = sanitizeTitle(parts.join(" "));
   const safeTitle = sanitizeTitle(title ?? "");
@@ -252,7 +257,14 @@ export function buildLegalContextualPrefix(
  * `buildContextualPrefix`.
  */
 export function isLegalPage(frontmatter: Record<string, unknown>): boolean {
-  return frontmatter?.type === "law" || frontmatter?.type === "statute";
+  // Kanonisches Schema v1 führt `doc_class` statt `type`. Ohne diesen Zweig
+  // fiele jede normalisierte Norm auf den generischen Chunker zurück und
+  // verlöre ihre Paragraphen-Struktur.
+  return (
+    frontmatter?.type === "law" ||
+    frontmatter?.type === "statute" ||
+    frontmatter?.doc_class === "statute"
+  );
 }
 
 /**
@@ -261,5 +273,10 @@ export function isLegalPage(frontmatter: Record<string, unknown>): boolean {
  * generic recursive chunker.
  */
 export function isCourtDecisionPage(frontmatter: Record<string, unknown>): boolean {
-  return frontmatter?.type === "court_decision" || frontmatter?.type === "judgement";
+  // `doc_class: "decision"` ist die kanonische Entsprechung — siehe isLegalPage.
+  return (
+    frontmatter?.type === "court_decision" ||
+    frontmatter?.type === "judgement" ||
+    frontmatter?.doc_class === "decision"
+  );
 }

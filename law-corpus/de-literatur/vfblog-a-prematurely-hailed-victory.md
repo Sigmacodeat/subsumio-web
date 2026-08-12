@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-prematurely-hailed-victory/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e0f7edbc3a85f1d3"
 ---
 
 # A Prematurely Hailed Victory

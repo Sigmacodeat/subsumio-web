@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/sperrminoritat-kommt-vor-dem-fall/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b4456ba9cc1ccfdc"
 ---
 
 # Sperrminorität kommt vor dem Fall

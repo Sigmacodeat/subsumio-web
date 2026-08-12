@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-win-for-lgbt-rights-in-namibia/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "02805de9db3451d8"
 ---
 
 # A Win for LGBT Rights in Namibia

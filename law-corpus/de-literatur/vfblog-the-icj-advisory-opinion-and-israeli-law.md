@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-icj-advisory-opinion-and-israeli-law/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "95c286ee9b70f3ba"
 ---
 
 # The ICJ Advisory Opinion and Israeli Law

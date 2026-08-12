@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/chat-kontrolle-effektiver-kinder-und-juge
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3f209a5f1da5dc1d"
 ---
 
 # Digitale Silver Bullets

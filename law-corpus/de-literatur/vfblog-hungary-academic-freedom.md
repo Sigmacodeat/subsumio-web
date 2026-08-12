@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hungary-academic-freedom/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "25a06fb8386efa8f"
 ---
 
 # The Hungarian Roadmap

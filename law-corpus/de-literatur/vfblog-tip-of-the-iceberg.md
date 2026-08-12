@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/tip-of-the-iceberg/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d337367d706dedff"
 ---
 
 # The Sovereign Protection Office as the Tip of the Iceberg

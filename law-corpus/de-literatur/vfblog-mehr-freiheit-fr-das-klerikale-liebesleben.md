@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/mehr-freiheit-fr-das-klerikale-liebeslebe
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ca467b245bd1257c"
 ---
 
 # Mehr Freiheit für das klerikale Liebesleben

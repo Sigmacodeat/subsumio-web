@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-basic-structure-doctrine-arrives-in-k
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8b5f27bfe79c02b7"
 ---
 
 # The Basic Structure Doctrine arrives in Kenya

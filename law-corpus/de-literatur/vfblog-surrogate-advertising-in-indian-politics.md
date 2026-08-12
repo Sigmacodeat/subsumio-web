@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/surrogate-advertising-in-indian-politics/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ca398fc9a52d0969"
 ---
 
 # Secret Campaigns and Masked Messages

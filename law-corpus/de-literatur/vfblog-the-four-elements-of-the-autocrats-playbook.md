@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-four-elements-of-the-autocrats-playbo
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "70480ee37739adad"
 ---
 
 # The Four Elements of the Autocrats’ Playbook

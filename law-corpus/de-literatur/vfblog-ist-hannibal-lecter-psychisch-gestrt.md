@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/ist-hannibal-lecter-psychisch-gestrt/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b2791ce5b53d0d75"
 ---
 
 # Ist Hannibal Lecter psychisch gestört?

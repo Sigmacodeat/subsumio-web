@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fecb3c4292c7abe0"
 ---
 
 # Mehr Menschenrechts&shy;schutz mit einem Lieferkettengesetz „Made in Germany“?

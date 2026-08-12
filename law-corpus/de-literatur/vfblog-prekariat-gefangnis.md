@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/prekariat-gefangnis/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e56bd6f2113fed59"
 ---
 
 # Prekariat Gefängnis

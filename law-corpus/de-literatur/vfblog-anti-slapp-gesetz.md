@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/anti-slapp-gesetz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "7a9a82a207020502"
 ---
 
 # Kein SLAPP-Back

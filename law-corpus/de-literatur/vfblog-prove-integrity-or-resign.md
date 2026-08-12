@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/prove-integrity-or-resign/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "5cd75d354d61d2a4"
 ---
 
 # Prove Your Integrity or Resign

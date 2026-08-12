@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/protection-for-victims-data-retention/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d252d98f7744ca7e"
 ---
 
 # More Protection for Victims Through Data Retention

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "268fbe4c3201a13d"
 ---
 
 # How Germany’s Trajectory Differs from LPE’s Diagnosis for the US, and Where Germany’s Problems Lie

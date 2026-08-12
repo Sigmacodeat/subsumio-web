@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/break-from-the-break/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0d1e6a085b3239b3"
 ---
 
 # Break from the Break

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/more-than-a-trade-route-hormuz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "457a75d51bbbf21f"
 ---
 
 # More Than a Trade Route

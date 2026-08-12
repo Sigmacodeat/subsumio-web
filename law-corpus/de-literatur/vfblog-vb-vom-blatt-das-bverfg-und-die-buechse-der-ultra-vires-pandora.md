@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a9daaee66fc14125"
 ---
 
 # VB vom Blatt: Das BVerfG und die Büchse der ultra-vires-Pandora

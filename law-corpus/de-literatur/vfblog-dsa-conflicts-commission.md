@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dsa-conflicts-commission/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fef78529728b4a1b"
 ---
 
 # A Regulator Caught Between Conflicting Policy Objectives

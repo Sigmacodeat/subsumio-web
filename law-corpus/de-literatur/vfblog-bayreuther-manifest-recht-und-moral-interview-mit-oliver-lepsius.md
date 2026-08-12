@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6669c87662c113d5"
 ---
 
 # Das Bayreuther Manifest zu Recht und Moral: Interview mit Oliver Lepsius

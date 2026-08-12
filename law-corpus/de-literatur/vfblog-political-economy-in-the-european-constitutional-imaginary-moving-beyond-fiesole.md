@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "16cb5f40498624e1"
 ---
 
 # Political Economy in the European Constitutional Imaginary – Moving beyond Fiesole

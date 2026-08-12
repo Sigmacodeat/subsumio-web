@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "bb0e53b2ade0bf6b"
 ---
 
 # Die Haftung von Zertifizierungs- und Prüfunternehmen  als gebotener Bestandteil eines effektiven Lieferkettengesetzes

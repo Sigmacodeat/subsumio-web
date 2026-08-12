@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/rethinking-the-notion-of-the-file/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8b2dcec8bdad696a"
 ---
 
 # Rethinking the Notion of the File

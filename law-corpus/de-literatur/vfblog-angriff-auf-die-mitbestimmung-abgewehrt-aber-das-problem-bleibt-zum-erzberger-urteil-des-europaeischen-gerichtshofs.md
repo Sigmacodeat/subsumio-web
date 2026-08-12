@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "740e6d456b639232"
 ---
 
 # Angriff auf die Mitbestimmung abgewehrt – aber das Problem bleibt: Zum Erzberger-Urteil des Europäischen Gerichtshofs

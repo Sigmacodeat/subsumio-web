@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/borissovs-latest-plan-to-avoid-true-refor
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1150e53127c34056"
 ---
 
 # Borissov’s Latest Plan to Avoid True Reforms

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/taking-separation-of-powers-seriously/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "39440140ee3dfc68"
 ---
 
 # Taking Separation of Powers Seriously

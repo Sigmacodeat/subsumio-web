@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/memo-an-die-montagehalle/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "6943206860788add"
 ---
 
 # Memo an die Montagehalle

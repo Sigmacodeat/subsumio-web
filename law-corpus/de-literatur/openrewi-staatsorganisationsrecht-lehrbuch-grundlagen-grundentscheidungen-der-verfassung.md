@@ -17,6 +17,7 @@ license: >-
   (https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung).
   Namensnennung: OpenRewi-Autor:innen via Versionsgeschichte der Quellseite;
   Share-Alike.
+content_hash: "6ae6c049d55cbadc"
 ---
 
 § 2 Einordnung öffentliches Recht - Verfassungsrecht &#124; Inhaltsverzeichnis &#124; § 3.1 Staatsstrukturprinzipien und Staatszielbestimmungen 

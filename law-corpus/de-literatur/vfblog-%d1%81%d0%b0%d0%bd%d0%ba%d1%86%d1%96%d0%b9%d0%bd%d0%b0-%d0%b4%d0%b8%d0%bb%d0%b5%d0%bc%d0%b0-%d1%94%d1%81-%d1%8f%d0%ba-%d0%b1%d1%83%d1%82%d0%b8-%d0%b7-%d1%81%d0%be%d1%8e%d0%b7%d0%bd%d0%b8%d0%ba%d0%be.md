@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ff6541220955c6aa"
 ---
 
 # Санкційна дилема ЄС: як бути з союзником Росії – Білоруссю

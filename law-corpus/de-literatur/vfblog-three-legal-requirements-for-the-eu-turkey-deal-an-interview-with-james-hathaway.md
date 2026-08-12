@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3de8d8ae40101578"
 ---
 
 # Three legal requirements for the EU-Turkey deal: An interview with JAMES HATHAWAY

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2880922faf464598"
 ---
 
 # Wieso das N-Wort nie die richtige Bezeichnung für Schwarze Menschen ist

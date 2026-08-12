@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-sleeping-beauty-has-awoken/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "3f86533faabfd71e"
 ---
 
 # The Sleeping Beauty Has Awoken

@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/dsa-fails/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "b2bbee06287cae3e"
 ---
 
 # The DSA fails to reign in the most harmful digital platform businesses – but it is still useful

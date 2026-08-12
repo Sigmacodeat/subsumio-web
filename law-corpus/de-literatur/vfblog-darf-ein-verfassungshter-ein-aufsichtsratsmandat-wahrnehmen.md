@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "735af92be4fdaaa2"
 ---
 
 # Darf ein Verfassungshüter ein Aufsichtsratsmandat wahrnehmen?

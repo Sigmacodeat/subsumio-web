@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-defence-of-scholactivism/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eaa1f66259282a2a"
 ---
 
 # A Defence of Scholactivism

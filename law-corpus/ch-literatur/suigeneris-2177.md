@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2020 Marco Ehrat;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "b5770adc9930b91d"
 ---
 
 # Zurückhaltendes Urteil mit weitreichenden Folgen: Bundesgericht erklärt Bündner Wahlsystem für verfassungswidrig: Bemerkungen zum Bundesgerichtsurteil 1C_495/2017 vom 29. Juni 2019

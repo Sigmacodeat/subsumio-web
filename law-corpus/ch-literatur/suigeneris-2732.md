@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2021 Gian Ege, Elinor Edem;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "9f99c6f4a7d37e73"
 ---
 
 # « Rien ne va plus » ? Die Schuldfähigkeit eines glücksspielsüchtigen Täters

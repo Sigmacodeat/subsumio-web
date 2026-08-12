@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/judicial-reform-in-times-of-war/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "039800532b917a24"
 ---
 
 # Judicial Reform in Times of War

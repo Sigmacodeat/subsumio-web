@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/doppelpass-als-menschenrecht/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eb45e72c93eb473b"
 ---
 
 # Doppelpass als Menschenrecht?

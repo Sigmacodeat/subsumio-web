@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-tale-of-two-borders/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8f5ac8de0c8c27dd"
 ---
 
 # A Tale of Two Borders

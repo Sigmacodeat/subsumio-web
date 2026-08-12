@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "9a3c9b753157a89b"
 ---
 
 # Ergebnisparität oder Chancengleichheit? Quotenmodelle zur Steigerung des Frauenanteils im Parlament

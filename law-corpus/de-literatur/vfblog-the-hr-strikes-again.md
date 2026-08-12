@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-hr-strikes-again/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "ef76d3c17c0e3cee"
 ---
 
 # The High Representative Strikes Again

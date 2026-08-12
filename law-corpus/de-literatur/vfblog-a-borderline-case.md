@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-borderline-case/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "acf3ab4f6d2873b2"
 ---
 
 # A Borderline Case

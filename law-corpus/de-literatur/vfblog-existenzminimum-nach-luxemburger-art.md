@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/existenzminimum-nach-luxemburger-art/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "aea9433ec9c041e0"
 ---
 
 # Existenzminimum nach Luxemburger Art

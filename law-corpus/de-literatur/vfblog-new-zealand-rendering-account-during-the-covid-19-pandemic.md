@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "31c2d3343df5ea2d"
 ---
 
 # New Zealand: Rendering Account During the COVID-19 Pandemic

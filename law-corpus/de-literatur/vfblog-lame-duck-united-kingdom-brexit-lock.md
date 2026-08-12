@@ -14,6 +14,7 @@ source_url: https://verfassungsblog.de/lame-duck-united-kingdom-brexit-lock/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8dbb4f958cfcf47c"
 ---
 
 # A Lame Duck for a Member State? Thoughts on the UK’s Position in the EU after the Brexit Vote

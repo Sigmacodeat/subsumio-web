@@ -97,6 +97,7 @@ export function ChatInput({
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.nativeEvent.isComposing) return;
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
@@ -166,16 +167,16 @@ export function ChatInput({
           {attachments.map((att) => (
             <span
               key={att.slug}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)]"
+              className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] shadow-[var(--card-shadow)]"
             >
-              <FileText size={11} />
-              {att.name}
+              <FileText className="h-4 w-4 sm:h-3 sm:w-3" />
+              <span className="truncate max-w-[12ch]">{att.name}</span>
               <button
                 onClick={() => removeAttachment(att.slug)}
-                className="ml-0.5 text-[color:var(--ds-text-subtle)] transition-colors hover:text-red-500"
+                className="flex h-8 w-8 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-red-500 sm:h-5 sm:w-5"
                 aria-label={t("chat.input.remove_attachment")}
               >
-                <X size={11} />
+                <X className="h-4 w-4 sm:h-3 sm:w-3" />
               </button>
             </span>
           ))}
@@ -203,12 +204,12 @@ export function ChatInput({
       <div className="px-3 pb-3">
         <div
           className={cn(
-            "relative rounded-2xl border bg-[color:var(--ds-surface)] shadow-sm transition-[border-color,box-shadow] duration-200 focus-within:shadow-md",
+            "relative rounded-2xl border bg-[color:var(--ds-surface)] shadow-[var(--card-shadow)] transition-[border-color,box-shadow] duration-200",
             overLimit
               ? "border-red-500"
               : nearLimit
                 ? "border-amber-400/60"
-                : "border-[color:var(--ds-border)] focus-within:border-[color:var(--brand-primary)]/40"
+                : "border-[color:var(--ds-border)] focus-within:border-[color:var(--ds-ring)]"
           )}
         >
           {/* Textarea */}
@@ -224,7 +225,7 @@ export function ChatInput({
             }
             rows={1}
             maxLength={50000}
-            className="min-h-[36px] w-full resize-none bg-transparent px-3 pt-2.5 pb-1 text-[14px] leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 disabled:opacity-50"
+            className="min-h-11 w-full resize-none bg-transparent px-3 py-2.5 text-base leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none disabled:opacity-50 sm:text-sm"
             aria-label={t("chat.input.enter_message")}
           />
 
@@ -247,7 +248,7 @@ export function ChatInput({
               <button
                 onClick={() => setShowTemplates((v) => !v)}
                 disabled={isStreaming || disabled}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
+                className="flex h-11 w-11 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
                 aria-label={t("chat.input.templates")}
                 title={t("chat.input.templates")}
               >
@@ -296,7 +297,7 @@ export function ChatInput({
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isStreaming || uploading || disabled}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
+                  className="flex h-11 w-11 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
                   aria-label={t("chat.input.upload_file")}
                   title={t("chat.input.upload_file")}
                 >
@@ -319,7 +320,7 @@ export function ChatInput({
                 setText((prev) => (prev ? prev + " " : "") + text);
                 textareaRef.current?.focus();
               }}
-              className="shrink-0"
+              className="shrink-0 h-11 w-11 sm:h-7 sm:w-7"
             />
 
             {/* Model selector */}
@@ -345,7 +346,7 @@ export function ChatInput({
             {isStreaming ? (
               <button
                 onClick={() => onStop?.()}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-500 transition-[background-color,transform] duration-200 hover:bg-red-500/20 active:scale-95"
+                className="flex h-11 w-11 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-500 transition-[background-color,transform] duration-200 hover:bg-red-500/20 active:scale-95"
                 aria-label={t("chat.input.stop_generation")}
                 title={t("chat.input.stop_esc")}
               >
@@ -356,7 +357,7 @@ export function ChatInput({
                 onClick={handleSubmit}
                 disabled={!canSend}
                 className={cn(
-                  "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[color:var(--brand-primary)] text-white transition-[background-color,transform,opacity] duration-200 hover:bg-[color:var(--brand-primary-hover)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-30",
+                  "flex h-11 w-11 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-lg bg-[color:var(--brand-primary)] text-white transition-[background-color,transform,opacity] duration-200 hover:bg-[color:var(--brand-primary-hover)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-30",
                   overLimit && "bg-red-500"
                 )}
                 aria-label={t("chat.send")}

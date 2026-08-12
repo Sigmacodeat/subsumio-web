@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/dsa-regulating-influence/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "2cbb74d6b76b2678"
 ---
 
 # Regulating influence, timidly

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/as-if-they-were-to-blame/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "edac4007fa55d048"
 ---
 
 # “As If They Were to Blame”

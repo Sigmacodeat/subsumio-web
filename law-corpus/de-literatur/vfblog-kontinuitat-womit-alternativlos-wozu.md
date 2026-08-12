@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/kontinuitat-womit-alternativlos-wozu/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "4f1994b3761e2436"
 ---
 
 # Kontinuität womit? Alternativlos wozu?

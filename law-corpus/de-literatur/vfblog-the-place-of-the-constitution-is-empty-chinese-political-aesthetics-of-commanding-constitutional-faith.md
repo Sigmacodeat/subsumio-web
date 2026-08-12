@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cc84b31a56da5fe2"
 ---
 
 # ‘The Place of the Constitution Is Empty’: Chinese Political Aesthetics of Commanding Constitutional Faith

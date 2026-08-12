@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "1d09e474e79ef224"
 ---
 
 # Coping with Disloyal Cooperation in the Midst of a Pandemic: The Italian Response

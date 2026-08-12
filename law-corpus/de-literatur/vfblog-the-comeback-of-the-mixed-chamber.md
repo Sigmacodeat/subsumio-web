@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-comeback-of-the-mixed-chamber/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "0ba164aed6977876"
 ---
 
 # The Comeback of the Mixed Chamber

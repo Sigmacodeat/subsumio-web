@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/1-3-billionen-euro-kriegsreparationen-an-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "8581304e59b224f1"
 ---
 
 # 1.3 Billionen Euro Kriegsreparationen an Polen

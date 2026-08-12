@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/why-the-eu-charter-matters/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f9e0b3949dc09aaa"
 ---
 
 # Why the EU Charter Matters

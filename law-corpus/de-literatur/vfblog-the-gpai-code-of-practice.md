@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-gpai-code-of-practice/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "684bd4eab7e09e63"
 ---
 
 # The GPAI Code of Practice

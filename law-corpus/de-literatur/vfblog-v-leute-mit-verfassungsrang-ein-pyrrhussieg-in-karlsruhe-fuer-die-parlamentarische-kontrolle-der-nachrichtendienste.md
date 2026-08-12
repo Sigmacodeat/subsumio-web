@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c5b9186d83ea56f3"
 ---
 
 # V-Leute mit Verfassungsrang – ein Pyrrhussieg in Karlsruhe für die parlamentarische Kontrolle der Nachrichtendienste

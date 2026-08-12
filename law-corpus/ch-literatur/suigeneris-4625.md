@@ -19,6 +19,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2023 Isabelle Wildhaber,
   Stefanie Debrunner-Epprecht; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "26020d1b2b1d6172"
 ---
 
 # Haben Arbeitnehmende in Grossraumbüros und bei Desk Sharing spezielle individuelle Rechte?

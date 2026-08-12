@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/aristotle-in-the-commission/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "93ae997977c8a4fc"
 ---
 
 # Aristotle in the Commission

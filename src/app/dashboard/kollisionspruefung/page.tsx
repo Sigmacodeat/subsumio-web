@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   ShieldAlert,
   Loader2,
@@ -9,6 +10,7 @@ import {
   AlertTriangle,
   Users,
   Building2,
+  ArrowRight,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -172,6 +174,18 @@ export default function KollisionspruefungPage() {
                 <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
                   {result.explanation}
                 </p>
+                {result.severity === "none" && searchName.trim() && (
+                  <div className="mt-3">
+                    <Link
+                      href={`/dashboard/intake?new=1&name=${encodeURIComponent(searchName.trim())}`}
+                    >
+                      <Button variant="outline" size="sm" className="gap-1.5">
+                        Mandatsannahme starten
+                        <ArrowRight size={14} />
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
 

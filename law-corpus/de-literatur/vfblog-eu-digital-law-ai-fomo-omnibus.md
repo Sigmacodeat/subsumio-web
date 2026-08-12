@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eu-digital-law-ai-fomo-omnibus/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e74dac904c9b0a3e"
 ---
 
 # European AI FOMO

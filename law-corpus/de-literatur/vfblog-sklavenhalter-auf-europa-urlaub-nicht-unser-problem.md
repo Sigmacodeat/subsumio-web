@@ -13,6 +13,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "d1606aaea1176de4"
 ---
 
 # Sklavenhalter auf Europa-Urlaub: Nicht unser Problem?

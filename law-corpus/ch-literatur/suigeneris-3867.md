@@ -20,6 +20,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2022 Frank Bremer, Michèle
   Ritz; http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "169c7c74bb64e054"
 ---
 
 # Grünes Kartellrecht: Wettbewerbspolitisches Plädoyer für einen «more environmental approach»: Kartellrechtliche Handlungsspielräume für die Berücksichtigung von Umweltbelangen bei der Anwendung des schweizerischen Kartellrechts

@@ -7,6 +7,7 @@ version_date: "2026-06-21"
 retrieved_at: "2026-06-21"
 source_url: "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX:32012R0121"
 license: "Quelle: EUR-Lex (eur-lex.europa.eu) — Amtliche Veröffentlichung der Europäischen Union."
+content_hash: "65e37aef7dea5d0f"
 ---
 
 - L_2012044DE.01000101.xml

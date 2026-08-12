@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/in-a-barbie-world/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "00363db8dff09efb"
 ---
 
 # In a Barbie World

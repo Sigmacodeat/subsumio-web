@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/south-korea-legal-distortion-democracy/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fbdd7b9f0b8b4454"
 ---
 
 # Judging the Judges

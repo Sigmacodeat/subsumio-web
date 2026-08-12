@@ -16,6 +16,7 @@ license: >-
   CC BY-SA 4.0. Phase 1: Metadaten + Abstract via OAI-PMH; Volltext-PDF nur nach
   Lizenzprüfung pro Artikel. Rights: Copyright (c) 2015 Irene Grohsmann;
   http://creativecommons.org/licenses/by-sa/4.0
+content_hash: "0d2b1754f0110400"
 ---
 
 # Vaterschaftsurlaub, what else?

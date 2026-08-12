@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/new-paradigms-for-the-european-parliament
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "389948e57d14ada3"
 ---
 
 # New Paradigms for the European Parliament

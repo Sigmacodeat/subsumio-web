@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/bicameralism-discontents-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "337bce0115c7a85a"
 ---
 
 # Bicameralism and its Discontents

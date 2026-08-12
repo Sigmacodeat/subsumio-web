@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/save-the-constitution/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "12c9241639f86baa"
 ---
 
 # Save the Constitution!

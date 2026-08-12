@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/wahlrecht-zwischen-pest-und-cholera/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "912fcd92b80eb7ff"
 ---
 
 # Wahlrecht zwischen Pest und Cholera

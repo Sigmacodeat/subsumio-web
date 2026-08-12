@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/reforming-the-gdpr/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "eb295462c4675c13"
 ---
 
 # Reforming the GDPR

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/hausbesetzervereine-habe-auch-rechte/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cc0dfa7895a02a14"
 ---
 
 # Hausbesetzervereine habe auch Rechte

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/abstammungsrecht-reform-koalitionsvertrag
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c8212cb03d0caf38"
 ---
 
 # Gleiche Eltern, gleiche Rechte

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/a-new-chance-for-democracy-in-moldova/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "cfebcde9fc814ff7"
 ---
 
 # A new chance for democracy in Moldova

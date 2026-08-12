@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/eu-pol-community/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "f94708df2533a8d3"
 ---
 
 # A New European Political Community: The British Perspective

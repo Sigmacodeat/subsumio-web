@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/banning-russians/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "fcee9ff7a05d8476"
 ---
 
 # Why Banning Russians from Schengen Is Unlawful

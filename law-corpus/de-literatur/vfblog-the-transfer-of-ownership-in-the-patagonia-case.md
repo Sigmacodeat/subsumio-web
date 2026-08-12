@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-transfer-of-ownership-in-the-patagoni
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "294ac4cbcded6762"
 ---
 
 # The Transfer of Ownership in the ‘Patagonia Case’

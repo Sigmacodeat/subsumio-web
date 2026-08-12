@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/money-trust-and-tools/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "c191abc5e855d050"
 ---
 
 # Money, Trust and Tools

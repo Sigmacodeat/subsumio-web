@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "a04b36344f187b59"
 ---
 
 # “2004 EU Accession” as a Founding Moment?  Of lost opportunities, alienating constitutionalism and vigilant courts

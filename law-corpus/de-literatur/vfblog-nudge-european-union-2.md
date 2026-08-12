@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/nudge-european-union-2/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "04707ad3bcf05859"
 ---
 
 # Nudge and the European Union

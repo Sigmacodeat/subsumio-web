@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/the-burden-of-victory/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "e3f945451a6f3c7e"
 ---
 
 # The Burden of Victory

@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/what-happens-after-the-polish-elections/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "57566db5cae79d95"
 ---
 
 # What happens after the Polish Elections?

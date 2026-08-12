@@ -12,6 +12,7 @@ source_url: https://verfassungsblog.de/impfregister-statt-datenschutz/
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "38014d6d86ad8d05"
 ---
 
 # Impfregister statt Datenschutz?

@@ -15,6 +15,7 @@ source_url: >-
 license: >-
   CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
   abweichen). Namensnennung + Share-Alike erforderlich.
+content_hash: "28e0fb0ee8263ed7"
 ---
 
 # Effective Pandemic Management Requires the Rule of Law and Good Governance
