@@ -133,7 +133,7 @@ const pct = (n: number) => `${n.toFixed(1)}%`;
 
 const SYNC_STATUS_CONFIG: Record<CorpusSyncRow["syncStatus"], { variant: "success" | "warning" | "danger" | "default"; label: string }> = {
   synced: { variant: "success", label: "Synchron" },
-  import_pending: { variant: "warning", label: "Import offen" },
+  import_pending: { variant: "warning", label: "Lücke" },
   orphan_in_db: { variant: "danger", label: "DB-Orphane" },
   no_db: { variant: "default", label: "Keine DB" },
 };
@@ -374,10 +374,10 @@ function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: 
                   <div className={cn("col-span-2 font-mono truncate", r.fullyComplete && "text-[color:var(--ds-success-text)]")} title={r.corpus}>{r.corpus}</div>
                   <div className="col-span-1 text-right tabular-nums" title={r.risTotal ? `RIS OGD: ${fmt(r.risTotal)} Dokumente` : "RIS Total unbekannt"}>
                     {r.risTotal ? (
-                      <span className={r.diskFiles >= r.risTotal * 0.95 ? "text-[color:var(--ds-success-text)]" : r.diskFiles >= r.risTotal * 0.8 ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-danger-text)]"}>
+                      <span className={r.missingFromDb === 0 ? "text-[color:var(--ds-success-text)]" : r.missingFromDb < r.risTotal * 0.2 ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-danger-text)]"}>
                         {fmt(r.risTotal)}
                         {r.newOnRis > 0 && (
-                          <sup className="ml-0.5 text-[color:var(--ds-success-text)]" title={`${fmt(r.newOnRis)} neu auf RIS`}>+{fmt(r.newOnRis)}</sup>
+                          <sup className="ml-0.5 text-[color:var(--ds-warning-text)]" title={`${fmt(r.newOnRis)} auf RIS aber noch nicht lokal auf Disk`}>+{fmt(r.newOnRis)}</sup>
                         )}
                       </span>
                     ) : (

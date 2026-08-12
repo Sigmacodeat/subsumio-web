@@ -248,35 +248,34 @@ export const GET = createHandler(
       // RIS Total: aus pipeline_state, wenn verfügbar
       const risTotal = pipelineInfo && pipelineInfo.risTotal ? pipelineInfo.risTotal : null;
 
-      // Status-Logik: Vergleiche echte DB-Pages mit dem, was die Pipeline erwartet
-      // (pipeline_state.db_pages ist die Soll-Zahl, nicht disk == dbPages)
+      // Status-Logik: RIS OGD ist Source-of-Truth
       const expectedDbPages = pipelineInfo ? pipelineInfo.dbPages : null;
 
       const stale = dbChunks - embedded;
       const coverage = dbChunks > 0 ? Math.round((embedded / dbChunks) * 1000) / 10 : 0;
 
-      let syncStatus: CorpusSyncRow["syncStatus"] = "synced";
-      if (dbPages === 0 && disk > 0) {
-        syncStatus = "no_db";
-      } else if (expectedDbPages !== null) {
-        if (dbPages < expectedDbPages) syncStatus = "import_pending";
-        else if (dbPages > expectedDbPages) syncStatus = "orphan_in_db";
-      } else if (dbPages > 0 && disk > 0 && dbPages > disk * 5) {
-        // Heuristik: wenn DB viel größer als Disk (z.B. 5x mehr Pages als Dateien)
-        // und es keinen Pipeline-Track gibt, ist das bei Gesetzen normal.
-        syncStatus = "synced";
-      } else if (disk > 0 && dbPages === 0) {
-        syncStatus = "no_db";
-      }
-
-      // Lücke/Orphan zur Anzeige: nur sinnvoll wenn wir wirklich Vergleichswerte haben
-      const notImported = expectedDbPages !== null ? Math.max(0, expectedDbPages - dbPages) : Math.max(0, disk - dbPages);
-      const orphanDb = expectedDbPages !== null ? Math.max(0, dbPages - expectedDbPages) : Math.max(0, dbPages - disk);
-
       // Differenzen zum Source-of-Truth RIS OGD
       const missingFromDb = risTotal !== null ? Math.max(0, risTotal - dbPages) : 0;
       const missingFromDisk = risTotal !== null ? Math.max(0, risTotal - disk) : 0;
       const newOnRis = risTotal !== null ? Math.max(0, risTotal - disk) : 0;
+      const orphanDb = risTotal !== null ? Math.max(0, dbPages - risTotal) : Math.max(0, dbPages - disk);
+
+      // Status: Wahrheitsgemäß nach RIS, nicht nach interner Pipeline-Erwartung
+      let syncStatus: CorpusSyncRow["syncStatus"] = "synced";
+      if (dbPages === 0 && disk > 0) {
+        syncStatus = "no_db";
+      } else if (missingFromDb > 0) {
+        syncStatus = "import_pending";
+      } else if (missingFromDisk > 0) {
+        syncStatus = "import_pending";
+      } else if (orphanDb > 0) {
+        syncStatus = "orphan_in_db";
+      } else if (disk > 0 && dbPages === 0) {
+        syncStatus = "no_db";
+      }
+
+      // notImported = fehlende DB-Pages; bisherige fallback bleibt für Nicht-RIS
+      const notImported = expectedDbPages !== null ? Math.max(0, expectedDbPages - dbPages) : Math.max(0, disk - dbPages);
       const canUpdate = risTotal !== null && pipelineKey != null && (missingFromDb > 0 || missingFromDisk > 0);
 
 
@@ -292,7 +291,7 @@ export const GET = createHandler(
         notImported,
         orphanDb,
         syncStatus,
-        fullyComplete: syncStatus === "synced" && coverage === 100 && stale === 0 && notImported === 0 && dbPages > 0,
+        fullyComplete: syncStatus === "synced" && missingFromDb === 0 && missingFromDisk === 0 && coverage === 100 && stale === 0 && dbPages > 0,
         risTotal,
         missingFromDb,
         missingFromDisk,

@@ -249,6 +249,28 @@ describe("CorpusCommandCenter: Sync-Status Tabelle", () => {
       expect(screen.getAllByText(/Fehlt/i).length).toBeGreaterThan(0);
     });
   });
+
+  it("zeigt Status-Badge 'Lücke' wenn API syncStatus='import_pending' liefert", async () => {
+    const data = {
+      ...MOCK_DATA,
+      sync: {
+        ...MOCK_DATA.sync,
+        rows: [{ ...MOCK_DATA.sync.rows[0], syncStatus: "import_pending" }],
+      },
+    };
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ data }),
+    });
+    withQueryClient(<CorpusCommandCenter />);
+    await waitFor(() => {
+      expect(screen.getByText("law-at")).toBeInTheDocument();
+    });
+    // Suche das Status-Badge — ein span/exact "Lücke" neben der law-at Zeile
+    const badges = screen.getAllByText(/^Lücke$/i);
+    expect(badges.length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Import offen/i)).not.toBeInTheDocument();
+  });
 });
 
 describe("CorpusCommandCenter: Empty-State", () => {
