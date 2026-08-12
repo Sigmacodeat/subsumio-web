@@ -29,6 +29,16 @@ interface CorpusSyncRow {
   syncStatus: "synced" | "import_pending" | "orphan_in_db" | "no_db";
   /** Live RIS OGD Total für diesen Korpus (null wenn unbekannt). */
   risTotal: number | null;
+  /** Fehlende Dokumente: RIS OGD Total minus DB-Seiten. */
+  missingFromDb: number;
+  /** Noch nicht auf Disk: RIS OGD Total minus lokale Dateien. */
+  missingFromDisk: number;
+  /** Neu auf RIS seit letztem lokalen Sync (RIS - Disk, wenn positiv). */
+  newOnRis: number;
+  /** Ob für diesen Korpus ein Backfill sinnvoll ist. */
+  canUpdate: boolean;
+  /** Pipeline source_key für One-Click Backfill (null wenn kein Mapping). */
+  pipelineKey: string | null;
 }
 
 interface WorkQueueItem {
@@ -256,6 +266,13 @@ export const GET = createHandler(
       const notImported = expectedDbPages !== null ? Math.max(0, expectedDbPages - dbPages) : Math.max(0, disk - dbPages);
       const orphanDb = expectedDbPages !== null ? Math.max(0, dbPages - expectedDbPages) : Math.max(0, dbPages - disk);
 
+      // Differenzen zum Source-of-Truth RIS OGD
+      const missingFromDb = risTotal !== null ? Math.max(0, risTotal - dbPages) : 0;
+      const missingFromDisk = risTotal !== null ? Math.max(0, risTotal - disk) : 0;
+      const newOnRis = risTotal !== null ? Math.max(0, risTotal - disk) : 0;
+      const canUpdate = risTotal !== null && pipelineKey != null && (missingFromDb > 0 || missingFromDisk > 0);
+
+
       syncRows.push({
         corpus,
         sourceId: corpus,
@@ -270,6 +287,11 @@ export const GET = createHandler(
         syncStatus,
         fullyComplete: syncStatus === "synced" && coverage === 100 && stale === 0 && notImported === 0 && dbPages > 0,
         risTotal,
+        missingFromDb,
+        missingFromDisk,
+        newOnRis,
+        canUpdate,
+        pipelineKey: pipelineKey ?? null,
       });
     }
 
@@ -325,6 +347,9 @@ export const GET = createHandler(
     const totalNotImported = syncRows.reduce((s, r) => s + r.notImported, 0);
     const totalStale = syncRows.reduce((s, r) => s + r.staleChunks, 0);
     const totalRis = syncRows.reduce((s, r) => s + (r.risTotal || 0), 0);
+    const totalMissingFromDb = syncRows.reduce((s, r) => s + r.missingFromDb, 0);
+    const totalMissingFromDisk = syncRows.reduce((s, r) => s + r.missingFromDisk, 0);
+    const totalNewOnRis = syncRows.reduce((s, r) => s + r.newOnRis, 0);
     const totalVerified = Object.values(flags).filter((f) => f.flag === "verified").length;
     const totalNeedsReview = Object.values(flags).filter((f) => f.flag === "needs_review").length;
     const totalDefective = Object.values(flags).filter((f) => f.flag === "defective").length;
@@ -393,6 +418,9 @@ export const GET = createHandler(
           totalNotImported,
           totalStale,
           totalRis,
+          totalMissingFromDb,
+          totalMissingFromDisk,
+          totalNewOnRis,
           coveragePct: totalDbPages > 0 ? Math.round((totalEmbedded / (totalDbPages > 0 ? totalDbPages : 1)) * 1000) / 10 : 0,
         },
       },

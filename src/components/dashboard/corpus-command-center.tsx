@@ -31,6 +31,11 @@ interface CorpusSyncRow {
   syncStatus: "synced" | "import_pending" | "orphan_in_db" | "no_db";
   fullyComplete: boolean;
   risTotal: number | null;
+  missingFromDb: number;
+  missingFromDisk: number;
+  newOnRis: number;
+  canUpdate: boolean;
+  pipelineKey: string | null;
 }
 
 interface WorkQueueItem {
@@ -87,6 +92,9 @@ interface CommandCenterData {
       totalStale: number;
       coveragePct: number;
       totalRis: number;
+      totalMissingFromDb: number;
+      totalMissingFromDisk: number;
+      totalNewOnRis: number;
     };
   };
   workQueue: {
@@ -118,7 +126,7 @@ interface CommandCenterData {
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
-const fmt = (n: number) => n.toLocaleString("de-DE");
+const fmt = (n: number | null | undefined) => (n ?? 0).toLocaleString("de-DE");
 const pct = (n: number) => `${n.toFixed(1)}%`;
 
 const SYNC_STATUS_CONFIG: Record<CorpusSyncRow["syncStatus"], { variant: "success" | "warning" | "danger" | "default"; label: string }> = {
@@ -153,8 +161,31 @@ function CoverageIndicator({ coveragePct }: { coveragePct: number }) {
 
 // ── Section 1: Sync-Status ───────────────────────────────────────────────
 
-function SyncStatusSection({ rows, totals, onSelectCorpus }: { rows: CorpusSyncRow[]; totals: CommandCenterData["sync"]["totals"]; onSelectCorpus?: (sourceId: string) => void }) {
+function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: CorpusSyncRow[]; totals: CommandCenterData["sync"]["totals"]; onSelectCorpus?: (sourceId: string) => void; onRefresh?: () => void }) {
+  const { addToast } = useToast();
   const [hideComplete, setHideComplete] = useState(true);
+
+  const fetchMissing = useMutation({
+    mutationFn: async (payload: { action: string; source_key: string }) => {
+      const res = await fetch("/api/admin/corpus-pipeline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Backfill konnte nicht gestartet werden");
+      }
+      return res.json();
+    },
+    onSuccess: (_d, payload) => {
+      addToast({ title: `Backfill für ${payload.source_key} gestartet`, type: "success" });
+      onRefresh?.();
+    },
+    onError: (err: Error) => {
+      addToast({ title: "Backfill-Fehler", description: err.message, type: "error" });
+    },
+  });
 
   const completeCount = rows.filter((r) => r.fullyComplete).length;
   const displayRows = rows
@@ -167,13 +198,24 @@ function SyncStatusSection({ rows, totals, onSelectCorpus }: { rows: CorpusSyncR
   return (
     <div className="space-y-4">
       {/* Summary Cards — neutral numbers, icon-only color accent */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
             <Globe className="h-7 w-7 text-[color:var(--ds-info-text)]" />
             <div>
-              <p className="text-xl font-bold tabular-nums text-[color:var(--ds-text)]">{fmt(totals.totalRis)}</p>
+              <p className="text-xl font-bold tabular-nums text-[color:var(--ds-text)]">
+                {totals.totalRis != null ? fmt(totals.totalRis) : "—"}
+              </p>
               <p className="text-xs text-[color:var(--ds-text-subtle)]">RIS OGD</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <AlertTriangle className="h-7 w-7 text-[color:var(--ds-danger-text)]" />
+            <div>
+              <p className="text-xl font-bold tabular-nums text-[color:var(--ds-text)]">{fmt(totals.totalMissingFromDb)}</p>
+              <p className="text-xs text-[color:var(--ds-text-subtle)]">Fehlt</p>
             </div>
           </CardContent>
         </Card>
@@ -251,12 +293,14 @@ function SyncStatusSection({ rows, totals, onSelectCorpus }: { rows: CorpusSyncR
             <div className="grid grid-cols-12 gap-2 text-xs font-medium text-[color:var(--ds-text-subtle)] pb-2 border-b">
               <div className="col-span-2">Korpus</div>
               <div className="col-span-1 text-right" title="RIS OGD Total (live/letzter Check)">RIS</div>
-              <div className="col-span-2 text-right">Disk</div>
-              <div className="col-span-2 text-right">DB</div>
-              <div className="col-span-2 text-right">Embedded</div>
+              <div className="col-span-1 text-right">Disk</div>
+              <div className="col-span-1 text-right">DB</div>
+              <div className="col-span-1 text-right" title="Fehlende Dokumente: RIS − DB">Fehlt</div>
+              <div className="col-span-3 text-right">Embedded</div>
               <div className="col-span-1 text-right">Lücke</div>
               <div className="col-span-1 text-center">Trend</div>
               <div className="col-span-1 text-center">Status</div>
+              <div className="col-span-1 text-center">Aktion</div>
             </div>
             {displayRows.map((r) => {
               const config = r.fullyComplete
@@ -287,14 +331,26 @@ function SyncStatusSection({ rows, totals, onSelectCorpus }: { rows: CorpusSyncR
                     {r.risTotal ? (
                       <span className={r.diskFiles >= r.risTotal * 0.95 ? "text-[color:var(--ds-success-text)]" : r.diskFiles >= r.risTotal * 0.8 ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-danger-text)]"}>
                         {fmt(r.risTotal)}
+                        {r.newOnRis > 0 && (
+                          <sup className="ml-0.5 text-[color:var(--ds-success-text)]" title={`${fmt(r.newOnRis)} neu auf RIS`}>+{fmt(r.newOnRis)}</sup>
+                        )}
                       </span>
                     ) : (
                       <span className="text-[color:var(--ds-text-subtle)]">—</span>
                     )}
                   </div>
-                  <div className="col-span-2 text-right tabular-nums">{fmt(r.diskFiles)}</div>
-                  <div className="col-span-2 text-right tabular-nums">{fmt(r.dbPages)}</div>
-                  <div className="col-span-2 text-right tabular-nums">
+                  <div className="col-span-1 text-right tabular-nums">{fmt(r.diskFiles)}</div>
+                  <div className="col-span-1 text-right tabular-nums">{fmt(r.dbPages)}</div>
+                  <div className="col-span-1 text-right tabular-nums" title={r.risTotal ? `${fmt(r.missingFromDb)} fehlen in DB (RIS ${fmt(r.risTotal)} − DB ${fmt(r.dbPages)})` : "RIS Total unbekannt"}>
+                    {r.risTotal ? (
+                      <span className={r.missingFromDb === 0 ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-danger-text)] font-medium"}>
+                        {r.missingFromDb === 0 ? "✓" : fmt(r.missingFromDb)}
+                      </span>
+                    ) : (
+                      <span className="text-[color:var(--ds-text-subtle)]">—</span>
+                    )}
+                  </div>
+                  <div className="col-span-3 text-right tabular-nums">
                     <span className={r.fullyComplete ? "text-[color:var(--ds-success-text)] font-medium" : r.coveragePct >= 90 ? "text-[color:var(--ds-success-text)]" : r.coveragePct >= 50 ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-danger-text)]"}>
                       {fmt(r.embeddedChunks)}
                     </span>
@@ -314,6 +370,26 @@ function SyncStatusSection({ rows, totals, onSelectCorpus }: { rows: CorpusSyncR
                   </div>
                   <div className="col-span-1 text-center">
                     <Badge variant={config.variant} className="text-[10px]">{config.label}</Badge>
+                  </div>
+                  <div className="col-span-1 text-center">
+                    {r.canUpdate ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={fetchMissing.isPending}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (r.pipelineKey) fetchMissing.mutate({ action: "fetch_missing", source_key: r.pipelineKey });
+                        }}
+                        className="h-6 text-[10px] px-1.5"
+                        title={`Fehlende ${fmt(r.missingFromDb)} für ${r.corpus} nachholen`}
+                      >
+                        {fetchMissing.isPending ? <RefreshCw className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                        <span className="hidden lg:inline ml-1">Aktualisieren</span>
+                      </Button>
+                    ) : (
+                      <span className="text-[color:var(--ds-text-subtle)]">—</span>
+                    )}
                   </div>
                 </div>
               );
@@ -1131,7 +1207,7 @@ export function CorpusCommandCenter({ onSelectCorpus }: { onSelectCorpus?: (sour
       </div>
 
       {/* Section Content */}
-      {section === "sync" && <SyncStatusSection rows={data.sync.rows} totals={data.sync.totals} onSelectCorpus={onSelectCorpus} />}
+      {section === "sync" && <SyncStatusSection rows={data.sync.rows} totals={data.sync.totals} onSelectCorpus={onSelectCorpus} onRefresh={refetch} />}
       {section === "work" && (
         <WorkQueueSection
           items={data.workQueue.items}

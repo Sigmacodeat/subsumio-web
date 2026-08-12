@@ -1457,18 +1457,34 @@ async function cycle(): Promise<void> {
       const key = fetchTriggered.replace(/'/g, "''");
       // Map source_key to fetch script
       const fetchCmd: Record<string, string[]> = {
+        // Judikatur: große Höfe (altes Verhalten beibehalten)
         "jud-ogh": ["scripts/fetch-all-at-judikatur.ts", "--source", "ogh"],
         "jud-vfgh": ["scripts/fetch-all-at-judikatur.ts", "--source", "vfgh"],
         "jud-vwgh": ["scripts/fetch-all-at-judikatur.ts", "--source", "vwgh"],
         "jud-bvwg": ["scripts/fetch-all-at-judikatur.ts", "--source", "bvwg"],
         "jud-lvwg": ["scripts/fetch-all-at-judikatur.ts", "--source", "lvwg"],
+        // Judikatur: kleinere Höfe (neu, RIS OGD Applikation)
+        "jud-asylgh": ["scripts/fetch-missing-sources.ts", "--source", "AsylGH"],
+        "jud-uvs": ["scripts/fetch-missing-sources.ts", "--source", "Uvs"],
+        "jud-dsk": ["scripts/fetch-missing-sources.ts", "--source", "Dsk"],
+        "jud-dok": ["scripts/fetch-missing-sources.ts", "--source", "Dok"],
+        "jud-gbk": ["scripts/fetch-missing-sources.ts", "--source", "Gbk"],
+        "jud-pvak": ["scripts/fetch-missing-sources.ts", "--source", "Pvak"],
+        "jud-ubas": ["scripts/fetch-missing-sources.ts", "--source", "Ubas"],
+        "jud-umse": ["scripts/fetch-missing-sources.ts", "--source", "Umse"],
+        // Bundesrecht + Landesrecht
+        "statutes-at": ["scripts/fetch-all-at-laws.ts"],
+        "landesrecht": ["scripts/fetch-at-landesrecht-xml.ts"],
       };
       const cmd = fetchCmd[key];
       if (cmd) {
-        const fetchRunning = processRunningGrep("fetch-all-at-judikatur");
+        const isAllAtJudikatur = cmd[0] === "scripts/fetch-all-at-judikatur.ts";
+        const fetchRunning = isAllAtJudikatur
+          ? processRunningGrep("fetch-all-at-judikatur")
+          : processRunningGrep(cmd[0].replace(/.*\\//, "").replace(/\\.ts$/, ""));
         if (!fetchRunning) {
           startProcess("fetch-missing", cmd, "fetch-missing", 14400);
-          console.log(`  📥 Fetch ausgelöst für: ${key}`);
+          console.log(`  📥 Fetch ausgelöst für: ${key} → ${cmd.join(" ")}`);
           appendHistory(key, "fetch", "triggered");
         }
       }
