@@ -77,6 +77,10 @@ export interface DeltaDocument {
   artikelParagraphAnlage: string | null;
   /** Änderungs-Typ: "new" (Veroeffentlicht vorhanden, Geaendert null) oder "changed" */
   changeType: "new" | "changed";
+  /** Inkrafttretensdatum (YYYY-MM-DD), falls in Metadaten vorhanden */
+  inkrafttreten: string | null;
+  /** Ausserkrafttretensdatum (YYYY-MM-DD), falls Norm nicht mehr in Kraft */
+  ausserkrafttreten: string | null;
 }
 
 export interface DeltaResult {
@@ -256,19 +260,35 @@ function parseRef(ref: Record<string, unknown>, applikation: string): ParsedRef 
   let gesetzesnummer: string | null = null;
   let geschaeftszahl: string | null = null;
   let artikelParagraphAnlage: string | null = null;
+  let inkrafttreten: string | null = null;
+  let ausserkrafttreten: string | null = null;
 
+  // Bundesrecht: Felder liegen unter meta.Bundesrecht.BrKons (nicht direkt unter Bundesrecht)
+  // Der BrKons-Sub-Object enthält Gesetzesnummer, ArtikelParagraphAnlage, Inkrafttretensdatum etc.
+  // Kurztitel/Titel/Eli liegen direkt unter Bundesrecht.
   const bundesrecht = meta.Bundesrecht as Record<string, unknown> | undefined;
   if (bundesrecht) {
     kurztitel = (bundesrecht.Kurztitel as string) || null;
-    gesetzesnummer = (bundesrecht.Gesetzesnummer as string) || null;
-    artikelParagraphAnlage = (bundesrecht.ArtikelParagraphAnlage as string) || null;
+    const brKons = bundesrecht.BrKons as Record<string, unknown> | undefined;
+    if (brKons) {
+      gesetzesnummer = (brKons.Gesetzesnummer as string) || null;
+      artikelParagraphAnlage = (brKons.ArtikelParagraphAnlage as string) || null;
+      inkrafttreten = (brKons.Inkrafttretensdatum as string) || null;
+      ausserkrafttreten = (brKons.Ausserkrafttretensdatum as string) || null;
+    }
   }
 
+  // Landesrecht: gleiche Struktur, Sub-Object heisst LrKons
   const landesrecht = meta.Landesrecht as Record<string, unknown> | undefined;
   if (landesrecht) {
     kurztitel = (landesrecht.Kurztitel as string) || null;
-    gesetzesnummer = (landesrecht.Gesetzesnummer as string) || null;
-    artikelParagraphAnlage = (landesrecht.ArtikelParagraphAnlage as string) || null;
+    const lrKons = landesrecht.LrKons as Record<string, unknown> | undefined;
+    if (lrKons) {
+      gesetzesnummer = (lrKons.Gesetzesnummer as string) || null;
+      artikelParagraphAnlage = (lrKons.ArtikelParagraphAnlage as string) || null;
+      inkrafttreten = (lrKons.Inkrafttretensdatum as string) || null;
+      ausserkrafttreten = (lrKons.Ausserkrafttretensdatum as string) || null;
+    }
   }
 
   const judikatur = meta.Judikatur as Record<string, unknown> | undefined;
@@ -299,6 +319,8 @@ function parseRef(ref: Record<string, unknown>, applikation: string): ParsedRef 
     geschaeftszahl,
     artikelParagraphAnlage,
     changeType,
+    inkrafttreten,
+    ausserkrafttreten,
   };
 }
 

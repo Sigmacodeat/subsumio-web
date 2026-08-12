@@ -40,7 +40,7 @@ import { dump as yamlDump } from "js-yaml";
 import { fetchDelta, DELTA_APPLIKATIONS, formatDeltaSummary, type DeltaApplikation, type DeltaDocument, type DeltaResult } from "./ris-delta";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { proxyFetchOptions, getUserAgent } from "./ris-proxy";
-import { fetchWithRetry, risXmlToText, atomicWrite, contentHash, validateFetchedText } from "./backfill-utils";
+import { fetchWithRetry, risXmlToText, atomicWrite, contentHash, validateFetchedText, contentMatchesDocument } from "./backfill-utils";
 
 // ── Config ─────────────────────────────────────────────────────────────
 
@@ -229,6 +229,9 @@ function buildStatuteMarkdown(doc: DeltaDocument, xmlText: string): string {
     `id: "ris-${doc.id}"`,
   ];
   if (apa) fm.push(`paragraph: "${esc(apa)}"`);
+  if (doc.inkrafttreten) fm.push(`inkrafttretensdatum: "${doc.inkrafttreten}"`);
+  if (doc.ausserkrafttreten) fm.push(`ausserkrafttretensdatum: "${doc.ausserkrafttreten}"`);
+  if (doc.ausserkrafttreten) fm.push(`deprecated: true`);
   fm.push(`source_url: "${doc.dokumentUrl || doc.xmlUrl || ""}"`);
   fm.push(`source_format: xml`);
   fm.push(`retrieved_at: "${new Date().toISOString().slice(0, 10)}"`);
@@ -289,6 +292,9 @@ function buildLandesrechtMarkdown(doc: DeltaDocument, xmlText: string): string {
     `id: "ris-${doc.id}"`,
   ];
   if (apa) fm.push(`paragraph: "${esc(apa)}"`);
+  if (doc.inkrafttreten) fm.push(`inkrafttretensdatum: "${doc.inkrafttreten}"`);
+  if (doc.ausserkrafttreten) fm.push(`ausserkrafttretensdatum: "${doc.ausserkrafttreten}"`);
+  if (doc.ausserkrafttreten) fm.push(`deprecated: true`);
   fm.push(`source_url: "${doc.dokumentUrl || doc.xmlUrl || ""}"`);
   fm.push(`source_format: xml`);
   fm.push(`retrieved_at: "${new Date().toISOString().slice(0, 10)}"`);
@@ -309,9 +315,10 @@ function docFilePath(app: DeltaApplikation, doc: DeltaDocument): string {
   const corpusDir = join(CORPUS_ROOT, app.corpusDir);
 
   if (app.endpoint === "Judikatur") {
+    // Pfad OHNE Datum — verhindert Duplikate wenn sich changedAt ändert.
+    // Bisherige Dateien mit Datum-Prefix müssen migriert werden (siehe migrate-judikatur-paths.ts).
     const slug = slugify(doc.geschaeftszahl || doc.id);
-    const date = doc.changedAt.slice(0, 10);
-    return join(corpusDir, `${date}-${slug}.md`);
+    return join(corpusDir, `${slug}.md`);
   }
 
   // Bundesrecht / Landesrecht
@@ -361,6 +368,16 @@ async function processDocument(app: DeltaApplikation, doc: DeltaDocument): Promi
     const validation = validateFetchedText(text);
     if (!validation.valid) {
       console.warn(`  ⚠️ Text invalid für ${doc.id}: ${validation.reason} — überspringe`);
+      return false;
+    }
+  }
+
+  // Content-Identity-Check für Judikatur: verhindert falsche Dokumente unter korrektem Frontmatter
+  // (HTTP 200 mit Fehlerseite statt echtem Entscheidungstext — der 2026-07-15 Vorfall)
+  if (app.endpoint === "Judikatur" && doc.geschaeftszahl) {
+    const text = risXmlToText(xml);
+    if (!contentMatchesDocument(text, { case_number: doc.geschaeftszahl })) {
+      console.warn(`  ⚠️ Content-Identity-Check fehlgeschlagen für ${doc.id} (GZ ${doc.geschaeftszahl} nicht im Text) — überspringe`);
       return false;
     }
   }
@@ -428,8 +445,25 @@ async function syncApplikation(app: DeltaApplikation): Promise<DeltaResult & { w
     let written = 0;
     let failed = 0;
     let skipped = 0;
+    const seenIds = new Set<string>();
 
     for (const doc of result.documents) {
+      // Dedup: RIS kann bei Paginierung-Overlap dasselbe Dokument mehrfach liefern
+      if (seenIds.has(doc.id)) {
+        skipped++;
+        continue;
+      }
+      seenIds.add(doc.id);
+
+      // In-Kraft-Filter: Normen mit Ausserkrafttretensdatum in der Vergangenheit
+      // werden mit deprecated: true geschrieben (nicht gelöscht — historische Anfragen)
+      if (doc.ausserkrafttreten) {
+        const today = new Date().toISOString().slice(0, 10);
+        if (doc.ausserkrafttreten <= today) {
+          console.log(`  ⚠️ ${doc.id} ausserkraft seit ${doc.ausserkrafttreten} — wird als deprecated markiert`);
+        }
+      }
+
       const ok = await processDocument(app, doc);
       if (ok) written++;
       else failed++;
