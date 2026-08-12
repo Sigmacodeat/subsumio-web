@@ -1481,7 +1481,7 @@ async function cycle(): Promise<void> {
         const isAllAtJudikatur = cmd[0] === "scripts/fetch-all-at-judikatur.ts";
         const fetchRunning = isAllAtJudikatur
           ? processRunningGrep("fetch-all-at-judikatur")
-          : processRunningGrep(cmd[0].replace(/.*\\//, "").replace(/\\.ts$/, ""));
+          : processRunningGrep(cmd[0].replace(/.*[/]/, "").replace(/\.ts$/, ""));
         if (!fetchRunning) {
           startProcess("fetch-missing", cmd, "fetch-missing", 14400);
           console.log(`  📥 Fetch ausgelöst für: ${key} → ${cmd.join(" ")}`);
