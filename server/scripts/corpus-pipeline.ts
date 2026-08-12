@@ -319,6 +319,17 @@ const SIMPLE: SimpleSource[] = [
   },
 ];
 
+// Build key→sourceId map for sources.last_sync_at updates (R5 fix)
+const KEY_TO_SOURCE_ID: Record<string, string> = {};
+for (const s of [...SIMPLE, ...JUDIKATUR]) KEY_TO_SOURCE_ID[s.key] = s.sourceId;
+
+/** Update sources.last_sync_at when an import succeeds (R5 fix). */
+function markSourceSynced(key: string): void {
+  const sourceId = KEY_TO_SOURCE_ID[key];
+  if (!sourceId) return;
+  psqlQuery(`UPDATE sources SET last_sync_at = NOW() WHERE id = '${sourceId.replace(/'/g, "''")}'`);
+}
+
 // ── DB-backed State ───────────────────────────────────────────────────
 //
 // All pipeline state lives in the `pipeline_state` table (migration 008).
@@ -440,14 +451,26 @@ function appendHistory(key: string, stage: string, action: string): void {
   );
 }
 
-/** Raise an alert on a source (stored in alert_flags JSONB). */
+/** Raise an alert on a source (stored in alert_flags JSONB).
+ *  Dedup by type: removes existing alerts of same type before appending.
+ *  Cap at 50 alerts to prevent unbounded growth. */
 function raiseAlert(key: string, type: string, severity: string, message: string): void {
   const alert = { type, severity, message, raised_at: new Date().toISOString() };
+  const alertJson = JSON.stringify(alert).replace(/'/g, "''");
+  const typeEsc = type.replace(/'/g, "''");
+  const keyEsc = key.replace(/'/g, "''");
+  // Remove existing alerts of same type, then append new one, then cap at 50
   psqlQuery(
-    `UPDATE pipeline_state SET alert_flags =
-       COALESCE(alert_flags, '[]'::jsonb) || '${JSON.stringify(alert).replace(/'/g, "''")}'::jsonb,
-       updated_at = NOW()
-     WHERE source_key = '${key}'`
+    `UPDATE pipeline_state SET alert_flags = (
+       SELECT COALESCE(jsonb_agg(elem), '[]'::jsonb) FROM (
+         SELECT elem FROM jsonb_array_elements(
+           (SELECT COALESCE(alert_flags, '[]'::jsonb) FROM pipeline_state WHERE source_key = '${keyEsc}')
+         ) AS elem
+         WHERE elem->>'type' != '${typeEsc}'
+         UNION ALL SELECT '${alertJson}'::jsonb
+         LIMIT 50
+       ) sub
+     ), updated_at = NOW() WHERE source_key = '${keyEsc}'`
   );
   // Fire webhook if configured
   if (ALERT_WEBHOOK) {
@@ -1168,6 +1191,7 @@ async function cycle(): Promise<void> {
             last_import_success: state.lastImportSuccess[key],
             stage: "done",
           });
+          markSourceSynced(key);
           appendHistory(key, "import", "finished");
           clearAlerts(key, "import_failed");
         } else {
