@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
-import { listCorpusNames, hasIndex, clearCache } from "@/lib/corpus-index";
-import { existsSync, writeFileSync, mkdirSync } from "fs";
+import { createHandler, apiSuccess } from "@/lib/api-handler";
+import { listCorpusNames, clearCache } from "@/lib/corpus-index";
+import { existsSync, writeFileSync, mkdirSync, renameSync } from "fs";
 import { join } from "path";
 import { execFile } from "child_process";
 import { promisify } from "util";
@@ -42,20 +42,30 @@ export const POST = createHandler(
     const results: Array<{ corpus: string; files: number; ms: number }> = [];
 
     for (const corpus of corpora) {
-      if (!corpus.startsWith("at-") && corpus !== "at") continue;
+      // BUG 34: vorher nur at-*/at — de/ch/eu wurden übersprungen auch
+      // wenn listCorpusNames sie zurückgab.
+      if (
+        !corpus.startsWith("at-") &&
+        !corpus.startsWith("de") &&
+        !corpus.startsWith("ch") &&
+        !corpus.startsWith("eu") &&
+        corpus !== "at"
+      )
+        continue;
       const corpusDir = join(NORMALIZED_ROOT, corpus);
       if (!existsSync(corpusDir)) continue;
 
       const t0 = Date.now();
       // WICHTIG: Bun.spawn existiert nicht in Node.js (Next.js läuft mit
       // Node.js, nicht Bun). Wir verwenden execFile (async) stattdessen.
-      const { stdout: output } = await execFileAsync("find", [
-        corpusDir, "-type", "f", "-name", "*.md",
-        "-exec", "stat", statFmt, statArg, "{}", "+",
-      ], {
-        encoding: "utf-8",
-        maxBuffer: 512 * 1024 * 1024, // 512MB — 713K Dateien
-      });
+      const { stdout: output } = await execFileAsync(
+        "find",
+        [corpusDir, "-type", "f", "-name", "*.md", "-exec", "stat", statFmt, statArg, "{}", "+"],
+        {
+          encoding: "utf-8",
+          maxBuffer: 512 * 1024 * 1024, // 512MB — 713K Dateien
+        }
+      );
 
       const entries: Array<{ path: string; size: number; mtime: number }> = [];
       for (const line of output.split("\n")) {
@@ -72,7 +82,12 @@ export const POST = createHandler(
       entries.sort((a, b) => a.path.localeCompare(b.path));
 
       const indexPath = join(INDEX_DIR, `${corpus}.json`);
-      writeFileSync(indexPath, JSON.stringify(entries), "utf-8");
+      // BUG 35: atomic write (tmp + rename) — verhindert korrupte Index-Dateien
+      // bei Abbruch mid-write. 713K Dateien × JSON = mehrere MB; ein Crash
+      // mid-write würde den gesamten Index unbrauchbar machen.
+      const tmpPath = `${indexPath}.tmp.${process.pid}.${Date.now()}`;
+      writeFileSync(tmpPath, JSON.stringify(entries), "utf-8");
+      renameSync(tmpPath, indexPath);
       results.push({ corpus, files: entries.length, ms: Date.now() - t0 });
     }
 
@@ -83,5 +98,5 @@ export const POST = createHandler(
       totalFiles: results.reduce((s, r) => s + r.files, 0),
       totalMs: results.reduce((s, r) => s + r.ms, 0),
     });
-  },
+  }
 );

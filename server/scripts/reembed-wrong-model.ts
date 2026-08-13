@@ -62,7 +62,7 @@ for (const { source_id, cnt } of wrongSources) {
   console.log(`[reset] ${source_id}: resetting ${cnt} chunks...`);
   const resetResult: Array<{ id: string }> = await engine.executeRaw(
     `UPDATE content_chunks
-     SET embedded_at = NULL, embedding = NULL
+     SET embedded_at = NULL, embedding = NULL, model = NULL
      WHERE model != $1
        AND page_id IN (SELECT id FROM pages WHERE source_id = $2)
      RETURNING id`,
@@ -125,7 +125,9 @@ for (const { source_id } of wrongSources) {
     } catch (e) {
       errors += rows.length;
       const msg = e instanceof Error ? e.message : String(e);
-      console.error(`[embed] ${source_id}: ❌ Batch error at offset ${processed}: ${msg.slice(0, 200)}`);
+      console.error(
+        `[embed] ${source_id}: ❌ Batch error at offset ${processed}: ${msg.slice(0, 200)}`
+      );
     }
   }
 

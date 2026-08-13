@@ -43,13 +43,20 @@ export const POST = createHandler(
       let affected = 0;
 
       if (action === "reembed") {
+        // BUG 61: model = NULL muss auch gesetzt werden (wie BUG 32 in
+        // corpus-pipeline.ts). Sonst umgeht auto-embed-pg.ts seinen
+        // Claim-Mechanismus und parallele Worker könnten doppelt embedden.
         const result = await pool.query(
-          `UPDATE content_chunks SET embedding = NULL, embedded_at = NULL, updated_at = NOW()
+          `UPDATE content_chunks SET embedding = NULL, embedded_at = NULL, model = NULL, updated_at = NOW()
            WHERE id IN (${placeholders})`,
           params
         );
         affected = result.rowCount ?? 0;
-      } else if (action === "flag_defective" || action === "flag_needs_review" || action === "flag_verified") {
+      } else if (
+        action === "flag_defective" ||
+        action === "flag_needs_review" ||
+        action === "flag_verified"
+      ) {
         const flagValue = action.replace("flag_", "");
         // quality_flag als JSONB-Spalte (falls vorhanden), sonst im frontmatter
         try {

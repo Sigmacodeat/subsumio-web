@@ -17,6 +17,7 @@ const bodySchema = z.object({
  * POST /api/admin/corpus-files/restore
  *
  * Stellt eine spezifische Version einer Datei wieder her.
+ * restoreVersion ruft intern syncToRawCorpus auf (BUG 28).
  */
 export const POST = createHandler(
   {
@@ -49,6 +50,11 @@ export const POST = createHandler(
     // Datenbank auf der verworfenen Fassung stehen.
     markiereZumImport(body.path, ctx.user.email, "edit");
 
-    return apiSuccess({ restored: true, path: body.path, version: body.version, importAusstehend: true });
-  },
+    return apiSuccess({
+      restored: true,
+      path: body.path,
+      version: body.version,
+      importAusstehend: true,
+    });
+  }
 );

@@ -17,6 +17,7 @@ const bodySchema = z.object({
  * POST /api/admin/corpus-files/delete
  *
  * Löscht eine oder mehrere Dateien (mit Version-Snapshot vor Löschung).
+ * deleteFile/deleteFilesBulk rufen intern removeFromRawCorpus auf (BUG 23).
  */
 export const POST = createHandler(
   {
@@ -62,11 +63,13 @@ export const POST = createHandler(
         }
       }
 
-      for (const p of body.paths) markiereZumImport(p, ctx.user.email, "delete");
+      for (const p of body.paths) {
+        markiereZumImport(p, ctx.user.email, "delete");
+      }
 
       return apiSuccess(result);
     }
 
     return apiError("validation_failed", "Either 'path' or 'paths' is required", 400);
-  },
+  }
 );

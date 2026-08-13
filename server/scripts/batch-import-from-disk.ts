@@ -12,7 +12,7 @@
  *   - Batch size control (--batch-size N)
  *   - Rate limiting between imports (--sleep-ms N)
  *   - Dry-run mode (--dry-run)
- *   - No-embed mode (--no-embed, import first, embed later via auto-embed-pending)
+ *   - No-embed mode (--no-embed, import first, embed later via auto-embed-pg)
  *   - Per-source filtering (--source law-at-judikatur-vwgh)
  *   - Progress reporting every batch
  *   - Graceful shutdown on SIGINT (saves cursor)
@@ -190,7 +190,12 @@ const AT_STATUTE_NAMESPACES: Record<string, string> = {
   "law-at-staatsvertraege": "staatsvertraege",
 };
 
-function deriveSlug(filePath: string, sourceId: string, slugPrefix?: string, diskRoot?: string): string {
+function deriveSlug(
+  filePath: string,
+  sourceId: string,
+  slugPrefix?: string,
+  diskRoot?: string
+): string {
   // --slug-from-path: den Pfad UNTERHALB des Wurzelverzeichnisses in den Slug
   // übernehmen. Nötig für verschachtelte Korpora wie at-normen/<abk>/<p-96>.md,
   // wo der Dateiname allein nicht eindeutig ist (abgb/p-96 vs. stgb/p-96).
@@ -202,8 +207,9 @@ function deriveSlug(filePath: string, sourceId: string, slugPrefix?: string, dis
     // 1.529 Seiten unter falschen Slugs angelegt.
     const absFile = filePath.startsWith("/") ? filePath : resolve(process.cwd(), filePath);
     const absRoot = resolve(diskRoot);
-    const rel = (absFile.startsWith(`${absRoot}/`) ? absFile.slice(absRoot.length + 1) : absFile)
-      .replace(/\.[^.]+$/, "");
+    const rel = (
+      absFile.startsWith(`${absRoot}/`) ? absFile.slice(absRoot.length + 1) : absFile
+    ).replace(/\.[^.]+$/, "");
     if (rel.startsWith("/") || rel.includes("..")) {
       throw new Error(
         `Slug-Ableitung fehlgeschlagen: ${filePath} liegt nicht unter ${diskRoot}. ` +
@@ -360,11 +366,15 @@ async function main() {
     const complete = accountedFor === totalOnDisk;
     console.log("");
     console.log("═══════════════════════════════════════════════════════════");
-    console.log(`  Vollständigkeit: ${accountedFor}/${totalOnDisk} ` +
-      (complete ? "✓ 1:1" : `✗ ${totalOnDisk - accountedFor} FEHLEN`));
+    console.log(
+      `  Vollständigkeit: ${accountedFor}/${totalOnDisk} ` +
+        (complete ? "✓ 1:1" : `✗ ${totalOnDisk - accountedFor} FEHLEN`)
+    );
     console.log("═══════════════════════════════════════════════════════════");
     if (!complete) {
-      console.error(`! FEHLER: ${totalOnDisk - accountedFor} Dateien nicht zugeordnet — das ist ein Bug.`);
+      console.error(
+        `! FEHLER: ${totalOnDisk - accountedFor} Dateien nicht zugeordnet — das ist ein Bug.`
+      );
       process.exit(1);
     }
     return;
@@ -630,12 +640,14 @@ async function main() {
     }
   }
   if (NO_EMBED) {
-    console.log(`\n⚠️  Embeddings were skipped. Run auto-embed-pending.ts to generate them:`);
-    console.log(`  bun run server/scripts/auto-embed-pending.ts --source ${SOURCE_ID}`);
+    console.log(`\n⚠️  Embeddings were skipped. Run auto-embed-pg.ts to generate them:`);
+    console.log(`  bun run server/scripts/auto-embed-pg.ts --source ${SOURCE_ID}`);
   }
 
   if (!complete) {
-    console.error(`\n! FEHLER: ${totalOnDisk - accountedFor} Dateien nicht zugeordnet — das ist ein Bug.`);
+    console.error(
+      `\n! FEHLER: ${totalOnDisk - accountedFor} Dateien nicht zugeordnet — das ist ein Bug.`
+    );
     process.exit(1);
   }
 

@@ -64,8 +64,8 @@ export const GET = createHandler(
     let roleResult, sourceResult, sampleResult;
     try {
       [roleResult, sourceResult, sampleResult] = await Promise.all([
-      // Role distribution (exact, fast — no length() needed)
-      pool.query(`
+        // Role distribution (exact, fast — no length() needed)
+        pool.query(`
         SELECT cc.chunk_role, COUNT(*)::bigint AS cnt
         FROM content_chunks cc
         JOIN pages p ON cc.page_id = p.id
@@ -74,13 +74,15 @@ export const GET = createHandler(
         ORDER BY cnt DESC
       `),
 
-      // Per-source stats (exact counts, no length() avg)
-      pool.query(`
+        // Per-source stats (exact counts + avg length — die JOIN auf
+        // content_chunks ist ohnehin da, AVG(length()) ist kostenlos dazu)
+        pool.query(`
         SELECT
           p.source_id,
           COUNT(DISTINCT p.id)::bigint AS pages,
           COUNT(cc.id)::bigint AS chunks,
-          COUNT(cc.id) FILTER (WHERE cc.embedding IS NOT NULL)::bigint AS embedded
+          COUNT(cc.id) FILTER (WHERE cc.embedding IS NOT NULL)::bigint AS embedded,
+          COALESCE(AVG(length(cc.chunk_text)), 0)::float AS avg_length
         FROM pages p
         LEFT JOIN content_chunks cc ON cc.page_id = p.id
         WHERE p.deleted_at IS NULL
@@ -88,8 +90,8 @@ export const GET = createHandler(
         ORDER BY chunks DESC
       `),
 
-      // Length histogram + avg from a 1% sample (fast, representative)
-      pool.query(`
+        // Length histogram + avg from a 1% sample (fast, representative)
+        pool.query(`
         SELECT
           COUNT(*)::bigint AS sampled,
           COUNT(*) FILTER (WHERE length(cc.chunk_text) < 50)::bigint AS tiny,
@@ -103,12 +105,17 @@ export const GET = createHandler(
         JOIN pages p ON cc.page_id = p.id
         WHERE p.deleted_at IS NULL
       `),
-    ]);
+      ]);
     } catch (err) {
       console.error("[chunk-quality] query failed:", (err as Error).message);
       return apiSuccess({
-        totalChunks: 0, embeddedChunks: 0, embeddingCoveragePct: 0, avgLength: 0,
-        roleDistribution: [], lengthHistogram: [], perSource: [],
+        totalChunks: 0,
+        embeddedChunks: 0,
+        embeddingCoveragePct: 0,
+        avgLength: 0,
+        roleDistribution: [],
+        lengthHistogram: [],
+        perSource: [],
         generatedAt: new Date().toISOString(),
       });
     }
@@ -138,16 +145,14 @@ export const GET = createHandler(
         parseInt(r.chunks, 10) > 0
           ? Math.round((parseInt(r.embedded, 10) / parseInt(r.chunks, 10)) * 1000) / 10
           : 0,
-      avgLength: 0, // not per-source (too expensive)
+      avgLength: Math.round(parseFloat(r.avg_length ?? "0")),
     }));
 
     // Totals
     const totalChunks = perSource.reduce((s, r) => s + r.chunks, 0);
     const embeddedChunks = perSource.reduce((s, r) => s + r.embedded, 0);
     const embeddingCoveragePct =
-      totalChunks > 0
-        ? Math.round((embeddedChunks / totalChunks) * 1000) / 10
-        : 0;
+      totalChunks > 0 ? Math.round((embeddedChunks / totalChunks) * 1000) / 10 : 0;
     const avgLength = Math.round(parseFloat(s.avg_length ?? "0"));
 
     const data: QualityData = {

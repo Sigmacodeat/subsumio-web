@@ -96,28 +96,124 @@ export interface DeltaResult {
 
 export const DELTA_APPLIKATIONS: DeltaApplikation[] = [
   // Bundesrecht
-  { applikation: "BrKons", endpoint: "Bundesrecht", corpusDir: "at-normen", label: "Bundesrecht (konsolidiert)", stateKey: "ris-delta-BrKons" },
+  {
+    applikation: "BrKons",
+    endpoint: "Bundesrecht",
+    corpusDir: "at-normen",
+    label: "Bundesrecht (konsolidiert)",
+    stateKey: "ris-delta-BrKons",
+  },
   // Landesrecht
-  { applikation: "LrKons", endpoint: "Landesrecht", corpusDir: "at-landesrecht", label: "Landesrecht (konsolidiert)", stateKey: "ris-delta-LrKons" },
+  {
+    applikation: "LrKons",
+    endpoint: "Landesrecht",
+    corpusDir: "at-landesrecht",
+    label: "Landesrecht (konsolidiert)",
+    stateKey: "ris-delta-LrKons",
+  },
   // Judikatur
-  { applikation: "Justiz", endpoint: "Judikatur", corpusDir: "at-judikatur", label: "OGH Judikatur", stateKey: "ris-delta-Justiz" },
-  { applikation: "Vwgh", endpoint: "Judikatur", corpusDir: "at-judikatur-vwgh", label: "VwGH Judikatur", stateKey: "ris-delta-Vwgh" },
-  { applikation: "Vfgh", endpoint: "Judikatur", corpusDir: "at-judikatur-vfgh", label: "VfGH Judikatur", stateKey: "ris-delta-Vfgh" },
-  { applikation: "Bvwg", endpoint: "Judikatur", corpusDir: "at-judikatur-bvwg", label: "BVwG Judikatur", stateKey: "ris-delta-Bvwg" },
-  { applikation: "Lvwg", endpoint: "Judikatur", corpusDir: "at-judikatur-lvwg", label: "LVwG Judikatur", stateKey: "ris-delta-Lvwg" },
-  { applikation: "AsylGH", endpoint: "Judikatur", corpusDir: "at-judikatur-asylgh", label: "AsylGH Judikatur", stateKey: "ris-delta-AsylGH" },
-  { applikation: "Uvs", endpoint: "Judikatur", corpusDir: "at-judikatur-uvs", label: "UVS Judikatur", stateKey: "ris-delta-Uvs" },
-  { applikation: "Dsk", endpoint: "Judikatur", corpusDir: "at-judikatur-dsk", label: "DSK Judikatur", stateKey: "ris-delta-Dsk" },
-  { applikation: "Gbk", endpoint: "Judikatur", corpusDir: "at-judikatur-gbk", label: "GBK Judikatur", stateKey: "ris-delta-Gbk" },
-  { applikation: "Pvak", endpoint: "Judikatur", corpusDir: "at-judikatur-pvak", label: "PVAK Judikatur", stateKey: "ris-delta-Pvak" },
-  { applikation: "Dok", endpoint: "Judikatur", corpusDir: "at-judikatur-dok", label: "DOK Judikatur", stateKey: "ris-delta-Dok" },
-  { applikation: "Ubas", endpoint: "Judikatur", corpusDir: "at-judikatur-ubas", label: "UBAS Judikatur", stateKey: "ris-delta-Ubas" },
-  { applikation: "Umse", endpoint: "Judikatur", corpusDir: "at-judikatur-umse", label: "UMSE Judikatur", stateKey: "ris-delta-Umse" },
+  {
+    applikation: "Justiz",
+    endpoint: "Judikatur",
+    corpusDir: "at-judikatur",
+    label: "OGH Judikatur",
+    stateKey: "ris-delta-Justiz",
+  },
+  {
+    applikation: "Vwgh",
+    endpoint: "Judikatur",
+    corpusDir: "at-judikatur-vwgh",
+    label: "VwGH Judikatur",
+    stateKey: "ris-delta-Vwgh",
+  },
+  {
+    applikation: "Vfgh",
+    endpoint: "Judikatur",
+    corpusDir: "at-judikatur-vfgh",
+    label: "VfGH Judikatur",
+    stateKey: "ris-delta-Vfgh",
+  },
+  {
+    applikation: "Bvwg",
+    endpoint: "Judikatur",
+    corpusDir: "at-judikatur-bvwg",
+    label: "BVwG Judikatur",
+    stateKey: "ris-delta-Bvwg",
+  },
+  {
+    applikation: "Lvwg",
+    endpoint: "Judikatur",
+    corpusDir: "at-judikatur-lvwg",
+    label: "LVwG Judikatur",
+    stateKey: "ris-delta-Lvwg",
+  },
+  {
+    applikation: "AsylGH",
+    endpoint: "Judikatur",
+    corpusDir: "at-judikatur-asylgh",
+    label: "AsylGH Judikatur",
+    stateKey: "ris-delta-AsylGH",
+  },
+  {
+    applikation: "Uvs",
+    endpoint: "Judikatur",
+    corpusDir: "at-judikatur-uvs",
+    label: "UVS Judikatur",
+    stateKey: "ris-delta-Uvs",
+  },
+  {
+    applikation: "Dsk",
+    endpoint: "Judikatur",
+    corpusDir: "at-judikatur-dsk",
+    label: "DSK Judikatur",
+    stateKey: "ris-delta-Dsk",
+  },
+  {
+    applikation: "Gbk",
+    endpoint: "Judikatur",
+    corpusDir: "at-judikatur-gbk",
+    label: "GBK Judikatur",
+    stateKey: "ris-delta-Gbk",
+  },
+  {
+    applikation: "Pvak",
+    endpoint: "Judikatur",
+    corpusDir: "at-judikatur-pvak",
+    label: "PVAK Judikatur",
+    stateKey: "ris-delta-Pvak",
+  },
+  {
+    applikation: "Dok",
+    endpoint: "Judikatur",
+    corpusDir: "at-judikatur-dok",
+    label: "DOK Judikatur",
+    stateKey: "ris-delta-Dok",
+  },
+  {
+    applikation: "Ubas",
+    endpoint: "Judikatur",
+    corpusDir: "at-judikatur-ubas",
+    label: "UBAS Judikatur",
+    stateKey: "ris-delta-Ubas",
+  },
+  {
+    applikation: "Umse",
+    endpoint: "Judikatur",
+    corpusDir: "at-judikatur-umse",
+    label: "UMSE Judikatur",
+    stateKey: "ris-delta-Umse",
+  },
 ];
 
 // ── ImRisSeit Intervall-Auswahl ────────────────────────────────────────
 
-type ImRisSeitValue = "EinerWoche" | "ZweiWochen" | "EinemMonat" | "DreiMonaten" | "SechsMonaten" | "EinemJahr";
+type ImRisSeitValue =
+  | "EinerWoche"
+  | "ZweiWochen"
+  | "EinemMonat"
+  | "DreiMonaten"
+  | "SechsMonaten"
+  | "EinemJahr";
 
 /**
  * Wählt das kleinste ImRisSeit-Intervall, das den Cursor abdeckt.
@@ -150,7 +246,7 @@ async function fetchDeltaPage(
   endpoint: RisEndpoint,
   applikation: string,
   imRisSeit: ImRisSeitValue,
-  page: number,
+  page: number
 ): Promise<{ refs: unknown[]; totalHits: number } | null> {
   const url = new URL(`${RIS_BASE}/${endpoint}`);
   url.searchParams.set("Applikation", applikation);
@@ -342,7 +438,7 @@ export function parseRef(ref: Record<string, unknown>, applikation: string): Par
 export async function fetchDelta(
   app: DeltaApplikation,
   cursor: string | null,
-  maxPages = 500,
+  maxPages = 500
 ): Promise<DeltaResult> {
   const imRisSeit = chooseImRisSeit(cursor);
   const documents: DeltaDocument[] = [];
@@ -350,6 +446,8 @@ export async function fetchDelta(
   let pagesFetched = 0;
 
   for (let page = 1; page <= maxPages; page++) {
+    // Rate-limit: 200ms delay between pages (RIS OGD polite crawling)
+    if (page > 1) await new Promise((r) => setTimeout(r, 200));
     const result = await fetchDeltaPage(app.endpoint, app.applikation, imRisSeit, page);
     if (!result) {
       // Fehler nach allen Retries — abbrechen, Cursor nicht updaten
@@ -405,9 +503,13 @@ export async function fetchDelta(
   }
 
   // Neuer Cursor: jetzt (oder neuestes changedAt, falls vorhanden)
-  const newCursor = documents.length > 0
-    ? documents.reduce((latest, d) => (d.changedAt > latest ? d.changedAt : latest), documents[0].changedAt)
-    : new Date().toISOString().slice(0, 10);
+  const newCursor =
+    documents.length > 0
+      ? documents.reduce(
+          (latest, d) => (d.changedAt > latest ? d.changedAt : latest),
+          documents[0].changedAt
+        )
+      : new Date().toISOString().slice(0, 10);
 
   return {
     applikation: app.applikation,

@@ -26,7 +26,7 @@ interface WarteEintrag {
 
 interface PublishStatus {
   laeuft: boolean;
-  gestartet: string;
+  gestartet: string | null;
   beendet?: string;
   dateien: number;
   quellen: string[];
@@ -79,8 +79,14 @@ export function PublishBanner() {
   if (daten.offen === 0 && !laeuft) {
     if (daten.status?.ergebnis === "fehler") {
       return (
-        <div className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4 text-sm">
-          <strong className="text-[color:var(--ds-danger-text)]">Letzter Import fehlgeschlagen.</strong>{" "}
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4 text-sm"
+        >
+          <strong className="text-[color:var(--ds-danger-text)]">
+            Letzter Import fehlgeschlagen.
+          </strong>{" "}
           {daten.status.meldung ?? "Kein Grund übermittelt."} Die Datenbank kann von den
           bearbeiteten Dateien abweichen.
         </div>
@@ -90,14 +96,18 @@ export function PublishBanner() {
   }
 
   return (
-    <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-4">
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={`${daten.offen} ausstehende Corpus-Änderungen`}
+      className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-4"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm">
           {laeuft ? (
             <>
-              <strong>Import läuft.</strong>{" "}
-              {daten.status?.dateien.toLocaleString("de-AT")} Dateien werden in die Datenbank
-              übertragen ({daten.status?.quellen.join(", ")}).
+              <strong>Import läuft.</strong> {daten.status?.dateien.toLocaleString("de-AT")} Dateien
+              werden in die Datenbank übertragen ({daten.status?.quellen.join(", ")}).
             </>
           ) : (
             <>
@@ -113,13 +123,16 @@ export function PublishBanner() {
           size="sm"
           onClick={() => publish.mutate()}
           disabled={laeuft || publish.isPending || daten.offen === 0}
+          aria-label="Corpus-Import anstoßen"
         >
           {laeuft ? "läuft …" : publish.isPending ? "wird angestoßen …" : "Import anstoßen"}
         </Button>
       </div>
 
       {publish.isError && (
-        <p className="mt-2 text-sm text-[color:var(--ds-danger-text)]">{(publish.error as Error).message}</p>
+        <p className="mt-2 text-sm text-[color:var(--ds-danger-text)]">
+          {(publish.error as Error).message}
+        </p>
       )}
 
       {!laeuft && daten.eintraege.length > 0 && (
@@ -133,9 +146,9 @@ export function PublishBanner() {
             {daten.offen > 5 && <li>… und {(daten.offen - 5).toLocaleString("de-AT")} weitere</li>}
           </ul>
           <p className="mt-2 text-xs text-[color:var(--ds-text-muted)]">
-            Die Pipeline übernimmt den Import automatisch (alle ~10 Min) und leert die
-            Warteschlange nach erfolgreichem Import. &bdquo;Import anstoßen&ldquo; startet einen
-            sofortigen Zyklus.
+            Die Pipeline übernimmt den Import automatisch (alle ~10 Min) und leert die Warteschlange
+            nach erfolgreichem Import. &bdquo;Import anstoßen&ldquo; startet einen sofortigen
+            Zyklus.
           </p>
         </>
       )}

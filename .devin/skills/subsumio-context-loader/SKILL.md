@@ -30,16 +30,18 @@ proaktiv den ganzen relevanten Bereich, statt erst zu suchen wenn du stossest.
 ## Task-Typ → Datei-Liste
 
 ### Corpus-Steward Feature
+
 - `src/lib/corpus-steward.ts` — Kern-Logik (parseDoc, diffLines, etc.)
 - `src/lib/corpus-index.ts` — Disk + Memory Index
 - `src/lib/corpus-import-queue.ts` — Import-Queue (markiereZumImport)
 - `src/lib/corpus-schema.ts` — Frontmatter-Validierung
 - `src/lib/corpus-meta.ts` — Metadaten
 - `src/app/api/admin/corpus-files/*/route.ts` — alle API-Routes
-- `src/components/dashboard/corpus-steward/CorpusStewardTab.tsx` — Haupt-UI
+- `src/components/dashboard/corpus-command-center.tsx — Haupt-UI (CorpusStewardTab.tsx gelöscht)
 - `src/components/dashboard/corpus-steward/PublishBanner.tsx` — Banner
 
 ### Chat / AI-Output Feature
+
 - `src/lib/api.ts` — API-Client (think, query, etc.)
 - `src/lib/use-grounded-answer.ts` — Grounding-Hook (Invariant!)
 - `src/lib/citation-gate.ts` + `citation-gate-client.ts`
@@ -48,6 +50,7 @@ proaktiv den ganzen relevanten Bereich, statt erst zu suchen wenn du stossest.
 - `src/lib/use-grounded-answer.test.ts` — Invariant-Test
 
 ### Auth / Session Feature
+
 - `src/lib/auth/server.ts` — Session-Server
 - `src/lib/auth/session.ts` + `session-core.ts`
 - `src/lib/auth/store.ts` — Session-Store
@@ -59,6 +62,7 @@ proaktiv den ganzen relevanten Bereich, statt erst zu suchen wenn du stossest.
 - `src/lib/queries/auth.ts` — React Query Hooks
 
 ### Engine / Schema-Änderung
+
 - `server/src/core/migrate.ts` — MIGRATIONS-Array
 - `server/src/core/operations.ts` — Contract (Single Source)
 - `server/src/core/engine-factory.ts` — Engine-Auswahl
@@ -69,6 +73,7 @@ proaktiv den ganzen relevanten Bereich, statt erst zu suchen wenn du stossest.
 - `scripts/check-jsonb-pattern.sh` — JSONB-Guard
 
 ### Billing / Credits Feature
+
 - `src/lib/billing/credits.ts` + `credit-constants.ts`
 - `src/lib/billing/plans.ts` + `dunning.ts`
 - `src/core/model-pricing.ts` (falls Engine-Seite) — kanonische Pricing
@@ -76,27 +81,32 @@ proaktiv den ganzen relevanten Bereich, statt erst zu suchen wenn du stossest.
 - `src/app/api/billing/*/route.ts` — alle Billing-Routes
 
 ### ACL / Permissions Feature
+
 - `src/lib/permissions.ts` — RBAC
 - `src/app/api/acls/*/route.ts` — alle ACL-Routes
 - `src/components/dashboard/acl-settings.tsx` — ACL-UI
 
 ### BEA / Steuer Feature
+
 - `src/lib/bea-import.ts` + `bea-send.ts`
 - `src/app/api/bea/*/route.ts` — alle BEA-Routes
 - `src/lib/bea-import.test.ts` + `bea-send.test.ts`
 
 ### Act-Import Feature
+
 - `src/lib/act-import.ts` + `act-import-server.ts`
 - `src/app/api/act-imports/*/route.ts`
 - `src/lib/act-import.test.ts`
 
 ### Agent / Copilot Feature
+
 - `src/lib/agent-conditionals.ts`
 - `src/app/api/agents/*/route.ts`
 - `src/app/api/agent-templates/*/route.ts`
 - `src/components/copilot/*`
 
 ### Admin / Audit Feature
+
 - `src/lib/audit.ts` + `audit-chain-verification.ts` + `audit-labels.ts`
 - `src/app/api/admin/*/route.ts` (bereichsspezifisch)
 - `src/components/admin/*`

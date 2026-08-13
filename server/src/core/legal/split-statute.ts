@@ -61,12 +61,14 @@ export interface SplitStatuteResult {
 }
 
 /** Minimal, dependency-free YAML-frontmatter reader for the flat string maps
- *  the statute ingester emits (key: "value"). Not a general YAML parser. */
+ *  the statute ingester emits (key: "value"). Not a general YAML parser.
+ *  BUG 75: vorher raw.indexOf("\n---", 3) — matcht `---` auch innerhalb
+ *  von Frontmatter-Werten. Regex matcht `---` nur als eigene Zeile. */
 function parseFrontmatter(raw: string): { meta: StatuteMeta; bodyStart: number } {
   if (!raw.startsWith("---")) return { meta: {}, bodyStart: 0 };
-  const end = raw.indexOf("\n---", 3);
-  if (end === -1) return { meta: {}, bodyStart: 0 };
-  const block = raw.slice(3, end);
+  const fmMatch = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+  if (!fmMatch) return { meta: {}, bodyStart: 0 };
+  const block = fmMatch[1];
   const meta: Record<string, string> = {};
   for (const line of block.split("\n")) {
     const m = line.match(/^([a-z_]+):\s*(.*)$/i);
@@ -77,9 +79,10 @@ function parseFrontmatter(raw: string): { meta: StatuteMeta; bodyStart: number }
     }
     meta[m[1]] = v;
   }
-  // bodyStart = position just after the closing "---" line.
-  const afterClose = raw.indexOf("\n", end + 1);
-  return { meta: meta as StatuteMeta, bodyStart: afterClose === -1 ? raw.length : afterClose + 1 };
+  // bodyStart = position of the body (after closing "---\n")
+  const bodyIdx = raw.indexOf("\n---\n", 3);
+  const afterClose = bodyIdx === -1 ? raw.length : bodyIdx + 5;
+  return { meta: meta as StatuteMeta, bodyStart: afterClose };
 }
 
 /** A section heading: `## § …` (DE/AT codes) or `## Art. …` / `## Art …`
@@ -244,10 +247,7 @@ const NORM_MIN_SPAN = 100;
  * longer duplicate `§ N.` span. This fixes isolated ToC captures without
  * replacing already substantive sections or changing section identities.
  */
-function repairShortStructuredSections(
-  body: string,
-  sections: StatuteSection[]
-): StatuteSection[] {
+function repairShortStructuredSections(body: string, sections: StatuteSection[]): StatuteSection[] {
   const shortRefs = new Set(
     sections
       .filter((section) => /^\d+[a-z]*$/i.test(section.ref) && section.body.length < 400)

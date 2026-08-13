@@ -4,10 +4,55 @@
  * Path-Confinement, Quality-Flags, Audit-Log, Version-History, Diff
  * für das Corpus Steward Dashboard.
  * Alle Dateioperationen sind auf law-corpus/_normalized/ beschränkt.
+ *
+ * RAW-SYNC-PFLICHT: Jede Schreiboperation (write/create/restore/bulk-edit)
+ * MUSS syncToRawCorpus() aufrufen, jede Löschung removeFromRawCorpus().
+ * Die Pipeline importiert aus law-corpus/{dir}/ (raw), nicht aus
+ * _normalized/. Ohne Sync kommt die Steward-Änderung nie in die DB.
+ * Siehe BUG 5 im Audit-Verlauf.
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync, readdirSync, unlinkSync, statSync, renameSync, realpathSync } from "fs";
-import { join, resolve, relative, basename, dirname } from "path";
+import {
+  readFileSync,
+  writeFileSync,
+  existsSync,
+  mkdirSync,
+  appendFileSync,
+  unlinkSync,
+  statSync,
+  realpathSync,
+  renameSync,
+  openSync,
+  closeSync,
+  fsyncSync,
+} from "fs";
+import { join, resolve, relative, dirname } from "path";
+
+// ── Atomic Write Helper (BUG 54 + BUG 56) ──────────────────────────────
+// Schreibt Dateien atomar via tmp + fsync + rename. Verhindert korrupte
+// Dateien bei Abbruch mid-write (BUG 54) UND bei Power-Loss (BUG 56).
+// Best Practice laut 0xKiire/thelinuxcode: write tmp → fsync(fd) → rename →
+// fsync(dir). Bei 713K juristischen Dokumenten ist Durability kritisch —
+// ein rename ohne fsync kann auf Power-Loss zu einer leeren Datei führen.
+export function atomicWrite(absPath: string, content: string): void {
+  const tmp = `${absPath}.tmp.${process.pid}.${Date.now()}`;
+  writeFileSync(tmp, content, "utf-8");
+  // BUG 56: fsync vor rename — sonst ist rename sichtbar aber Daten evtl.
+  // noch im Page-Cache und bei Power-Loss verloren. Siehe:
+  // https://0xkiire.com/crash-consistency-fsync-rename/
+  try {
+    const fd = openSync(tmp, "r+");
+    try {
+      fsyncSync(fd);
+    } catch {
+      /* fsync nicht verfügbar (PGLite/WASM) */
+    }
+    closeSync(fd);
+  } catch {
+    /* tmp bereits gelöscht oder cross-platform */
+  }
+  renameSync(tmp, absPath);
+}
 
 // ── Path Confinement ───────────────────────────────────────────────────
 
@@ -31,7 +76,16 @@ export function safeCorpusPath(relPath: string): string | null {
 
   // Muss relativ zu NORMALIZED_ROOT sein (kein ../ escape)
   if (rel.startsWith("..") || rel.includes("..")) return null;
-  if (!rel.startsWith("at-") && !rel.startsWith("at/")) return null;
+  // BUG 37: vorher nur at-*/at/ — de/ch/eu Pfade wurden abgewiesen.
+  // Das war der Root Cause aller at-* Filter in den API-Routes.
+  if (
+    !rel.startsWith("at-") &&
+    !rel.startsWith("at/") &&
+    !rel.startsWith("de") &&
+    !rel.startsWith("ch") &&
+    !rel.startsWith("eu")
+  )
+    return null;
 
   // Symlink-Schutz: wenn die Datei existiert, prüfe dass der realPath
   // immer noch innerhalb von NORMALIZED_ROOT liegt. Ein Symlink
@@ -47,9 +101,85 @@ export function safeCorpusPath(relPath: string): string | null {
   return abs;
 }
 
+/**
+ * Synced Raw-Root — das Verzeichnis law-corpus/ (ohne _normalized).
+ * Die Pipeline importiert aus law-corpus/{dir}/, der Steward bearbeitet
+ * law-corpus/_normalized/{dir}/. Ohne Sync kommt die Steward-Änderung
+ * nie in die DB (BUG 5).
+ */
+const RAW_ROOT = join(REPO_ROOT, "law-corpus");
+
+/**
+ * Synchronisiert eine Datei von _normalized/{path} nach law-corpus/{path}.
+ * Wird nach write/create/restore aufgerufen, damit der Pipeline-Import
+ * (der aus law-corpus/{dir} liest) die Änderung sieht und needsImport
+ * (mtime-basiert) anschlägt.
+ *
+ * Wenn die Raw-Datei nicht existiert, wird sie angelegt (create-Fall).
+ * Wenn _normalized die Datei nicht hat (sollte nicht passieren), ist das
+ * ein No-Op. Fehler beim Sync sind nicht fatal — die Pipeline hat einen
+ * eigenen Reconcile-Schritt der Lücken findet.
+ */
+export function syncToRawCorpus(relPath: string, content: string): boolean {
+  const rawAbs = resolve(RAW_ROOT, relPath);
+  const rawRel = relative(RAW_ROOT, rawAbs);
+
+  // Path-Confinement: muss innerhalb law-corpus/ liegen und mit einer
+  // bekannten Jurisdiktion beginnen. BUG 39: vorher startsWith("at")
+  // matchte auch "atlas/" — strikter Check auf "at-" oder "at/".
+  if (rawRel.startsWith("..") || rawRel.includes("..")) return false;
+  if (
+    !rawRel.startsWith("at-") &&
+    !rawRel.startsWith("at/") &&
+    !rawRel.startsWith("de") &&
+    !rawRel.startsWith("ch") &&
+    !rawRel.startsWith("eu")
+  )
+    return false;
+
+  try {
+    mkdirSync(dirname(rawAbs), { recursive: true });
+    atomicWrite(rawAbs, content);
+    return true;
+  } catch {
+    // Raw-Verzeichnis nicht vorhanden (z.B. Web-Container ohne law-corpus Volume)
+    return false;
+  }
+}
+
+/**
+ * Entfernt eine Datei aus law-corpus/{path} (Raw-Sync bei delete).
+ * Wenn die Datei nicht existiert, ist das ein No-Op.
+ */
+export function removeFromRawCorpus(relPath: string): boolean {
+  const rawAbs = resolve(RAW_ROOT, relPath);
+  const rawRel = relative(RAW_ROOT, rawAbs);
+
+  if (rawRel.startsWith("..") || rawRel.includes("..")) return false;
+  // BUG 39: strikter Jurisdiktions-Check (at- oder at/, nicht nur "at")
+  if (
+    !rawRel.startsWith("at-") &&
+    !rawRel.startsWith("at/") &&
+    !rawRel.startsWith("de") &&
+    !rawRel.startsWith("ch") &&
+    !rawRel.startsWith("eu")
+  )
+    return false;
+
+  try {
+    if (existsSync(rawAbs)) {
+      unlinkSync(rawAbs);
+      return true;
+    }
+  } catch {
+    // ignore
+  }
+  return false;
+}
+
 // ── Frontmatter Parsing ────────────────────────────────────────────────
 
-export interface ParsedDoc {
+interface ParsedDoc {
   frontmatter: Record<string, unknown>;
   body: string;
   raw: string;
@@ -62,6 +192,11 @@ export function parseDoc(content: string): ParsedDoc {
   // Normalize CRLF to LF — sonst matcht der Frontmatter-Regex nicht
   // und der gesamte Inhalt wird als Body geparst (Frontmatter-Verlust).
   const normalized = content.includes("\r\n") ? content.replace(/\r\n/g, "\n") : content;
+  // Regex matcht `---` nur zwischen Newlines (sicherer als split("---")).
+  // Bekannte Limitierung: wenn ein Frontmatter-Wert `---` alleine auf einer
+  // Zeile enthält (z.B. in einem Block-Scalar `|`), matcht der Regex zu früh.
+  // In juristischen Corpus-Dateien kommt das nicht vor. Für volle YAML-Spec
+  // compliance wäre js-yaml nötig — siehe Recherche 2026-01.
   const fmMatch = normalized.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
   if (!fmMatch) {
     return { frontmatter: {}, body: normalized, raw: normalized };
@@ -72,7 +207,6 @@ export function parseDoc(content: string): ParsedDoc {
   const frontmatter: Record<string, unknown> = {};
 
   let currentKey = "";
-  let currentList: unknown[] | null = null;
 
   for (const line of fmText.split("\n")) {
     const listMatch = line.match(/^\s+-\s+(.*)$/);
@@ -93,18 +227,15 @@ export function parseDoc(content: string): ParsedDoc {
       if (val === "[]") {
         frontmatter[key] = [];
         currentKey = "";
-        currentList = null;
       } else if (val === "") {
         // Leerer Wert (z.B. "title:") — könnte ein Array-Start sein
         // (wenn nächste Zeile "- item"). Vorerst leerer String;
         // listMatch-Branch wandelt es bei Bedarf in ein Array um.
         frontmatter[key] = "";
         currentKey = key;
-        currentList = null;
       } else {
         frontmatter[key] = parseValue(val);
         currentKey = "";
-        currentList = null;
       }
     }
   }
@@ -114,12 +245,20 @@ export function parseDoc(content: string): ParsedDoc {
 
 function parseValue(val: string): unknown {
   if (val.startsWith('"') && val.endsWith('"') && val.length >= 2) {
-    // Double-quoted YAML: de-escape \" → ", \\ → \, \n → newline
-    return val.slice(1, -1)
+    // Double-quoted YAML: de-escape. BUG 57: Reihenfolge korrigiert —
+    // zuerst \\ → \ (escaped backslash), DANN \n/\r/\t/\" de-escapen.
+    // Vorher wurde \\n zuerst zu newline, dann \\ zu \ — aber das \n
+    // das gerade erzeugt wurde blieb unberührt. Korrekte YAML-De-Escaping
+    // Reihenfolge: backslash zuerst, dann escape-sequences.
+    // Siehe: https://yaml.org/spec/1.2.2/#57-escaped-characters
+    return val
+      .slice(1, -1)
+      .replace(/\\\\/g, "\x00") // placeholder für escaped backslash
+      .replace(/\\"/g, '"')
       .replace(/\\n/g, "\n")
+      .replace(/\\r/g, "\r")
       .replace(/\\t/g, "\t")
-      .replace(/\\\\/g, "\\")
-      .replace(/\\"/g, '"');
+      .replace(/\x00/g, "\\");
   }
   if (val.startsWith("'") && val.endsWith("'") && val.length >= 2) {
     // Single-quoted YAML: '' → ' (doubled single quote = escaped quote)
@@ -133,7 +272,11 @@ function parseValue(val: string): unknown {
   if (/^-?\d+\.\d+$/.test(val)) return parseFloat(val);
   // JSON object/array inline (z.B. nested: {"a":1})
   if ((val.startsWith("{") && val.endsWith("}")) || (val.startsWith("[") && val.endsWith("]"))) {
-    try { return JSON.parse(val); } catch { /* not JSON, return as-is */ }
+    try {
+      return JSON.parse(val);
+    } catch {
+      /* not JSON, return as-is */
+    }
   }
   return val;
 }
@@ -169,9 +312,19 @@ function formatValue(val: unknown): string {
   if (val === true) return "true";
   if (val === false) return "false";
   if (typeof val === "string") {
-    // Quote if the string contains YAML-special chars or newlines
-    if (/[:#\[\]{}&*?|<>=!%@`,"']/.test(val) || val.includes("\n") || val.trim() !== val) {
-      return `"${val.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+    // Quote if the string contains YAML-special chars or newlines/CR
+    // BUG 50: \n und \r müssen escaped werden — sonst entsteht invalides
+    // YAML mit einer literalen Newline im quoted string. parseValue macht
+    // \\n → \n De-Escaping; ohne dieses Escaping ist der Roundtrip broken.
+    // Siehe: https://github.com/Yeachan-Heo/oh-my-claudecode/issues/2281
+    // (exakt derselbe Bug in einem anderen Projekt).
+    if (
+      /[:#\[\]{}&*?|<>=!%@`,"']/.test(val) ||
+      val.includes("\n") ||
+      val.includes("\r") ||
+      val.trim() !== val
+    ) {
+      return `"${val.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t")}"`;
     }
     return val;
   }
@@ -183,7 +336,7 @@ function formatValue(val: unknown): string {
 
 export type QualityFlag = "verified" | "needs_review" | "defective" | "unreviewed" | "archived";
 
-export interface FlagEntry {
+interface FlagEntry {
   flag: QualityFlag;
   note?: string;
   flaggedBy: string;
@@ -210,7 +363,11 @@ function loadFlags(): Record<string, FlagEntry> {
 
 function saveFlags(flags: Record<string, FlagEntry>): void {
   flagsCache = flags;
-  writeFileSync(FLAGS_FILE, JSON.stringify(flags, null, 2), "utf-8");
+  // BUG 43: atomic write (tmp + rename) — verhindert korrupte Flag-Datei
+  // bei Abbruch mid-write. Bei 713K Dateien kann die Datei mehrere MB groß sein.
+  const tmp = `${FLAGS_FILE}.tmp.${process.pid}.${Date.now()}`;
+  writeFileSync(tmp, JSON.stringify(flags, null, 2), "utf-8");
+  renameSync(tmp, FLAGS_FILE);
 }
 
 export function getFlag(relPath: string): FlagEntry | null {
@@ -227,7 +384,12 @@ export function getFlagsBulk(relPaths: string[]): Record<string, FlagEntry> {
   return result;
 }
 
-export function setFlag(relPath: string, flag: QualityFlag, note: string | undefined, user: string): FlagEntry {
+export function setFlag(
+  relPath: string,
+  flag: QualityFlag,
+  note: string | undefined,
+  user: string
+): FlagEntry {
   const flags = loadFlags();
   const entry: FlagEntry = { flag, note, flaggedBy: user, flaggedAt: new Date().toISOString() };
   flags[relPath] = entry;
@@ -247,7 +409,7 @@ export function setFlagsBulk(relPaths: string[], flag: QualityFlag, user: string
   return relPaths.length;
 }
 
-export function deleteFlag(relPath: string, user: string): void {
+function deleteFlag(relPath: string, user: string): void {
   const flags = loadFlags();
   delete flags[relPath];
   saveFlags(flags);
@@ -282,7 +444,9 @@ export function auditLog(entry: Omit<AuditEntry, "timestamp">): void {
       if (stat.size > 5 * 1024 * 1024) {
         rotateAuditLog();
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 }
 
@@ -292,8 +456,13 @@ function rotateAuditLog(): void {
     const lines = readFileSync(AUDIT_FILE, "utf-8").trim().split("\n");
     if (lines.length <= MAX_AUDIT_ENTRIES) return;
     const kept = lines.slice(lines.length - MAX_AUDIT_ENTRIES);
-    writeFileSync(AUDIT_FILE, kept.join("\n") + "\n", "utf-8");
-  } catch { /* ignore */ }
+    // BUG 52: atomic write (tmp + rename) — verhindert korruptes Audit-Log
+    const tmp = `${AUDIT_FILE}.tmp.${process.pid}.${Date.now()}`;
+    writeFileSync(tmp, kept.join("\n") + "\n", "utf-8");
+    renameSync(tmp, AUDIT_FILE);
+  } catch {
+    /* ignore */
+  }
 }
 
 export type AuditLogEntry = AuditEntry;
@@ -321,7 +490,7 @@ export function getAuditLog(limit: number = 50, pathFilter?: string): AuditLogEn
  * Format: _versions/{hash}/{timestamp}.md
  * Metadaten in _versions/{hash}/meta.json
  */
-export interface VersionEntry {
+interface VersionEntry {
   version: number;
   timestamp: string;
   user: string;
@@ -330,7 +499,7 @@ export interface VersionEntry {
   note?: string;
 }
 
-export interface VersionDetail extends VersionEntry {
+interface VersionDetail extends VersionEntry {
   content: string;
   frontmatter: Record<string, unknown>;
   body: string;
@@ -346,7 +515,7 @@ function simpleHash(str: string): string {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash |= 0;
   }
   return Math.abs(hash).toString(36) + "_" + Buffer.from(str).toString("hex").slice(0, 8);
@@ -366,14 +535,23 @@ function loadVersionMeta(relPath: string): VersionEntry[] {
 function saveVersionMeta(relPath: string, versions: VersionEntry[]): void {
   const dir = versionDirFor(relPath);
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "meta.json"), JSON.stringify(versions, null, 2), "utf-8");
+  // BUG 43: atomic write (tmp + rename) — verhindert korrupte meta.json
+  const metaPath = join(dir, "meta.json");
+  const tmp = `${metaPath}.tmp.${process.pid}.${Date.now()}`;
+  writeFileSync(tmp, JSON.stringify(versions, null, 2), "utf-8");
+  renameSync(tmp, metaPath);
 }
 
 /**
  * Speichert die aktuelle Version einer Datei vor einer Änderung.
  * (Liest die Datei vom Disk und speichert sie als Version)
  */
-export function saveVersion(relPath: string, user: string, action: VersionEntry["action"], note?: string): VersionEntry | null {
+export function saveVersion(
+  relPath: string,
+  user: string,
+  action: VersionEntry["action"],
+  note?: string
+): VersionEntry | null {
   const absPath = safeCorpusPath(relPath);
   if (!absPath || !existsSync(absPath)) return null;
 
@@ -385,14 +563,20 @@ export function saveVersion(relPath: string, user: string, action: VersionEntry[
  * Speichert einen spezifischen Inhalt als neue Version.
  * (Wird nach Write aufgerufen um die NEUE Version zu speichern)
  */
-export function saveVersionContent(relPath: string, content: string, user: string, action: VersionEntry["action"], note?: string): VersionEntry | null {
+export function saveVersionContent(
+  relPath: string,
+  content: string,
+  user: string,
+  action: VersionEntry["action"],
+  note?: string
+): VersionEntry | null {
   const versions = loadVersionMeta(relPath);
   const versionNum = versions.length + 1;
   const timestamp = new Date().toISOString();
 
   const dir = versionDirFor(relPath);
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, `${versionNum}.md`), content, "utf-8");
+  atomicWrite(join(dir, `${versionNum}.md`), content);
 
   const entry: VersionEntry = {
     version: versionNum,
@@ -409,7 +593,11 @@ export function saveVersionContent(relPath: string, content: string, user: strin
   if (versions.length > MAX_VERSIONS) {
     const toRemove = versions.slice(0, versions.length - MAX_VERSIONS);
     for (const old of toRemove) {
-      try { unlinkSync(join(dir, `${old.version}.md`)); } catch { /* schon weg */ }
+      try {
+        unlinkSync(join(dir, `${old.version}.md`));
+      } catch {
+        /* schon weg */
+      }
     }
     versions.splice(0, versions.length - MAX_VERSIONS);
   }
@@ -458,7 +646,12 @@ export function restoreVersion(relPath: string, version: number, user: string): 
   saveVersion(relPath, user, "restore", `Restored from v${version}`);
 
   // Write the old content back
-  writeFileSync(absPath, detail.content, "utf-8");
+  atomicWrite(absPath, detail.content);
+
+  // RAW-SYNC: Pipeline importiert aus law-corpus/{dir}/. Ohne Sync bleibt
+  // die DB auf der alten Version — der Anwalt sieht die restaurierte Fassung
+  // im Dashboard, die KI zitiert aber noch die alte. (BUG 5, BUG 28)
+  syncToRawCorpus(relPath, detail.content);
 
   auditLog({ action: "restore_version", path: relPath, user, details: { version } });
   return true;
@@ -466,7 +659,7 @@ export function restoreVersion(relPath: string, version: number, user: string): 
 
 // ── Diff ───────────────────────────────────────────────────────────────
 
-export interface DiffLine {
+interface DiffLine {
   type: "added" | "removed" | "unchanged";
   oldLine?: number;
   newLine?: number;
@@ -476,7 +669,7 @@ export interface DiffLine {
 /**
  * Einfacher Zeilen-Diff zwischen zwei Texten.
  */
-export function diffTexts(oldText: string, newText: string): DiffLine[] {
+function diffTexts(oldText: string, newText: string): DiffLine[] {
   const oldLines = oldText.split("\n");
   const newLines = newText.split("\n");
   const result: DiffLine[] = [];
@@ -497,14 +690,17 @@ export function diffTexts(oldText: string, newText: string): DiffLine[] {
       if (oldLine === newLine) {
         result.push({ type: "unchanged", oldLine: i + 1, newLine: i + 1, content: oldLine ?? "" });
       } else {
-        if (oldLine !== undefined) result.push({ type: "removed", oldLine: i + 1, content: oldLine });
+        if (oldLine !== undefined)
+          result.push({ type: "removed", oldLine: i + 1, content: oldLine });
         if (newLine !== undefined) result.push({ type: "added", newLine: i + 1, content: newLine });
       }
     }
     return result;
   }
 
-  const dp: number[][] = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+  const dp: number[][] = Array(m + 1)
+    .fill(null)
+    .map(() => Array(n + 1).fill(0));
 
   for (let i = 1; i <= m; i++) {
     for (let j = 1; j <= n; j++) {
@@ -517,12 +713,14 @@ export function diffTexts(oldText: string, newText: string): DiffLine[] {
   }
 
   // Backtrack
-  let i = m, j = n;
+  let i = m,
+    j = n;
   const temp: DiffLine[] = [];
   while (i > 0 || j > 0) {
     if (i > 0 && j > 0 && oldLines[i - 1] === newLines[j - 1]) {
       temp.unshift({ type: "unchanged", oldLine: i, newLine: j, content: oldLines[i - 1] });
-      i--; j--;
+      i--;
+      j--;
     } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
       temp.unshift({ type: "added", newLine: j, content: newLines[j - 1] });
       j--;
@@ -561,21 +759,17 @@ export function diffWithCurrent(relPath: string, version: number): DiffLine[] {
 
 // ── Backup (legacy, wird durch Version-History ersetzt aber kompatibel gehalten) ─
 
-export function createBackup(absPath: string): string {
-  const bakPath = absPath + ".bak";
-  if (existsSync(absPath)) {
-    const content = readFileSync(absPath);
-    writeFileSync(bakPath, content);
-  }
-  return bakPath;
-}
-
 // ── File Operations (Create / Delete) ──────────────────────────────────
 
 /**
  * Erstellt eine neue Datei im Corpus.
  */
-export function createFile(relPath: string, frontmatter: Record<string, unknown>, body: string, user: string): { created: boolean; path: string; size: number } {
+export function createFile(
+  relPath: string,
+  frontmatter: Record<string, unknown>,
+  body: string,
+  user: string
+): { created: boolean; path: string; size: number } {
   const absPath = safeCorpusPath(relPath);
   if (!absPath) throw new Error("Invalid path");
   if (existsSync(absPath)) throw new Error("File already exists");
@@ -584,13 +778,17 @@ export function createFile(relPath: string, frontmatter: Record<string, unknown>
   mkdirSync(dir, { recursive: true });
 
   const content = serializeDoc(frontmatter, body);
-  writeFileSync(absPath, content, "utf-8");
+  atomicWrite(absPath, content);
+
+  // RAW-SYNC: Pipeline importiert aus law-corpus/{dir}/, nicht aus _normalized/.
+  // Ohne diesen Sync kommt die neue Datei nie in die DB. (BUG 5, BUG 23)
+  syncToRawCorpus(relPath, content);
 
   // Save initial version
   const versions: VersionEntry[] = [];
   const dir2 = versionDirFor(relPath);
   mkdirSync(dir2, { recursive: true });
-  writeFileSync(join(dir2, "1.md"), content, "utf-8");
+  atomicWrite(join(dir2, "1.md"), content);
   versions.push({
     version: 1,
     timestamp: new Date().toISOString(),
@@ -618,6 +816,11 @@ export function deleteFile(relPath: string, user: string): { deleted: boolean; p
 
   unlinkSync(absPath);
 
+  // RAW-SYNC: Pipeline importiert aus law-corpus/{dir}/. Wenn wir die
+  // _normalized-Datei löschen, müssen wir auch die raw-Datei löschen,
+  // sonst bleibt die gelöschte Norm für immer in der DB. (BUG 5, BUG 23)
+  removeFromRawCorpus(relPath);
+
   // Remove .bak if exists
   const bakPath = absPath + ".bak";
   if (existsSync(bakPath)) unlinkSync(bakPath);
@@ -633,7 +836,10 @@ export function deleteFile(relPath: string, user: string): { deleted: boolean; p
 /**
  * Löscht mehrere Dateien (Bulk).
  */
-export function deleteFilesBulk(relPaths: string[], user: string): { deleted: number; failed: number; errors: string[] } {
+export function deleteFilesBulk(
+  relPaths: string[],
+  user: string
+): { deleted: number; failed: number; errors: string[] } {
   let deleted = 0;
   let failed = 0;
   const errors: string[] = [];

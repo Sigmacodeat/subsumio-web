@@ -1,11 +1,19 @@
 import { z } from "zod";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
-import { safeCorpusPath, serializeDoc, saveVersion, saveVersionContent, auditLog } from "@/lib/corpus-steward";
+import {
+  safeCorpusPath,
+  serializeDoc,
+  saveVersion,
+  saveVersionContent,
+  auditLog,
+  syncToRawCorpus,
+  atomicWrite,
+} from "@/lib/corpus-steward";
 import { validateFrontmatter } from "@/lib/corpus-schema";
 import { updateIndexEntry } from "@/lib/corpus-index";
 import { markiereZumImport } from "@/lib/corpus-import-queue";
 import { createHash } from "crypto";
-import { readFileSync, writeFileSync, existsSync, statSync } from "fs";
+import { readFileSync, existsSync, statSync } from "fs";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 10;
@@ -47,12 +55,15 @@ export const PUT = createHandler(
     // lautlos — der zweite Speichervorgang gewann, ohne dass der erste es
     // erfuhr. Bei Gesetzestexten ist das nicht hinnehmbar.
     if (body.expectedHash) {
-      const istHash = createHash("sha256").update(readFileSync(absPath, "utf-8")).digest("hex").slice(0, 16);
+      const istHash = createHash("sha256")
+        .update(readFileSync(absPath, "utf-8"))
+        .digest("hex")
+        .slice(0, 16);
       if (istHash !== body.expectedHash) {
         return apiError(
           "conflict",
           "Die Datei wurde seit dem Öffnen geändert. Bitte neu laden und Änderung erneut anwenden.",
-          409,
+          409
         );
       }
     }
@@ -62,21 +73,29 @@ export const PUT = createHandler(
     // genau die Uneinheitlichkeit wieder einschleusen, gegen die der
     // Normalisierer den ganzen Bestand vereinheitlicht hat.
     // doc_class ist das kanonische Feld im Frontmatter (nicht "type").
-    const pruefung = validateFrontmatter(body.frontmatter, body.frontmatter.doc_class as string | undefined);
+    const pruefung = validateFrontmatter(
+      body.frontmatter,
+      body.frontmatter.doc_class as string | undefined
+    );
     if (!pruefung.valid) {
       return apiError(
         "validation_failed",
         `Frontmatter verletzt das Schema: ${pruefung.errors.map((e) => e.message).join("; ")}`,
-        400,
+        400
       );
     }
 
     // Save old version before overwrite
     saveVersion(body.path, ctx.user.email, "edit", "pre-edit snapshot");
 
-    // Serialize and write
+    // Serialize and write — BUG 54+56: atomicWrite (tmp + fsync + rename)
     const content = serializeDoc(body.frontmatter, body.body);
-    writeFileSync(absPath, content, "utf-8");
+    atomicWrite(absPath, content);
+
+    // Sync nach law-corpus/{path} (raw) — die Pipeline importiert aus
+    // law-corpus/{dir}, nicht aus _normalized/. Ohne diesen Sync kommt
+    // die Steward-Änderung nie in die DB (BUG 5).
+    syncToRawCorpus(body.path, content);
 
     // Save new version after write
     saveVersionContent(body.path, content, ctx.user.email, "edit", "post-edit snapshot");
@@ -109,5 +128,5 @@ export const PUT = createHandler(
       /** Solange true, weicht die Datenbank von der Datei ab. */
       importAusstehend: true,
     });
-  },
+  }
 );

@@ -110,22 +110,16 @@ export const GET = createHandler(
       paragraphRef: r.paragraph_ref ?? null,
       documentType: r.document_type ?? null,
       legalArea: r.legal_area ?? null,
-      decisionDate: r.decision_date
-        ? new Date(r.decision_date).toISOString().slice(0, 10)
-        : null,
+      decisionDate: r.decision_date ? new Date(r.decision_date).toISOString().slice(0, 10) : null,
       embeddingStatus: r.is_embedded ? "embedded" : "pending",
-      embeddedAt: r.embedded_at
-        ? new Date(r.embedded_at).toISOString()
-        : null,
+      embeddedAt: r.embedded_at ? new Date(r.embedded_at).toISOString() : null,
       model: r.model ?? null,
       tokenCount: r.token_count ? parseInt(r.token_count, 10) : null,
       pageId: r.page_id,
       pageSlug: r.page_slug,
       pageTitle: r.page_title,
       sourceId: r.source_id,
-      chunkerVersion: r.chunker_version
-        ? parseInt(r.chunker_version, 10)
-        : null,
+      chunkerVersion: r.chunker_version ? parseInt(r.chunker_version, 10) : null,
       frontmatter: r.frontmatter ?? null,
     };
 
@@ -179,16 +173,37 @@ export const PATCH = createHandler(
     if (chunkText !== undefined) {
       sets.push(`chunk_text = $${idx++}`);
       params.push(chunkText);
-      // Text geändert → Embedding invalidieren
+      // Text geändert → Embedding invalidieren. BUG 62: model = NULL muss
+      // auch gesetzt werden (wie BUG 32/61). Sonst umgeht auto-embed-pg.ts
+      // seinen Claim-Mechanismus und parallele Worker könnten doppelt embedden.
       sets.push(`embedding = NULL`);
       sets.push(`embedded_at = NULL`);
+      sets.push(`model = NULL`);
     }
-    if (chunkRole !== undefined) { sets.push(`chunk_role = $${idx++}`); params.push(chunkRole); }
-    if (court !== undefined) { sets.push(`court = $${idx++}`); params.push(court); }
-    if (caseNumber !== undefined) { sets.push(`case_number = $${idx++}`); params.push(caseNumber); }
-    if (ecli !== undefined) { sets.push(`ecli = $${idx++}`); params.push(ecli); }
-    if (statuteAbbr !== undefined) { sets.push(`statute_abbr = $${idx++}`); params.push(statuteAbbr); }
-    if (paragraphRef !== undefined) { sets.push(`paragraph_ref = $${idx++}`); params.push(paragraphRef); }
+    if (chunkRole !== undefined) {
+      sets.push(`chunk_role = $${idx++}`);
+      params.push(chunkRole);
+    }
+    if (court !== undefined) {
+      sets.push(`court = $${idx++}`);
+      params.push(court);
+    }
+    if (caseNumber !== undefined) {
+      sets.push(`case_number = $${idx++}`);
+      params.push(caseNumber);
+    }
+    if (ecli !== undefined) {
+      sets.push(`ecli = $${idx++}`);
+      params.push(ecli);
+    }
+    if (statuteAbbr !== undefined) {
+      sets.push(`statute_abbr = $${idx++}`);
+      params.push(statuteAbbr);
+    }
+    if (paragraphRef !== undefined) {
+      sets.push(`paragraph_ref = $${idx++}`);
+      params.push(paragraphRef);
+    }
 
     if (sets.length === 0) {
       return apiError("bad_request", "Keine Felder zum Aktualisieren", 400);

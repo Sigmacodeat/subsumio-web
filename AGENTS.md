@@ -42,6 +42,7 @@ Frontend-Arbeit auf Agentur-Niveau. KEINE generische Programmierung.
 Nutze das bestehende Design-System:
 
 ### Design-Tokens (in `src/app/globals.css`)
+
 - **Brand-Farben:** `--brand-primary` (hsl 230 60% 52%), `--brand-primary-hover`,
   animierbar via `@property`. Nutze `var(--brand-*)`, nie hardcodiert.
 - **Dark-Mode:** `data-theme="dark"` auf `<html>`, `dark:`-Varianten.
@@ -52,6 +53,7 @@ Nutze das bestehende Design-System:
 - **Signal-Farben:** success/warning/danger über shadcn-Variants.
 
 ### UI-Primitives (`src/components/ui/`)
+
 - shadcn/ui-Pattern: `Button`, `Card`, `Dialog`, `Badge`, `Input`,
   `Select`, `Dropdown`, `Accordion`, `Avatar`, `Checkbox`, etc.
 - **IMMER diese Primitives nutzen** — keine eigenen Buttons/Inputs/Dialogs
@@ -61,6 +63,7 @@ Nutze das bestehende Design-System:
   Visuellen Prüfen.
 
 ### Modern Patterns (Subsumio-spezifisch)
+
 - **Next.js App Router** — Server Components default, `"use client"` nur
   bei Interaktion.
 - **React Query** — `useQuery`/`useMutation`, `queryClient.invalidateQueries`
@@ -73,6 +76,7 @@ Nutze das bestehende Design-System:
 - **Motion** — `src/components/dashboard/motion.tsx` für Entrance-Animations.
 
 ### Accessibility (Subsumio = DACH-Rechtsprodukt — hohe Bar)
+
 - WCAG 2.1 AA Minimum, bei Anwalts-Kanzleien oft gefordert.
 - Semantisches HTML, ARIA, Tastatur, Kontrast ≥4.5:1.
 - `prefers-reduced-motion` respektieren (Rechtsanwälte arbeiten lang).
@@ -84,6 +88,7 @@ Nutze das bestehende Design-System:
 ## 💡 Proaktive Vorschläge (Subsumio-spezifisch)
 
 Du MUSST proaktiv vorschlagen, nicht nur ausführen. Beispiele für Subsumio:
+
 - "Dieser Dialog wird auf Mobile als Bottom-Sheet besser, weil Anwälte
   oft auf dem Tablet arbeiten."
 - "Hier fehlt ein Empty-State mit 'Erste Norm einpflegen'-CTA, weil ein
@@ -159,17 +164,24 @@ Immer wenn du eine Datei änderst, prüfe die verbundenen Dateien:
 - **Eine kanonische Pricing-Tabelle:** `src/core/model-pricing.ts`. Keine
   Duplikation in abgeleiteten Views. Pinned by `test/model-pricing.test.ts`.
 - **Migrationen:** in `MIGRATIONS`-Array (`server/src/core/migrate.ts`).
+- **Corpus raw-Sync-Pflicht:** Der Steward bearbeitet `law-corpus/_normalized/`,
+  die Pipeline importiert aus `law-corpus/{dir}/` (raw). Jede Schreiboperation
+  (write/create/restore/bulk-edit) MUSS `syncToRawCorpus()` aufrufen, jede
+  Löschung `removeFromRawCorpus()`. Ohne Sync kommt die Änderung nie in die DB.
+  Die Import-Queue (`_import-warteschlange.json`) wird von der Pipeline via
+  `drainImportQueue` (edit/create) und `reconcileDeletedFiles` (delete)
+  abgeräumt — NICHT von der publish-Route. Siehe BUG 1–18 im Audit-Verlauf.
 
 ---
 
 ## Skill-Routing für Subsumio
 
-| Moment | Skill |
-|---|---|
-| 🔬 Vor Recherche | `/research-best-practices` |
-| Vor Blueprint (Dateien laden) | `/subsumio-context-loader` |
-| 🎨 Bei Frontend/UI-Arbeit | `/frontend-craft` |
-| API/lib/types/engine-Änderung | `/subsumio-connections` |
+| Moment                        | Skill                                   |
+| ----------------------------- | --------------------------------------- |
+| 🔬 Vor Recherche              | `/research-best-practices`              |
+| Vor Blueprint (Dateien laden) | `/subsumio-context-loader`              |
+| 🎨 Bei Frontend/UI-Arbeit     | `/frontend-craft`                       |
+| API/lib/types/engine-Änderung | `/subsumio-connections`                 |
 | Vor "fertig" (Subsumio-Layer) | `/subsumio-dod-layer` (via `/dod-gate`) |
 
 ---

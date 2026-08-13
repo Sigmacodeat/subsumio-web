@@ -351,7 +351,9 @@ async function main() {
   );
   console.log("");
   if (skippedQuarantine > 0) {
-    console.log(`Quarantäne: ${skippedQuarantine} nicht-kanonische Quellen vom Import ausgeschlossen.`);
+    console.log(
+      `Quarantäne: ${skippedQuarantine} nicht-kanonische Quellen vom Import ausgeschlossen.`
+    );
   }
 
   // Preflight the complete batch before opening the database or writing a
@@ -359,7 +361,13 @@ async function main() {
   // an incomplete statute can no longer leave a half-imported batch behind.
   const prepared: Array<{
     sf: StatuteFile;
-    meta: { abbreviation?: string; title?: string; version_date?: string; source_url?: string; license?: string };
+    meta: {
+      abbreviation?: string;
+      title?: string;
+      version_date?: string;
+      source_url?: string;
+      license?: string;
+    };
     sections: Array<{ id: string; marker: "§" | "Art."; ref: string; title: string; body: string }>;
   }> = [];
   const preflightErrors: string[] = [];
@@ -458,7 +466,9 @@ async function main() {
     // auto-derived sourceId will reference them.
     const sourceIdsToCreate = SOURCE_ID ? [SOURCE_ID] : Object.values(LEGAL_SOURCE_BY_JURISDICTION);
     for (const sid of sourceIdsToCreate) {
-      const jurisdiction = Object.entries(LEGAL_SOURCE_BY_JURISDICTION).find(([, id]) => id === sid)?.[0];
+      const jurisdiction = Object.entries(LEGAL_SOURCE_BY_JURISDICTION).find(
+        ([, id]) => id === sid
+      )?.[0];
       await engine.executeRaw(
         `INSERT INTO sources (id, name, jurisdiction, config)
          VALUES ($1, $1, $2::text, jsonb_build_object('federated', true, 'legal_reference', true, 'jurisdiction', $2::text))
@@ -476,7 +486,6 @@ async function main() {
   let totalErrors = 0;
 
   for (const { sf, meta, sections } of prepared) {
-
     if (DRY) {
       console.log(`  ${sf.jurisdiction}/${sf.abbr}: ${sections.length} §-sections`);
       totalSections += sections.length;
@@ -562,9 +571,7 @@ async function main() {
   );
   console.log("═══════════════════════════════════════════════════════════");
   if (!DRY && NO_EMBED) {
-    console.log(
-      "⚠️  Embedding übersprungen. Nachholen: bun run server/scripts/auto-embed-pending.ts"
-    );
+    console.log("⚠️  Embedding übersprungen. Nachholen: bun run server/scripts/auto-embed-pg.ts");
   }
 }
 

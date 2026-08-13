@@ -8,6 +8,7 @@
 ## 1. Ziel (User-Sicht)
 
 Admins können im Browser:
+
 - Die 25 AT-Korpora durchblättern (paginiert, gefiltert)
 - Einzelne Dateien öffnen (Frontmatter + Body)
 - Frontmatter-Felder editieren (court, date, ECLI, etc.)
@@ -20,6 +21,7 @@ Admins können im Browser:
 ## 2. Architektur
 
 ### Backend (API Routes)
+
 ```
 src/app/api/admin/corpus-files/
   ├── list/route.ts     GET    — paginierte Datei-Liste pro Korpus
@@ -31,9 +33,10 @@ src/app/api/admin/corpus-files/
 ```
 
 ### Frontend (Tab in admin/corpus)
+
 ```
 src/components/dashboard/corpus-steward/
-  ├── CorpusStewardTab.tsx       — Haupt-Tab-Container
+  ├── corpus-command-center.tsx — Haupt-UI (CorpusStewardTab.tsx gelöscht)
   ├── CorpusFileBrowser.tsx      — Liste + Filter + Pagination
   ├── CorpusFileViewer.tsx       — Datei-Ansicht (Frontmatter + Body)
   ├── CorpusFileEditor.tsx       — Editier-Modus
@@ -41,6 +44,7 @@ src/components/dashboard/corpus-steward/
 ```
 
 ### Persistenz
+
 - **Quality Flags:** `law-corpus/_normalized/_steward-flags.json` (Sidecar, überlebt Re-Import)
 - **Audit-Log:** `law-corpus/_normalized/_steward-audit.jsonl` (append-only)
 - **Backups:** `.bak` Dateien neben den Originalen

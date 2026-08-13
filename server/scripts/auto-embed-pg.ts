@@ -3,7 +3,7 @@
  * Auto-Embed Pipeline (Postgres) — Nachbesserung für Pages ohne Embeddings.
  *
  * Läuft nach Bulk-Importen (z.B. --no-embed) oder als Scheduled Job.
- * Findet content_chunks mit embedded_at IS NULL und embedded sie nach.
+ * Findet content_chunks mit embedding IS NULL und embedded sie nach.
  *
  * Usage:
  *   bun run server/scripts/auto-embed-pg.ts
@@ -136,7 +136,7 @@ async function main() {
 
   if (DRY_RUN) {
     const countResult = await engine.executeRaw(
-      `SELECT count(*) as cnt FROM content_chunks WHERE embedded_at IS NULL`
+      `SELECT count(*) as cnt FROM content_chunks WHERE embedding IS NULL`
     );
     const pendingCount = Number((countResult[0] as { cnt: number }).cnt);
     console.log(`[DRY-RUN] Würde ${pendingCount} chunks embedden.`);

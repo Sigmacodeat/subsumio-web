@@ -6,6 +6,16 @@
  *
  *   backfill (text fetch+validate) → import (chunk) → embed → reconcile
  *
+ * IMPORT-QUEUE (BUG 1–2, 5–6, 14):
+ *   - Der Corpus Steward schreibt nach law-corpus/_normalized/, die Pipeline
+ *     importiert aus law-corpus/{dir}/ (raw). syncToRawCorpus() in
+ *     corpus-steward.ts kopiert bei jeder Schreiboperation (_normalized → raw).
+ *   - Jede Schreiboperation trägt den Pfad in _import-warteschlange.json ein.
+ *   - publish-Route setzt pipeline_config.triggered → Pipeline startet sofort.
+ *   - drainImportQueue() räumt edit/create-Einträge ab nach erfolgreichem Import.
+ *   - reconcileDeletedFiles() markiert DB-Pages für delete-Einträge als
+ *     deleted_at (vorher: gelöschte Normen blieben für immer in der Suche).
+ *
  * Design rules (born from the 2026-07-14/15 incidents, hardened 2026-07-16):
  *   - MEASURE, don't remember: every stage decision derives from observable
  *     state (placeholder counts on disk, page counts in DB, pending embeds),
@@ -46,11 +56,20 @@
  * fetch-all-at-judikatur.ts deliberately when ready.
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync, openSync, unlinkSync } from "fs";
+import {
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  existsSync,
+  openSync,
+  unlinkSync,
+  renameSync,
+} from "fs";
 import { join, dirname } from "path";
 import { createHash } from "crypto";
 import { fileURLToPath } from "url";
 import { spawn, execSync } from "child_process";
+import { getSharedPgPool } from "@/lib/auth/store";
 
 const _dir = dirname(fileURLToPath(import.meta.url));
 const SERVER_DIR = join(_dir, "..");
@@ -193,6 +212,20 @@ const JUDIKATUR: JudikaturSource[] = [
     sourceId: "law-at-judikatur-dok",
     risApplikation: "Dok",
   },
+  {
+    kind: "judikatur",
+    key: "ubas",
+    dir: "at-judikatur-ubas",
+    sourceId: "law-at-judikatur-ubas",
+    risApplikation: "Ubas",
+  },
+  {
+    kind: "judikatur",
+    key: "umse",
+    dir: "at-judikatur-umse",
+    sourceId: "law-at-judikatur-umse",
+    risApplikation: "Umse",
+  },
 ];
 
 const SIMPLE: SimpleSource[] = [
@@ -202,6 +235,28 @@ const SIMPLE: SimpleSource[] = [
     dir: "at",
     sourceId: "law-at",
     importCmd: ["scripts/import-statutes-split.ts", "--auto-at", "--no-embed"],
+  },
+  {
+    // at-normen: Bundesrecht konsolidiert (BrKons) — 10.467 Dateien in
+    // Subdirs (gnr-XXXXXX/p-1.md). import-statutes-split --auto-at scannt
+    // nur law-corpus/at/*.md (flat) und übersieht at-normen komplett.
+    // batch-import-from-disk importiert recursiv aus at-normen in dieselbe
+    // DB-Source law-at. --slug-from-path ist Pflicht: sonst kollidieren
+    // p-1.md aus verschiedenen Gesetzen auf demselben Slug.
+    // BUG 7: vorher nie importiert. BUG 17: vorher ohne --slug-from-path.
+    kind: "dirimport",
+    key: "normen-at",
+    dir: "at-normen",
+    sourceId: "law-at",
+    importCmd: [
+      "scripts/batch-import-from-disk.ts",
+      "--source",
+      "law-at",
+      "--disk-dir",
+      "law-corpus/at-normen",
+      "--slug-from-path",
+      "--no-embed",
+    ],
   },
   {
     kind: "statutes",
@@ -398,7 +453,7 @@ function releaseCycleLock(): void {
   );
 }
 
-function psqlJSON(query: string): any[] {
+function psqlJSON(query: string): Record<string, unknown>[] {
   const raw = psqlQuery(query);
   if (!raw) return [];
   try {
@@ -441,13 +496,17 @@ function updateSourceState(
     return `${k} = ${v}`;
   });
   sets.push(`updated_at = NOW()`);
-  psqlQuery(`UPDATE pipeline_state SET ${sets.join(", ")} WHERE source_key = '${key}'`);
+  // BUG 45: key wird escaped — vorher unescaped interpoliert (SQL-Injection
+  // wenn key jemals von extern käme; aktuell hardcoded aber defensiv).
+  psqlQuery(
+    `UPDATE pipeline_state SET ${sets.join(", ")} WHERE source_key = '${key.replace(/'/g, "''")}'`
+  );
 }
 
 /** Append to stage_history via the DB function. */
 function appendHistory(key: string, stage: string, action: string): void {
   psqlQuery(
-    `SELECT append_stage_history('${key}', '${stage.replace(/'/g, "''")}', '${action.replace(/'/g, "''")}')`
+    `SELECT append_stage_history('${key.replace(/'/g, "''")}', '${stage.replace(/'/g, "''")}', '${action.replace(/'/g, "''")}')`
   );
 }
 
@@ -485,6 +544,7 @@ function raiseAlert(key: string, type: string, severity: string, message: string
 
 /** Clear alerts of a given type for a source. */
 function clearAlerts(key: string, type: string): void {
+  // BUG 65: key wird escaped — wie raiseAlert (BUG 45).
   psqlQuery(
     `UPDATE pipeline_state SET alert_flags =
        COALESCE(
@@ -493,7 +553,7 @@ function clearAlerts(key: string, type: string): void {
          '[]'::jsonb
        ),
        updated_at = NOW()
-     WHERE source_key = '${key}'`
+     WHERE source_key = '${key.replace(/'/g, "''")}'`
   );
 }
 
@@ -508,6 +568,10 @@ interface CycleState {
   pidMap: Record<string, { pid: number; cmd: string; startedAt: string; timeoutS: number }>;
   /** Consecutive failed import attempts, derived from import_failed alert flags. */
   importFailCount: Record<string, number>;
+  /** True when the ris-delta process was running in the previous cycle and is now gone. */
+  deltaJustFinished?: boolean;
+  /** True when the ris-delta process is currently running (set each cycle while alive). */
+  deltaWasRunning?: boolean;
 }
 
 /** Give up restarting a source's import after this many consecutive failures. */
@@ -654,9 +718,15 @@ async function risHits(applikation: string): Promise<number> {
       { signal: AbortSignal.timeout(20_000) }
     );
     if (!res.ok) return -1;
-    const data = (await res.json()) as any;
-    const hits = data?.OgdSearchResult?.OgdDocumentResults?.Hits?.["#text"];
-    return hits ? parseInt(String(hits), 10) : -1;
+    // RIS OGD API hat keine TypeScript-Typen — wir navigieren das JSON
+    // defensiv mit optional chaining. Siehe RIS API Doku:
+    // https://docs.data.gv.at/katalog/dataset/ris-ogd-judikatur
+    const data = (await res.json()) as Record<string, unknown>;
+    const result = data?.OgdSearchResult as Record<string, unknown> | undefined;
+    const docResults = result?.OgdDocumentResults as Record<string, unknown> | undefined;
+    const hits = docResults?.Hits as Record<string, string> | undefined;
+    const hitsText = hits?.["#text"];
+    return hitsText ? parseInt(String(hitsText), 10) : -1;
   } catch {
     return -1;
   }
@@ -1002,15 +1072,30 @@ function runFassungsSync(): void {
 
   // For each jurisdiction, check the newest file modification date in the corpus
   for (const dbDate of dbDates) {
-    const jurisdiction =
-      dbDate.source_id === "law-at" ? "at" : dbDate.source_id === "law-de" ? "de" : "ch";
-    const corpusDir = join(CORPUS, jurisdiction);
-    if (!existsSync(corpusDir)) continue;
+    // BUG 47: law-at liegt in at-normen/ (148K Dateien, aktuell) UND at/
+    // (1.2K Dateien, Legacy). vorher wurde nur at/ geprüft → Fassungs-Sync
+    // prüfte 1.2K Legacy-Dateien statt 148K aktueller Dateien.
+    // law-de → de/, law-ch → ch/.
+    const corpusDirs =
+      dbDate.source_id === "law-at"
+        ? [join(CORPUS, "at-normen"), join(CORPUS, "at")]
+        : dbDate.source_id === "law-de"
+          ? [join(CORPUS, "de")]
+          : [join(CORPUS, "ch")];
 
-    // Find the most recently modified .md file
-    const newestFile = sh(
-      `find ${JSON.stringify(corpusDir)} -name '*.md' -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1`
-    );
+    // Find the most recently modified .md file across all relevant dirs
+    let newestFile = "";
+    for (const corpusDir of corpusDirs) {
+      if (!existsSync(corpusDir)) continue;
+      const candidate = sh(
+        `find ${JSON.stringify(corpusDir)} -name '*.md' -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1`
+      );
+      if (candidate) {
+        const candidateTime = parseFloat(candidate.split(" ")[0] || "0");
+        const currentMax = parseFloat(newestFile.split(" ")[0] || "0");
+        if (candidateTime > currentMax) newestFile = candidate;
+      }
+    }
     if (!newestFile) continue;
 
     const fileTime = parseFloat(newestFile.split(" ")[0] || "0");
@@ -1052,7 +1137,7 @@ function runFassungsSync(): void {
  *  The delta-watcher fetches new/changed documents from RIS OGD API,
  *  writes them to disk, and marks them for import via markiereZumImport.
  *  The regular import stage then picks them up. */
-function runDeltaWatcher(state: CycleState): void {
+async function runDeltaWatcher(state: CycleState): Promise<void> {
   const key = "ris-delta";
   ensureSourceRow(key);
 
@@ -1075,7 +1160,102 @@ function runDeltaWatcher(state: CycleState): void {
   const procState = checkSourceProcess(key, state);
   if (procState.running) {
     console.log("  [ris-delta] Läuft bereits — überspringe");
+    // Mark that delta was running so next cycle can detect completion
+    state.deltaWasRunning = true;
     return;
+  }
+
+  // Process just finished — was it running in the previous cycle?
+  if (state.deltaWasRunning) {
+    state.deltaJustFinished = true;
+    delete state.deltaWasRunning;
+  }
+
+  // Process just finished — check exit code and write notification
+  if (state.deltaJustFinished) {
+    const exitCode = readExitCode("ris-delta");
+    if (exitCode === 0) {
+      // Read the delta-watcher's summary from stage_history JSONB array
+      // (append_stage_history stores entries as {stage, action, ts} in pipeline_state.stage_history)
+      const deltaRow = psqlJSON(
+        `SELECT stage_history FROM pipeline_state WHERE source_key = 'ris-delta'`
+      );
+      if (Array.isArray(deltaRow) && deltaRow.length > 0) {
+        // Find the "summary:" entry in stage_history (written by ris-delta-watcher.ts)
+        const stageHistory = deltaRow[0].stage_history;
+        let details = "";
+        if (Array.isArray(stageHistory) && stageHistory.length > 0) {
+          // Find the latest entry with action starting "summary:"
+          for (let i = stageHistory.length - 1; i >= 0; i--) {
+            const entry = stageHistory[i];
+            if (entry && typeof entry.action === "string" && entry.action.startsWith("summary:")) {
+              details = entry.action;
+              break;
+            }
+          }
+        }
+        let newCount = 0;
+        let changedCount = 0;
+        let failedCount = 0;
+        const applikationen: string[] = [];
+        if (details) {
+          // Parse "summary: N neu, M geändert, F fehlgeschlagen, applikationen: BrKons,..."
+          const newMatch = details.match(/(\d+)\s+neu/);
+          const changedMatch = details.match(/(\d+)\s+geändert/);
+          const failedMatch = details.match(/(\d+)\s+fehlgeschlagen/);
+          if (newMatch) newCount = parseInt(newMatch[1], 10);
+          if (changedMatch) changedCount = parseInt(changedMatch[1], 10);
+          if (failedMatch) failedCount = parseInt(failedMatch[1], 10);
+          // Extract applikationen from details
+          const appMatch = details.match(/applikationen:\s*([^\s,]+)/);
+          if (appMatch) applikationen.push(...appMatch[1].split(","));
+        }
+        // Write notification via DB directly (pipeline runs as Node script, not Next.js)
+        try {
+          const pool = getSharedPgPool();
+          if (pool) {
+            // Ensure notifications table exists (pipeline may run before any web request)
+            await pool.query(
+              `CREATE TABLE IF NOT EXISTS subsumio_notifications (
+                id text NOT NULL PRIMARY KEY,
+                user_id text NOT NULL,
+                brain_id text NOT NULL,
+                type text NOT NULL,
+                data jsonb NOT NULL DEFAULT '{}'::jsonb,
+                read_at timestamptz,
+                created_at timestamptz NOT NULL DEFAULT now()
+              )`
+            );
+            const today = new Date().toISOString().slice(0, 10);
+            const notifId = `notif_corpus_delta_${today}`;
+            const total = newCount + changedCount;
+            const data = {
+              title:
+                total > 0
+                  ? `${total} ${total === 1 ? "neues/geändertes Dokument" : "neue/geänderte Dokumente"} im RIS`
+                  : "RIS Delta-Sync abgeschlossen — keine Änderungen",
+              newCount,
+              changedCount,
+              failedCount,
+              applikationen: applikationen.length > 0 ? applikationen : ["all"],
+              total,
+              url: "/dashboard/admin/corpus",
+              syncDate: today,
+            };
+            await pool.query(
+              `INSERT INTO subsumio_notifications (id, user_id, brain_id, type, data, read_at, created_at)
+               VALUES ($1, 'system', 'system', 'corpus_delta', $2, NULL, now())
+               ON CONFLICT (id) DO UPDATE SET data = $2, read_at = NULL`,
+              [notifId, JSON.stringify(data)]
+            );
+            console.log(`  [ris-delta] Notification geschrieben: ${total} Dokumente`);
+          }
+        } catch (err) {
+          console.error(`  [ris-delta] Notification fehlgeschlagen: ${err}`);
+        }
+      }
+    }
+    delete state.deltaJustFinished;
   }
 
   console.log("  [ris-delta] Starte RIS Delta-Watcher...");
@@ -1089,6 +1269,275 @@ function runDeltaWatcher(state: CycleState): void {
   startProcess("ris-delta", argv, key, 7200); // 2h timeout
   updateSourceState(key, { stage: "running", last_cycle_at: new Date().toISOString() });
   appendHistory(key, "delta", manualTrigger ? "triggered manually" : "scheduled run");
+
+  // Clear the trigger so it doesn't re-fire on every cycle
+  if (manualTrigger) {
+    try {
+      const pool = getSharedPgPool();
+      if (pool) {
+        await pool.query("DELETE FROM pipeline_config WHERE key = 'delta_sync_triggered'");
+      } else {
+        psqlQuery("DELETE FROM pipeline_config WHERE key = 'delta_sync_triggered'");
+      }
+    } catch {
+      // Non-fatal — trigger will be re-read next cycle but delta-watcher
+      // won't re-run due to the 24h interval guard.
+    }
+  }
+}
+
+// ── Import-Queue Drain ─────────────────────────────────────────────────
+//
+// Die Import-Warteschlange (law-corpus/_normalized/_import-warteschlange.json)
+// wird vom Corpus Steward bei jeder Schreiboperation befüllt (markiereZumImport).
+// Die Pipeline importiert automatisch (mtime-basiert via needsImport), aber
+// sie räumte die Queue NIE ab — der PublishBanner zeigte also ewig "N Änderungen
+// offen", obwohl der Import längst erfolgt war. Das ist der "stille Auseinanderlauf
+// von Anzeige und Auskunft", den der Banner verhindern sollte — der Banner selbst
+// lügt dann.
+//
+// drainImportQueue räumt Queue-Einträge ab, deren zugehörige Source seit dem
+// Eintragungszeitpunkt erfolgreich importiert wurde (last_import_success > seit).
+// delete-Einträge bleiben: die Pipeline legt stillgelegte Dateien in der DB nicht
+// automatisch still (kein mtime-Signal bei gelöschten Dateien) — das erfordert
+// einen separaten reconcile-Schritt.
+
+const NORMALIZED_ROOT = join(CORPUS, "_normalized");
+const QUEUE_FILE = join(NORMALIZED_ROOT, "_import-warteschlange.json");
+
+/** Mappt Corpus-Ordnernamen (erster Pfad-Teil eines Queue-Eintrags) auf den
+ *  Pipeline-source_key, dessen last_import_success den Erfolg bestätigt.
+ *
+ *  at-normen (BrKons/Bundesrecht) wird über import-statutes-split --auto-at
+ *  als Source law-at importiert — es teilt sich den statutes-at Source-Key
+ *  mit dem flat at/ Korpus. at-judikatur-ubas/umse haben eigene Keys. */
+function buildCorpusToSourceKey(): Map<string, string> {
+  const m = new Map<string, string>();
+  for (const src of SIMPLE) m.set(src.dir, src.key);
+  for (const src of JUDIKATUR) m.set(src.dir, `jud-${src.key}`);
+  // at-normen (Bundesrecht konsolidiert) hat eigenen Pipeline-Key normen-at
+  m.set("at-normen", "normen-at");
+  // Judikatur-Höfe die in der Delta-Watcher-Liste sind aber nicht im
+  // JUDIKATUR-Array (werden via fetch_triggered + batch-import importiert)
+  m.set("at-judikatur-ubas", "jud-ubas");
+  m.set("at-judikatur-umse", "jud-umse");
+  return m;
+}
+
+function drainImportQueue(state: CycleState): void {
+  if (!existsSync(QUEUE_FILE)) return;
+  let entries: Array<{ pfad: string; benutzer: string; seit: string; art: string }> = [];
+  try {
+    const raw = JSON.parse(readFileSync(QUEUE_FILE, "utf-8"));
+    if (!Array.isArray(raw)) return;
+    entries = raw;
+  } catch {
+    return;
+  }
+  if (entries.length === 0) return;
+
+  const corpusToKey = buildCorpusToSourceKey();
+  const remaining: typeof entries = [];
+  let drained = 0;
+  let unmapped = 0;
+
+  for (const e of entries) {
+    if (e.art === "delete") {
+      remaining.push(e);
+      continue;
+    }
+    const corpus = e.pfad.split("/")[0];
+    const sourceKey = corpusToKey.get(corpus);
+    if (!sourceKey) {
+      unmapped++;
+      remaining.push(e);
+      continue;
+    }
+    const lastSuccess = state.lastImportSuccess[sourceKey];
+    if (lastSuccess && new Date(lastSuccess) > new Date(e.seit)) {
+      drained++;
+    } else {
+      remaining.push(e);
+    }
+  }
+
+  if (drained > 0) {
+    // BUG 66: atomic write (tmp + rename) — wie corpus-import-queue.ts (BUG 13).
+    // Bei gleichzeitigen Writes (API fügt hinzu, Pipeline räumt ab) könnte
+    // die Queue-Datei sonst korrupt werden.
+    const tmp = `${QUEUE_FILE}.tmp.${process.pid}.${Date.now()}`;
+    writeFileSync(tmp, JSON.stringify(remaining, null, 2), "utf-8");
+    renameSync(tmp, QUEUE_FILE);
+    console.log(
+      `  📤 Import-Queue abgeräumt: ${drained} erledigte(s) ${drained === 1 ? "Eintrag" : "Einträge"} entfernt, ${remaining.length} verbleibend${unmapped > 0 ? ` (${unmapped} ohne Pipeline-Source)` : ""}`
+    );
+    appendHistory("publish", "drain", `${drained} queue entries drained`);
+  }
+}
+
+/**
+ * Reconcile: verarbeitet delete-Einträge aus der Import-Queue.
+ *
+ * BUG 14: Bisher hatte die Pipeline keinen Schritt der DB-Pages für
+ * gelöschte Disk-Dateien als deleted_at markierte. Gelöschte Normen
+ * blieben für immer in der Suche — der Anwalt fand und zitierte etwas
+ * das gar nicht mehr existiert.
+ *
+ * Diese Funktion:
+ *   1. Liest delete-Einträge aus der Queue
+ *   2. Findet die zugehörige DB-Page via slug (abgeleitet aus dem Pfad)
+ *   3. Markiert sie als deleted_at = NOW()
+ *   4. Entfernt den Eintrag aus der Queue
+ *
+ * Slug-Matching: der Corpus-Steward verwendet Pfade wie "at-normen/abgb/p-1.md".
+ * Der Import erstellt slugs wie "legal/statutes/at/abgb/p-1". Wir matchen
+ * den vollen Slug (konstruiert aus Pfad + Source-ID) um False Positives
+ * zu vermeiden (BUG 18: vorher LIKE '%basename' → p-1.md aus verschiedenen
+ * Gesetzen matchten alle auf denselben Slug).
+ */
+
+/** Slug-Präfix für eine Source-ID (korrespondiert mit batch-import-from-disk.ts:deriveSlugPrefix). */
+function slugPrefixFor(sourceId: string): string {
+  if (sourceId.startsWith("law-at-judikatur")) return "legal/judikatur/at";
+  if (sourceId.startsWith("law-de-judikatur")) return "legal/judikatur/de";
+  if (sourceId.startsWith("law-ch-judikatur")) return "legal/judikatur/ch";
+  if (sourceId === "law-eu") return "legal/regulations/eu";
+  if (sourceId.startsWith("law-at-landesrecht")) return "legal/landesrecht/at";
+  if (sourceId === "law-at" || sourceId.startsWith("law-at-")) return "legal/statutes/at";
+  if (sourceId === "law-de" || sourceId.startsWith("law-de-")) return "legal/statutes/de";
+  if (sourceId === "law-ch" || sourceId.startsWith("law-ch-")) return "legal/statutes/ch";
+  return `legal/${sourceId.replace(/^law-/, "")}`;
+}
+
+function reconcileDeletedFiles(_state: CycleState): void {
+  if (!existsSync(QUEUE_FILE)) return;
+  let entries: Array<{ pfad: string; benutzer: string; seit: string; art: string }> = [];
+  try {
+    const raw = JSON.parse(readFileSync(QUEUE_FILE, "utf-8"));
+    if (!Array.isArray(raw)) return;
+    entries = raw;
+  } catch {
+    return;
+  }
+
+  const deleteEntries = entries.filter((e) => e.art === "delete");
+  if (deleteEntries.length === 0) return;
+
+  // Source-ID + Slug-Prefix Mapping: corpus-Präfix → (source_id, slug_prefix)
+  const corpusToInfo = new Map<string, { sourceId: string; slugPrefix: string }>();
+  for (const src of SIMPLE) {
+    corpusToInfo.set(src.dir, { sourceId: src.sourceId, slugPrefix: slugPrefixFor(src.sourceId) });
+  }
+  for (const src of JUDIKATUR) {
+    corpusToInfo.set(src.dir, { sourceId: src.sourceId, slugPrefix: slugPrefixFor(src.sourceId) });
+  }
+
+  let reconciled = 0;
+  let notFound = 0;
+  // BUG 25: Nur erfolgreich verarbeitete Einträge entfernen.
+  // vorher: remaining = entries.filter(e => e.art !== "delete") — das
+  // entfernte ALLE delete-Einträge, auch solche die nicht gefunden wurden.
+  // Ein nicht gefundener delete-Eintrag ging verloren → DB-Page nie gelöscht.
+  const processed = new Set<string>();
+  const remaining = entries.filter((e) => e.art !== "delete");
+
+  for (const e of deleteEntries) {
+    const corpus = e.pfad.split("/")[0];
+    const info = corpusToInfo.get(corpus);
+    if (!info) {
+      notFound++;
+      remaining.push(e); // behalten für später
+      continue;
+    }
+
+    // Vollen Slug konstruieren: slugPrefix + pfad-nach-corpus-präfix (ohne .md)
+    // at-normen/gnr-123456/p-1.md → legal/statutes/at/gnr-123456/p-1
+    // at/abgb.md → legal/statutes/at/abgb (aber import-statutes-split erstellt
+    //   legal/statutes/at/abgb/p-1, p-2, ... — eine Datei → viele Pages!)
+    // at-judikatur-vwgh/4bc12345.md → legal/judikatur/at/4bc12345
+    //
+    // BUG 26: Für at/ und at-normen/ (via import-statutes-split importiert)
+    // erstellt eine .md-Datei MULTIPLE Pages (p-1, p-2, ...). slug = fullSlug
+    // findet nichts. Wir müssen mit slug LIKE 'fullSlug/%' matchen um alle
+    // Section-Pages der gelöschten Datei zu erwischen.
+    const afterCorpus = e.pfad.slice(corpus.length + 1).replace(/\.md$/, "");
+    const fullSlug = `${info.slugPrefix}/${afterCorpus}`.replace(/'/g, "''");
+    const slugPrefixLike = `${fullSlug}/%`;
+
+    try {
+      // Erst exakt matchen (für Judikatur: 1 Datei → 1 Page)
+      let result = psqlQuery(
+        `UPDATE pages SET deleted_at = NOW()
+         WHERE source_id = '${info.sourceId.replace(/'/g, "''")}'
+           AND deleted_at IS NULL
+           AND slug = '${fullSlug}'
+         RETURNING id`
+      );
+      let count = result.trim().split("\n").filter(Boolean).length;
+
+      if (count === 0) {
+        // BUG 26: Für import-statutes-split Sources (at/, at-normen/) —
+        // eine Datei erzeugt multiple Pages (slug/p-1, slug/p-2, ...).
+        // Matche alle Pages deren Slug mit fullSlug/ beginnt.
+        result = psqlQuery(
+          `UPDATE pages SET deleted_at = NOW()
+           WHERE source_id = '${info.sourceId.replace(/'/g, "''")}'
+             AND deleted_at IS NULL
+             AND slug LIKE '${slugPrefixLike}'
+           RETURNING id`
+        );
+        count = result.trim().split("\n").filter(Boolean).length;
+      }
+
+      if (count > 0) {
+        reconciled += count;
+        processed.add(e.pfad);
+        console.log(
+          `  🗑️  Reconcile: ${count} Page(s) für ${e.pfad} als gelöscht markiert (slug=${fullSlug}${count > 1 ? "/*" : ""})`
+        );
+      } else {
+        // Fallback: vielleicht wurde die Datei mit einem anderen Slug-Format
+        // importiert (z.B. ohne --slug-from-path). Versuche LIKE auf den
+        // Pfad-Suffix als konservative Fallback-Strategie.
+        const suffix = afterCorpus.replace(/'/g, "''");
+        const fallbackResult = psqlQuery(
+          `UPDATE pages SET deleted_at = NOW()
+           WHERE source_id = '${info.sourceId.replace(/'/g, "''")}'
+             AND deleted_at IS NULL
+             AND (slug LIKE '%/${suffix}' OR slug LIKE '%/${suffix}/%')
+           RETURNING id`
+        );
+        const fbCount = fallbackResult.trim().split("\n").filter(Boolean).length;
+        if (fbCount > 0) {
+          reconciled += fbCount;
+          processed.add(e.pfad);
+          console.log(
+            `  🗑️  Reconcile (fallback): ${fbCount} Page(s) für ${e.pfad} (slug LIKE %/${suffix}%)`
+          );
+        } else {
+          // Nicht gefunden — Eintrag behalten für nächsten Zyklus.
+          // BUG 25: vorher wurde er verworfen → DB-Page nie gelöscht.
+          notFound++;
+          remaining.push(e);
+        }
+      }
+    } catch {
+      notFound++;
+      remaining.push(e); // behalten für nächsten Zyklus
+    }
+  }
+
+  if (reconciled > 0 || remaining.length < entries.length) {
+    // BUG 66: atomic write (tmp + rename) — wie drainImportQueue oben.
+    const tmp = `${QUEUE_FILE}.tmp.${process.pid}.${Date.now()}`;
+    writeFileSync(tmp, JSON.stringify(remaining, null, 2), "utf-8");
+    renameSync(tmp, QUEUE_FILE);
+    appendHistory(
+      "reconcile",
+      "delete",
+      `${reconciled} pages soft-deleted, ${notFound} nicht gefunden`
+    );
+  }
 }
 
 // ── Main cycle ─────────────────────────────────────────────────────────
@@ -1118,6 +1567,21 @@ async function cycle(): Promise<void> {
 
   // Dashboard-steuerbarer Pausenschalter (pipeline_config) — jeden Zyklus neu lesen.
   refreshPausedFlag();
+
+  // ── Publish-Trigger (from dashboard: corpus-files/publish) ──
+  // Der "Import anstoßen"-Button im Corpus Steward setzt pipeline_config.triggered.
+  // Im --loop-Modus läuft die Pipeline ohnehin zyklisch (default alle 600s), aber
+  // der Trigger signalisiert dass ein sofortiger Zyklus gewünscht ist und dass
+  // die Queue nach erfolgreichem Import abgeräumt werden soll. Wir lesen und
+  // löschen den Key, damit er nicht orphaned stehen bleibt (BUG 1).
+  const publishTriggered = psqlQuery(
+    "SELECT value->>'triggered' FROM pipeline_config WHERE key = 'triggered'"
+  ).trim();
+  if (publishTriggered === "true") {
+    psqlQuery("DELETE FROM pipeline_config WHERE key = 'triggered'");
+    console.log("  📤 Publish-Trigger erkannt — Zyklus forciert, Queue wird nach Import abgeräumt");
+    appendHistory("publish", "trigger", "publish triggered");
+  }
 
   try {
     // Load state from DB (not JSON file)
@@ -1158,10 +1622,17 @@ async function cycle(): Promise<void> {
       if (sid) dbBySource.set(sid.trim(), parseInt(n, 10) || 0);
     }
     const pendingEmbeds = parseInt(
-      psqlQuery("SELECT count(*) FROM content_chunks WHERE embedded_at IS NULL") || "0",
+      psqlQuery(
+        "SELECT count(*) FROM content_chunks cc JOIN pages p ON cc.page_id = p.id WHERE p.deleted_at IS NULL AND cc.embedding IS NULL"
+      ) || "0",
       10
     );
-    const totalChunks = parseInt(psqlQuery("SELECT count(*) FROM content_chunks") || "0", 10);
+    const totalChunks = parseInt(
+      psqlQuery(
+        "SELECT count(*) FROM content_chunks cc JOIN pages p ON cc.page_id = p.id WHERE p.deleted_at IS NULL"
+      ) || "0",
+      10
+    );
     const totalLinks = parseInt(psqlQuery("SELECT count(*) FROM links") || "0", 10);
 
     // Shared import-stage decision. Uses PID-based running detection.
@@ -1173,7 +1644,7 @@ async function cycle(): Promise<void> {
       startArgv: string[] | null,
       timeoutS: number = 7200
     ): { stage: string; action: string } {
-      const { running, stale } = checkSourceProcess(key, state);
+      const { running } = checkSourceProcess(key, state);
       if (running) return { stage: "importing", action: "—" };
 
       if (state.pendingImport[key]) {
@@ -1319,6 +1790,15 @@ async function cycle(): Promise<void> {
       let stage = "idle";
       let action = "—";
 
+      // BUG 73: importRunning wurde berechnet aber nie verwendet. Ein
+      // manuell gestarteter Import (legacy grep) wurde nicht als "importing"
+      // erkannt — die Stage blieb "idle" und die Pipeline konnte einen
+      // zweiten Import starten. Jetzt wird die Stage korrekt gesetzt.
+      if (importRunning) {
+        stage = "importing";
+        action = "—";
+      }
+
       // Exhaustion bookkeeping: only a backfill WE started and observed finish
       // without reducing the placeholder count marks a source as exhausted.
       if (
@@ -1454,25 +1934,6 @@ async function cycle(): Promise<void> {
       });
     }
 
-    // ── Re-Embed trigger (from dashboard: pipeline_config.reembed_triggered) ──
-    const reembedTriggered = psqlQuery(
-      "SELECT value->>'source' FROM pipeline_config WHERE key = 'reembed_triggered'"
-    ).trim();
-    if (reembedTriggered && !embedRunning && !REPORT_ONLY) {
-      // Clear embedded_at for the specified source so auto-embed picks them up
-      const sourceFilter = reembedTriggered.replace(/'/g, "''");
-      psqlQuery(
-        `UPDATE content_chunks SET embedded_at = NULL
-         WHERE page_id IN (
-           SELECT id FROM pages WHERE source_id = '${sourceFilter}' AND deleted_at IS NULL
-         )`
-      );
-      // Clear the trigger
-      psqlQuery("DELETE FROM pipeline_config WHERE key = 'reembed_triggered'");
-      console.log(`  🔄 Re-Embed ausgelöst für Source: ${reembedTriggered}`);
-      appendHistory("embed", "reembed", `triggered: ${reembedTriggered}`);
-    }
-
     // ── Fetch-missing trigger (from dashboard: pipeline_config.fetch_triggered) ──
     const fetchTriggered = psqlQuery(
       "SELECT value->>'source_key' FROM pipeline_config WHERE key = 'fetch_triggered'"
@@ -1498,7 +1959,7 @@ async function cycle(): Promise<void> {
         "jud-umse": ["scripts/fetch-missing-sources.ts", "--source", "Umse"],
         // Bundesrecht + Landesrecht
         "statutes-at": ["scripts/fetch-all-at-laws.ts"],
-        "landesrecht": ["scripts/fetch-at-landesrecht-xml.ts"],
+        landesrecht: ["scripts/fetch-at-landesrecht-xml.ts"],
       };
       const cmd = fetchCmd[key];
       if (cmd) {
@@ -1520,9 +1981,37 @@ async function cycle(): Promise<void> {
     let embedAction = "—";
     const embedProc = checkSourceProcess("embed", state);
     const embedRunning = embedProc.running || processRunningGrep("auto-embed-pg.ts");
-    // Re-read pending embeds after potential reembed trigger
+
+    // ── Re-Embed trigger (from dashboard: pipeline_config.reembed_triggered) ──
+    const reembedTriggered = psqlQuery(
+      "SELECT value->>'source' FROM pipeline_config WHERE key = 'reembed_triggered'"
+    ).trim();
+    if (reembedTriggered && !embedRunning && !REPORT_ONLY) {
+      // Clear embedding + embedded_at + model for the specified source so
+      // auto-embed picks them up. Alle drei Spalten zurücksetzen (BUG 32:
+      // vorher wurde model nicht gelöscht → auto-embed-pg Claim-Mechanismus
+      // konnte umgangen werden, parallele Worker konnten doppelt embedden).
+      const sourceFilter = reembedTriggered.replace(/'/g, "''");
+      psqlQuery(
+        `UPDATE content_chunks SET embedding = NULL, embedded_at = NULL, model = NULL
+         WHERE page_id IN (
+           SELECT id FROM pages WHERE source_id = '${sourceFilter}' AND deleted_at IS NULL
+         )`
+      );
+      // Clear the trigger
+      psqlQuery("DELETE FROM pipeline_config WHERE key = 'reembed_triggered'");
+      console.log(`  🔄 Re-Embed ausgelöst für Source: ${reembedTriggered}`);
+      appendHistory("embed", "reembed", `triggered: ${reembedTriggered}`);
+    }
+
+    // Re-read pending embeds after potential reembed trigger.
+    // Konsistent mit der UI (chunk-quality, command-center): embedding IS NULL
+    // (nicht embedded_at) und deleted_at-Filter — sonst zählt die Pipeline
+    // Chunks von gelöschten Pages und startet unnötig Embed-Läufe.
     const currentPendingEmbeds = parseInt(
-      psqlQuery("SELECT count(*) FROM content_chunks WHERE embedded_at IS NULL") || "0",
+      psqlQuery(
+        "SELECT count(*) FROM content_chunks cc JOIN pages p ON cc.page_id = p.id WHERE p.deleted_at IS NULL AND cc.embedding IS NULL"
+      ) || "0",
       10
     );
     if (currentPendingEmbeds > 0 && !embedRunning && !REPORT_ONLY) {
@@ -1549,7 +2038,13 @@ async function cycle(): Promise<void> {
     runFassungsSync();
 
     // ── Layer 7: RIS Delta-Watcher (at most once per 24h or manual trigger) ──
-    runDeltaWatcher(state as CycleState);
+    await runDeltaWatcher(state as CycleState);
+
+    // ── Import-Queue abräumen (nach erfolgreichem Import der Sources) ──
+    drainImportQueue(state as CycleState);
+
+    // ── Reconcile: gelöschte Dateien in DB als deleted_at markieren ──
+    reconcileDeletedFiles(state as CycleState);
 
     // ── Report ──
     const lines: string[] = [];
@@ -1699,7 +2194,6 @@ async function main() {
     if (isPipelinePaused())
       console.log(`⏸️  PIPELINE PAUSED — reporting only, no jobs will be started`);
     if (ALERT_WEBHOOK) console.log(`Alert webhook: ${ALERT_WEBHOOK}`);
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       try {
         await cycle();

@@ -7,8 +7,18 @@
  * Performance: 76s → <50ms (Overview), 12s → <5ms (List)
  */
 
-import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from "fs";
-import { join, basename } from "path";
+import {
+  readFileSync,
+  writeFileSync,
+  existsSync,
+  readdirSync,
+  statSync,
+  renameSync,
+  openSync,
+  closeSync,
+  fsyncSync,
+} from "fs";
+import { join } from "path";
 
 const REPO_ROOT = process.cwd();
 const NORMALIZED_ROOT = join(REPO_ROOT, "law-corpus", "_normalized");
@@ -25,7 +35,7 @@ export interface IndexedFile {
 const cache = new Map<string, IndexedFile[]>();
 let allCorporaCache: string[] | null = null;
 
-/** Lädt alle Korpus-Namen (at-* Ordner). */
+/** Lädt alle Korpus-Namen (at-*, de-*, ch-*, eu-* Ordner). */
 export function listCorpusNames(): string[] {
   if (allCorporaCache) return allCorporaCache;
   if (!existsSync(NORMALIZED_ROOT)) {
@@ -33,7 +43,14 @@ export function listCorpusNames(): string[] {
     return [];
   }
   allCorporaCache = readdirSync(NORMALIZED_ROOT)
-    .filter((d) => d.startsWith("at-") || d === "at")
+    .filter(
+      (d) =>
+        d.startsWith("at-") ||
+        d === "at" ||
+        d.startsWith("de") ||
+        d.startsWith("ch") ||
+        d.startsWith("eu")
+    )
     .filter((d) => {
       try {
         return statSync(join(NORMALIZED_ROOT, d)).isDirectory();
@@ -68,12 +85,6 @@ export function getCorpusIndex(corpus: string): IndexedFile[] {
   }
 }
 
-/** Invalidiert Cache für ein Korpus (nach Write/Flag). */
-export function refreshCorpusIndex(corpus: string): IndexedFile[] {
-  cache.delete(corpus);
-  return getCorpusIndex(corpus);
-}
-
 /**
  * Aktualisiert einen einzelnen Eintrag im Index (Disk + Memory).
  * Wird nach Write/Create aufgerufen.
@@ -102,7 +113,23 @@ export function removeIndexEntry(corpus: string, path: string): void {
 /** Schreibt den Index auf Disk und aktualisiert den Memory-Cache. */
 function persistIndex(corpus: string, entries: IndexedFile[]): void {
   const indexPath = join(INDEX_DIR, `${corpus}.json`);
-  writeFileSync(indexPath, JSON.stringify(entries), "utf-8");
+  // BUG 58: atomic write (tmp + fsync + rename) — Index-Dateien können
+  // mehrere MB groß sein (148K Dateien × JSON). Nicht-atomarer Write
+  // kann bei Abbruch zu korruptem Index führen.
+  const tmp = `${indexPath}.tmp.${process.pid}.${Date.now()}`;
+  writeFileSync(tmp, JSON.stringify(entries), "utf-8");
+  try {
+    const fd = openSync(tmp, "r+");
+    try {
+      fsyncSync(fd);
+    } catch {
+      /* fsync nicht verfügbar */
+    }
+    closeSync(fd);
+  } catch {
+    /* ignore */
+  }
+  renameSync(tmp, indexPath);
   cache.set(corpus, entries);
 }
 
@@ -133,5 +160,3 @@ export function isIndexStale(corpus: string): boolean {
 // ── Path Validation (re-exportiert aus corpus-steward.ts für Backward-Compat) ─
 
 export { safeCorpusPath } from "@/lib/corpus-steward";
-
-export const NORMALIZED_ROOT_PATH = NORMALIZED_ROOT;

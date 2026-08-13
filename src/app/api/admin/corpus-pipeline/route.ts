@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createHandler, apiError } from "@/lib/api-handler";
+import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { getSharedPgPool } from "@/lib/auth/store";
 
 export const dynamic = "force-dynamic";
@@ -73,7 +73,7 @@ export const POST = createHandler(
           503
         );
       }
-      return Response.json({ ok: true, paused: value.paused });
+      return apiSuccess({ ok: true, paused: value.paused });
     }
 
     // clear_alerts
@@ -87,50 +87,53 @@ export const POST = createHandler(
       if (res.rowCount === 0) {
         return apiError("not_found", `Source "${body.source_key}" nicht in pipeline_state`, 404);
       }
-      return Response.json({ ok: true, cleared: body.source_key });
+      return apiSuccess({ ok: true, cleared: body.source_key });
     }
 
-  // reembed: trigger embedding generation for a specific source
-  if (body.action === "reembed") {
-    try {
-      await pool.query(
-        `INSERT INTO pipeline_config (key, value, updated_at, updated_by)
+    // reembed: trigger embedding generation for a specific source
+    if (body.action === "reembed") {
+      try {
+        await pool.query(
+          `INSERT INTO pipeline_config (key, value, updated_at, updated_by)
          VALUES ('reembed_triggered', $1::jsonb, NOW(), $2)
          ON CONFLICT (key)
          DO UPDATE SET value = $1::jsonb, updated_at = NOW(), updated_by = $2`,
-        [JSON.stringify({ source: body.source, seit: new Date().toISOString() }), ctx.user.email]
-      );
-    } catch {
-      return apiError(
-        "migration_missing",
-        "pipeline_config-Tabelle fehlt — Migration 011 anwenden",
-        503
-      );
+          [JSON.stringify({ source: body.source, seit: new Date().toISOString() }), ctx.user.email]
+        );
+      } catch {
+        return apiError(
+          "migration_missing",
+          "pipeline_config-Tabelle fehlt — Migration 011 anwenden",
+          503
+        );
+      }
+      return apiSuccess({ ok: true, triggered: true, source: body.source });
     }
-    return Response.json({ ok: true, triggered: true, source: body.source });
-  }
 
-  // fetch_missing: trigger discovery/fetch for a source with reconcile_gap
-  if (body.action === "fetch_missing") {
-    try {
-      await pool.query(
-        `INSERT INTO pipeline_config (key, value, updated_at, updated_by)
+    // fetch_missing: trigger discovery/fetch for a source with reconcile_gap
+    if (body.action === "fetch_missing") {
+      try {
+        await pool.query(
+          `INSERT INTO pipeline_config (key, value, updated_at, updated_by)
          VALUES ('fetch_triggered', $1::jsonb, NOW(), $2)
          ON CONFLICT (key)
          DO UPDATE SET value = $1::jsonb, updated_at = NOW(), updated_by = $2`,
-        [JSON.stringify({ source_key: body.source_key, seit: new Date().toISOString() }), ctx.user.email]
-      );
-    } catch {
-      return apiError(
-        "migration_missing",
-        "pipeline_config-Tabelle fehlt — Migration 011 anwenden",
-        503
-      );
+          [
+            JSON.stringify({ source_key: body.source_key, seit: new Date().toISOString() }),
+            ctx.user.email,
+          ]
+        );
+      } catch {
+        return apiError(
+          "migration_missing",
+          "pipeline_config-Tabelle fehlt — Migration 011 anwenden",
+          503
+        );
+      }
+      return apiSuccess({ ok: true, triggered: true, source_key: body.source_key });
     }
-    return Response.json({ ok: true, triggered: true, source_key: body.source_key });
-  }
 
-  // Unreachable — discriminated union covers all cases
-  return Response.json({ ok: false, error: "Unbekannte Aktion" }, { status: 400 });
-  },
+    // Unreachable — discriminated union covers all cases
+    return apiError("validation_failed", "Unbekannte Aktion", 400);
+  }
 );

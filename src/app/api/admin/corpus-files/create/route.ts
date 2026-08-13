@@ -26,9 +26,15 @@ export const POST = createHandler(
     body: bodySchema,
   },
   async (ctx, body) => {
-    // Validate path
-    if (!body.path.startsWith("at-") && !body.path.startsWith("at/")) {
-      return apiError("validation_failed", "Path must start with at- or at/", 400);
+    // Validate path — BUG 41: vorher nur at-/at/, jetzt alle Jurisdiktionen.
+    if (
+      !body.path.startsWith("at-") &&
+      !body.path.startsWith("at/") &&
+      !body.path.startsWith("de/") &&
+      !body.path.startsWith("ch/") &&
+      !body.path.startsWith("eu/")
+    ) {
+      return apiError("validation_failed", "Path must start with at-, at/, de/, ch/, or eu/", 400);
     }
     if (!body.path.endsWith(".md")) {
       return apiError("validation_failed", "Path must end with .md", 400);
@@ -46,12 +52,15 @@ export const POST = createHandler(
     // kanonischen Schema entsprechen, sonst entsteht Uneinheitlichkeit
     // an der Quelle statt nachträglichem Normalisieren.
     // doc_class ist das kanonische Feld im Frontmatter (nicht "type").
-    const pruefung = validateFrontmatter(body.frontmatter, body.frontmatter.doc_class as string | undefined);
+    const pruefung = validateFrontmatter(
+      body.frontmatter,
+      body.frontmatter.doc_class as string | undefined
+    );
     if (!pruefung.valid) {
       return apiError(
         "validation_failed",
         `Frontmatter verletzt das Schema: ${pruefung.errors.map((e) => e.message).join("; ")}`,
-        400,
+        400
       );
     }
 
@@ -75,5 +84,5 @@ export const POST = createHandler(
     } catch (err) {
       return apiError("create_failed", (err as Error).message, 500);
     }
-  },
+  }
 );

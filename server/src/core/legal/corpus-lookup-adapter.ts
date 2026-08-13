@@ -21,7 +21,6 @@ import { createHash } from "node:crypto";
 // constructor.
 let CORPUS_META: Record<string, { jurisdiction: string; label: string; file: string }> = {};
 try {
-  // @ts-ignore — optional dependency, may not exist in engine-only container
   CORPUS_META = (await import("@/lib/legal-grounding")).CORPUS_META;
 } catch {
   // Engine-only container: CORPUS_META not available, use empty map
@@ -168,7 +167,7 @@ function resolveCorpusMeta(
   if (exact && exact.jurisdiction.toLowerCase() === jur) return exact;
 
   // Label match (case-insensitive) within the same jurisdiction
-  for (const [key, meta] of Object.entries(metaMap)) {
+  for (const [, meta] of Object.entries(metaMap)) {
     if (meta.jurisdiction.toLowerCase() !== jur) continue;
     const labelLower = meta.label.toLowerCase();
     const statuteLower = statute.toLowerCase();
@@ -198,10 +197,12 @@ export function normalizeCorpusText(text: string): string {
 
 function parseFrontmatter(text: string): Record<string, string> {
   const result: Record<string, string> = {};
-  if (!text.startsWith("---")) return result;
-  const end = text.indexOf("---", 3);
-  if (end === -1) return result;
-  const fm = text.slice(3, end).trim();
+  // BUG 64: vorher text.indexOf("---", 3) — das matcht `---` auch innerhalb
+  // von Frontmatter-Werten. Regex matcht `---` nur zwischen Newlines (wie
+  // parseDoc in corpus-steward.ts). Siehe Recherche 2026-01.
+  const fmMatch = text.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+  if (!fmMatch) return result;
+  const fm = fmMatch[1];
   for (const line of fm.split("\n")) {
     const match = line.match(/^([a-zA-Z0-9_]+):\s*(?:"([^"]*)"|'([^']*)'|(.*))?\s*$/);
     if (match) {
@@ -233,7 +234,7 @@ function extractParagraphSpan(
     const headerLen = deMatch[1].length;
     const bodyStart = fullStart + headerLen;
     const bodyEnd = fullStart + deMatch[0].length;
-    let spanText = text.slice(bodyStart, bodyEnd).trim();
+    const spanText = text.slice(bodyStart, bodyEnd).trim();
     if (spanText.length < paraNum.length + 3) return null;
 
     if (absatz) {
@@ -264,7 +265,7 @@ function extractParagraphSpan(
     const after = normText.slice(atIdx + 1);
     const nextRel = after.search(/\n§\.?\s*\d+[a-z]*\s*\./);
     const end = nextRel !== -1 ? absoluteStart + 1 + nextRel : absoluteStart + 2500;
-    let spanText = text.slice(absoluteStart, Math.min(end, text.length)).trim();
+    const spanText = text.slice(absoluteStart, Math.min(end, text.length)).trim();
     if (spanText.length < paraNum.length + 3) return null;
 
     if (absatz) {

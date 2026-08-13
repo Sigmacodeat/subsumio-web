@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
-import { getCorpusIndex, listCorpusNames, safeCorpusPath, NORMALIZED_ROOT_PATH } from "@/lib/corpus-index";
+import { getCorpusIndex, listCorpusNames, safeCorpusPath } from "@/lib/corpus-index";
 import { basename } from "path";
 import { existsSync } from "fs";
 import { execFile } from "child_process";
@@ -42,7 +42,14 @@ export const GET = createHandler(
 
     // Determine which corpora to search
     const corpora = corpus === "all" ? listCorpusNames() : [corpus];
-    if (corpus !== "all" && !corpus.startsWith("at-") && corpus !== "at") {
+    if (
+      corpus !== "all" &&
+      !corpus.startsWith("at-") &&
+      !corpus.startsWith("de") &&
+      !corpus.startsWith("ch") &&
+      !corpus.startsWith("eu") &&
+      corpus !== "at"
+    ) {
       return apiError("validation_failed", "Invalid corpus name", 400);
     }
 
@@ -87,10 +94,14 @@ export const GET = createHandler(
           // Node.js, nicht Bun). Wir verwenden execFile (async) stattdessen.
           let grepOutput = "";
           try {
-            const { stdout } = await execFileAsync("grep", ["-rliF", "--include=*.md", q, corpusDir], {
-              encoding: "utf-8",
-              maxBuffer: 256 * 1024 * 1024, // 256MB — at-normen hat ~584KB grep-Output
-            });
+            const { stdout } = await execFileAsync(
+              "grep",
+              ["-rliF", "--include=*.md", q, corpusDir],
+              {
+                encoding: "utf-8",
+                maxBuffer: 256 * 1024 * 1024, // 256MB — at-normen hat ~584KB grep-Output
+              }
+            );
             grepOutput = stdout;
           } catch (err) {
             // grep exit 1 = no matches (not an error), exit 2 = real error
@@ -144,5 +155,5 @@ export const GET = createHandler(
       total: results.length,
       results,
     });
-  },
+  }
 );

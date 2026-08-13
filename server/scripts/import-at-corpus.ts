@@ -51,7 +51,9 @@ interface CorpusFile {
 function slugify(s: string): string {
   return s
     .toLowerCase()
-    .replace(/ä/g, "a").replace(/ö/g, "o").replace(/ü/g, "u")
+    .replace(/ä/g, "a")
+    .replace(/ö/g, "o")
+    .replace(/ü/g, "u")
     .replace(/ß/g, "ss")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
@@ -123,10 +125,18 @@ async function main() {
   console.log("  Subsumio — AT Corpus Import (Staatsverträge + Landesrecht)");
   console.log("═══════════════════════════════════════════════════════════");
   console.log(`  Phase: ${PHASE}`);
-  console.log(`  Mode: ${DRY ? "DRY-RUN (kein DB-Write)" : NO_EMBED ? "import, no-embed" : "import + embed"}`);
+  console.log(
+    `  Mode: ${DRY ? "DRY-RUN (kein DB-Write)" : NO_EMBED ? "import, no-embed" : "import + embed"}`
+  );
   console.log(`  Gefunden: ${files.length} Dateien`);
-  if (doStaatsvertraege) console.log(`    Staatsverträge: ${files.filter((f) => f.sourceId === STAATSVERTRAEGE_SOURCE).length}`);
-  if (doLandesrecht) console.log(`    Landesrecht: ${files.filter((f) => f.sourceId === LANDESRECHT_SOURCE).length}`);
+  if (doStaatsvertraege)
+    console.log(
+      `    Staatsverträge: ${files.filter((f) => f.sourceId === STAATSVERTRAEGE_SOURCE).length}`
+    );
+  if (doLandesrecht)
+    console.log(
+      `    Landesrecht: ${files.filter((f) => f.sourceId === LANDESRECHT_SOURCE).length}`
+    );
   console.log("");
 
   if (DRY) {
@@ -144,7 +154,9 @@ async function main() {
       wholeFiles++;
       totalSections++;
     }
-    console.log(`  Geschätzte Seiten: ${totalSections} (${wholeFiles} ganze Dateien + ${totalSections - wholeFiles} §-Sections)`);
+    console.log(
+      `  Geschätzte Seiten: ${totalSections} (${wholeFiles} ganze Dateien + ${totalSections - wholeFiles} §-Sections)`
+    );
     return;
   }
 
@@ -152,7 +164,8 @@ async function main() {
   const { loadConfig, toEngineConfig } = await import("../src/core/config.ts");
   const { createEngine } = await import("../src/core/engine-factory.ts");
   const { buildGatewayConfig } = await import("../src/core/ai/build-gateway-config.ts");
-  const { configureGateway, reconfigureGatewayWithEngine } = await import("../src/core/ai/gateway.ts");
+  const { configureGateway, reconfigureGatewayWithEngine } =
+    await import("../src/core/ai/gateway.ts");
 
   const cfg = loadConfig();
   if (!cfg) throw new Error("No engine configured. Set DATABASE_URL or ~/.gbrain/config.json.");
@@ -243,19 +256,21 @@ async function main() {
     totalErrors += errForFile;
     totalSkipped += skipForFile;
 
-    if ((totalPages + totalSkipped) % 100 === 0 && (totalPages + totalSkipped) > 0) {
+    if ((totalPages + totalSkipped) % 100 === 0 && totalPages + totalSkipped > 0) {
       console.log(`    ... ${totalPages + totalSkipped} Seiten importiert, ${totalErrors} Fehler`);
     }
   }
 
   console.log("");
   console.log("═══════════════════════════════════════════════════════════");
-  console.log(`  GESAMT: ${totalPages} Seiten importiert, ${totalSkipped} skipped, ${totalErrors} Fehler`);
+  console.log(
+    `  GESAMT: ${totalPages} Seiten importiert, ${totalSkipped} skipped, ${totalErrors} Fehler`
+  );
   console.log(`  Davon ${totalSplit} Dateien per-§ gesplittet`);
   console.log("═══════════════════════════════════════════════════════════");
 
   if (!DRY && NO_EMBED) {
-    console.log("⚠️  Embedding übersprungen. Nachholen: bun run server/scripts/auto-embed-pending.ts");
+    console.log("⚠️  Embedding übersprungen. Nachholen: bun run server/scripts/auto-embed-pg.ts");
   }
 
   await engine.disconnect();

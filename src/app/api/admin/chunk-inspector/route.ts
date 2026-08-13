@@ -9,9 +9,7 @@ const querySchema = z.object({
   source: z.string().min(1).max(100).default("all"),
   role: z.string().max(200).default("all"), // comma-separated
   q: z.string().max(200).default(""),
-  sort: z
-    .enum(["length_asc", "length_desc", "newest", "oldest", "role"])
-    .default("newest"),
+  sort: z.enum(["length_asc", "length_desc", "newest", "oldest", "role"]).default("newest"),
   page: z.coerce.number().int().min(1).max(100_000).default(1),
   pageSize: z.coerce.number().int().min(1).max(200).default(50),
 });
@@ -34,8 +32,8 @@ interface ChunkRow {
 }
 
 const SORT_MAP: Record<string, [string, "ASC" | "DESC"]> = {
-  length_asc: ["cc.chunk_index", "ASC"], // proxy: chunk_index ascending ≈ file order
-  length_desc: ["cc.chunk_index", "DESC"],
+  length_asc: ["char_length(cc.chunk_text)", "ASC"],
+  length_desc: ["char_length(cc.chunk_text)", "DESC"],
   newest: ["cc.created_at", "DESC"],
   oldest: ["cc.created_at", "ASC"],
   role: ["cc.chunk_role", "ASC"],
@@ -77,9 +75,7 @@ export const GET = createHandler(
         .map((r) => r.trim())
         .filter(Boolean);
       if (roles.length > 0) {
-        const placeholders = roles
-          .map((_, i) => `$${paramIdx + i}`)
-          .join(",");
+        const placeholders = roles.map((_, i) => `$${paramIdx + i}`).join(",");
         paramIdx += roles.length;
         conditions.push(`cc.chunk_role IN (${placeholders})`);
         params.push(...roles);
@@ -98,17 +94,20 @@ export const GET = createHandler(
     // Count total — separate from data query, uses simpler JOIN
     let countResult, idResult, textResult;
     try {
-      countResult = await pool.query(`
+      countResult = await pool.query(
+        `
       SELECT COUNT(*)::bigint AS total
       FROM content_chunks cc
       JOIN pages p ON cc.page_id = p.id
       WHERE ${whereClause}
-    `, params);
-    const total = parseInt(countResult.rows[0]?.total ?? "0", 10);
+    `,
+        params
+      );
+      const total = parseInt(countResult.rows[0]?.total ?? "0", 10);
 
-    // Fetch page — two-stage query to avoid expensive LEFT() over all rows.
-    // Stage 1: find chunk IDs + metadata (fast, no text extraction)
-    const idQuery = `
+      // Fetch page — two-stage query to avoid expensive LEFT() over all rows.
+      // Stage 1: find chunk IDs + metadata (fast, no text extraction)
+      const idQuery = `
       SELECT
         cc.id::text,
         cc.chunk_index,
@@ -128,20 +127,20 @@ export const GET = createHandler(
       ORDER BY ${sortCol} ${sortDir}
       LIMIT $${paramIdx++} OFFSET $${paramIdx++}
     `;
-    const idParams = [...params, pageSize, offset];
-    idResult = await pool.query(idQuery, idParams);
+      const idParams = [...params, pageSize, offset];
+      idResult = await pool.query(idQuery, idParams);
 
-    if (idResult.rows.length === 0) {
-      return apiSuccess([], { page, limit: pageSize, total });
-    }
+      if (idResult.rows.length === 0) {
+        return apiSuccess([], { page, limit: pageSize, total });
+      }
 
-    // Stage 2: fetch text previews only for the page's chunk IDs
-    const chunkIds = idResult.rows.map((r) => r.id);
-    const placeholders = chunkIds.map((_, i) => `$${i + 1}`).join(",");
-    textResult = await pool.query(
-      `SELECT id::text, LEFT(chunk_text, 200) AS preview, length(chunk_text) AS full_length FROM content_chunks WHERE id IN (${placeholders})`,
-      chunkIds
-    );
+      // Stage 2: fetch text previews only for the page's chunk IDs
+      const chunkIds = idResult.rows.map((r) => r.id);
+      const placeholders = chunkIds.map((_, i) => `$${i + 1}`).join(",");
+      textResult = await pool.query(
+        `SELECT id::text, LEFT(chunk_text, 200) AS preview, length(chunk_text) AS full_length FROM content_chunks WHERE id IN (${placeholders})`,
+        chunkIds
+      );
     } catch (err) {
       console.error("[chunk-inspector] query failed:", (err as Error).message);
       return apiSuccess([], { page, limit: pageSize, total: 0 });
@@ -149,7 +148,10 @@ export const GET = createHandler(
 
     const total = parseInt(countResult.rows[0]?.total ?? "0", 10);
     const textMap = new Map(
-      textResult.rows.map((r) => [r.id, { preview: r.preview ?? "", length: parseInt(r.full_length ?? "0", 10) }])
+      textResult.rows.map((r) => [
+        r.id,
+        { preview: r.preview ?? "", length: parseInt(r.full_length ?? "0", 10) },
+      ])
     );
 
     const chunks: ChunkRow[] = idResult.rows.map((r) => {

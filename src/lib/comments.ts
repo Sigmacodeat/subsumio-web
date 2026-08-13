@@ -211,7 +211,8 @@ export interface Notification {
     | "copilot_missing_parties"
     | "copilot_legal_hold_active"
     | "copilot_critical_deadline"
-    | "copilot_no_tasks";
+    | "copilot_no_tasks"
+    | "corpus_delta";
   data: Record<string, unknown>;
   readAt: string | null;
   createdAt: string;
@@ -748,4 +749,104 @@ export async function createInboxTriageNotification(opts: {
     createdAt: new Date().toISOString(),
   };
   await persistNotificationUpsert(notif);
+}
+
+/**
+ * Corpus Delta Notification — wird vom corpus-pipeline Supervisor geschrieben,
+ * wenn der RIS Delta-Watcher neue oder geänderte Dokumente gefunden hat.
+ *
+ * Deterministic ID: `notif_corpus_delta_{YYYY-MM-DD}` verhindert Duplikate
+ * pro Tag — der Delta-Watcher läuft 1x täglich via Cron, aber manuelle
+ * Triggers erzeugen keine zweite Notification für denselben Tag.
+ *
+ * Die Notification ist user-agnostic (userId="system", brainId="system") —
+ * alle Admins sehen sie. Das Corpus-Alert-Banner filtert nach type=corpus_delta.
+ */
+export async function createCorpusDeltaNotification(opts: {
+  newCount: number;
+  changedCount: number;
+  applikationen: string[];
+  failedCount?: number;
+}): Promise<void> {
+  const today = new Date().toISOString().slice(0, 10);
+  const notifId = `notif_corpus_delta_${today}`;
+  const total = opts.newCount + opts.changedCount;
+  const notif: Notification = {
+    id: notifId,
+    userId: "system",
+    brainId: "system",
+    type: "corpus_delta",
+    data: {
+      title:
+        total > 0
+          ? `${total} ${total === 1 ? "neues/geändertes Dokument" : "neue/geänderte Dokumente"} im RIS`
+          : "RIS Delta-Sync abgeschlossen — keine Änderungen",
+      newCount: opts.newCount,
+      changedCount: opts.changedCount,
+      failedCount: opts.failedCount ?? 0,
+      applikationen: opts.applikationen,
+      total,
+      url: "/dashboard/admin/corpus",
+      syncDate: today,
+    },
+    readAt: null,
+    createdAt: new Date().toISOString(),
+  };
+  await persistNotificationUpsert(notif);
+}
+
+/**
+ * Listet alle Corpus-Delta-Notifications (ungelesen), unabhängig vom User —
+ * da Corpus-Alerts systemweit sind (userId="system").
+ */
+export async function listCorpusDeltaNotifications(opts: {
+  unreadOnly?: boolean;
+  limit?: number;
+}): Promise<Notification[]> {
+  const pool = getSharedPgPool();
+  if (!pool) return [];
+  try {
+    await ensureNotifSchema();
+    const conditions = ["type = 'corpus_delta'"];
+    const params: unknown[] = [];
+    if (opts.unreadOnly) {
+      conditions.push("read_at IS NULL");
+    }
+    const limit = Math.min(Number.isFinite(opts.limit) ? opts.limit! : 50, 200);
+    params.push(limit);
+    const result = await pool.query(
+      `SELECT * FROM subsumio_notifications WHERE ${conditions.join(" AND ")} ORDER BY created_at DESC LIMIT $1`,
+      params
+    );
+    return result.rows.map((row: Record<string, unknown>) => ({
+      id: row.id as string,
+      userId: row.user_id as string,
+      brainId: row.brain_id as string,
+      type: row.type as Notification["type"],
+      data: row.data as Record<string, unknown>,
+      readAt:
+        row.read_at instanceof Date ? row.read_at.toISOString() : (row.read_at as string | null),
+      createdAt:
+        row.created_at instanceof Date ? row.created_at.toISOString() : (row.created_at as string),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Markiert alle Corpus-Delta-Notifications als gelesen.
+ */
+export async function markAllCorpusDeltaNotificationsRead(): Promise<number> {
+  const pool = getSharedPgPool();
+  if (!pool) return 0;
+  try {
+    await ensureNotifSchema();
+    const result = await pool.query(
+      "UPDATE subsumio_notifications SET read_at = now() WHERE type = 'corpus_delta' AND read_at IS NULL"
+    );
+    return result.rowCount ?? 0;
+  } catch {
+    return 0;
+  }
 }

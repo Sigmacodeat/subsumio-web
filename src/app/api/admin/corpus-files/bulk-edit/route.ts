@@ -1,10 +1,19 @@
 import { z } from "zod";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
-import { safeCorpusPath, serializeDoc, parseDoc, saveVersion, saveVersionContent, auditLog } from "@/lib/corpus-steward";
+import {
+  safeCorpusPath,
+  serializeDoc,
+  parseDoc,
+  saveVersion,
+  saveVersionContent,
+  auditLog,
+  syncToRawCorpus,
+  atomicWrite,
+} from "@/lib/corpus-steward";
 import { updateIndexEntry } from "@/lib/corpus-index";
 import { markiereZumImport } from "@/lib/corpus-import-queue";
 import { validateFrontmatter } from "@/lib/corpus-schema";
-import { readFileSync, writeFileSync, existsSync, statSync } from "fs";
+import { readFileSync, existsSync, statSync } from "fs";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -41,8 +50,13 @@ export const POST = createHandler(
     if (operation === "set_field" && value === undefined) {
       return apiError("validation_failed", "value is required for set_field", 400);
     }
-    if (operation === "replace_body" || operation === "prepend_body" || operation === "append_body") {
-      if (text === undefined) return apiError("validation_failed", "text is required for this operation", 400);
+    if (
+      operation === "replace_body" ||
+      operation === "prepend_body" ||
+      operation === "append_body"
+    ) {
+      if (text === undefined)
+        return apiError("validation_failed", "text is required for this operation", 400);
     }
 
     let success = 0;
@@ -59,9 +73,6 @@ export const POST = createHandler(
       }
 
       try {
-        // Save version before edit
-        saveVersion(relPath, ctx.user.email, "edit", `bulk ${operation}`);
-
         // Read and parse
         const content = readFileSync(absPath, "utf-8");
         const parsed = parseDoc(content);
@@ -89,18 +100,33 @@ export const POST = createHandler(
         // kanonische Felder (doc_class, jurisdiction) kaputt macht.
         // Bei delete_field nur warnen (kann bewusst sein), bei set_field
         // hard fail — der Nutzer soll keine invaliden Werte setzen können.
+        // BUG 31: Validierung VOR saveVersion — sonst entsteht eine
+        // Phantom-Version (pre-edit snapshot) obwohl kein Edit stattfand.
         if (operation === "set_field") {
-          const pruefung = validateFrontmatter(parsed.frontmatter, parsed.frontmatter.doc_class as string | undefined);
+          const pruefung = validateFrontmatter(
+            parsed.frontmatter,
+            parsed.frontmatter.doc_class as string | undefined
+          );
           if (!pruefung.valid) {
             failed++;
-            errors.push(`${relPath}: schema validation failed: ${pruefung.errors.map(e => e.message).join("; ")}`);
+            errors.push(
+              `${relPath}: schema validation failed: ${pruefung.errors.map((e) => e.message).join("; ")}`
+            );
             continue;
           }
         }
 
-        // Serialize and write
+        // Save version before edit (nur wenn die Änderung wirklich stattfindet)
+        saveVersion(relPath, ctx.user.email, "edit", `bulk ${operation}`);
+
+        // Serialize and write — BUG 54+56: atomicWrite (tmp + fsync + rename)
         const newContent = serializeDoc(parsed.frontmatter, parsed.body);
-        writeFileSync(absPath, newContent, "utf-8");
+        atomicWrite(absPath, newContent);
+
+        // Sync nach law-corpus/{path} (raw) — die Pipeline importiert aus
+        // law-corpus/{dir}, nicht aus _normalized/. Ohne Sync kommt die
+        // Bulk-Änderung nie in die DB (BUG 5).
+        syncToRawCorpus(relPath, newContent);
 
         // Save new version
         saveVersionContent(relPath, newContent, ctx.user.email, "edit", `bulk ${operation} (post)`);
@@ -133,5 +159,5 @@ export const POST = createHandler(
     });
 
     return apiSuccess({ success, failed, errors, operation });
-  },
+  }
 );

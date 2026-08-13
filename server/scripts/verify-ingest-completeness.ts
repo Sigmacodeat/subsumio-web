@@ -29,13 +29,22 @@ function arg(name: string, fb?: string) {
 const RIS_FILE = arg("ris", "/tmp/ris-inforce.jsonl")!;
 const SOURCE_ID = arg("source", "law-at")!;
 const DISK_DIR = arg("disk-dir", join(import.meta.dir, "..", "..", "law-corpus", "at-normen"))!;
-const DB_URL = arg("db", process.env.DATABASE_URL ?? "postgres://sigmabrain@localhost:15432/sigmabrain")!;
+const DB_URL = arg(
+  "db",
+  process.env.DATABASE_URL ?? "postgres://sigmabrain@localhost:15432/sigmabrain"
+)!;
 const SKIP_EMBEDDINGS = process.argv.includes("--skip-embeddings");
 
 function slugify(s: string): string {
-  return s.toLowerCase()
-    .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
-    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
+  return s
+    .toLowerCase()
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80);
 }
 
 /** "§ 1152" → "p-1152", "Art. 5" → "art-5", "Anl. 2" → "anl-2". § 0 → null. */
@@ -56,8 +65,12 @@ function normKey(apa: string | null): string | null {
 }
 
 type Norm = {
-  nor: string; gnr: string; kurztitel: string; abk: string | null;
-  apa: string | null; inkraft: string | null;
+  nor: string;
+  gnr: string;
+  kurztitel: string;
+  abk: string | null;
+  apa: string | null;
+  inkraft: string | null;
 };
 
 async function main() {
@@ -76,7 +89,9 @@ async function main() {
   let norms: Norm[] = [];
   if (existsSync(RIS_FILE)) {
     norms = readFileSync(RIS_FILE, "utf-8")
-      .split("\n").filter(Boolean).map((l) => JSON.parse(l) as Norm)
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => JSON.parse(l) as Norm)
       .filter((n) => n.nor && n.gnr);
   }
   console.log(`RIS-Liste: ${norms.length} Normen geladen`);
@@ -172,7 +187,7 @@ async function main() {
   // ── 4. Stufe 1: RIS → Festplatte (1:1) ──────────────────────────────
   console.log("── Stufe 1: RIS → Festplatte ──────────────────────────────");
   let risTotal = 0;
-  let risExcluded = 0;  // § 0 — bewusster Ausschluss
+  let risExcluded = 0; // § 0 — bewusster Ausschluss
   let risOnDisk = 0;
   let risMissing = 0;
   const missingFromDisk: string[] = [];
@@ -180,7 +195,10 @@ async function main() {
   for (const n of norms) {
     risTotal++;
     const basisKey = normKey(n.apa);
-    if (!basisKey) { risExcluded++; continue; }
+    if (!basisKey) {
+      risExcluded++;
+      continue;
+    }
 
     // Slug wie ris-xml-fetch-normen.ts: dirFor + key
     const dir = n.abk
@@ -211,13 +229,17 @@ async function main() {
   console.log(`  Auf Platte:     ${risOnDisk} (${((risOnDisk / risSoll) * 100).toFixed(2)}%)`);
   console.log(`  Ausgeschlossen: ${risExcluded} (§ 0 — Inhaltsverzeichnis)`);
   console.log(`  Fehlend:        ${risMissing}`);
-  console.log(`  Vollständigkeit:${risOnDisk}/${risSoll} ${risOnDisk === risSoll ? "✓ 1:1" : "✗ unvollständig"}`);
+  console.log(
+    `  Vollständigkeit:${risOnDisk}/${risSoll} ${risOnDisk === risSoll ? "✓ 1:1" : "✗ unvollständig"}`
+  );
   if (missingFromDisk.length > 0) {
     console.log(`  Fehlende Dateien (max 50):`);
     for (const m of missingFromDisk) console.log(`    ${m}`);
   }
   if (risMissing > 0) {
-    console.error(`  ✗ ${risMissing} Normen auf der Platte fehlen — ris-xml-fetch-normen.ts neu laufen.`);
+    console.error(
+      `  ✗ ${risMissing} Normen auf der Platte fehlen — ris-xml-fetch-normen.ts neu laufen.`
+    );
     exitCode = 1;
   } else {
     console.log(`  ✓ Alle ${risTotal - risExcluded} geltenden Normen liegen auf der Platte.`);
@@ -241,7 +263,7 @@ async function main() {
     }
 
     console.log(`  Dateien:        ${diskTotal}`);
-    console.log(`  In DB:          ${diskInDb} (${(diskInDb / diskTotal * 100).toFixed(2)}%)`);
+    console.log(`  In DB:          ${diskInDb} (${((diskInDb / diskTotal) * 100).toFixed(2)}%)`);
     console.log(`  Nicht in DB:    ${diskNotInDb}`);
     if (diskNoHash > 0) {
       console.log(`  Ohne hash:      ${diskNoHash} (werden vom Quality-Gate übersprungen)`);
@@ -251,7 +273,9 @@ async function main() {
       for (const m of notInDb) console.log(`    ${m}`);
     }
     if (diskNotInDb > 0) {
-      console.error(`  ✗ ${diskNotInDb} Dateien nicht in DB — batch-import-from-disk.ts neu laufen.`);
+      console.error(
+        `  ✗ ${diskNotInDb} Dateien nicht in DB — batch-import-from-disk.ts neu laufen.`
+      );
       exitCode = 1;
     } else {
       console.log(`  ✓ Alle ${diskTotal} Dateien sind in der DB.`);
@@ -265,10 +289,12 @@ async function main() {
     const embedMissing = dbChunks - dbEmbedded;
     console.log(`  Pages:          ${dbPages}`);
     console.log(`  Chunks:         ${dbChunks}`);
-    console.log(`  Eingebettet:    ${dbEmbedded} (${dbChunks > 0 ? (dbEmbedded / dbChunks * 100).toFixed(2) : 0}%)`);
+    console.log(
+      `  Eingebettet:    ${dbEmbedded} (${dbChunks > 0 ? ((dbEmbedded / dbChunks) * 100).toFixed(2) : 0}%)`
+    );
     console.log(`  Ohne Embedding: ${embedMissing}`);
     if (embedMissing > 0) {
-      console.error(`  ✗ ${embedMissing} Chunks ohne Embedding — auto-embed-pending.ts neu laufen.`);
+      console.error(`  ✗ ${embedMissing} Chunks ohne Embedding — auto-embed-pg.ts neu laufen.`);
       exitCode = 1;
     } else {
       console.log(`  ✓ Alle ${dbChunks} Chunks haben Embeddings.`);
@@ -289,4 +315,7 @@ async function main() {
   process.exit(exitCode);
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

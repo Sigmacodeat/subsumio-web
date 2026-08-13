@@ -1,4 +1,4 @@
-import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
+import { createHandler, apiSuccess } from "@/lib/api-handler";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { listCorpusNames, getCorpusIndex } from "@/lib/corpus-index";
 import { readFileSync, existsSync } from "fs";
@@ -161,7 +161,9 @@ export const GET = createHandler(
           risTotal: r.ris_total || null,
           alertFlags: Array.isArray(r.alert_flags) ? r.alert_flags : [],
         }));
-      } catch (err) { console.error("[corpus-command-center] pipeline_state query failed:", err); }
+      } catch (err) {
+        console.error("[corpus-command-center] pipeline_state query failed:", err);
+      }
 
       // Pipeline paused?
       try {
@@ -171,7 +173,9 @@ export const GET = createHandler(
         if (pauseResult.rows.length > 0) {
           pipelinePaused = pauseResult.rows[0].value?.paused === true;
         }
-      } catch (err) { console.error("[corpus-command-center] pipeline_config query failed:", err); }
+      } catch (err) {
+        console.error("[corpus-command-center] pipeline_config query failed:", err);
+      }
     }
 
     // ── 1b. Disk-Index (lokal) ──
@@ -190,66 +194,120 @@ export const GET = createHandler(
     }
 
     // ── 3. Flags (Quality) ──
-    let flags: Record<string, { flag: string; note: string; flaggedBy: string; flaggedAt: string }> = {};
+    let flags: Record<
+      string,
+      { flag: string; note: string; flaggedBy: string; flaggedAt: string }
+    > = {};
     if (existsSync(FLAGS_FILE)) {
       try {
         flags = JSON.parse(readFileSync(FLAGS_FILE, "utf-8"));
-      } catch { /* corrupt JSON → leer */ }
+      } catch {
+        /* corrupt JSON → leer */
+      }
     }
 
     // ── 4. Sync-Status zusammenbauen ──
-    // Explizites Mapping: DB source_id → pipeline_state.source_key
-    // (pipeline_state verwendet Kurznamen wie "jud-vwgh", DB verwendet "law-at-judikatur-vwgh")
-    const SOURCE_TO_PIPELINE_KEY: Record<string, string> = {
-      "law-at": "statutes-at",
-      "law-at-landesrecht": "landesrecht",
-      "law-at-judikatur": "jud-ogh",
-      "law-at-judikatur-vwgh": "jud-vwgh",
-      "law-at-judikatur-vfgh": "jud-vfgh",
-      "law-at-judikatur-lvwg": "jud-lvwg",
-      "law-at-judikatur-bvwg": "jud-bvwg",
-      "law-at-judikatur-asylgh": "jud-asylgh",
-      "law-at-judikatur-uvs": "jud-uvs",
-      "law-at-judikatur-dsk": "jud-dsk",
-      "law-at-judikatur-dok": "jud-dok",
-      "law-at-judikatur-gbk": "jud-gbk",
-      "law-at-judikatur-pvak": "jud-pvak",
-      "law-at-judikatur-ubas": "jud-ubas",
-      "law-at-judikatur-umse": "jud-umse",
-      "law-at-staatsvertraege": "staatsvertraege",
-      "law-at-literatur": "literatur-at",
-      "law-de": "statutes-de",
-      "law-ch": "statutes-ch",
-      "law-de-literatur": "literatur-de",
-      "law-ch-literatur": "literatur-ch",
-      "law-de-materialien": "materialien-de",
-      "law-eu": "eu-regulations",
-      "law-eu-directives": "eu-directives",
+    // BUG 20+21: corpora sind Directory-Namen (at, at-normen, at-judikatur-vwgh),
+    // aber dbStats ist nach source_id gekeyed (law-at, law-at-judikatur-vwgh).
+    // Ohne Mapping zeigte das Command Center für ALLE Corpora 0 DB-Pages/0 Chunks.
+    //
+    // CORPUS_TO_SOURCE_ID: mappt Directory-Name → DB source_id.
+    // CORPUS_TO_PIPELINE_KEY: mappt Directory-Name → pipeline_state.source_key.
+    //   Direktes Mapping (nicht via source_id), weil at + at-normen beide
+    //   source_id=law-at haben aber unterschiedliche pipeline keys
+    //   (statutes-at vs normen-at).
+    const CORPUS_TO_SOURCE_ID: Record<string, string> = {
+      at: "law-at",
+      "at-normen": "law-at",
+      "at-landesrecht": "law-at-landesrecht",
+      "at-staatsvertraege": "law-at-staatsvertraege",
+      "at-literatur": "law-at-literatur",
+      "at-judikatur": "law-at-judikatur",
+      "at-judikatur-vwgh": "law-at-judikatur-vwgh",
+      "at-judikatur-vfgh": "law-at-judikatur-vfgh",
+      "at-judikatur-lvwg": "law-at-judikatur-lvwg",
+      "at-judikatur-bvwg": "law-at-judikatur-bvwg",
+      "at-judikatur-asylgh": "law-at-judikatur-asylgh",
+      "at-judikatur-uvs": "law-at-judikatur-uvs",
+      "at-judikatur-dsk": "law-at-judikatur-dsk",
+      "at-judikatur-dok": "law-at-judikatur-dok",
+      "at-judikatur-gbk": "law-at-judikatur-gbk",
+      "at-judikatur-pvak": "law-at-judikatur-pvak",
+      "at-judikatur-ubas": "law-at-judikatur-ubas",
+      "at-judikatur-umse": "law-at-judikatur-umse",
+      // BUG 24: Diese Corpora existieren auf Disk aber haben keine Pipeline-Source.
+      // Sie werden via batch-import-from-disk manuell importiert. Ohne Mapping
+      // zeigte das Command Center sourceId=corpus (Directory-Name) statt law-at-*.
+      "at-avn": "law-at-avn",
+      "at-avsv": "law-at-avsv",
+      "at-bezirke": "law-at-bezirke",
+      "at-bmerl": "law-at-bmerl",
+      "at-gemeinden": "law-at-gemeinden",
+      "at-kmger": "law-at-kmger",
+      "at-spg": "law-at-spg",
+      de: "law-de",
+      "de-literatur": "law-de-literatur",
+      "de-materialien": "law-de-materialien",
+      ch: "law-ch",
+      "ch-literatur": "law-ch-literatur",
+    };
+
+    const CORPUS_TO_PIPELINE_KEY: Record<string, string> = {
+      at: "statutes-at",
+      "at-normen": "normen-at",
+      "at-landesrecht": "landesrecht",
+      "at-staatsvertraege": "staatsvertraege",
+      "at-literatur": "literatur-at",
+      "at-judikatur": "ogh",
+      "at-judikatur-vwgh": "vwgh",
+      "at-judikatur-vfgh": "vfgh",
+      "at-judikatur-lvwg": "lvwg",
+      "at-judikatur-bvwg": "bvwg",
+      "at-judikatur-asylgh": "asylgh",
+      "at-judikatur-uvs": "uvs",
+      "at-judikatur-dsk": "dsk",
+      "at-judikatur-dok": "dok",
+      "at-judikatur-gbk": "gbk",
+      "at-judikatur-pvak": "pvak",
+      "at-judikatur-ubas": "ubas",
+      "at-judikatur-umse": "umse",
+      de: "statutes-de",
+      "de-literatur": "literatur-de",
+      "de-materialien": "materialien-de",
+      ch: "statutes-ch",
+      "ch-literatur": "literatur-ch",
     };
 
     // Pipeline-State Lookup-Map: source_key → { diskCount, dbPages, risTotal }
-    const pipelineBySource: Record<string, { diskCount: number; dbPages: number; risTotal: number | null }> = {};
+    const pipelineBySource: Record<
+      string,
+      { diskCount: number; dbPages: number; risTotal: number | null }
+    > = {};
     for (const p of pipelineState) {
-      pipelineBySource[p.source] = { diskCount: p.diskCount, dbPages: p.dbPages, risTotal: p.risTotal };
+      pipelineBySource[p.source] = {
+        diskCount: p.diskCount,
+        dbPages: p.dbPages,
+        risTotal: p.risTotal,
+      };
     }
 
     const syncRows: CorpusSyncRow[] = [];
 
     for (const corpus of corpora) {
-      const stats = dbStats[corpus];
+      // BUG 20+21: corpus ist ein Directory-Name, dbStats ist nach source_id gekeyed.
+      // Ohne CORPUS_TO_SOURCE_ID-Mapping waren alle DB-Stats 0.
+      const sourceId = CORPUS_TO_SOURCE_ID[corpus] ?? corpus;
+      const stats = dbStats[sourceId];
       const dbPages = stats?.pages ?? 0;
       const dbChunks = stats?.chunks ?? 0;
       const embedded = stats?.embedded ?? 0;
 
-      // Disk-Zahl: aus pipeline_state via explizitem Mapping, oder aus lokalem Disk-Index
-      const pipelineKey = SOURCE_TO_PIPELINE_KEY[corpus];
+      // Disk-Zahl: aus pipeline_state via direktem Corpus→PipelineKey-Mapping
+      const pipelineKey = CORPUS_TO_PIPELINE_KEY[corpus];
       const pipelineInfo = pipelineKey ? pipelineBySource[pipelineKey] : undefined;
       const disk = pipelineInfo ? pipelineInfo.diskCount : (diskCounts[corpus] ?? 0);
       // RIS Total: aus pipeline_state, wenn verfügbar
       const risTotal = pipelineInfo && pipelineInfo.risTotal ? pipelineInfo.risTotal : null;
-
-      // Status-Logik: RIS OGD ist Source-of-Truth
-      const expectedDbPages = pipelineInfo ? pipelineInfo.dbPages : null;
 
       const stale = dbChunks - embedded;
       const coverage = dbChunks > 0 ? Math.round((embedded / dbChunks) * 1000) / 10 : 0;
@@ -258,11 +316,22 @@ export const GET = createHandler(
       const missingFromDb = risTotal !== null ? Math.max(0, risTotal - dbPages) : 0;
       const missingFromDisk = risTotal !== null ? Math.max(0, risTotal - disk) : 0;
       const newOnRis = risTotal !== null ? Math.max(0, risTotal - disk) : 0;
-      // Orphan nur für RIS-Sources sauber vergleichen; bei Nicht-RIS ist disk=Quelldateien und dbPages=§-Pages,
-      // also >5x normal (Gesetze werden pro § in Pages zerlegt). Für Nicht-RIS zählen nur echt "zu viele" DB-Pages.
-      const orphanDb = risTotal !== null ? Math.max(0, dbPages - risTotal) : Math.max(0, dbPages - disk * 5);
+      // Orphan: DB-Pages ohne entsprechenden Disk-Bestand.
+      // Für RIS-Sources: risTotal ist Source-of-Truth → dbPages > risTotal = orphan.
+      // Für Nicht-RIS: disk-Dateien vs dbPages kann nicht direkt verglichen werden
+      // (1 Datei → viele §-Pages bei Gesetzen). Zuverlässiger Signal: disk=0 aber
+      // dbPages>0 → alle DB-Pages sind orphan. Sonst 0 (nicht bestimmbar ohne
+      // per-file Tracking). Die bisherige `disk * 5`-Heuristik war für Judikatur
+      // falsch (1 Datei → 1 Page) und für große Gesetze zu niedrig (1 Datei →
+      // 1500+ Pages).
+      const orphanDb =
+        risTotal !== null
+          ? Math.max(0, dbPages - risTotal)
+          : disk === 0 && dbPages > 0
+            ? dbPages
+            : 0;
 
-      // Status: Wahrheitsgemäß nach RIS für RIS-Sources; für Nicht-RIS mit §-Split-Heuristik
+      // Status: Wahrheitsgemäß nach RIS für RIS-Sources; für Nicht-RIS konservativ
       let syncStatus: CorpusSyncRow["syncStatus"] = "synced";
       if (dbPages === 0 && disk > 0) {
         syncStatus = "no_db";
@@ -272,18 +341,23 @@ export const GET = createHandler(
         syncStatus = "import_pending";
       } else if (risTotal !== null && orphanDb > 0) {
         syncStatus = "orphan_in_db";
-      } else if (disk > 0 && dbPages === 0) {
-        syncStatus = "no_db";
+      } else if (disk === 0 && dbPages > 0) {
+        syncStatus = "orphan_in_db";
       }
 
-      // notImported = fehlende DB-Pages; bisherige fallback bleibt für Nicht-RIS
-      const notImported = expectedDbPages !== null ? Math.max(0, expectedDbPages - dbPages) : Math.max(0, disk - dbPages);
-      const canUpdate = risTotal !== null && pipelineKey != null && (missingFromDb > 0 || missingFromDisk > 0);
-
+      // notImported: Dateien auf Disk die noch nicht in der DB sind.
+      // expectedDbPages (pipeline_state.db_pages) ist die Pipeline's letzte
+      // Messung — derselbe DB-Count, nur leicht veraltet. expectedDbPages -
+      // dbPages ist daher immer ~0 und versteckt echte Lücken.
+      // Zuverlässiger Signal: dbPages=0 aber disk>0 → nichts importiert.
+      // Für RIS-Sources: missingFromDb ist die echte Lücke (risTotal - dbPages).
+      const notImported = risTotal !== null ? missingFromDb : dbPages === 0 && disk > 0 ? disk : 0;
+      const canUpdate =
+        risTotal !== null && pipelineKey != null && (missingFromDb > 0 || missingFromDisk > 0);
 
       syncRows.push({
         corpus,
-        sourceId: corpus,
+        sourceId,
         diskFiles: disk,
         dbPages,
         dbChunks,
@@ -293,7 +367,13 @@ export const GET = createHandler(
         notImported,
         orphanDb,
         syncStatus,
-        fullyComplete: syncStatus === "synced" && coverage === 100 && stale === 0 && dbPages > 0 && missingFromDb === 0 && missingFromDisk === 0,
+        fullyComplete:
+          syncStatus === "synced" &&
+          coverage === 100 &&
+          stale === 0 &&
+          dbPages > 0 &&
+          missingFromDb === 0 &&
+          missingFromDisk === 0,
         risTotal,
         missingFromDb,
         missingFromDisk,
@@ -329,7 +409,15 @@ export const GET = createHandler(
 
     const trustByCorpus: Record<string, TrustRow> = {};
     for (const c of corpora) {
-      trustByCorpus[c] = { corpus: c, verified: 0, needsReview: 0, defective: 0, archived: 0, unreviewed: 0, total: 0 };
+      trustByCorpus[c] = {
+        corpus: c,
+        verified: 0,
+        needsReview: 0,
+        defective: 0,
+        archived: 0,
+        unreviewed: 0,
+        total: 0,
+      };
     }
     for (const [path, entry] of Object.entries(flags)) {
       const corpus = path.includes("/") ? path.split("/")[0] : "?";
@@ -346,7 +434,9 @@ export const GET = createHandler(
       const t = trustByCorpus[c];
       t.unreviewed = Math.max(0, (diskByCorpus[c] ?? 0) - t.total);
     }
-    const trustRows = Object.values(trustByCorpus).filter((t) => t.total > 0 || (diskByCorpus[t.corpus] ?? 0) > 0);
+    const trustRows = Object.values(trustByCorpus).filter(
+      (t) => t.total > 0 || (diskByCorpus[t.corpus] ?? 0) > 0
+    );
 
     // ── 7. Totals ──
     const totalDisk = syncRows.reduce((s, r) => s + r.diskFiles, 0);
@@ -403,16 +493,22 @@ export const GET = createHandler(
             running: r.pid != null && parseInt(r.pid, 10) > 0,
           });
         }
-      } catch (err) { console.error("[corpus-command-center] ris-delta query failed:", err); }
+      } catch (err) {
+        console.error("[corpus-command-center] ris-delta query failed:", err);
+      }
     }
 
     // Delta-Sync Trigger-Status (ob ein manueller Trigger ansteht)
     let deltaTriggerPending = false;
     if (pool) {
       try {
-        const trigResult = await pool.query(`SELECT key FROM pipeline_config WHERE key = 'delta_sync_triggered'`);
+        const trigResult = await pool.query(
+          `SELECT key FROM pipeline_config WHERE key = 'delta_sync_triggered'`
+        );
         deltaTriggerPending = trigResult.rows.length > 0;
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
 
     return apiSuccess({
@@ -429,7 +525,10 @@ export const GET = createHandler(
           totalMissingFromDb,
           totalMissingFromDisk,
           totalNewOnRis,
-          coveragePct: totalDbPages > 0 ? Math.round((totalEmbedded / (totalDbPages > 0 ? totalDbPages : 1)) * 1000) / 10 : 0,
+          coveragePct:
+            totalDbPages > 0
+              ? Math.round((totalEmbedded / (totalDbPages > 0 ? totalDbPages : 1)) * 1000) / 10
+              : 0,
         },
       },
       workQueue: {
@@ -458,5 +557,5 @@ export const GET = createHandler(
         triggerPending: deltaTriggerPending,
       },
     });
-  },
+  }
 );

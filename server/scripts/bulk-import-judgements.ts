@@ -317,7 +317,7 @@ async function main() {
     if (NO_EMBED) {
       console.log("");
       console.log("Embedding wurde übersprungen (--no-embed). Nächster Schritt:");
-      console.log("  bun run server/scripts/auto-embed-pending.ts");
+      console.log("  bun run server/scripts/auto-embed-pg.ts");
     } else {
       console.log("Alle Urteile wurden importiert + embedded (auto-chunk + auto-embed).");
     }

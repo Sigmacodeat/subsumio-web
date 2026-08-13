@@ -11,21 +11,23 @@
 **Ziel**: Jede AI-Antwort hat per-claim Confidence Scores (0-1) mit Kalibrierung.
 
 **Userflows**:
+
 1. User stellt Frage → AI antwortet → jeder Claim hat Confidence-Indikator (grün/gelb/rot)
 2. Dashboard zeigt aggregierte Confidence + ECE-Trend
 3. Audit-Export enthält per-claim Confidence mit Begründung
 
 **Datenmodell**:
+
 ```typescript
 interface ClaimConfidence {
-  claim_text: string;        // The actual sentence/claim
-  claim_index: number;       // Position in answer
-  confidence: number;        // 0-1 calibrated score
+  claim_text: string; // The actual sentence/claim
+  claim_index: number; // Position in answer
+  confidence: number; // 0-1 calibrated score
   level: "high" | "medium" | "low";
   factors: {
     has_citation: boolean;
-    citation_grounded: boolean;   // § exists in context
-    citation_verified: boolean;   // Cross-verify confirmed
+    citation_grounded: boolean; // § exists in context
+    citation_verified: boolean; // Cross-verify confirmed
     hedging_detected: boolean;
     guardrail_flags: number;
     cross_verify_flags: number;
@@ -34,11 +36,11 @@ interface ClaimConfidence {
 }
 
 interface DocumentConfidence {
-  overall_confidence: number;     // 0-1 calibrated
+  overall_confidence: number; // 0-1 calibrated
   confidence_level: "high" | "medium" | "low";
   claim_confidences: ClaimConfidence[];
   calibration: {
-    ece: number;                  // Expected Calibration Error
+    ece: number; // Expected Calibration Error
     sample_count: number;
     last_updated: string;
   };
@@ -46,6 +48,7 @@ interface DocumentConfidence {
 ```
 
 **Architektur-Entscheidungen**:
+
 - Claim decomposition: Sentence-level (reuse `CLAIM_SENTENCE_RX` from ai-quality.ts)
 - Per-claim grounding: Check if claim's §-citations appear in context (reuse `citationInContext` logic)
 - Confidence formula: `C = w1 * citation_grounded + w2 * no_guardrail_flags + w3 * no_hedging + w4 * cross_verify_clean`
@@ -55,15 +58,17 @@ interface DocumentConfidence {
   - w4=0.2 (cross-verify catches semantic errors)
 - Level thresholds: HIGH ≥ 0.8, MEDIUM ≥ 0.5, LOW < 0.5
 - Calibration: Track predicted confidence vs. actual correctness (from judge/attorney review)
-- ECE: Bin into 10 buckets, sum |accuracy - confidence| * bin_size
+- ECE: Bin into 10 buckets, sum |accuracy - confidence| \* bin_size
 
 **Files to create/modify**:
+
 1. NEW: `server/src/core/confidence-scoring.ts` — Core module
 2. MODIFY: `server/src/core/think/index.ts` — Integrate after cross-verify
 3. MODIFY: `src/lib/ai-certification.ts` — Add `claimConfidences` field
 4. NEW: `server/test/confidence-scoring.test.ts` — Tests
 
 **Integration point in think/index.ts** (after line 915, before streaming):
+
 ```typescript
 // ── Claim-Level Confidence Scoring ──
 let documentConfidence: DocumentConfidence | undefined;
@@ -75,11 +80,14 @@ if (legalMode && response.answer && !opts.stubResponse) {
     guardrailResult: lastGuardrailResult,
     crossVerifyResult: lastCrossVerifyResult,
   });
-  warnings.push(`CONFIDENCE: ${documentConfidence.confidence_level} (${documentConfidence.overall_confidence.toFixed(2)})`);
+  warnings.push(
+    `CONFIDENCE: ${documentConfidence.confidence_level} (${documentConfidence.overall_confidence.toFixed(2)})`
+  );
 }
 ```
 
 **ThinkResult extension**:
+
 ```typescript
 export interface ThinkResult {
   // ... existing fields ...
@@ -88,6 +96,7 @@ export interface ThinkResult {
 ```
 
 **Acceptance criteria**:
+
 - [ ] Every AI output has per-claim confidence scores
 - [ ] Claims with no grounding score < 0.3
 - [ ] Claims with grounded citations + no flags score > 0.8
@@ -103,25 +112,28 @@ export interface ThinkResult {
 **Ziel**: Jeder Claim in einer AI-Antwort hat einen klickbaren Link zur exakten Quellen-Passage.
 
 **Datenmodell**:
+
 ```typescript
 interface ProvenanceLink {
   claim_index: number;
   claim_text: string;
   source_slug: string;
-  source_passage: string;     // The exact text from the source
-  passage_start: number;      // Character offset in source
+  source_passage: string; // The exact text from the source
+  passage_start: number; // Character offset in source
   passage_end: number;
   relevance: "direct" | "paraphrase" | "background";
 }
 ```
 
 **Architektur-Entscheidungen**:
+
 - Passage-level citation: Extend citation format to `[slug#section]` or carry character offsets
 - Retrieval metadata: Propagate chunk text + offsets from gather.ts through to confidence scoring
 - Provenance map: Built during claim decomposition — for each claim, find which context chunk contains the cited §
 - UI: On claim hover, show source passage in a popover/panel
 
 **Files to create/modify**:
+
 1. NEW: `server/src/core/provenance.ts` — Provenance chain builder
 2. MODIFY: `server/src/core/think/gather.ts` — Propagate chunk offsets
 3. MODIFY: `server/src/core/confidence-scoring.ts` — Integrate provenance
@@ -129,6 +141,7 @@ interface ProvenanceLink {
 5. MODIFY: `src/components/chat/` — Provenance panel UI (deferred to frontend phase)
 
 **Acceptance criteria**:
+
 - [ ] Every claim with a citation has a provenance link
 - [ ] Provenance link includes exact source passage text
 - [ ] Provenance chain stored in certification record
@@ -143,11 +156,13 @@ interface ProvenanceLink {
 **Ziel**: Daily automated sync of statutes from official sources, with diff detection and stale citation alerts.
 
 **Userflows**:
+
 1. Cron job runs daily → fetches latest statutes → diffs → re-imports changed §§
 2. Dashboard shows freshness status per jurisdiction
 3. Pipeline outputs citing changed §§ get stale alerts
 
 **Architektur-Entscheidungen**:
+
 - DE: gesetze-im-internet.de XML API (all federal laws)
 - AT: RIS-OGD API v2.6
 - CH: fedlex.ch API
@@ -157,15 +172,17 @@ interface ProvenanceLink {
 - Alert: Check existing pipeline outputs for citations to changed §§
 
 **Files to create/modify**:
+
 1. NEW: `server/scripts/sync-statutes-de.ts` — gesetze-im-internet.de fetcher
 2. NEW: `server/scripts/sync-statutes-at.ts` — RIS-OGD fetcher
 3. NEW: `server/scripts/sync-statutes-ch.ts` — fedlex.ch fetcher
 4. MODIFY: `src/app/api/cron/law-sync/route.ts` — Add statute sync
 5. MODIFY: `src/lib/source-registry.ts` — Add statute-specific freshness
 6. NEW: `src/lib/stale-citation-alert.ts` — Alert engine
-7. NEW: `src/components/dashboard/corpus-freshness-widget.tsx` — UI widget
+7. DELETED: corpus-freshness-widget.tsx (tot, durch command-center ersetzt)
 
 **Acceptance criteria**:
+
 - [ ] Cron job fetches all 4 jurisdictions daily
 - [ ] Changed §§ detected and re-imported within 24h
 - [ ] Stale citation alerts on affected pipeline outputs
@@ -180,6 +197,7 @@ interface ProvenanceLink {
 **Ziel**: Typed edges graph with hierarchy: Facts → Rules → Principles → Precedents.
 
 **Architektur-Entscheidungen**:
+
 - Extend existing `subsumio_judgement_citations` with edge types
 - New table: `subsumio_legal_graph_edges` with typed edges
 - Edge types: `cites_statute`, `applies_principle`, `distinguishes_from`, `overrules`, `interprets_article`
@@ -187,6 +205,7 @@ interface ProvenanceLink {
 - Hierarchical retrieval: Query at appropriate abstraction level
 
 **Files to create/modify**:
+
 1. MODIFY: `src/lib/legal-graph/schema.ts` — Add typed edges table
 2. MODIFY: `src/lib/legal-graph/search.ts` — Hierarchical queries
 3. NEW: `src/lib/legal-graph/principle-extraction.ts` — LLM extraction
@@ -194,6 +213,7 @@ interface ProvenanceLink {
 5. NEW: `server/migrations/004_legal_graph_edges.sql` — Schema
 
 **Acceptance criteria**:
+
 - [ ] Graph contains typed edges
 - [ ] Retrieval returns results at appropriate abstraction level
 - [ ] 20+ tests for graph queries
@@ -207,6 +227,7 @@ interface ProvenanceLink {
 **Ziel**: 4-stage citation verification cascade with ensemble option.
 
 **Architektur-Entscheidungen**:
+
 - Stage 1 (existing): Exact match (deterministic, free)
 - Stage 2 (existing): Fuzzy match (deterministic, free)
 - Stage 3 (new): Paraphrase judge — single LLM call, cheap
@@ -215,12 +236,14 @@ interface ProvenanceLink {
 - Activation: Stage 4 for high-stakes outputs only
 
 **Files to create/modify**:
+
 1. MODIFY: `server/src/core/citation-guardrail.ts` — Add Stage 3 + 4 hooks
 2. NEW: `server/src/core/ensemble-verify.ts` — Multi-model parallel verification
 3. MODIFY: `src/lib/ai-certification.ts` — Add `verificationMethod` field
 4. NEW: `server/test/ensemble-verify.test.ts` — Tests
 
 **Acceptance criteria**:
+
 - [ ] Stage 3 runs on every citation
 - [ ] Stage 4 runs on high-stakes outputs
 - [ ] `verificationMethod` persisted on certification
@@ -235,18 +258,21 @@ interface ProvenanceLink {
 **Ziel**: Uploaded documents cannot override system instructions.
 
 **Architektur-Entscheidungen**:
+
 - Input sanitization: Scan for injection patterns
 - Document/system prompt isolation: XML delimiter separation
 - Output validation: Check for injected content in output
 - Adversarial test suite: Known injection patterns
 
 **Files to create/modify**:
+
 1. NEW: `server/src/core/adversarial-defense.ts` — Injection detection
 2. MODIFY: `server/src/core/extract-document.ts` — Add injection scanner
 3. MODIFY: `server/src/core/think/prompt.ts` — Isolation delimiters
 4. NEW: `tests/e2e-playwright/adversarial-injection.spec.ts` — Test suite
 
 **Acceptance criteria**:
+
 - [ ] 100% of known injection patterns detected
 - [ ] Document content cannot override system instructions
 - [ ] Injection attempts logged in audit trail
@@ -261,6 +287,7 @@ interface ProvenanceLink {
 **Ziel**: Full reasoning trace for every AI output, immutable, exportable.
 
 **Datenmodell**:
+
 ```typescript
 interface ReasoningTrace {
   trace_id: string;
@@ -279,6 +306,7 @@ interface ReasoningTrace {
 ```
 
 **Architektur-Entscheidungen**:
+
 - Extend existing hash-chained audit log
 - New table: `subsumio_reasoning_traces` linked to audit log
 - Export: CSV + PDF in EU AI Act Art. 13 format
@@ -286,6 +314,7 @@ interface ReasoningTrace {
 - Webhook: ESCALATE/BLOCK events trigger configurable webhooks
 
 **Files to create/modify**:
+
 1. NEW: `src/lib/ai-reasoning-trace.ts` — Trace capture and storage
 2. MODIFY: `src/lib/audit.ts` — Link reasoning traces
 3. NEW: `server/migrations/005_reasoning_traces.sql` — Schema
@@ -293,6 +322,7 @@ interface ReasoningTrace {
 5. MODIFY: `server/src/core/think/index.ts` — Capture trace data
 
 **Acceptance criteria**:
+
 - [ ] Every AI output has complete reasoning trace
 - [ ] Traces immutable (hash-chained)
 - [ ] CSV/PDF export available

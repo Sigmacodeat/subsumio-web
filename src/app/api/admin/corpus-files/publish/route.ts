@@ -1,10 +1,23 @@
 import { z } from "zod";
 import { createHandler, apiSuccess } from "@/lib/api-handler";
-import { offeneEintraege, alsImportiertMarkieren, type WarteEintrag } from "@/lib/corpus-import-queue";
+import {
+  offeneEintraege,
+  alsImportiertMarkieren,
+  type WarteEintrag,
+} from "@/lib/corpus-import-queue";
 import { getSharedPgPool } from "@/lib/auth/store";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 10;
+
+interface PublishStatus {
+  laeuft: boolean;
+  gestartet: string | null;
+  quellen: string[];
+  dateien: number;
+  ergebnis?: "ok" | "fehler";
+  meldung?: string;
+}
 
 const bodySchema = z.object({
   paths: z.array(z.string()).optional(),
@@ -22,7 +35,12 @@ const bodySchema = z.object({
 
 /**
  * GET /api/admin/corpus-files/publish
- * → Listet alle offenen Import-Queue-Einträge + Pipeline-Status.
+ * → Listet alle offenen Import-Queue-Einträge + Pipeline-Live-Status.
+ *
+ *   status.laeuft = true wenn mindestens eine Pipeline-Source gerade importiert
+ *   (stage = 'importing' oder 'running'). status.quellen listet die aktiven
+ *   Source-Keys, status.dateien ist die Anzahl der Queue-Einträge die von den
+ *   laufenden Quellen betroffen sind.
  *
  * POST /api/admin/corpus-files/publish
  * → Stoßt den Pipeline-Import an (setzt Trigger-Flag in pipeline_config).
@@ -35,11 +53,93 @@ export const GET = createHandler(
   },
   async () => {
     const eintraege: WarteEintrag[] = offeneEintraege();
+
+    // Pipeline-Live-Status aus pipeline_state abfragen.
+    // Ein Import "läuft" wenn mindestens eine Source stage='importing' hat
+    // oder ein PID gesetzt ist (Prozess aktiv).
+    // Zusätzlich: alert_flags prüfen um ergebnis='fehler' + meldung zu
+    // liefern, damit der PublishBanner den letzten Fehler anzeigen kann.
+    let status: PublishStatus | null = null;
+    const pool = getSharedPgPool();
+    if (pool) {
+      try {
+        const result = await pool.query(`
+          SELECT source_key, stage, pid, pid_started_at, alert_flags
+          FROM pipeline_state
+          WHERE stage IN ('importing', 'running', 'backfilling', 'embedding')
+             OR pid IS NOT NULL
+        `);
+        const activeRows = result.rows.filter(
+          (r) =>
+            r.stage === "importing" ||
+            r.stage === "running" ||
+            r.stage === "backfilling" ||
+            r.pid !== null
+        );
+        if (activeRows.length > 0) {
+          const quellen = activeRows.map((r) => r.source_key);
+          const dateien = eintraege.length;
+          const gestartet =
+            activeRows
+              .map((r) => r.pid_started_at)
+              .filter(Boolean)
+              .sort()[0] ?? null;
+          status = {
+            laeuft: true,
+            gestartet: gestartet ? new Date(gestartet).toISOString() : null,
+            quellen,
+            dateien,
+          };
+        }
+
+        // Letzten Import-Fehler abfragen (alert_flags mit type='import_failed')
+        if (!status?.laeuft) {
+          const alertResult = await pool.query(`
+            SELECT source_key, alert_flags
+            FROM pipeline_state
+            WHERE alert_flags IS NOT NULL
+              AND alert_flags::text LIKE '%import_failed%'
+          `);
+          if (alertResult.rows.length > 0) {
+            const failedSources = alertResult.rows.map((r) => r.source_key);
+            const alerts = alertResult.rows.flatMap((r) => {
+              try {
+                const flags =
+                  typeof r.alert_flags === "string" ? JSON.parse(r.alert_flags) : r.alert_flags;
+                return Array.isArray(flags)
+                  ? flags.filter((f: { type: string }) => f.type === "import_failed")
+                  : [];
+              } catch {
+                return [];
+              }
+            });
+            if (alerts.length > 0) {
+              const lastAlert = alerts.sort(
+                (a: { raised_at?: string }, b: { raised_at?: string }) =>
+                  (b.raised_at ?? "").localeCompare(a.raised_at ?? "")
+              )[0];
+              status = {
+                laeuft: false,
+                gestartet: null,
+                quellen: failedSources,
+                dateien: 0,
+                ergebnis: "fehler",
+                meldung: (lastAlert as { message?: string }).message ?? "Import fehlgeschlagen",
+              };
+            }
+          }
+        }
+      } catch {
+        // pipeline_state nicht verfügbar → kein Status
+      }
+    }
+
     return apiSuccess({
       offen: eintraege.length,
       eintraege,
+      status: status ?? { laeuft: false, gestartet: null, quellen: [], dateien: 0 },
     });
-  },
+  }
 );
 
 export const POST = createHandler(
@@ -59,7 +159,8 @@ export const POST = createHandler(
     // Trigger-Modus: Pipeline-Flag setzen, Queue NICHT leeren.
     // Die Pipeline liest pipeline_config jeden Zyklus und startet bei
     // triggered=true einen sofortigen Lauf. Nach erfolgreichem Import
-    // leert sie die Queue (alsImportiertMarkieren).
+    // leert sie die Queue via drainImportQueue (edit/create) und
+    // reconcileDeletedFiles (delete).
     if (body.trigger) {
       const pool = getSharedPgPool();
       if (!pool) {
@@ -77,7 +178,10 @@ export const POST = createHandler(
            VALUES ('triggered', $1::jsonb, NOW(), $2)
            ON CONFLICT (key)
            DO UPDATE SET value = $1::jsonb, updated_at = NOW(), updated_by = $2`,
-          [JSON.stringify({ triggered: true, seit: new Date().toISOString(), pfade: paths }), ctx.user.email]
+          [
+            JSON.stringify({ triggered: true, seit: new Date().toISOString(), pfade: paths }),
+            ctx.user.email,
+          ]
         );
       } catch {
         // pipeline_config-Tabelle fehlt → Legacy-Modus.
@@ -85,14 +189,16 @@ export const POST = createHandler(
         return apiSuccess({
           abgeraeumt,
           verbleibend: offeneEintraege().length,
-          warnung: "pipeline_config-Tabelle fehlt — Queue wurde direkt geleert (Legacy-Modus). Migration 011 anwenden.",
+          warnung:
+            "pipeline_config-Tabelle fehlt — Queue wurde direkt geleert (Legacy-Modus). Migration 011 anwenden.",
         });
       }
       return apiSuccess({
         abgeraeumt: 0,
         verbleibend: offeneEintraege().length,
         triggered: true,
-        message: "Import wurde angestoßen. Die Pipeline übernimmt den Import beim nächsten Zyklus und leert die Queue nach erfolgreichem Import.",
+        message:
+          "Import wurde angestoßen. Die Pipeline übernimmt den Import beim nächsten Zyklus und leert die Queue nach erfolgreichem Import.",
       });
     }
 
@@ -102,5 +208,5 @@ export const POST = createHandler(
       abgeraeumt,
       verbleibend: offeneEintraege().length,
     });
-  },
+  }
 );

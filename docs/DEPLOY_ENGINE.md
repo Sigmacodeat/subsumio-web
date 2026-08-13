@@ -161,7 +161,7 @@ Run once against the deployed engine's database (per-§ pages, embeddable):
 # fetcher first: bun run server/scripts/ingest-law-corpus.ts)
 DATABASE_URL=<engine postgres url> bun run server/scripts/import-statutes-split.ts
 # then embed what landed:
-DATABASE_URL=<engine postgres url> bun run server/scripts/auto-embed-pending.ts
+DATABASE_URL=<engine postgres url> bun run server/scripts/auto-embed-pg.ts
 ```
 
 ---

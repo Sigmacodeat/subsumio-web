@@ -30,17 +30,30 @@
  *   bun scripts/ris-delta-watcher.ts --report-only       # nur Status, kein Sync
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync, renameSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { execSync } from "child_process";
-import { createHash } from "crypto";
 import { dump as yamlDump } from "js-yaml";
 
-import { fetchDelta, DELTA_APPLIKATIONS, formatDeltaSummary, type DeltaApplikation, type DeltaDocument, type DeltaResult } from "./ris-delta";
+import {
+  fetchDelta,
+  DELTA_APPLIKATIONS,
+  formatDeltaSummary,
+  type DeltaApplikation,
+  type DeltaDocument,
+  type DeltaResult,
+} from "./ris-delta";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { proxyFetchOptions, getUserAgent } from "./ris-proxy";
-import { fetchWithRetry, risXmlToText, atomicWrite, contentHash, validateFetchedText, contentMatchesDocument } from "./backfill-utils";
+import {
+  fetchWithRetry,
+  risXmlToText,
+  atomicWrite,
+  contentHash,
+  validateFetchedText,
+  contentMatchesDocument,
+} from "./backfill-utils";
 
 // ── Config ─────────────────────────────────────────────────────────────
 
@@ -88,22 +101,34 @@ function psqlQuery(query: string): string {
   try {
     return sh(`psql ${JSON.stringify(dbUrl())} -q -t -A -f ${JSON.stringify(tmpFile)}`);
   } finally {
-    try { unlinkSync(tmpFile); } catch { /* ignore */ }
+    try {
+      unlinkSync(tmpFile);
+    } catch {
+      /* ignore */
+    }
   }
 }
 
-function psqlJSON(query: string): any[] {
+function psqlJSON(query: string): Record<string, unknown>[] {
   const raw = psqlQuery(query);
   if (!raw) return [];
-  try { return JSON.parse(raw); } catch { return []; }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
 }
 
 function ensureSourceRow(key: string): void {
-  psqlQuery(`INSERT INTO pipeline_state (source_key) VALUES ('${key}') ON CONFLICT (source_key) DO NOTHING`);
+  psqlQuery(
+    `INSERT INTO pipeline_state (source_key) VALUES ('${key}') ON CONFLICT (source_key) DO NOTHING`
+  );
 }
 
 function getCursor(stateKey: string): string | null {
-  const rows = psqlJSON(`SELECT last_cycle_at FROM pipeline_state WHERE source_key = '${stateKey}'`);
+  const rows = psqlJSON(
+    `SELECT last_cycle_at FROM pipeline_state WHERE source_key = '${stateKey}'`
+  );
   if (Array.isArray(rows) && rows.length > 0 && rows[0].last_cycle_at) {
     return rows[0].last_cycle_at;
   }
@@ -111,11 +136,15 @@ function getCursor(stateKey: string): string | null {
 }
 
 function updateCursor(stateKey: string, cursor: string): void {
-  psqlQuery(`UPDATE pipeline_state SET last_cycle_at = '${cursor}', updated_at = NOW() WHERE source_key = '${stateKey}'`);
+  psqlQuery(
+    `UPDATE pipeline_state SET last_cycle_at = '${cursor}', updated_at = NOW() WHERE source_key = '${stateKey}'`
+  );
 }
 
 function resetCursor(stateKey: string): void {
-  psqlQuery(`UPDATE pipeline_state SET last_cycle_at = NULL, updated_at = NOW() WHERE source_key = '${stateKey}'`);
+  psqlQuery(
+    `UPDATE pipeline_state SET last_cycle_at = NULL, updated_at = NOW() WHERE source_key = '${stateKey}'`
+  );
 }
 
 function raiseAlert(stateKey: string, type: string, severity: string, message: string): void {
@@ -157,14 +186,19 @@ function markiereZumImport(pfad: string, art: "edit" | "create" = "edit"): void 
   if (existsSync(WARTESCHLANGE_DATEI)) {
     try {
       eintraege = JSON.parse(readFileSync(WARTESCHLANGE_DATEI, "utf-8"));
-    } catch { eintraege = []; }
+    } catch {
+      eintraege = [];
+    }
   }
   const eintrag = { pfad, benutzer: "ris-delta-watcher", seit: new Date().toISOString(), art };
   const i = eintraege.findIndex((e) => e.pfad === pfad);
   if (i >= 0) eintraege[i] = eintrag;
   else eintraege.push(eintrag);
   mkdirSync(dirname(WARTESCHLANGE_DATEI), { recursive: true });
-  writeFileSync(WARTESCHLANGE_DATEI, JSON.stringify(eintraege, null, 2), "utf-8");
+  // BUG 67: atomic write (tmp + rename) — wie corpus-import-queue.ts (BUG 13).
+  const tmp = `${WARTESCHLANGE_DATEI}.tmp.${process.pid}.${Date.now()}`;
+  writeFileSync(tmp, JSON.stringify(eintraege, null, 2), "utf-8");
+  renameSync(tmp, WARTESCHLANGE_DATEI);
 }
 
 // ── XML Fetch + Markdown Build ─────────────────────────────────────────
@@ -184,7 +218,10 @@ async function fetchXml(url: string): Promise<string | null> {
 export function slugify(s: string): string {
   return s
     .toLowerCase()
-    .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 80);
@@ -218,7 +255,6 @@ export function buildStatuteMarkdown(doc: DeltaDocument, xmlText: string): strin
   const text = risXmlToText(xmlText);
   const titel = doc.kurztitel || doc.id;
   const apa = doc.artikelParagraphAnlage || "";
-  const key = normKey(apa) || doc.id.toLowerCase();
 
   const fm: string[] = [
     `title: "${esc(titel)}"`,
@@ -236,7 +272,9 @@ export function buildStatuteMarkdown(doc: DeltaDocument, xmlText: string): strin
   fm.push(`source_format: xml`);
   fm.push(`retrieved_at: "${new Date().toISOString().slice(0, 10)}"`);
   fm.push(`zuletzt_geaendert: "${doc.changedAt}"`);
-  fm.push(`license: "Quelle: RIS OGD (data.bka.gv.at), Bundeskanzleramt Österreich — Open Government Data, Namensnennung."`);
+  fm.push(
+    `license: "Quelle: RIS OGD (data.bka.gv.at), Bundeskanzleramt Österreich — Open Government Data, Namensnennung."`
+  );
   fm.push(`content_hash: "${contentHash(text)}"`);
 
   return `---\n${fm.join("\n")}\n---\n\n# ${titel}${apa ? ` — ${apa}` : ""}\n\n${text}\n`;
@@ -281,7 +319,6 @@ export function buildLandesrechtMarkdown(doc: DeltaDocument, xmlText: string): s
   const text = risXmlToText(xmlText);
   const titel = doc.kurztitel || doc.id;
   const apa = doc.artikelParagraphAnlage || "";
-  const key = normKey(apa) || doc.id.toLowerCase();
 
   const fm: string[] = [
     `title: "${esc(titel)}"`,
@@ -299,7 +336,9 @@ export function buildLandesrechtMarkdown(doc: DeltaDocument, xmlText: string): s
   fm.push(`source_format: xml`);
   fm.push(`retrieved_at: "${new Date().toISOString().slice(0, 10)}"`);
   fm.push(`zuletzt_geaendert: "${doc.changedAt}"`);
-  fm.push(`license: "Quelle: RIS OGD (data.bka.gv.at), Bundeskanzleramt Österreich — Open Government Data, Namensnennung."`);
+  fm.push(
+    `license: "Quelle: RIS OGD (data.bka.gv.at), Bundeskanzleramt Österreich — Open Government Data, Namensnennung."`
+  );
   fm.push(`content_hash: "${contentHash(text)}"`);
 
   return `---\n${fm.join("\n")}\n---\n\n# ${titel}${apa ? ` — ${apa}` : ""}\n\n${text}\n`;
@@ -377,7 +416,9 @@ async function processDocument(app: DeltaApplikation, doc: DeltaDocument): Promi
   if (app.endpoint === "Judikatur" && doc.geschaeftszahl) {
     const text = risXmlToText(xml);
     if (!contentMatchesDocument(text, { case_number: doc.geschaeftszahl })) {
-      console.warn(`  ⚠️ Content-Identity-Check fehlgeschlagen für ${doc.id} (GZ ${doc.geschaeftszahl} nicht im Text) — überspringe`);
+      console.warn(
+        `  ⚠️ Content-Identity-Check fehlgeschlagen für ${doc.id} (GZ ${doc.geschaeftszahl} nicht im Text) — überspringe`
+      );
       return false;
     }
   }
@@ -402,7 +443,9 @@ async function processDocument(app: DeltaApplikation, doc: DeltaDocument): Promi
 
 // ── Main ───────────────────────────────────────────────────────────────
 
-async function syncApplikation(app: DeltaApplikation): Promise<DeltaResult & { written: number; failed: number; skipped: number }> {
+async function syncApplikation(
+  app: DeltaApplikation
+): Promise<DeltaResult & { written: number; failed: number; skipped: number }> {
   const cursor = getCursor(app.stateKey);
   console.log(`\n═══ ${app.label} (${app.applikation}) ═══`);
   console.log(`  Cursor: ${cursor || "(keiner — erster Lauf)"}`);
@@ -437,7 +480,7 @@ async function syncApplikation(app: DeltaApplikation): Promise<DeltaResult & { w
         app.stateKey,
         "delta_gap",
         "warning",
-        `${result.totalHits} Hits auf RIS, aber nur ${result.documents.length} nach Cursor gefiltert — möglicherweise verpasste Deltas`,
+        `${result.totalHits} Hits auf RIS, aber nur ${result.documents.length} nach Cursor gefiltert — möglicherweise verpasste Deltas`
       );
     }
 
@@ -460,7 +503,9 @@ async function syncApplikation(app: DeltaApplikation): Promise<DeltaResult & { w
       if (doc.ausserkrafttreten) {
         const today = new Date().toISOString().slice(0, 10);
         if (doc.ausserkrafttreten <= today) {
-          console.log(`  ⚠️ ${doc.id} ausserkraft seit ${doc.ausserkrafttreten} — wird als deprecated markiert`);
+          console.log(
+            `  ⚠️ ${doc.id} ausserkraft seit ${doc.ausserkrafttreten} — wird als deprecated markiert`
+          );
         }
       }
 
@@ -469,11 +514,16 @@ async function syncApplikation(app: DeltaApplikation): Promise<DeltaResult & { w
       else failed++;
 
       if (written % 50 === 0 && written > 0) {
-        process.stderr.write(`\r  ${written}/${result.documents.length} verarbeitet · ${failed} fehlgeschlagen`);
+        process.stderr.write(
+          `\r  ${written}/${result.documents.length} verarbeitet · ${failed} fehlgeschlagen`
+        );
       }
     }
 
-    if (written > 0) process.stderr.write(`\r  ${written}/${result.documents.length} verarbeitet · ${failed} fehlgeschlagen\n`);
+    if (written > 0)
+      process.stderr.write(
+        `\r  ${written}/${result.documents.length} verarbeitet · ${failed} fehlgeschlagen\n`
+      );
 
     // Cursor updaten nur bei erfolgreicher Verarbeitung
     if (failed === 0) {
@@ -484,11 +534,21 @@ async function syncApplikation(app: DeltaApplikation): Promise<DeltaResult & { w
     } else if (written > 0) {
       // Teilweise erfolgreich — Cursor updaten, aber Alert
       updateCursor(app.stateKey, result.newCursor);
-      raiseAlert(app.stateKey, "delta_sync_partial", "warning", `${written} synced, ${failed} failed`);
+      raiseAlert(
+        app.stateKey,
+        "delta_sync_partial",
+        "warning",
+        `${written} synced, ${failed} failed`
+      );
       appendHistory(app.stateKey, "delta", `${written} synced, ${failed} failed`);
     } else {
       // Alles fehlgeschlagen — Cursor NICHT updaten
-      raiseAlert(app.stateKey, "delta_sync_failed", "error", `All ${result.documents.length} documents failed to sync`);
+      raiseAlert(
+        app.stateKey,
+        "delta_sync_failed",
+        "error",
+        `All ${result.documents.length} documents failed to sync`
+      );
       appendHistory(app.stateKey, "delta", `failed (${failed} docs)`);
     }
 
@@ -538,7 +598,10 @@ async function main() {
     process.exit(1);
   }
 
-  const results: Array<{ app: DeltaApplikation; result: Awaited<ReturnType<typeof syncApplikation>> }> = [];
+  const results: Array<{
+    app: DeltaApplikation;
+    result: Awaited<ReturnType<typeof syncApplikation>>;
+  }> = [];
   const errors: string[] = [];
 
   for (const app of apps) {
@@ -568,11 +631,23 @@ async function main() {
     totalWritten += result.written;
     totalFailed += result.failed;
 
-    console.log(`  ${app.applikation.padEnd(12)} ${String(result.documents.length).padStart(5)} docs (${newCount} neu, ${changedCount} geändert) → ${result.written} geschrieben, ${result.failed} fehlgeschlagen`);
+    console.log(
+      `  ${app.applikation.padEnd(12)} ${String(result.documents.length).padStart(5)} docs (${newCount} neu, ${changedCount} geändert) → ${result.written} geschrieben, ${result.failed} fehlgeschlagen`
+    );
   }
 
-  console.log(`\n  Gesamt: ${totalNew + totalChanged} Dokumente (${totalNew} neu, ${totalChanged} geändert)`);
+  console.log(
+    `\n  Gesamt: ${totalNew + totalChanged} Dokumente (${totalNew} neu, ${totalChanged} geändert)`
+  );
   console.log(`  Geschrieben: ${totalWritten} | Fehlgeschlagen: ${totalFailed}`);
+
+  // Summary history entry — parsed by corpus-pipeline for notifications
+  const applikationen = results.map((r) => r.app.applikation).join(",");
+  appendHistory(
+    "ris-delta",
+    "delta",
+    `summary: ${totalNew} neu, ${totalChanged} geändert, ${totalFailed} fehlgeschlagen, applikationen: ${applikationen}`
+  );
 
   if (errors.length > 0) {
     console.log(`\n  ❌ Fehler:`);

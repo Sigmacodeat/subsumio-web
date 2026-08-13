@@ -3,7 +3,6 @@ import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { safeCorpusPath, parseDoc } from "@/lib/corpus-steward";
 import { getCorpusIndex } from "@/lib/corpus-index";
 import { readFileSync, existsSync } from "fs";
-import { basename } from "path";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -44,7 +43,13 @@ export const GET = createHandler(
 
     // Corpus export (metadata only — full body would be too large)
     if (query.corpus) {
-      if (!query.corpus.startsWith("at-") && query.corpus !== "at") {
+      if (
+        !query.corpus.startsWith("at-") &&
+        !query.corpus.startsWith("de") &&
+        !query.corpus.startsWith("ch") &&
+        !query.corpus.startsWith("eu") &&
+        query.corpus !== "at"
+      ) {
         return apiError("validation_failed", "Invalid corpus", 400);
       }
       const entries = getCorpusIndex(query.corpus);
@@ -53,7 +58,9 @@ export const GET = createHandler(
         // CSV format: path,size,mtime
         const csvLines = ["path,size_kb,mtime_iso"];
         for (const e of entries) {
-          csvLines.push(`${e.path},${(e.size / 1024).toFixed(1)},${new Date(e.mtime * 1000).toISOString()}`);
+          csvLines.push(
+            `${e.path},${(e.size / 1024).toFixed(1)},${new Date(e.mtime * 1000).toISOString()}`
+          );
         }
         return new Response(csvLines.join("\n"), {
           headers: {
@@ -72,5 +79,5 @@ export const GET = createHandler(
     }
 
     return apiError("validation_failed", "Either 'path' or 'corpus' is required", 400);
-  },
+  }
 );

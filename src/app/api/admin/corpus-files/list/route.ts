@@ -12,7 +12,9 @@ const querySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(50),
   sort: z.enum(["name", "date", "size"]).default("name"),
-  flag: z.enum(["verified", "needs_review", "defective", "unreviewed", "archived", "all"]).default("all"),
+  flag: z
+    .enum(["verified", "needs_review", "defective", "unreviewed", "archived", "all"])
+    .default("all"),
   hideArchived: z.coerce.boolean().default(true),
 });
 
@@ -37,7 +39,14 @@ export const GET = createHandler(
   async (ctx, _body, query) => {
     const { corpus, page, pageSize, sort, flag: flagFilter, hideArchived } = query;
 
-    if (!corpus.startsWith("at-") && corpus !== "at") {
+    // BUG 36: vorher nur at-*/at — de/ch/eu wurden abgewiesen.
+    if (
+      !corpus.startsWith("at-") &&
+      !corpus.startsWith("de") &&
+      !corpus.startsWith("ch") &&
+      !corpus.startsWith("eu") &&
+      corpus !== "at"
+    ) {
       return apiError("validation_failed", "Invalid corpus name", 400);
     }
 
@@ -110,5 +119,5 @@ export const GET = createHandler(
       indexMissing,
       indexStale,
     });
-  },
+  }
 );

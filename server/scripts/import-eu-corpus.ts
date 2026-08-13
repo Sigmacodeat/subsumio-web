@@ -34,16 +34,40 @@ const TYPE_ARG = typeIdx >= 0 ? args[typeIdx + 1] : "all";
 const _scriptDir = dirname(fileURLToPath(import.meta.url));
 const CORPUS_ROOT = join(_scriptDir, "..", "..", "law-corpus", "eu");
 
-const TYPE_CONFIGS: Record<string, { dir: string; sourceId: string; slugPrefix: string; label: string }> = {
-  regulation: { dir: "regulations", sourceId: "law-eu-regulations", slugPrefix: "legal/eu/regulations", label: "EU Verordnungen" },
-  directive: { dir: "directives", sourceId: "law-eu-directives", slugPrefix: "legal/eu/directives", label: "EU Richtlinien" },
-  decision: { dir: "decisions", sourceId: "law-eu-decisions", slugPrefix: "legal/eu/decisions", label: "EU Entscheidungen" },
-  caselaw: { dir: "caselaw", sourceId: "law-eu-caselaw", slugPrefix: "legal/eu/caselaw", label: "EuGH Urteile" },
+const TYPE_CONFIGS: Record<
+  string,
+  { dir: string; sourceId: string; slugPrefix: string; label: string }
+> = {
+  regulation: {
+    dir: "regulations",
+    sourceId: "law-eu-regulations",
+    slugPrefix: "legal/eu/regulations",
+    label: "EU Verordnungen",
+  },
+  directive: {
+    dir: "directives",
+    sourceId: "law-eu-directives",
+    slugPrefix: "legal/eu/directives",
+    label: "EU Richtlinien",
+  },
+  decision: {
+    dir: "decisions",
+    sourceId: "law-eu-decisions",
+    slugPrefix: "legal/eu/decisions",
+    label: "EU Entscheidungen",
+  },
+  caselaw: {
+    dir: "caselaw",
+    sourceId: "law-eu-caselaw",
+    slugPrefix: "legal/eu/caselaw",
+    label: "EuGH Urteile",
+  },
 };
 
 const SPLIT_THRESHOLD = 50_000;
 
-const typesToRun = TYPE_ARG === "all" ? Object.keys(TYPE_CONFIGS) : TYPE_ARG.split(",").map((t) => t.trim());
+const typesToRun =
+  TYPE_ARG === "all" ? Object.keys(TYPE_CONFIGS) : TYPE_ARG.split(",").map((t) => t.trim());
 
 interface CorpusFile {
   slug: string;
@@ -71,11 +95,18 @@ function loadFiles(): CorpusFile[] {
       continue;
     }
 
-    const allFiles = readdirSync(dirPath).filter((f) => f.endsWith(".md")).sort();
+    const allFiles = readdirSync(dirPath)
+      .filter((f) => f.endsWith(".md"))
+      .sort();
     const dirFiles = allFiles.slice(OFFSET, OFFSET + LIMIT);
     for (const f of dirFiles) {
       const slug = `${cfg.slugPrefix}/${f.replace(/\.md$/, "")}`;
-      files.push({ slug, path: join(dirPath, f), sourceId: cfg.sourceId, label: `${typeKey}/${f}` });
+      files.push({
+        slug,
+        path: join(dirPath, f),
+        sourceId: cfg.sourceId,
+        label: `${typeKey}/${f}`,
+      });
       count++;
     }
   }
@@ -135,7 +166,9 @@ async function main() {
       wholeFiles++;
       totalSections++;
     }
-    console.log(`  Geschätzte Seiten: ${totalSections} (${wholeFiles} ganze Dateien + ${totalSections - wholeFiles} Sections)`);
+    console.log(
+      `  Geschätzte Seiten: ${totalSections} (${wholeFiles} ganze Dateien + ${totalSections - wholeFiles} Sections)`
+    );
     console.log(`  Placeholder (kein Text): ${placeholders} — übersprungen`);
     return;
   }
@@ -144,7 +177,8 @@ async function main() {
   const { loadConfig, toEngineConfig } = await import("../src/core/config.ts");
   const { createEngine } = await import("../src/core/engine-factory.ts");
   const { buildGatewayConfig } = await import("../src/core/ai/build-gateway-config.ts");
-  const { configureGateway, reconfigureGatewayWithEngine } = await import("../src/core/ai/gateway.ts");
+  const { configureGateway, reconfigureGatewayWithEngine } =
+    await import("../src/core/ai/gateway.ts");
 
   const cfg = loadConfig();
   if (!cfg) throw new Error("No engine configured. Set DATABASE_URL or ~/.gbrain/config.json.");
@@ -232,19 +266,23 @@ async function main() {
       }
     }
 
-    if ((totalPages + totalSkipped) % 500 === 0 && (totalPages + totalSkipped) > 0) {
-      console.log(`    ... ${totalPages + totalSkipped} Seiten, ${totalErrors} Fehler, ${totalPlaceholders} Placeholder übersprungen`);
+    if ((totalPages + totalSkipped) % 500 === 0 && totalPages + totalSkipped > 0) {
+      console.log(
+        `    ... ${totalPages + totalSkipped} Seiten, ${totalErrors} Fehler, ${totalPlaceholders} Placeholder übersprungen`
+      );
     }
   }
 
   console.log("");
   console.log("═══════════════════════════════════════════════════════════");
   console.log(`  GESAMT: ${totalPages} importiert, ${totalSkipped} skipped, ${totalErrors} Fehler`);
-  console.log(`  ${totalSplit} Dateien per-Section gesplittet, ${totalPlaceholders} Placeholder übersprungen`);
+  console.log(
+    `  ${totalSplit} Dateien per-Section gesplittet, ${totalPlaceholders} Placeholder übersprungen`
+  );
   console.log("═══════════════════════════════════════════════════════════");
 
   if (!DRY && NO_EMBED) {
-    console.log("⚠️  Embedding übersprungen. Nachholen: bun run server/scripts/auto-embed-pending.ts");
+    console.log("⚠️  Embedding übersprungen. Nachholen: bun run server/scripts/auto-embed-pg.ts");
   }
 
   await engine.disconnect();

@@ -25,7 +25,13 @@ export const GET = createHandler(
   async (ctx, _body, query) => {
     const { corpus, n } = query;
 
-    if (!corpus.startsWith("at-") && corpus !== "at") {
+    if (
+      !corpus.startsWith("at-") &&
+      !corpus.startsWith("de") &&
+      !corpus.startsWith("ch") &&
+      !corpus.startsWith("eu") &&
+      corpus !== "at"
+    ) {
       return apiError("validation_failed", "Invalid corpus name", 400);
     }
 
@@ -62,5 +68,5 @@ export const GET = createHandler(
       total: entries.length,
       sample,
     });
-  },
+  }
 );

@@ -5,7 +5,7 @@
  * Wird beim Create/Write verwendet um Datenqualität sicherzustellen.
  */
 
-export interface SchemaField {
+interface SchemaField {
   name: string;
   required: boolean;
   type: "string" | "number" | "boolean" | "array" | "enum";
@@ -13,7 +13,7 @@ export interface SchemaField {
   description?: string;
 }
 
-export interface DocSchema {
+interface DocSchema {
   docClass: string;
   label: string;
   requiredFields: SchemaField[];
@@ -28,18 +28,45 @@ const SCHEMAS: Record<string, DocSchema> = {
     label: "Gesetz / Verordnung",
     requiredFields: [
       { name: "title", required: true, type: "string", description: "Titel des Gesetzes" },
-      { name: "doc_class", required: true, type: "enum", enumValues: ["statute"], description: "Dokumentklasse" },
-      { name: "jurisdiction", required: true, type: "enum", enumValues: ["at", "de", "ch", "eu"], description: "Rechtsraum" },
+      {
+        name: "doc_class",
+        required: true,
+        type: "enum",
+        enumValues: ["statute"],
+        description: "Dokumentklasse",
+      },
+      {
+        name: "jurisdiction",
+        required: true,
+        type: "enum",
+        enumValues: ["at", "de", "ch", "eu"],
+        description: "Rechtsraum",
+      },
       { name: "doc_id", required: true, type: "string", description: "Eindeutige Dokument-ID" },
     ],
     optionalFields: [
       { name: "doc_id_alt", required: false, type: "array", description: "Alternative IDs" },
-      { name: "doc_subtype", required: false, type: "string", description: "Untertyp (Bundesgesetz, Verordnung, etc.)" },
+      {
+        name: "doc_subtype",
+        required: false,
+        type: "string",
+        description: "Untertyp (Bundesgesetz, Verordnung, etc.)",
+      },
       { name: "source", required: false, type: "string", description: "Quelle" },
       { name: "source_url", required: false, type: "string", description: "URL zur Quelle" },
-      { name: "content_hash", required: false, type: "string", description: "Content-Hash für Dedup" },
+      {
+        name: "content_hash",
+        required: false,
+        type: "string",
+        description: "Content-Hash für Dedup",
+      },
       { name: "schema_version", required: false, type: "number", description: "Schema-Version" },
-      { name: "in_force_from", required: false, type: "string", description: "Inkrafttretensdatum" },
+      {
+        name: "in_force_from",
+        required: false,
+        type: "string",
+        description: "Inkrafttretensdatum",
+      },
     ],
   },
   decision: {
@@ -47,8 +74,20 @@ const SCHEMAS: Record<string, DocSchema> = {
     label: "Gerichtsentscheidung",
     requiredFields: [
       { name: "title", required: true, type: "string", description: "Titel der Entscheidung" },
-      { name: "doc_class", required: true, type: "enum", enumValues: ["decision"], description: "Dokumentklasse" },
-      { name: "jurisdiction", required: true, type: "enum", enumValues: ["at", "de", "ch", "eu"], description: "Rechtsraum" },
+      {
+        name: "doc_class",
+        required: true,
+        type: "enum",
+        enumValues: ["decision"],
+        description: "Dokumentklasse",
+      },
+      {
+        name: "jurisdiction",
+        required: true,
+        type: "enum",
+        enumValues: ["at", "de", "ch", "eu"],
+        description: "Rechtsraum",
+      },
       { name: "doc_id", required: true, type: "string", description: "Eindeutige Dokument-ID" },
     ],
     optionalFields: [
@@ -69,8 +108,20 @@ const SCHEMAS: Record<string, DocSchema> = {
     label: "Literatur / Kommentar",
     requiredFields: [
       { name: "title", required: true, type: "string", description: "Titel" },
-      { name: "doc_class", required: true, type: "enum", enumValues: ["literature"], description: "Dokumentklasse" },
-      { name: "jurisdiction", required: true, type: "enum", enumValues: ["at", "de", "ch", "eu"], description: "Rechtsraum" },
+      {
+        name: "doc_class",
+        required: true,
+        type: "enum",
+        enumValues: ["literature"],
+        description: "Dokumentklasse",
+      },
+      {
+        name: "jurisdiction",
+        required: true,
+        type: "enum",
+        enumValues: ["at", "de", "ch", "eu"],
+        description: "Rechtsraum",
+      },
     ],
     optionalFields: [
       { name: "author", required: false, type: "string", description: "Autor" },
@@ -113,7 +164,7 @@ export function getSchema(docClass: string): DocSchema {
 
 export function validateFrontmatter(
   frontmatter: Record<string, unknown>,
-  docClass?: string,
+  docClass?: string
 ): ValidationResult {
   const dc = (docClass as string) ?? (frontmatter.doc_class as string) ?? "unknown";
   const schema = getSchema(dc);
@@ -142,6 +193,14 @@ export function validateFrontmatter(
           severity: "error",
         });
       }
+    } else if (field.type === "string" && typeof val !== "string") {
+      // BUG 33: string-Typ wurde vorher nicht geprüft — ein title=123 (number)
+      // oder title=true (boolean) passierte die Validierung ungeprüft.
+      errors.push({
+        field: field.name,
+        message: `"${field.name}" muss ein String sein (ist: ${typeof val})`,
+        severity: "error",
+      });
     } else if (field.type === "array" && !Array.isArray(val)) {
       warnings.push({
         field: field.name,

@@ -2,24 +2,20 @@
  * Warteschlange: welche bearbeiteten Dateien noch nicht in der Datenbank sind.
  *
  * WARUM DAS NÖTIG IST: Der Corpus Steward schreibt nach
- * `law-corpus/_normalized/`. Das KI-Gehirn liest aber nicht die Dateien,
- * sondern die Tabellen `pages` und `content_chunks`. Eine Bearbeitung im
- * Dashboard war deshalb bisher unsichtbar für die Suche und für jede Antwort
- * mit Fundstelle: der Anwalt sah im Dashboard seinen korrigierten Text, das
- * Gehirn zitierte weiter den alten. Ein stiller Auseinanderlauf von Anzeige
- * und Auskunft — die gefährlichste Sorte Fehler in einem Rechts-Copilot.
- *
- * Diese Warteschlange schließt die Lücke nicht selbst, sie macht sie
- * SICHTBAR und abarbeitbar: jede Schreiboperation trägt ihren Pfad ein,
- * `/api/admin/corpus-files/publish` arbeitet sie ab, und solange etwas
- * offen ist, kann das Dashboard es anzeigen.
+ * `law-corpus/_normalized/`. Die Pipeline importiert aber aus
+ * `law-corpus/{dir}/` (raw). `syncToRawCorpus` in corpus-steward.ts kopiert
+ * bei jeder Schreiboperation (_normalized → raw), und diese Warteschlange
+ * macht den Rest sichtbar: jede Schreiboperation trägt ihren Pfad ein,
+ * die `corpus-pipeline.ts` räumt die Queue via `drainImportQueue` ab
+ * (nach erfolgreichem Import) und via `reconcileDeletedFiles` (für
+ * gelöschte Dateien). Solange etwas offen ist, zeigt das Dashboard es an.
  *
  * Absichtlich eine Datei und keine Tabelle: die Warteschlange muss auch
  * dann lesbar sein, wenn die Datenbank gerade nicht erreichbar ist — genau
  * dann steht nämlich am meisten darin.
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync, unlinkSync } from "fs";
 import { join, dirname } from "path";
 
 const WURZEL = join(process.cwd(), "law-corpus", "_normalized");
@@ -52,7 +48,21 @@ function lesen(): WarteEintrag[] {
 
 function schreiben(eintraege: WarteEintrag[]): void {
   if (!existsSync(dirname(DATEI))) mkdirSync(dirname(DATEI), { recursive: true });
-  writeFileSync(DATEI, JSON.stringify(eintraege, null, 2), "utf-8");
+  // Atomic write: tmp-Datei + rename. Verhindert korrupte JSON-Dateien
+  // bei concurrent writes (BUG 13) und bei Abbruch mid-write.
+  const tmp = `${DATEI}.tmp.${process.pid}.${Date.now()}`;
+  writeFileSync(tmp, JSON.stringify(eintraege, null, 2), "utf-8");
+  try {
+    renameSync(tmp, DATEI);
+  } catch {
+    // rename fehlgeschlagen (z.B. cross-device) → fallback direkt schreiben
+    try {
+      unlinkSync(tmp);
+    } catch {
+      /* ignore */
+    }
+    writeFileSync(DATEI, JSON.stringify(eintraege, null, 2), "utf-8");
+  }
 }
 
 /**
@@ -64,7 +74,7 @@ function schreiben(eintraege: WarteEintrag[]): void {
 export function markiereZumImport(
   pfad: string,
   benutzer: string,
-  art: WarteEintrag["art"] = "edit",
+  art: WarteEintrag["art"] = "edit"
 ): void {
   const alle = lesen();
   const i = alle.findIndex((e) => e.pfad === pfad);
