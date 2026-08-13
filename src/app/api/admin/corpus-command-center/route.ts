@@ -258,9 +258,11 @@ export const GET = createHandler(
       const missingFromDb = risTotal !== null ? Math.max(0, risTotal - dbPages) : 0;
       const missingFromDisk = risTotal !== null ? Math.max(0, risTotal - disk) : 0;
       const newOnRis = risTotal !== null ? Math.max(0, risTotal - disk) : 0;
-      const orphanDb = risTotal !== null ? Math.max(0, dbPages - risTotal) : Math.max(0, dbPages - disk);
+      // Orphan nur für RIS-Sources sauber vergleichen; bei Nicht-RIS ist disk=Quelldateien und dbPages=§-Pages,
+      // also >5x normal (Gesetze werden pro § in Pages zerlegt). Für Nicht-RIS zählen nur echt "zu viele" DB-Pages.
+      const orphanDb = risTotal !== null ? Math.max(0, dbPages - risTotal) : Math.max(0, dbPages - disk * 5);
 
-      // Status: Wahrheitsgemäß nach RIS, nicht nach interner Pipeline-Erwartung
+      // Status: Wahrheitsgemäß nach RIS für RIS-Sources; für Nicht-RIS mit §-Split-Heuristik
       let syncStatus: CorpusSyncRow["syncStatus"] = "synced";
       if (dbPages === 0 && disk > 0) {
         syncStatus = "no_db";
@@ -268,7 +270,7 @@ export const GET = createHandler(
         syncStatus = "import_pending";
       } else if (missingFromDisk > 0) {
         syncStatus = "import_pending";
-      } else if (orphanDb > 0) {
+      } else if (risTotal !== null && orphanDb > 0) {
         syncStatus = "orphan_in_db";
       } else if (disk > 0 && dbPages === 0) {
         syncStatus = "no_db";
@@ -291,7 +293,7 @@ export const GET = createHandler(
         notImported,
         orphanDb,
         syncStatus,
-        fullyComplete: syncStatus === "synced" && missingFromDb === 0 && missingFromDisk === 0 && coverage === 100 && stale === 0 && dbPages > 0,
+        fullyComplete: syncStatus === "synced" && coverage === 100 && stale === 0 && dbPages > 0 && missingFromDb === 0 && missingFromDisk === 0,
         risTotal,
         missingFromDb,
         missingFromDisk,
