@@ -6,11 +6,32 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import {
-  Database, HardDrive, Zap, AlertTriangle, CheckCircle2, XCircle,
-  RefreshCw, Pause, Play, Activity, FileText, Layers, ShieldCheck,
-  ArrowRight, Inbox, TrendingUp, Archive, Globe,
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import {
+  Database,
+  HardDrive,
+  Zap,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  RefreshCw,
+  Pause,
+  Play,
+  Activity,
+  FileText,
+  Layers,
+  ShieldCheck,
+  ArrowRight,
+  Inbox,
+  TrendingUp,
+  Archive,
+  Globe,
 } from "lucide-react";
 import { useState, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -131,7 +152,10 @@ interface CommandCenterData {
 const fmt = (n: number | null | undefined) => (n ?? 0).toLocaleString("de-DE");
 const pct = (n: number) => `${n.toFixed(1)}%`;
 
-const SYNC_STATUS_CONFIG: Record<CorpusSyncRow["syncStatus"], { variant: "success" | "warning" | "danger" | "default"; label: string }> = {
+const SYNC_STATUS_CONFIG: Record<
+  CorpusSyncRow["syncStatus"],
+  { variant: "success" | "warning" | "danger" | "default"; label: string }
+> = {
   synced: { variant: "success", label: "Synchron" },
   import_pending: { variant: "warning", label: "Lücke" },
   orphan_in_db: { variant: "danger", label: "DB-Orphane" },
@@ -141,13 +165,23 @@ const SYNC_STATUS_CONFIG: Record<CorpusSyncRow["syncStatus"], { variant: "succes
 // ── Coverage Indicator (statt Sparkline — keine Hooks, TDZ-safe) ─────────
 
 function CoverageIndicator({ coveragePct }: { coveragePct: number }) {
-  const color = coveragePct >= 90 ? "var(--ds-success-text)" : coveragePct >= 50 ? "var(--ds-warning-text)" : "var(--ds-danger-text)";
+  const color =
+    coveragePct >= 90
+      ? "var(--ds-success-text)"
+      : coveragePct >= 50
+        ? "var(--ds-warning-text)"
+        : "var(--ds-danger-text)";
   return (
-    <div className="flex items-center gap-1" aria-label={`Embedding-Coverage: ${coveragePct.toFixed(1)}%`}>
+    <div
+      className="flex items-center gap-1"
+      aria-label={`Embedding-Coverage: ${coveragePct.toFixed(1)}%`}
+    >
       <svg width={36} height={16} className="overflow-visible" role="img" aria-hidden="true">
         <circle cx={8} cy={8} r={5} fill="none" stroke="var(--ds-surface-hover)" strokeWidth={2} />
         <circle
-          cx={8} cy={8} r={5}
+          cx={8}
+          cy={8}
+          r={5}
           fill="none"
           stroke={color}
           strokeWidth={2}
@@ -163,16 +197,28 @@ function CoverageIndicator({ coveragePct }: { coveragePct: number }) {
 
 // ── Section 1: Sync-Status ───────────────────────────────────────────────
 
-function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: CorpusSyncRow[]; totals: CommandCenterData["sync"]["totals"]; onSelectCorpus?: (sourceId: string) => void; onRefresh?: () => void }) {
+function SyncStatusSection({
+  rows,
+  totals,
+  onSelectCorpus,
+  onRefresh,
+}: {
+  rows: CorpusSyncRow[];
+  totals: CommandCenterData["sync"]["totals"];
+  onSelectCorpus?: (sourceId: string) => void;
+  onRefresh?: () => void;
+}) {
   const { addToast } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
 
   // 3-state filter: "incomplete" (default, war hideComplete=true), "all", "complete"
-  const filterMode = (searchParams.get("filter") as "all" | "incomplete" | "complete" | null) ?? "incomplete";
+  const filterMode =
+    (searchParams.get("filter") as "all" | "incomplete" | "complete" | null) ?? "incomplete";
   const setFilterMode = (mode: "all" | "incomplete" | "complete") => {
     const params = new URLSearchParams(searchParams.toString());
-    if (mode === "incomplete") params.delete("filter"); // default = kein Param
+    if (mode === "incomplete")
+      params.delete("filter"); // default = kein Param
     else params.set("filter", mode);
     router.replace(`?${params.toString()}`, { scroll: false });
   };
@@ -214,7 +260,8 @@ function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: 
     });
   }, [rows, filterMode]);
 
-  const filterLabel = filterMode === "all" ? "Alle" : filterMode === "complete" ? "Vollständig" : "Unvollständig";
+  const filterLabel =
+    filterMode === "all" ? "Alle" : filterMode === "complete" ? "Vollständig" : "Unvollständig";
 
   return (
     <div className="space-y-4">
@@ -224,7 +271,7 @@ function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: 
           <CardContent className="flex items-center gap-3 p-4">
             <Globe className="h-7 w-7 text-[color:var(--ds-info-text)]" />
             <div>
-              <p className="text-xl font-bold tabular-nums text-[color:var(--ds-text)]">
+              <p className="text-xl font-bold text-[color:var(--ds-text)] tabular-nums">
                 {totals.totalRis != null ? fmt(totals.totalRis) : "—"}
               </p>
               <p className="text-xs text-[color:var(--ds-text-subtle)]">RIS OGD</p>
@@ -235,7 +282,9 @@ function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: 
           <CardContent className="flex items-center gap-3 p-4">
             <AlertTriangle className="h-7 w-7 text-[color:var(--ds-danger-text)]" />
             <div>
-              <p className="text-xl font-bold tabular-nums text-[color:var(--ds-text)]">{fmt(totals.totalMissingFromDb)}</p>
+              <p className="text-xl font-bold text-[color:var(--ds-text)] tabular-nums">
+                {fmt(totals.totalMissingFromDb)}
+              </p>
               <p className="text-xs text-[color:var(--ds-text-subtle)]">Fehlt</p>
             </div>
           </CardContent>
@@ -244,7 +293,9 @@ function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: 
           <CardContent className="flex items-center gap-3 p-4">
             <HardDrive className="h-7 w-7 text-[color:var(--ds-text-muted)]" />
             <div>
-              <p className="text-xl font-bold tabular-nums text-[color:var(--ds-text)]">{fmt(totals.totalDisk)}</p>
+              <p className="text-xl font-bold text-[color:var(--ds-text)] tabular-nums">
+                {fmt(totals.totalDisk)}
+              </p>
               <p className="text-xs text-[color:var(--ds-text-subtle)]">Disk-Dateien</p>
             </div>
           </CardContent>
@@ -253,7 +304,9 @@ function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: 
           <CardContent className="flex items-center gap-3 p-4">
             <Database className="h-7 w-7 text-[color:var(--ds-info-text)]" />
             <div>
-              <p className="text-xl font-bold tabular-nums text-[color:var(--ds-text)]">{fmt(totals.totalDbPages)}</p>
+              <p className="text-xl font-bold text-[color:var(--ds-text)] tabular-nums">
+                {fmt(totals.totalDbPages)}
+              </p>
               <p className="text-xs text-[color:var(--ds-text-subtle)]">DB-Seiten</p>
             </div>
           </CardContent>
@@ -262,7 +315,9 @@ function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: 
           <CardContent className="flex items-center gap-3 p-4">
             <Zap className="h-7 w-7 text-[color:var(--ds-success-text)]" />
             <div>
-              <p className="text-xl font-bold tabular-nums text-[color:var(--ds-text)]">{fmt(totals.totalEmbedded)}</p>
+              <p className="text-xl font-bold text-[color:var(--ds-text)] tabular-nums">
+                {fmt(totals.totalEmbedded)}
+              </p>
               <p className="text-xs text-[color:var(--ds-text-subtle)]">Embedded</p>
             </div>
           </CardContent>
@@ -271,7 +326,9 @@ function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: 
           <CardContent className="flex items-center gap-3 p-4">
             <ArrowRight className="h-7 w-7 text-[color:var(--ds-warning-text)]" />
             <div>
-              <p className="text-xl font-bold tabular-nums text-[color:var(--ds-text)]">{fmt(totals.totalNotImported)}</p>
+              <p className="text-xl font-bold text-[color:var(--ds-text)] tabular-nums">
+                {fmt(totals.totalNotImported)}
+              </p>
               <p className="text-xs text-[color:var(--ds-text-subtle)]">Import-Lücke</p>
             </div>
           </CardContent>
@@ -280,7 +337,9 @@ function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: 
           <CardContent className="flex items-center gap-3 p-4">
             <AlertTriangle className="h-7 w-7 text-[color:var(--ds-attention-text)]" />
             <div>
-              <p className="text-xl font-bold tabular-nums text-[color:var(--ds-text)]">{fmt(totals.totalStale)}</p>
+              <p className="text-xl font-bold text-[color:var(--ds-text)] tabular-nums">
+                {fmt(totals.totalStale)}
+              </p>
               <p className="text-xs text-[color:var(--ds-text-subtle)]">Stale Chunks</p>
             </div>
           </CardContent>
@@ -290,16 +349,22 @@ function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: 
       {/* Per-Corpus Table */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <CardTitle className="text-sm flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <CardTitle className="flex items-center gap-2 text-sm">
               <Layers className="h-4 w-4" />
               Sync-Status pro Korpus
             </CardTitle>
             <div className="flex items-center gap-2">
               {/* Active-Filter Badge (visuell sichtbar — Modern Pattern) */}
               <Badge
-                variant={filterMode === "complete" ? "success" : filterMode === "incomplete" ? "warning" : "default"}
-                className="text-[10px] gap-1"
+                variant={
+                  filterMode === "complete"
+                    ? "success"
+                    : filterMode === "incomplete"
+                      ? "warning"
+                      : "default"
+                }
+                className="gap-1 text-[10px]"
                 aria-label={`Aktiver Filter: ${filterLabel}, ${displayRows.length} Corpora`}
               >
                 {filterLabel} · {fmt(displayRows.length)}
@@ -335,12 +400,16 @@ function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: 
         <CardContent>
           <div className="space-y-1.5">
             {/* Header */}
-            <div className="grid grid-cols-12 gap-2 text-xs font-medium text-[color:var(--ds-text-subtle)] pb-2 border-b">
+            <div className="grid grid-cols-12 gap-2 border-b pb-2 text-xs font-medium text-[color:var(--ds-text-subtle)]">
               <div className="col-span-2">Korpus</div>
-              <div className="col-span-1 text-right" title="RIS OGD Total (live/letzter Check)">RIS</div>
+              <div className="col-span-1 text-right" title="RIS OGD Total (live/letzter Check)">
+                RIS
+              </div>
               <div className="col-span-1 text-right">Disk</div>
               <div className="col-span-1 text-right">DB</div>
-              <div className="col-span-1 text-right" title="Fehlende Dokumente: RIS − DB">Fehlt</div>
+              <div className="col-span-1 text-right" title="Fehlende Dokumente: RIS − DB">
+                Fehlt
+              </div>
               <div className="col-span-3 text-right">Embedded</div>
               <div className="col-span-1 text-right">Lücke</div>
               <div className="col-span-1 text-center">Trend</div>
@@ -365,19 +434,45 @@ function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: 
                     }
                   }}
                   className={cn(
-                    "grid grid-cols-12 gap-2 text-xs items-center py-1.5 rounded px-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)]",
+                    "grid cursor-pointer grid-cols-12 items-center gap-2 rounded px-1 py-1.5 text-xs focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none",
                     r.fullyComplete
                       ? "text-[color:var(--ds-text-subtle)] opacity-70 hover:bg-[color:var(--ds-surface-2)]"
                       : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-hover)]"
                   )}
                 >
-                  <div className={cn("col-span-2 font-mono truncate", r.fullyComplete && "text-[color:var(--ds-success-text)]")} title={r.corpus}>{r.corpus}</div>
-                  <div className="col-span-1 text-right tabular-nums" title={r.risTotal ? `RIS OGD: ${fmt(r.risTotal)} Dokumente` : "RIS Total unbekannt"}>
+                  <div
+                    className={cn(
+                      "col-span-2 truncate font-mono",
+                      r.fullyComplete && "text-[color:var(--ds-success-text)]"
+                    )}
+                    title={r.corpus}
+                  >
+                    {r.corpus}
+                  </div>
+                  <div
+                    className="col-span-1 text-right tabular-nums"
+                    title={
+                      r.risTotal ? `RIS OGD: ${fmt(r.risTotal)} Dokumente` : "RIS Total unbekannt"
+                    }
+                  >
                     {r.risTotal ? (
-                      <span className={r.missingFromDb === 0 ? "text-[color:var(--ds-success-text)]" : r.missingFromDb < r.risTotal * 0.2 ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-danger-text)]"}>
+                      <span
+                        className={
+                          r.missingFromDb === 0
+                            ? "text-[color:var(--ds-success-text)]"
+                            : r.missingFromDb < r.risTotal * 0.2
+                              ? "text-[color:var(--ds-warning-text)]"
+                              : "text-[color:var(--ds-danger-text)]"
+                        }
+                      >
                         {fmt(r.risTotal)}
                         {r.newOnRis > 0 && (
-                          <sup className="ml-0.5 text-[color:var(--ds-warning-text)]" title={`${fmt(r.newOnRis)} auf RIS aber noch nicht lokal auf Disk`}>+{fmt(r.newOnRis)}</sup>
+                          <sup
+                            className="ml-0.5 text-[color:var(--ds-warning-text)]"
+                            title={`${fmt(r.newOnRis)} auf RIS aber noch nicht lokal auf Disk`}
+                          >
+                            +{fmt(r.newOnRis)}
+                          </sup>
                         )}
                       </span>
                     ) : (
@@ -386,9 +481,22 @@ function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: 
                   </div>
                   <div className="col-span-1 text-right tabular-nums">{fmt(r.diskFiles)}</div>
                   <div className="col-span-1 text-right tabular-nums">{fmt(r.dbPages)}</div>
-                  <div className="col-span-1 text-right tabular-nums" title={r.risTotal ? `${fmt(r.missingFromDb)} fehlen in DB (RIS ${fmt(r.risTotal)} − DB ${fmt(r.dbPages)})` : "RIS Total unbekannt"}>
+                  <div
+                    className="col-span-1 text-right tabular-nums"
+                    title={
+                      r.risTotal
+                        ? `${fmt(r.missingFromDb)} fehlen in DB (RIS ${fmt(r.risTotal)} − DB ${fmt(r.dbPages)})`
+                        : "RIS Total unbekannt"
+                    }
+                  >
                     {r.risTotal ? (
-                      <span className={r.missingFromDb === 0 ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-danger-text)] font-medium"}>
+                      <span
+                        className={
+                          r.missingFromDb === 0
+                            ? "text-[color:var(--ds-success-text)]"
+                            : "font-medium text-[color:var(--ds-danger-text)]"
+                        }
+                      >
                         {r.missingFromDb === 0 ? "✓" : fmt(r.missingFromDb)}
                       </span>
                     ) : (
@@ -396,16 +504,30 @@ function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: 
                     )}
                   </div>
                   <div className="col-span-3 text-right tabular-nums">
-                    <span className={r.fullyComplete ? "text-[color:var(--ds-success-text)] font-medium" : r.coveragePct >= 90 ? "text-[color:var(--ds-success-text)]" : r.coveragePct >= 50 ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-danger-text)]"}>
+                    <span
+                      className={
+                        r.fullyComplete
+                          ? "font-medium text-[color:var(--ds-success-text)]"
+                          : r.coveragePct >= 90
+                            ? "text-[color:var(--ds-success-text)]"
+                            : r.coveragePct >= 50
+                              ? "text-[color:var(--ds-warning-text)]"
+                              : "text-[color:var(--ds-danger-text)]"
+                      }
+                    >
                       {fmt(r.embeddedChunks)}
                     </span>
-                    <span className="text-[color:var(--ds-text-subtle)] text-[10px] ml-1">({pct(r.coveragePct)})</span>
+                    <span className="ml-1 text-[10px] text-[color:var(--ds-text-subtle)]">
+                      ({pct(r.coveragePct)})
+                    </span>
                   </div>
                   <div className="col-span-1 text-right tabular-nums">
                     {r.fullyComplete ? (
-                      <CheckCircle2 className="h-3.5 w-3.5 inline text-[color:var(--ds-success-text)]" />
+                      <CheckCircle2 className="inline h-3.5 w-3.5 text-[color:var(--ds-success-text)]" />
                     ) : r.notImported > 0 ? (
-                      <span className="text-[color:var(--ds-warning-text)] font-medium">{fmt(r.notImported)}</span>
+                      <span className="font-medium text-[color:var(--ds-warning-text)]">
+                        {fmt(r.notImported)}
+                      </span>
                     ) : (
                       <span className="text-[color:var(--ds-text-subtle)]">—</span>
                     )}
@@ -414,7 +536,9 @@ function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: 
                     <CoverageIndicator coveragePct={r.coveragePct} />
                   </div>
                   <div className="col-span-1 text-center">
-                    <Badge variant={config.variant} className="text-[10px]">{config.label}</Badge>
+                    <Badge variant={config.variant} className="text-[10px]">
+                      {config.label}
+                    </Badge>
                   </div>
                   <div className="col-span-1 text-center">
                     {r.canUpdate ? (
@@ -424,13 +548,21 @@ function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: 
                         disabled={fetchMissing.isPending}
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (r.pipelineKey) fetchMissing.mutate({ action: "fetch_missing", source_key: r.pipelineKey });
+                          if (r.pipelineKey)
+                            fetchMissing.mutate({
+                              action: "fetch_missing",
+                              source_key: r.pipelineKey,
+                            });
                         }}
-                        className="h-6 text-[10px] px-1.5"
+                        className="h-6 px-1.5 text-[10px]"
                         title={`Fehlende ${fmt(r.missingFromDb)} für ${r.corpus} nachholen`}
                       >
-                        {fetchMissing.isPending ? <RefreshCw className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                        <span className="hidden lg:inline ml-1">Aktualisieren</span>
+                        {fetchMissing.isPending ? (
+                          <RefreshCw className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-3 w-3" />
+                        )}
+                        <span className="ml-1 hidden lg:inline">Aktualisieren</span>
                       </Button>
                     ) : (
                       <span className="text-[color:var(--ds-text-subtle)]">—</span>
@@ -440,21 +572,32 @@ function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: 
               );
             })}
             {displayRows.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-8 gap-2 text-center">
+              <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
                 {filterMode === "incomplete" ? (
                   <>
                     <CheckCircle2 className="h-8 w-8 text-[color:var(--ds-success-text)]" />
-                    <p className="text-sm font-medium text-[color:var(--ds-text)]">Alle Corpora sind vollständig!</p>
-                    <p className="text-xs text-[color:var(--ds-text-subtle)]">Keine offenen Lücken mehr. Wechsle zu „Alle" um die Übersicht zu sehen.</p>
+                    <p className="text-sm font-medium text-[color:var(--ds-text)]">
+                      Alle Corpora sind vollständig!
+                    </p>
+                    <p className="text-xs text-[color:var(--ds-text-subtle)]">
+                      Keine offenen Lücken mehr. Wechsle zu &bdquo;Alle&ldquo; um die Übersicht zu
+                      sehen.
+                    </p>
                   </>
                 ) : filterMode === "complete" ? (
                   <>
                     <Archive className="h-8 w-8 text-[color:var(--ds-text-subtle)]" />
-                    <p className="text-sm font-medium text-[color:var(--ds-text)]">Noch keine vollständigen Corpora</p>
-                    <p className="text-xs text-[color:var(--ds-text-subtle)]">Sobald ein Corpus 100% Coverage erreicht, erscheint er hier.</p>
+                    <p className="text-sm font-medium text-[color:var(--ds-text)]">
+                      Noch keine vollständigen Corpora
+                    </p>
+                    <p className="text-xs text-[color:var(--ds-text-subtle)]">
+                      Sobald ein Corpus 100% Coverage erreicht, erscheint er hier.
+                    </p>
                   </>
                 ) : (
-                  <p className="text-xs text-[color:var(--ds-text-subtle)]">Keine Corpora gefunden.</p>
+                  <p className="text-xs text-[color:var(--ds-text-subtle)]">
+                    Keine Corpora gefunden.
+                  </p>
                 )}
               </div>
             )}
@@ -467,8 +610,18 @@ function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: 
 
 // ── Section 2: Work Queue ────────────────────────────────────────────────
 
-function WorkQueueSection({ items, total, defective, needsReview, verified }: {
-  items: WorkQueueItem[]; total: number; defective: number; needsReview: number; verified: number;
+function WorkQueueSection({
+  items,
+  total,
+  defective,
+  needsReview,
+  verified,
+}: {
+  items: WorkQueueItem[];
+  total: number;
+  defective: number;
+  needsReview: number;
+  verified: number;
 }) {
   const [filter, setFilter] = useState<"all" | "defective" | "needs_review">("defective");
   const [corpusFilter, setCorpusFilter] = useState<string>("");
@@ -480,7 +633,7 @@ function WorkQueueSection({ items, total, defective, needsReview, verified }: {
   });
 
   const corpora = [...new Set(items.map((i) => i.corpus))].sort();
-  const progress = total > 0 ? ((verified) / (total + verified)) * 100 : 0;
+  const progress = total > 0 ? (verified / (total + verified)) * 100 : 0;
 
   return (
     <div className="space-y-4">
@@ -492,34 +645,40 @@ function WorkQueueSection({ items, total, defective, needsReview, verified }: {
               <Inbox className="h-5 w-5 text-[color:var(--ds-text-subtle)]" />
               <span className="text-2xl font-bold tabular-nums">{fmt(total)}</span>
             </div>
-            <p className="text-xs text-[color:var(--ds-text-subtle)] mt-1">Offen</p>
+            <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">Offen</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <XCircle className="h-5 w-5 text-[color:var(--ds-danger-text)]" />
-              <span className="text-2xl font-bold tabular-nums text-[color:var(--ds-danger-text)]">{fmt(defective)}</span>
+              <span className="text-2xl font-bold text-[color:var(--ds-danger-text)] tabular-nums">
+                {fmt(defective)}
+              </span>
             </div>
-            <p className="text-xs text-[color:var(--ds-text-subtle)] mt-1">Defective</p>
+            <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">Defective</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <AlertTriangle className="h-5 w-5 text-[color:var(--ds-warning-text)]" />
-              <span className="text-2xl font-bold tabular-nums text-[color:var(--ds-warning-text)]">{fmt(needsReview)}</span>
+              <span className="text-2xl font-bold text-[color:var(--ds-warning-text)] tabular-nums">
+                {fmt(needsReview)}
+              </span>
             </div>
-            <p className="text-xs text-[color:var(--ds-text-subtle)] mt-1">Needs Review</p>
+            <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">Needs Review</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <CheckCircle2 className="h-5 w-5 text-[color:var(--ds-success-text)]" />
-              <span className="text-2xl font-bold tabular-nums text-[color:var(--ds-success-text)]">{fmt(verified)}</span>
+              <span className="text-2xl font-bold text-[color:var(--ds-success-text)] tabular-nums">
+                {fmt(verified)}
+              </span>
             </div>
-            <p className="text-xs text-[color:var(--ds-text-subtle)] mt-1">Verified</p>
+            <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">Verified</p>
           </CardContent>
         </Card>
       </div>
@@ -527,9 +686,11 @@ function WorkQueueSection({ items, total, defective, needsReview, verified }: {
       {/* Progress */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-2">
+          <div className="mb-2 flex items-center justify-between">
             <span className="text-sm font-medium">Bearbeitungs-Fortschritt</span>
-            <span className="text-sm text-[color:var(--ds-text-subtle)]">{fmt(verified)} / {fmt(total + verified)} ({progress.toFixed(1)}%)</span>
+            <span className="text-sm text-[color:var(--ds-text-subtle)]">
+              {fmt(verified)} / {fmt(total + verified)} ({progress.toFixed(1)}%)
+            </span>
           </div>
           <Progress value={progress} className="h-2" />
         </CardContent>
@@ -538,13 +699,15 @@ function WorkQueueSection({ items, total, defective, needsReview, verified }: {
       {/* Filter + List */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm flex items-center justify-between">
-            <span className="flex items-center gap-2"><Inbox className="h-4 w-4" /> Work Queue</span>
+          <CardTitle className="flex items-center justify-between text-sm">
+            <span className="flex items-center gap-2">
+              <Inbox className="h-4 w-4" /> Work Queue
+            </span>
             <div className="flex items-center gap-2">
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value as typeof filter)}
-                className="text-xs border border-[color:var(--ds-border)] rounded px-2 py-1 bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
+                className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-xs text-[color:var(--ds-text)]"
                 aria-label="Filter nach Flag"
               >
                 <option value="defective">Defective ({defective})</option>
@@ -554,48 +717,63 @@ function WorkQueueSection({ items, total, defective, needsReview, verified }: {
               <select
                 value={corpusFilter}
                 onChange={(e) => setCorpusFilter(e.target.value)}
-                className="text-xs border border-[color:var(--ds-border)] rounded px-2 py-1 bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
+                className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-xs text-[color:var(--ds-text)]"
                 aria-label="Filter nach Korpus"
               >
                 <option value="">Alle Korpora</option>
-                {corpora.map((c) => <option key={c} value={c}>{c}</option>)}
+                {corpora.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
               </select>
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
           {filtered.length === 0 ? (
-            <div className="text-center py-8 text-[color:var(--ds-text-subtle)] text-sm">
-              <CheckCircle2 className="h-10 w-10 mx-auto mb-2 text-[color:var(--ds-success-text)]/40" />
+            <div className="py-8 text-center text-sm text-[color:var(--ds-text-subtle)]">
+              <CheckCircle2 className="mx-auto mb-2 h-10 w-10 text-[color:var(--ds-success-text)]/40" />
               Keine Auffälligkeiten in diesem Filter
             </div>
           ) : (
-            <div className="space-y-1 max-h-[500px] overflow-y-auto">
+            <div className="max-h-[500px] space-y-1 overflow-y-auto">
               {filtered.map((item) => (
                 <div
                   key={item.path}
-                  className="flex items-start gap-3 p-2.5 rounded border border-[color:var(--ds-border)] hover:bg-[color:var(--ds-surface-hover)]"
+                  className="flex items-start gap-3 rounded border border-[color:var(--ds-border)] p-2.5 hover:bg-[color:var(--ds-surface-hover)]"
                 >
                   <Badge
                     variant={item.flag === "defective" ? "danger" : "warning"}
-                    className="text-[10px] flex-shrink-0 mt-0.5"
+                    className="mt-0.5 flex-shrink-0 text-[10px]"
                   >
                     {item.flag === "defective" ? "DEFECT" : "REVIEW"}
                   </Badge>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-mono text-xs truncate" title={item.path}>{item.path}</div>
-                    <div className="text-xs text-[color:var(--ds-text-subtle)] mt-0.5 line-clamp-2" title={item.note}>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-mono text-xs" title={item.path}>
+                      {item.path}
+                    </div>
+                    <div
+                      className="mt-0.5 line-clamp-2 text-xs text-[color:var(--ds-text-subtle)]"
+                      title={item.note}
+                    >
                       {item.note}
                     </div>
                   </div>
-                  <div className="flex-shrink-0 text-[10px] text-[color:var(--ds-text-subtle)] text-right">
-                    {item.flaggedBy === "auto-scan" && <Badge variant="default" className="text-[9px] mb-1">AUTO</Badge>}
-                    <div>{item.flaggedAt ? new Date(item.flaggedAt).toLocaleDateString("de-DE") : ""}</div>
+                  <div className="flex-shrink-0 text-right text-[10px] text-[color:var(--ds-text-subtle)]">
+                    {item.flaggedBy === "auto-scan" && (
+                      <Badge variant="default" className="mb-1 text-[9px]">
+                        AUTO
+                      </Badge>
+                    )}
+                    <div>
+                      {item.flaggedAt ? new Date(item.flaggedAt).toLocaleDateString("de-DE") : ""}
+                    </div>
                   </div>
                 </div>
               ))}
               {total > items.length && (
-                <div className="text-center py-3 text-xs text-[color:var(--ds-text-subtle)] border-t mt-2">
+                <div className="mt-2 border-t py-3 text-center text-xs text-[color:var(--ds-text-subtle)]">
                   Erste {items.length} von {fmt(total)} angezeigt — weitere via Pagination
                 </div>
               )}
@@ -609,7 +787,15 @@ function WorkQueueSection({ items, total, defective, needsReview, verified }: {
 
 // ── Section 3: Pipeline Live ─────────────────────────────────────────────
 
-function PipelineSection({ paused, states, onActionComplete }: { paused: boolean; states: PipelineStateRow[]; onActionComplete?: () => void }) {
+function PipelineSection({
+  paused,
+  states,
+  onActionComplete,
+}: {
+  paused: boolean;
+  states: PipelineStateRow[];
+  onActionComplete?: () => void;
+}) {
   const { addToast } = useToast();
 
   const pipelineAction = useMutation({
@@ -647,8 +833,8 @@ function PipelineSection({ paused, states, onActionComplete }: { paused: boolean
     "statutes-at": "law-at",
     "statutes-de": "law-de",
     "statutes-ch": "law-ch",
-    "landesrecht": "law-at-landesrecht",
-    "staatsvertraege": "law-at-staatsvertraege",
+    landesrecht: "law-at-landesrecht",
+    staatsvertraege: "law-at-staatsvertraege",
     "materialien-de": "law-de-materialien",
     "literatur-de": "law-de-literatur",
     "literatur-at": "law-at-literatur",
@@ -664,7 +850,9 @@ function PipelineSection({ paused, states, onActionComplete }: { paused: boolean
 
   const running = states.filter((s) => s.pid !== null);
   const alertStates = states.filter((s) => s.alertFlags.length > 0);
-  const gapStates = states.filter((s) => s.risTotal && s.diskCount > 0 && s.diskCount < s.risTotal * 0.95);
+  const gapStates = states.filter(
+    (s) => s.risTotal && s.diskCount > 0 && s.diskCount < s.risTotal * 0.95
+  );
 
   return (
     <div className="space-y-4">
@@ -673,15 +861,19 @@ function PipelineSection({ paused, states, onActionComplete }: { paused: boolean
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Activity className={`h-6 w-6 ${paused ? "text-[color:var(--ds-text-subtle)]" : "text-[color:var(--ds-success-text)] animate-pulse"}`} />
+              <Activity
+                className={`h-6 w-6 ${paused ? "text-[color:var(--ds-text-subtle)]" : "animate-pulse text-[color:var(--ds-success-text)]"}`}
+              />
               <div>
                 <p className="text-sm font-medium">
                   {paused ? "Pipeline pausiert" : "Pipeline aktiv"}
                 </p>
                 <p className="text-xs text-[color:var(--ds-text-subtle)]">
                   {running.length} laufende Stage{running.length !== 1 ? "s" : ""}
-                  {alertStates.length > 0 && ` · ${alertStates.length} Alert${alertStates.length !== 1 ? "s" : ""}`}
-                  {gapStates.length > 0 && ` · ${gapStates.length} Gap${gapStates.length !== 1 ? "s" : ""}`}
+                  {alertStates.length > 0 &&
+                    ` · ${alertStates.length} Alert${alertStates.length !== 1 ? "s" : ""}`}
+                  {gapStates.length > 0 &&
+                    ` · ${gapStates.length} Gap${gapStates.length !== 1 ? "s" : ""}`}
                 </p>
               </div>
             </div>
@@ -691,7 +883,7 @@ function PipelineSection({ paused, states, onActionComplete }: { paused: boolean
               onClick={() => pipelineAction.mutate({ action: paused ? "resume" : "pause" })}
               disabled={pipelineAction.isPending}
             >
-              {paused ? <Play className="h-4 w-4 mr-1" /> : <Pause className="h-4 w-4 mr-1" />}
+              {paused ? <Play className="mr-1 h-4 w-4" /> : <Pause className="mr-1 h-4 w-4" />}
               {paused ? "Fortsetzen" : "Pausieren"}
             </Button>
           </div>
@@ -702,7 +894,7 @@ function PipelineSection({ paused, states, onActionComplete }: { paused: boolean
       {gapStates.length > 0 && (
         <Card className="border-[color:var(--ds-warning-border)]">
           <CardHeader>
-            <CardTitle className="text-sm flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
               <AlertTriangle className="h-4 w-4 text-[color:var(--ds-warning-text)]" />
               Discovery-Gap ({gapStates.length} Quellen)
             </CardTitle>
@@ -713,18 +905,26 @@ function PipelineSection({ paused, states, onActionComplete }: { paused: boolean
                 const gap = s.risTotal! - s.diskCount;
                 const gapPct = ((gap / s.risTotal!) * 100).toFixed(1);
                 return (
-                  <div key={s.source} className="flex items-center gap-3 p-2 rounded border border-[color:var(--ds-border)] text-xs">
-                    <div className="flex-1 min-w-0">
+                  <div
+                    key={s.source}
+                    className="flex items-center gap-3 rounded border border-[color:var(--ds-border)] p-2 text-xs"
+                  >
+                    <div className="min-w-0 flex-1">
                       <span className="font-mono">{s.source}</span>
-                      <span className="text-[color:var(--ds-text-subtle)] ml-2">
-                        Disk: {fmt(s.diskCount)} / RIS: {fmt(s.risTotal!)} — <span className="text-[color:var(--ds-warning-text)] font-medium">{gapPct}% fehlen</span>
+                      <span className="ml-2 text-[color:var(--ds-text-subtle)]">
+                        Disk: {fmt(s.diskCount)} / RIS: {fmt(s.risTotal!)} —{" "}
+                        <span className="font-medium text-[color:var(--ds-warning-text)]">
+                          {gapPct}% fehlen
+                        </span>
                       </span>
                     </div>
                     <Button
                       size="sm"
                       variant="outline"
-                      className="h-7 text-[10px] gap-1"
-                      onClick={() => pipelineAction.mutate({ action: "fetch_missing", source_key: s.source })}
+                      className="h-7 gap-1 text-[10px]"
+                      onClick={() =>
+                        pipelineAction.mutate({ action: "fetch_missing", source_key: s.source })
+                      }
                       disabled={pipelineAction.isPending}
                       aria-label={`Fehlende Dateien für ${s.source} fetchen`}
                     >
@@ -742,65 +942,83 @@ function PipelineSection({ paused, states, onActionComplete }: { paused: boolean
       {states.length > 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
               <Activity className="h-4 w-4" />
               Pipeline-States ({states.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2 max-h-[500px] overflow-y-auto">
+            <div className="max-h-[500px] space-y-2 overflow-y-auto">
               {states.map((s, i) => {
                 const isRunning = s.pid !== null;
                 const hasAlerts = s.alertFlags.length > 0;
                 const sourceId = sourceKeyToSourceId[s.source] || s.source;
                 return (
-                  <div key={i} className="p-2.5 rounded border border-[color:var(--ds-border)] text-xs space-y-1.5">
+                  <div
+                    key={i}
+                    className="space-y-1.5 rounded border border-[color:var(--ds-border)] p-2.5 text-xs"
+                  >
                     <div className="flex items-center gap-3">
                       <Badge
                         variant={
-                          isRunning ? "success" :
-                          s.stage === "done" || s.stage === "ok" ? "default" :
-                          s.stage === "failed" ? "danger" :
-                          s.stage === "idle" || s.stage === "empty" ? "default" : "warning"
+                          isRunning
+                            ? "success"
+                            : s.stage === "done" || s.stage === "ok"
+                              ? "default"
+                              : s.stage === "failed"
+                                ? "danger"
+                                : s.stage === "idle" || s.stage === "empty"
+                                  ? "default"
+                                  : "warning"
                         }
-                        className="text-[10px] flex-shrink-0"
+                        className="flex-shrink-0 text-[10px]"
                       >
                         {s.stage}
                       </Badge>
-                      <div className="flex-1 min-w-0">
+                      <div className="min-w-0 flex-1">
                         <span className="font-mono">{s.source}</span>
                         {s.pidCmd && (
-                          <span className="text-[color:var(--ds-text-subtle)] ml-2 truncate" title={s.pidCmd}>
+                          <span
+                            className="ml-2 truncate text-[color:var(--ds-text-subtle)]"
+                            title={s.pidCmd}
+                          >
                             · PID {s.pid}
                           </span>
                         )}
                       </div>
                       {hasAlerts && (
-                        <AlertTriangle className="h-3 w-3 text-[color:var(--ds-warning-text)] flex-shrink-0" />
+                        <AlertTriangle className="h-3 w-3 flex-shrink-0 text-[color:var(--ds-warning-text)]" />
                       )}
                       {s.lastUpdated && (
-                        <span className="text-[10px] text-[color:var(--ds-text-subtle)] flex-shrink-0">
+                        <span className="flex-shrink-0 text-[10px] text-[color:var(--ds-text-subtle)]">
                           {new Date(s.lastUpdated).toLocaleTimeString("de-DE")}
                         </span>
                       )}
                     </div>
                     {/* Alert details */}
                     {hasAlerts && (
-                      <div className="pl-2 space-y-1 border-l-2 border-[color:var(--ds-warning-border)]">
+                      <div className="space-y-1 border-l-2 border-[color:var(--ds-warning-border)] pl-2">
                         {s.alertFlags.map((a, j) => (
                           <div key={j} className="flex items-start gap-2 text-[10px]">
                             <Badge
                               variant={a.severity === "error" ? "danger" : "warning"}
-                              className="text-[9px] flex-shrink-0"
+                              className="flex-shrink-0 text-[9px]"
                             >
                               {a.type}
                             </Badge>
-                            <span className="text-[color:var(--ds-text-subtle)] flex-1">{a.message}</span>
+                            <span className="flex-1 text-[color:var(--ds-text-subtle)]">
+                              {a.message}
+                            </span>
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-5 text-[9px] px-1"
-                              onClick={() => pipelineAction.mutate({ action: "clear_alerts", source_key: s.source })}
+                              className="h-5 px-1 text-[9px]"
+                              onClick={() =>
+                                pipelineAction.mutate({
+                                  action: "clear_alerts",
+                                  source_key: s.source,
+                                })
+                              }
                               disabled={pipelineAction.isPending}
                               aria-label={`Alerts für ${s.source} leeren`}
                             >
@@ -815,8 +1033,10 @@ function PipelineSection({ paused, states, onActionComplete }: { paused: boolean
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-6 text-[10px] gap-1"
-                        onClick={() => pipelineAction.mutate({ action: "reembed", source: sourceId })}
+                        className="h-6 gap-1 text-[10px]"
+                        onClick={() =>
+                          pipelineAction.mutate({ action: "reembed", source: sourceId })
+                        }
                         disabled={pipelineAction.isPending}
                         aria-label={`Re-Embed für ${s.source} anstoßen`}
                       >
@@ -837,7 +1057,7 @@ function PipelineSection({ paused, states, onActionComplete }: { paused: boolean
       ) : (
         <Card>
           <CardContent className="p-8 text-center text-sm text-[color:var(--ds-text-subtle)]">
-            <Activity className="h-10 w-10 mx-auto mb-2 text-[color:var(--ds-text-subtle)]/40" />
+            <Activity className="mx-auto mb-2 h-10 w-10 text-[color:var(--ds-text-subtle)]/40" />
             Keine Pipeline-States in der DB
           </CardContent>
         </Card>
@@ -848,8 +1068,15 @@ function PipelineSection({ paused, states, onActionComplete }: { paused: boolean
 
 // ── Section 4: Trust Status ──────────────────────────────────────────────
 
-function TrustSection({ rows, totals }: { rows: TrustRow[]; totals: CommandCenterData["trust"]["totals"] }) {
-  const total = totals.verified + totals.needsReview + totals.defective + totals.archived + totals.unreviewed;
+function TrustSection({
+  rows,
+  totals,
+}: {
+  rows: TrustRow[];
+  totals: CommandCenterData["trust"]["totals"];
+}) {
+  const total =
+    totals.verified + totals.needsReview + totals.defective + totals.archived + totals.unreviewed;
   const verifiedPct = total > 0 ? (totals.verified / total) * 100 : 0;
   const archivedPct = total > 0 ? (totals.archived / total) * 100 : 0;
 
@@ -861,36 +1088,48 @@ function TrustSection({ rows, totals }: { rows: TrustRow[]; totals: CommandCente
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <ShieldCheck className="h-5 w-5 text-[color:var(--ds-success-text)]" />
-              <span className="text-2xl font-bold text-[color:var(--ds-success-text)]">{fmt(totals.verified)}</span>
+              <span className="text-2xl font-bold text-[color:var(--ds-success-text)]">
+                {fmt(totals.verified)}
+              </span>
             </div>
-            <p className="text-xs text-[color:var(--ds-text-subtle)] mt-1">Verified ({verifiedPct.toFixed(1)}%)</p>
+            <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
+              Verified ({verifiedPct.toFixed(1)}%)
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <Archive className="h-5 w-5 text-[color:var(--ds-text-muted)]" />
-              <span className="text-2xl font-bold text-[color:var(--ds-text-muted)]">{fmt(totals.archived)}</span>
+              <span className="text-2xl font-bold text-[color:var(--ds-text-muted)]">
+                {fmt(totals.archived)}
+              </span>
             </div>
-            <p className="text-xs text-[color:var(--ds-text-subtle)] mt-1">Archiviert ({archivedPct.toFixed(1)}%)</p>
+            <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
+              Archiviert ({archivedPct.toFixed(1)}%)
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <AlertTriangle className="h-5 w-5 text-[color:var(--ds-warning-text)]" />
-              <span className="text-2xl font-bold text-[color:var(--ds-warning-text)]">{fmt(totals.needsReview)}</span>
+              <span className="text-2xl font-bold text-[color:var(--ds-warning-text)]">
+                {fmt(totals.needsReview)}
+              </span>
             </div>
-            <p className="text-xs text-[color:var(--ds-text-subtle)] mt-1">Needs Review</p>
+            <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">Needs Review</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <XCircle className="h-5 w-5 text-[color:var(--ds-danger-text)]" />
-              <span className="text-2xl font-bold text-[color:var(--ds-danger-text)]">{fmt(totals.defective)}</span>
+              <span className="text-2xl font-bold text-[color:var(--ds-danger-text)]">
+                {fmt(totals.defective)}
+              </span>
             </div>
-            <p className="text-xs text-[color:var(--ds-text-subtle)] mt-1">Defective</p>
+            <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">Defective</p>
           </CardContent>
         </Card>
         <Card>
@@ -899,7 +1138,7 @@ function TrustSection({ rows, totals }: { rows: TrustRow[]; totals: CommandCente
               <FileText className="h-5 w-5 text-[color:var(--ds-text-subtle)]" />
               <span className="text-2xl font-bold">{fmt(totals.unreviewed)}</span>
             </div>
-            <p className="text-xs text-[color:var(--ds-text-subtle)] mt-1">Unreviewed</p>
+            <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">Unreviewed</p>
           </CardContent>
         </Card>
       </div>
@@ -907,13 +1146,13 @@ function TrustSection({ rows, totals }: { rows: TrustRow[]; totals: CommandCente
       {/* Per-Corpus Trust */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
             <ShieldCheck className="h-4 w-4" />
             Trust pro Korpus
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
+          <div className="max-h-[400px] space-y-1.5 overflow-y-auto">
             {rows.map((r) => {
               const total = r.total + r.unreviewed;
               const verifiedPct = total > 0 ? (r.verified / total) * 100 : 0;
@@ -921,32 +1160,66 @@ function TrustSection({ rows, totals }: { rows: TrustRow[]; totals: CommandCente
               const defectPct = total > 0 ? (r.defective / total) * 100 : 0;
               const archivedPct = total > 0 ? (r.archived / total) * 100 : 0;
               return (
-                <div key={r.corpus} className="p-2 rounded border border-[color:var(--ds-border)]">
-                  <div className="flex items-center justify-between mb-1.5">
+                <div key={r.corpus} className="rounded border border-[color:var(--ds-border)] p-2">
+                  <div className="mb-1.5 flex items-center justify-between">
                     <span className="font-mono text-xs">{r.corpus}</span>
-                    <span className="text-xs text-[color:var(--ds-text-subtle)]">{fmt(r.total + r.unreviewed)} Dateien</span>
+                    <span className="text-xs text-[color:var(--ds-text-subtle)]">
+                      {fmt(r.total + r.unreviewed)} Dateien
+                    </span>
                   </div>
                   {/* Stacked Progress Bar */}
-                  <div className="flex h-2 rounded-full overflow-hidden bg-[color:var(--ds-surface-2)]">
+                  <div className="flex h-2 overflow-hidden rounded-full bg-[color:var(--ds-surface-2)]">
                     {r.verified > 0 && (
-                      <div className="bg-[color:var(--ds-success-solid)]" style={{ width: `${verifiedPct}%` }} title={`Verified: ${r.verified}`} />
+                      <div
+                        className="bg-[color:var(--ds-success-solid)]"
+                        style={{ width: `${verifiedPct}%` }}
+                        title={`Verified: ${r.verified}`}
+                      />
                     )}
                     {r.archived > 0 && (
-                      <div className="bg-[color:var(--ds-text-muted)]" style={{ width: `${archivedPct}%` }} title={`Archiviert: ${r.archived}`} />
+                      <div
+                        className="bg-[color:var(--ds-text-muted)]"
+                        style={{ width: `${archivedPct}%` }}
+                        title={`Archiviert: ${r.archived}`}
+                      />
                     )}
                     {r.needsReview > 0 && (
-                      <div className="bg-[color:var(--ds-warning-solid)]" style={{ width: `${reviewPct}%` }} title={`Needs Review: ${r.needsReview}`} />
+                      <div
+                        className="bg-[color:var(--ds-warning-solid)]"
+                        style={{ width: `${reviewPct}%` }}
+                        title={`Needs Review: ${r.needsReview}`}
+                      />
                     )}
                     {r.defective > 0 && (
-                      <div className="bg-[color:var(--ds-danger-solid)]" style={{ width: `${defectPct}%` }} title={`Defective: ${r.defective}`} />
+                      <div
+                        className="bg-[color:var(--ds-danger-solid)]"
+                        style={{ width: `${defectPct}%` }}
+                        title={`Defective: ${r.defective}`}
+                      />
                     )}
                   </div>
                   {(r.verified > 0 || r.needsReview > 0 || r.defective > 0 || r.archived > 0) && (
-                    <div className="flex items-center gap-3 mt-1 text-[10px] text-[color:var(--ds-text-subtle)]">
-                      {r.verified > 0 && <span className="text-[color:var(--ds-success-text)]">✓ {fmt(r.verified)}</span>}
-                      {r.archived > 0 && <span className="text-[color:var(--ds-text-muted)]">📦 {fmt(r.archived)}</span>}
-                      {r.needsReview > 0 && <span className="text-[color:var(--ds-warning-text)]">⚠ {fmt(r.needsReview)}</span>}
-                      {r.defective > 0 && <span className="text-[color:var(--ds-danger-text)]">✗ {fmt(r.defective)}</span>}
+                    <div className="mt-1 flex items-center gap-3 text-[10px] text-[color:var(--ds-text-subtle)]">
+                      {r.verified > 0 && (
+                        <span className="text-[color:var(--ds-success-text)]">
+                          ✓ {fmt(r.verified)}
+                        </span>
+                      )}
+                      {r.archived > 0 && (
+                        <span className="text-[color:var(--ds-text-muted)]">
+                          📦 {fmt(r.archived)}
+                        </span>
+                      )}
+                      {r.needsReview > 0 && (
+                        <span className="text-[color:var(--ds-warning-text)]">
+                          ⚠ {fmt(r.needsReview)}
+                        </span>
+                      )}
+                      {r.defective > 0 && (
+                        <span className="text-[color:var(--ds-danger-text)]">
+                          ✗ {fmt(r.defective)}
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -978,7 +1251,11 @@ function RisDeltaSection({
       return res.json();
     },
     onSuccess: () => {
-      addToast({ title: "Delta-Sync ausgelöst", description: "Der corpus-pipeline wird den Watcher im nächsten Zyklus starten.", type: "success" });
+      addToast({
+        title: "Delta-Sync ausgelöst",
+        description: "Der corpus-pipeline wird den Watcher im nächsten Zyklus starten.",
+        type: "success",
+      });
       onActionComplete();
     },
     onError: (err: Error) => {
@@ -991,7 +1268,10 @@ function RisDeltaSection({
   const syncedCount = rows.filter((r) => r.stage === "ok" && !r.running).length;
   const idleCount = rows.filter((r) => r.stage === "idle" || !r.lastSync).length;
 
-  const STAGE_CONFIG: Record<string, { variant: "success" | "warning" | "danger" | "default"; label: string }> = {
+  const STAGE_CONFIG: Record<
+    string,
+    { variant: "success" | "warning" | "danger" | "default"; label: string }
+  > = {
     idle: { variant: "default", label: "Nie gesynced" },
     running: { variant: "warning", label: "Läuft" },
     ok: { variant: "success", label: "Aktuell" },
@@ -1002,41 +1282,62 @@ function RisDeltaSection({
   return (
     <div className="space-y-4">
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Card className="border-[color:var(--ds-success-border)]">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-[color:var(--ds-success-text)]" />
               <span className="text-xs text-[color:var(--ds-text-muted)]">Aktuell</span>
             </div>
-            <p className="text-2xl font-semibold mt-1">{syncedCount}</p>
+            <p className="mt-1 text-2xl font-semibold">{syncedCount}</p>
           </CardContent>
         </Card>
         <Card className={runningCount > 0 ? "border-[color:var(--ds-warning-border)]" : ""}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Activity className={cn("h-4 w-4", runningCount > 0 ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-text-muted)]")} />
+              <Activity
+                className={cn(
+                  "h-4 w-4",
+                  runningCount > 0
+                    ? "text-[color:var(--ds-warning-text)]"
+                    : "text-[color:var(--ds-text-muted)]"
+                )}
+              />
               <span className="text-xs text-[color:var(--ds-text-muted)]">Läuft</span>
             </div>
-            <p className="text-2xl font-semibold mt-1">{runningCount}</p>
+            <p className="mt-1 text-2xl font-semibold">{runningCount}</p>
           </CardContent>
         </Card>
         <Card className={alertCount > 0 ? "border-[color:var(--ds-danger-border)]" : ""}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <AlertTriangle className={cn("h-4 w-4", alertCount > 0 ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-text-muted)]")} />
+              <AlertTriangle
+                className={cn(
+                  "h-4 w-4",
+                  alertCount > 0
+                    ? "text-[color:var(--ds-danger-text)]"
+                    : "text-[color:var(--ds-text-muted)]"
+                )}
+              />
               <span className="text-xs text-[color:var(--ds-text-muted)]">Alerts</span>
             </div>
-            <p className="text-2xl font-semibold mt-1">{alertCount}</p>
+            <p className="mt-1 text-2xl font-semibold">{alertCount}</p>
           </CardContent>
         </Card>
         <Card className={idleCount > 0 ? "border-[color:var(--ds-warning-border)]" : ""}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Zap className={cn("h-4 w-4", idleCount > 0 ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-text-muted)]")} />
+              <Zap
+                className={cn(
+                  "h-4 w-4",
+                  idleCount > 0
+                    ? "text-[color:var(--ds-warning-text)]"
+                    : "text-[color:var(--ds-text-muted)]"
+                )}
+              />
               <span className="text-xs text-[color:var(--ds-text-muted)]">Nie gesynced</span>
             </div>
-            <p className="text-2xl font-semibold mt-1">{idleCount}</p>
+            <p className="mt-1 text-2xl font-semibold">{idleCount}</p>
           </CardContent>
         </Card>
       </div>
@@ -1044,21 +1345,21 @@ function RisDeltaSection({
       {/* Trigger Button */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4 text-[color:var(--brand-primary)]" />
                 <span className="text-sm font-medium">RIS Delta-Sync</span>
                 {triggerPending && (
                   <Badge variant="warning" className="text-xs">
-                    <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                    <RefreshCw className="mr-1 h-3 w-3 animate-spin" />
                     Trigger anstehend
                   </Badge>
                 )}
               </div>
               <p className="text-xs text-[color:var(--ds-text-muted)]">
-                Inkrementeller Sync: holt neue &amp; geänderte Dokumente von RIS OGD API.
-                Läuft täglich um 04:30 CEST automatisch.
+                Inkrementeller Sync: holt neue &amp; geänderte Dokumente von RIS OGD API. Läuft
+                täglich um 04:30 CEST automatisch.
               </p>
             </div>
             <Button
@@ -1068,11 +1369,17 @@ function RisDeltaSection({
               disabled={triggerMutation.isPending || triggerPending}
             >
               {triggerMutation.isPending ? (
-                <><RefreshCw className="h-3 w-3 mr-1 animate-spin" /> Wird ausgelöst…</>
+                <>
+                  <RefreshCw className="mr-1 h-3 w-3 animate-spin" /> Wird ausgelöst…
+                </>
               ) : triggerPending ? (
-                <><Activity className="h-3 w-3 mr-1" /> Trigger aktiv</>
+                <>
+                  <Activity className="mr-1 h-3 w-3" /> Trigger aktiv
+                </>
               ) : (
-                <><Zap className="h-3 w-3 mr-1" /> Jetzt syncen</>
+                <>
+                  <Zap className="mr-1 h-3 w-3" /> Jetzt syncen
+                </>
               )}
             </Button>
           </div>
@@ -1082,7 +1389,7 @@ function RisDeltaSection({
       {/* Per-Applikation Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
             <Database className="h-4 w-4" />
             Applikationen ({rows.length})
           </CardTitle>
@@ -1090,10 +1397,12 @@ function RisDeltaSection({
         <CardContent className="p-0">
           {rows.length === 0 ? (
             <div className="p-8 text-center text-sm text-[color:var(--ds-text-muted)]">
-              <Zap className="h-8 w-8 mx-auto mb-2 opacity-40" />
+              <Zap className="mx-auto mb-2 h-8 w-8 opacity-40" />
               Keine Delta-Watcher-Daten verfügbar.
               <br />
-              <span className="text-xs">Der Watcher wird beim ersten Pipeline-Zyklus initialisiert.</span>
+              <span className="text-xs">
+                Der Watcher wird beim ersten Pipeline-Zyklus initialisiert.
+              </span>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -1110,23 +1419,38 @@ function RisDeltaSection({
                   {rows.map((row) => {
                     const stageCfg = STAGE_CONFIG[row.stage] || STAGE_CONFIG.idle;
                     return (
-                      <tr key={row.applikation} className="border-b last:border-0 hover:bg-[color:var(--ds-surface-hover)] transition-colors">
+                      <tr
+                        key={row.applikation}
+                        className="border-b transition-colors last:border-0 hover:bg-[color:var(--ds-surface-hover)]"
+                      >
                         <td className="px-4 py-3">
                           <div className="font-medium">{row.label}</div>
-                          <div className="text-xs text-[color:var(--ds-text-muted)] font-mono">{row.applikation}</div>
+                          <div className="font-mono text-xs text-[color:var(--ds-text-muted)]">
+                            {row.applikation}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            {row.running && <RefreshCw className="h-3 w-3 animate-spin text-[color:var(--ds-warning-text)]" />}
-                            <Badge variant={stageCfg.variant} className="text-xs">{stageCfg.label}</Badge>
+                            {row.running && (
+                              <RefreshCw className="h-3 w-3 animate-spin text-[color:var(--ds-warning-text)]" />
+                            )}
+                            <Badge variant={stageCfg.variant} className="text-xs">
+                              {stageCfg.label}
+                            </Badge>
                           </div>
                         </td>
                         <td className="px-4 py-3 text-xs text-[color:var(--ds-text-muted)]">
                           {row.lastSync ? (
                             <span title={row.lastSync}>
-                              {new Date(row.lastSync).toLocaleDateString("de-AT", { day: "2-digit", month: "short", year: "numeric" })}
-                              {" "}
-                              {new Date(row.lastSync).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}
+                              {new Date(row.lastSync).toLocaleDateString("de-AT", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })}{" "}
+                              {new Date(row.lastSync).toLocaleTimeString("de-AT", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
                             </span>
                           ) : (
                             <span className="opacity-50">—</span>
@@ -1137,16 +1461,24 @@ function RisDeltaSection({
                             <div className="space-y-1">
                               {row.alerts.slice(0, 3).map((a, i) => (
                                 <div key={i} className="flex items-start gap-1 text-xs">
-                                  <Badge variant={a.severity === "error" ? "danger" : "warning"} className="text-[10px] shrink-0">
+                                  <Badge
+                                    variant={a.severity === "error" ? "danger" : "warning"}
+                                    className="shrink-0 text-[10px]"
+                                  >
                                     {a.severity}
                                   </Badge>
-                                  <span className="text-[color:var(--ds-text-muted)] truncate max-w-xs" title={a.message}>
+                                  <span
+                                    className="max-w-xs truncate text-[color:var(--ds-text-muted)]"
+                                    title={a.message}
+                                  >
                                     {a.message}
                                   </span>
                                 </div>
                               ))}
                               {row.alerts.length > 3 && (
-                                <span className="text-xs text-[color:var(--ds-text-muted)]">+{row.alerts.length - 3} weitere</span>
+                                <span className="text-xs text-[color:var(--ds-text-muted)]">
+                                  +{row.alerts.length - 3} weitere
+                                </span>
                               )}
                             </div>
                           ) : (
@@ -1168,7 +1500,9 @@ function RisDeltaSection({
 
 // ── Main Component ───────────────────────────────────────────────────────
 
-export function CorpusCommandCenter({ onSelectCorpus }: { onSelectCorpus?: (sourceId: string) => void } = {}) {
+export function CorpusCommandCenter({
+  onSelectCorpus,
+}: { onSelectCorpus?: (sourceId: string) => void } = {}) {
   const [section, setSection] = useState<"sync" | "work" | "pipeline" | "trust" | "delta">("sync");
 
   const { data, isLoading, isError, error, refetch } = useQuery<CommandCenterData>({
@@ -1189,8 +1523,8 @@ export function CorpusCommandCenter({ onSelectCorpus }: { onSelectCorpus?: (sour
             <Card key={i}>
               <CardContent className="p-4">
                 <Skeleton className="h-7 w-7 rounded" />
-                <Skeleton className="h-5 w-20 mt-2" />
-                <Skeleton className="h-3 w-14 mt-1" />
+                <Skeleton className="mt-2 h-5 w-20" />
+                <Skeleton className="mt-1 h-3 w-14" />
               </CardContent>
             </Card>
           ))}
@@ -1212,9 +1546,11 @@ export function CorpusCommandCenter({ onSelectCorpus }: { onSelectCorpus?: (sour
             <XCircle className="h-5 w-5" />
             <span className="text-sm font-medium">Command Center nicht ladbar</span>
           </div>
-          <p className="text-xs text-[color:var(--ds-danger-text)] mt-1 ml-7">{(error as Error)?.message}</p>
+          <p className="mt-1 ml-7 text-xs text-[color:var(--ds-danger-text)]">
+            {(error as Error)?.message}
+          </p>
           <Button size="sm" variant="outline" className="mt-3 ml-7" onClick={() => refetch()}>
-            <RefreshCw className="h-3 w-3 mr-1" /> Erneut versuchen
+            <RefreshCw className="mr-1 h-3 w-3" /> Erneut versuchen
           </Button>
         </CardContent>
       </Card>
@@ -1226,7 +1562,12 @@ export function CorpusCommandCenter({ onSelectCorpus }: { onSelectCorpus?: (sour
   const sections = [
     { id: "sync" as const, label: "Sync-Status", icon: Layers, count: data.sync.rows.length },
     { id: "work" as const, label: "Work Queue", icon: Inbox, count: data.workQueue.total },
-    { id: "pipeline" as const, label: "Pipeline", icon: Activity, count: data.pipeline.states.length },
+    {
+      id: "pipeline" as const,
+      label: "Pipeline",
+      icon: Activity,
+      count: data.pipeline.states.length,
+    },
     { id: "trust" as const, label: "Trust", icon: ShieldCheck, count: data.trust.rows.length },
     { id: "delta" as const, label: "RIS Delta", icon: Zap, count: data.risDelta?.rows.length ?? 0 },
   ];
@@ -1234,7 +1575,7 @@ export function CorpusCommandCenter({ onSelectCorpus }: { onSelectCorpus?: (sour
   return (
     <div className="space-y-4">
       {/* Section Tabs */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex flex-wrap items-center gap-2">
         {sections.map((s) => {
           const Icon = s.icon;
           const active = section === s.id;
@@ -1249,7 +1590,7 @@ export function CorpusCommandCenter({ onSelectCorpus }: { onSelectCorpus?: (sour
               <Icon className="h-4 w-4" />
               {s.label}
               {s.count > 0 && (
-                <Badge variant={active ? "default" : "accent"} className="text-[10px] ml-1">
+                <Badge variant={active ? "default" : "accent"} className="ml-1 text-[10px]">
                   {fmt(s.count)}
                 </Badge>
               )}
@@ -1259,7 +1600,7 @@ export function CorpusCommandCenter({ onSelectCorpus }: { onSelectCorpus?: (sour
         <div className="flex-1" />
         {!data.dbAvailable && (
           <Badge variant="warning" className="text-xs">
-            <AlertTriangle className="h-3 w-3 mr-1" /> DB nicht verbunden
+            <AlertTriangle className="mr-1 h-3 w-3" /> DB nicht verbunden
           </Badge>
         )}
         <Button size="sm" variant="ghost" onClick={() => refetch()} aria-label="Aktualisieren">
@@ -1269,8 +1610,19 @@ export function CorpusCommandCenter({ onSelectCorpus }: { onSelectCorpus?: (sour
 
       {/* Section Content */}
       {section === "sync" && (
-        <Suspense fallback={<div className="space-y-4"><div className="h-32 animate-pulse rounded-lg bg-[color:var(--ds-surface-2)]" /></div>}>
-          <SyncStatusSection rows={data.sync.rows} totals={data.sync.totals} onSelectCorpus={onSelectCorpus} onRefresh={refetch} />
+        <Suspense
+          fallback={
+            <div className="space-y-4">
+              <div className="h-32 animate-pulse rounded-lg bg-[color:var(--ds-surface-2)]" />
+            </div>
+          }
+        >
+          <SyncStatusSection
+            rows={data.sync.rows}
+            totals={data.sync.totals}
+            onSelectCorpus={onSelectCorpus}
+            onRefresh={refetch}
+          />
         </Suspense>
       )}
       {section === "work" && (
@@ -1282,10 +1634,20 @@ export function CorpusCommandCenter({ onSelectCorpus }: { onSelectCorpus?: (sour
           verified={data.workQueue.verified}
         />
       )}
-      {section === "pipeline" && <PipelineSection paused={data.pipeline.paused} states={data.pipeline.states} onActionComplete={() => refetch()} />}
+      {section === "pipeline" && (
+        <PipelineSection
+          paused={data.pipeline.paused}
+          states={data.pipeline.states}
+          onActionComplete={() => refetch()}
+        />
+      )}
       {section === "trust" && <TrustSection rows={data.trust.rows} totals={data.trust.totals} />}
       {section === "delta" && data.risDelta && (
-        <RisDeltaSection rows={data.risDelta.rows} triggerPending={data.risDelta.triggerPending} onActionComplete={() => refetch()} />
+        <RisDeltaSection
+          rows={data.risDelta.rows}
+          triggerPending={data.risDelta.triggerPending}
+          onActionComplete={() => refetch()}
+        />
       )}
     </div>
   );
