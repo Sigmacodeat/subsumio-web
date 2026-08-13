@@ -5660,6 +5660,30 @@ export const MIGRATIONS: Migration[] = [
         ON pages (is_current) WHERE is_current = true;
     `,
   },
+  {
+    version: 124,
+    name: "content_chunks_source_id_denormalized",
+    // v0.42 feature: postgres-engine.ts uses denormalized cc.source_id in
+    // hybridSearch source-scoping (avoids JOIN with pages in HNSW candidate
+    // scan). The column was referenced in code but never migrated — E2E
+    // search tests failed with "column cc.source_id does not exist".
+    //
+    // Backfill: set from pages.source_id for existing chunks.
+    // Index: partial index for source-scoped HNSW queries.
+    idempotent: true,
+    sql: `
+      ALTER TABLE content_chunks ADD COLUMN IF NOT EXISTS source_id TEXT;
+
+      UPDATE content_chunks
+        SET source_id = p.source_id
+        FROM pages p
+        WHERE content_chunks.page_id = p.id
+          AND content_chunks.source_id IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_chunks_source_id
+        ON content_chunks (source_id) WHERE source_id IS NOT NULL;
+    `,
+  },
 ];
 
 export const LATEST_VERSION =
