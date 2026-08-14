@@ -29,7 +29,6 @@ import {
   ShieldCheck,
   ArrowRight,
   Inbox,
-  TrendingUp,
   Archive,
   Globe,
 } from "lucide-react";
@@ -166,39 +165,6 @@ const SYNC_STATUS_CONFIG: Record<
   orphan_in_db: { variant: "danger", label: "DB-Orphane" },
   no_db: { variant: "default", label: "Keine DB" },
 };
-
-// ── Coverage Indicator (statt Sparkline — keine Hooks, TDZ-safe) ─────────
-
-function CoverageIndicator({ coveragePct }: { coveragePct: number }) {
-  const color =
-    coveragePct >= 90
-      ? "var(--ds-success-text)"
-      : coveragePct >= 50
-        ? "var(--ds-warning-text)"
-        : "var(--ds-danger-text)";
-  return (
-    <div
-      className="flex items-center gap-1"
-      aria-label={`Embedding-Coverage: ${coveragePct.toFixed(1)}%`}
-    >
-      <svg width={36} height={16} className="overflow-visible" role="img" aria-hidden="true">
-        <circle cx={8} cy={8} r={5} fill="none" stroke="var(--ds-surface-hover)" strokeWidth={2} />
-        <circle
-          cx={8}
-          cy={8}
-          r={5}
-          fill="none"
-          stroke={color}
-          strokeWidth={2}
-          strokeDasharray={`${(coveragePct / 100) * 31.4} 31.4`}
-          strokeLinecap="round"
-          transform="rotate(-90 8 8)"
-        />
-      </svg>
-      {coveragePct >= 90 && <TrendingUp className="h-3 w-3 text-[color:var(--ds-success-text)]" />}
-    </div>
-  );
-}
 
 // ── Section 1: Sync-Status ───────────────────────────────────────────────
 
@@ -423,11 +389,9 @@ function SyncStatusSection({
               <div className="col-span-1 text-right" title="Fehlende Dokumente: RIS − DB">
                 Fehlt
               </div>
-              <div className="col-span-3 text-right">Embedded</div>
-              <div className="col-span-1 text-right">Lücke</div>
-              <div className="col-span-1 text-center">Trend</div>
-              <div className="col-span-1 text-center">Status</div>
-              <div className="col-span-1 text-center">Aktion</div>
+              <div className="col-span-2 text-right">Embedded</div>
+              <div className="col-span-2 text-center">Status</div>
+              <div className="col-span-2 text-center">Aktion</div>
             </div>
             {displayRows.map((r) => {
               const config = r.fullyComplete
@@ -526,7 +490,7 @@ function SyncStatusSection({
                       <span className="text-[color:var(--ds-text-subtle)]">—</span>
                     )}
                   </div>
-                  <div className="col-span-3 text-right tabular-nums">
+                  <div className="col-span-2 text-right tabular-nums">
                     <span
                       className={
                         r.fullyComplete
@@ -537,33 +501,20 @@ function SyncStatusSection({
                               ? "text-[color:var(--ds-warning-text)]"
                               : "text-[color:var(--ds-danger-text)]"
                       }
+                      title={`${fmt(r.embeddedChunks)} von ${fmt(r.dbChunks)} Chunks embedded`}
                     >
-                      {fmt(r.embeddedChunks)}
+                      {pct(r.coveragePct)}
                     </span>
                     <span className="ml-1 text-[10px] text-[color:var(--ds-text-subtle)]">
-                      ({pct(r.coveragePct)})
+                      ({fmt(r.embeddedChunks)})
                     </span>
                   </div>
-                  <div className="col-span-1 text-right tabular-nums">
-                    {r.fullyComplete ? (
-                      <CheckCircle2 className="inline h-3.5 w-3.5 text-[color:var(--ds-success-text)]" />
-                    ) : r.notImported > 0 ? (
-                      <span className="font-medium text-[color:var(--ds-warning-text)]">
-                        {fmt(r.notImported)}
-                      </span>
-                    ) : (
-                      <span className="text-[color:var(--ds-text-subtle)]">—</span>
-                    )}
-                  </div>
-                  <div className="col-span-1 flex justify-center">
-                    <CoverageIndicator coveragePct={r.coveragePct} />
-                  </div>
-                  <div className="col-span-1 text-center">
+                  <div className="col-span-2 text-center">
                     <Badge variant={config.variant} className="text-[10px]">
                       {config.label}
                     </Badge>
                   </div>
-                  <div className="col-span-1 text-center">
+                  <div className="col-span-2 flex justify-center">
                     {r.canUpdate ? (
                       <Button
                         size="sm"
