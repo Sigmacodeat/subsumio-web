@@ -155,6 +155,10 @@ services:
       MAX_TABULAR_UPLOAD_BYTES: ${MAX_TABULAR_UPLOAD_BYTES:-20971520}
       NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES: ${NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES:-524288000}
       NEXT_PUBLIC_ENGINE_URL: "https://${ENGINE_DOMAIN:?set ENGINE_DOMAIN in .env}"
+    volumes:
+      # Corpus read-only mount so the dashboard can enumerate local disk files.
+      # Mounted at /app/law-corpus to match src/lib/corpus-index.ts (NORMALIZED_ROOT).
+      - /opt/subsumio/law-corpus:/app/law-corpus:ro
     depends_on:
       db:
         condition: service_healthy
