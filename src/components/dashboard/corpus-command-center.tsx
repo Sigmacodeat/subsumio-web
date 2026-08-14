@@ -59,6 +59,7 @@ interface CorpusSyncRow {
   risTotal: number | null;
   missingFromDb: number;
   missingFromDisk: number;
+  diskPending: number;
   newOnRis: number;
   canUpdate: boolean;
   pipelineKey: string | null;
@@ -376,10 +377,18 @@ function SyncStatusSection({
             {/* Header */}
             <div className="grid grid-cols-12 gap-2 border-b pb-2 text-xs font-medium text-[color:var(--ds-text-subtle)]">
               <div className="col-span-3">Korpus</div>
-              <div className="col-span-1 text-right" title="RIS OGD Total (live/letzter Check)">
+              <div
+                className="col-span-1 text-right"
+                title="RIS-Dokumente, die noch nicht in der DB sind"
+              >
                 RIS
               </div>
-              <div className="col-span-1 text-right">Disk</div>
+              <div
+                className="col-span-1 text-right"
+                title="Dateien auf Disk, die noch nicht in der DB sind"
+              >
+                Disk
+              </div>
               <div
                 className="col-span-1 text-right"
                 title="Dokumente in der DB (DISTINCT import_filename). Bei Gesetzen 1 Datei → viele §-Pages; hier wird die Dokument-Anzahl gezeigt, die mit RIS Total vergleichbar ist."
@@ -435,17 +444,38 @@ function SyncStatusSection({
                     className="col-span-1 text-right tabular-nums"
                     title={
                       r.risTotal
-                        ? `RIS: ${fmt(r.risTotal)} | Disk: ${fmt(r.diskFiles)} | DB: ${fmt(r.dbDocuments)}`
-                        : "RIS Total unbekannt"
+                        ? `${fmt(r.missingFromDb)} RIS-Dokumente fehlen in DB (RIS ${fmt(r.risTotal)} − DB ${fmt(r.dbDocuments)})`
+                        : "RIS-Source nicht aktiv"
                     }
                   >
                     {r.risTotal ? (
-                      <span>{fmt(r.risTotal)}</span>
+                      <span
+                        className={
+                          r.missingFromDb === 0
+                            ? "text-[color:var(--ds-success-text)]"
+                            : "text-[color:var(--ds-warning-text)]"
+                        }
+                      >
+                        {r.missingFromDb === 0 ? "✓" : fmt(r.missingFromDb)}
+                      </span>
                     ) : (
                       <span className="text-[color:var(--ds-text-subtle)]">—</span>
                     )}
                   </div>
-                  <div className="col-span-1 text-right tabular-nums">{fmt(r.diskFiles)}</div>
+                  <div
+                    className="col-span-1 text-right tabular-nums"
+                    title={`${fmt(r.diskPending)} Dateien auf Disk, noch nicht in DB (Disk ${fmt(r.diskFiles)} − DB ${fmt(r.dbDocuments)})`}
+                  >
+                    <span
+                      className={
+                        r.diskPending === 0
+                          ? "text-[color:var(--ds-success-text)]"
+                          : "text-[color:var(--ds-warning-text)]"
+                      }
+                    >
+                      {r.diskPending === 0 ? "✓" : fmt(r.diskPending)}
+                    </span>
+                  </div>
                   <div
                     className="col-span-1 text-right tabular-nums"
                     title={`${fmt(r.dbDocuments)} Dokumente · ${fmt(r.dbPages)} Pages (1 Datei → viele §-Abschnitte bei Gesetzen)`}

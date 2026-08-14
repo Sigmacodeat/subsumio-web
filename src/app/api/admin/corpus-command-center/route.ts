@@ -37,6 +37,8 @@ interface CorpusSyncRow {
   missingFromDb: number;
   /** Noch nicht auf Disk: RIS OGD Total minus lokale Dateien. */
   missingFromDisk: number;
+  /** Auf Disk aber noch nicht in DB (Disk-Dokumente minus DB-Dokumente). */
+  diskPending: number;
   /** Neu auf RIS seit letztem lokalen Sync (RIS - Disk, wenn positiv). */
   newOnRis: number;
   /** Ob für diesen Korpus ein Backfill sinnvoll ist. */
@@ -336,6 +338,7 @@ export const GET = createHandler(
       // Gesetzen 1 Datei → viele Pages (z.B. normen: 4081 Dateien → 52603 Pages).
       const missingFromDb = risTotal !== null ? Math.max(0, risTotal - dbDocuments) : 0;
       const missingFromDisk = risTotal !== null ? Math.max(0, risTotal - disk) : 0;
+      const diskPending = Math.max(0, disk - dbDocuments);
       const newOnRis = risTotal !== null ? Math.max(0, risTotal - disk) : 0;
       // Orphan: DB-Dokumente ohne entsprechenden Disk-Bestand.
       // Für RIS-Sources: risTotal ist Source-of-Truth → dbDocuments > risTotal = orphan.
@@ -354,7 +357,7 @@ export const GET = createHandler(
         syncStatus = "no_db";
       } else if (missingFromDb > 0) {
         syncStatus = "import_pending";
-      } else if (missingFromDisk > 0) {
+      } else if (diskPending > 0) {
         syncStatus = "import_pending";
       } else if (risTotal !== null && orphanDb > 0) {
         syncStatus = "orphan_in_db";
@@ -365,8 +368,7 @@ export const GET = createHandler(
       // notImported: Dateien auf Disk die noch nicht in der DB sind.
       // BUG 47: Für RIS-Sources ist missingFromDb die echte Lücke (risTotal - dbDocuments).
       const notImported = risTotal !== null ? missingFromDb : dbPages === 0 && disk > 0 ? disk : 0;
-      const canUpdate =
-        risTotal !== null && pipelineKey != null && (missingFromDb > 0 || missingFromDisk > 0);
+      const canUpdate = risTotal !== null && pipelineKey != null && missingFromDb > 0;
 
       syncRows.push({
         corpus,
@@ -382,16 +384,17 @@ export const GET = createHandler(
         orphanDb,
         syncStatus,
         fullyComplete:
-          syncStatus === "synced" &&
           coverage === 100 &&
           stale === 0 &&
           dbPages > 0 &&
           missingFromDb === 0 &&
-          missingFromDisk === 0,
+          diskPending === 0 &&
+          orphanDb === 0,
         risTotal,
         missingFromDb,
         missingFromDisk,
         newOnRis,
+        diskPending,
         canUpdate,
         pipelineKey: pipelineKey ?? null,
       });
