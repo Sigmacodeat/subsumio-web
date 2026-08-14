@@ -395,7 +395,13 @@ function SyncStatusSection({
             {displayRows.map((r) => {
               const config = r.fullyComplete
                 ? { variant: "success" as const, label: "Vollständig" }
-                : SYNC_STATUS_CONFIG[r.syncStatus];
+                : {
+                    variant:
+                      SYNC_STATUS_CONFIG[r.syncStatus].variant === "success"
+                        ? "warning"
+                        : SYNC_STATUS_CONFIG[r.syncStatus].variant,
+                    label: "Lücke",
+                  };
               return (
                 <div
                   key={r.corpus}
