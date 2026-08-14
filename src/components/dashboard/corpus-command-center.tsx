@@ -375,7 +375,7 @@ function SyncStatusSection({
           <div className="space-y-1.5">
             {/* Header */}
             <div className="grid grid-cols-12 gap-2 border-b pb-2 text-xs font-medium text-[color:var(--ds-text-subtle)]">
-              <div className="col-span-2">Korpus</div>
+              <div className="col-span-3">Korpus</div>
               <div className="col-span-1 text-right" title="RIS OGD Total (live/letzter Check)">
                 RIS
               </div>
@@ -386,10 +386,9 @@ function SyncStatusSection({
               >
                 DB
               </div>
-              <div className="col-span-1 text-right" title="Fehlende Dokumente: RIS − DB">
-                Fehlt
+              <div className="col-span-2 text-right" title="Anteil der DB-Chunks mit Embeddings">
+                Embedded
               </div>
-              <div className="col-span-2 text-right">Embedded</div>
               <div className="col-span-2 text-center">Status</div>
               <div className="col-span-2 text-center">Aktion</div>
             </div>
@@ -419,7 +418,7 @@ function SyncStatusSection({
                 >
                   <div
                     className={cn(
-                      "col-span-2 truncate font-mono",
+                      "col-span-3 truncate font-mono",
                       r.fullyComplete && "text-[color:var(--ds-success-text)]"
                     )}
                     title={r.corpus}
@@ -430,30 +429,12 @@ function SyncStatusSection({
                     className="col-span-1 text-right tabular-nums"
                     title={
                       r.risTotal
-                        ? `RIS OGD: ${fmt(r.risTotal)} | auf Disk: ${fmt(r.diskFiles)} | fehlen auf Disk: ${fmt(r.newOnRis)}`
+                        ? `RIS: ${fmt(r.risTotal)} | Disk: ${fmt(r.diskFiles)} | DB: ${fmt(r.dbDocuments)}`
                         : "RIS Total unbekannt"
                     }
                   >
                     {r.risTotal ? (
-                      <span
-                        className={
-                          r.missingFromDb === 0
-                            ? "text-[color:var(--ds-success-text)]"
-                            : r.missingFromDb < r.risTotal * 0.2
-                              ? "text-[color:var(--ds-warning-text)]"
-                              : "text-[color:var(--ds-danger-text)]"
-                        }
-                      >
-                        {fmt(r.risTotal)}
-                        {r.newOnRis > 0 && (
-                          <sup
-                            className="ml-0.5 text-[color:var(--ds-warning-text)]"
-                            title={`${fmt(r.newOnRis)} fehlen auf Disk (RIS − Disk), nicht „neu heute“`}
-                          >
-                            −{fmt(r.newOnRis)}
-                          </sup>
-                        )}
-                      </span>
+                      <span>{fmt(r.risTotal)}</span>
                     ) : (
                       <span className="text-[color:var(--ds-text-subtle)]">—</span>
                     )}
@@ -464,33 +445,6 @@ function SyncStatusSection({
                     title={`${fmt(r.dbDocuments)} Dokumente · ${fmt(r.dbPages)} Pages (1 Datei → viele §-Abschnitte bei Gesetzen)`}
                   >
                     {fmt(r.dbDocuments)}
-                    {r.dbPages > r.dbDocuments && (
-                      <span className="ml-0.5 text-[10px] text-[color:var(--ds-text-subtle)]">
-                        /{fmt(r.dbPages)}
-                      </span>
-                    )}
-                  </div>
-                  <div
-                    className="col-span-1 text-right tabular-nums"
-                    title={
-                      r.risTotal
-                        ? `${fmt(r.missingFromDb)} Dokumente fehlen in DB (RIS ${fmt(r.risTotal)} − DB ${fmt(r.dbDocuments)} Dokumente)`
-                        : "RIS Total unbekannt"
-                    }
-                  >
-                    {r.risTotal ? (
-                      <span
-                        className={
-                          r.missingFromDb === 0
-                            ? "text-[color:var(--ds-success-text)]"
-                            : "font-medium text-[color:var(--ds-danger-text)]"
-                        }
-                      >
-                        {r.missingFromDb === 0 ? "✓" : fmt(r.missingFromDb)}
-                      </span>
-                    ) : (
-                      <span className="text-[color:var(--ds-text-subtle)]">—</span>
-                    )}
                   </div>
                   <div className="col-span-2 text-right tabular-nums">
                     <span
@@ -506,9 +460,6 @@ function SyncStatusSection({
                       title={`${fmt(r.embeddedChunks)} von ${fmt(r.dbChunks)} Chunks embedded`}
                     >
                       {pct(r.coveragePct)}
-                    </span>
-                    <span className="ml-1 text-[10px] text-[color:var(--ds-text-subtle)]">
-                      ({fmt(r.embeddedChunks)})
                     </span>
                   </div>
                   <div className="col-span-2 text-center">
