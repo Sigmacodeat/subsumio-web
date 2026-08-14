@@ -429,7 +429,9 @@ function SyncStatusSection({
                   <div
                     className="col-span-1 text-right tabular-nums"
                     title={
-                      r.risTotal ? `RIS OGD: ${fmt(r.risTotal)} Dokumente` : "RIS Total unbekannt"
+                      r.risTotal
+                        ? `RIS OGD: ${fmt(r.risTotal)} | auf Disk: ${fmt(r.diskFiles)} | fehlen auf Disk: ${fmt(r.newOnRis)}`
+                        : "RIS Total unbekannt"
                     }
                   >
                     {r.risTotal ? (
@@ -446,9 +448,9 @@ function SyncStatusSection({
                         {r.newOnRis > 0 && (
                           <sup
                             className="ml-0.5 text-[color:var(--ds-warning-text)]"
-                            title={`${fmt(r.newOnRis)} auf RIS aber noch nicht lokal auf Disk`}
+                            title={`${fmt(r.newOnRis)} fehlen auf Disk (RIS − Disk), nicht „neu heute“`}
                           >
-                            +{fmt(r.newOnRis)}
+                            −{fmt(r.newOnRis)}
                           </sup>
                         )}
                       </span>
