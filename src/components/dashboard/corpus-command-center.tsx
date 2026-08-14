@@ -45,6 +45,10 @@ interface CorpusSyncRow {
   sourceId: string;
   diskFiles: number;
   dbPages: number;
+  /** Distincte Dokumente in der DB (COUNT DISTINCT import_filename).
+   *  Bei Judikatur 1:1 mit dbPages; bei Gesetzen 1 Datei → viele Pages.
+   *  Dies ist die korrekte Vergleichsgröße mit RIS Total (Dokumente). */
+  dbDocuments: number;
   dbChunks: number;
   embeddedChunks: number;
   staleChunks: number;
@@ -110,6 +114,7 @@ interface CommandCenterData {
     totals: {
       totalDisk: number;
       totalDbPages: number;
+      totalDbDocuments: number;
       totalEmbedded: number;
       totalNotImported: number;
       totalStale: number;
@@ -304,10 +309,13 @@ function SyncStatusSection({
           <CardContent className="flex items-center gap-3 p-4">
             <Database className="h-7 w-7 text-[color:var(--ds-info-text)]" />
             <div>
-              <p className="text-xl font-bold text-[color:var(--ds-text)] tabular-nums">
-                {fmt(totals.totalDbPages)}
+              <p
+                className="text-xl font-bold text-[color:var(--ds-text)] tabular-nums"
+                title={`${fmt(totals.totalDbDocuments)} Dokumente · ${fmt(totals.totalDbPages)} Pages gesamt`}
+              >
+                {fmt(totals.totalDbDocuments)}
               </p>
-              <p className="text-xs text-[color:var(--ds-text-subtle)]">DB-Seiten</p>
+              <p className="text-xs text-[color:var(--ds-text-subtle)]">DB-Dokumente</p>
             </div>
           </CardContent>
         </Card>
@@ -406,7 +414,12 @@ function SyncStatusSection({
                 RIS
               </div>
               <div className="col-span-1 text-right">Disk</div>
-              <div className="col-span-1 text-right">DB</div>
+              <div
+                className="col-span-1 text-right"
+                title="Dokumente in der DB (DISTINCT import_filename). Bei Gesetzen 1 Datei → viele §-Pages; hier wird die Dokument-Anzahl gezeigt, die mit RIS Total vergleichbar ist."
+              >
+                DB
+              </div>
               <div className="col-span-1 text-right" title="Fehlende Dokumente: RIS − DB">
                 Fehlt
               </div>
@@ -480,12 +493,22 @@ function SyncStatusSection({
                     )}
                   </div>
                   <div className="col-span-1 text-right tabular-nums">{fmt(r.diskFiles)}</div>
-                  <div className="col-span-1 text-right tabular-nums">{fmt(r.dbPages)}</div>
+                  <div
+                    className="col-span-1 text-right tabular-nums"
+                    title={`${fmt(r.dbDocuments)} Dokumente · ${fmt(r.dbPages)} Pages (1 Datei → viele §-Abschnitte bei Gesetzen)`}
+                  >
+                    {fmt(r.dbDocuments)}
+                    {r.dbPages > r.dbDocuments && (
+                      <span className="ml-0.5 text-[10px] text-[color:var(--ds-text-subtle)]">
+                        /{fmt(r.dbPages)}
+                      </span>
+                    )}
+                  </div>
                   <div
                     className="col-span-1 text-right tabular-nums"
                     title={
                       r.risTotal
-                        ? `${fmt(r.missingFromDb)} fehlen in DB (RIS ${fmt(r.risTotal)} − DB ${fmt(r.dbPages)})`
+                        ? `${fmt(r.missingFromDb)} Dokumente fehlen in DB (RIS ${fmt(r.risTotal)} − DB ${fmt(r.dbDocuments)} Dokumente)`
                         : "RIS Total unbekannt"
                     }
                   >

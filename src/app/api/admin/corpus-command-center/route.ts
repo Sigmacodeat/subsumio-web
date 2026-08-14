@@ -16,6 +16,10 @@ interface CorpusSyncRow {
   sourceId: string;
   diskFiles: number;
   dbPages: number;
+  /** Distincte Dokumente in der DB (COUNT DISTINCT import_filename).
+   *  Bei Judikatur 1:1 mit dbPages; bei Gesetzen 1 Datei → viele Pages.
+   *  Dies ist die korrekte Vergleichsgröße mit RIS Total (Dokumente). */
+  dbDocuments: number;
   dbChunks: number;
   embeddedChunks: number;
   staleChunks: number;
@@ -29,7 +33,7 @@ interface CorpusSyncRow {
   syncStatus: "synced" | "import_pending" | "orphan_in_db" | "no_db";
   /** Live RIS OGD Total für diesen Korpus (null wenn unbekannt). */
   risTotal: number | null;
-  /** Fehlende Dokumente: RIS OGD Total minus DB-Seiten. */
+  /** Fehlende Dokumente: RIS OGD Total minus DB-Dokumente (DISTINCT import_filename). */
   missingFromDb: number;
   /** Noch nicht auf Disk: RIS OGD Total minus lokale Dateien. */
   missingFromDisk: number;
@@ -109,7 +113,10 @@ export const GET = createHandler(
   async () => {
     // ── 2. DB-Stats (Hetzner) ──
     const pool = getSharedPgPool();
-    const dbStats: Record<string, { pages: number; chunks: number; embedded: number }> = {};
+    const dbStats: Record<
+      string,
+      { pages: number; documents: number; chunks: number; embedded: number }
+    > = {};
     let pipelineState: PipelineStateRow[] = [];
     let pipelinePaused = false;
     let dbAvailable = false;
@@ -118,10 +125,15 @@ export const GET = createHandler(
       dbAvailable = true;
       try {
         // Per-source DB-Stats — mappt source_id auf corpus-Namen.
+        // BUG 47: dbPages ist die Anzahl Pages (1 Datei → viele §-Pages bei Gesetzen).
+        // RIS Total ist aber in Dokumenten. Daher zusätzlich dbDocuments
+        // (COUNT DISTINCT import_filename) abfragen — das ist die korrekte
+        // Vergleichsgröße mit RIS Total. Bei Judikatur 1:1 mit dbPages.
         const dbResult = await pool.query(`
           SELECT
             COALESCE(p.source_id, 'unknown') AS source_id,
             COUNT(DISTINCT p.id) FILTER (WHERE p.deleted_at IS NULL) AS pages,
+            COUNT(DISTINCT p.import_filename) FILTER (WHERE p.deleted_at IS NULL AND p.import_filename IS NOT NULL) AS documents,
             COUNT(cc.id) FILTER (WHERE p.deleted_at IS NULL) AS chunks,
             COUNT(cc.id) FILTER (WHERE p.deleted_at IS NULL AND cc.embedding IS NOT NULL) AS embedded
           FROM pages p
@@ -132,6 +144,7 @@ export const GET = createHandler(
         for (const r of dbResult.rows) {
           dbStats[r.source_id] = {
             pages: parseInt(r.pages ?? "0", 10),
+            documents: parseInt(r.documents ?? "0", 10),
             chunks: parseInt(r.chunks ?? "0", 10),
             embedded: parseInt(r.embedded ?? "0", 10),
           };
@@ -299,6 +312,9 @@ export const GET = createHandler(
       const sourceId = CORPUS_TO_SOURCE_ID[corpus] ?? corpus;
       const stats = dbStats[sourceId];
       const dbPages = stats?.pages ?? 0;
+      // BUG 47: dbDocuments ist die korrekte Vergleichsgröße mit RIS Total.
+      // Fallback auf dbPages wenn import_filename nicht gesetzt (ältere Imports).
+      const dbDocuments = stats?.documents ?? dbPages;
       const dbChunks = stats?.chunks ?? 0;
       const embedded = stats?.embedded ?? 0;
 
@@ -313,20 +329,19 @@ export const GET = createHandler(
       const coverage = dbChunks > 0 ? Math.round((embedded / dbChunks) * 1000) / 10 : 0;
 
       // Differenzen zum Source-of-Truth RIS OGD
-      const missingFromDb = risTotal !== null ? Math.max(0, risTotal - dbPages) : 0;
+      // BUG 47: RIS Total ist in Dokumenten, nicht in Pages. Daher mit
+      // dbDocuments vergleichen, nicht dbPages. Bei Judikatur 1:1, bei
+      // Gesetzen 1 Datei → viele Pages (z.B. normen: 4081 Dateien → 52603 Pages).
+      const missingFromDb = risTotal !== null ? Math.max(0, risTotal - dbDocuments) : 0;
       const missingFromDisk = risTotal !== null ? Math.max(0, risTotal - disk) : 0;
       const newOnRis = risTotal !== null ? Math.max(0, risTotal - disk) : 0;
-      // Orphan: DB-Pages ohne entsprechenden Disk-Bestand.
-      // Für RIS-Sources: risTotal ist Source-of-Truth → dbPages > risTotal = orphan.
-      // Für Nicht-RIS: disk-Dateien vs dbPages kann nicht direkt verglichen werden
-      // (1 Datei → viele §-Pages bei Gesetzen). Zuverlässiger Signal: disk=0 aber
-      // dbPages>0 → alle DB-Pages sind orphan. Sonst 0 (nicht bestimmbar ohne
-      // per-file Tracking). Die bisherige `disk * 5`-Heuristik war für Judikatur
-      // falsch (1 Datei → 1 Page) und für große Gesetze zu niedrig (1 Datei →
-      // 1500+ Pages).
+      // Orphan: DB-Dokumente ohne entsprechenden Disk-Bestand.
+      // Für RIS-Sources: risTotal ist Source-of-Truth → dbDocuments > risTotal = orphan.
+      // Für Nicht-RIS: disk-Dateien vs dbDocuments kann nicht direkt verglichen werden.
+      // Zuverlässiger Signal: disk=0 aber dbPages>0 → alle DB-Pages sind orphan.
       const orphanDb =
         risTotal !== null
-          ? Math.max(0, dbPages - risTotal)
+          ? Math.max(0, dbDocuments - risTotal)
           : disk === 0 && dbPages > 0
             ? dbPages
             : 0;
@@ -346,11 +361,7 @@ export const GET = createHandler(
       }
 
       // notImported: Dateien auf Disk die noch nicht in der DB sind.
-      // expectedDbPages (pipeline_state.db_pages) ist die Pipeline's letzte
-      // Messung — derselbe DB-Count, nur leicht veraltet. expectedDbPages -
-      // dbPages ist daher immer ~0 und versteckt echte Lücken.
-      // Zuverlässiger Signal: dbPages=0 aber disk>0 → nichts importiert.
-      // Für RIS-Sources: missingFromDb ist die echte Lücke (risTotal - dbPages).
+      // BUG 47: Für RIS-Sources ist missingFromDb die echte Lücke (risTotal - dbDocuments).
       const notImported = risTotal !== null ? missingFromDb : dbPages === 0 && disk > 0 ? disk : 0;
       const canUpdate =
         risTotal !== null && pipelineKey != null && (missingFromDb > 0 || missingFromDisk > 0);
@@ -360,6 +371,7 @@ export const GET = createHandler(
         sourceId,
         diskFiles: disk,
         dbPages,
+        dbDocuments,
         dbChunks,
         embeddedChunks: embedded,
         staleChunks: stale,
@@ -441,6 +453,7 @@ export const GET = createHandler(
     // ── 7. Totals ──
     const totalDisk = syncRows.reduce((s, r) => s + r.diskFiles, 0);
     const totalDbPages = syncRows.reduce((s, r) => s + r.dbPages, 0);
+    const totalDbDocuments = syncRows.reduce((s, r) => s + r.dbDocuments, 0);
     const totalEmbedded = syncRows.reduce((s, r) => s + r.embeddedChunks, 0);
     const totalNotImported = syncRows.reduce((s, r) => s + r.notImported, 0);
     const totalStale = syncRows.reduce((s, r) => s + r.staleChunks, 0);
@@ -518,6 +531,7 @@ export const GET = createHandler(
         totals: {
           totalDisk,
           totalDbPages,
+          totalDbDocuments,
           totalEmbedded,
           totalNotImported,
           totalStale,
