@@ -47,6 +47,8 @@ interface CorpusSyncRow {
   pipelineKey: string | null;
   /** RIS-Lücken sind unerreichbar (nur Platzhalter liefert). */
   fetchFruitless: boolean;
+  /** Fortschritt des Disk-Imports in Prozent (dbDocuments / diskFiles). */
+  diskProgress: number;
 }
 
 interface WorkQueueItem {
@@ -410,6 +412,7 @@ export const GET = createHandler(
         missingFromDisk,
         newOnRis: fetchFruitless ? 0 : newOnRis,
         diskPending,
+        diskProgress: disk > 0 ? Math.min(100, Math.round((dbDocuments / disk) * 1000) / 10) : 0,
         canUpdate,
         pipelineKey: pipelineKey ?? null,
         fetchFruitless,

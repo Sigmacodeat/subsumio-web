@@ -64,6 +64,7 @@ interface CorpusSyncRow {
   canUpdate: boolean;
   pipelineKey: string | null;
   fetchFruitless: boolean;
+  diskProgress: number;
 }
 
 interface WorkQueueItem {
@@ -501,10 +502,22 @@ function SyncStatusSection({
                       {pct(r.coveragePct)}
                     </span>
                   </div>
-                  <div className="col-span-2 text-center">
+                  <div className="col-span-2 flex flex-col items-center justify-center gap-1">
                     <Badge variant={config.variant} className="text-[10px]">
                       {config.label}
                     </Badge>
+                    {r.diskProgress > 0 && r.diskProgress < 100 && (
+                      <div
+                        className="w-12 rounded-full bg-[color:var(--ds-surface-2)]"
+                        title={`Disk-Import: ${r.diskProgress.toFixed(1)}% (${fmt(r.dbDocuments)} von ${fmt(r.diskFiles)} Dateien)`}
+                        aria-label={`Disk-Import Fortschritt: ${r.diskProgress.toFixed(1)} Prozent`}
+                      >
+                        <div
+                          className="h-1 rounded-full bg-[color:var(--brand-primary)]"
+                          style={{ width: `${Math.min(r.diskProgress, 100)}%` }}
+                        />
+                      </div>
+                    )}
                   </div>
                   <div className="col-span-2 flex justify-center">
                     {r.canUpdate ? (
