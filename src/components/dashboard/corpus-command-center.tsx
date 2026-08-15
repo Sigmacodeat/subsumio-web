@@ -63,6 +63,7 @@ interface CorpusSyncRow {
   newOnRis: number;
   canUpdate: boolean;
   pipelineKey: string | null;
+  fetchFruitless: boolean;
 }
 
 interface WorkQueueItem {
@@ -379,7 +380,7 @@ function SyncStatusSection({
               <div className="col-span-3">Korpus</div>
               <div
                 className="col-span-1 text-right"
-                title="RIS-Dokumente, die noch nicht in der DB sind"
+                title="RIS-Dokumente, die noch nicht in der DB sind (— = Volltext nicht verfügbar)"
               >
                 RIS
               </div>
@@ -443,12 +444,14 @@ function SyncStatusSection({
                   <div
                     className="col-span-1 text-right tabular-nums"
                     title={
-                      r.risTotal
-                        ? `${fmt(r.missingFromDb)} RIS-Dokumente fehlen in DB (RIS ${fmt(r.risTotal)} − DB ${fmt(r.dbDocuments)})`
-                        : "RIS-Source nicht aktiv"
+                      r.fetchFruitless
+                        ? `RIS hat ${fmt(r.risTotal ?? 0)} Dokumente, aber deren Volltexte sind nicht verfügbar`
+                        : r.risTotal
+                          ? `${fmt(r.missingFromDb)} RIS-Dokumente fehlen in DB (RIS ${fmt(r.risTotal)} − DB ${fmt(r.dbDocuments)})`
+                          : "RIS-Source nicht aktiv"
                     }
                   >
-                    {r.risTotal ? (
+                    {r.risTotal && !r.fetchFruitless ? (
                       <span
                         className={
                           r.missingFromDb === 0

@@ -45,6 +45,8 @@ interface CorpusSyncRow {
   canUpdate: boolean;
   /** Pipeline source_key für One-Click Backfill (null wenn kein Mapping). */
   pipelineKey: string | null;
+  /** RIS-Lücken sind unerreichbar (nur Platzhalter liefert). */
+  fetchFruitless: boolean;
 }
 
 interface WorkQueueItem {
@@ -340,6 +342,17 @@ export const GET = createHandler(
       const missingFromDisk = risTotal !== null ? Math.max(0, risTotal - disk) : 0;
       const diskPending = Math.max(0, disk - dbDocuments);
       const newOnRis = risTotal !== null ? Math.max(0, risTotal - disk) : 0;
+      // Heuristik: Wenn Judikatur viele RIS-Dokumente fehlen, aber nur wenige
+      // echte Volltexte auf Disk vorhanden sind, produziert ein RIS-Backfill nur
+      // Platzhalter ("Volltext nicht abrufbar"). Solche Lücken werden als
+      // unerreichbar markiert, damit das Dashboard sie nicht als offene Arbeit
+      // anzeigt. Beispiel: ogh 81k RIS-Lücken vs. 1k echte Disk-Dateien.
+      const isJudikatur = corpus.startsWith("at-judikatur");
+      const fetchFruitless =
+        isJudikatur &&
+        risTotal !== null &&
+        missingFromDb > 0 &&
+        (disk === 0 || missingFromDb > disk * 2);
       // Orphan: DB-Dokumente ohne entsprechenden Disk-Bestand.
       // Für RIS-Sources: risTotal ist Source-of-Truth → dbDocuments > risTotal = orphan.
       // Für Nicht-RIS: disk-Dateien vs dbDocuments kann nicht direkt verglichen werden.
@@ -368,7 +381,8 @@ export const GET = createHandler(
       // notImported: Dateien auf Disk die noch nicht in der DB sind.
       // BUG 47: Für RIS-Sources ist missingFromDb die echte Lücke (risTotal - dbDocuments).
       const notImported = risTotal !== null ? missingFromDb : dbPages === 0 && disk > 0 ? disk : 0;
-      const canUpdate = risTotal !== null && pipelineKey != null && missingFromDb > 0;
+      const canUpdate =
+        risTotal !== null && pipelineKey != null && missingFromDb > 0 && !fetchFruitless;
 
       syncRows.push({
         corpus,
@@ -389,14 +403,16 @@ export const GET = createHandler(
           dbPages > 0 &&
           missingFromDb === 0 &&
           diskPending === 0 &&
-          orphanDb === 0,
+          orphanDb === 0 &&
+          !fetchFruitless,
         risTotal,
-        missingFromDb,
+        missingFromDb: fetchFruitless ? 0 : missingFromDb,
         missingFromDisk,
-        newOnRis,
+        newOnRis: fetchFruitless ? 0 : newOnRis,
         diskPending,
         canUpdate,
         pipelineKey: pipelineKey ?? null,
+        fetchFruitless,
       });
     }
 
