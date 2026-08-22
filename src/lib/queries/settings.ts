@@ -267,6 +267,74 @@ export function useCheckout() {
   });
 }
 
+// ── Token Usage (token-based billing dashboard) ──
+
+export interface TokenUsageRow {
+  modelId: string;
+  totalCredits: number;
+  totalInputTokens: number;
+  totalCachedTokens: number;
+  totalCacheCreateTokens: number;
+  totalOutputTokens: number;
+  callCount: number;
+}
+
+export interface TokenUsageResponse {
+  ok: boolean;
+  usage: TokenUsageRow[];
+  totals: {
+    totalCredits: number;
+    totalInputTokens: number;
+    totalCachedTokens: number;
+    totalCacheCreateTokens: number;
+    totalOutputTokens: number;
+    totalCalls: number;
+    cacheHitRate: number;
+  };
+}
+
+export function useTokenUsage(opts?: { since?: string; until?: string }) {
+  const params = new URLSearchParams();
+  if (opts?.since) params.set("since", opts.since);
+  if (opts?.until) params.set("until", opts.until);
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  return useQuery({
+    queryKey: ["billing", "token-usage", opts?.since ?? "current", opts?.until ?? "now"],
+    queryFn: () => apiGet<TokenUsageResponse>(`/api/billing/token-usage${qs}`),
+  });
+}
+
+// ── Pipeline Estimate ──
+
+export interface PipelineEstimateResponse {
+  ok: boolean;
+  estimate: {
+    estimatedCredits: number;
+    estimatedInputTokens: number;
+    estimatedOutputTokens: number;
+    estimatedCachedTokens: number;
+    estimatedCacheCreateTokens: number;
+    tier: 1 | 2 | 3;
+    layerCount: number;
+    sufficient: boolean;
+    balanceAfterPipeline: number;
+  };
+  balance: number;
+}
+
+export function usePipelineEstimate(opts: { pages?: number; parts?: number; tier?: 1 | 2 | 3 }) {
+  const params = new URLSearchParams();
+  if (opts.pages !== undefined) params.set("pages", String(opts.pages));
+  if (opts.parts !== undefined) params.set("parts", String(opts.parts));
+  if (opts.tier !== undefined) params.set("tier", String(opts.tier));
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  return useQuery({
+    queryKey: ["billing", "estimate", opts],
+    queryFn: () => apiGet<PipelineEstimateResponse>(`/api/billing/estimate${qs}`),
+    enabled: opts.pages !== undefined || opts.parts !== undefined,
+  });
+}
+
 // ── AI Model Preference ──
 
 export interface ModelPreferenceResponse {

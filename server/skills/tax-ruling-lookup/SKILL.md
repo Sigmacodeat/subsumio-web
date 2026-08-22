@@ -23,8 +23,6 @@ triggers:
   - "Steuererklärung prüfen"
   - "Betriebsausgaben"
   - "AO Verjährung"
-  - "Umsatzsteuer prüfen"
-  - "Vorsteuerabzug"
 priority: 65
 tools:
   - search

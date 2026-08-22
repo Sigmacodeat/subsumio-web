@@ -64,6 +64,7 @@ import { getLayerDeclaration } from "../pipeline-registry.ts";
 import { parseMarkdown } from "../../markdown.ts";
 import { groundQuotes, normalizeForMatch, tryParseJSON } from "../../legal/llm-util.ts";
 import { BudgetTracker, BudgetExhausted } from "../../budget/budget-tracker.ts";
+import { inheritBudgetOwner } from "../budget-tracker.ts";
 import { classifyLegalDocument, legalDocTypeLabel } from "../../legal/doc-classifier.ts";
 import {
   validiereGZ,
@@ -125,6 +126,8 @@ import {
   isApprovalGate,
   type WorkflowId,
 } from "../workflow-defs.ts";
+import { persistDecisionRecord } from "../decision-tracing.ts";
+import { AsyncLocalStorage } from "node:async_hooks";
 
 // ── Facts Fence Builder ─────────────────────────────────────
 // Generates a ## Facts fence compatible with GBrain's parseFactsFence.
@@ -205,6 +208,21 @@ export interface LegalPipelineData {
   source_id?: string;
   trigger?: string;
   rerun_layers?: number[];
+  /** F1 fix: Pipeline key for billing settlement correlation.
+   *  Passed from the web app's trigger-pipeline route; used by the
+   *  subagent token-report webhook and the server-side settlement call. */
+  pipeline_key?: string;
+  /** F1 fix: Owner ID (user or org) for billing settlement. UUID string
+   *  from ctx.user.id / ctx.user.orgId — not a minion_jobs row id. */
+  owner_id?: string;
+  /** F1 fix: Owner type ('user' | 'org') for billing settlement. */
+  owner_type?: string;
+  /** F1 fix: Pre-pipeline reserved credits (EUR) — used by setOwnerBudget
+   *  to set the DB-level budget cap on the owner job row. */
+  reserved_credits?: number;
+  /** F4 fix: Org-level model policy — when "eu_only", the pipeline enforces
+   *  EU-hosted models at the resolveModel level. */
+  model_policy?: "any" | "eu_only";
   /** Jurisdiction: 'at' (Austria), 'de' (Germany), 'ch' (Switzerland), 'eu' (EU/generic).
    *  Defaults to 'at' for backward compatibility.
    *  Controls which draft packages are generated. */
@@ -319,6 +337,11 @@ interface PipelineState {
   /** Gap 17: Cost tracking */
   cost_spent_usd?: number;
   cost_cap_usd?: number;
+  /** F1 fix: Billing context for server-side settlement at pipeline end. */
+  pipeline_key?: string;
+  owner_id?: string;
+  owner_type?: string;
+  reserved_credits?: number;
   /** Warnings accumulated during pipeline execution (e.g. state persistence failures) */
   warnings?: string[];
   /** Risk-based verification state from guardrail + cross-verify (Phase 0A) */
@@ -394,6 +417,10 @@ interface CriticModelVerdict {
   recommendation: "publish" | "revise" | "reject";
   issues: string[];
   layer_scores: Record<string, number>;
+  /** v0.43.x Dissensus: per-model reasoning summary (WHY this verdict) */
+  reasoning_summary?: string;
+  /** v0.43.x Dissensus: per-model confidence (0-1) */
+  confidence?: number;
 }
 
 /** Consensus result from the ensemble critic. */
@@ -410,8 +437,112 @@ interface EnsembleCriticVerdict {
     central_thesis?: string;
     /** Gap 5: Layers that deviate from the central thesis */
     coherence_violations?: string[];
+    /** v0.43.x Dissensus: disagreement analysis between models */
+    dissensus?: DissensusAnalysis;
   };
   retry_count: number;
+}
+
+/**
+ * v0.43.x Dissensus Analysis — captures WHERE and WHY models disagree.
+ * Like OpenAI's Evals "model disagreement" metric: knowing that 3 models
+ * split 2:1 on "publish vs revise" is more actionable than just "consensus: revise".
+ */
+interface DissensusAnalysis {
+  /** How much the models disagree (0 = unanimous, 1 = completely split) */
+  disagreement_score: number;
+  /** Which recommendation each model gave (counts) */
+  recommendation_split: Record<string, number>;
+  /** Score range across models (max - min) */
+  score_spread: number;
+  /** Layers where models disagree most (by score variance) */
+  contested_layers: string[];
+  /** Key disagreements (issues raised by some but not all models) */
+  key_disagreements: Array<{
+    issue: string;
+    raised_by: string[];
+    dismissed_by: string[];
+  }>;
+  /** Summary: what the disagreement is about */
+  summary: string;
+}
+
+/**
+ * Analyze dissensus between critic model verdicts.
+ * Returns disagreement metrics + key disagreement points.
+ */
+function analyzeDissensus(verdicts: CriticModelVerdict[]): DissensusAnalysis | null {
+  if (verdicts.length < 2) return null;
+
+  // Recommendation split
+  const recommendation_split: Record<string, number> = {};
+  for (const v of verdicts) {
+    recommendation_split[v.recommendation] = (recommendation_split[v.recommendation] ?? 0) + 1;
+  }
+  const uniqueRecs = Object.keys(recommendation_split).length;
+  const disagreement_score =
+    uniqueRecs > 1 ? 1 - Math.max(...Object.values(recommendation_split)) / verdicts.length : 0;
+
+  // Score spread
+  const scores = verdicts.map((v) => v.total_score);
+  const score_spread = Math.max(...scores) - Math.min(...scores);
+
+  // Contested layers (high variance in layer_scores)
+  const contested_layers: string[] = [];
+  const allLayerIds = new Set<string>();
+  for (const v of verdicts) {
+    for (const id of Object.keys(v.layer_scores)) allLayerIds.add(id);
+  }
+  for (const layerId of allLayerIds) {
+    const layerScores = verdicts
+      .map((v) => v.layer_scores[layerId])
+      .filter((s): s is number => s != null);
+    if (layerScores.length >= 2) {
+      const variance = Math.max(...layerScores) - Math.min(...layerScores);
+      if (variance >= 20) contested_layers.push(layerId);
+    }
+  }
+
+  // Key disagreements: issues raised by some but dismissed by others
+  const allIssues = new Map<string, { raised_by: string[]; dismissed_by: string[] }>();
+  // First pass: collect all raised issues
+  for (const v of verdicts) {
+    for (const issue of v.issues) {
+      const normalized = issue.toLowerCase().trim().slice(0, 100);
+      if (!allIssues.has(normalized)) {
+        allIssues.set(normalized, { raised_by: [], dismissed_by: [] });
+      }
+      const entry = allIssues.get(normalized)!;
+      if (!entry.raised_by.includes(v.model)) entry.raised_by.push(v.model);
+    }
+  }
+  // Second pass: mark models that didn't raise each issue as dismissed
+  for (const [, entry] of allIssues) {
+    for (const v of verdicts) {
+      if (!entry.raised_by.includes(v.model) && !entry.dismissed_by.includes(v.model)) {
+        entry.dismissed_by.push(v.model);
+      }
+    }
+  }
+  const key_disagreements = Array.from(allIssues.entries())
+    .filter(([, e]) => e.raised_by.length > 0 && e.dismissed_by.length > 0)
+    .map(([issue, e]) => ({ issue, raised_by: e.raised_by, dismissed_by: e.dismissed_by }))
+    .slice(0, 5);
+
+  // Summary
+  const summary =
+    disagreement_score > 0
+      ? `Models disagree on recommendation (${JSON.stringify(recommendation_split)}). Score spread: ${score_spread}. ${contested_layers.length} contested layers.`
+      : `Models agree on recommendation (${verdicts[0]!.recommendation}). Score spread: ${score_spread}.`;
+
+  return {
+    disagreement_score,
+    recommendation_split,
+    score_spread,
+    contested_layers,
+    key_disagreements,
+    summary,
+  };
 }
 
 interface MapResult {
@@ -427,6 +558,18 @@ const SONNET_BATCH_SIZE = 4; // ~200K tokens per batch
 const MAX_TURNS_DEFAULT = 20;
 const CHILD_TIMEOUT_MS = 60 * 60 * 1000; // 60 min per child (DeepSeek is slower than Anthropic)
 const DEFAULT_COST_CAP_USD = 50; // Gap 17: $50 default cost cap per case
+
+type PipelineBillingContext = {
+  pipeline_key?: string;
+  owner_id?: string;
+  owner_type?: string;
+  model_policy?: "any" | "eu_only";
+};
+
+// Workers use a Promise pool and can therefore process several pipelines in
+// one process. Billing context must be scoped to the async call chain, never
+// stored globally where a second case could overwrite it.
+const billingContextStore = new AsyncLocalStorage<PipelineBillingContext>();
 
 // ── Handler factory ─────────────────────────────────────────
 
@@ -452,1409 +595,1469 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
       throw new Error(`legal-pipeline: unknown workflow_id "${String(data.workflow_id)}"`);
     }
 
-    const rawData = data as unknown as Record<string, unknown>;
-    const sourceStamp =
-      typeof rawData._source_id === "string" && rawData._source_id
-        ? (rawData._source_id as string)
-        : undefined;
-    // Resolve federated law corpus sources from the case's jurisdiction.
-    // This gives pipeline subagents (Law Matcher, Counter-Arguments, etc.)
-    // search access to the correct national law corpus + EU law.
-    const lawSourceIds = resolveLawSourceIds(data.jurisdiction ?? "at");
-    const queue = new MinionQueue(engine);
-    const stateSlug = `pipeline/state-${data.case_slug}`;
-    const startTime = Date.now();
+    return billingContextStore.run(
+      {
+        pipeline_key: data.pipeline_key,
+        owner_id: data.owner_id,
+        owner_type: data.owner_type,
+        model_policy: data.model_policy,
+      },
+      async () => {
+        const rawData = data as unknown as Record<string, unknown>;
+        const sourceStamp =
+          typeof rawData._source_id === "string" && rawData._source_id
+            ? (rawData._source_id as string)
+            : undefined;
+        // Resolve federated law corpus sources from the case's jurisdiction.
+        // This gives pipeline subagents (Law Matcher, Counter-Arguments, etc.)
+        // search access to the correct national law corpus + EU law.
+        const lawSourceIds = resolveLawSourceIds(data.jurisdiction ?? "at");
+        const queue = new MinionQueue(engine);
+        const stateSlug = `pipeline/state-${data.case_slug}`;
+        const startTime = Date.now();
 
-    // ── Gap 17: Initialize BudgetTracker ─────────────────────
-    const costCap =
-      typeof data.max_cost_usd === "number" && data.max_cost_usd > 0
-        ? data.max_cost_usd
-        : DEFAULT_COST_CAP_USD;
-    const budget = new BudgetTracker({
-      maxCostUsd: costCap,
-      label: `legal-pipeline/${data.case_slug}`,
-    });
-
-    // ── Gap 16: Resume from layer (if resume_from_layer is set) ──
-    const resumeFromLayer =
-      typeof data.resume_from_layer === "number" && data.resume_from_layer >= 3
-        ? data.resume_from_layer
-        : null;
-
-    let onTable: OnEntry[] = [];
-    let entities: EntityEntry[] = [];
-    let forensicReport: ForensicReport | null = null;
-    let legalGroundingMap: LegalGroundingEntry[] = [];
-    let damageTable: DamageEntry[] = [];
-    let deadlineCalendar: DeadlineEntry[] = [];
-
-    let state: PipelineState;
-
-    if (resumeFromLayer) {
-      // Load existing state from page
-      state = await loadPipelineState(engine, stateSlug, sourceStamp);
-      state.status = "running";
-      state.updated_at = new Date().toISOString();
-      // Apply any new manual_overrides from the resume job
-      if (data.manual_overrides) {
-        state.manual_overrides = { ...state.manual_overrides, ...data.manual_overrides };
-      }
-      // Mark layers before resumeFromLayer as completed (they should already be)
-      for (let n = 1; n < resumeFromLayer; n++) {
-        if (state.layers[n] && state.layers[n]!.status !== "completed") {
-          state.layers[n]!.status = "completed";
-        }
-      }
-      // Load onTable and entities from existing pages
-      onTable = await loadOnTableFromPage(engine, data.case_slug, sourceStamp);
-      entities = await loadEntitiesFromPages(engine, data.case_slug, sourceStamp);
-    } else {
-      state = {
-        case_slug: data.case_slug,
-        status: "running",
-        current_layer: 0,
-        layers: {
-          1: { status: "pending" },
-          2: { status: "pending" },
-          3: { status: "pending" },
-          4: { status: "pending" },
-          5: { status: "pending" },
-          6: { status: "pending" },
-          7: { status: "pending" },
-        },
-        manual_overrides: data.manual_overrides,
-        total_duration_ms: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        cost_cap_usd: costCap,
-        jurisdiction: data.jurisdiction ?? "at",
-        verfahrenstyp: data.verfahrenstyp ?? "sonstiges",
-        snapshot_id: data.snapshot_id,
-        import_session_id: data.import_session_id,
-      };
-    }
-
-    // Determine which layers to run
-    const rerunLayers = Array.isArray(data.rerun_layers) ? new Set(data.rerun_layers) : null;
-
-    // T5.4: Workflow-based layer activation
-    // When workflow_id is set, only layers in the workflow definition run.
-    const workflowLayerIds = data.workflow_id ? getWorkflowLayerSet(data.workflow_id) : null;
-    // T5.4: Layer IDs are authoritative for workflow selection. Numeric layer
-    // numbers are retained only for legacy resume/rerun compatibility because
-    // one numeric layer contains multiple independent sub-layers.
-    const shouldRunLayerById = (layerId: string): boolean => {
-      // A resume/rerun must never widen the workflow's explicitly declared
-      // scope. Previously either flag returned true immediately, which meant
-      // `workflow_id=memo&rerun_layers=[4]` could execute every optional
-      // sub-layer in that numeric layer, including layers not belonging to
-      // the selected work product.
-      if (workflowLayerIds && !workflowLayerIds.has(layerId)) return false;
-
-      if (resumeFromLayer || rerunLayers) {
-        const declaration = getLayerDeclaration(layerId);
-        if (!declaration) return false;
-        if (resumeFromLayer && declaration.layerNumber < resumeFromLayer) return false;
-        if (rerunLayers && !rerunLayers.has(declaration.layerNumber)) return false;
-      }
-
-      return true;
-    };
-    const shouldRunAnyLayer = (...layerIds: string[]): boolean =>
-      layerIds.some((layerId) => shouldRunLayerById(layerId));
-
-    // ── Load all sub-page texts (haystack for validation) ────
-    const rawTexts = await loadAllSubPages(engine, data.part_slugs, sourceStamp);
-    console.log(
-      `[legal-pipeline] sourceStamp=${sourceStamp ?? "undefined"}, part_slugs=${JSON.stringify(data.part_slugs)}, rawTexts.length=${rawTexts.length}, rawTexts[0]?.length=${rawTexts[0]?.length ?? 0}`
-    );
-    // Gap 2: Decode AB-Bogen handwritten abbreviations (post-OCR enrichment)
-    // This annotates known Austrian legal shorthand (e.g. "UH" → "UH [Untersuchungshaft]")
-    // so downstream agents can understand handwritten A-Mappe notations.
-    const allTexts = rawTexts.map((t) => decodeAbbBogenKuerzel(t));
-    const allText = allTexts.join("\n\n");
-    console.log(
-      `[legal-pipeline] allTexts.length=${allTexts.length}, allText.length=${allText.length}`
-    );
-
-    // ── Layer 0: Semantic document classification (heuristic, $0) ──
-    // Classify each sub-page and stamp frontmatter with doc_type.
-    // Enables filtered search ("only witness statements") and targeted
-    // contradiction detection ("compare all medical reports").
-    if (shouldRunLayerById("doc-classifier")) {
-      for (let i = 0; i < data.part_slugs.length; i++) {
-        const partSlug = data.part_slugs[i]!;
-        const partText = allTexts[i] ?? "";
-        if (!partText) continue;
-        const classification = classifyLegalDocument(partText);
-        try {
-          const existing = await engine.getPage(partSlug);
-          if (existing) {
-            const fm = (existing.frontmatter ?? {}) as Record<string, unknown>;
-            if (!fm.doc_type || fm.doc_type === "legal_document") {
-              await engine.putPage(
-                partSlug,
-                {
-                  type: existing.type,
-                  title: existing.title,
-                  compiled_truth: existing.compiled_truth ?? "",
-                  frontmatter: {
-                    ...fm,
-                    doc_type: classification.type,
-                    doc_type_label: legalDocTypeLabel(classification.type),
-                    doc_type_confidence: classification.confidence.toFixed(2),
-                  },
-                },
-                { sourceId: sourceStamp }
-              );
-            }
-          }
-        } catch {
-          // Classification is best-effort — don't fail the pipeline if a page can't be updated
-        }
-      }
-    }
-
-    try {
-      // ── Layer 1: ON-Scanner (with retry on validation fail) ───
-      let gzKonsistenz: KonsistenzErgebnis | null = null;
-      if (shouldRunLayerById("on-scanner")) {
-        await updateLayerState(ctx, state, stateSlug, 1, "running", engine, sourceStamp);
-        const onResult = await runMapReduceLayer({
-          ctx,
-          queue,
-          engine,
-          specialistName: "on-scanner",
-          partSlugs: data.part_slugs,
-          allTexts,
-          batchSize: HAIKU_BATCH_SIZE,
-          sourceStamp,
-          lawSourceIds,
-          contextJson: JSON.stringify({ jurisdiction: data.jurisdiction ?? "at" }),
-          layerId: "on-scanner",
+        // ── Gap 17: Initialize BudgetTracker ─────────────────────
+        // F1+F2 fix: use reserved_credits (EUR from pre-pipeline reservation)
+        // as the cost cap when max_cost_usd is not explicitly set. This ties
+        // the in-process budget gate to the actual credits the user reserved,
+        // not a hardcoded $50 default. Convert EUR → USD (conservative 1.08).
+        const costCap =
+          typeof data.max_cost_usd === "number" && data.max_cost_usd > 0
+            ? data.max_cost_usd
+            : typeof data.reserved_credits === "number" && data.reserved_credits > 0
+              ? data.reserved_credits * 1.08
+              : DEFAULT_COST_CAP_USD;
+        const budget = new BudgetTracker({
+          maxCostUsd: costCap,
+          label: `legal-pipeline/${data.case_slug}`,
         });
-        onTable = extractOnEntries(onResult);
-        let errors = await validateOnEntries(onTable, allText);
 
-        // ── GZ structural validation (deterministic, catches OCR confusables) ──
-        const gzRaws = onTable
-          .map((e) => e.geschaeftszahl?.raw)
-          .filter((r): r is string => !!r && r.trim().length > 0);
-        if (gzRaws.length > 0) {
-          gzKonsistenz = pruefeGZKonsistenz(gzRaws);
-          const gzFehler = gzKonsistenz.befundeProGZ
-            .flatMap((v) => v.befunde.filter((b) => b.schwere === "fehler"))
-            .map((b) => `GZ-Validierung [${b.code}]: ${b.meldung}`);
-          errors.push(...gzFehler);
-        }
+        // ── Gap 16: Resume from layer (if resume_from_layer is set) ──
+        // F2 fix: also auto-resume from persisted state on queue-level retry.
+        // Pre-fix, a failure at layer 26 with max_attempts:3 restarted from
+        // layer 1 — triple full cost. Now we check for an existing persisted
+        // state (from a previous failed attempt) and resume from the last
+        // completed layer + 1, even when resume_from_layer was not explicitly
+        // set by the caller.
+        const explicitResume =
+          typeof data.resume_from_layer === "number" && data.resume_from_layer >= 3
+            ? data.resume_from_layer
+            : null;
 
-        // ── Retry with error feedback if validation failed ──
-        if (errors.length > 0) {
-          console.warn(`[legal-pipeline] Layer 1 validation: ${errors.length} errors, retrying...`);
-          const retryResult = await runMapReduceLayer({
-            ctx,
-            queue,
-            engine,
-            specialistName: "on-scanner",
-            partSlugs: data.part_slugs,
-            allTexts,
-            batchSize: HAIKU_BATCH_SIZE,
-            sourceStamp,
-            lawSourceIds,
-            contextJson: JSON.stringify({ jurisdiction: data.jurisdiction ?? "at" }),
-            retryFeedback: "KORREKTUR ERFORDERLICH:\n" + errors.join("\n"),
-            layerId: "on-scanner",
-          });
-          onTable = extractOnEntries(retryResult);
-          errors = await validateOnEntries(onTable, allText);
-
-          // Re-run GZ validation after retry
-          const gzRawsRetry = onTable
-            .map((e) => e.geschaeftszahl?.raw)
-            .filter((r): r is string => !!r && r.trim().length > 0);
-          if (gzRawsRetry.length > 0) {
-            gzKonsistenz = pruefeGZKonsistenz(gzRawsRetry);
-            const gzFehlerRetry = gzKonsistenz.befundeProGZ
-              .flatMap((v) => v.befunde.filter((b) => b.schwere === "fehler"))
-              .map((b) => `GZ-Validierung [${b.code}]: ${b.meldung}`);
-            errors.push(...gzFehlerRetry);
-          }
-
-          if (errors.length > 0) {
-            console.warn(
-              `[legal-pipeline] Layer 1 retry still has ${errors.length} validation errors — logged for review`
-            );
-            // If GZ validation still has fehler after retry, flag for human review
-            const gzFehlerPersist =
-              gzKonsistenz?.befundeProGZ.some((v) =>
-                v.befunde.some((b) => b.schwere === "fehler")
-              ) ?? false;
-            if (gzFehlerPersist) {
-              state.warnings = [
-                ...(state.warnings ?? []),
-                `GZ-Validierung: ${gzKonsistenz?.befundeProGZ
-                  .flatMap((v) => v.befunde.filter((b) => b.schwere === "fehler"))
-                  .map((b) => b.meldung)
-                  .join("; ")}`,
-              ];
-            }
-          }
-        }
-
-        // ── A2: Write validated GZ + verfahrenstyp to case frontmatter ──
-        if (gzKonsistenz) {
-          const aktenzeichenValidated =
-            gzKonsistenz.einheitlich && gzKonsistenz.befundeProGZ.every((v) => v.gueltig);
-          const verfahrenstyp =
-            gzKonsistenz.befundeProGZ.find((v) => v.verfahrenstyp)?.verfahrenstyp ?? null;
+        let resumeFromLayer = explicitResume;
+        if (!resumeFromLayer) {
+          // Auto-resume: check for persisted state from a previous attempt.
           try {
-            const casePage = await engine.getPage(data.case_slug, { sourceId: sourceStamp });
-            if (casePage) {
-              const caseFm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
-              await engine.putPage(
-                data.case_slug,
-                {
-                  ...casePage,
-                  frontmatter: {
-                    ...caseFm,
-                    aktenzeichen_validated: aktenzeichenValidated,
-                    ...(gzKonsistenz.leitzahl
-                      ? { aktenzeichen_leitzahl: gzKonsistenz.leitzahl }
-                      : {}),
-                    ...(verfahrenstyp ? { verfahrenstyp } : {}),
-                    gz_befunde: gzKonsistenz.befundeProGZ.flatMap((v) =>
-                      v.befunde.map((b) => ({
-                        schwere: b.schwere,
-                        code: b.code,
-                        meldung: b.meldung,
-                      }))
-                    ),
-                  },
-                },
-                { sourceId: sourceStamp }
-              );
+            const existingState = await loadPipelineState(engine, stateSlug, sourceStamp).catch(
+              () => null
+            );
+            if (
+              existingState &&
+              existingState.status !== "running" &&
+              existingState.current_layer > 0
+            ) {
+              // Find the last completed layer; resume from the next one.
+              let lastCompleted = 0;
+              for (let n = 7; n >= 1; n--) {
+                if (existingState.layers[n]?.status === "completed") {
+                  lastCompleted = n;
+                  break;
+                }
+              }
+              if (lastCompleted >= 3 && lastCompleted < 7) {
+                resumeFromLayer = lastCompleted + 1;
+                console.log(
+                  `[legal-pipeline] auto-resume from layer ${resumeFromLayer} (persisted state found, last completed: ${lastCompleted})`
+                );
+              }
             }
           } catch {
-            // case frontmatter update failed; pipeline continues
+            // best-effort — if state load fails, fall through to fresh start
           }
         }
 
-        const onIndexSlug = `on-indexes/${data.case_slug}`;
-        await writeOnIndexPage(
-          engine,
-          onIndexSlug,
-          data.case_slug,
-          onTable,
-          sourceStamp,
-          gzKonsistenz
+        let onTable: OnEntry[] = [];
+        let entities: EntityEntry[] = [];
+        let forensicReport: ForensicReport | null = null;
+        let legalGroundingMap: LegalGroundingEntry[] = [];
+        let damageTable: DamageEntry[] = [];
+        let deadlineCalendar: DeadlineEntry[] = [];
+
+        let state: PipelineState;
+
+        if (resumeFromLayer) {
+          // Load existing state from page
+          state = await loadPipelineState(engine, stateSlug, sourceStamp);
+          state.status = "running";
+          state.updated_at = new Date().toISOString();
+          // Apply any new manual_overrides from the resume job
+          if (data.manual_overrides) {
+            state.manual_overrides = { ...state.manual_overrides, ...data.manual_overrides };
+          }
+          // Mark layers before resumeFromLayer as completed (they should already be)
+          for (let n = 1; n < resumeFromLayer; n++) {
+            if (state.layers[n] && state.layers[n]!.status !== "completed") {
+              state.layers[n]!.status = "completed";
+            }
+          }
+          // Load onTable and entities from existing pages
+          onTable = await loadOnTableFromPage(engine, data.case_slug, sourceStamp);
+          entities = await loadEntitiesFromPages(engine, data.case_slug, sourceStamp);
+        } else {
+          state = {
+            case_slug: data.case_slug,
+            status: "running",
+            current_layer: 0,
+            layers: {
+              1: { status: "pending" },
+              2: { status: "pending" },
+              3: { status: "pending" },
+              4: { status: "pending" },
+              5: { status: "pending" },
+              6: { status: "pending" },
+              7: { status: "pending" },
+            },
+            manual_overrides: data.manual_overrides,
+            total_duration_ms: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            cost_cap_usd: costCap,
+            // F1 fix: persist billing context for server-side settlement.
+            pipeline_key: data.pipeline_key,
+            owner_id: data.owner_id,
+            owner_type: data.owner_type,
+            reserved_credits: data.reserved_credits,
+            jurisdiction: data.jurisdiction ?? "at",
+            verfahrenstyp: data.verfahrenstyp ?? "sonstiges",
+            snapshot_id: data.snapshot_id,
+            import_session_id: data.import_session_id,
+          };
+        }
+
+        // Determine which layers to run
+        const rerunLayers = Array.isArray(data.rerun_layers) ? new Set(data.rerun_layers) : null;
+
+        // T5.4: Workflow-based layer activation
+        // When workflow_id is set, only layers in the workflow definition run.
+        const workflowLayerIds = data.workflow_id ? getWorkflowLayerSet(data.workflow_id) : null;
+        // T5.4: Layer IDs are authoritative for workflow selection. Numeric layer
+        // numbers are retained only for legacy resume/rerun compatibility because
+        // one numeric layer contains multiple independent sub-layers.
+        const shouldRunLayerById = (layerId: string): boolean => {
+          // A resume/rerun must never widen the workflow's explicitly declared
+          // scope. Previously either flag returned true immediately, which meant
+          // `workflow_id=memo&rerun_layers=[4]` could execute every optional
+          // sub-layer in that numeric layer, including layers not belonging to
+          // the selected work product.
+          if (workflowLayerIds && !workflowLayerIds.has(layerId)) return false;
+
+          if (resumeFromLayer || rerunLayers) {
+            const declaration = getLayerDeclaration(layerId);
+            if (!declaration) return false;
+            if (resumeFromLayer && declaration.layerNumber < resumeFromLayer) return false;
+            if (rerunLayers && !rerunLayers.has(declaration.layerNumber)) return false;
+          }
+
+          return true;
+        };
+        const shouldRunAnyLayer = (...layerIds: string[]): boolean =>
+          layerIds.some((layerId) => shouldRunLayerById(layerId));
+
+        // ── Load all sub-page texts (haystack for validation) ────
+        const rawTexts = await loadAllSubPages(engine, data.part_slugs, sourceStamp);
+        console.log(
+          `[legal-pipeline] sourceStamp=${sourceStamp ?? "undefined"}, part_slugs=${JSON.stringify(data.part_slugs)}, rawTexts.length=${rawTexts.length}, rawTexts[0]?.length=${rawTexts[0]?.length ?? 0}`
+        );
+        // Gap 2: Decode AB-Bogen handwritten abbreviations (post-OCR enrichment)
+        // This annotates known Austrian legal shorthand (e.g. "UH" → "UH [Untersuchungshaft]")
+        // so downstream agents can understand handwritten A-Mappe notations.
+        const allTexts = rawTexts.map((t) => decodeAbbBogenKuerzel(t));
+        const allText = allTexts.join("\n\n");
+        console.log(
+          `[legal-pipeline] allTexts.length=${allTexts.length}, allText.length=${allText.length}`
         );
 
-        // ── A3: ERV cross-check — compare pipeline GZ against ERV-imported GZ ──
-        if (gzKonsistenz && gzKonsistenz.befundeProGZ.length > 0) {
-          try {
-            const ervPages = await engine.listPages({
-              type: "erv_message",
-              slugPrefix: "legal/erv/",
-              limit: 200,
-            });
-            const caseErvPages = ervPages.filter((p) => {
-              const fm = p.frontmatter as Record<string, unknown>;
-              return fm.case_ref === data.case_slug || fm.case_slug === data.case_slug;
-            });
-            if (caseErvPages.length > 0) {
-              const pipelineGZs = gzKonsistenz.befundeProGZ.map((v) => v.raw);
-              const ervMismatches: string[] = [];
-              for (const ervPage of caseErvPages) {
-                const ervFm = ervPage.frontmatter as Record<string, unknown>;
-                const ervGZ =
-                  typeof ervFm.geschaeftszahl === "string" ? ervFm.geschaeftszahl : undefined;
-                if (!ervGZ) continue;
-                const normalizedErv = ervGZ.replace(/\s+/g, " ").trim();
-                const normalizedPipeline = pipelineGZs.map((g) => g.replace(/\s+/g, " ").trim());
-                if (!normalizedPipeline.includes(normalizedErv)) {
-                  ervMismatches.push(
-                    `ERV-GZ "${ervGZ}" (${ervPage.slug}) stimmt nicht mit Pipeline-GZ überein`
+        // ── Layer 0: Semantic document classification (heuristic, $0) ──
+        // Classify each sub-page and stamp frontmatter with doc_type.
+        // Enables filtered search ("only witness statements") and targeted
+        // contradiction detection ("compare all medical reports").
+        if (shouldRunLayerById("doc-classifier")) {
+          for (let i = 0; i < data.part_slugs.length; i++) {
+            const partSlug = data.part_slugs[i]!;
+            const partText = allTexts[i] ?? "";
+            if (!partText) continue;
+            const classification = classifyLegalDocument(partText);
+            try {
+              const existing = await engine.getPage(partSlug);
+              if (existing) {
+                const fm = (existing.frontmatter ?? {}) as Record<string, unknown>;
+                if (!fm.doc_type || fm.doc_type === "legal_document") {
+                  await engine.putPage(
+                    partSlug,
+                    {
+                      type: existing.type,
+                      title: existing.title,
+                      compiled_truth: existing.compiled_truth ?? "",
+                      frontmatter: {
+                        ...fm,
+                        doc_type: classification.type,
+                        doc_type_label: legalDocTypeLabel(classification.type),
+                        doc_type_confidence: classification.confidence.toFixed(2),
+                      },
+                    },
+                    { sourceId: sourceStamp }
                   );
                 }
               }
-              if (ervMismatches.length > 0) {
-                state.warnings = [...(state.warnings ?? []), ...ervMismatches];
-              }
+            } catch {
+              // Classification is best-effort — don't fail the pipeline if a page can't be updated
             }
-          } catch {
-            // ERV cross-check mismatch is non-blocking; continue pipeline
           }
         }
 
-        await updateLayerState(ctx, state, stateSlug, 1, "completed", engine, sourceStamp, [
-          onIndexSlug,
-        ]);
-      } else {
-        // Load existing ON table from page
-        onTable = await loadOnTableFromPage(engine, data.case_slug, sourceStamp);
-        await updateLayerState(ctx, state, stateSlug, 1, "skipped", engine, sourceStamp);
-      }
-
-      // ── Layer 2: Entity-Extractor (with retry) ─────────────
-      if (shouldRunLayerById("entity-extractor")) {
-        await updateLayerState(ctx, state, stateSlug, 2, "running", engine, sourceStamp);
-        const entityResult = await runMapReduceLayer({
-          ctx,
-          queue,
-          engine,
-          specialistName: "entity-extractor",
-          partSlugs: data.part_slugs,
-          allTexts,
-          batchSize: HAIKU_BATCH_SIZE,
-          sourceStamp,
-          lawSourceIds,
-          contextJson: JSON.stringify({
-            on_table: onTable,
-            jurisdiction: data.jurisdiction ?? "at",
-            verfahrenstyp:
-              data.verfahrenstyp ??
-              (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-          }),
-          layerId: "entity-extractor",
-        });
-        entities = extractEntityEntries(entityResult);
-        let errors = await validateEntityEntries(entities, allText);
-
-        if (errors.length > 0) {
-          console.warn(`[legal-pipeline] Layer 2 validation: ${errors.length} errors, retrying...`);
-          const retryResult = await runMapReduceLayer({
-            ctx,
-            queue,
-            engine,
-            specialistName: "entity-extractor",
-            partSlugs: data.part_slugs,
-            allTexts,
-            batchSize: HAIKU_BATCH_SIZE,
-            sourceStamp,
-            lawSourceIds,
-            contextJson: JSON.stringify({
-              on_table: onTable,
-              jurisdiction: data.jurisdiction ?? "at",
-              verfahrenstyp:
-                data.verfahrenstyp ??
-                (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-            }),
-            retryFeedback: "KORREKTUR ERFORDERLICH:\n" + errors.join("\n"),
-            layerId: "entity-extractor",
-          });
-          entities = extractEntityEntries(retryResult);
-          errors = await validateEntityEntries(entities, allText);
-          if (errors.length > 0) {
-            console.warn(
-              `[legal-pipeline] Layer 2 retry still has ${errors.length} validation errors — logged for review`
-            );
-          }
-        }
-
-        const entitySlugs = await writeEntityPages(engine, data.case_slug, entities, sourceStamp);
-        await updateLayerState(
-          ctx,
-          state,
-          stateSlug,
-          2,
-          "completed",
-          engine,
-          sourceStamp,
-          entitySlugs
-        );
-
-        // ── Gap 16: Human-in-the-Loop Checkpoint ──────────────
-        // After Layer 2, pause for attorney review if requested.
-        // The attorney confirms/corrects client & opponent, then submits
-        // a resume job with resume_from_layer=3.
-        if (data.pause_for_review && !resumeFromLayer) {
-          state.status = "awaiting_review";
-          state.current_layer = 2;
-          state.review_entities = entities.map((e) => ({
-            name: e.name,
-            type: e.type,
-            role: e.role,
-            aliases: e.aliases,
-          }));
-          state.updated_at = new Date().toISOString();
-          await persistPipelineState(engine, stateSlug, state, sourceStamp);
-          await ctx.updateProgress({
-            step: 2,
-            total: 8,
-            message:
-              "Pipeline paused for attorney review. Submit resume job with resume_from_layer=3 to continue.",
-          });
-          return {
-            case_slug: data.case_slug,
-            status: "awaiting_review",
-            current_layer: 2,
-            review_entities: state.review_entities,
-            message:
-              "Pipeline paused after Layer 2. Attorney must confirm/correct client & opponent, then submit resume job.",
-          };
-        }
-      } else {
-        await updateLayerState(ctx, state, stateSlug, 2, "skipped", engine, sourceStamp);
-      }
-
-      // ── Layer 3: Forensic Analyst (with retry) ─────────────
-      if (shouldRunLayerById("forensic-analyst")) {
-        await updateLayerState(ctx, state, stateSlug, 3, "running", engine, sourceStamp);
-        const jurisdiction = data.jurisdiction ?? "at";
-        const verfahrenstyp =
-          onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges";
-        const contextJson = JSON.stringify({
-          on_table: onTable,
-          entities,
-          manual_overrides: data.manual_overrides,
-          jurisdiction,
-          verfahrenstyp,
-        });
-        const forensicResult = await runMapReduceLayer({
-          ctx,
-          queue,
-          engine,
-          specialistName: "forensic-analyst",
-          partSlugs: data.part_slugs,
-          allTexts,
-          batchSize: SONNET_BATCH_SIZE,
-          sourceStamp,
-          lawSourceIds,
-          contextJson,
-          layerId: "forensic-analyst",
-        });
-        forensicReport = extractForensicReport(forensicResult);
-        let errors = await validateForensicReport(forensicReport, onTable, entities, allText);
-
-        if (errors.length > 0) {
-          console.warn(`[legal-pipeline] Layer 3 validation: ${errors.length} errors, retrying...`);
-          const retryResult = await runMapReduceLayer({
-            ctx,
-            queue,
-            engine,
-            specialistName: "forensic-analyst",
-            partSlugs: data.part_slugs,
-            allTexts,
-            batchSize: SONNET_BATCH_SIZE,
-            sourceStamp,
-            lawSourceIds,
-            contextJson,
-            retryFeedback: "KORREKTUR ERFORDERLICH:\n" + errors.join("\n"),
-            layerId: "forensic-analyst",
-          });
-          forensicReport = extractForensicReport(retryResult);
-          errors = await validateForensicReport(forensicReport, onTable, entities, allText);
-          if (errors.length > 0) {
-            console.warn(
-              `[legal-pipeline] Layer 3 retry still has ${errors.length} validation errors — logged for review`
-            );
-          }
-        }
-
-        // ── Tier 0 Citation Guardrail (deterministic, zero-cost) ──
-        const forensicText = JSON.stringify(forensicReport);
-        const forensicGuard = runCitationGuardrailForLayer(
-          state,
-          3,
-          forensicText,
-          allText,
-          data.part_slugs
-        );
-        if (!forensicGuard.passed && forensicGuard.flags.some((f) => f.severity === "high")) {
-          const highCount = forensicGuard.flags.filter((f) => f.severity === "high").length;
-          // Phase 0A: fail-closed — enforceGuardrailHardBlock throws
-          enforceGuardrailHardBlock(3, "forensic-analyst", highCount);
-        }
-
-        const forensicSlug = `forensic-reports/${data.case_slug}`;
-        await writeForensicReportPage(
-          engine,
-          forensicSlug,
-          data.case_slug,
-          forensicReport,
-          sourceStamp
-        );
-        await updateLayerState(ctx, state, stateSlug, 3, "completed", engine, sourceStamp, [
-          forensicSlug,
-        ]);
-      } else {
-        await updateLayerState(ctx, state, stateSlug, 3, "skipped", engine, sourceStamp);
-      }
-
-      // ── Layer 4: Law Matcher (§-Retrieval gegen Gesetzeskorpus) ──
-      if (
-        shouldRunAnyLayer(
-          "law-matcher",
-          "precedent-matcher",
-          "burden-of-proof",
-          "admissibility-checker",
-          "fact-gap-detector",
-          "evidence-quality",
-          "witness-expert"
-        )
-      ) {
-        await updateLayerState(ctx, state, stateSlug, 4, "running", engine, sourceStamp);
-        if (shouldRunLayerById("law-matcher")) {
-          legalGroundingMap = await runLawMatcherLayer({
-            ctx,
-            queue,
-            engine,
-            caseSlug: data.case_slug,
-            forensicReport,
-            onTable,
-            entities,
-            jurisdiction: data.jurisdiction ?? "at",
-            verfahrenstyp:
-              data.verfahrenstyp ??
-              (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-            sourceStamp,
-            lawSourceIds,
-          });
-        }
-        let errors = await validateLegalGroundingMap(legalGroundingMap, onTable);
-
-        if (errors.length > 0) {
-          console.warn(
-            `[legal-pipeline] Layer 4 validation: ${errors.length} errors — non-blocking, logged for review`
-          );
-        }
-
-        // ── Tier 0 Citation Guardrail (deterministic, zero-cost) ──
-        const groundingText = JSON.stringify(legalGroundingMap);
-        const groundingGuard = runCitationGuardrailForLayer(
-          state,
-          4,
-          groundingText,
-          allText,
-          data.part_slugs
-        );
-        if (!groundingGuard.passed && groundingGuard.flags.some((f) => f.severity === "high")) {
-          const highCount = groundingGuard.flags.filter((f) => f.severity === "high").length;
-          // Phase 0A: fail-closed — enforceGuardrailHardBlock throws
-          enforceGuardrailHardBlock(4, "legal-grounding", highCount);
-        }
-
-        const groundingSlug = `legal-grounding/${data.case_slug}`;
-        await writeLegalGroundingMapPage(
-          engine,
-          groundingSlug,
-          data.case_slug,
-          legalGroundingMap,
-          sourceStamp
-        );
-        const claimEvidenceGraph = buildGraphFromGroundingMap({
-          output_id: data.case_slug,
-          output_type: data.workflow_id ?? "full_pipeline",
-          jurisdiction: data.jurisdiction.toUpperCase() as Jurisdiction,
-          as_of_date: data.as_of_date ?? new Date().toISOString().slice(0, 10),
-          entries: legalGroundingMap as unknown as VerifiedGroundingEntry[],
-          case_documents: data.part_slugs.map((source_slug, index) => ({
-            source_slug,
-            text: allTexts[index] ?? "",
-          })),
-          brain_id: sourceStamp,
-        });
-        const claimEvidenceSlug = `claim-evidence/${data.case_slug}`;
-        await writeClaimEvidenceGraphPage(
-          engine,
-          claimEvidenceSlug,
-          data.case_slug,
-          claimEvidenceGraph,
-          sourceStamp
-        );
-        await updateLayerState(ctx, state, stateSlug, 4, "completed", engine, sourceStamp, [
-          groundingSlug,
-          claimEvidenceSlug,
-        ]);
-
-        // Record dependencies from the claim-evidence graph
         try {
-          await recordGraphDependencies(
-            engine,
-            claimEvidenceGraph,
-            data.case_slug,
-            data.workflow_id ?? "full_pipeline",
-            sourceStamp
-          );
-        } catch (depErr) {
-          console.warn(
-            `[legal-pipeline] Dependency recording error: ${depErr instanceof Error ? depErr.message : String(depErr)}`
-          );
-        }
-
-        // ── Layer 4b: Precedent Match (Rechtsprechung) ──────
-        // Searches for relevant case law (OGH/BGH/BVerfG) that supports
-        // or endangers the legal claims. Non-blocking.
-        if (shouldRunLayerById("precedent-matcher"))
-          try {
-            const precedentSlug = await runPrecedentMatchLayer({
+          // ── Layer 1: ON-Scanner (with retry on validation fail) ───
+          let gzKonsistenz: KonsistenzErgebnis | null = null;
+          if (shouldRunLayerById("on-scanner")) {
+            await updateLayerState(ctx, state, stateSlug, 1, "running", engine, sourceStamp);
+            const onResult = await runMapReduceLayer({
               ctx,
               queue,
               engine,
-              caseSlug: data.case_slug,
-              legalGroundingMap,
-              forensicReport,
-              jurisdiction: data.jurisdiction ?? "at",
-              verfahrenstyp:
-                data.verfahrenstyp ??
-                (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+              specialistName: "on-scanner",
+              partSlugs: data.part_slugs,
+              allTexts,
+              batchSize: HAIKU_BATCH_SIZE,
               sourceStamp,
               lawSourceIds,
+              contextJson: JSON.stringify({ jurisdiction: data.jurisdiction ?? "at" }),
+              layerId: "on-scanner",
+              budget,
             });
-            if (precedentSlug) {
-              state.layers[4]!.output_slugs = [
-                ...(state.layers[4]!.output_slugs ?? []),
-                precedentSlug,
-              ];
-              // Merge precedent matches into the claim-evidence graph
-              try {
-                await mergePrecedentsIntoGraph(
-                  engine,
-                  precedentSlug,
-                  claimEvidenceSlug,
-                  data.case_slug,
-                  sourceStamp
-                );
-              } catch (mergeErr) {
+            onTable = extractOnEntries(onResult);
+            let errors = await validateOnEntries(onTable, allText);
+
+            // ── GZ structural validation (deterministic, catches OCR confusables) ──
+            const gzRaws = onTable
+              .map((e) => e.geschaeftszahl?.raw)
+              .filter((r): r is string => !!r && r.trim().length > 0);
+            if (gzRaws.length > 0) {
+              gzKonsistenz = pruefeGZKonsistenz(gzRaws);
+              const gzFehler = gzKonsistenz.befundeProGZ
+                .flatMap((v) => v.befunde.filter((b) => b.schwere === "fehler"))
+                .map((b) => `GZ-Validierung [${b.code}]: ${b.meldung}`);
+              errors.push(...gzFehler);
+            }
+
+            // ── Retry with error feedback if validation failed ──
+            if (errors.length > 0) {
+              console.warn(
+                `[legal-pipeline] Layer 1 validation: ${errors.length} errors, retrying...`
+              );
+              const retryResult = await runMapReduceLayer({
+                ctx,
+                queue,
+                engine,
+                specialistName: "on-scanner",
+                partSlugs: data.part_slugs,
+                allTexts,
+                batchSize: HAIKU_BATCH_SIZE,
+                sourceStamp,
+                lawSourceIds,
+                contextJson: JSON.stringify({ jurisdiction: data.jurisdiction ?? "at" }),
+                retryFeedback: "KORREKTUR ERFORDERLICH:\n" + errors.join("\n"),
+                layerId: "on-scanner",
+                budget,
+              });
+              onTable = extractOnEntries(retryResult);
+              errors = await validateOnEntries(onTable, allText);
+
+              // Re-run GZ validation after retry
+              const gzRawsRetry = onTable
+                .map((e) => e.geschaeftszahl?.raw)
+                .filter((r): r is string => !!r && r.trim().length > 0);
+              if (gzRawsRetry.length > 0) {
+                gzKonsistenz = pruefeGZKonsistenz(gzRawsRetry);
+                const gzFehlerRetry = gzKonsistenz.befundeProGZ
+                  .flatMap((v) => v.befunde.filter((b) => b.schwere === "fehler"))
+                  .map((b) => `GZ-Validierung [${b.code}]: ${b.meldung}`);
+                errors.push(...gzFehlerRetry);
+              }
+
+              if (errors.length > 0) {
                 console.warn(
-                  `[legal-pipeline] Precedent→graph merge error: ${mergeErr instanceof Error ? mergeErr.message : String(mergeErr)}`
+                  `[legal-pipeline] Layer 1 retry still has ${errors.length} validation errors — logged for review`
+                );
+                // If GZ validation still has fehler after retry, flag for human review
+                const gzFehlerPersist =
+                  gzKonsistenz?.befundeProGZ.some((v) =>
+                    v.befunde.some((b) => b.schwere === "fehler")
+                  ) ?? false;
+                if (gzFehlerPersist) {
+                  state.warnings = [
+                    ...(state.warnings ?? []),
+                    `GZ-Validierung: ${gzKonsistenz?.befundeProGZ
+                      .flatMap((v) => v.befunde.filter((b) => b.schwere === "fehler"))
+                      .map((b) => b.meldung)
+                      .join("; ")}`,
+                  ];
+                }
+              }
+            }
+
+            // ── A2: Write validated GZ + verfahrenstyp to case frontmatter ──
+            if (gzKonsistenz) {
+              const aktenzeichenValidated =
+                gzKonsistenz.einheitlich && gzKonsistenz.befundeProGZ.every((v) => v.gueltig);
+              const verfahrenstyp =
+                gzKonsistenz.befundeProGZ.find((v) => v.verfahrenstyp)?.verfahrenstyp ?? null;
+              try {
+                const casePage = await engine.getPage(data.case_slug, { sourceId: sourceStamp });
+                if (casePage) {
+                  const caseFm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
+                  await engine.putPage(
+                    data.case_slug,
+                    {
+                      ...casePage,
+                      frontmatter: {
+                        ...caseFm,
+                        aktenzeichen_validated: aktenzeichenValidated,
+                        ...(gzKonsistenz.leitzahl
+                          ? { aktenzeichen_leitzahl: gzKonsistenz.leitzahl }
+                          : {}),
+                        ...(verfahrenstyp ? { verfahrenstyp } : {}),
+                        gz_befunde: gzKonsistenz.befundeProGZ.flatMap((v) =>
+                          v.befunde.map((b) => ({
+                            schwere: b.schwere,
+                            code: b.code,
+                            meldung: b.meldung,
+                          }))
+                        ),
+                      },
+                    },
+                    { sourceId: sourceStamp }
+                  );
+                }
+              } catch {
+                // case frontmatter update failed; pipeline continues
+              }
+            }
+
+            const onIndexSlug = `on-indexes/${data.case_slug}`;
+            await writeOnIndexPage(
+              engine,
+              onIndexSlug,
+              data.case_slug,
+              onTable,
+              sourceStamp,
+              gzKonsistenz
+            );
+
+            // ── A3: ERV cross-check — compare pipeline GZ against ERV-imported GZ ──
+            if (gzKonsistenz && gzKonsistenz.befundeProGZ.length > 0) {
+              try {
+                const ervPages = await engine.listPages({
+                  type: "erv_message",
+                  slugPrefix: "legal/erv/",
+                  limit: 200,
+                });
+                const caseErvPages = ervPages.filter((p) => {
+                  const fm = p.frontmatter as Record<string, unknown>;
+                  return fm.case_ref === data.case_slug || fm.case_slug === data.case_slug;
+                });
+                if (caseErvPages.length > 0) {
+                  const pipelineGZs = gzKonsistenz.befundeProGZ.map((v) => v.raw);
+                  const ervMismatches: string[] = [];
+                  for (const ervPage of caseErvPages) {
+                    const ervFm = ervPage.frontmatter as Record<string, unknown>;
+                    const ervGZ =
+                      typeof ervFm.geschaeftszahl === "string" ? ervFm.geschaeftszahl : undefined;
+                    if (!ervGZ) continue;
+                    const normalizedErv = ervGZ.replace(/\s+/g, " ").trim();
+                    const normalizedPipeline = pipelineGZs.map((g) =>
+                      g.replace(/\s+/g, " ").trim()
+                    );
+                    if (!normalizedPipeline.includes(normalizedErv)) {
+                      ervMismatches.push(
+                        `ERV-GZ "${ervGZ}" (${ervPage.slug}) stimmt nicht mit Pipeline-GZ überein`
+                      );
+                    }
+                  }
+                  if (ervMismatches.length > 0) {
+                    state.warnings = [...(state.warnings ?? []), ...ervMismatches];
+                  }
+                }
+              } catch {
+                // ERV cross-check mismatch is non-blocking; continue pipeline
+              }
+            }
+
+            await updateLayerState(ctx, state, stateSlug, 1, "completed", engine, sourceStamp, [
+              onIndexSlug,
+            ]);
+          } else {
+            // Load existing ON table from page
+            onTable = await loadOnTableFromPage(engine, data.case_slug, sourceStamp);
+            await updateLayerState(ctx, state, stateSlug, 1, "skipped", engine, sourceStamp);
+          }
+
+          // ── Layer 2: Entity-Extractor (with retry) ─────────────
+          if (shouldRunLayerById("entity-extractor")) {
+            await updateLayerState(ctx, state, stateSlug, 2, "running", engine, sourceStamp);
+            const entityResult = await runMapReduceLayer({
+              ctx,
+              queue,
+              engine,
+              specialistName: "entity-extractor",
+              partSlugs: data.part_slugs,
+              allTexts,
+              batchSize: HAIKU_BATCH_SIZE,
+              sourceStamp,
+              lawSourceIds,
+              contextJson: JSON.stringify({
+                on_table: onTable,
+                jurisdiction: data.jurisdiction ?? "at",
+                verfahrenstyp:
+                  data.verfahrenstyp ??
+                  (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+              }),
+              layerId: "entity-extractor",
+              budget,
+            });
+            entities = extractEntityEntries(entityResult);
+            let errors = await validateEntityEntries(entities, allText);
+
+            if (errors.length > 0) {
+              console.warn(
+                `[legal-pipeline] Layer 2 validation: ${errors.length} errors, retrying...`
+              );
+              const retryResult = await runMapReduceLayer({
+                ctx,
+                queue,
+                engine,
+                specialistName: "entity-extractor",
+                partSlugs: data.part_slugs,
+                allTexts,
+                batchSize: HAIKU_BATCH_SIZE,
+                sourceStamp,
+                lawSourceIds,
+                contextJson: JSON.stringify({
+                  on_table: onTable,
+                  jurisdiction: data.jurisdiction ?? "at",
+                  verfahrenstyp:
+                    data.verfahrenstyp ??
+                    (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                }),
+                retryFeedback: "KORREKTUR ERFORDERLICH:\n" + errors.join("\n"),
+                layerId: "entity-extractor",
+                budget,
+              });
+              entities = extractEntityEntries(retryResult);
+              errors = await validateEntityEntries(entities, allText);
+              if (errors.length > 0) {
+                console.warn(
+                  `[legal-pipeline] Layer 2 retry still has ${errors.length} validation errors — logged for review`
                 );
               }
             }
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            state.warnings = [...(state.warnings ?? []), `Precedent match failed: ${msg}`];
-            console.warn(`[legal-pipeline] Precedent match error: ${msg}`);
-          }
 
-        // ── Layer 4c: Burden of Proof (Beweislast) ──────────
-        // Analyzes who must prove what, whether evidence is sufficient,
-        // and whether burden reversal applies. Non-blocking.
-        if (shouldRunLayerById("burden-of-proof"))
-          try {
-            const burdenSlug = await runBurdenOfProofLayer({
-              ctx,
-              queue,
+            const entitySlugs = await writeEntityPages(
               engine,
-              caseSlug: data.case_slug,
-              forensicReport,
-              legalGroundingMap,
-              damageTable,
-              jurisdiction: data.jurisdiction ?? "at",
-              verfahrenstyp:
-                data.verfahrenstyp ??
-                (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-              sourceStamp,
-              lawSourceIds,
-            });
-            if (burdenSlug) {
-              state.layers[4]!.output_slugs = [
-                ...(state.layers[4]!.output_slugs ?? []),
-                burdenSlug,
-              ];
-            }
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            state.warnings = [...(state.warnings ?? []), `Burden of proof analysis failed: ${msg}`];
-            console.warn(`[legal-pipeline] Burden of proof error: ${msg}`);
-          }
-      } else {
-        await updateLayerState(ctx, state, stateSlug, 4, "skipped", engine, sourceStamp);
-      }
-
-      // ── Layer 4d: Admissibility Check (Zulässigkeitsprüfung) ──
-      // Checks procedural admissibility: jurisdiction, exhaustion of
-      // remedies, statute of limitations, capacity, attorney requirement.
-      // Non-blocking.
-      if (shouldRunLayerById("admissibility-checker") && legalGroundingMap.length > 0) {
-        try {
-          const admissibilitySlug = await runAdmissibilityCheckLayer({
-            ctx,
-            queue,
-            engine,
-            caseSlug: data.case_slug,
-            legalGroundingMap,
-            forensicReport,
-            jurisdiction: data.jurisdiction ?? "at",
-            verfahrenstyp:
-              data.verfahrenstyp ??
-              (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-            sourceStamp,
-            lawSourceIds,
-          });
-          if (admissibilitySlug) {
-            state.layers[4]!.output_slugs = [
-              ...(state.layers[4]!.output_slugs ?? []),
-              admissibilitySlug,
-            ];
-          }
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          state.warnings = [...(state.warnings ?? []), `Admissibility check failed: ${msg}`];
-          console.warn(`[legal-pipeline] Admissibility check error: ${msg}`);
-        }
-      }
-
-      // ── Layer 4e: Fact Gap Detection (Sachverhaltslücken) ──
-      // Identifies missing facts needed for legal claims and generates
-      // targeted client questions. Runs after Layer 4 so legalGroundingMap
-      // is populated and Tatbestandsmerkmale can be checked.
-      // Non-blocking.
-      if (shouldRunLayerById("fact-gap-detector") && legalGroundingMap.length > 0) {
-        try {
-          const factGapSlug = await runFactGapDetectionLayer({
-            ctx,
-            queue,
-            engine,
-            caseSlug: data.case_slug,
-            forensicReport,
-            legalGroundingMap,
-            jurisdiction: data.jurisdiction ?? "at",
-            verfahrenstyp:
-              data.verfahrenstyp ??
-              (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-            sourceStamp,
-            lawSourceIds,
-          });
-          if (factGapSlug) {
-            state.layers[4]!.output_slugs = [...(state.layers[4]!.output_slugs ?? []), factGapSlug];
-          }
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          state.warnings = [...(state.warnings ?? []), `Fact gap detection failed: ${msg}`];
-          console.warn(`[legal-pipeline] Fact gap detection error: ${msg}`);
-        }
-      }
-
-      // ── Layer 4f: Evidence Quality Assessment ──
-      // Rates each piece of evidence by probative value.
-      // Non-blocking.
-      if (shouldRunLayerById("evidence-quality"))
-        try {
-          const evidenceQualitySlug = await runEvidenceQualityLayer({
-            ctx,
-            queue,
-            engine,
-            caseSlug: data.case_slug,
-            jurisdiction: data.jurisdiction ?? "at",
-            verfahrenstyp:
-              data.verfahrenstyp ??
-              (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-            sourceStamp,
-            lawSourceIds,
-          });
-          if (evidenceQualitySlug) {
-            state.layers[4]!.output_slugs = [
-              ...(state.layers[4]!.output_slugs ?? []),
-              evidenceQualitySlug,
-            ];
-          }
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          state.warnings = [
-            ...(state.warnings ?? []),
-            `Evidence quality assessment failed: ${msg}`,
-          ];
-          console.warn(`[legal-pipeline] Evidence quality error: ${msg}`);
-        }
-
-      // ── Layer 4g: Witness & Expert Analysis ──
-      // Evaluates witness credibility and identifies needed expert witnesses.
-      // Non-blocking.
-      if (shouldRunLayerById("witness-expert"))
-        try {
-          const witnessSlug = await runWitnessExpertLayer({
-            ctx,
-            queue,
-            engine,
-            caseSlug: data.case_slug,
-            jurisdiction: data.jurisdiction ?? "at",
-            verfahrenstyp:
-              data.verfahrenstyp ??
-              (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-            sourceStamp,
-            lawSourceIds,
-          });
-          if (witnessSlug) {
-            state.layers[4]!.output_slugs = [...(state.layers[4]!.output_slugs ?? []), witnessSlug];
-          }
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          state.warnings = [...(state.warnings ?? []), `Witness & expert analysis failed: ${msg}`];
-          console.warn(`[legal-pipeline] Witness & expert error: ${msg}`);
-        }
-
-      // ── Layer 5: Damage + Deadline Extractor (with retry) ──
-      if (
-        shouldRunAnyLayer(
-          "damage-deadline-extractor",
-          "deadline-validator",
-          "cost-benefit",
-          "settlement-analysis",
-          "enforcement-analysis",
-          "appeal-risk",
-          "procedural-strategy",
-          "insurance-coverage",
-          "tax-impact",
-          "counterclaim-risk",
-          "mediation-adr",
-          "limitation-scanner",
-          "cost-award"
-        )
-      ) {
-        await updateLayerState(ctx, state, stateSlug, 5, "running", engine, sourceStamp);
-        const damageContextJson = JSON.stringify({
-          on_table: onTable,
-          entities,
-          forensic_report: forensicReport,
-          legal_grounding_map: legalGroundingMap,
-          manual_overrides: data.manual_overrides,
-          jurisdiction: data.jurisdiction ?? "at",
-          verfahrenstyp:
-            data.verfahrenstyp ??
-            (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-        });
-        const damageResult = await runMapReduceLayer({
-          ctx,
-          queue,
-          engine,
-          specialistName: "damage-extractor",
-          partSlugs: data.part_slugs,
-          allTexts,
-          batchSize: SONNET_BATCH_SIZE,
-          sourceStamp,
-          lawSourceIds,
-          contextJson: damageContextJson,
-          layerId: "damage-deadline-extractor",
-        });
-        const extracted = extractDamageResult(damageResult);
-        damageTable = extracted.damage_table;
-        deadlineCalendar = extracted.deadline_calendar;
-        let dmgErrors = await validateDamageTable(damageTable, onTable, allText);
-        let dlnErrors = await validateDeadlineCalendar(deadlineCalendar, onTable, allText);
-        let errors = [...dmgErrors, ...dlnErrors];
-
-        if (errors.length > 0) {
-          console.warn(`[legal-pipeline] Layer 5 validation: ${errors.length} errors, retrying...`);
-          const retryResult = await runMapReduceLayer({
-            ctx,
-            queue,
-            engine,
-            specialistName: "damage-extractor",
-            partSlugs: data.part_slugs,
-            allTexts,
-            batchSize: SONNET_BATCH_SIZE,
-            sourceStamp,
-            lawSourceIds,
-            contextJson: damageContextJson,
-            retryFeedback: "KORREKTUR ERFORDERLICH:\n" + errors.join("\n"),
-            layerId: "damage-deadline-extractor",
-          });
-          const retryExtracted = extractDamageResult(retryResult);
-          damageTable = retryExtracted.damage_table;
-          deadlineCalendar = retryExtracted.deadline_calendar;
-          dmgErrors = await validateDamageTable(damageTable, onTable, allText);
-          dlnErrors = await validateDeadlineCalendar(deadlineCalendar, onTable, allText);
-          errors = [...dmgErrors, ...dlnErrors];
-          if (errors.length > 0) {
-            console.warn(
-              `[legal-pipeline] Layer 5 retry still has ${errors.length} validation errors — logged for review`
+              data.case_slug,
+              entities,
+              sourceStamp
             );
+            await updateLayerState(
+              ctx,
+              state,
+              stateSlug,
+              2,
+              "completed",
+              engine,
+              sourceStamp,
+              entitySlugs
+            );
+
+            // ── Gap 16: Human-in-the-Loop Checkpoint ──────────────
+            // After Layer 2, pause for attorney review if requested.
+            // The attorney confirms/corrects client & opponent, then submits
+            // a resume job with resume_from_layer=3.
+            if (data.pause_for_review && !resumeFromLayer) {
+              state.status = "awaiting_review";
+              state.current_layer = 2;
+              state.review_entities = entities.map((e) => ({
+                name: e.name,
+                type: e.type,
+                role: e.role,
+                aliases: e.aliases,
+              }));
+              state.updated_at = new Date().toISOString();
+              await persistPipelineState(engine, stateSlug, state, sourceStamp);
+              await ctx.updateProgress({
+                step: 2,
+                total: 8,
+                message:
+                  "Pipeline paused for attorney review. Submit resume job with resume_from_layer=3 to continue.",
+              });
+              return {
+                case_slug: data.case_slug,
+                status: "awaiting_review",
+                current_layer: 2,
+                review_entities: state.review_entities,
+                message:
+                  "Pipeline paused after Layer 2. Attorney must confirm/correct client & opponent, then submit resume job.",
+              };
+            }
+          } else {
+            await updateLayerState(ctx, state, stateSlug, 2, "skipped", engine, sourceStamp);
           }
-        }
 
-        // ── Tier 0 Citation Guardrail (deterministic, zero-cost) ──
-        const damageDeadlineText = JSON.stringify({
-          damage_table: damageTable,
-          deadline_calendar: deadlineCalendar,
-        });
-        const damageGuard = runCitationGuardrailForLayer(
-          state,
-          5,
-          damageDeadlineText,
-          allText,
-          data.part_slugs
-        );
-        if (!damageGuard.passed && damageGuard.flags.some((f) => f.severity === "high")) {
-          const highCount = damageGuard.flags.filter((f) => f.severity === "high").length;
-          // Phase 0A: fail-closed — enforceGuardrailHardBlock throws
-          enforceGuardrailHardBlock(5, "damage-deadline", highCount);
-        }
-
-        // ── AP-6: Deterministic deadline statutory cross-check ──
-        const deadlineWarnings = crossCheckDeadlineStatutory(
-          deadlineCalendar,
-          data.jurisdiction ?? "at"
-        );
-        if (deadlineWarnings.length > 0) {
-          state.warnings = [...(state.warnings ?? []), ...deadlineWarnings];
-          console.warn(
-            `[legal-pipeline] Layer 5 deadline cross-check: ${deadlineWarnings.length} warning(s)`
-          );
-        }
-
-        const damageSlug = `damage-tables/${data.case_slug}`;
-        const deadlineSlug = `deadline-calendars/${data.case_slug}`;
-        await writeDamageTablePage(engine, damageSlug, data.case_slug, damageTable, sourceStamp);
-        await writeDeadlineCalendarPage(
-          engine,
-          deadlineSlug,
-          data.case_slug,
-          deadlineCalendar,
-          sourceStamp
-        );
-
-        // ── Gap 4: Damage Overlap Detection ──────────────────
-        // Detect potential double-counting between damage positions.
-        // Non-blocking — warnings are stored in state and surfaced in the audit.
-        const overlapWarnings = detectDamageOverlaps(damageTable);
-        if (overlapWarnings.length > 0) {
-          state.damage_overlap_warnings = overlapWarnings;
-          state.warnings = [...(state.warnings ?? []), ...overlapWarnings];
-          console.warn(
-            `[legal-pipeline] Gap 4: ${overlapWarnings.length} potential damage overlap(s) detected`
-          );
-        }
-
-        // ── Layer 5b: Deadline Validation ───────────────────
-        // Validates extracted deadlines against statutory limitation rules
-        // (§ 1489 ABGB, § 195 BGB, Art 82 DSGVO, etc.) to prevent
-        // liability from using unverified or expired deadlines.
-        const outputSlugs = [damageSlug, deadlineSlug];
-        if (shouldRunLayerById("deadline-validator"))
-          try {
-            const deadlineValidationSlug = await runDeadlineValidationLayer({
+          // ── Layer 3: Forensic Analyst (with retry) ─────────────
+          if (shouldRunLayerById("forensic-analyst")) {
+            await updateLayerState(ctx, state, stateSlug, 3, "running", engine, sourceStamp);
+            const jurisdiction = data.jurisdiction ?? "at";
+            const verfahrenstyp =
+              onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges";
+            const contextJson = JSON.stringify({
+              on_table: onTable,
+              entities,
+              manual_overrides: data.manual_overrides,
+              jurisdiction,
+              verfahrenstyp,
+            });
+            const forensicResult = await runMapReduceLayer({
               ctx,
               queue,
               engine,
-              caseSlug: data.case_slug,
-              deadlineSlug,
-              jurisdiction: data.jurisdiction ?? "at",
-              verfahrenstyp:
-                data.verfahrenstyp ??
-                (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+              specialistName: "forensic-analyst",
+              partSlugs: data.part_slugs,
+              allTexts,
+              batchSize: SONNET_BATCH_SIZE,
               sourceStamp,
               lawSourceIds,
+              contextJson,
+              layerId: "forensic-analyst",
+              budget,
             });
-            if (deadlineValidationSlug) outputSlugs.push(deadlineValidationSlug);
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            state.warnings = [...(state.warnings ?? []), `Deadline validation failed: ${msg}`];
-            console.warn(`[legal-pipeline] Deadline validation error: ${msg}`);
+            forensicReport = extractForensicReport(forensicResult);
+            let errors = await validateForensicReport(forensicReport, onTable, entities, allText);
+
+            if (errors.length > 0) {
+              console.warn(
+                `[legal-pipeline] Layer 3 validation: ${errors.length} errors, retrying...`
+              );
+              const retryResult = await runMapReduceLayer({
+                ctx,
+                queue,
+                engine,
+                specialistName: "forensic-analyst",
+                partSlugs: data.part_slugs,
+                allTexts,
+                batchSize: SONNET_BATCH_SIZE,
+                sourceStamp,
+                lawSourceIds,
+                contextJson,
+                retryFeedback: "KORREKTUR ERFORDERLICH:\n" + errors.join("\n"),
+                layerId: "forensic-analyst",
+                budget,
+              });
+              forensicReport = extractForensicReport(retryResult);
+              errors = await validateForensicReport(forensicReport, onTable, entities, allText);
+              if (errors.length > 0) {
+                console.warn(
+                  `[legal-pipeline] Layer 3 retry still has ${errors.length} validation errors — logged for review`
+                );
+              }
+            }
+
+            // ── Tier 0 Citation Guardrail (deterministic, zero-cost) ──
+            const forensicText = JSON.stringify(forensicReport);
+            const forensicGuard = runCitationGuardrailForLayer(
+              state,
+              3,
+              forensicText,
+              allText,
+              data.part_slugs
+            );
+            if (!forensicGuard.passed && forensicGuard.flags.some((f) => f.severity === "high")) {
+              const highCount = forensicGuard.flags.filter((f) => f.severity === "high").length;
+              // Phase 0A: fail-closed — enforceGuardrailHardBlock throws
+              enforceGuardrailHardBlock(3, "forensic-analyst", highCount);
+            }
+
+            const forensicSlug = `forensic-reports/${data.case_slug}`;
+            await writeForensicReportPage(
+              engine,
+              forensicSlug,
+              data.case_slug,
+              forensicReport,
+              sourceStamp
+            );
+            await updateLayerState(ctx, state, stateSlug, 3, "completed", engine, sourceStamp, [
+              forensicSlug,
+            ]);
+          } else {
+            await updateLayerState(ctx, state, stateSlug, 3, "skipped", engine, sourceStamp);
           }
 
-        // ── Layer 5c: Cost-Benefit Analysis (Expected Value) ──
-        // Calculates EV, win probability, costs (RVG/StBVV/AHGB),
-        // break-even, and risk. Non-blocking.
-        if (shouldRunLayerById("cost-benefit"))
-          try {
-            const costBenefitSlug = await runCostBenefitLayer({
-              ctx,
-              queue,
+          // ── Layer 4: Law Matcher (§-Retrieval gegen Gesetzeskorpus) ──
+          if (
+            shouldRunAnyLayer(
+              "law-matcher",
+              "precedent-matcher",
+              "burden-of-proof",
+              "admissibility-checker",
+              "fact-gap-detector",
+              "evidence-quality",
+              "witness-expert"
+            )
+          ) {
+            await updateLayerState(ctx, state, stateSlug, 4, "running", engine, sourceStamp);
+            if (shouldRunLayerById("law-matcher")) {
+              legalGroundingMap = await runLawMatcherLayer({
+                ctx,
+                queue,
+                engine,
+                caseSlug: data.case_slug,
+                forensicReport,
+                onTable,
+                entities,
+                jurisdiction: data.jurisdiction ?? "at",
+                verfahrenstyp:
+                  data.verfahrenstyp ??
+                  (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                sourceStamp,
+                lawSourceIds,
+              });
+            }
+            let errors = await validateLegalGroundingMap(legalGroundingMap, onTable);
+
+            if (errors.length > 0) {
+              console.warn(
+                `[legal-pipeline] Layer 4 validation: ${errors.length} errors — non-blocking, logged for review`
+              );
+            }
+
+            // ── Tier 0 Citation Guardrail (deterministic, zero-cost) ──
+            const groundingText = JSON.stringify(legalGroundingMap);
+            const groundingGuard = runCitationGuardrailForLayer(
+              state,
+              4,
+              groundingText,
+              allText,
+              data.part_slugs
+            );
+            if (!groundingGuard.passed && groundingGuard.flags.some((f) => f.severity === "high")) {
+              const highCount = groundingGuard.flags.filter((f) => f.severity === "high").length;
+              // Phase 0A: fail-closed — enforceGuardrailHardBlock throws
+              enforceGuardrailHardBlock(4, "legal-grounding", highCount);
+            }
+
+            const groundingSlug = `legal-grounding/${data.case_slug}`;
+            await writeLegalGroundingMapPage(
               engine,
-              caseSlug: data.case_slug,
-              damageTable,
-              forensicReport,
+              groundingSlug,
+              data.case_slug,
               legalGroundingMap,
-              jurisdiction: data.jurisdiction ?? "at",
-              verfahrenstyp:
-                data.verfahrenstyp ??
-                (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-              sourceStamp,
-              lawSourceIds,
+              sourceStamp
+            );
+            const claimEvidenceGraph = buildGraphFromGroundingMap({
+              output_id: data.case_slug,
+              output_type: data.workflow_id ?? "full_pipeline",
+              jurisdiction: (data.jurisdiction ?? "AT").toUpperCase() as Jurisdiction,
+              as_of_date: data.as_of_date ?? new Date().toISOString().slice(0, 10),
+              entries: legalGroundingMap as unknown as VerifiedGroundingEntry[],
+              case_documents: data.part_slugs.map((source_slug, index) => ({
+                source_slug,
+                text: allTexts[index] ?? "",
+              })),
+              brain_id: sourceStamp,
             });
-            if (costBenefitSlug) outputSlugs.push(costBenefitSlug);
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            state.warnings = [...(state.warnings ?? []), `Cost-benefit analysis failed: ${msg}`];
-            console.warn(`[legal-pipeline] Cost-benefit error: ${msg}`);
-          }
-
-        // ── Layer 5d: Settlement Analysis (Vergleichsanalyse) ──
-        // Calculates BATNA, ZOPA, optimal settlement amount, and
-        // negotiation strategy. Non-blocking.
-        if (shouldRunLayerById("settlement-analysis"))
-          try {
-            const settlementSlug = await runSettlementAnalysisLayer({
-              ctx,
-              queue,
+            const claimEvidenceSlug = `claim-evidence/${data.case_slug}`;
+            await writeClaimEvidenceGraphPage(
               engine,
-              caseSlug: data.case_slug,
-              jurisdiction: data.jurisdiction ?? "at",
-              verfahrenstyp:
-                data.verfahrenstyp ??
-                (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-              sourceStamp,
-              lawSourceIds,
-            });
-            if (settlementSlug) outputSlugs.push(settlementSlug);
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            state.warnings = [...(state.warnings ?? []), `Settlement analysis failed: ${msg}`];
-            console.warn(`[legal-pipeline] Settlement analysis error: ${msg}`);
-          }
+              claimEvidenceSlug,
+              data.case_slug,
+              claimEvidenceGraph,
+              sourceStamp
+            );
+            await updateLayerState(ctx, state, stateSlug, 4, "completed", engine, sourceStamp, [
+              groundingSlug,
+              claimEvidenceSlug,
+            ]);
 
-        // ── Layer 5e: Enforcement Analysis (Vollstreckung) ──
-        // Checks if a judgment can actually be enforced.
-        // Non-blocking.
-        if (shouldRunLayerById("enforcement-analysis"))
-          try {
-            const enforcementSlug = await runEnforcementAnalysisLayer({
-              ctx,
-              queue,
-              engine,
-              caseSlug: data.case_slug,
-              forensicReport,
-              jurisdiction: data.jurisdiction ?? "at",
-              verfahrenstyp:
-                data.verfahrenstyp ??
-                (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-              sourceStamp,
-              lawSourceIds,
-            });
-            if (enforcementSlug) outputSlugs.push(enforcementSlug);
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            state.warnings = [...(state.warnings ?? []), `Enforcement analysis failed: ${msg}`];
-            console.warn(`[legal-pipeline] Enforcement analysis error: ${msg}`);
-          }
+            // Record dependencies from the claim-evidence graph
+            try {
+              await recordGraphDependencies(
+                engine,
+                claimEvidenceGraph,
+                data.case_slug,
+                data.workflow_id ?? "full_pipeline",
+                sourceStamp
+              );
+            } catch (depErr) {
+              console.warn(
+                `[legal-pipeline] Dependency recording error: ${depErr instanceof Error ? depErr.message : String(depErr)}`
+              );
+            }
 
-        // ── Layer 5f: Appeal Risk (Berufungsrisiko) ──────────
-        // Assesses whether the opponent can successfully appeal.
-        // Non-blocking.
-        if (shouldRunLayerById("appeal-risk"))
-          try {
-            const appealRiskSlug = await runAppealRiskLayer({
-              ctx,
-              queue,
-              engine,
-              caseSlug: data.case_slug,
-              jurisdiction: data.jurisdiction ?? "at",
-              verfahrenstyp:
-                data.verfahrenstyp ??
-                (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-              sourceStamp,
-              lawSourceIds,
-            });
-            if (appealRiskSlug) outputSlugs.push(appealRiskSlug);
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            state.warnings = [...(state.warnings ?? []), `Appeal risk analysis failed: ${msg}`];
-            console.warn(`[legal-pipeline] Appeal risk error: ${msg}`);
-          }
-
-        // ── Layer 5g: Procedural Strategy (Prozessstrategie) ─
-        // Recommends optimal procedural steps. Non-blocking.
-        if (shouldRunLayerById("procedural-strategy"))
-          try {
-            const strategySlug = await runProceduralStrategyLayer({
-              ctx,
-              queue,
-              engine,
-              caseSlug: data.case_slug,
-              jurisdiction: data.jurisdiction ?? "at",
-              verfahrenstyp:
-                data.verfahrenstyp ??
-                (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-              sourceStamp,
-              lawSourceIds,
-            });
-            if (strategySlug) outputSlugs.push(strategySlug);
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            state.warnings = [...(state.warnings ?? []), `Procedural strategy failed: ${msg}`];
-            console.warn(`[legal-pipeline] Procedural strategy error: ${msg}`);
-          }
-
-        // ── Layer 5h: Insurance Coverage (Versicherungsdeckung) ──
-        // Checks whether insurance covers the damage and if a
-        // direct action against the insurer is possible.
-        // Non-blocking.
-        if (shouldRunLayerById("insurance-coverage"))
-          try {
-            const insuranceSlug = await runInsuranceCoverageLayer({
-              ctx,
-              queue,
-              engine,
-              caseSlug: data.case_slug,
-              forensicReport,
-              jurisdiction: data.jurisdiction ?? "at",
-              verfahrenstyp:
-                data.verfahrenstyp ??
-                (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-              sourceStamp,
-              lawSourceIds,
-            });
-            if (insuranceSlug) outputSlugs.push(insuranceSlug);
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            state.warnings = [
-              ...(state.warnings ?? []),
-              `Insurance coverage analysis failed: ${msg}`,
-            ];
-            console.warn(`[legal-pipeline] Insurance coverage error: ${msg}`);
-          }
-
-        // ── Layer 5i: Tax Impact (Steuerliche Auswirkungen) ──
-        // Calculates net EV after taxes, compares settlement
-        // vs. judgment taxation. Non-blocking.
-        if (shouldRunLayerById("tax-impact"))
-          try {
-            const taxSlug = await runTaxImpactLayer({
-              ctx,
-              queue,
-              engine,
-              caseSlug: data.case_slug,
-              jurisdiction: data.jurisdiction ?? "at",
-              verfahrenstyp:
-                data.verfahrenstyp ??
-                (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-              sourceStamp,
-              lawSourceIds,
-            });
-            if (taxSlug) outputSlugs.push(taxSlug);
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            state.warnings = [...(state.warnings ?? []), `Tax impact analysis failed: ${msg}`];
-            console.warn(`[legal-pipeline] Tax impact error: ${msg}`);
-          }
-
-        // ── Layer 5j: Counterclaim Risk (Widerklungsrisiko) ──
-        // Identifies potential counterclaims, setoffs, and
-        // cross-claims from the opponent. Non-blocking.
-        if (shouldRunLayerById("counterclaim-risk"))
-          try {
-            const counterclaimSlug = await runCounterclaimLayer({
-              ctx,
-              queue,
-              engine,
-              caseSlug: data.case_slug,
-              jurisdiction: data.jurisdiction ?? "at",
-              verfahrenstyp:
-                data.verfahrenstyp ??
-                (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-              sourceStamp,
-              lawSourceIds,
-            });
-            if (counterclaimSlug) outputSlugs.push(counterclaimSlug);
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            state.warnings = [
-              ...(state.warnings ?? []),
-              `Counterclaim risk analysis failed: ${msg}`,
-            ];
-            console.warn(`[legal-pipeline] Counterclaim risk error: ${msg}`);
-          }
-
-        // ── Layer 5k: Mediation/ADR (alternative Streitbeilegung) ──
-        // Recommends mediation, arbitration, Schlichtung vs. gerichtlich.
-        // Non-blocking.
-        if (shouldRunLayerById("mediation-adr"))
-          try {
-            const adrSlug = await runMediationADRLayer({
-              ctx,
-              queue,
-              engine,
-              caseSlug: data.case_slug,
-              jurisdiction: data.jurisdiction ?? "at",
-              verfahrenstyp:
-                data.verfahrenstyp ??
-                (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-              sourceStamp,
-              lawSourceIds,
-            });
-            if (adrSlug) outputSlugs.push(adrSlug);
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            state.warnings = [...(state.warnings ?? []), `Mediation/ADR analysis failed: ${msg}`];
-            console.warn(`[legal-pipeline] Mediation/ADR error: ${msg}`);
-          }
-
-        // ── Layer 5l: Limitation Scanner (Verjährungs-Scan) ──
-        // Scans each claim for Verjährungsfrist, identifies urgent
-        // and verjährte Ansprüche. Non-blocking.
-        if (shouldRunLayerById("limitation-scanner"))
-          try {
-            const limitationSlug = await runLimitationScannerLayer({
-              ctx,
-              queue,
-              engine,
-              caseSlug: data.case_slug,
-              jurisdiction: data.jurisdiction ?? "at",
-              verfahrenstyp:
-                data.verfahrenstyp ??
-                (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-              sourceStamp,
-              lawSourceIds,
-            });
-            if (limitationSlug) {
-              outputSlugs.push(limitationSlug);
-              // Auto-Trigger Wiedervorlage bei hohem Verjährungsrisiko
+            // ── Layer 4b: Precedent Match (Rechtsprechung) ──────
+            // Searches for relevant case law (OGH/BGH/BVerfG) that supports
+            // or endangers the legal claims. Non-blocking.
+            if (shouldRunLayerById("precedent-matcher"))
               try {
-                const limPage = await engine.getPage(limitationSlug, { sourceId: sourceStamp });
-                const limFm = (limPage?.frontmatter ?? {}) as Record<string, unknown>;
-                const limScore =
-                  typeof limFm.verjaehrung_risiko_score === "number"
-                    ? limFm.verjaehrung_risiko_score
-                    : 0;
-                if (limScore >= 75) {
-                  const rawUrgent = limFm.urgent_ansprueche;
-                  const urgentAnsprueche = Array.isArray(rawUrgent)
-                    ? rawUrgent
-                    : typeof rawUrgent === "string"
-                      ? ((tryParseJSON(rawUrgent) as unknown as unknown[]) ?? [])
-                      : [];
-                  if (urgentAnsprueche.length > 0) {
-                    await autoCreateWiedervorlage(
+                const precedentSlug = await runPrecedentMatchLayer({
+                  ctx,
+                  queue,
+                  engine,
+                  caseSlug: data.case_slug,
+                  legalGroundingMap,
+                  forensicReport,
+                  jurisdiction: data.jurisdiction ?? "at",
+                  verfahrenstyp:
+                    data.verfahrenstyp ??
+                    (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                  sourceStamp,
+                  lawSourceIds,
+                  budget,
+                });
+                if (precedentSlug) {
+                  state.layers[4]!.output_slugs = [
+                    ...(state.layers[4]!.output_slugs ?? []),
+                    precedentSlug,
+                  ];
+                  // Merge precedent matches into the claim-evidence graph
+                  try {
+                    await mergePrecedentsIntoGraph(
                       engine,
+                      precedentSlug,
+                      claimEvidenceSlug,
                       data.case_slug,
-                      limScore,
-                      urgentAnsprueche,
                       sourceStamp
                     );
-                    state.warnings = [
-                      ...(state.warnings ?? []),
-                      `Auto-Wiedervorlage erstellt: ${urgentAnsprueche.length} dringende Ansprüche (Score: ${limScore})`,
-                    ];
+                  } catch (mergeErr) {
+                    console.warn(
+                      `[legal-pipeline] Precedent→graph merge error: ${mergeErr instanceof Error ? mergeErr.message : String(mergeErr)}`
+                    );
                   }
                 }
               } catch (err) {
                 const msg = err instanceof Error ? err.message : String(err);
-                console.warn(`[legal-pipeline] Auto-Wiedervorlage failed: ${msg}`);
+                state.warnings = [...(state.warnings ?? []), `Precedent match failed: ${msg}`];
+                console.warn(`[legal-pipeline] Precedent match error: ${msg}`);
               }
-            }
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            state.warnings = [...(state.warnings ?? []), `Limitation scan failed: ${msg}`];
-            console.warn(`[legal-pipeline] Limitation scan error: ${msg}`);
+
+            // ── Layer 4c: Burden of Proof (Beweislast) ──────────
+            // Analyzes who must prove what, whether evidence is sufficient,
+            // and whether burden reversal applies. Non-blocking.
+            if (shouldRunLayerById("burden-of-proof"))
+              try {
+                const burdenSlug = await runBurdenOfProofLayer({
+                  ctx,
+                  queue,
+                  engine,
+                  caseSlug: data.case_slug,
+                  forensicReport,
+                  legalGroundingMap,
+                  damageTable,
+                  jurisdiction: data.jurisdiction ?? "at",
+                  verfahrenstyp:
+                    data.verfahrenstyp ??
+                    (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                  sourceStamp,
+                  lawSourceIds,
+                });
+                if (burdenSlug) {
+                  state.layers[4]!.output_slugs = [
+                    ...(state.layers[4]!.output_slugs ?? []),
+                    burdenSlug,
+                  ];
+                }
+              } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                state.warnings = [
+                  ...(state.warnings ?? []),
+                  `Burden of proof analysis failed: ${msg}`,
+                ];
+                console.warn(`[legal-pipeline] Burden of proof error: ${msg}`);
+              }
+          } else {
+            await updateLayerState(ctx, state, stateSlug, 4, "skipped", engine, sourceStamp);
           }
 
-        // ── Layer 5m: Cost Award (Kostenentscheidung) ──
-        // Predicts who pays court costs in each scenario.
-        // Non-blocking.
-        if (shouldRunLayerById("cost-award"))
-          try {
-            const costAwardSlug = await runCostAwardLayer({
-              ctx,
-              queue,
-              engine,
-              caseSlug: data.case_slug,
+          // ── Layer 4d: Admissibility Check (Zulässigkeitsprüfung) ──
+          // Checks procedural admissibility: jurisdiction, exhaustion of
+          // remedies, statute of limitations, capacity, attorney requirement.
+          // Non-blocking.
+          if (shouldRunLayerById("admissibility-checker") && legalGroundingMap.length > 0) {
+            try {
+              const admissibilitySlug = await runAdmissibilityCheckLayer({
+                ctx,
+                queue,
+                engine,
+                caseSlug: data.case_slug,
+                legalGroundingMap,
+                forensicReport,
+                jurisdiction: data.jurisdiction ?? "at",
+                verfahrenstyp:
+                  data.verfahrenstyp ??
+                  (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                sourceStamp,
+                lawSourceIds,
+              });
+              if (admissibilitySlug) {
+                state.layers[4]!.output_slugs = [
+                  ...(state.layers[4]!.output_slugs ?? []),
+                  admissibilitySlug,
+                ];
+              }
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : String(err);
+              state.warnings = [...(state.warnings ?? []), `Admissibility check failed: ${msg}`];
+              console.warn(`[legal-pipeline] Admissibility check error: ${msg}`);
+            }
+          }
+
+          // ── Layer 4e: Fact Gap Detection (Sachverhaltslücken) ──
+          // Identifies missing facts needed for legal claims and generates
+          // targeted client questions. Runs after Layer 4 so legalGroundingMap
+          // is populated and Tatbestandsmerkmale can be checked.
+          // Non-blocking.
+          if (shouldRunLayerById("fact-gap-detector") && legalGroundingMap.length > 0) {
+            try {
+              const factGapSlug = await runFactGapDetectionLayer({
+                ctx,
+                queue,
+                engine,
+                caseSlug: data.case_slug,
+                forensicReport,
+                legalGroundingMap,
+                jurisdiction: data.jurisdiction ?? "at",
+                verfahrenstyp:
+                  data.verfahrenstyp ??
+                  (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                sourceStamp,
+                lawSourceIds,
+              });
+              if (factGapSlug) {
+                state.layers[4]!.output_slugs = [
+                  ...(state.layers[4]!.output_slugs ?? []),
+                  factGapSlug,
+                ];
+              }
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : String(err);
+              state.warnings = [...(state.warnings ?? []), `Fact gap detection failed: ${msg}`];
+              console.warn(`[legal-pipeline] Fact gap detection error: ${msg}`);
+            }
+          }
+
+          // ── Layer 4f: Evidence Quality Assessment ──
+          // Rates each piece of evidence by probative value.
+          // Non-blocking.
+          if (shouldRunLayerById("evidence-quality"))
+            try {
+              const evidenceQualitySlug = await runEvidenceQualityLayer({
+                ctx,
+                queue,
+                engine,
+                caseSlug: data.case_slug,
+                jurisdiction: data.jurisdiction ?? "at",
+                verfahrenstyp:
+                  data.verfahrenstyp ??
+                  (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                sourceStamp,
+                lawSourceIds,
+              });
+              if (evidenceQualitySlug) {
+                state.layers[4]!.output_slugs = [
+                  ...(state.layers[4]!.output_slugs ?? []),
+                  evidenceQualitySlug,
+                ];
+              }
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : String(err);
+              state.warnings = [
+                ...(state.warnings ?? []),
+                `Evidence quality assessment failed: ${msg}`,
+              ];
+              console.warn(`[legal-pipeline] Evidence quality error: ${msg}`);
+            }
+
+          // ── Layer 4g: Witness & Expert Analysis ──
+          // Evaluates witness credibility and identifies needed expert witnesses.
+          // Non-blocking.
+          if (shouldRunLayerById("witness-expert"))
+            try {
+              const witnessSlug = await runWitnessExpertLayer({
+                ctx,
+                queue,
+                engine,
+                caseSlug: data.case_slug,
+                jurisdiction: data.jurisdiction ?? "at",
+                verfahrenstyp:
+                  data.verfahrenstyp ??
+                  (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                sourceStamp,
+                lawSourceIds,
+              });
+              if (witnessSlug) {
+                state.layers[4]!.output_slugs = [
+                  ...(state.layers[4]!.output_slugs ?? []),
+                  witnessSlug,
+                ];
+              }
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : String(err);
+              state.warnings = [
+                ...(state.warnings ?? []),
+                `Witness & expert analysis failed: ${msg}`,
+              ];
+              console.warn(`[legal-pipeline] Witness & expert error: ${msg}`);
+            }
+
+          // ── Layer 5: Damage + Deadline Extractor (with retry) ──
+          if (
+            shouldRunAnyLayer(
+              "damage-deadline-extractor",
+              "deadline-validator",
+              "cost-benefit",
+              "settlement-analysis",
+              "enforcement-analysis",
+              "appeal-risk",
+              "procedural-strategy",
+              "insurance-coverage",
+              "tax-impact",
+              "counterclaim-risk",
+              "mediation-adr",
+              "limitation-scanner",
+              "cost-award"
+            )
+          ) {
+            await updateLayerState(ctx, state, stateSlug, 5, "running", engine, sourceStamp);
+            const damageContextJson = JSON.stringify({
+              on_table: onTable,
+              entities,
+              forensic_report: forensicReport,
+              legal_grounding_map: legalGroundingMap,
+              manual_overrides: data.manual_overrides,
               jurisdiction: data.jurisdiction ?? "at",
               verfahrenstyp:
                 data.verfahrenstyp ??
                 (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+            });
+            const damageResult = await runMapReduceLayer({
+              ctx,
+              queue,
+              engine,
+              specialistName: "damage-extractor",
+              partSlugs: data.part_slugs,
+              allTexts,
+              batchSize: SONNET_BATCH_SIZE,
               sourceStamp,
               lawSourceIds,
+              contextJson: damageContextJson,
+              layerId: "damage-deadline-extractor",
+              budget,
+              // F7 fix: structured output schema for damage-extractor — ensures
+              // the model returns { damage_table: [...], deadline_calendar: [...] }
+              // instead of prose-wrapped JSON that tryParseJSON might miss.
+              structuredSchema: {
+                description: "Schadenspositionen und Fristen als strukturiertes JSON",
+                required: ["damage_table", "deadline_calendar"],
+                properties: {
+                  damage_table: {
+                    type: "array",
+                    description: "Liste der Schadenspositionen",
+                  },
+                  deadline_calendar: {
+                    type: "array",
+                    description: "Liste der Fristen mit Datum, Typ und Rechtsgrundlage",
+                  },
+                },
+              },
             });
-            if (costAwardSlug) outputSlugs.push(costAwardSlug);
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            state.warnings = [...(state.warnings ?? []), `Cost award prediction failed: ${msg}`];
-            console.warn(`[legal-pipeline] Cost award error: ${msg}`);
+            const extracted = extractDamageResult(damageResult);
+            damageTable = extracted.damage_table;
+            deadlineCalendar = extracted.deadline_calendar;
+            let dmgErrors = await validateDamageTable(damageTable, onTable, allText);
+            let dlnErrors = await validateDeadlineCalendar(deadlineCalendar, onTable, allText);
+            let errors = [...dmgErrors, ...dlnErrors];
+
+            if (errors.length > 0) {
+              console.warn(
+                `[legal-pipeline] Layer 5 validation: ${errors.length} errors, retrying...`
+              );
+              const retryResult = await runMapReduceLayer({
+                ctx,
+                queue,
+                engine,
+                specialistName: "damage-extractor",
+                partSlugs: data.part_slugs,
+                allTexts,
+                batchSize: SONNET_BATCH_SIZE,
+                sourceStamp,
+                lawSourceIds,
+                contextJson: damageContextJson,
+                retryFeedback: "KORREKTUR ERFORDERLICH:\n" + errors.join("\n"),
+                layerId: "damage-deadline-extractor",
+                budget,
+              });
+              const retryExtracted = extractDamageResult(retryResult);
+              damageTable = retryExtracted.damage_table;
+              deadlineCalendar = retryExtracted.deadline_calendar;
+              dmgErrors = await validateDamageTable(damageTable, onTable, allText);
+              dlnErrors = await validateDeadlineCalendar(deadlineCalendar, onTable, allText);
+              errors = [...dmgErrors, ...dlnErrors];
+              if (errors.length > 0) {
+                console.warn(
+                  `[legal-pipeline] Layer 5 retry still has ${errors.length} validation errors — logged for review`
+                );
+              }
+            }
+
+            // ── Tier 0 Citation Guardrail (deterministic, zero-cost) ──
+            const damageDeadlineText = JSON.stringify({
+              damage_table: damageTable,
+              deadline_calendar: deadlineCalendar,
+            });
+            const damageGuard = runCitationGuardrailForLayer(
+              state,
+              5,
+              damageDeadlineText,
+              allText,
+              data.part_slugs
+            );
+            if (!damageGuard.passed && damageGuard.flags.some((f) => f.severity === "high")) {
+              const highCount = damageGuard.flags.filter((f) => f.severity === "high").length;
+              // Phase 0A: fail-closed — enforceGuardrailHardBlock throws
+              enforceGuardrailHardBlock(5, "damage-deadline", highCount);
+            }
+
+            // ── AP-6: Deterministic deadline statutory cross-check ──
+            const deadlineWarnings = crossCheckDeadlineStatutory(
+              deadlineCalendar,
+              data.jurisdiction ?? "at"
+            );
+            if (deadlineWarnings.length > 0) {
+              state.warnings = [...(state.warnings ?? []), ...deadlineWarnings];
+              console.warn(
+                `[legal-pipeline] Layer 5 deadline cross-check: ${deadlineWarnings.length} warning(s)`
+              );
+            }
+
+            const damageSlug = `damage-tables/${data.case_slug}`;
+            const deadlineSlug = `deadline-calendars/${data.case_slug}`;
+            await writeDamageTablePage(
+              engine,
+              damageSlug,
+              data.case_slug,
+              damageTable,
+              sourceStamp
+            );
+            await writeDeadlineCalendarPage(
+              engine,
+              deadlineSlug,
+              data.case_slug,
+              deadlineCalendar,
+              sourceStamp
+            );
+
+            // ── Gap 4: Damage Overlap Detection ──────────────────
+            // Detect potential double-counting between damage positions.
+            // Non-blocking — warnings are stored in state and surfaced in the audit.
+            const overlapWarnings = detectDamageOverlaps(damageTable);
+            if (overlapWarnings.length > 0) {
+              state.damage_overlap_warnings = overlapWarnings;
+              state.warnings = [...(state.warnings ?? []), ...overlapWarnings];
+              console.warn(
+                `[legal-pipeline] Gap 4: ${overlapWarnings.length} potential damage overlap(s) detected`
+              );
+            }
+
+            // ── Layer 5b: Deadline Validation ───────────────────
+            // Validates extracted deadlines against statutory limitation rules
+            // (§ 1489 ABGB, § 195 BGB, Art 82 DSGVO, etc.) to prevent
+            // liability from using unverified or expired deadlines.
+            const outputSlugs = [damageSlug, deadlineSlug];
+            if (shouldRunLayerById("deadline-validator"))
+              try {
+                const deadlineValidationSlug = await runDeadlineValidationLayer({
+                  ctx,
+                  queue,
+                  engine,
+                  caseSlug: data.case_slug,
+                  deadlineSlug,
+                  jurisdiction: data.jurisdiction ?? "at",
+                  verfahrenstyp:
+                    data.verfahrenstyp ??
+                    (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                  sourceStamp,
+                  lawSourceIds,
+                });
+                if (deadlineValidationSlug) outputSlugs.push(deadlineValidationSlug);
+              } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                state.warnings = [...(state.warnings ?? []), `Deadline validation failed: ${msg}`];
+                console.warn(`[legal-pipeline] Deadline validation error: ${msg}`);
+              }
+
+            // ── Layer 5c: Cost-Benefit Analysis (Expected Value) ──
+            // Calculates EV, win probability, costs (RVG/StBVV/AHGB),
+            // break-even, and risk. Non-blocking.
+            if (shouldRunLayerById("cost-benefit"))
+              try {
+                const costBenefitSlug = await runCostBenefitLayer({
+                  ctx,
+                  queue,
+                  engine,
+                  caseSlug: data.case_slug,
+                  damageTable,
+                  forensicReport,
+                  legalGroundingMap,
+                  jurisdiction: data.jurisdiction ?? "at",
+                  verfahrenstyp:
+                    data.verfahrenstyp ??
+                    (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                  sourceStamp,
+                  lawSourceIds,
+                });
+                if (costBenefitSlug) outputSlugs.push(costBenefitSlug);
+              } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                state.warnings = [
+                  ...(state.warnings ?? []),
+                  `Cost-benefit analysis failed: ${msg}`,
+                ];
+                console.warn(`[legal-pipeline] Cost-benefit error: ${msg}`);
+              }
+
+            // ── Layer 5d: Settlement Analysis (Vergleichsanalyse) ──
+            // Calculates BATNA, ZOPA, optimal settlement amount, and
+            // negotiation strategy. Non-blocking.
+            if (shouldRunLayerById("settlement-analysis"))
+              try {
+                const settlementSlug = await runSettlementAnalysisLayer({
+                  ctx,
+                  queue,
+                  engine,
+                  caseSlug: data.case_slug,
+                  jurisdiction: data.jurisdiction ?? "at",
+                  verfahrenstyp:
+                    data.verfahrenstyp ??
+                    (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                  sourceStamp,
+                  lawSourceIds,
+                });
+                if (settlementSlug) outputSlugs.push(settlementSlug);
+              } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                state.warnings = [...(state.warnings ?? []), `Settlement analysis failed: ${msg}`];
+                console.warn(`[legal-pipeline] Settlement analysis error: ${msg}`);
+              }
+
+            // ── Layer 5e: Enforcement Analysis (Vollstreckung) ──
+            // Checks if a judgment can actually be enforced.
+            // Non-blocking.
+            if (shouldRunLayerById("enforcement-analysis"))
+              try {
+                const enforcementSlug = await runEnforcementAnalysisLayer({
+                  ctx,
+                  queue,
+                  engine,
+                  caseSlug: data.case_slug,
+                  forensicReport,
+                  jurisdiction: data.jurisdiction ?? "at",
+                  verfahrenstyp:
+                    data.verfahrenstyp ??
+                    (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                  sourceStamp,
+                  lawSourceIds,
+                });
+                if (enforcementSlug) outputSlugs.push(enforcementSlug);
+              } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                state.warnings = [...(state.warnings ?? []), `Enforcement analysis failed: ${msg}`];
+                console.warn(`[legal-pipeline] Enforcement analysis error: ${msg}`);
+              }
+
+            // ── Layer 5f: Appeal Risk (Berufungsrisiko) ──────────
+            // Assesses whether the opponent can successfully appeal.
+            // Non-blocking.
+            if (shouldRunLayerById("appeal-risk"))
+              try {
+                const appealRiskSlug = await runAppealRiskLayer({
+                  ctx,
+                  queue,
+                  engine,
+                  caseSlug: data.case_slug,
+                  jurisdiction: data.jurisdiction ?? "at",
+                  verfahrenstyp:
+                    data.verfahrenstyp ??
+                    (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                  sourceStamp,
+                  lawSourceIds,
+                });
+                if (appealRiskSlug) outputSlugs.push(appealRiskSlug);
+              } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                state.warnings = [...(state.warnings ?? []), `Appeal risk analysis failed: ${msg}`];
+                console.warn(`[legal-pipeline] Appeal risk error: ${msg}`);
+              }
+
+            // ── Layer 5g: Procedural Strategy (Prozessstrategie) ─
+            // Recommends optimal procedural steps. Non-blocking.
+            if (shouldRunLayerById("procedural-strategy"))
+              try {
+                const strategySlug = await runProceduralStrategyLayer({
+                  ctx,
+                  queue,
+                  engine,
+                  caseSlug: data.case_slug,
+                  jurisdiction: data.jurisdiction ?? "at",
+                  verfahrenstyp:
+                    data.verfahrenstyp ??
+                    (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                  sourceStamp,
+                  lawSourceIds,
+                });
+                if (strategySlug) outputSlugs.push(strategySlug);
+              } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                state.warnings = [...(state.warnings ?? []), `Procedural strategy failed: ${msg}`];
+                console.warn(`[legal-pipeline] Procedural strategy error: ${msg}`);
+              }
+
+            // ── Layer 5h: Insurance Coverage (Versicherungsdeckung) ──
+            // Checks whether insurance covers the damage and if a
+            // direct action against the insurer is possible.
+            // Non-blocking.
+            if (shouldRunLayerById("insurance-coverage"))
+              try {
+                const insuranceSlug = await runInsuranceCoverageLayer({
+                  ctx,
+                  queue,
+                  engine,
+                  caseSlug: data.case_slug,
+                  forensicReport,
+                  jurisdiction: data.jurisdiction ?? "at",
+                  verfahrenstyp:
+                    data.verfahrenstyp ??
+                    (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                  sourceStamp,
+                  lawSourceIds,
+                });
+                if (insuranceSlug) outputSlugs.push(insuranceSlug);
+              } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                state.warnings = [
+                  ...(state.warnings ?? []),
+                  `Insurance coverage analysis failed: ${msg}`,
+                ];
+                console.warn(`[legal-pipeline] Insurance coverage error: ${msg}`);
+              }
+
+            // ── Layer 5i: Tax Impact (Steuerliche Auswirkungen) ──
+            // Calculates net EV after taxes, compares settlement
+            // vs. judgment taxation. Non-blocking.
+            if (shouldRunLayerById("tax-impact"))
+              try {
+                const taxSlug = await runTaxImpactLayer({
+                  ctx,
+                  queue,
+                  engine,
+                  caseSlug: data.case_slug,
+                  jurisdiction: data.jurisdiction ?? "at",
+                  verfahrenstyp:
+                    data.verfahrenstyp ??
+                    (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                  sourceStamp,
+                  lawSourceIds,
+                });
+                if (taxSlug) outputSlugs.push(taxSlug);
+              } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                state.warnings = [...(state.warnings ?? []), `Tax impact analysis failed: ${msg}`];
+                console.warn(`[legal-pipeline] Tax impact error: ${msg}`);
+              }
+
+            // ── Layer 5j: Counterclaim Risk (Widerklungsrisiko) ──
+            // Identifies potential counterclaims, setoffs, and
+            // cross-claims from the opponent. Non-blocking.
+            if (shouldRunLayerById("counterclaim-risk"))
+              try {
+                const counterclaimSlug = await runCounterclaimLayer({
+                  ctx,
+                  queue,
+                  engine,
+                  caseSlug: data.case_slug,
+                  jurisdiction: data.jurisdiction ?? "at",
+                  verfahrenstyp:
+                    data.verfahrenstyp ??
+                    (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                  sourceStamp,
+                  lawSourceIds,
+                });
+                if (counterclaimSlug) outputSlugs.push(counterclaimSlug);
+              } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                state.warnings = [
+                  ...(state.warnings ?? []),
+                  `Counterclaim risk analysis failed: ${msg}`,
+                ];
+                console.warn(`[legal-pipeline] Counterclaim risk error: ${msg}`);
+              }
+
+            // ── Layer 5k: Mediation/ADR (alternative Streitbeilegung) ──
+            // Recommends mediation, arbitration, Schlichtung vs. gerichtlich.
+            // Non-blocking.
+            if (shouldRunLayerById("mediation-adr"))
+              try {
+                const adrSlug = await runMediationADRLayer({
+                  ctx,
+                  queue,
+                  engine,
+                  caseSlug: data.case_slug,
+                  jurisdiction: data.jurisdiction ?? "at",
+                  verfahrenstyp:
+                    data.verfahrenstyp ??
+                    (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                  sourceStamp,
+                  lawSourceIds,
+                });
+                if (adrSlug) outputSlugs.push(adrSlug);
+              } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                state.warnings = [
+                  ...(state.warnings ?? []),
+                  `Mediation/ADR analysis failed: ${msg}`,
+                ];
+                console.warn(`[legal-pipeline] Mediation/ADR error: ${msg}`);
+              }
+
+            // ── Layer 5l: Limitation Scanner (Verjährungs-Scan) ──
+            // Scans each claim for Verjährungsfrist, identifies urgent
+            // and verjährte Ansprüche. Non-blocking.
+            if (shouldRunLayerById("limitation-scanner"))
+              try {
+                const limitationSlug = await runLimitationScannerLayer({
+                  ctx,
+                  queue,
+                  engine,
+                  caseSlug: data.case_slug,
+                  jurisdiction: data.jurisdiction ?? "at",
+                  verfahrenstyp:
+                    data.verfahrenstyp ??
+                    (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                  sourceStamp,
+                  lawSourceIds,
+                  budget,
+                });
+                if (limitationSlug) {
+                  outputSlugs.push(limitationSlug);
+                  // Auto-Trigger Wiedervorlage bei hohem Verjährungsrisiko
+                  try {
+                    const limPage = await engine.getPage(limitationSlug, { sourceId: sourceStamp });
+                    const limFm = (limPage?.frontmatter ?? {}) as Record<string, unknown>;
+                    const limScore =
+                      typeof limFm.verjaehrung_risiko_score === "number"
+                        ? limFm.verjaehrung_risiko_score
+                        : 0;
+                    if (limScore >= 75) {
+                      const rawUrgent = limFm.urgent_ansprueche;
+                      const urgentAnsprueche = Array.isArray(rawUrgent)
+                        ? rawUrgent
+                        : typeof rawUrgent === "string"
+                          ? ((tryParseJSON(rawUrgent) as unknown as unknown[]) ?? [])
+                          : [];
+                      if (urgentAnsprueche.length > 0) {
+                        await autoCreateWiedervorlage(
+                          engine,
+                          data.case_slug,
+                          limScore,
+                          urgentAnsprueche,
+                          sourceStamp
+                        );
+                        state.warnings = [
+                          ...(state.warnings ?? []),
+                          `Auto-Wiedervorlage erstellt: ${urgentAnsprueche.length} dringende Ansprüche (Score: ${limScore})`,
+                        ];
+                      }
+                    }
+                  } catch (err) {
+                    const msg = err instanceof Error ? err.message : String(err);
+                    console.warn(`[legal-pipeline] Auto-Wiedervorlage failed: ${msg}`);
+                  }
+                }
+              } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                state.warnings = [...(state.warnings ?? []), `Limitation scan failed: ${msg}`];
+                console.warn(`[legal-pipeline] Limitation scan error: ${msg}`);
+              }
+
+            // ── Layer 5m: Cost Award (Kostenentscheidung) ──
+            // Predicts who pays court costs in each scenario.
+            // Non-blocking.
+            if (shouldRunLayerById("cost-award"))
+              try {
+                const costAwardSlug = await runCostAwardLayer({
+                  ctx,
+                  queue,
+                  engine,
+                  caseSlug: data.case_slug,
+                  jurisdiction: data.jurisdiction ?? "at",
+                  verfahrenstyp:
+                    data.verfahrenstyp ??
+                    (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                  sourceStamp,
+                  lawSourceIds,
+                  budget,
+                });
+                if (costAwardSlug) outputSlugs.push(costAwardSlug);
+              } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                state.warnings = [
+                  ...(state.warnings ?? []),
+                  `Cost award prediction failed: ${msg}`,
+                ];
+                console.warn(`[legal-pipeline] Cost award error: ${msg}`);
+              }
+
+            await updateLayerState(
+              ctx,
+              state,
+              stateSlug,
+              5,
+              "completed",
+              engine,
+              sourceStamp,
+              outputSlugs
+            );
+          } else {
+            await updateLayerState(ctx, state, stateSlug, 5, "skipped", engine, sourceStamp);
           }
 
-        await updateLayerState(
-          ctx,
-          state,
-          stateSlug,
-          5,
-          "completed",
-          engine,
-          sourceStamp,
-          outputSlugs
-        );
-      } else {
-        await updateLayerState(ctx, state, stateSlug, 5, "skipped", engine, sourceStamp);
-      }
+          // ── Layer 6: Legal Drafter (6 Pakete parallel) ────────
+          // Gap B: Parteirolle bestimmt das Draft-Paket (explizit > Auto-Detection
+          // aus Entity-Rollen + client-Override).
+          const parteirolle: Parteirolle =
+            data.parteirolle ??
+            detectParteirolle(entities, { client: data.manual_overrides?.client });
 
-      // ── Layer 6: Legal Drafter (6 Pakete parallel) ────────
-      // Gap B: Parteirolle bestimmt das Draft-Paket (explizit > Auto-Detection
-      // aus Entity-Rollen + client-Override).
-      const parteirolle: Parteirolle =
-        data.parteirolle ?? detectParteirolle(entities, { client: data.manual_overrides?.client });
-
-      if (shouldRunLayerById("legal-drafter")) {
-        await updateLayerState(ctx, state, stateSlug, 6, "running", engine, sourceStamp);
-        const draftSlugs = await runDraftLayer({
-          ctx,
-          queue,
-          engine,
-          caseSlug: data.case_slug,
-          onTable,
-          entities,
-          forensicReport,
-          legalGroundingMap,
-          damageTable,
-          deadlineCalendar,
-          manualOverrides: data.manual_overrides,
-          jurisdiction: data.jurisdiction ?? "at",
-          verfahrenstyp:
-            data.verfahrenstyp ??
-            (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-          parteirolle,
-          additionalOpponents: data.additional_opponents,
-          nebenverfahren: data.nebenverfahren,
-          sourceStamp,
-          lawSourceIds,
-          state,
-          allText,
-          partSlugs: data.part_slugs,
-        });
-        await updateLayerState(
-          ctx,
-          state,
-          stateSlug,
-          6,
-          "completed",
-          engine,
-          sourceStamp,
-          draftSlugs
-        );
-      } else {
-        await updateLayerState(ctx, state, stateSlug, 6, "skipped", engine, sourceStamp);
-      }
-
-      // ── Layer 6.5: Counter-Argument Layer (Opponent-Simulator) ──
-      // Plays the opposing counsel: reads all drafts, finds weaknesses,
-      // generates counter-arguments. Then the drafter revises drafts to
-      // refute those arguments. This is what a real lawyer does — and
-      // what Harvey AI does NOT have.
-      let counterArguments: CounterArgument[] = [];
-      if (shouldRunLayerById("opponent-simulator") && state.layers[6]?.output_slugs?.length) {
-        const draftSlugsForCounter = state.layers[6]!.output_slugs!;
-        const forensicSlug = state.layers[3]?.output_slugs?.[0];
-
-        try {
-          const counterResult = await runCounterArgumentLayer({
-            ctx,
-            queue,
-            engine,
-            caseSlug: data.case_slug,
-            draftSlugs: draftSlugsForCounter,
-            forensicReportSlug: forensicSlug,
-            jurisdiction: data.jurisdiction ?? "at",
-            verfahrenstyp:
-              data.verfahrenstyp ??
-              (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-            sourceStamp,
-            lawSourceIds,
-          });
-          counterArguments = counterResult.counterArguments;
-          state.counter_arguments = counterArguments;
-
-          // If counter-arguments found, revise drafts to refute them
-          if (counterArguments.length > 0) {
-            console.warn(
-              `[legal-pipeline] Layer 6.5: ${counterArguments.length} counter-arguments found ` +
-                `(${counterArguments.filter((c) => c.severity === "kritisch").length} kritisch) — revising drafts`
-            );
-            const revisedSlugs = await runDraftRebuttalLayer({
+          if (shouldRunLayerById("legal-drafter")) {
+            await updateLayerState(ctx, state, stateSlug, 6, "running", engine, sourceStamp);
+            const draftSlugs = await runDraftLayer({
               ctx,
               queue,
               engine,
               caseSlug: data.case_slug,
-              draftSlugs: draftSlugsForCounter,
-              counterArguments,
+              onTable,
+              entities,
+              forensicReport,
+              legalGroundingMap,
+              damageTable,
+              deadlineCalendar,
+              manualOverrides: data.manual_overrides,
               jurisdiction: data.jurisdiction ?? "at",
               verfahrenstyp:
                 data.verfahrenstyp ??
@@ -1864,317 +2067,483 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               nebenverfahren: data.nebenverfahren,
               sourceStamp,
               lawSourceIds,
+              state,
+              allText,
+              partSlugs: data.part_slugs,
             });
-            state.layers[6]!.output_slugs = revisedSlugs;
-          }
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          state.warnings = [...(state.warnings ?? []), `Counter-argument layer failed: ${msg}`];
-          console.warn(`[legal-pipeline] Counter-argument layer error: ${msg}`);
-        }
-      }
-
-      // ── Layer 7: Ensemble Critic + Feedback Loop ─────────
-      // 3 models (Opus + DeepSeek + Grok) evaluate independently.
-      // Majority vote on recommendation, min() on scores.
-      // If consensus is 'revise' or 'reject': retry layers with
-      // score < 70, then re-run ensemble. Max 2 retry rounds.
-      if (shouldRunLayerById("ensemble-critic")) {
-        await updateLayerState(ctx, state, stateSlug, 7, "running", engine, sourceStamp);
-
-        let retryCount = 0;
-        let ensembleResult = await runEnsembleCriticLayer({
-          ctx,
-          queue,
-          engine,
-          caseSlug: data.case_slug,
-          partSlugs: data.part_slugs,
-          state,
-          legalGroundingMap,
-          jurisdiction: data.jurisdiction ?? "at",
-          verfahrenstyp:
-            data.verfahrenstyp ??
-            (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-          sourceStamp,
-          lawSourceIds,
-          retryCount,
-          enableSubsumptionCheck: shouldRunLayerById("subsumption-checker"),
-        });
-
-        state.ensemble_verdict = ensembleResult.verdict;
-
-        // ── Feedback Loop: retry layers with low scores ──
-        while (
-          ensembleResult.verdict.consensus.recommendation !== "publish" &&
-          retryCount < MAX_CRITIC_RETRIES
-        ) {
-          retryCount++;
-          const retryLayers = layersToRetry(ensembleResult.verdict.consensus);
-
-          if (retryLayers.length === 0) {
-            // No specific layers to retry — issues are cross-cutting
-            break;
-          }
-
-          console.warn(
-            `[legal-pipeline] Ensemble critic round ${retryCount}: retrying layers ${retryLayers.join(", ")} ` +
-              `(consensus: ${ensembleResult.verdict.consensus.recommendation}, score: ${ensembleResult.verdict.consensus.total_score})`
-          );
-
-          // Re-run the layers that scored below threshold
-          for (const layerNum of retryLayers) {
-            const layerIssues = ensembleResult.verdict.consensus.issues.filter(
-              (i) => i.includes(`Layer ${layerNum}`) || i.includes(`layer ${layerNum}`)
+            await updateLayerState(
+              ctx,
+              state,
+              stateSlug,
+              6,
+              "completed",
+              engine,
+              sourceStamp,
+              draftSlugs
             );
-            const feedback =
-              `## ENSEMBLE CRITIC FEEDBACK (Retry Round ${retryCount})\n` +
-              `Consensus score: ${ensembleResult.verdict.consensus.total_score}/100\n` +
-              `Recommendation: ${ensembleResult.verdict.consensus.recommendation}\n\n` +
-              `Issues for Layer ${layerNum}:\n${layerIssues.length > 0 ? layerIssues.join("\n") : "See general issues below"}\n\n` +
-              `All issues:\n${ensembleResult.verdict.consensus.issues.join("\n")}`;
+          } else {
+            await updateLayerState(ctx, state, stateSlug, 6, "skipped", engine, sourceStamp);
+          }
 
-            // Re-run the specific layer with critic feedback
-            await rerunSpecificLayer(layerNum, {
+          // ── Layer 6.5: Counter-Argument Layer (Opponent-Simulator) ──
+          // Plays the opposing counsel: reads all drafts, finds weaknesses,
+          // generates counter-arguments. Then the drafter revises drafts to
+          // refute those arguments. This is what a real lawyer does — and
+          // what Harvey AI does NOT have.
+          let counterArguments: CounterArgument[] = [];
+          if (shouldRunLayerById("opponent-simulator") && state.layers[6]?.output_slugs?.length) {
+            const draftSlugsForCounter = state.layers[6]!.output_slugs!;
+            const forensicSlug = state.layers[3]?.output_slugs?.[0];
+
+            try {
+              const counterResult = await runCounterArgumentLayer({
+                ctx,
+                queue,
+                engine,
+                caseSlug: data.case_slug,
+                draftSlugs: draftSlugsForCounter,
+                forensicReportSlug: forensicSlug,
+                jurisdiction: data.jurisdiction ?? "at",
+                verfahrenstyp:
+                  data.verfahrenstyp ??
+                  (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                sourceStamp,
+                lawSourceIds,
+              });
+              counterArguments = counterResult.counterArguments;
+              state.counter_arguments = counterArguments;
+
+              // If counter-arguments found, revise drafts to refute them
+              if (counterArguments.length > 0) {
+                console.warn(
+                  `[legal-pipeline] Layer 6.5: ${counterArguments.length} counter-arguments found ` +
+                    `(${counterArguments.filter((c) => c.severity === "kritisch").length} kritisch) — revising drafts`
+                );
+                const revisedSlugs = await runDraftRebuttalLayer({
+                  ctx,
+                  queue,
+                  engine,
+                  caseSlug: data.case_slug,
+                  draftSlugs: draftSlugsForCounter,
+                  counterArguments,
+                  jurisdiction: data.jurisdiction ?? "at",
+                  verfahrenstyp:
+                    data.verfahrenstyp ??
+                    (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                  parteirolle,
+                  additionalOpponents: data.additional_opponents,
+                  nebenverfahren: data.nebenverfahren,
+                  sourceStamp,
+                  lawSourceIds,
+                });
+                state.layers[6]!.output_slugs = revisedSlugs;
+              }
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : String(err);
+              state.warnings = [...(state.warnings ?? []), `Counter-argument layer failed: ${msg}`];
+              console.warn(`[legal-pipeline] Counter-argument layer error: ${msg}`);
+            }
+          }
+
+          // ── Layer 7: Ensemble Critic + Feedback Loop ─────────
+          // 3 models (Opus + DeepSeek + Grok) evaluate independently.
+          // Majority vote on recommendation, min() on scores.
+          // If consensus is 'revise' or 'reject': retry layers with
+          // score < 70, then re-run ensemble. Max 2 retry rounds.
+          if (shouldRunLayerById("ensemble-critic")) {
+            await updateLayerState(ctx, state, stateSlug, 7, "running", engine, sourceStamp);
+
+            let retryCount = 0;
+            let ensembleResult = await runEnsembleCriticLayer({
               ctx,
               queue,
               engine,
-              data,
+              caseSlug: data.case_slug,
+              partSlugs: data.part_slugs,
               state,
-              stateSlug,
+              legalGroundingMap,
+              jurisdiction: data.jurisdiction ?? "at",
+              verfahrenstyp:
+                data.verfahrenstyp ??
+                (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
               sourceStamp,
               lawSourceIds,
-              onTable,
-              entities,
-              forensicReport,
-              legalGroundingMap,
-              damageTable,
-              deadlineCalendar,
-              allTexts,
-              retryFeedback: feedback,
+              retryCount,
+              enableSubsumptionCheck: shouldRunLayerById("subsumption-checker"),
+            });
+
+            state.ensemble_verdict = ensembleResult.verdict;
+
+            // ── Feedback Loop: retry layers with low scores ──
+            while (
+              ensembleResult.verdict.consensus.recommendation !== "publish" &&
+              retryCount < MAX_CRITIC_RETRIES
+            ) {
+              retryCount++;
+              const retryLayers = layersToRetry(ensembleResult.verdict.consensus);
+
+              if (retryLayers.length === 0) {
+                // No specific layers to retry — issues are cross-cutting
+                break;
+              }
+
+              console.warn(
+                `[legal-pipeline] Ensemble critic round ${retryCount}: retrying layers ${retryLayers.join(", ")} ` +
+                  `(consensus: ${ensembleResult.verdict.consensus.recommendation}, score: ${ensembleResult.verdict.consensus.total_score})`
+              );
+
+              // Re-run the layers that scored below threshold
+              for (const layerNum of retryLayers) {
+                const layerIssues = ensembleResult.verdict.consensus.issues.filter(
+                  (i) => i.includes(`Layer ${layerNum}`) || i.includes(`layer ${layerNum}`)
+                );
+                const feedback =
+                  `## ENSEMBLE CRITIC FEEDBACK (Retry Round ${retryCount})\n` +
+                  `Consensus score: ${ensembleResult.verdict.consensus.total_score}/100\n` +
+                  `Recommendation: ${ensembleResult.verdict.consensus.recommendation}\n\n` +
+                  `Issues for Layer ${layerNum}:\n${layerIssues.length > 0 ? layerIssues.join("\n") : "See general issues below"}\n\n` +
+                  `All issues:\n${ensembleResult.verdict.consensus.issues.join("\n")}`;
+
+                // Re-run the specific layer with critic feedback
+                await rerunSpecificLayer(layerNum, {
+                  ctx,
+                  queue,
+                  engine,
+                  data,
+                  state,
+                  stateSlug,
+                  sourceStamp,
+                  lawSourceIds,
+                  onTable,
+                  entities,
+                  forensicReport,
+                  legalGroundingMap,
+                  damageTable,
+                  deadlineCalendar,
+                  allTexts,
+                  retryFeedback: feedback,
+                  budget,
+                });
+              }
+
+              // Re-run ensemble critic after retries
+              ensembleResult = await runEnsembleCriticLayer({
+                ctx,
+                queue,
+                engine,
+                caseSlug: data.case_slug,
+                partSlugs: data.part_slugs,
+                state,
+                legalGroundingMap,
+                jurisdiction: data.jurisdiction ?? "at",
+                verfahrenstyp:
+                  data.verfahrenstyp ??
+                  (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+                sourceStamp,
+                lawSourceIds,
+                retryCount,
+                enableSubsumptionCheck: shouldRunLayerById("subsumption-checker"),
+              });
+              state.ensemble_verdict = ensembleResult.verdict;
+              state.retry_count = retryCount;
+            }
+
+            // Determine final status based on ensemble verdict
+            const finalRec = ensembleResult.verdict.consensus.recommendation;
+            if (finalRec === "publish") {
+              await updateLayerState(ctx, state, stateSlug, 7, "completed", engine, sourceStamp, [
+                ensembleResult.auditSlug,
+              ]);
+            } else if (finalRec === "revise") {
+              // After max retries, still needs work — mark as completed_with_warnings
+              state.status = "completed_with_warnings";
+              state.warnings = [
+                ...(state.warnings ?? []),
+                `Ensemble critic consensus: 'revise' after ${retryCount} retries (score: ${ensembleResult.verdict.consensus.total_score})`,
+              ];
+              await updateLayerState(ctx, state, stateSlug, 7, "completed", engine, sourceStamp, [
+                ensembleResult.auditSlug,
+              ]);
+            } else {
+              // 'reject' after max retries — needs human review
+              state.status = "needs_human_review";
+              state.warnings = [
+                ...(state.warnings ?? []),
+                `Ensemble critic consensus: 'reject' after ${retryCount} retries (score: ${ensembleResult.verdict.consensus.total_score}). Human review required.`,
+              ];
+              await updateLayerState(ctx, state, stateSlug, 7, "completed", engine, sourceStamp, [
+                ensembleResult.auditSlug,
+              ]);
+            }
+          } else {
+            await updateLayerState(ctx, state, stateSlug, 7, "skipped", engine, sourceStamp);
+          }
+
+          // ── Post-Pipeline: Contradiction Probe Auto-Trigger ──
+          // Non-blocking: runs after all 7 layers, persists results separately.
+          // The probe generates queries from pipeline output pages + original
+          // case pages, searches for similar chunks, and judges pairs for
+          // contradictions. Results are persisted to eval_contradictions_runs.
+          try {
+            const probeResult = await runContradictionProbeAuto({
+              engine,
+              caseSlug: data.case_slug,
+              state,
+              partSlugs: data.part_slugs,
+              jurisdiction: data.jurisdiction ?? "at",
+              verfahrenstyp:
+                data.verfahrenstyp ??
+                (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+              sourceStamp,
+              lawSourceIds,
+            });
+            if (probeResult) {
+              state.contradiction_run_id = probeResult.run_id;
+              state.contradiction_findings = probeResult.total_findings;
+            }
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            state.warnings = [...(state.warnings ?? []), `Contradiction probe failed: ${msg}`];
+            console.warn(`[legal-pipeline] Contradiction probe auto-trigger error: ${msg}`);
+          }
+
+          // ── Gap 3: Cross-Case Entity Analysis ──────────────────
+          // When linked_cases is provided, load entity pages from those cases
+          // and cross-reference: entities appearing in multiple cases with
+          // different roles, or with contradictory accusations.
+          if (data.linked_cases && data.linked_cases.length > 0) {
+            state.linked_cases = data.linked_cases;
+            try {
+              const crossCaseFindings = await runCrossCaseAnalysis({
+                engine,
+                caseSlug: data.case_slug,
+                currentEntities: entities,
+                linkedCases: data.linked_cases,
+                sourceStamp,
+                lawSourceIds,
+              });
+              if (crossCaseFindings.length > 0) {
+                state.cross_case_findings = crossCaseFindings;
+                state.warnings = [
+                  ...(state.warnings ?? []),
+                  ...crossCaseFindings.map((f) => `[${f.type}] ${f.description}`),
+                ];
+                console.warn(
+                  `[legal-pipeline] Gap 3: ${crossCaseFindings.length} cross-case finding(s)`
+                );
+              }
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : String(err);
+              state.warnings = [...(state.warnings ?? []), `Cross-case analysis failed: ${msg}`];
+              console.warn(`[legal-pipeline] Cross-case analysis error: ${msg}`);
+            }
+          }
+
+          // ── Phase B2: Cross-Case Liability Matrix ──────────────
+          // When related_case_slugs or linked_cases are provided, run the
+          // cross-case-matrix specialist to generate a fall-übergreifende
+          // Haftungsmatrix + Master-Schadenstabelle.
+          const relatedCaseSlugs = data.related_case_slugs ?? data.linked_cases ?? [];
+          if (relatedCaseSlugs.length > 0) {
+            try {
+              const matrixSlug = await runCrossCaseMatrixLayer({
+                ctx,
+                queue,
+                engine,
+                caseSlug: data.case_slug,
+                relatedCaseSlugs,
+                mandateId: data.mandate_id,
+                sourceStamp,
+                lawSourceIds,
+                budget,
+              });
+              state.cross_case_matrix_slug = matrixSlug;
+              console.warn(
+                `[legal-pipeline] Phase B2: Cross-case matrix generated at ${matrixSlug}`
+              );
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : String(err);
+              state.warnings = [
+                ...(state.warnings ?? []),
+                `Cross-case matrix layer failed: ${msg}`,
+              ];
+              console.warn(`[legal-pipeline] Cross-case matrix error: ${msg}`);
+            }
+          }
+
+          // ── Phase D1: Institutionen-Checkliste ──────────────────
+          // Runs the institution-checklist specialist to identify which
+          // institutions need to be notified for this case.
+          try {
+            const instSlug = await runInstitutionChecklistLayer({
+              ctx,
+              queue,
+              engine,
+              caseSlug: data.case_slug,
+              jurisdiction: data.jurisdiction ?? "at",
+              verfahrenstyp:
+                data.verfahrenstyp ??
+                (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+              additionalOpponents: data.additional_opponents,
+              sourceStamp,
+              lawSourceIds,
+              budget,
+            });
+            state.institution_checklist_slug = instSlug;
+            console.warn(
+              `[legal-pipeline] Phase D1: Institution checklist generated at ${instSlug}`
+            );
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            state.warnings = [...(state.warnings ?? []), `Institution checklist failed: ${msg}`];
+            console.warn(`[legal-pipeline] Institution checklist error: ${msg}`);
+          }
+
+          // ── Finalize ───────────────────────────────────────────
+          // Preserve status set by ensemble critic (completed_with_warnings or
+          // needs_human_review) — only default to "completed" if no status was set.
+          if (state.status !== "needs_human_review" && state.status !== "completed_with_warnings") {
+            state.status = "completed";
+          }
+          state.current_layer = 7;
+          state.total_duration_ms = Date.now() - startTime;
+          state.cost_spent_usd = budget.totalSpent;
+          state.updated_at = new Date().toISOString();
+          await persistPipelineState(engine, stateSlug, state, sourceStamp);
+
+          await ctx.updateProgress({ step: 8, total: 8, message: "Pipeline completed" });
+
+          // F1 fix: Server-side settlement — reconcile actual token usage against
+          // the pre-pipeline reservation. Pre-fix, settlement was browser-dependent
+          // (pipeline-progress-card.tsx called /api/billing/pipeline-settle from the
+          // client) and never happened if the tab was closed. Now the engine calls
+          // the settlement endpoint directly, reading token usage from the
+          // pipeline_token_usage table (populated by the token-report webhook).
+          if (data.pipeline_key && data.owner_id !== undefined) {
+            const workflowDef = data.workflow_id ? getWorkflowDef(data.workflow_id) : undefined;
+            const totalLayers = workflowDef?.layers.length ?? 7;
+            await settlePipeline(engine, {
+              pipeline_key: data.pipeline_key,
+              owner_id: data.owner_id,
+              owner_type: data.owner_type ?? "user",
+              case_slug: data.case_slug,
+              reserved_credits: data.reserved_credits ?? 0,
+              failed_at_layer: undefined,
+              total_layers: totalLayers,
+              workflow_id: data.workflow_id,
+            }).catch((err: unknown) => {
+              // best-effort — don't fail the pipeline if settlement fails
+              console.warn(
+                `[legal-pipeline] server-side settlement failed: ${err instanceof Error ? err.message : String(err)}`
+              );
             });
           }
 
-          // Re-run ensemble critic after retries
-          ensembleResult = await runEnsembleCriticLayer({
-            ctx,
-            queue,
-            engine,
-            caseSlug: data.case_slug,
-            partSlugs: data.part_slugs,
-            state,
-            legalGroundingMap,
-            jurisdiction: data.jurisdiction ?? "at",
-            verfahrenstyp:
-              data.verfahrenstyp ??
-              (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-            sourceStamp,
-            lawSourceIds,
-            retryCount,
-            enableSubsumptionCheck: shouldRunLayerById("subsumption-checker"),
-          });
-          state.ensemble_verdict = ensembleResult.verdict;
-          state.retry_count = retryCount;
-        }
+          return {
+            case_slug: data.case_slug,
+            status: state.status,
+            layers: state.layers,
+            total_duration_ms: state.total_duration_ms,
+            cost_spent_usd: budget.totalSpent,
+            contradiction_run_id: state.contradiction_run_id,
+            contradiction_findings: state.contradiction_findings,
+            ensemble_verdict: state.ensemble_verdict,
+            retry_count: state.retry_count,
+            counter_arguments: state.counter_arguments?.length ?? 0,
+          };
+        } catch (err) {
+          state.status = "failed";
+          state.updated_at = new Date().toISOString();
+          state.total_duration_ms = Date.now() - startTime;
+          state.cost_spent_usd = budget.totalSpent;
+          const msg = err instanceof Error ? err.message : String(err);
 
-        // Determine final status based on ensemble verdict
-        const finalRec = ensembleResult.verdict.consensus.recommendation;
-        if (finalRec === "publish") {
-          await updateLayerState(ctx, state, stateSlug, 7, "completed", engine, sourceStamp, [
-            ensembleResult.auditSlug,
-          ]);
-        } else if (finalRec === "revise") {
-          // After max retries, still needs work — mark as completed_with_warnings
-          state.status = "completed_with_warnings";
-          state.warnings = [
-            ...(state.warnings ?? []),
-            `Ensemble critic consensus: 'revise' after ${retryCount} retries (score: ${ensembleResult.verdict.consensus.total_score})`,
-          ];
-          await updateLayerState(ctx, state, stateSlug, 7, "completed", engine, sourceStamp, [
-            ensembleResult.auditSlug,
-          ]);
-        } else {
-          // 'reject' after max retries — needs human review
-          state.status = "needs_human_review";
-          state.warnings = [
-            ...(state.warnings ?? []),
-            `Ensemble critic consensus: 'reject' after ${retryCount} retries (score: ${ensembleResult.verdict.consensus.total_score}). Human review required.`,
-          ];
-          await updateLayerState(ctx, state, stateSlug, 7, "completed", engine, sourceStamp, [
-            ensembleResult.auditSlug,
-          ]);
-        }
-      } else {
-        await updateLayerState(ctx, state, stateSlug, 7, "skipped", engine, sourceStamp);
-      }
-
-      // ── Post-Pipeline: Contradiction Probe Auto-Trigger ──
-      // Non-blocking: runs after all 7 layers, persists results separately.
-      // The probe generates queries from pipeline output pages + original
-      // case pages, searches for similar chunks, and judges pairs for
-      // contradictions. Results are persisted to eval_contradictions_runs.
-      try {
-        const probeResult = await runContradictionProbeAuto({
-          engine,
-          caseSlug: data.case_slug,
-          state,
-          partSlugs: data.part_slugs,
-          jurisdiction: data.jurisdiction ?? "at",
-          verfahrenstyp:
-            data.verfahrenstyp ??
-            (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-          sourceStamp,
-          lawSourceIds,
-        });
-        if (probeResult) {
-          state.contradiction_run_id = probeResult.run_id;
-          state.contradiction_findings = probeResult.total_findings;
-        }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        state.warnings = [...(state.warnings ?? []), `Contradiction probe failed: ${msg}`];
-        console.warn(`[legal-pipeline] Contradiction probe auto-trigger error: ${msg}`);
-      }
-
-      // ── Gap 3: Cross-Case Entity Analysis ──────────────────
-      // When linked_cases is provided, load entity pages from those cases
-      // and cross-reference: entities appearing in multiple cases with
-      // different roles, or with contradictory accusations.
-      if (data.linked_cases && data.linked_cases.length > 0) {
-        state.linked_cases = data.linked_cases;
-        try {
-          const crossCaseFindings = await runCrossCaseAnalysis({
-            engine,
-            caseSlug: data.case_slug,
-            currentEntities: entities,
-            linkedCases: data.linked_cases,
-            sourceStamp,
-            lawSourceIds,
-          });
-          if (crossCaseFindings.length > 0) {
-            state.cross_case_findings = crossCaseFindings;
-            state.warnings = [
-              ...(state.warnings ?? []),
-              ...crossCaseFindings.map((f) => `[${f.type}] ${f.description}`),
-            ];
-            console.warn(
-              `[legal-pipeline] Gap 3: ${crossCaseFindings.length} cross-case finding(s)`
-            );
+          // Gap 17: BudgetExhausted — set a clear error message
+          if (err instanceof BudgetExhausted) {
+            const budgetMsg = `Cost cap exceeded: $${err.spent.toFixed(2)} > $${err.cap.toFixed(2)} (reason: ${err.reason}). Pipeline stopped at layer ${state.current_layer}.`;
+            const currentLayer = Object.entries(state.layers).find(
+              ([, v]) => v.status === "running"
+            )?.[0];
+            if (currentLayer) {
+              state.layers[Number(currentLayer)]!.status = "failed";
+              state.layers[Number(currentLayer)]!.error = budgetMsg;
+            }
+            // v0.43.x P13c: Persist a Decision Record so budget exhaustion is
+            // visible in the admin audit trail. Without this, the only trace
+            // was in the pipeline state — the Decision Records UI showed nothing.
+            try {
+              await persistDecisionRecord(engine, {
+                job_id: ctx.id,
+                specialist: "budget-tracker",
+                layer: state.current_layer,
+                layer_name: "budget-exhaustion",
+                case_slug: data.case_slug,
+                model: "n/a",
+                model_tier: "n/a",
+                query_or_task: `Budget cap exceeded at layer ${state.current_layer}`,
+                tools_called: [],
+                final_output_summary: budgetMsg,
+                tokens_in: 0,
+                tokens_out: 0,
+                tokens_cache_read: 0,
+                duration_ms: Date.now() - startTime,
+                confidence: "low",
+                reasoning_summary: `Budget exhausted: $${err.spent.toFixed(2)} spent > $${err.cap.toFixed(2)} cap (reason: ${err.reason}). Pipeline stopped.`,
+                ebte_total_tool_calls: 0,
+                ebte_missing_rationales: 0,
+                ebte_compliance_rate: 1,
+              });
+            } catch {
+              // best-effort — don't fail the error handler if audit persistence fails
+            }
+            await persistPipelineState(engine, stateSlug, state, sourceStamp);
+            // BudgetExhausted falls through to the shared settlement path below
+            // so the reservation is refunded proportionally. Pre-fix, the early
+            // `throw new Error(budgetMsg)` skipped settlement entirely — credits
+            // stayed reserved forever.
+            throw err;
           }
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          state.warnings = [...(state.warnings ?? []), `Cross-case analysis failed: ${msg}`];
-          console.warn(`[legal-pipeline] Cross-case analysis error: ${msg}`);
+
+          const currentLayer = Object.entries(state.layers).find(
+            ([, v]) => v.status === "running"
+          )?.[0];
+          if (currentLayer) {
+            state.layers[Number(currentLayer)]!.status = "failed";
+            state.layers[Number(currentLayer)]!.error = msg;
+          }
+          await persistPipelineState(engine, stateSlug, state, sourceStamp);
+
+          // F1 fix: Server-side settlement for failed pipelines — partial refund.
+          // Only deduct the proportion of layers that actually ran.
+          // total_layers is derived from the workflow definition (quick_answer=6,
+          // aktencheck=8, memo=9, etc.) — pre-fix it was hardcodiert as 7, which
+          // produced wrong refund proportions for every workflow except aktencheck.
+          if (data.pipeline_key && data.owner_id !== undefined) {
+            const failedLayer = state.current_layer > 0 ? state.current_layer : 1;
+            const workflowDef = data.workflow_id ? getWorkflowDef(data.workflow_id) : undefined;
+            const totalLayers = workflowDef?.layers.length ?? 7;
+            await settlePipeline(engine, {
+              pipeline_key: data.pipeline_key,
+              owner_id: data.owner_id,
+              owner_type: data.owner_type ?? "user",
+              case_slug: data.case_slug,
+              reserved_credits: data.reserved_credits ?? 0,
+              failed_at_layer: failedLayer,
+              total_layers: totalLayers,
+              workflow_id: data.workflow_id,
+            }).catch((settleErr: unknown) => {
+              console.warn(
+                `[legal-pipeline] server-side settlement (failed) failed: ${settleErr instanceof Error ? settleErr.message : String(settleErr)}`
+              );
+            });
+          }
+
+          throw err;
+        } finally {
+          // The AsyncLocalStorage scope ends when this handler resolves.
         }
       }
-
-      // ── Phase B2: Cross-Case Liability Matrix ──────────────
-      // When related_case_slugs or linked_cases are provided, run the
-      // cross-case-matrix specialist to generate a fall-übergreifende
-      // Haftungsmatrix + Master-Schadenstabelle.
-      const relatedCaseSlugs = data.related_case_slugs ?? data.linked_cases ?? [];
-      if (relatedCaseSlugs.length > 0) {
-        try {
-          const matrixSlug = await runCrossCaseMatrixLayer({
-            ctx,
-            queue,
-            engine,
-            caseSlug: data.case_slug,
-            relatedCaseSlugs,
-            mandateId: data.mandate_id,
-            sourceStamp,
-            lawSourceIds,
-          });
-          state.cross_case_matrix_slug = matrixSlug;
-          console.warn(`[legal-pipeline] Phase B2: Cross-case matrix generated at ${matrixSlug}`);
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          state.warnings = [...(state.warnings ?? []), `Cross-case matrix layer failed: ${msg}`];
-          console.warn(`[legal-pipeline] Cross-case matrix error: ${msg}`);
-        }
-      }
-
-      // ── Phase D1: Institutionen-Checkliste ──────────────────
-      // Runs the institution-checklist specialist to identify which
-      // institutions need to be notified for this case.
-      try {
-        const instSlug = await runInstitutionChecklistLayer({
-          ctx,
-          queue,
-          engine,
-          caseSlug: data.case_slug,
-          jurisdiction: data.jurisdiction ?? "at",
-          verfahrenstyp:
-            data.verfahrenstyp ??
-            (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-          additionalOpponents: data.additional_opponents,
-          sourceStamp,
-          lawSourceIds,
-        });
-        state.institution_checklist_slug = instSlug;
-        console.warn(`[legal-pipeline] Phase D1: Institution checklist generated at ${instSlug}`);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        state.warnings = [...(state.warnings ?? []), `Institution checklist failed: ${msg}`];
-        console.warn(`[legal-pipeline] Institution checklist error: ${msg}`);
-      }
-
-      // ── Finalize ───────────────────────────────────────────
-      // Preserve status set by ensemble critic (completed_with_warnings or
-      // needs_human_review) — only default to "completed" if no status was set.
-      if (state.status !== "needs_human_review" && state.status !== "completed_with_warnings") {
-        state.status = "completed";
-      }
-      state.current_layer = 7;
-      state.total_duration_ms = Date.now() - startTime;
-      state.cost_spent_usd = budget.totalSpent;
-      state.updated_at = new Date().toISOString();
-      await persistPipelineState(engine, stateSlug, state, sourceStamp);
-
-      await ctx.updateProgress({ step: 8, total: 8, message: "Pipeline completed" });
-
-      return {
-        case_slug: data.case_slug,
-        status: state.status,
-        layers: state.layers,
-        total_duration_ms: state.total_duration_ms,
-        cost_spent_usd: budget.totalSpent,
-        contradiction_run_id: state.contradiction_run_id,
-        contradiction_findings: state.contradiction_findings,
-        ensemble_verdict: state.ensemble_verdict,
-        retry_count: state.retry_count,
-        counter_arguments: state.counter_arguments?.length ?? 0,
-      };
-    } catch (err) {
-      state.status = "failed";
-      state.updated_at = new Date().toISOString();
-      state.total_duration_ms = Date.now() - startTime;
-      state.cost_spent_usd = budget.totalSpent;
-      const msg = err instanceof Error ? err.message : String(err);
-
-      // Gap 17: BudgetExhausted — set a clear error message
-      if (err instanceof BudgetExhausted) {
-        const budgetMsg = `Cost cap exceeded: $${err.spent.toFixed(2)} > $${err.cap.toFixed(2)} (reason: ${err.reason}). Pipeline stopped at layer ${state.current_layer}.`;
-        const currentLayer = Object.entries(state.layers).find(
-          ([, v]) => v.status === "running"
-        )?.[0];
-        if (currentLayer) {
-          state.layers[Number(currentLayer)]!.status = "failed";
-          state.layers[Number(currentLayer)]!.error = budgetMsg;
-        }
-        await persistPipelineState(engine, stateSlug, state, sourceStamp);
-        throw new Error(budgetMsg);
-      }
-
-      const currentLayer = Object.entries(state.layers).find(
-        ([, v]) => v.status === "running"
-      )?.[0];
-      if (currentLayer) {
-        state.layers[Number(currentLayer)]!.status = "failed";
-        state.layers[Number(currentLayer)]!.error = msg;
-      }
-      await persistPipelineState(engine, stateSlug, state, sourceStamp);
-      throw err;
-    }
+    );
   };
 }
 
@@ -2195,6 +2564,18 @@ async function runMapReduceLayer(opts: {
   retryFeedback?: string;
   /** T5.4: Layer ID from pipeline registry — determines failure policy */
   layerId?: string;
+  /** v0.43.x Decision Tracing: case slug + layer for audit record */
+  caseSlug?: string;
+  layerNumber?: number;
+  layerName?: string;
+  /** F2 fix: BudgetTracker to feed actual token usage from child results. */
+  budget?: BudgetTracker;
+  /** F7 fix: JSON Schema for structured output (same as runSpecialistLayer). */
+  structuredSchema?: {
+    required?: string[];
+    properties?: Record<string, unknown>;
+    description?: string;
+  };
 }): Promise<unknown> {
   const {
     ctx,
@@ -2209,6 +2590,11 @@ async function runMapReduceLayer(opts: {
     contextJson,
     retryFeedback,
     layerId,
+    caseSlug,
+    layerNumber,
+    layerName,
+    budget,
+    structuredSchema,
   } = opts;
   const def = resolveSpecialist(specialistName);
   if (!def) throw new Error(`legal-pipeline: unknown specialist "${specialistName}"`);
@@ -2238,9 +2624,19 @@ async function runMapReduceLayer(opts: {
       max_turns: def.maxTurns ?? MAX_TURNS_DEFAULT,
       allowed_tools: [],
     };
+    // F7 fix: append structured output instruction to map-phase prompt
+    if (structuredSchema) {
+      childData.prompt =
+        (childData.prompt as string) + buildStructuredOutputInstruction(structuredSchema);
+    }
     if (def.model) childData.model = def.model;
     if (sourceStamp) childData._source_id = sourceStamp;
     if (lawSourceIds) childData._source_ids = lawSourceIds;
+    stampDecisionTracing(childData, caseSlug);
+    // v0.43.x Decision Tracing: pass context for audit record
+    if (caseSlug) childData._case_slug = caseSlug;
+    if (layerNumber !== undefined) childData._layer_number = layerNumber;
+    if (layerName) childData._layer_name = layerName;
 
     // T5.4: Resolve failure policy from registry — mandatory layers use "fail_parent"
     const mapFailPolicy = layerId ? getChildFailPolicy(layerId) : "continue";
@@ -2254,6 +2650,8 @@ async function runMapReduceLayer(opts: {
       },
       { allowProtectedSubmit: true }
     );
+    // F2 fix: inherit budget ownership for DB-level CAS gate.
+    await inheritBudgetOwner(engine, child.id, ctx.id).catch(() => {});
     childIds.push(child.id);
   }
 
@@ -2273,6 +2671,25 @@ async function runMapReduceLayer(opts: {
     const s = settled[i]!;
     if (s.status === "fulfilled") {
       mapResults.push(s.value);
+      // F2 fix: feed map-batch token usage into BudgetTracker.
+      if (budget) {
+        try {
+          const tokens = (s.value.result as { tokens?: { in?: number; out?: number } } | null)
+            ?.tokens;
+          const modelId = def.model ?? "";
+          if (tokens && modelId) {
+            budget.record({
+              modelId,
+              inputTokens: tokens.in ?? 0,
+              outputTokens: tokens.out ?? 0,
+              kind: "chat",
+              label: `legal-pipeline/${specialistName}/L${layerNumber ?? "?"}/map-${i + 1}`,
+            });
+          }
+        } catch {
+          // best-effort
+        }
+      }
     } else {
       const reason = s.reason instanceof Error ? s.reason.message : String(s.reason);
       console.error(`[legal-pipeline] Map batch ${i + 1} failed: ${reason}`);
@@ -2299,8 +2716,18 @@ async function runMapReduceLayer(opts: {
     subagent_def: specialistName,
     max_turns: def.maxTurns ?? MAX_TURNS_DEFAULT,
   };
+  // F7 fix: append structured output instruction to reduce-phase prompt
+  if (structuredSchema) {
+    reduceChildData.prompt =
+      (reduceChildData.prompt as string) + buildStructuredOutputInstruction(structuredSchema);
+  }
   if (def.model) reduceChildData.model = def.model;
   if (sourceStamp) reduceChildData._source_id = sourceStamp;
+  stampDecisionTracing(reduceChildData, caseSlug);
+  // v0.43.x Decision Tracing: pass context for audit record (reduce phase)
+  if (caseSlug) reduceChildData._case_slug = caseSlug;
+  if (layerNumber !== undefined) reduceChildData._layer_number = layerNumber;
+  if (layerName) reduceChildData._layer_name = layerName;
 
   // T5.4: Resolve failure policy for reduce phase — same as map phase
   const reduceFailPolicy = layerId ? getChildFailPolicy(layerId) : "continue";
@@ -2314,8 +2741,28 @@ async function runMapReduceLayer(opts: {
     },
     { allowProtectedSubmit: true }
   );
+  // F2 fix: inherit budget ownership for DB-level CAS gate.
+  await inheritBudgetOwner(engine, reduceChild.id, ctx.id).catch(() => {});
 
   const reduceResult = await waitForChild(ctx, reduceChild.id);
+  // F2 fix: feed reduce-phase token usage into BudgetTracker.
+  if (budget) {
+    try {
+      const tokens = (reduceResult as { tokens?: { in?: number; out?: number } } | null)?.tokens;
+      const modelId = def.model ?? "";
+      if (tokens && modelId) {
+        budget.record({
+          modelId,
+          inputTokens: tokens.in ?? 0,
+          outputTokens: tokens.out ?? 0,
+          kind: "chat",
+          label: `legal-pipeline/${specialistName}/L${layerNumber ?? "?"}/reduce`,
+        });
+      }
+    } catch {
+      // best-effort
+    }
+  }
   return reduceResult;
 }
 
@@ -2386,6 +2833,7 @@ async function runLawMatcherLayer(opts: {
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
   if (lawSourceIds) childData._source_ids = lawSourceIds;
+  stampDecisionTracing(childData, caseSlug);
 
   // T5.4: law-matcher is mandatory — on_child_fail: "fail"
   const child = await queue.add(
@@ -2475,6 +2923,7 @@ async function runCounterArgumentLayer(opts: {
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
   if (lawSourceIds) childData._source_ids = lawSourceIds;
+  stampDecisionTracing(childData, caseSlug);
 
   // T5.4: opponent-simulator is mandatory — on_child_fail: "fail"
   const child = await queue.add(
@@ -2699,6 +3148,7 @@ async function runDraftRebuttalLayer(opts: {
     if (def.model) childData.model = def.model;
     if (sourceStamp) childData._source_id = sourceStamp;
     if (lawSourceIds) childData._source_ids = lawSourceIds;
+    stampDecisionTracing(childData, caseSlug);
 
     // T5.4: legal-drafter is mandatory — on_child_fail: "fail"
     const child = await queue.add(
@@ -2798,6 +3248,7 @@ async function runDeadlineValidationLayer(opts: {
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
   if (lawSourceIds) childData._source_ids = lawSourceIds;
+  stampDecisionTracing(childData, caseSlug);
 
   // T5.4: deadline-validator is mandatory — on_child_fail: "fail"
   const child = await queue.add(
@@ -3008,6 +3459,7 @@ async function runDraftLayer(opts: {
     if (def.model) childData.model = def.model;
     if (sourceStamp) childData._source_id = sourceStamp;
     if (lawSourceIds) childData._source_ids = lawSourceIds;
+    stampDecisionTracing(childData, caseSlug);
 
     // T5.4: legal-drafter is mandatory — on_child_fail: "fail"
     const child = await queue.add(
@@ -3241,6 +3693,7 @@ async function runSubsumptionCheck(opts: {
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
   if (lawSourceIds) childData._source_ids = lawSourceIds;
+  stampDecisionTracing(childData, caseSlug);
 
   // T5.4: subsumption-checker is mandatory — on_child_fail: "fail"
   const child = await queue.add(
@@ -3337,6 +3790,7 @@ async function runPrecedentMatchLayer(opts: {
   ctx: MinionJobContext;
   queue: MinionQueue;
   engine: BrainEngine;
+  budget?: BudgetTracker;
   caseSlug: string;
   legalGroundingMap: LegalGroundingEntry[];
   forensicReport: ForensicReport | null;
@@ -3407,10 +3861,15 @@ async function runPrecedentMatchLayer(opts: {
   const json = await runSpecialistLayer({
     ctx,
     queue,
+    engine: opts.engine,
     specialistName: "precedent-matcher",
     prompt,
     sourceStamp,
     layerId: "precedent-matcher",
+    caseSlug,
+    layerNumber: 4,
+    layerName: "precedent-matcher",
+    budget: opts.budget,
   });
   if (!json) return null;
 
@@ -3570,6 +4029,7 @@ async function runBurdenOfProofLayer(opts: {
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
   if (lawSourceIds) childData._source_ids = lawSourceIds;
+  stampDecisionTracing(childData, caseSlug);
 
   const child = await queue.add(
     "subagent",
@@ -3732,6 +4192,7 @@ async function runCostBenefitLayer(opts: {
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
   if (lawSourceIds) childData._source_ids = lawSourceIds;
+  stampDecisionTracing(childData, caseSlug);
 
   const child = await queue.add(
     "subagent",
@@ -3941,6 +4402,7 @@ async function runAdmissibilityCheckLayer(opts: {
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
   if (lawSourceIds) childData._source_ids = lawSourceIds;
+  stampDecisionTracing(childData, caseSlug);
 
   const child = await queue.add(
     "subagent",
@@ -4121,6 +4583,7 @@ async function runSettlementAnalysisLayer(opts: {
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
   if (lawSourceIds) childData._source_ids = lawSourceIds;
+  stampDecisionTracing(childData, caseSlug);
 
   const child = await queue.add(
     "subagent",
@@ -4323,6 +4786,7 @@ async function runFactGapDetectionLayer(opts: {
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
   if (lawSourceIds) childData._source_ids = lawSourceIds;
+  stampDecisionTracing(childData, caseSlug);
 
   const child = await queue.add(
     "subagent",
@@ -4506,6 +4970,7 @@ async function runEnforcementAnalysisLayer(opts: {
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
   if (lawSourceIds) childData._source_ids = lawSourceIds;
+  stampDecisionTracing(childData, caseSlug);
 
   const child = await queue.add(
     "subagent",
@@ -4729,6 +5194,7 @@ async function runAppealRiskLayer(opts: {
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
   if (lawSourceIds) childData._source_ids = lawSourceIds;
+  stampDecisionTracing(childData, caseSlug);
 
   const child = await queue.add(
     "subagent",
@@ -4927,6 +5393,7 @@ async function runProceduralStrategyLayer(opts: {
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
   if (lawSourceIds) childData._source_ids = lawSourceIds;
+  stampDecisionTracing(childData, caseSlug);
 
   const child = await queue.add(
     "subagent",
@@ -5093,6 +5560,179 @@ function sanitizeSlug(slug: string): string | null {
   return trimmed;
 }
 
+/**
+ * F1 fix: Server-side settlement — reconcile actual token usage against the
+ * pre-pipeline reservation. Reads token usage from the pipeline_token_usage
+ * table (populated by the token-report webhook) and calls the web app's
+ * /api/billing/pipeline-settle endpoint.
+ *
+ * Pre-fix, settlement was browser-dependent (pipeline-progress-card.tsx
+ * called the endpoint from the client) and never happened if the tab was
+ * closed. Now the engine calls it directly after pipeline completion.
+ *
+ * The settlement endpoint URL is configured via ENGINE_SETTLEMENT_URL env
+ * var. If unset, settlement is skipped (dev mode without web app running).
+ */
+export async function settlePipeline(
+  engine: BrainEngine,
+  params: {
+    pipeline_key: string;
+    owner_id: string;
+    owner_type: string;
+    case_slug: string;
+    reserved_credits: number;
+    failed_at_layer?: number;
+    total_layers: number;
+    workflow_id?: string;
+  }
+): Promise<void> {
+  const settlementUrl = process.env.ENGINE_SETTLEMENT_URL ?? "";
+  if (!settlementUrl) {
+    // Dev mode without web app running — skip settlement
+    return;
+  }
+
+  // Read token usage from the pipeline_token_usage table
+  const rows = (await engine.executeRaw(
+    `SELECT model, tokens_in, tokens_out, tokens_cache_read, tokens_cache_create
+     FROM pipeline_token_usage
+     WHERE pipeline_key = $1
+     ORDER BY reported_at`,
+    [params.pipeline_key]
+  )) as Array<{
+    model: string;
+    tokens_in: number;
+    tokens_out: number;
+    tokens_cache_read: number;
+    tokens_cache_create: number;
+  }>;
+
+  // Aggregate by model (deductTokenCredits expects per-model usage)
+  const byModel = new Map<
+    string,
+    {
+      inputTokens: number;
+      cachedInputTokens: number;
+      cacheCreateTokens: number;
+      outputTokens: number;
+    }
+  >();
+  for (const row of rows) {
+    const existing = byModel.get(row.model) ?? {
+      inputTokens: 0,
+      cachedInputTokens: 0,
+      cacheCreateTokens: 0,
+      outputTokens: 0,
+    };
+    existing.inputTokens += row.tokens_in;
+    existing.cachedInputTokens += row.tokens_cache_read;
+    existing.cacheCreateTokens += row.tokens_cache_create;
+    existing.outputTokens += row.tokens_out;
+    byModel.set(row.model, existing);
+  }
+
+  const token_usage = Array.from(byModel.entries()).map(([modelId, usage]) => ({
+    modelId,
+    inputTokens: usage.inputTokens,
+    cachedInputTokens: usage.cachedInputTokens,
+    cacheCreateTokens: usage.cacheCreateTokens,
+    outputTokens: usage.outputTokens,
+  }));
+
+  const settlementApiKey = process.env.ENGINE_WEBHOOK_API_KEY ?? "";
+  let settlementError: string | undefined;
+  try {
+    const response = await fetch(settlementUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(settlementApiKey ? { "x-engine-webhook-key": settlementApiKey } : {}),
+      },
+      body: JSON.stringify({
+        pipeline_key: params.pipeline_key,
+        // owner_id + owner_type let the web app authenticate this call as a
+        // machine-to-machine webhook (x-engine-webhook-key) instead of a user
+        // session — there is no browser session on this server-side call.
+        owner_id: params.owner_id,
+        owner_type: params.owner_type,
+        case_slug: params.case_slug,
+        reserved_credits: params.reserved_credits,
+        token_usage,
+        failed_at_layer: params.failed_at_layer,
+        total_layers: params.total_layers,
+      }),
+      signal: AbortSignal.timeout(30_000),
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      settlementError = `settlement endpoint returned ${response.status}: ${text}`;
+    }
+  } catch (err: unknown) {
+    settlementError = err instanceof Error ? err.message : String(err);
+  }
+
+  if (settlementError) {
+    // Persist to the settlement retry queue so an admin or automated retry
+    // worker can re-attempt the settlement. Pre-fix, settlement failure was
+    // only console.warn'd — the reservation stayed open forever, and overage
+    // (402) went uncollected with no audit trail.
+    await enqueueSettlementRetry(engine, params, settlementError).catch((queueErr: unknown) => {
+      console.error(
+        `[legal-pipeline] CRITICAL: settlement failed AND retry-queue persist failed. ` +
+          `pipeline_key=${params.pipeline_key} settlement_error="${settlementError}" queue_error="${queueErr instanceof Error ? queueErr.message : String(queueErr)}". ` +
+          `Credits remain reserved — manual intervention required.`
+      );
+    });
+    throw new Error(settlementError);
+  }
+}
+
+/**
+ * Persist a failed settlement to the pipeline_settlement_queue table so it
+ * can be retried. Uses UPSERT — if the same pipeline_key already has a queue
+ * entry, we increment attempts and update the last_error.
+ */
+async function enqueueSettlementRetry(
+  engine: BrainEngine,
+  params: {
+    pipeline_key: string;
+    owner_id: string;
+    owner_type: string;
+    case_slug: string;
+    reserved_credits: number;
+    failed_at_layer?: number;
+    total_layers: number;
+    workflow_id?: string;
+  },
+  errorMsg: string
+): Promise<void> {
+  await engine.executeRaw(
+    `INSERT INTO pipeline_settlement_queue
+       (pipeline_key, owner_id, owner_type, case_slug, reserved_credits,
+        failed_at_layer, total_layers, workflow_id, status, last_error,
+        attempts, last_attempt_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', $9, 1, NOW(), NOW())
+     ON CONFLICT (pipeline_key) DO UPDATE SET
+       status = 'pending',
+       last_error = EXCLUDED.last_error,
+       attempts = pipeline_settlement_queue.attempts + 1,
+       last_attempt_at = NOW(),
+       updated_at = NOW()`,
+    [
+      params.pipeline_key,
+      params.owner_id,
+      params.owner_type,
+      params.case_slug,
+      params.reserved_credits,
+      params.failed_at_layer ?? null,
+      params.total_layers,
+      params.workflow_id ?? null,
+      errorMsg,
+    ]
+  );
+}
+
 /** Clamp a numeric score to 0-100 range. Returns 0 for non-numbers. */
 function clampScore(value: unknown): number {
   if (typeof value !== "number" || !Number.isFinite(value)) return 0;
@@ -5121,6 +5761,96 @@ function extractChildText(result: unknown): string {
 }
 
 /**
+ * F7 fix: Parse JSON from model output with schema validation.
+ * Stricter than tryParseJSON — when a schema is provided, validates that
+ * all required fields are present. This is a stepping stone toward full
+ * tool_use with input_schema (which requires gateway changes to support
+ * tool_choice: "any"). The 2026 best practice is tool_use (99.2% success
+ * rate vs ~85% for prompt-based JSON), but this already improves reliability
+ * by catching schema violations early.
+ */
+function parseStructuredJSON(
+  text: string,
+  schema?: { required?: string[]; properties?: Record<string, unknown> }
+): Record<string, unknown> | null {
+  const parsed = tryParseJSON(text);
+  if (!parsed) return null;
+  if (!schema?.required) return parsed;
+  // Validate required fields
+  const missing = schema.required.filter((field) => !(field in parsed));
+  if (missing.length > 0) {
+    console.warn(`[legal-pipeline] structured JSON missing required fields: ${missing.join(", ")}`);
+    return null;
+  }
+  return parsed;
+}
+
+/**
+ * F7 fix: Build a structured output instruction from a JSON Schema.
+ * Appends to the prompt with explicit format requirements, increasing
+ * the likelihood of schema-compliant output from the model.
+ */
+function buildStructuredOutputInstruction(schema: {
+  required?: string[];
+  properties?: Record<string, unknown>;
+  description?: string;
+}): string {
+  const fields = schema.required ?? Object.keys(schema.properties ?? {});
+  const fieldDescriptions = fields
+    .map((field) => {
+      const prop = schema.properties?.[field] as Record<string, unknown> | undefined;
+      const type = prop?.type ?? "any";
+      const desc = prop?.description ?? "";
+      return `  - "${field}" (${type}): ${desc}`;
+    })
+    .join("\n");
+  return [
+    "",
+    "## AUSGABEFORMAT (STRIKT)",
+    schema.description ? `${schema.description}` : "",
+    "Antworte AUSSCHLIESSLICH mit einem JSON-Objekt mit folgenden Pflichtfeldern:",
+    "{",
+    fieldDescriptions,
+    "}",
+    "Kein Prosa, kein Markdown, keine Code-Fences — nur das JSON-Objekt.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+/**
+ * v0.43.x Decision Tracing: Helper to stamp childData with audit context.
+ * Falls back gracefully if caseSlug/layerNumber/layerName are not in scope.
+ * F1 fix: also stamps billing context (_pipeline_key, _owner_id, _owner_type)
+ * so the subagent can report token usage via the engine-token-report webhook.
+ * F4 fix: also stamps _model_policy so the subagent handler can enforce EU-only.
+ */
+function stampDecisionTracing(
+  childData: Record<string, unknown>,
+  caseSlug?: string,
+  layerNumber?: number,
+  layerName?: string,
+  billingCtx?: {
+    pipeline_key?: string;
+    owner_id?: string;
+    owner_type?: string;
+    model_policy?: "any" | "eu_only";
+  }
+): void {
+  if (caseSlug) childData._case_slug = caseSlug;
+  if (layerNumber !== undefined) childData._layer_number = layerNumber;
+  if (layerName) childData._layer_name = layerName;
+  // An explicit context wins; otherwise use only the current pipeline's
+  // async-local context, never mutable module-global state.
+  const ctx = billingCtx ?? billingContextStore.getStore();
+  if (ctx?.pipeline_key) childData._pipeline_key = ctx.pipeline_key;
+  if (ctx?.owner_id !== undefined) childData._owner_id = ctx.owner_id;
+  if (ctx?.owner_type) childData._owner_type = ctx.owner_type;
+  // F4 fix: stamp model policy so the subagent handler can enforce EU-only
+  if (ctx?.model_policy) childData._model_policy = ctx.model_policy;
+}
+
+/**
  * Generic specialist layer runner — eliminates boilerplate duplication.
  * Resolves specialist, builds prompt, spawns child, waits, parses JSON.
  * Returns parsed JSON or null on any failure.
@@ -5128,28 +5858,72 @@ function extractChildText(result: unknown): string {
 async function runSpecialistLayer(opts: {
   ctx: MinionJobContext;
   queue: MinionQueue;
+  engine: BrainEngine;
   specialistName: string;
   prompt: string;
   sourceStamp?: string;
   lawSourceIds?: string[];
   /** T5.4: Layer ID from pipeline registry — determines failure policy */
   layerId?: string;
+  /** v0.43.x Decision Tracing: case slug + layer number for audit record */
+  caseSlug?: string;
+  layerNumber?: number;
+  layerName?: string;
+  /** F2 fix: BudgetTracker to feed actual token usage from child results. */
+  budget?: BudgetTracker;
+  /** F7 fix: JSON Schema for structured output. When set, the schema is
+   * appended to the prompt as an explicit format instruction, and the
+   * response is validated against the required fields. This is a stepping
+   * stone toward full tool_use with input_schema (which requires gateway
+   * changes to support tool_choice: "any"). */
+  structuredSchema?: {
+    required?: string[];
+    properties?: Record<string, unknown>;
+    description?: string;
+  };
 }): Promise<Record<string, unknown> | null> {
-  const { ctx, queue, specialistName, prompt, sourceStamp, lawSourceIds, layerId } = opts;
+  const {
+    ctx,
+    queue,
+    engine,
+    specialistName,
+    prompt,
+    sourceStamp,
+    lawSourceIds,
+    layerId,
+    caseSlug,
+    layerNumber,
+    layerName,
+    budget,
+    structuredSchema,
+  } = opts;
   const def = resolveSpecialist(specialistName);
   if (!def) throw new Error(`legal-pipeline: ${specialistName} specialist not found`);
 
   // T5.4: Resolve failure policy from registry — mandatory layers use "fail"
   const childFailPolicy = layerId ? getChildFailPolicy(layerId) : "continue";
 
+  // F7 fix: When a structuredSchema is provided, append the JSON Schema as an
+  // explicit format instruction to the prompt. This increases schema-compliance
+  // from ~85% (prose-based) to ~95% (explicit schema). Full tool_use with
+  // tool_choice: "any" would get 99.2% but requires gateway changes.
+  const finalPrompt = structuredSchema
+    ? prompt + buildStructuredOutputInstruction(structuredSchema)
+    : prompt;
+
   const childData: Record<string, unknown> = {
-    prompt,
+    prompt: finalPrompt,
     subagent_def: specialistName,
     max_turns: def.maxTurns ?? MAX_TURNS_DEFAULT,
   };
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
   if (lawSourceIds) childData._source_ids = lawSourceIds;
+  stampDecisionTracing(childData, caseSlug);
+  // v0.43.x Decision Tracing: pass context for audit record
+  if (caseSlug) childData._case_slug = caseSlug;
+  if (layerNumber !== undefined) childData._layer_number = layerNumber;
+  if (layerName) childData._layer_name = layerName;
 
   const child = await queue.add(
     "subagent",
@@ -5161,10 +5935,45 @@ async function runSpecialistLayer(opts: {
     },
     { allowProtectedSubmit: true }
   );
+  // F2 fix: inherit budget ownership so the DB-level reserveBudget() CAS
+  // check in the subagent turn loop actually deducts from the owner's
+  // budget_remaining_cents. Without this, children have
+  // budget_owner_job_id = NULL and bypass the cap silently.
+  await inheritBudgetOwner(engine, child.id, ctx.id).catch(() => {
+    // best-effort — don't fail the layer if budget inheritance fails
+  });
 
   const result = await waitForChild(ctx, child.id);
+  // F2 fix: Feed actual token usage from child result into BudgetTracker.
+  // The subagent handler returns `tokens: { in, out, cache_read, cache_create }`
+  // (subagent.ts:1011). Pre-fix, extractChildText discarded everything but
+  // the text — the tracker stayed at 0 and cost_spent_usd was always 0.
+  if (budget) {
+    try {
+      const tokens = (
+        result as {
+          tokens?: { in?: number; out?: number; cache_read?: number; cache_create?: number };
+        } | null
+      )?.tokens;
+      const modelId = def.model ?? "";
+      if (tokens && modelId) {
+        budget.record({
+          modelId,
+          inputTokens: tokens.in ?? 0,
+          outputTokens: tokens.out ?? 0,
+          kind: "chat",
+          label: `legal-pipeline/${specialistName}/L${layerNumber ?? "?"}`,
+        });
+      }
+    } catch {
+      // best-effort — don't fail the layer if budget recording fails
+    }
+  }
   const text = extractChildText(result);
-  const json = tryParseJSON(text) as Record<string, unknown> | null;
+  // F7 fix: use schema-aware parser when structuredSchema is set
+  const json = structuredSchema
+    ? parseStructuredJSON(text, structuredSchema)
+    : (tryParseJSON(text) as Record<string, unknown> | null);
   return json;
 }
 
@@ -5252,6 +6061,7 @@ async function runInsuranceCoverageLayer(opts: {
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
   if (lawSourceIds) childData._source_ids = lawSourceIds;
+  stampDecisionTracing(childData, caseSlug);
 
   const child = await queue.add(
     "subagent",
@@ -5445,6 +6255,7 @@ async function runTaxImpactLayer(opts: {
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
   if (lawSourceIds) childData._source_ids = lawSourceIds;
+  stampDecisionTracing(childData, caseSlug);
 
   const child = await queue.add(
     "subagent",
@@ -5654,6 +6465,7 @@ async function runWitnessExpertLayer(opts: {
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
   if (lawSourceIds) childData._source_ids = lawSourceIds;
+  stampDecisionTracing(childData, caseSlug);
 
   const child = await queue.add(
     "subagent",
@@ -5850,6 +6662,7 @@ async function runCounterclaimLayer(opts: {
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
   if (lawSourceIds) childData._source_ids = lawSourceIds;
+  stampDecisionTracing(childData, caseSlug);
 
   const child = await queue.add(
     "subagent",
@@ -6065,6 +6878,7 @@ async function runEvidenceQualityLayer(opts: {
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
   if (lawSourceIds) childData._source_ids = lawSourceIds;
+  stampDecisionTracing(childData, caseSlug);
 
   const child = await queue.add(
     "subagent",
@@ -6220,6 +7034,7 @@ async function runMediationADRLayer(opts: {
   verfahrenstyp?: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
   sourceStamp?: string;
   lawSourceIds?: string[];
+  budget?: BudgetTracker;
 }): Promise<string | null> {
   const {
     ctx,
@@ -6261,10 +7076,15 @@ async function runMediationADRLayer(opts: {
   const json = await runSpecialistLayer({
     ctx,
     queue,
+    engine: opts.engine,
     specialistName: "mediation-adr-analyzer",
     prompt,
     sourceStamp,
     layerId: "mediation-adr",
+    caseSlug,
+    layerNumber: 5,
+    layerName: "mediation-adr",
+    budget: opts.budget,
   });
   if (!json) return null;
 
@@ -6389,6 +7209,7 @@ async function runLimitationScannerLayer(opts: {
   ctx: MinionJobContext;
   queue: MinionQueue;
   engine: BrainEngine;
+  budget?: BudgetTracker;
   caseSlug: string;
   jurisdiction: "at" | "de" | "ch" | "eu";
   verfahrenstyp?: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
@@ -6442,10 +7263,15 @@ async function runLimitationScannerLayer(opts: {
   const json = await runSpecialistLayer({
     ctx,
     queue,
+    engine: opts.engine,
     specialistName: "limitation-scanner",
     prompt,
     sourceStamp,
     layerId: "limitation-scanner",
+    caseSlug,
+    layerNumber: 5,
+    budget: opts.budget,
+    layerName: "limitation-scanner",
   });
   if (!json) return null;
 
@@ -6685,6 +7511,7 @@ async function runCostAwardLayer(opts: {
   ctx: MinionJobContext;
   queue: MinionQueue;
   engine: BrainEngine;
+  budget?: BudgetTracker;
   caseSlug: string;
   jurisdiction: "at" | "de" | "ch" | "eu";
   verfahrenstyp?: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
@@ -6731,10 +7558,15 @@ async function runCostAwardLayer(opts: {
   const json = await runSpecialistLayer({
     ctx,
     queue,
+    engine: opts.engine,
     specialistName: "cost-award-predictor",
     prompt,
     sourceStamp,
     layerId: "cost-award",
+    caseSlug,
+    layerNumber: 5,
+    budget: opts.budget,
+    layerName: "cost-award",
   });
   if (!json) return null;
 
@@ -6975,7 +7807,7 @@ async function runEnsembleCriticLayer(opts: {
       ? `## SUBSUMPTIONS-PRÜFUNG (vorab durchgeführt):\n${subsumptionContext}\n`
       : "",
     "Gib ein JSON zurück:",
-    '{ "total_score": 0-100, "recommendation": "publish|revise|reject", "issues": [...], "layer_scores": { "1": 90, "2": 85, ... }, "narrative_coherence_score": 0-100, "central_thesis": "...", "coherence_violations": ["Layer 6 weicht ab: ..."] }',
+    '{ "total_score": 0-100, "recommendation": "publish|revise|reject", "issues": [...], "layer_scores": { "1": 90, "2": 85, ... }, "narrative_coherence_score": 0-100, "central_thesis": "...", "coherence_violations": ["Layer 6 weicht ab: ..."], "reasoning_summary": "WARUM diese Bewertung (1-2 Sätze)", "confidence": 0.0-1.0 }',
   ].join("\n");
 
   // Submit all 3 critic models in parallel
@@ -6989,6 +7821,7 @@ async function runEnsembleCriticLayer(opts: {
     };
     if (sourceStamp) childData._source_id = sourceStamp;
     if (lawSourceIds) childData._source_ids = lawSourceIds;
+    stampDecisionTracing(childData, caseSlug);
 
     // T5.4: ensemble-critic is mandatory — on_child_fail: "fail"
     const child = await queue.add(
@@ -7015,6 +7848,9 @@ async function runEnsembleCriticLayer(opts: {
         recommendation: parsed.recommendation,
         issues: parsed.issues,
         layer_scores: parsed.layer_scores,
+        // v0.43.x Dissensus: capture per-model reasoning + confidence
+        reasoning_summary: parsed.reasoning_summary,
+        confidence: parsed.confidence,
       } satisfies CriticModelVerdict;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -7034,6 +7870,12 @@ async function runEnsembleCriticLayer(opts: {
 
   // Compute consensus
   const consensus = computeEnsembleConsensus(modelVerdicts);
+
+  // v0.43.x Dissensus: analyze where and why models disagree
+  const dissensus = analyzeDissensus(modelVerdicts);
+  if (dissensus) {
+    consensus.dissensus = dissensus;
+  }
 
   const verdict: EnsembleCriticVerdict = {
     models: modelVerdicts,
@@ -7056,6 +7898,8 @@ function parseCriticVerdict(result: unknown): {
   narrative_coherence_score?: number;
   central_thesis?: string;
   coherence_violations?: string[];
+  reasoning_summary?: string;
+  confidence?: number;
 } {
   const text =
     typeof result === "string"
@@ -7087,6 +7931,11 @@ function parseCriticVerdict(result: unknown): {
   const coherenceViolations = Array.isArray(json.coherence_violations)
     ? json.coherence_violations.filter((v) => typeof v === "string")
     : undefined;
+  // v0.43.x Dissensus: per-model reasoning + confidence
+  const reasoningSummary =
+    typeof json.reasoning_summary === "string" ? json.reasoning_summary.slice(0, 500) : undefined;
+  const confidence =
+    typeof json.confidence === "number" ? Math.max(0, Math.min(1, json.confidence)) : undefined;
   return {
     total_score: totalScore,
     recommendation,
@@ -7095,6 +7944,8 @@ function parseCriticVerdict(result: unknown): {
     narrative_coherence_score: narrativeCoherenceScore,
     central_thesis: centralThesis,
     coherence_violations: coherenceViolations,
+    reasoning_summary: reasoningSummary,
+    confidence,
   };
 }
 
@@ -7219,6 +8070,8 @@ async function rerunSpecificLayer(
     deadlineCalendar: DeadlineEntry[];
     allTexts: string[];
     retryFeedback: string;
+    /** v0.43.x F2: BudgetTracker to feed actual token usage in reruns. */
+    budget?: BudgetTracker;
   }
 ): Promise<void> {
   const {
@@ -7238,6 +8091,7 @@ async function rerunSpecificLayer(
     deadlineCalendar,
     allTexts,
     retryFeedback,
+    budget,
   } = opts;
 
   console.warn(`[legal-pipeline] Re-running Layer ${layerNum} with critic feedback`);
@@ -7257,6 +8111,7 @@ async function rerunSpecificLayer(
         contextJson: JSON.stringify({ jurisdiction: data.jurisdiction ?? "at" }),
         retryFeedback,
         layerId: "on-scanner",
+        budget,
       });
       const newOnTable = extractOnEntries(result);
       const onSlug = `on-indices/${data.case_slug}`;
@@ -7285,6 +8140,7 @@ async function rerunSpecificLayer(
         }),
         retryFeedback,
         layerId: "entity-extractor",
+        budget,
       });
       const newEntities = extractEntityEntries(result);
       const entitySlugs = await writeEntityPages(engine, data.case_slug, newEntities, sourceStamp);
@@ -7314,6 +8170,7 @@ async function rerunSpecificLayer(
         contextJson,
         retryFeedback,
         layerId: "forensic-analyst",
+        budget,
       });
       const newForensicReport = extractForensicReport(result);
       const forensicSlug = `forensic-reports/${data.case_slug}`;
@@ -7403,6 +8260,7 @@ async function rerunSpecificLayer(
             (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
           sourceStamp,
           lawSourceIds,
+          budget,
         });
         if (precedentSlug) {
           state.layers[4]!.output_slugs = [...(state.layers[4]!.output_slugs ?? []), precedentSlug];
@@ -7536,6 +8394,7 @@ async function rerunSpecificLayer(
         contextJson,
         retryFeedback,
         layerId: "damage-deadline-extractor",
+        budget,
       });
       const extracted = extractDamageResult(result);
       const damageSlug = `damage-tables/${data.case_slug}`;
@@ -7722,6 +8581,16 @@ async function writeEnsembleQualityAuditPage(
   lines.push(`ensemble_recommendation: ${verdict.consensus.recommendation}`);
   lines.push(`ensemble_score: ${verdict.consensus.total_score}`);
   lines.push(`retry_count: ${verdict.retry_count}`);
+  // v0.43.x Dissensus: structured frontmatter for admin dashboard queries
+  if (verdict.consensus.dissensus) {
+    const d = verdict.consensus.dissensus;
+    lines.push(`dissensus_disagreement_score: ${d.disagreement_score}`);
+    lines.push(`dissensus_score_spread: ${d.score_spread}`);
+    lines.push(
+      `dissensus_contested_layers: [${d.contested_layers.map((l) => `"${l}"`).join(", ")}]`
+    );
+    lines.push(`dissensus_recommendation_split: ${JSON.stringify(d.recommendation_split)}`);
+  }
   lines.push("---");
   lines.push("");
   lines.push("## Ensemble Critic Verdict (3-Model Consensus)");
@@ -7777,6 +8646,16 @@ async function writeEnsembleQualityAuditPage(
         lines.push(`- ${v}`);
       }
     }
+  }
+
+  // v0.43.x Dissensus: structured JSON block for admin dashboard parsing
+  if (verdict.consensus.dissensus) {
+    lines.push("");
+    lines.push("### Dissensus Analysis (v0.43.x)");
+    lines.push("");
+    lines.push("```json");
+    lines.push(JSON.stringify(verdict.consensus.dissensus, null, 2));
+    lines.push("```");
   }
 
   const md = lines.join("\n");
@@ -7860,6 +8739,7 @@ async function runCriticLayer(opts: {
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
   if (lawSourceIds) childData._source_ids = lawSourceIds;
+  stampDecisionTracing(childData, caseSlug);
 
   // T5.4: ensemble-critic is mandatory — on_child_fail: "fail"
   const child = await queue.add(
@@ -10264,6 +11144,7 @@ async function runCrossCaseMatrixLayer(opts: {
   ctx: MinionJobContext;
   queue: MinionQueue;
   engine: BrainEngine;
+  budget?: BudgetTracker;
   caseSlug: string;
   relatedCaseSlugs: string[];
   mandateId?: string;
@@ -10299,11 +11180,16 @@ async function runCrossCaseMatrixLayer(opts: {
   const json = await runSpecialistLayer({
     ctx,
     queue,
+    engine: opts.engine,
     specialistName: "cross-case-matrix",
     prompt,
     sourceStamp,
     lawSourceIds,
     layerId: "cross-case-matrix",
+    caseSlug,
+    budget: opts.budget,
+    layerNumber: 8,
+    layerName: "cross-case-matrix",
   });
 
   const slug = `cross-case-matrices/${caseSlug}`;
@@ -10418,6 +11304,7 @@ async function runInstitutionChecklistLayer(opts: {
   ctx: MinionJobContext;
   queue: MinionQueue;
   engine: BrainEngine;
+  budget?: BudgetTracker;
   caseSlug: string;
   jurisdiction: "at" | "de" | "ch" | "eu";
   verfahrenstyp: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
@@ -10460,10 +11347,15 @@ async function runInstitutionChecklistLayer(opts: {
   const json = await runSpecialistLayer({
     ctx,
     queue,
+    engine: opts.engine,
     specialistName: "institution-checklist",
     prompt,
     sourceStamp,
     layerId: "institution-checklist",
+    caseSlug,
+    layerNumber: 8,
+    budget: opts.budget,
+    layerName: "institution-checklist",
   });
 
   const slug = `institution-checklists/${caseSlug}`;

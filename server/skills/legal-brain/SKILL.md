@@ -9,13 +9,11 @@ triggers:
   - "new legal case"
   - "analyze opponent"
   - "assess chances"
-  - "legal strategy"
   - "Rechtsfall"
   - "Gegner analysieren"
   - "Gegneranalyse"
   - "Chancen bewerten"
   - "Chancenbewertung"
-  - "Rechtsstrategie"
 priority: 60
 ---
 

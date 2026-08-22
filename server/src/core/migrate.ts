@@ -5684,6 +5684,359 @@ export const MIGRATIONS: Migration[] = [
         ON content_chunks (source_id) WHERE source_id IS NOT NULL;
     `,
   },
+  {
+    version: 125,
+    name: "corpus_pipeline_state_table",
+    idempotent: true,
+    sql: `
+      CREATE TABLE IF NOT EXISTS pipeline_state (
+        source_key       TEXT PRIMARY KEY,
+        stage            TEXT NOT NULL DEFAULT 'idle' CHECK (stage IN (
+          'idle',
+          'backfill-pending',
+          'backfilling',
+          'import-pending',
+          'importing',
+          'waiting-for-statutes',
+          'waiting-for-ris-slot',
+          'done',
+          'failed',
+          'exhausted',
+          'ok'
+        )),
+        last_import_success  TIMESTAMPTZ,
+        pending_import_since TIMESTAMPTZ,
+        pid              INTEGER,
+        pid_cmd          TEXT,
+        pid_started_at   TIMESTAMPTZ,
+        pid_timeout_s    INTEGER NOT NULL DEFAULT 3600,
+        last_placeholder_count   INTEGER NOT NULL DEFAULT 0,
+        pending_backfill_ph      INTEGER,
+        backfill_exhausted       BOOLEAN NOT NULL DEFAULT FALSE,
+        disk_count       INTEGER NOT NULL DEFAULT 0,
+        db_pages         INTEGER NOT NULL DEFAULT 0,
+        ris_total        INTEGER,
+        alert_flags      JSONB NOT NULL DEFAULT '[]'::jsonb,
+        stage_history    JSONB NOT NULL DEFAULT '[]'::jsonb,
+        last_cycle_at    TIMESTAMPTZ,
+        updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_pipeline_state_stage
+        ON pipeline_state (stage)
+        WHERE stage NOT IN ('idle', 'done', 'exhausted');
+
+      CREATE INDEX IF NOT EXISTS idx_pipeline_state_pid_started
+        ON pipeline_state (pid_started_at)
+        WHERE pid IS NOT NULL;
+
+      CREATE OR REPLACE FUNCTION claim_pipeline_source(
+        p_source_key   TEXT,
+        p_pid          INTEGER,
+        p_pid_cmd      TEXT,
+        p_timeout_s    INTEGER DEFAULT 3600
+      ) RETURNS BOOLEAN AS $$
+      DECLARE
+        claimed BOOLEAN := FALSE;
+      BEGIN
+        UPDATE pipeline_state
+          SET pid = p_pid,
+              pid_cmd = p_pid_cmd,
+              pid_started_at = NOW(),
+              pid_timeout_s = p_timeout_s,
+              updated_at = NOW()
+          WHERE source_key = p_source_key
+            AND (
+              pid IS NULL
+              OR pid_started_at < NOW() - (pid_timeout_s::text || ' seconds')::INTERVAL
+            )
+          RETURNING TRUE INTO claimed;
+
+        RETURN COALESCE(claimed, FALSE);
+      END;
+      $$ LANGUAGE plpgsql;
+
+      CREATE OR REPLACE FUNCTION release_pipeline_source(
+        p_source_key   TEXT,
+        p_pid          INTEGER,
+        p_new_stage    TEXT DEFAULT NULL
+      ) RETURNS VOID AS $$
+      BEGIN
+        UPDATE pipeline_state
+          SET pid = NULL,
+              pid_cmd = NULL,
+              pid_started_at = NULL,
+              stage = COALESCE(p_new_stage, stage),
+              updated_at = NOW()
+          WHERE source_key = p_source_key
+            AND pid = p_pid;
+      END;
+      $$ LANGUAGE plpgsql;
+
+      CREATE OR REPLACE FUNCTION append_stage_history(
+        p_source_key   TEXT,
+        p_stage        TEXT,
+        p_action       TEXT
+      ) RETURNS VOID AS $$
+      BEGIN
+        UPDATE pipeline_state
+          SET stage_history = (
+            SELECT jsonb_agg(elem ORDER BY idx ASC)
+            FROM (
+              SELECT elem
+              FROM jsonb_array_elements(
+                stage_history || jsonb_build_array(jsonb_build_object('stage', p_stage, 'action', p_action, 'ts', NOW()))
+              ) WITH ORDINALITY AS t(elem, idx)
+              ORDER BY idx DESC
+              LIMIT 20
+            ) sub
+          ),
+          updated_at = NOW()
+          WHERE source_key = p_source_key;
+      END;
+      $$ LANGUAGE plpgsql;
+    `,
+  },
+  {
+    version: 126,
+    name: "pipeline_state_disk_files_column",
+    // corpus-command-center needs both units for statutes:
+    //   disk_count  = document count (law directories)  — comparable to ris_total
+    //   disk_files  = raw .md file count (paragraphs)   — shown in dashboard
+    // For judikatur and flat sources both are identical (1 file = 1 document).
+    idempotent: true,
+    sql: `
+      ALTER TABLE pipeline_state ADD COLUMN IF NOT EXISTS disk_files INTEGER NOT NULL DEFAULT 0;
+
+      -- Backfill disk_files = disk_count for sources that haven't been updated yet
+      UPDATE pipeline_state
+        SET disk_files = disk_count
+        WHERE disk_files = 0;
+    `,
+  },
+  {
+    version: 127,
+    name: "pages_ecli_body_hash_columns",
+    // Corpus integrity: promote ecli + body_hash from frontmatter JSONB to
+    // first-class columns so partial UNIQUE constraints can enforce 1:1
+    // coverage against RIS and prevent the slug-prefix duplication class
+    // (169.841 vfgh/ogh/dok/vwgh pages created with court-prefixed slugs
+    // alongside the canonical no-prefix slug — see audit 2026-08-21).
+    //
+    //   ecli       — frontmatter->>'ecli', promoted for UNIQUE(source_id, ecli)
+    //   body_hash  — sha256(compiled_truth) body-only, distinct from
+    //                content_hash which folds frontmatter+title+tags and thus
+    //                misses body-identical duplicates with different FM shape.
+    //
+    // Both columns land nullable + unindexed here. A separate backfill step
+    // (server/scripts/backfill-ecli-body-hash.ts) populates them for all
+    // 949K pages, after which the partial UNIQUE indexes are created by the
+    // follow-up v128 migration. Splitting add-column from add-constraint lets
+    // the backfill run without holding the constraint's write lock.
+    //
+    // Idempotent (IF NOT EXISTS) — safe to re-run on PGLite and Postgres.
+    idempotent: true,
+    sql: `
+      ALTER TABLE pages ADD COLUMN IF NOT EXISTS ecli text;
+      ALTER TABLE pages ADD COLUMN IF NOT EXISTS body_hash text;
+    `,
+  },
+  {
+    version: 128,
+    name: "pages_body_hash_unique_index",
+    // Activates the partial UNIQUE index on (source_id, body_hash).
+    // Partial on deleted_at IS NULL so soft-deleted rows don't block
+    // re-ingestion under a new slug; skips NULLs (body_hash is nullable
+    // until backfilled — NULLS NOT DISTINCT would force every un-backfilled
+    // row to collide).
+    //
+    // This constraint is what structurally prevents the 169.841-Duplikat
+    // class from recurring: two imports of the same body under different
+    // slugs now raise a unique violation at insert time, before the
+    // duplicate row lands. The import path (importFromContent) already
+    // has skipContentDuplicates logic keyed on content_hash; this is the
+    // DB-level backstop for the cases where content_hash diverges because
+    // frontmatter shape differs (the exact vfgh/ogh/dok/vwgh bug).
+    //
+    // NOTE: ECLI is NOT a valid unique key for judikatur. RIS publishes
+    // multiple Rechtssatz documents per decision, all sharing one ECLI
+    // but with different bodies (verified: LVWG has 22 Rechtssätze per
+    // ECLI, each 1.1-1.5KB, distinct body_hash). A UNIQUE(source_id, ecli)
+    // constraint would DELETE legitimate Rechtssätze. body_hash is the
+    // correct dedup key — it's body-only (sha256 of compiled_truth) and
+    // catches true duplicates regardless of frontmatter shape.
+    //
+    // Run AFTER the backfill script populates body_hash for all existing
+    // rows AND after the cleanup of the 169.841 slug-prefix duplicates,
+    // otherwise pre-existing duplicates will make CREATE UNIQUE INDEX fail.
+    // See server/scripts/dedup-judikatur.ts for the cleanup.
+    //
+    // Idempotent (IF NOT EXISTS).
+    idempotent: true,
+    sql: `
+      CREATE UNIQUE INDEX IF NOT EXISTS pages_judikatur_body_hash_uniq
+        ON pages (source_id, body_hash)
+        WHERE body_hash IS NOT NULL AND deleted_at IS NULL
+          AND source_id LIKE 'law-at-judikatur-%';
+    `,
+  },
+  {
+    version: 129,
+    name: "ris_expected_registry",
+    // Creates the `ris_expected` registry table — a complete list of all
+    // documents that RIS publishes per source, so we can do 1:1 coverage
+    // checks ("which ECLIs are missing from our corpus?") instead of just
+    // comparing counts.
+    //
+    // Columns:
+    //   source_id   — our internal source ID (e.g. law-at-judikatur-vfgh)
+    //   ris_id      — RIS technical ID (OgdDocumentReference.Data.Metadaten.Technisch.ID)
+    //   ecli        — European Case Law Identifier (nullable — not all docs have one)
+    //   case_number — Geschäftszahl / Aktenzeichen (nullable)
+    //   court       — Gericht name from RIS
+    //   decision_date — date string from RIS (YYYY-MM-DD or ISO)
+    //   ris_url     — canonical RIS document URL
+    //   fetched_at  — when this row was last confirmed from the RIS API
+    //   payload     — JSONB with extra metadata (keywords, legalArea, etc.)
+    //
+    // UNIQUE(source_id, ris_id) — one row per RIS document per source.
+    // ECLI is NOT unique per document — RIS publishes multiple Rechtssatz
+    // documents per Entscheidung, all sharing one ECLI (verified: LVWG has
+    // 22 Rechtssätze per ECLI). So we use a non-unique index on ECLI for
+    // coverage lookups, not a UNIQUE constraint.
+    //
+    // Idempotent (IF NOT EXISTS).
+    idempotent: true,
+    sql: `
+      CREATE TABLE IF NOT EXISTS ris_expected (
+        id              SERIAL PRIMARY KEY,
+        source_id       TEXT NOT NULL,
+        ris_id          TEXT NOT NULL,
+        ecli            TEXT,
+        case_number     TEXT,
+        court           TEXT,
+        decision_date   TEXT,
+        ris_url         TEXT,
+        fetched_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+        payload         JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+        updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS ris_expected_source_ris_id_uniq
+        ON ris_expected (source_id, ris_id);
+
+      CREATE INDEX IF NOT EXISTS ris_expected_source_idx
+        ON ris_expected (source_id);
+
+      CREATE INDEX IF NOT EXISTS ris_expected_ecli_idx
+        ON ris_expected (source_id, ecli)
+        WHERE ecli IS NOT NULL;
+
+      CREATE INDEX IF NOT EXISTS ris_expected_case_number_idx
+        ON ris_expected (source_id, case_number)
+        WHERE case_number IS NOT NULL;
+    `,
+  },
+  {
+    version: 130,
+    name: "pipeline_token_usage",
+    // F1 fix: Token usage reporting table for server-side billing settlement.
+    // Subagents call POST /api/legal-pipeline/token-report after each LLM
+    // turn to record actual token counts. The settlement endpoint reads
+    // this table to compute real cost from real tokens, replacing the
+    // browser-based estimate that was lost when the tab was closed.
+    //
+    // Columns:
+    //   pipeline_key  — correlation key matching pipeline_credit_reservations
+    //   owner_id      — user or org ID for billing
+    //   owner_type    — 'user' | 'org'
+    //   job_id        — minion job ID (nullable — may be called from non-job context)
+    //   model         — model ID used for the LLM call
+    //   turn_idx      — turn index within the subagent conversation
+    //   tokens_*      — actual token counts from the LLM API response
+    //   reported_at   — when this report was received
+    //
+    // Idempotent (IF NOT EXISTS).
+    idempotent: true,
+    sql: `
+      CREATE TABLE IF NOT EXISTS pipeline_token_usage (
+        id                    SERIAL PRIMARY KEY,
+        pipeline_key          TEXT NOT NULL,
+        owner_id              TEXT NOT NULL,
+        owner_type            TEXT NOT NULL DEFAULT 'user',
+        job_id                INTEGER,
+        model                 TEXT,
+        turn_idx              INTEGER,
+        tokens_in             INTEGER NOT NULL DEFAULT 0,
+        tokens_out            INTEGER NOT NULL DEFAULT 0,
+        tokens_cache_read     INTEGER NOT NULL DEFAULT 0,
+        tokens_cache_create   INTEGER NOT NULL DEFAULT 0,
+        reported_at           TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
+
+      CREATE INDEX IF NOT EXISTS pipeline_token_usage_pipeline_key_idx
+        ON pipeline_token_usage (pipeline_key);
+
+      CREATE INDEX IF NOT EXISTS pipeline_token_usage_owner_idx
+        ON pipeline_token_usage (owner_id, owner_type, reported_at);
+    `,
+  },
+  {
+    version: 131,
+    name: "pipeline_token_usage_unique_idx",
+    // F1 fix follow-up: the engine's /api/legal-pipeline/token-report endpoint
+    // uses `ON CONFLICT DO NOTHING` to deduplicate retry-reports from
+    // subagents (timeouts, network blips). Pre-fix, the table had NO unique
+    // constraint — ON CONFLICT DO NOTHING was a silent no-op, and every retry
+    // inserted a duplicate row. Settlement sums all rows → overcharging.
+    //
+    // The unique key is (pipeline_key, job_id, turn_idx) — one report per
+    // (pipeline, subagent job, turn). job_id and turn_idx are nullable, so
+    // NULLs are excluded from the index (partial index) to avoid colliding
+    // on "no job context" reports.
+    idempotent: true,
+    sql: `
+      CREATE UNIQUE INDEX IF NOT EXISTS pipeline_token_usage_uniq_idx
+        ON pipeline_token_usage (pipeline_key, job_id, turn_idx)
+        WHERE job_id IS NOT NULL AND turn_idx IS NOT NULL;
+    `,
+  },
+  {
+    version: 132,
+    name: "pipeline_settlement_queue",
+    // Settlement retry queue — when the engine's settlePipeline() call to
+    // /api/billing/pipeline-settle fails (web app transient down, 402 overage
+    // unpaid, network timeout), the failed settlement is persisted here so
+    // an admin can retry it or an automated retry worker can pick it up.
+    // Pre-fix, settlement failure was only console.warn'd — the reservation
+    // stayed open forever, and overage went uncollected.
+    idempotent: true,
+    sql: `
+      CREATE TABLE IF NOT EXISTS pipeline_settlement_queue (
+        id                  SERIAL PRIMARY KEY,
+        pipeline_key        TEXT NOT NULL UNIQUE,
+        owner_id            TEXT NOT NULL,
+        owner_type          TEXT NOT NULL DEFAULT 'user',
+        case_slug           TEXT NOT NULL,
+        reserved_credits    NUMERIC(12,2) NOT NULL DEFAULT 0,
+        failed_at_layer     INTEGER,
+        total_layers        INTEGER,
+        workflow_id         TEXT,
+        status              TEXT NOT NULL DEFAULT 'pending',
+          -- pending: queued for retry
+          -- succeeded: settled successfully (kept for audit)
+          -- exhausted: max retries reached, needs admin intervention
+        last_error          TEXT,
+        attempts            INTEGER NOT NULL DEFAULT 0,
+        last_attempt_at     TIMESTAMPTZ,
+        created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS pipeline_settlement_queue_status_idx
+        ON pipeline_settlement_queue (status, created_at);
+    `,
+  },
 ];
 
 export const LATEST_VERSION =

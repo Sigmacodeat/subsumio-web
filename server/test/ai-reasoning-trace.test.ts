@@ -1,4 +1,5 @@
 import { describe, test, expect } from "bun:test";
+import { withEnv } from "./helpers/with-env.ts";
 import {
   buildReasoningTrace,
   verifyTraceChain,
@@ -46,7 +47,15 @@ const baseOpts: TraceCaptureOpts = {
   injection_blocked: false,
   confidence_level: "high",
   overall_confidence: 0.92,
-  provenance_links: [{ claim_index: 0, claim_text: "Übergabepflicht", source_slug: "legal/statutes/de/bgb/p-433", source_passage: "Der Verkäufer ist verpflichtet...", relevance: "direct" }],
+  provenance_links: [
+    {
+      claim_index: 0,
+      claim_text: "Übergabepflicht",
+      source_slug: "legal/statutes/de/bgb/p-433",
+      source_passage: "Der Verkäufer ist verpflichtet...",
+      relevance: "direct",
+    },
+  ],
 };
 
 describe("buildReasoningTrace", () => {
@@ -85,13 +94,19 @@ describe("buildReasoningTrace", () => {
   test("computes correct query hash", () => {
     const trace = buildReasoningTrace(baseOpts);
     // SHA-256 of "Was sagt § 433 BGB?"
-    const expected = require("crypto").createHash("sha256").update("Was sagt § 433 BGB?", "utf8").digest("hex");
+    const expected = require("crypto")
+      .createHash("sha256")
+      .update("Was sagt § 433 BGB?", "utf8")
+      .digest("hex");
     expect(trace.query_hash).toBe(expected);
   });
 
   test("computes correct answer hash", () => {
     const trace = buildReasoningTrace(baseOpts);
-    const expected = require("crypto").createHash("sha256").update(baseOpts.answer, "utf8").digest("hex");
+    const expected = require("crypto")
+      .createHash("sha256")
+      .update(baseOpts.answer, "utf8")
+      .digest("hex");
     expect(trace.final_answer_hash).toBe(expected);
   });
 
@@ -101,7 +116,11 @@ describe("buildReasoningTrace", () => {
   });
 
   test("defaults injection flags to false", () => {
-    const trace = buildReasoningTrace({ ...baseOpts, injection_detected: undefined, injection_blocked: undefined });
+    const trace = buildReasoningTrace({
+      ...baseOpts,
+      injection_detected: undefined,
+      injection_blocked: undefined,
+    });
     expect(trace.injection_detected).toBe(false);
     expect(trace.injection_blocked).toBe(false);
   });
@@ -453,7 +472,8 @@ describe("deliverWebhook", () => {
     const event = buildWebhookEvent(trace)!;
 
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = (async () => new Response("error", { status: 500 })) as unknown as typeof fetch;
+    globalThis.fetch = (async () =>
+      new Response("error", { status: 500 })) as unknown as typeof fetch;
 
     try {
       const result = await deliverWebhook(event, "https://hooks.example.com/subsumio");
@@ -493,23 +513,19 @@ describe("storeTrace / loadTraces", () => {
   // no-pool path by clearing the global pool cache and env vars.
   async function withNoPool<T>(fn: () => Promise<T>): Promise<T> {
     const origPool = globalThis.__subsumioAuthPool;
-    const origDbUrl = process.env.DATABASE_URL;
-    const origAuthDbUrl = process.env.SUBSUMIO_AUTH_DATABASE_URL;
-    const origPgUrl = process.env.POSTGRES_URL;
-    const origPrismaUrl = process.env.POSTGRES_PRISMA_URL;
     globalThis.__subsumioAuthPool = undefined;
-    delete process.env.DATABASE_URL;
-    delete process.env.SUBSUMIO_AUTH_DATABASE_URL;
-    delete process.env.POSTGRES_URL;
-    delete process.env.POSTGRES_PRISMA_URL;
     try {
-      return await fn();
+      return await withEnv(
+        {
+          DATABASE_URL: undefined,
+          SUBSUMIO_AUTH_DATABASE_URL: undefined,
+          POSTGRES_URL: undefined,
+          POSTGRES_PRISMA_URL: undefined,
+        },
+        fn
+      );
     } finally {
       globalThis.__subsumioAuthPool = origPool;
-      if (origDbUrl) process.env.DATABASE_URL = origDbUrl;
-      if (origAuthDbUrl) process.env.SUBSUMIO_AUTH_DATABASE_URL = origAuthDbUrl;
-      if (origPgUrl) process.env.POSTGRES_URL = origPgUrl;
-      if (origPrismaUrl) process.env.POSTGRES_PRISMA_URL = origPrismaUrl;
     }
   }
 

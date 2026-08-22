@@ -44,7 +44,15 @@ describe("Pipeline Layer Registry", () => {
       expect(layer.id).toBeTruthy();
       expect(layer.layerNumber).toBeGreaterThanOrEqual(0);
       expect(layer.name).toBeTruthy();
-      expect(layer.specialist).toBeTruthy();
+      // Some layers are deliberate deterministic heuristics or dedicated
+      // runners rather than LLM specialists (e.g. document classification,
+      // contradiction-probe which uses runContradictionProbe()). These may
+      // carry medium risk when the dedicated code is non-trivial.
+      if (layer.specialist === undefined) {
+        expect(["low", "medium"]).toContain(layer.risk);
+      } else {
+        expect(layer.specialist).toBeTruthy();
+      }
       expect(layer.inputs).toBeInstanceOf(Array);
       expect(layer.outputs).toBeInstanceOf(Array);
       expect(layer.sideEffects).toBeInstanceOf(Array);
@@ -178,13 +186,15 @@ describe("Pipeline Layer Registry", () => {
 // ── Workflow Definition Tests ─────────────────────────────────
 
 describe("Workflow Definitions", () => {
-  it("should have 4 workflow definitions (memo, fristen_report, schriftsatz, full_pipeline)", () => {
+  it("includes focused intake workflows as well as the four expert workflows", () => {
     const ids = listWorkflowIds();
     expect(ids).toContain("memo");
     expect(ids).toContain("fristen_report");
     expect(ids).toContain("schriftsatz");
     expect(ids).toContain("full_pipeline");
-    expect(ids.length).toBe(4);
+    expect(ids).toContain("quick_answer");
+    expect(ids).toContain("aktencheck");
+    expect(ids.length).toBe(6);
   });
 
   it("every workflow has required fields", () => {

@@ -813,6 +813,32 @@ const COLUMN_EXEMPTIONS = new Set<string>([
   "minion_jobs.budget_remaining_cents",
   "minion_jobs.budget_owner_job_id",
   "minion_jobs.budget_root_owner_id",
+  // v0.43 (migration v126) — pipeline_state.disk_files. pipeline_state is
+  // created entirely by migration v125 (not in PGLITE_SCHEMA_SQL), so the
+  // v125+v126 chain handles fresh + upgrade; no CREATE INDEX references
+  // disk_files, so there's no forward reference for the bootstrap to cover.
+  "pipeline_state.disk_files",
+  // v0.43 (migration v130) — pipeline_token_usage is created entirely by
+  // migration v130 (not in PGLITE_SCHEMA_SQL). All columns are defined in
+  // the same CREATE TABLE, so no ALTER TABLE ADD COLUMN forward-reference
+  // exists. The unique index in v131 is co-defined in its own migration.
+  "pipeline_token_usage.tokens_in",
+  "pipeline_token_usage.tokens_out",
+  "pipeline_token_usage.tokens_cache_read",
+  "pipeline_token_usage.tokens_cache_create",
+  // v0.43 (migrations v127/v128) — pages.ecli + pages.body_hash. Both are
+  // column-only additions; the partial UNIQUE index in v128 is co-defined
+  // in the same migration, not in PGLITE_SCHEMA_SQL. No forward-reference.
+  "pages.ecli",
+  "pages.body_hash",
+  // pages.is_current / pages.superseded_at — column-only additions with no
+  // forward-reference index in PGLITE_SCHEMA_SQL. Migration handles fresh
+  // + upgrade via ADD COLUMN IF NOT EXISTS.
+  "pages.is_current",
+  "pages.superseded_at",
+  // content_chunks.source_id — column-only addition; the partial index in
+  // the same migration is co-defined there, not in PGLITE_SCHEMA_SQL.
+  "content_chunks.source_id",
 ]);
 
 test("every ALTER TABLE ADD COLUMN in MIGRATIONS is covered by applyForwardReferenceBootstrap (column-only class)", async () => {
