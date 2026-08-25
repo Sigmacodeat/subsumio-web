@@ -306,6 +306,17 @@ async function runStatsSubcommand(engine: BrainEngine, args: string[]): Promise<
       `                         (top-result match quality; a downward drift = retrieval regressing)`
     );
   }
+  // v0.42.21 — vector-arm fallback rate. Non-zero = real users getting
+  // keyword-only results silently (PG timeout, embedding API failure, etc.)
+  if (stats.vector_disabled_count > 0) {
+    const rate = (stats.vector_disabled_rate * 100).toFixed(1);
+    console.log(
+      `  ⚠️ Vector disabled:     ${stats.vector_disabled_count} calls (${rate}% of total) — silent keyword-only fallback`
+    );
+    console.log(
+      `                         (check PG statement_timeout, index size vs RAM, embedding API)`
+    );
+  }
   console.log("");
   console.log("  Mode distribution:");
   for (const [m, c] of Object.entries(stats.mode_distribution).sort((a, b) => b[1] - a[1])) {

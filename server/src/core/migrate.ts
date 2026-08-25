@@ -6037,6 +6037,25 @@ export const MIGRATIONS: Migration[] = [
         ON pipeline_settlement_queue (status, created_at);
     `,
   },
+  {
+    version: 133,
+    name: "search_telemetry_vector_disabled",
+    // v0.42.21 — vector-arm fallback telemetry. When the vector arm fails
+    // (PG statement timeout, embedding API timeout, etc.), hybridSearch
+    // silently degrades to keyword-only. This was only visible via
+    // console.error — nobody reads that in production.
+    //
+    // Adds vector_disabled counter to the existing day/mode/intent rollup
+    // so `gbrain search stats` and `gbrain doctor` can surface the rate.
+    // A non-zero vector_disabled/count ratio means real users are getting
+    // degraded search results without any error surfacing.
+    //
+    // Idempotent ADD COLUMN IF NOT EXISTS on both engines.
+    idempotent: true,
+    sql: `
+      ALTER TABLE search_telemetry ADD COLUMN IF NOT EXISTS vector_disabled INTEGER NOT NULL DEFAULT 0;
+    `,
+  },
 ];
 
 export const LATEST_VERSION =

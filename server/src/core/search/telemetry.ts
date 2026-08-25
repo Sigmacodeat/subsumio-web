@@ -43,6 +43,7 @@ interface Bucket {
   rank1_lt_solid: number; // base_score < 0.6
   rank1_solid: number; // 0.6 <= base_score < 0.85
   rank1_high: number; // base_score >= 0.85
+  vector_disabled: number; // vector arm fell back to keyword-only
 }
 
 // T7 — coarse rank-1 score bands (mirror evidence.ts SOLID/HIGH floors).
@@ -108,6 +109,7 @@ class TelemetryWriter {
         rank1_lt_solid: 0,
         rank1_solid: 0,
         rank1_high: 0,
+        vector_disabled: 0,
       };
       this.buckets.set(key, b);
     }
@@ -118,6 +120,7 @@ class TelemetryWriter {
     b.sum_budget_dropped += Math.max(0, Math.floor(meta.token_budget?.dropped ?? 0));
     if (meta.cache?.status === "hit") b.cache_hit += 1;
     if (meta.cache?.status === "miss") b.cache_miss += 1;
+    if (meta.vector_enabled === false) b.vector_disabled += 1;
     // T7 — rank-1 base_score drift signal. Only counts queries that returned
     // a result (rank1_score present + finite).
     if (typeof opts.rank1_score === "number" && Number.isFinite(opts.rank1_score)) {
@@ -163,8 +166,8 @@ class TelemetryWriter {
             await engine.executeRaw(
               `INSERT INTO search_telemetry
                  (date, mode, intent, count, sum_results, sum_tokens, sum_budget_dropped, cache_hit, cache_miss,
-                  sum_rank1_score, count_rank1, rank1_lt_solid, rank1_solid, rank1_high, first_seen, last_seen)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, now(), now())
+                  sum_rank1_score, count_rank1, rank1_lt_solid, rank1_solid, rank1_high, vector_disabled, first_seen, last_seen)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, now(), now())
                ON CONFLICT (date, mode, intent) DO UPDATE SET
                  count = search_telemetry.count + EXCLUDED.count,
                  sum_results = search_telemetry.sum_results + EXCLUDED.sum_results,
@@ -177,6 +180,7 @@ class TelemetryWriter {
                  rank1_lt_solid = search_telemetry.rank1_lt_solid + EXCLUDED.rank1_lt_solid,
                  rank1_solid = search_telemetry.rank1_solid + EXCLUDED.rank1_solid,
                  rank1_high = search_telemetry.rank1_high + EXCLUDED.rank1_high,
+                 vector_disabled = search_telemetry.vector_disabled + EXCLUDED.vector_disabled,
                  last_seen = now()`,
               [
                 b.date,
@@ -193,6 +197,7 @@ class TelemetryWriter {
                 b.rank1_lt_solid,
                 b.rank1_solid,
                 b.rank1_high,
+                b.vector_disabled,
               ]
             );
           } catch {
@@ -323,6 +328,8 @@ export interface StatsWindow {
   avg_rank1_score: number | null; // null when no rank-1 samples
   rank1_count: number;
   rank1_distribution: { lt_solid: number; solid: number; high: number };
+  vector_disabled_count: number;
+  vector_disabled_rate: number; // vector_disabled_count / total_calls
 }
 
 export async function readSearchStats(
@@ -347,6 +354,7 @@ export async function readSearchStats(
       rank1_lt_solid: number;
       rank1_solid: number;
       rank1_high: number;
+      vector_disabled: number;
       first_seen: string;
       last_seen: string;
     }>(
@@ -362,6 +370,7 @@ export async function readSearchStats(
               COALESCE(SUM(rank1_lt_solid), 0)::int     AS rank1_lt_solid,
               COALESCE(SUM(rank1_solid), 0)::int        AS rank1_solid,
               COALESCE(SUM(rank1_high), 0)::int         AS rank1_high,
+              COALESCE(SUM(vector_disabled), 0)::int    AS vector_disabled,
               MIN(first_seen)::text       AS first_seen,
               MAX(last_seen)::text        AS last_seen
        FROM search_telemetry
@@ -385,6 +394,7 @@ export async function readSearchStats(
     let r1_lt = 0;
     let r1_solid = 0;
     let r1_high = 0;
+    let vector_disabled = 0;
 
     for (const r of rows) {
       total_calls += r.count;
@@ -398,6 +408,7 @@ export async function readSearchStats(
       r1_lt += r.rank1_lt_solid;
       r1_solid += r.rank1_solid;
       r1_high += r.rank1_high;
+      vector_disabled += r.vector_disabled;
       intent_distribution[r.intent] = (intent_distribution[r.intent] ?? 0) + r.count;
       mode_distribution[r.mode] = (mode_distribution[r.mode] ?? 0) + r.count;
       if (r.first_seen && (!oldest_seen || r.first_seen < oldest_seen)) oldest_seen = r.first_seen;
@@ -421,6 +432,8 @@ export async function readSearchStats(
       avg_rank1_score: count_rank1 > 0 ? sum_rank1 / count_rank1 : null,
       rank1_count: count_rank1,
       rank1_distribution: { lt_solid: r1_lt, solid: r1_solid, high: r1_high },
+      vector_disabled_count: vector_disabled,
+      vector_disabled_rate: total_calls > 0 ? vector_disabled / total_calls : 0,
     };
   } catch {
     // Table missing or query failed — return empty stats rather than throw.
@@ -438,6 +451,8 @@ export async function readSearchStats(
       avg_rank1_score: null,
       rank1_count: 0,
       rank1_distribution: { lt_solid: 0, solid: 0, high: 0 },
+      vector_disabled_count: 0,
+      vector_disabled_rate: 0,
     };
   }
 }
