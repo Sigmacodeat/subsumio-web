@@ -3457,16 +3457,23 @@ export function cacheScopeKey(opts?: { sourceId?: string; sourceIds?: string[] }
 
 /**
  * Deterministic tie-breaker comparator for SearchResult sorting.
- * Score DESC, then slug ASC, then chunk_id ASC.
+ * Score DESC, then (source_id, slug) ASC, then chunk_id ASC.
  * Without this, equal-score results have non-deterministic order (Map
  * iteration order varies between runs), causing 7/80 rank changes in eval
  * runs with --reranker none. Mirrors the `ORDER BY score DESC, page_id ASC,
  * chunk_id ASC` tie-breaker already used in searchVector SQL.
+ * Uses (source_id, slug) for uniqueness per the Multi-Source Invariante.
  */
 export function byScoreDescSlugAsc(a: SearchResult, b: SearchResult): number {
   if (b.score !== a.score) return b.score - a.score;
+  const aSrc = a.source_id ?? "default";
+  const bSrc = b.source_id ?? "default";
+  if (aSrc !== bSrc) return aSrc < bSrc ? -1 : 1;
   if (a.slug !== b.slug) return a.slug < b.slug ? -1 : 1;
-  return (a.chunk_id ?? 0) - (b.chunk_id ?? 0);
+  const aChunk = a.chunk_id ?? -1;
+  const bChunk = b.chunk_id ?? -1;
+  if (aChunk !== bChunk) return aChunk - bChunk;
+  return 0;
 }
 
 /**

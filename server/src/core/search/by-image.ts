@@ -29,7 +29,7 @@
 import type { BrainEngine } from "../engine.ts";
 import type { SearchOpts, SearchResult } from "../types.ts";
 import { effectiveRrfK } from "./intent-weights.ts";
-import { rrfFusionWeighted, RRF_K } from "./hybrid.ts";
+import { rrfFusionWeighted, RRF_K, byScoreDescSlugAsc } from "./hybrid.ts";
 import { dedupResults } from "./dedup.ts";
 import { embedQueryMultimodal, embedQueryMultimodalImage } from "../ai/gateway.ts";
 import { loadSearchModeConfig, resolveSearchMode } from "./mode.ts";
@@ -119,7 +119,7 @@ export async function searchByImage(
       ],
       true // apply boost
     );
-    fused.sort((a, b) => b.score - a.score);
+    fused.sort(byScoreDescSlugAsc);
     return dedupResults(fused).slice(offset, offset + limit);
   }
 

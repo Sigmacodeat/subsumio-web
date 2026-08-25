@@ -1702,7 +1702,7 @@ export class PGLiteEngine implements BrainEngine {
            -- OCR text doesn't drown text-page hits. Image-similarity queries
            -- run a separate vector path on embedding_image.
            AND cc.modality = 'text'
-         ORDER BY score DESC
+         ORDER BY score DESC, page_id ASC, chunk_id ASC
          LIMIT $2
        ),
        ${buildBestPerPagePoolCte("ranked")}
@@ -1828,7 +1828,7 @@ export class PGLiteEngine implements BrainEngine {
            JOIN sources s ON s.id = p.source_id
            WHERE cc.chunk_text ILIKE '%' || $1 || '%' ESCAPE '\\' ${detailFilter}${extraFilter} ${hardExcludeClause} ${visibilityClause}
              AND cc.modality = 'text'
-           ORDER BY score DESC
+           ORDER BY score DESC, page_id ASC, chunk_id ASC
            LIMIT $3
          ),
          ${buildBestPerPagePoolCte("ranked")}
@@ -1853,7 +1853,7 @@ export class PGLiteEngine implements BrainEngine {
          JOIN pages p ON p.id = cc.page_id
          JOIN sources s ON s.id = p.source_id
          WHERE cc.chunk_text ILIKE '%' || $1 || '%' ESCAPE '\\' ${detailFilter}${extraFilter} ${hardExcludeClause} ${visibilityClause}
-         ORDER BY score DESC
+         ORDER BY score DESC, page_id ASC, chunk_id ASC
          LIMIT $3 OFFSET $4`,
         params
       );
@@ -1973,7 +1973,7 @@ export class PGLiteEngine implements BrainEngine {
        JOIN pages p ON p.id = cc.page_id
        JOIN sources s ON s.id = p.source_id
        WHERE cc.search_vector @@ websearch_to_tsquery('german', $1) ${detailFilter}${extraFilter} ${hardExcludeClause} ${visibilityClause}
-       ORDER BY score DESC
+       ORDER BY score DESC, page_id ASC, chunk_id ASC
        LIMIT $2 OFFSET $3`,
       params
     );
