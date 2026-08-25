@@ -1927,7 +1927,7 @@ export async function applyAliasHop(
       alias_hit: true,
     } as SearchResult);
   }
-  out.sort((a, b) => b.score - a.score);
+  out.sort(byScoreDescSlugAsc);
   return out;
 }
 
@@ -2051,7 +2051,7 @@ export function selectLegalVersionsAsOf(
       .sort((a, b) => b.match[1].localeCompare(a.match[1]));
     if (dated[0]) selected.push(dated[0].result);
   }
-  return selected.sort((a, b) => b.score - a.score);
+  return selected.sort(byScoreDescSlugAsc);
 }
 
 /**
@@ -2462,7 +2462,7 @@ export async function hybridSearch(
         const prior = merged.get(key);
         if (!prior || result.score > prior.score) merged.set(key, result);
       }
-      keywordResults = [...merged.values()].sort((a, b) => b.score - a.score);
+      keywordResults = [...merged.values()].sort(byScoreDescSlugAsc);
     }
   }
 
@@ -2619,7 +2619,7 @@ export async function hybridSearch(
     }
     if (noEmbedResults.length > 0) {
       await runPostFusionStages(engine, noEmbedResults, postFusionOpts);
-      noEmbedResults.sort((a, b) => b.score - a.score);
+      noEmbedResults.sort(byScoreDescSlugAsc);
     }
     // T3/T4 — alias hop + evidence stamp even without an embedding provider
     // (the named-thing fix is most valuable exactly when vector is unavailable).
@@ -2870,7 +2870,7 @@ export async function hybridSearch(
     }
     if (fallbackResults.length > 0) {
       await runPostFusionStages(engine, fallbackResults, postFusionOpts);
-      fallbackResults.sort((a, b) => b.score - a.score);
+      fallbackResults.sort(byScoreDescSlugAsc);
     }
     const kwHopped = await applyAliasHop(engine, dedupResults(fallbackResults), query, {
       sourceId: opts?.sourceId,
@@ -2961,7 +2961,7 @@ export async function hybridSearch(
     if (intentWeights.exactMatchBoost !== 1.0) {
       applyExactMatchBoost(fused, query, intentWeights);
     }
-    fused.sort((a, b) => b.score - a.score);
+    fused.sort(byScoreDescSlugAsc);
   }
 
   // v0.20.0 Cathedral II Layer 7 (A2): two-pass structural expansion.
@@ -2995,7 +2995,7 @@ export async function hybridSearch(
           r.score = scoreById.get(r.chunk_id) ?? 0.01;
           fused.push(r);
         }
-        fused.sort((a, b) => b.score - a.score);
+        fused.sort(byScoreDescSlugAsc);
       }
       // Widen per-page dedup cap when walking.
       const capFromWalk = Math.min(10, Math.max(walkDepth * 5, 5));
@@ -3456,6 +3456,20 @@ export function cacheScopeKey(opts?: { sourceId?: string; sourceIds?: string[] }
 }
 
 /**
+ * Deterministic tie-breaker comparator for SearchResult sorting.
+ * Score DESC, then slug ASC, then chunk_id ASC.
+ * Without this, equal-score results have non-deterministic order (Map
+ * iteration order varies between runs), causing 7/80 rank changes in eval
+ * runs with --reranker none. Mirrors the `ORDER BY score DESC, page_id ASC,
+ * chunk_id ASC` tie-breaker already used in searchVector SQL.
+ */
+export function byScoreDescSlugAsc(a: SearchResult, b: SearchResult): number {
+  if (b.score !== a.score) return b.score - a.score;
+  if (a.slug !== b.slug) return a.slug < b.slug ? -1 : 1;
+  return (a.chunk_id ?? 0) - (b.chunk_id ?? 0);
+}
+
+/**
  * v0.32.x search-lite — weighted RRF. Each list contributes with its own
  * effective k value, which lets intent weighting bias keyword vs vector
  * lists without re-weighting individual scores. Wraps rrfFusion internally
@@ -3496,7 +3510,11 @@ export function rrfFusionWeighted(
   }
 
   return entries
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (a.result.slug !== b.result.slug) return a.result.slug < b.result.slug ? -1 : 1;
+      return (a.result.chunk_id ?? 0) - (b.result.chunk_id ?? 0);
+    })
     .map(({ result, score }) => ({ ...result, score }));
 }
 
@@ -3546,9 +3564,13 @@ export function rrfFusion(lists: SearchResult[][], k: number, applyBoost = true)
     }
   }
 
-  // Sort by boosted score descending
+  // Sort by boosted score descending, with deterministic tie-breaker
   return entries
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (a.result.slug !== b.result.slug) return a.result.slug < b.result.slug ? -1 : 1;
+      return (a.result.chunk_id ?? 0) - (b.result.chunk_id ?? 0);
+    })
     .map(({ result, score }) => ({ ...result, score }));
 }
 
@@ -3600,7 +3622,7 @@ async function cosineReScore(
 
       return { ...r, score: blended };
     })
-    .sort((a, b) => b.score - a.score);
+    .sort(byScoreDescSlugAsc);
 }
 
 export function cosineSimilarity(a: Float32Array, b: Float32Array): number {

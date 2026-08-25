@@ -107,6 +107,8 @@ interface Result {
   reciprocal_rank: number;
   top_slugs: string[];
   top_scores: number[];
+  vector_enabled?: boolean;
+  expansion_applied?: boolean;
   error?: string;
 }
 
@@ -343,6 +345,8 @@ Output ONLY a JSON array of document indices, most helpful first. No explanation
       );
 
       try {
+        // onMeta callback — captures whether vector arm ran or fell back
+        let metaCaptured: { vector_enabled: boolean; expansion_applied: boolean } | null = null;
         const searchResults = await hybridSearch(engine, q.question, {
           limit: SEARCH_LIMIT,
           sourceIds: SOURCE_IDS,
@@ -353,6 +357,12 @@ Output ONLY a JSON array of document indices, most helpful first. No explanation
             type: "vector" as const,
             dimensions: 1536,
             embeddingModel: "openrouter:openai/text-embedding-3-small",
+          },
+          onMeta: (m: any) => {
+            metaCaptured = {
+              vector_enabled: m.vector_enabled,
+              expansion_applied: m.expansion_applied,
+            };
           },
           reranker: rerankerFn
             ? {
@@ -388,9 +398,16 @@ Output ONLY a JSON array of document indices, most helpful first. No explanation
           reciprocal_rank: firstHit >= 0 ? 1 / (firstHit + 1) : 0,
           top_slugs: rankedSlugs,
           top_scores: rankedScores,
+          ...(metaCaptured
+            ? {
+                vector_enabled: metaCaptured.vector_enabled,
+                expansion_applied: metaCaptured.expansion_applied,
+              }
+            : {}),
         };
 
         results.push(result);
+        const vecFlag = metaCaptured ? (metaCaptured.vector_enabled ? "" : " ⚠️NO-VEC") : "";
         const mark = result.hit_at_1
           ? "✅ #1"
           : result.hit_at_3
@@ -400,7 +417,7 @@ Output ONLY a JSON array of document indices, most helpful first. No explanation
               : result.hit_at_8
                 ? "🟠 #8"
                 : "❌ miss";
-        console.log(`${mark} (rank=${result.rank})`);
+        console.log(`${mark} (rank=${result.rank})${vecFlag}`);
       } catch (e) {
         const errMsg = e instanceof Error ? e.message : String(e);
         console.log(`❌ ERROR: ${errMsg.substring(0, 80)}`);
@@ -448,7 +465,8 @@ Output ONLY a JSON array of document indices, most helpful first. No explanation
     label: string,
     agg: ReturnType<typeof computeAgg>,
     n: number,
-    elapsedS: number
+    elapsedS: number,
+    results?: Result[]
   ) {
     console.log("");
     console.log(`═══════════════════════════════════════════════════════════`);
@@ -466,6 +484,18 @@ Output ONLY a JSON array of document indices, most helpful first. No explanation
     console.log(`  Recall@30:   ${(agg.recall_at_30 * 100).toFixed(1)}%`);
     console.log(`  Recall@50:   ${(agg.recall_at_50 * 100).toFixed(1)}%`);
     console.log(`  Recall@100:  ${(agg.recall_at_100 * 100).toFixed(1)}%`);
+    if (results) {
+      const withMeta = results.filter((r) => r.vector_enabled !== undefined);
+      const noVec = results.filter((r) => r.vector_enabled === false);
+      if (withMeta.length > 0) {
+        console.log(
+          `  Vector arm:  ${withMeta.length - noVec.length}/${withMeta.length} ran, ${noVec.length} fell back to keyword-only ⚠️`
+        );
+        if (noVec.length > 0) {
+          console.log(`  ⚠️ NO-VEC queries: ${noVec.map((r) => r.question_id).join(", ")}`);
+        }
+      }
+    }
     console.log(`═══════════════════════════════════════════════════════════`);
   }
 
@@ -484,9 +514,9 @@ Output ONLY a JSON array of document indices, most helpful first. No explanation
     allRunTimes.push(elapsed);
 
     if (REPEAT === 1) {
-      printAgg("RESULTS", allRunAggs[0], results.length, elapsed);
+      printAgg("RESULTS", allRunAggs[0], results.length, elapsed, results);
     } else {
-      printAgg(runLabel, allRunAggs[run], results.length, elapsed);
+      printAgg(runLabel, allRunAggs[run], results.length, elapsed, results);
     }
   }
 

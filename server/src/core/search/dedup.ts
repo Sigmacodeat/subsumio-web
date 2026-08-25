@@ -18,6 +18,7 @@
  */
 
 import type { SearchResult } from "../types.ts";
+import { byScoreDescSlugAsc } from "./hybrid.ts";
 
 const COSINE_DEDUP_THRESHOLD = 0.85;
 const MAX_TYPE_RATIO = 0.6;
@@ -85,11 +86,11 @@ function dedupBySource(results: SearchResult[]): SearchResult[] {
 
   const kept: SearchResult[] = [];
   for (const chunks of byPage.values()) {
-    chunks.sort((a, b) => b.score - a.score);
+    chunks.sort(byScoreDescSlugAsc);
     kept.push(...chunks.slice(0, 3));
   }
 
-  return kept.sort((a, b) => b.score - a.score);
+  return kept.sort(byScoreDescSlugAsc);
 }
 
 /**
@@ -187,7 +188,7 @@ function guaranteeCompiledTruth(results: SearchResult[], preDedup: SearchResult[
     // pages in different sources don't mistakenly swap chunks across.
     const candidate = preDedup
       .filter((r) => pageKey(r) === key && r.chunk_source === "compiled_truth")
-      .sort((a, b) => b.score - a.score)[0];
+      .sort(byScoreDescSlugAsc)[0];
 
     if (!candidate) continue;
 
