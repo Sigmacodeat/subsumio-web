@@ -7,28 +7,17 @@
  *   afterAll(async () => { await teardownDB(); });
  */
 
-import { readFileSync, existsSync, readdirSync, statSync } from "fs";
-import { join, resolve, relative, dirname, basename, extname } from "path";
+import { readFileSync, readdirSync, statSync } from "fs";
+import { join, resolve, relative, basename, extname } from "path";
 import { PostgresEngine } from "../../src/core/postgres-engine.ts";
 import * as db from "../../src/core/db.ts";
 import { importFromContent } from "../../src/core/import-file.ts";
 import { parseMarkdown } from "../../src/core/markdown.ts";
 
-// Load .env.testing if present
-const envPath = resolve(import.meta.dir, "../../.env.testing");
-if (existsSync(envPath)) {
-  const lines = readFileSync(envPath, "utf-8").split("\n");
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq);
-    const val = trimmed.slice(eq + 1);
-    if (!process.env[key]) process.env[key] = val;
-  }
-}
-
+// E2E tests need a DATABASE_URL pointing at a TEST database — never the
+// production corpus. We do NOT load .env (which points at subsumio_law_v2).
+// The caller must set DATABASE_URL explicitly to a test DB, e.g.:
+//   DATABASE_URL=postgresql://postgres:postgres@localhost:5433/gbrain_test bun test ...
 const DATABASE_URL = process.env.DATABASE_URL;
 const FIXTURES_DIR = resolve(import.meta.dir, "fixtures");
 
@@ -58,9 +47,15 @@ const ALL_TABLES = [
 
 /**
  * Check if a real database is available for E2E tests.
+ * Returns false if DATABASE_URL is unset OR points at the production corpus.
  */
 export function hasDatabase(): boolean {
-  return !!DATABASE_URL;
+  if (!DATABASE_URL) return false;
+  const dbName = DATABASE_URL.match(/\/([^/?]+)(?:\?|$)/)?.[1] ?? "";
+  // Reject production DB names — E2E tests must use a separate test DB.
+  if (dbName.includes("subsumio_law") || dbName.includes("sigmabrain")) return false;
+  if (!dbName.includes("test") && !dbName.endsWith("_test")) return false;
+  return true;
 }
 
 /**
