@@ -722,6 +722,12 @@ const COLUMN_EXEMPTIONS = new Set<string>([
   "search_telemetry.rank1_lt_solid",
   "search_telemetry.rank1_solid",
   "search_telemetry.rank1_high",
+  // v0.42.21 — vector-arm fallback counter (migration v133). Same rationale as
+  // the v111 rank-1 columns above: search_telemetry is created entirely by
+  // migration v57 (not in the schema blob), so the v57+v133 chain handles fresh
+  // + upgrade; no CREATE INDEX references this column, so there is no forward
+  // reference for the bootstrap to cover.
+  "search_telemetry.vector_disabled",
   // Schema-blob-not-yet-refreshed: each of these columns is added by a
   // migration but NOT (yet) referenced by `PGLITE_SCHEMA_SQL` (neither in a
   // CREATE TABLE body nor in any CREATE INDEX). Bootstrap doesn't need to
