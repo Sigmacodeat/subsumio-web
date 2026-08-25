@@ -14,6 +14,8 @@ import {
 } from "./ai/gateway.ts";
 import { lookupEmbeddingPrice } from "./embedding-pricing.ts";
 import { DEFAULT_EMBEDDING_MODEL, DEFAULT_EMBEDDING_DIMENSIONS } from "./ai/defaults.ts";
+import { readFileSync, existsSync, appendFileSync } from "fs";
+import { createHash } from "crypto";
 
 // v0.27.1: re-export multimodal embedding so callers can pull both text and
 // image embedding APIs from `src/core/embedding`. import-image-file consumes
@@ -47,11 +49,59 @@ export async function embed(text: string): Promise<Float32Array> {
  * dynamic-embedding-column path can embed via the column's provider rather
  * than the globally-configured default. Bare `embedQuery(text)` preserves
  * pre-v0.36 behavior.
+ *
+ * v0.49 (eval-determinism): persistent query-embedding cache. When enabled
+ * with a file path, the same (model|dimensions|text) always returns the same
+ * vector — across processes. This is critical for eval harnesses where
+ * text-embedding-3-small via OpenRouter returns slightly different vectors
+ * (~1e-5 diff) on ~20% of calls, causing non-deterministic IVFFlat candidate
+ * sets. The cache is a JSONL file: one {key, vector} per line.
  */
+const _queryEmbedCache = new Map<string, Float32Array>();
+let _queryEmbedCacheEnabled = false;
+let _queryEmbedCacheFile: string | null = null;
+
+export function enableQueryEmbedCache(cacheFile?: string): void {
+  _queryEmbedCacheEnabled = true;
+  _queryEmbedCache.clear();
+  _queryEmbedCacheFile = cacheFile ?? null;
+  if (_queryEmbedCacheFile && existsSync(_queryEmbedCacheFile)) {
+    const raw = readFileSync(_queryEmbedCacheFile, "utf-8");
+    for (const line of raw.split("\n")) {
+      if (!line.trim()) continue;
+      try {
+        const entry = JSON.parse(line) as { key: string; vector: number[] };
+        _queryEmbedCache.set(entry.key, new Float32Array(entry.vector));
+      } catch {}
+    }
+  }
+}
+
+export function disableQueryEmbedCache(): void {
+  _queryEmbedCacheEnabled = false;
+  _queryEmbedCache.clear();
+  _queryEmbedCacheFile = null;
+}
+
+export function getQueryEmbedCacheStats(): { size: number; enabled: boolean } {
+  return { size: _queryEmbedCache.size, enabled: _queryEmbedCacheEnabled };
+}
+
 export async function embedQuery(
   text: string,
   opts?: { embeddingModel?: string; dimensions?: number; abortSignal?: AbortSignal }
 ): Promise<Float32Array> {
+  if (_queryEmbedCacheEnabled) {
+    const key = `${opts?.embeddingModel ?? "default"}|${opts?.dimensions ?? 0}|${text}`;
+    const cached = _queryEmbedCache.get(key);
+    if (cached) return cached;
+    const vec = await gatewayEmbedQuery(text, opts);
+    _queryEmbedCache.set(key, vec);
+    if (_queryEmbedCacheFile) {
+      appendFileSync(_queryEmbedCacheFile, JSON.stringify({ key, vector: Array.from(vec) }) + "\n");
+    }
+    return vec;
+  }
   return gatewayEmbedQuery(text, opts);
 }
 
