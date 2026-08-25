@@ -2334,6 +2334,13 @@ export class PostgresEngine implements BrainEngine {
       await sql.unsafe(`SET LOCAL hnsw.ef_search = ${efSearch}`, []);
       await sql.unsafe("SET LOCAL hnsw.iterative_scan = 'relaxed_order'", []);
       await sql.unsafe("SET LOCAL hnsw.max_scan_tuples = 50000", []);
+      // IVFFlat: probes default is 1 (only 1 cluster searched). With 3600 lists
+      // at 3.6M rows (~1012 rows/list), probes=1 misses 99.97% of candidates.
+      // probes=60 ≈ sqrt(lists) gives ~95% recall per pgvector benchmarks.
+      // Filtered queries need more probes since the cluster may not align with
+      // the source_id filter, so we use 120 for filtered, 60 for unfiltered.
+      const ivfflatProbes = hasSourceFilter ? 120 : 60;
+      await sql.unsafe(`SET LOCAL ivfflat.probes = ${ivfflatProbes}`, []);
       return await sql.unsafe(rawQuery, params as Parameters<typeof sql.unsafe>[1]);
     });
     return rows.map(rowToSearchResult);

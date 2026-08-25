@@ -31,7 +31,7 @@
 {"question_id": "at-031", "question": "Was ist der Kündigungsgrund eines Arbeitnehmers im Arbeitsverhältnis?", "expected_slug": "legal/statutes/at/arbvg/p-105", "legal_area": "arbvg", "question_type": "arbeitsrecht"}
 {"question_id": "at-032", "question": "Welche Rechte hat ein Arbeitnehmer bei ungerechtfertigter Entlassung?", "expected_slug": "legal/statutes/at/avrag/p-15", "legal_area": "avrag", "question_type": "arbeitsrecht"}
 {"question_id": "at-033", "question": "Wie lange ist die Karenzzeit nach der Geburt eines Kindes?", "expected_slug": "legal/statutes/at/vkg/p-2", "legal_area": "vkgg", "question_type": "arbeitsrecht"}
-{"question_id": "at-034", "question": "Was ist der Anspruch auf Urlaubsentgelt im Arbeitsrecht?", "expected_slug": "legal/statutes/at/buag/p-12", "legal_area": "buag", "question_type": "arbeitsrecht"}
+{"question_id": "at-034", "question": "Was ist der Anspruch auf Urlaubsentgelt im Arbeitsrecht?", "expected_slug": "legal/statutes/at/buag/p-11", "legal_area": "buag", "question_type": "arbeitsrecht"}
 {"question_id": "at-035", "question": "Welche Voraussetzungen müssen für eine wirksame Kündigung vorliegen?", "expected_slug": "legal/statutes/at/arbvg/p-105", "legal_area": "arbvg", "question_type": "arbeitsrecht"}
 {"question_id": "at-036", "question": "Was regelt das Allgemeine Sozialversicherungsgesetz über den Krankenversicherungsschutz?", "expected_slug": "legal/statutes/at/asvg/p-116", "legal_area": "asvg", "question_type": "sozialrecht"}
 {"question_id": "at-037", "question": "Welche Leistungen umfasst die Krankenversicherung?", "expected_slug": "legal/statutes/at/asvg/p-116", "legal_area": "asvg", "question_type": "sozialrecht"}
@@ -41,9 +41,9 @@
 {"question_id": "at-041", "question": "Was ist die Zuständigkeit des Verwaltungsgerichts im AVG?", "expected_slug": "legal/statutes/at/avg/p-1", "legal_area": "avg", "question_type": "verwaltungsrecht"}
 {"question_id": "at-042", "question": "Welche Fristen gelten für die Einbringung eines Antrags im Verwaltungsverfahren?", "expected_slug": "legal/statutes/at/avg/p-73", "legal_area": "avg", "question_type": "verwaltungsrecht"}
 {"question_id": "at-043", "question": "Was ist der Bescheid im Verwaltungsverfahren?", "expected_slug": "legal/statutes/at/avg/p-56", "legal_area": "avg", "question_type": "verwaltungsrecht"}
-{"question_id": "at-044", "question": "Welche Rechtsschutzmöglichkeiten gibt es gegen einen Bescheid?", "expected_slug": "legal/statutes/at/avg/p-62", "legal_area": "avg", "question_type": "verwaltungsrecht"}
+{"question_id": "at-044", "question": "Welche Rechtsschutzmöglichkeiten gibt es gegen einen Bescheid?", "expected_slug": "legal/statutes/at/avg/p-61", "legal_area": "avg", "question_type": "verwaltungsrecht"}
 {"question_id": "at-045", "question": "Was ist die Parteienstellung im Verwaltungsverfahren?", "expected_slug": "legal/statutes/at/avg/p-8", "legal_area": "avg", "question_type": "verwaltungsrecht"}
-{"question_id": "at-046", "question": "Welche Voraussetzungen müssen für die Scheidung durch Verschulden vorliegen?", "expected_slug": "legal/statutes/at/eheg/p-55", "legal_area": "eheg", "question_type": "familienrecht"}
+{"question_id": "at-046", "question": "Welche Voraussetzungen müssen für die Scheidung durch Verschulden vorliegen?", "expected_slug": "legal/statutes/at/eheg/p-49", "legal_area": "eheg", "question_type": "familienrecht"}
 {"question_id": "at-047", "question": "Was ist der Unterhaltsanspruch eines Ehegatten nach der Scheidung?", "expected_slug": "legal/statutes/at/eheg/p-66", "legal_area": "eheg", "question_type": "familienrecht"}
 {"question_id": "at-048", "question": "Wie wird das Ehewohnungsrecht bei Trennung geregelt?", "expected_slug": "legal/statutes/at/eheg/p-87", "legal_area": "eheg", "question_type": "familienrecht"}
 {"question_id": "at-049", "question": "Welche Voraussetzungen gelten für die Eheschließung?", "expected_slug": "legal/statutes/at/eheg/p-1", "legal_area": "eheg", "question_type": "familienrecht"}
@@ -54,11 +54,11 @@
 {"question_id": "at-054", "question": "Was ist die Gewerbeberechtigung im österreichischen Gewerberecht?", "expected_slug": "legal/statutes/at/gewo-1994-10007517/p-1", "legal_area": "gewo", "question_type": "gewerberecht"}
 {"question_id": "at-055", "question": "Welche Voraussetzungen müssen für die Gewerbeerteilung vorliegen?", "expected_slug": "legal/statutes/at/gewo-1994-10007517/p-15", "legal_area": "gewo", "question_type": "gewerberecht"}
 {"question_id": "at-056", "question": "Was ist die Gewerbeuntersagung und wann wird sie verhängt?", "expected_slug": "legal/statutes/at/gewo-1994-10007517/p-87", "legal_area": "gewo", "question_type": "gewerberecht"}
-{"question_id": "at-057", "question": "Welche Rechte haben Betroffene nach dem Datenschutzgesetz?", "expected_slug": "legal/statutes/at/dsg/art-2-p-21", "legal_area": "dsg", "question_type": "datenschutzrecht"}
+{"question_id": "at-057", "question": "Welche Rechte haben Betroffene nach dem Datenschutzgesetz?", "expected_slug": "legal/statutes/at/dsg/art-2-p-24", "legal_area": "dsg", "question_type": "datenschutzrecht"}
 {"question_id": "at-058", "question": "Was ist die Verarbeitung personenbezogener Daten im Sinne des Datenschutzgesetzes?", "expected_slug": "legal/statutes/at/dsg/art-2-p-4", "legal_area": "dsg", "question_type": "datenschutzrecht"}
-{"question_id": "at-059", "question": "Welche Rechte haben Asylwerber im österreichischen Asylverfahren?", "expected_slug": "legal/statutes/at/asylg-2005/p-1", "legal_area": "asylg", "question_type": "asylrecht"}
-{"question_id": "at-060", "question": "Was ist der Asylantrag und wie wird er gestellt?", "expected_slug": "legal/statutes/at/asylg-2005/p-1", "legal_area": "asylg", "question_type": "asylrecht"}
-{"question_id": "at-061", "question": "Was sind die Voraussetzungen für eine Ehescheidung wegen Verschuldens?", "expected_slug": "legal/statutes/at/eheg/p-43", "legal_area": "eheg", "question_type": "familienrecht"}
+{"question_id": "at-059", "question": "Welche Rechte haben Asylwerber im österreichischen Asylverfahren?", "expected_slug": "legal/statutes/at/asylg-2005/p-12", "legal_area": "asylg", "question_type": "asylrecht"}
+{"question_id": "at-060", "question": "Was ist der Asylantrag und wie wird er gestellt?", "expected_slug": "legal/statutes/at/asylg-2005/p-17", "legal_area": "asylg", "question_type": "asylrecht"}
+{"question_id": "at-061", "question": "Was sind die Voraussetzungen für eine Ehescheidung wegen Verschuldens?", "expected_slug": "legal/statutes/at/eheg/p-49", "legal_area": "eheg", "question_type": "familienrecht"}
 {"question_id": "at-062", "question": "Wann kann ein Ehegatte Unterhalt verlangen?", "expected_slug": "legal/statutes/at/eheg/p-66", "legal_area": "eheg", "question_type": "familienrecht"}
 {"question_id": "at-063", "question": "Was ist die Vermögensauseinandersetzung nach einer Scheidung?", "expected_slug": "legal/statutes/at/eheg/p-81", "legal_area": "eheg", "question_type": "familienrecht"}
 {"question_id": "at-064", "question": "Wann ist ein Insolvenzverfahren zu eröffnen?", "expected_slug": "legal/statutes/at/io/p-69", "legal_area": "io", "question_type": "insolvenzrecht"}
@@ -70,10 +70,10 @@
 {"question_id": "at-070", "question": "Welche Leistungen bietet die Krankenversicherung?", "expected_slug": "legal/statutes/at/asvg/p-102", "legal_area": "asvg", "question_type": "sozialrecht"}
 {"question_id": "at-071", "question": "Wann entsteht ein Pensionsanspruch nach dem ASVG?", "expected_slug": "legal/statutes/at/asvg/p-245", "legal_area": "asvg", "question_type": "sozialrecht"}
 {"question_id": "at-072", "question": "Was ist die Kündigung eines Arbeitsverhältnisses nach dem ArbVG?", "expected_slug": "legal/statutes/at/arbvg/p-105", "legal_area": "arbvg", "question_type": "arbeitsrecht"}
-{"question_id": "at-073", "question": "Wann ist eine Entlassung eines Dienstnehmers gerechtfertigt?", "expected_slug": "legal/statutes/at/arbvg/p-105", "legal_area": "arbvg", "question_type": "arbeitsrecht"}
-{"question_id": "at-074", "question": "Was ist der Anspruch auf Abfertigung nach dem ArbVG?", "expected_slug": "legal/statutes/at/arbvg/p-97", "legal_area": "arbvg", "question_type": "arbeitsrecht"}
+{"question_id": "at-073", "question": "Wann ist eine Entlassung eines Dienstnehmers gerechtfertigt?", "expected_slug": "legal/statutes/at/angg/art-1-p-27", "legal_area": "arbvg", "question_type": "arbeitsrecht"}
+{"question_id": "at-074", "question": "Was ist der Anspruch auf Abfertigung nach dem ArbVG?", "expected_slug": "legal/statutes/at/buag/p-13a", "legal_area": "arbvg", "question_type": "arbeitsrecht"}
 {"question_id": "at-075", "question": "Was ist die Haftung der Geschäftsführer einer Aktiengesellschaft?", "expected_slug": "legal/statutes/at/aktg/p-84", "legal_area": "aktg", "question_type": "gesellschaftsrecht"}
-{"question_id": "at-076", "question": "Welche Vorschriften gelten für die Hauptversammlung einer AG?", "expected_slug": "legal/statutes/at/aktg/p-101", "legal_area": "aktg", "question_type": "gesellschaftsrecht"}
+{"question_id": "at-076", "question": "Welche Vorschriften gelten für die Hauptversammlung einer AG?", "expected_slug": "legal/statutes/at/aktg/p-104", "legal_area": "aktg", "question_type": "gesellschaftsrecht"}
 {"question_id": "at-077", "question": "Was ist die sachliche Zuständigkeit der Gerichte nach der JN?", "expected_slug": "legal/statutes/at/jn/p-1", "legal_area": "jn", "question_type": "procedural"}
 {"question_id": "at-078", "question": "Was ist der Streitwert und wie wird er berechnet nach der JN?", "expected_slug": "legal/statutes/at/jn/p-7a", "legal_area": "jn", "question_type": "procedural"}
 {"question_id": "at-079", "question": "Was ist die Pflicht zur Rechnungslegung nach dem UGB?", "expected_slug": "legal/statutes/at/ugb/p-189", "legal_area": "ugb", "question_type": "definition"}
