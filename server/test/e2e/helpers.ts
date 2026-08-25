@@ -66,11 +66,29 @@ export function hasDatabase(): boolean {
 /**
  * Connect to DB, run schema init, truncate all tables.
  * Call in beforeAll() of each test file.
+ *
+ * SAFETY GUARD: refuses to proceed if the database name doesn't look like a
+ * test database (must contain "test" or end in "_test"), OR if the `pages`
+ * table has more than 5000 rows. This prevents accidental truncation of a
+ * production corpus — which happened on 2026-08-25 when server/.env pointed
+ * at the production DB and `bun test test/e2e/*` truncated 775k pages +
+ * 3.6M chunks.
  */
 export async function setupDB(): Promise<PostgresEngine> {
   if (!DATABASE_URL) {
     throw new Error(
       "DATABASE_URL not set. Copy .env.testing.example to .env.testing and configure it."
+    );
+  }
+
+  // Guard 1: database name must look like a test DB.
+  const dbName = DATABASE_URL.match(/\/([^/?]+)(?:\?|$)/)?.[1] ?? "";
+  if (!dbName.includes("test") && !dbName.endsWith("_test")) {
+    throw new Error(
+      `setupDB() SAFETY GUARD: database "${dbName}" doesn't look like a test DB ` +
+        `(name must contain "test" or end in "_test"). ` +
+        `Refusing to truncate — check DATABASE_URL in your .env or .env.testing. ` +
+        `If this IS a test DB, rename it to include "test" in the name.`
     );
   }
 
@@ -81,10 +99,30 @@ export async function setupDB(): Promise<PostgresEngine> {
   await db.connect({ database_url: DATABASE_URL });
   await db.initSchema();
 
+  // Guard 2: refuse to truncate if pages table has > 5000 rows.
+  // A test DB should be empty or have fixture data (typically < 100 rows).
+  // 775k rows means this is a production corpus.
+  const conn = db.getConnection();
+  try {
+    const rowCount = await conn.unsafe(`SELECT count(*)::int as n FROM pages`);
+    const n = (rowCount[0] as { n?: number })?.n ?? 0;
+    if (n > 5000) {
+      await db.disconnect();
+      throw new Error(
+        `setupDB() SAFETY GUARD: pages table has ${n} rows (threshold: 5000). ` +
+          `This looks like a production database, not a test DB. ` +
+          `Refusing to truncate — check DATABASE_URL.`
+      );
+    }
+  } catch (e: unknown) {
+    // Table doesn't exist yet (fresh DB) — that's fine, proceed.
+    const code = (e as { code?: string })?.code;
+    if (code !== "42P01") throw e;
+  }
+
   // Truncate all data tables (preserves schema + extensions).
   // Some tables (e.g. v0.28 takes/synthesis_evidence) only exist after
   // migrations run via engine.connect() below, so skip non-existent tables.
-  const conn = db.getConnection();
   for (const table of ALL_TABLES) {
     try {
       await conn.unsafe(`TRUNCATE ${table} CASCADE`);
