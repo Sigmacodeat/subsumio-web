@@ -6,6 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   FileText,
   Download,
   RefreshCw,
@@ -61,7 +68,7 @@ interface TracesResponse {
 
 export default function ComplianceExportPage() {
   const { t } = useLang();
-  const [limit, _setLimit] = useState(50);
+  const [limit, setLimit] = useState(50);
 
   const { data, isLoading, refetch } = useQuery<TracesResponse>({
     queryKey: ["reasoning-traces", limit],
@@ -128,7 +135,19 @@ export default function ComplianceExportPage() {
         title={t("admin.compliance_export.title")}
         description={t("admin.compliance_export.desc")}
         actions={
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            <Select value={String(limit)} onValueChange={(v) => setLimit(Number(v))}>
+              <SelectTrigger className="h-9 w-[120px] text-xs" aria-label="Anzahl Traces">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[10, 25, 50, 100, 200].map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {n} Traces
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button variant="outline" size="sm" onClick={() => refetch()}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh

@@ -31,6 +31,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/use-lang";
 
 // ── Types ─────────────────────────────────────────────────────────────
@@ -115,7 +116,7 @@ export default function FeedbackTriagePage() {
   const [correction, setCorrection] = useState<string>("");
   const [reviewNotes, setReviewNotes] = useState<string>("");
 
-  const { data: statsData, isLoading: _statsLoading } = useQuery({
+  const { data: statsData, isLoading: statsLoading } = useQuery({
     queryKey: ["triage-stats"],
     queryFn: async () => {
       const res = await fetch("/api/admin/feedback-triage?action=stats");
@@ -230,7 +231,11 @@ export default function FeedbackTriagePage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[color:var(--ds-text-muted)]">Gesamt</p>
-                <p className="text-2xl font-bold">{stats?.total ?? "—"}</p>
+                {statsLoading ? (
+                  <Skeleton className="mt-1 h-7 w-16" />
+                ) : (
+                  <p className="text-2xl font-bold">{stats?.total ?? "—"}</p>
+                )}
               </div>
               <ClipboardList className="h-8 w-8 text-[color:var(--ds-text-muted)]" />
             </div>
@@ -241,7 +246,11 @@ export default function FeedbackTriagePage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[color:var(--ds-text-muted)]">Wartend</p>
-                <p className="text-2xl font-bold">{stats?.pending_count ?? "—"}</p>
+                {statsLoading ? (
+                  <Skeleton className="mt-1 h-7 w-16" />
+                ) : (
+                  <p className="text-2xl font-bold">{stats?.pending_count ?? "—"}</p>
+                )}
               </div>
               <Inbox className="h-8 w-8 text-[color:var(--ds-info-text)]" />
             </div>
@@ -252,9 +261,13 @@ export default function FeedbackTriagePage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[color:var(--ds-text-muted)]">Bestätigt</p>
-                <p className="text-2xl font-bold">
-                  {stats ? `${(stats.confirmation_rate * 100).toFixed(0)}%` : "—"}
-                </p>
+                {statsLoading ? (
+                  <Skeleton className="mt-1 h-7 w-16" />
+                ) : (
+                  <p className="text-2xl font-bold">
+                    {stats ? `${(stats.confirmation_rate * 100).toFixed(0)}%` : "—"}
+                  </p>
+                )}
               </div>
               <CheckCircle2 className="h-8 w-8 text-[color:var(--ds-success-text)]" />
             </div>
@@ -265,7 +278,11 @@ export default function FeedbackTriagePage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[color:var(--ds-text-muted)]">Offene Fixtures</p>
-                <p className="text-2xl font-bold">{stats?.unmined_confirmed ?? "—"}</p>
+                {statsLoading ? (
+                  <Skeleton className="mt-1 h-7 w-16" />
+                ) : (
+                  <p className="text-2xl font-bold">{stats?.unmined_confirmed ?? "—"}</p>
+                )}
               </div>
               <AlertCircle className="h-8 w-8 text-[color:var(--ds-warning-text)]" />
             </div>
