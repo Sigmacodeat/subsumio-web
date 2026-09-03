@@ -1,9 +1,5 @@
 import { describe, test, expect } from "vitest";
-import {
-  parsePrincipleOutput,
-  extractPrinciples,
-  type ExtractedPrinciple,
-} from "./principle-extraction";
+import { parsePrincipleOutput, extractPrinciples } from "./principle-extraction";
 
 describe("parsePrincipleOutput", () => {
   test("parses raw JSON array", () => {

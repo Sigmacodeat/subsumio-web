@@ -172,7 +172,7 @@ describe("CreditsHealthCard", () => {
 
   it("renders error state when fetch fails completely", async () => {
     mockFetch.mockRejectedValueOnce(new Error("Network error"));
-    const { container } = renderWithQueryClient(<CreditsHealthCard />);
+    const { _container } = renderWithQueryClient(<CreditsHealthCard />);
     // Wait for query to settle (isError state)
     await waitFor(
       () => {

@@ -58,7 +58,7 @@ const STEP_ICONS: Record<
   blocked: { icon: AlertCircle, color: "text-red-600" },
 };
 
-const STATUS_LABELS_DE = {
+const _STATUS_LABELS_DE = {
   pending: "Ausstehend",
   in_progress: "In Bearbeitung",
   completed: "Erledigt",

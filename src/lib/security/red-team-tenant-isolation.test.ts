@@ -41,7 +41,7 @@ const TENANT_BETA: TenantScope = {
   source: "default",
 };
 
-const TENANT_GAMMA_SAME_ORG: TenantScope = {
+const _TENANT_GAMMA_SAME_ORG: TenantScope = {
   brain_id: "brain-gamma",
   org_id: "org-1",
   source: "archive",
@@ -412,7 +412,7 @@ describe("Red-Team: DMS Import Scoping", () => {
 describe("Red-Team: ACL Bypass via Fake Token", () => {
   it("token with admin role but invalid signature is rejected", () => {
     // Simulate: attacker crafts token with role=admin but without valid HMAC
-    const fakeToken = {
+    const _fakeToken = {
       userId: "attacker-1",
       role: "admin",
       matterScope: "all",
@@ -426,7 +426,7 @@ describe("Red-Team: ACL Bypass via Fake Token", () => {
   });
 
   it("token with 'all' aclGroups but invalid signature does not grant access", () => {
-    const fakeToken = {
+    const _fakeToken = {
       userId: "attacker-1",
       role: "user",
       aclGroups: "all",

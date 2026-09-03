@@ -44,7 +44,7 @@ async function fetchCaseConfidence(): Promise<CasePipelineInfo[]> {
 }
 
 export function ConfidenceScoreWidget() {
-  const { t, lang } = useLang();
+  const { lang } = useLang();
   const { data, isLoading } = useQuery<CasePipelineInfo[]>({
     queryKey: ["pipeline-confidence"],
     queryFn: fetchCaseConfidence,

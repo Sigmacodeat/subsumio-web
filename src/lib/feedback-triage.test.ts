@@ -312,7 +312,7 @@ describe("Feedback-Triage", () => {
     });
 
     it("sorts candidates first (oldest first)", () => {
-      const e1 = createManualCandidate({ query: "Q1", answer_excerpt: "A1", org_id: ORG_ID });
+      const _e1 = createManualCandidate({ query: "Q1", answer_excerpt: "A1", org_id: ORG_ID });
       const e2 = createManualCandidate({ query: "Q2", answer_excerpt: "A2", org_id: ORG_ID });
       applyTriageDecision({
         triage_id: e2.id,
@@ -375,7 +375,7 @@ describe("Feedback-Triage", () => {
     it("computes correct stats", () => {
       const e1 = createManualCandidate({ query: "Q1", answer_excerpt: "A1", org_id: ORG_ID });
       const e2 = createManualCandidate({ query: "Q2", answer_excerpt: "A2", org_id: ORG_ID });
-      const e3 = createManualCandidate({ query: "Q3", answer_excerpt: "A3", org_id: ORG_ID });
+      const _e3 = createManualCandidate({ query: "Q3", answer_excerpt: "A3", org_id: ORG_ID });
 
       applyTriageDecision({
         triage_id: e1.id,

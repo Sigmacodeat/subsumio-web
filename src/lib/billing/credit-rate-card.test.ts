@@ -61,7 +61,7 @@ describe("credit-rate-card", () => {
     });
 
     it("cached rate is 10% of input rate (Anthropic Prompt Caching)", () => {
-      for (const [modelId, rate] of Object.entries(CREDIT_RATE_CARD)) {
+      for (const [_modelId, rate] of Object.entries(CREDIT_RATE_CARD)) {
         const expectedCached = rate.input * 0.1;
         expect(rate.cachedInput).toBeCloseTo(expectedCached, 2);
       }

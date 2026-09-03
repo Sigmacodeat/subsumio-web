@@ -62,7 +62,6 @@ export default function CaseAssignmentPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [assigningSlug, setAssigningSlug] = useState<string | null>(null);
-  const [selectedLawyer, setSelectedLawyer] = useState<string>("");
 
   const teamQuery = useTeam();
   const assignmentsQuery = useQuery({

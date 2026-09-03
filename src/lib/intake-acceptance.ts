@@ -136,7 +136,7 @@ export function waiveConflictCheck(
 
 export function canAcceptMandate(
   workflow: IntakeAcceptanceWorkflow,
-  roles?: UserRoles
+  _roles?: UserRoles
 ): { ok: true } | { ok: false; blocking: string[] } {
   const blocking: string[] = [];
 
@@ -225,7 +225,7 @@ export function buildCaseMandateAcceptance(
   };
 }
 
-export function inferKycRequired(legalArea?: string, clientName?: string): boolean {
+export function inferKycRequired(legalArea?: string, _clientName?: string): boolean {
   if (!legalArea) return true;
   const lower = legalArea.toLowerCase();
   // Real estate, company law, corporate transactions and M&A always need KYC/AML checks

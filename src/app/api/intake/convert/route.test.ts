@@ -3,7 +3,7 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 
 const mockFetch = vi.fn();
-const mockBrainPage = vi.fn((slug: string) => ({
+const _mockBrainPage = vi.fn((slug: string) => ({
   slug,
   title: "Intake: Max Muster",
   type: "intake_request",

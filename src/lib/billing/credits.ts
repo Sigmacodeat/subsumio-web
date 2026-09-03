@@ -2030,7 +2030,7 @@ export interface NegativeBalanceConfig {
 
 export async function getNegativeBalanceConfig(
   ownerId: string,
-  ownerType: OwnerType
+  _ownerType: OwnerType
 ): Promise<NegativeBalanceConfig> {
   const pool = getSharedPgPool();
   if (!pool) return { allowNegative: false, maxNegative: 0, gracePeriodHours: 0 };

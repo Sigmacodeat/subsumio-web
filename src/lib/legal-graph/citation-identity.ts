@@ -178,21 +178,6 @@ function parseGermanDate(dateStr: string): string | undefined {
 }
 
 /**
- * Detect jurisdiction from a court abbreviation.
- */
-function jurisdictionFromCourt(court: string): string | undefined {
-  const upper = court.toUpperCase();
-  // AT courts
-  if (/^(OGH|VwGH|VfGH|OGD|OLG\s+\w+|LG\s+\w+|BG\s+\w+|LSG|BGST)$/.test(upper)) return "AT";
-  // EU courts
-  if (/^(EUGH|EUG|EUGK|EUZPO)$/.test(upper)) return "EU";
-  // DE courts
-  if (/^(BGH|BVERFG|BVERWG|BFH|BAG|BSG|BAYOBLG|KG|OLG|OVG|VGH|FG|LAG|LSG|VG|AG|SG)$/.test(upper))
-    return "DE";
-  return undefined;
-}
-
-/**
  * Detect jurisdiction from a statute abbreviation.
  */
 function jurisdictionFromStatute(statute: string): string | undefined {

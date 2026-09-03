@@ -40,7 +40,7 @@ export const PATCH = createHandler(
     action: "legal.memo",
     rateTier: "heavy",
     body: patchSchema,
-    audit: (_ctx, body) => ({
+    audit: (_ctx, _body) => ({
       action: "legal.memo",
       entityType: "work_product",
       details: { updated: true },

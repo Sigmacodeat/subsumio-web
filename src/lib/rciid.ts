@@ -26,7 +26,6 @@ const log = logger("rciid");
 
 const API_URL = env("RCIID_API_URL") || "https://rciid.at/api/v1";
 const API_KEY = env("RCIID_API_KEY") || "";
-const WEBHOOK_SECRET = env("RCIID_WEBHOOK_SECRET") || "";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 

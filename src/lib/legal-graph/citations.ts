@@ -35,43 +35,95 @@ const STATUTE_CITATION_PATTERNS: RegExp[] = [
 // Abbreviations that exist in multiple jurisdictions (KSchG, StGB, ZPO, etc.)
 // are tagged with their jurisdiction for collision detection.
 
-const DE_SPECIFIC_STATUTES =
+const _DE_SPECIFIC_STATUTES =
   "BGB|HGB|AO|EStG|UStG|GmbHG|AktG|InsO|FamFG|BetrVG|BUrlG|BVerfGG|TzBfG|AGG|MuSchG|NachwG|ArbGG|SGB|VwVfG|BauGB|GWB|ZVG|ErbStG|EGZPO|EGStGB|EUStB";
 
-const AT_SPECIFIC_STATUTES =
+const _AT_SPECIFIC_STATUTES =
   "ABGB|UGB|AngG|ArbVG|AZG|ASVG|AVG|AuslBG|AVRAG|GlBG|MSchG|MRG|WEG|EO|AHG|KartG|GewO|GOG|IO|BAO|BewG|KStG|FamFG|EKStG|BVG|DSG|StGB|StPO|ZPO|KSchG|UWG|EO|EkStG|ErbStG";
 
-const CH_SPECIFIC_STATUTES =
+const _CH_SPECIFIC_STATUTES =
   "OR|ZGB|SchKG|BVG|UVG|ArG|GlG|MWSTG|DBG|StGB|StPO|ZPO|DSG|VWVG|BGFA|UWG";
 
-const EU_SPECIFIC_STATUTES =
+const _EU_SPECIFIC_STATUTES =
   "DSGVO|DSRL|EUV|AEUV|EMRK|EuInsVO|EuZVO|BrüsselIbis|RomI|RomII|Grundrechtecharta";
 
 // Jurisdiction-tagged statute set: maps abbreviation → jurisdiction(s)
 const STATUTE_JURISDICTION_MAP: Record<string, string[]> = {
   // DE-only
-  BGB: ["DE"], HGB: ["DE"], AO: ["DE"], InsO: ["DE"], FamFG: ["DE"],
-  BetrVG: ["DE"], BUrlG: ["DE"], BVerfGG: ["DE"], TzBfG: ["DE"], AGG: ["DE"],
-  MuSchG: ["DE"], NachwG: ["DE"], ArbGG: ["DE"], SGB: ["DE"], VwVfG: ["DE"],
-  BauGB: ["DE"], GWB: ["DE"], ZVG: ["DE"], ErbStG: ["DE"],
+  BGB: ["DE"],
+  HGB: ["DE"],
+  AO: ["DE"],
+  InsO: ["DE"],
+  FamFG: ["DE"],
+  BetrVG: ["DE"],
+  BUrlG: ["DE"],
+  BVerfGG: ["DE"],
+  TzBfG: ["DE"],
+  AGG: ["DE"],
+  MuSchG: ["DE"],
+  NachwG: ["DE"],
+  ArbGG: ["DE"],
+  SGB: ["DE"],
+  VwVfG: ["DE"],
+  BauGB: ["DE"],
+  GWB: ["DE"],
+  ZVG: ["DE"],
+  ErbStG: ["DE"],
   // AT-only
-  ABGB: ["AT"], UGB: ["AT"], AngG: ["AT"], ArbVG: ["AT"], AZG: ["AT"],
-  ASVG: ["AT"], AVG: ["AT"], AuslBG: ["AT"], AVRAG: ["AT"], GlBG: ["AT"],
-  MSchG: ["AT"], MRG: ["AT"], WEG: ["AT"], EO: ["AT"], AHG: ["AT"],
-  KartG: ["AT"], GewO: ["AT"], GOG: ["AT"], IO: ["AT"], BAO: ["AT"],
-  BewG: ["AT"], DSG: ["AT", "CH"],
+  ABGB: ["AT"],
+  UGB: ["AT"],
+  AngG: ["AT"],
+  ArbVG: ["AT"],
+  AZG: ["AT"],
+  ASVG: ["AT"],
+  AVG: ["AT"],
+  AuslBG: ["AT"],
+  AVRAG: ["AT"],
+  GlBG: ["AT"],
+  MSchG: ["AT"],
+  MRG: ["AT"],
+  WEG: ["AT"],
+  EO: ["AT"],
+  AHG: ["AT"],
+  KartG: ["AT"],
+  GewO: ["AT"],
+  GOG: ["AT"],
+  IO: ["AT"],
+  BAO: ["AT"],
+  BewG: ["AT"],
+  DSG: ["AT", "CH"],
   // CH-only
-  OR: ["CH"], ZGB: ["CH"], SchKG: ["CH"], UVG: ["CH"],
-  ArG: ["CH"], GlG: ["CH"], MWSTG: ["CH"], DBG: ["CH"], VWVG: ["CH"],
+  OR: ["CH"],
+  ZGB: ["CH"],
+  SchKG: ["CH"],
+  UVG: ["CH"],
+  ArG: ["CH"],
+  GlG: ["CH"],
+  MWSTG: ["CH"],
+  DBG: ["CH"],
+  VWVG: ["CH"],
   BGFA: ["CH"],
   // EU
-  DSGVO: ["EU"], DSRL: ["EU"], EUV: ["EU"], AEUV: ["EU"], EMRK: ["EU"],
-  EuInsVO: ["EU"], EuZVO: ["EU"],
+  DSGVO: ["EU"],
+  DSRL: ["EU"],
+  EUV: ["EU"],
+  AEUV: ["EU"],
+  EMRK: ["EU"],
+  EuInsVO: ["EU"],
+  EuZVO: ["EU"],
   // Collisions (exist in multiple jurisdictions)
-  KSchG: ["AT", "DE"], StGB: ["DE", "AT", "CH"], ZPO: ["DE", "AT", "CH"],
-  StPO: ["DE", "AT", "CH"], GmbHG: ["DE", "AT"], AktG: ["DE", "AT"],
-  EStG: ["DE", "AT"], UStG: ["DE", "AT"], UWG: ["DE", "AT", "CH"],
-  GG: ["DE"], KStG: ["DE", "AT"], BVG: ["AT", "CH"],
+  KSchG: ["AT", "DE"],
+  StGB: ["DE", "AT", "CH"],
+  ZPO: ["DE", "AT", "CH"],
+  StPO: ["DE", "AT", "CH"],
+  GmbHG: ["DE", "AT"],
+  AktG: ["DE", "AT"],
+  EStG: ["DE", "AT"],
+  UStG: ["DE", "AT"],
+  UWG: ["DE", "AT", "CH"],
+  GG: ["DE"],
+  KStG: ["DE", "AT"],
+  BVG: ["AT", "CH"],
 };
 
 // ── Jurisdiction-aware statute validation ─────────────────────────────
@@ -86,10 +138,7 @@ for (const [key, value] of Object.entries(STATUTE_JURISDICTION_MAP)) {
  * Check if a statute abbreviation is valid for the given jurisdiction.
  * EU statutes are always valid (they apply to all DACH jurisdictions).
  */
-export function isStatuteValidForJurisdiction(
-  abbr: string,
-  jurisdiction: string
-): boolean {
+export function isStatuteValidForJurisdiction(abbr: string, jurisdiction: string): boolean {
   const jur = jurisdiction.toUpperCase();
   const jurisdictions = STATUTE_JURISDICTION_INDEX[abbr.toUpperCase()];
   if (!jurisdictions) return false;

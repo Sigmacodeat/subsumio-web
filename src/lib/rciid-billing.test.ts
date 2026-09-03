@@ -7,7 +7,7 @@ import {
   calculateTotalWithVat,
   type RciidBillingConfig,
 } from "./rciid-billing";
-import type { RciidCase, RciidCaseStatus } from "./rciid";
+import type { RciidCase } from "./rciid";
 
 describe("rciid-billing", () => {
   describe("calculateForensicsFee", () => {

@@ -83,7 +83,7 @@ export function RciidWalletSuggestion({ caseSlug, onAcceptWallets }: RciidWallet
     }
   }
 
-  const validCount = results.filter((w) => w.checksumValid).length;
+  const _validCount = results.filter((w) => w.checksumValid).length;
   const selectedCount = selected.size;
 
   return (

@@ -17,11 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
-import {
-  CERT_STATUS_CONFIG,
-  type AICertification,
-  type CertificationStatus,
-} from "@/lib/ai-certification";
+import { CERT_STATUS_CONFIG, type AICertification } from "@/lib/ai-certification";
 
 interface CertificationStampProps {
   cert: AICertification;

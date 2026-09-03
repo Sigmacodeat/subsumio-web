@@ -216,7 +216,7 @@ export function MatterBudgetWidget() {
       {/* Budget list */}
       <div className="space-y-2">
         {data.slice(0, 8).map((budget) => {
-          const encoded = budget.agreement.case_slug.split("/").map(encodeURIComponent).join("/");
+          const _encoded = budget.agreement.case_slug.split("/").map(encodeURIComponent).join("/");
           const pct = Math.round(budget.status.utilization * 100);
           const isOver = budget.status.alert_level === "critical";
           const isWarning = budget.status.alert_level === "warning";

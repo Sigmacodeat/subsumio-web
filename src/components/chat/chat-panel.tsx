@@ -788,7 +788,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   const [queryMode, setQueryMode] = useState<QueryMode>("deep_matter");
   const [modelOverride, setModelOverride] = useState<string | undefined>(undefined);
   const [sessionTokens, setSessionTokens] = useState(0);
-  const [isCompact, setIsCompact] = useState(false);
+  const [_isCompact, setIsCompact] = useState(false);
   const [subsumptionMode, setSubsumptionMode] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 

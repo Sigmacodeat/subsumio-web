@@ -1,5 +1,8 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { isLLMDeadlineExtractionAvailable, hybridDeadlineDetection } from "@/lib/llm-deadline-extract";
+import {
+  isLLMDeadlineExtractionAvailable,
+  hybridDeadlineDetection,
+} from "@/lib/llm-deadline-extract";
 import { detectDeadlines, enrichAllDeadlines } from "@/lib/ai-deadline-detect";
 
 // Mock fetch and env
@@ -57,7 +60,8 @@ describe("llm-deadline-extract", () => {
 
       // Text with clear Berufung + Zustellungsdatum → regex finds high-confidence
       // Keep under 500 chars so LLM threshold (highConf < 3 && text > 500) is not triggered
-      const text = "Berufungsfrist. Zugestellt am 15.03.2024. Klagebeantwortungsfrist. Zugestellt am 20.03.2024.";
+      const text =
+        "Berufungsfrist. Zugestellt am 15.03.2024. Klagebeantwortungsfrist. Zugestellt am 20.03.2024.";
       const regexDetected = enrichAllDeadlines(detectDeadlines(text), text);
       const highConf = regexDetected.filter((d) => d.confidence === "high");
       expect(highConf.length).toBeGreaterThanOrEqual(2);
@@ -71,27 +75,30 @@ describe("llm-deadline-extract", () => {
       process.env.OPENROUTER_API_KEY = "sk-test-key";
 
       // Complex text without standard regex patterns
-      const text = "Der Kläger hat binnen der sich aus § 401 Abs 1 ZPO ergebenden Frist zu reagieren. Die Parteien werden auf die Rechtsmittelbelehrung hingewiesen.";
+      const text =
+        "Der Kläger hat binnen der sich aus § 401 Abs 1 ZPO ergebenden Frist zu reagieren. Die Parteien werden auf die Rechtsmittelbelehrung hingewiesen.";
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          choices: [{
-            message: {
-              content: JSON.stringify([
-                {
-                  frist_key: "berufung",
-                  frist_beschreibung: "Berufungsfrist",
-                  zustellungsdatum: "2024-06-01",
-                  absolutes_datum: null,
-                  tage_relativ: null,
-                  rechtsgrundlage: "§ 464 Abs 1 ZPO",
-                  snippet: "binnen der sich aus § 401 Abs 1 ZPO ergebenden Frist",
-                  confidence: "medium",
-                },
-              ]),
+          choices: [
+            {
+              message: {
+                content: JSON.stringify([
+                  {
+                    frist_key: "berufung",
+                    frist_beschreibung: "Berufungsfrist",
+                    zustellungsdatum: "2024-06-01",
+                    absolutes_datum: null,
+                    tage_relativ: null,
+                    rechtsgrundlage: "§ 464 Abs 1 ZPO",
+                    snippet: "binnen der sich aus § 401 Abs 1 ZPO ergebenden Frist",
+                    confidence: "medium",
+                  },
+                ]),
+              },
             },
-          }],
+          ],
         }),
       });
 
@@ -111,32 +118,34 @@ describe("llm-deadline-extract", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          choices: [{
-            message: {
-              content: JSON.stringify([
-                {
-                  frist_key: "berufung",
-                  frist_beschreibung: "Berufungsfrist",
-                  zustellungsdatum: "2024-03-15",
-                  absolutes_datum: null,
-                  tage_relativ: null,
-                  rechtsgrundlage: "§ 464 Abs 1 ZPO",
-                  snippet: "Berufungsfrist. Zugestellt am 15.03.2024.",
-                  confidence: "high",
-                },
-                {
-                  frist_key: "verjaehrung_kurz",
-                  frist_beschreibung: "Verjährungsfrist 3 Jahre",
-                  zustellungsdatum: null,
-                  absolutes_datum: "2024-01-15",
-                  tage_relativ: null,
-                  rechtsgrundlage: "§ 1489 ABGB",
-                  snippet: "Verjährung 3 Jahre ab Kenntnis",
-                  confidence: "low",
-                },
-              ]),
+          choices: [
+            {
+              message: {
+                content: JSON.stringify([
+                  {
+                    frist_key: "berufung",
+                    frist_beschreibung: "Berufungsfrist",
+                    zustellungsdatum: "2024-03-15",
+                    absolutes_datum: null,
+                    tage_relativ: null,
+                    rechtsgrundlage: "§ 464 Abs 1 ZPO",
+                    snippet: "Berufungsfrist. Zugestellt am 15.03.2024.",
+                    confidence: "high",
+                  },
+                  {
+                    frist_key: "verjaehrung_kurz",
+                    frist_beschreibung: "Verjährungsfrist 3 Jahre",
+                    zustellungsdatum: null,
+                    absolutes_datum: "2024-01-15",
+                    tage_relativ: null,
+                    rechtsgrundlage: "§ 1489 ABGB",
+                    snippet: "Verjährung 3 Jahre ab Kenntnis",
+                    confidence: "low",
+                  },
+                ]),
+              },
             },
-          }],
+          ],
         }),
       });
 
@@ -146,7 +155,7 @@ describe("llm-deadline-extract", () => {
       const result = await hybridDeadlineDetection(longText, regexDetected);
 
       // The Berufung should be deduplicated (same template + zustellungsdatum)
-      const llmResults = result.filter((d) => d.matchedRule === "llm_fallback");
+      const _llmResults = result.filter((d) => d.matchedRule === "llm_fallback");
       const berufs = result.filter((d) => d.suggestedTemplate === "berufung");
       // At most 1 Berufung from LLM (deduplicated)
       expect(berufs.filter((d) => d.matchedRule === "llm_fallback").length).toBe(0);
@@ -176,11 +185,13 @@ describe("llm-deadline-extract", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          choices: [{
-            message: {
-              content: "This is not valid JSON",
+          choices: [
+            {
+              message: {
+                content: "This is not valid JSON",
+              },
             },
-          }],
+          ],
         }),
       });
 
@@ -197,11 +208,13 @@ describe("llm-deadline-extract", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          choices: [{
-            message: {
-              content: "[]",
+          choices: [
+            {
+              message: {
+                content: "[]",
+              },
             },
-          }],
+          ],
         }),
       });
 
@@ -218,26 +231,29 @@ describe("llm-deadline-extract", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          choices: [{
-            message: {
-              content: JSON.stringify([
-                {
-                  frist_key: "berufung",
-                  frist_beschreibung: "Berufungsfrist",
-                  zustellungsdatum: "2024-03-15",
-                  absolutes_datum: null,
-                  tage_relativ: null,
-                  rechtsgrundlage: "§ 464 Abs 1 ZPO",
-                  snippet: "Rechtsmittelbelehrung weist auf vierwöchige Frist hin.",
-                  confidence: "medium",
-                },
-              ]),
+          choices: [
+            {
+              message: {
+                content: JSON.stringify([
+                  {
+                    frist_key: "berufung",
+                    frist_beschreibung: "Berufungsfrist",
+                    zustellungsdatum: "2024-03-15",
+                    absolutes_datum: null,
+                    tage_relativ: null,
+                    rechtsgrundlage: "§ 464 Abs 1 ZPO",
+                    snippet: "Rechtsmittelbelehrung weist auf vierwöchige Frist hin.",
+                    confidence: "medium",
+                  },
+                ]),
+              },
             },
-          }],
+          ],
         }),
       });
 
-      const text = "Rechtsmittelbelehrung weist auf vierwöchige Frist hin. Zustellung erfolgte am 15.03.2024.";
+      const text =
+        "Rechtsmittelbelehrung weist auf vierwöchige Frist hin. Zustellung erfolgte am 15.03.2024.";
       const regexDetected = enrichAllDeadlines(detectDeadlines(text), text);
       const result = await hybridDeadlineDetection(text, regexDetected);
 

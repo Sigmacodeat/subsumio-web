@@ -138,8 +138,8 @@ export function checkSingleDeadline(
  */
 export function parseDeadlineCalendarPage(
   content: string,
-  caseSlug: string,
-  caseTitle: string
+  _caseSlug: string,
+  _caseTitle: string
 ): Array<{ label: string; date: string; startDate: string; law?: string }> {
   const entries: Array<{ label: string; date: string; startDate: string; law?: string }> = [];
 

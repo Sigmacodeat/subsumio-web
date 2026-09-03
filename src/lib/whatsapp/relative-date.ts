@@ -11,7 +11,7 @@ const WEEKDAYS = ["sonntag", "montag", "dienstag", "mittwoch", "donnerstag", "fr
 
 const WEEKDAYS_SHORT = ["so", "mo", "di", "mi", "do", "fr", "sa"];
 
-const MONTHS = [
+const _MONTHS = [
   "januar",
   "februar",
   "märz",

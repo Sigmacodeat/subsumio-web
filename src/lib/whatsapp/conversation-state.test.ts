@@ -210,7 +210,7 @@ describe("mergePartialIntent", () => {
       text: "ich meine nächte woche",
     };
 
-    const { merged, stillMissing } = mergePartialIntent(state, newIntent);
+    const { _merged, stillMissing } = mergePartialIntent(state, newIntent);
     expect(stillMissing).toContain("date");
     expect(stillMissing).toContain("time");
   });

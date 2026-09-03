@@ -78,17 +78,17 @@ class MockDMSConnector implements DMSConnector {
 
   async importToBrain(
     doc: DMSDocument,
-    brainId: string,
-    headers: Record<string, string>
+    _brainId: string,
+    _headers: Record<string, string>
   ): Promise<{ slug: string; success: boolean }> {
     const slug = `dms/import/${doc.id}`;
     return { slug, success: true };
   }
 
   async pushToDms(
-    filename: string,
-    contentBase64: string,
-    opts: { folderId?: string; metadata?: Record<string, string> }
+    _filename: string,
+    _contentBase64: string,
+    _opts: { folderId?: string; metadata?: Record<string, string> }
   ): Promise<{ success: boolean; documentId?: string; error?: string }> {
     const docId = `dms-push-${Date.now()}`;
     return { success: true, documentId: docId };

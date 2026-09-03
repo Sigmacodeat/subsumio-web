@@ -21,7 +21,7 @@ const STATUTE_TEXT = `---\ntitle: BGB\n---\n\n## § 433 BGB — Vertragstypische
 
 const STATUTE_TEXT_MODIFIED = `---\ntitle: BGB\n---\n\n## § 433 BGB — Vertragstypische Pflichten\n\nDer Verkäufer ist verpflichtet, dem Käufer die Sache zu übergeben und das Eigentum zu verschaffen.\n\n## § 434 BGB — Sachmangel\n\nDie Sache ist frei von Sachmängeln, wenn sie bei Gefahrübergang die vereinbarte Beschaffenheit hat.\n\n## § 435 BGB — Rechtsmangel\n\nDie Sache ist frei von Rechtsmängeln.\n`;
 
-const STATUTE_TEXT_REMOVED = `---\ntitle: BGB\n---\n\n## § 433 BGB — Vertragstypische Pflichten\n\nDer Verkäufer ist verpflichtet, dem Käufer die Sache zu übergeben.\n\n## § 435 BGB — Rechtsmangel\n\nDie Sache ist frei von Rechtsmängeln.\n`;
+const _STATUTE_TEXT_REMOVED = `---\ntitle: BGB\n---\n\n## § 433 BGB — Vertragstypische Pflichten\n\nDer Verkäufer ist verpflichtet, dem Käufer die Sache zu übergeben.\n\n## § 435 BGB — Rechtsmangel\n\nDie Sache ist frei von Rechtsmängeln.\n`;
 
 beforeEach(() => {
   clearSnapshots();
@@ -245,7 +245,8 @@ describe("checkStatuteAmendments", () => {
     await checkStatuteAmendments("DE", "BGB", mockFetch1 as unknown as typeof fetch);
 
     // Second run — modified text
-    const mockFetch2 = async (): Promise<Response> => new Response(STATUTE_TEXT_MODIFIED, { status: 200 });
+    const mockFetch2 = async (): Promise<Response> =>
+      new Response(STATUTE_TEXT_MODIFIED, { status: 200 });
     const result = await checkStatuteAmendments("DE", "BGB", mockFetch2 as unknown as typeof fetch);
 
     expect(result.amendments.length).toBe(1);
@@ -255,7 +256,11 @@ describe("checkStatuteAmendments", () => {
 
   test("returns error on fetch failure", async () => {
     const mockFetch = async (): Promise<Response> => new Response(null, { status: 404 });
-    const result = await checkStatuteAmendments("DE", "NONEXIST", mockFetch as unknown as typeof fetch);
+    const result = await checkStatuteAmendments(
+      "DE",
+      "NONEXIST",
+      mockFetch as unknown as typeof fetch
+    );
     expect(result.error).toBeTruthy();
     expect(result.snapshot).toBeNull();
   });
@@ -302,9 +307,7 @@ describe("findStaleCitations", () => {
         source_url: "",
       },
     ];
-    const outputs = [
-      { slug: "synthesis/test", citations: ["§ 434 BGB"] },
-    ];
+    const outputs = [{ slug: "synthesis/test", citations: ["§ 434 BGB"] }];
     const alerts = findStaleCitations(amendments, outputs);
     expect(alerts[0].severity).toBe("critical");
   });
@@ -320,9 +323,7 @@ describe("findStaleCitations", () => {
         source_url: "",
       },
     ];
-    const outputs = [
-      { slug: "synthesis/test", citations: ["§ 441 BGB"] },
-    ];
+    const outputs = [{ slug: "synthesis/test", citations: ["§ 441 BGB"] }];
     const alerts = findStaleCitations(amendments, outputs);
     expect(alerts[0].severity).toBe("low");
   });
@@ -338,9 +339,7 @@ describe("findStaleCitations", () => {
         source_url: "",
       },
     ];
-    const outputs = [
-      { slug: "synthesis/other", citations: ["§ 1924 BGB"] },
-    ];
+    const outputs = [{ slug: "synthesis/other", citations: ["§ 1924 BGB"] }];
     const alerts = findStaleCitations(amendments, outputs);
     expect(alerts.length).toBe(0);
   });

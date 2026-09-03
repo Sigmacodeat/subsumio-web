@@ -127,7 +127,7 @@ export function CaseQuickCreateDialog({
   const [submitting, setSubmitting] = useState(false);
   const [createAnother, setCreateAnother] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-  const [conflictCheck, setConflictCheck] = useState<
+  const [_conflictCheck, setConflictCheck] = useState<
     "idle" | "checking" | "critical" | "clear" | "error"
   >("idle");
 

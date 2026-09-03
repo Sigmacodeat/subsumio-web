@@ -146,7 +146,7 @@ describe("Revocation: Session Invalidation", () => {
   });
 
   it("new session after revocation is valid", async () => {
-    const session1 = await createSession("user-revoke", "test@test.com", "user");
+    const _session1 = await createSession("user-revoke", "test@test.com", "user");
     await revokeAllSessions("user-revoke");
     const session2 = await createSession("user-revoke", "test@test.com", "user");
     expect(await verifySession(session2.token)).not.toBeNull();

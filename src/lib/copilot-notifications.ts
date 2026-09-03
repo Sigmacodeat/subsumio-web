@@ -88,7 +88,7 @@ function daysUntil(dateStr: string): number {
   return Math.ceil((target.getTime() - today.getTime()) / 86_400_000);
 }
 
-async function scanCases(brainId?: string): Promise<CaseScanResult[]> {
+async function scanCases(_brainId?: string): Promise<CaseScanResult[]> {
   const pages = await api.brain.listPages({ type: "legal_case", limit: 500 });
   const now = new Date().toISOString();
 

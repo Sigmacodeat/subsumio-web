@@ -8,7 +8,6 @@ import { useLang } from "@/lib/use-lang";
 import { useMatterDetail } from "@/lib/matter-detail-context";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
-import type { BrainPage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface ChecklistItem {

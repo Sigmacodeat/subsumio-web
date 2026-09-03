@@ -176,7 +176,7 @@ export async function buildFullMemoryContext(opts: {
 export async function promoteSessionMemoryToAgent(
   sessionId: string,
   entryKey: string,
-  opts: {
+  _opts: {
     type: CopilotMemoryEntry["type"];
     key: string;
     value: string;

@@ -61,7 +61,7 @@ interface TracesResponse {
 
 export default function ComplianceExportPage() {
   const { t } = useLang();
-  const [limit, setLimit] = useState(50);
+  const [limit, _setLimit] = useState(50);
 
   const { data, isLoading, refetch } = useQuery<TracesResponse>({
     queryKey: ["reasoning-traces", limit],
@@ -154,11 +154,11 @@ export default function ComplianceExportPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Traces gesamt</CardTitle>
-            <FileText className="text-[color:var(--ds-text-muted)] h-4 w-4" />
+            <FileText className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-[color:var(--ds-text-muted)] text-xs">KI-Ausgaben protokolliert</p>
+            <p className="text-xs text-[color:var(--ds-text-muted)]">KI-Ausgaben protokolliert</p>
           </CardContent>
         </Card>
 
@@ -168,8 +168,12 @@ export default function ComplianceExportPage() {
             <ShieldCheck className="h-4 w-4 text-[color:var(--ds-success-text)]" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[color:var(--ds-success-text)]">{stats.guardrailPassed}</div>
-            <p className="text-[color:var(--ds-text-muted)] text-xs">{stats.guardrailFailed} fehlgeschlagen</p>
+            <div className="text-2xl font-bold text-[color:var(--ds-success-text)]">
+              {stats.guardrailPassed}
+            </div>
+            <p className="text-xs text-[color:var(--ds-text-muted)]">
+              {stats.guardrailFailed} fehlgeschlagen
+            </p>
           </CardContent>
         </Card>
 
@@ -179,19 +183,25 @@ export default function ComplianceExportPage() {
             <AlertTriangle className="h-4 w-4 text-[color:var(--ds-warning-text)]" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[color:var(--ds-warning-text)]">{stats.injectionDetected}</div>
-            <p className="text-[color:var(--ds-text-muted)] text-xs">{stats.injectionBlocked} blockiert</p>
+            <div className="text-2xl font-bold text-[color:var(--ds-warning-text)]">
+              {stats.injectionDetected}
+            </div>
+            <p className="text-xs text-[color:var(--ds-text-muted)]">
+              {stats.injectionBlocked} blockiert
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Ø Konfidenz</CardTitle>
-            <Hash className="text-[color:var(--ds-text-muted)] h-4 w-4" />
+            <Hash className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.avgConfidence}</div>
-            <p className="text-[color:var(--ds-text-muted)] text-xs">{stats.regenerations} Regenerationen</p>
+            <p className="text-xs text-[color:var(--ds-text-muted)]">
+              {stats.regenerations} Regenerationen
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -201,9 +211,11 @@ export default function ComplianceExportPage() {
         <CardHeader>
           <CardTitle className="text-base">EU-KI-Verordnung Art. 12 Compliance</CardTitle>
         </CardHeader>
-        <CardContent className="text-[color:var(--ds-text-muted)] space-y-2 text-sm">
+        <CardContent className="space-y-2 text-sm text-[color:var(--ds-text-muted)]">
           <p>
-            Jede KI-Ausgabe wird als unveränderlicher, hash-verketteter Reasoning-Trace erfasst. Traces umfassen den Retrieval-Kontext, Guardrail-Ergebnisse, Ensemble-Verifizierung, adversariale Defense-Scans und Konfidenzwerte.
+            Jede KI-Ausgabe wird als unveränderlicher, hash-verketteter Reasoning-Trace erfasst.
+            Traces umfassen den Retrieval-Kontext, Guardrail-Ergebnisse, Ensemble-Verifizierung,
+            adversariale Defense-Scans und Konfidenzwerte.
           </p>
           <div className="flex flex-wrap gap-2 pt-2">
             <Badge variant="default" className="text-xs">
@@ -233,12 +245,12 @@ export default function ComplianceExportPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-[color:var(--ds-text-muted)] flex items-center justify-center py-8">
+            <div className="flex items-center justify-center py-8 text-[color:var(--ds-text-muted)]">
               <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
               Lade Traces…
             </div>
           ) : traces.length === 0 ? (
-            <div className="text-[color:var(--ds-text-muted)] flex flex-col items-center justify-center py-8">
+            <div className="flex flex-col items-center justify-center py-8 text-[color:var(--ds-text-muted)]">
               <FileText className="mb-2 h-8 w-8" />
               <p>Keine Reasoning-Traces gefunden.</p>
               <p className="text-xs">Traces entstehen bei jeder KI-Ausgabe.</p>
@@ -269,7 +281,7 @@ function TraceRow({ trace }: { trace: ReasoningTrace }) {
       role="button"
       tabIndex={0}
       aria-expanded={expanded}
-      className="hover:bg-[color:var(--ds-surface-hover)] cursor-pointer rounded-lg border p-3 transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+      className="cursor-pointer rounded-lg border p-3 transition-colors hover:bg-[color:var(--ds-surface-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
       onClick={() => setExpanded(!expanded)}
       onKeyDown={(e) => {
         if (e.target !== e.currentTarget) return;
@@ -282,16 +294,16 @@ function TraceRow({ trace }: { trace: ReasoningTrace }) {
       <div className="flex items-center justify-between">
         <div className="flex min-w-0 items-center gap-3">
           <ChevronRight
-            className={`text-[color:var(--ds-text-muted)] h-4 w-4 shrink-0 transition-transform ${
+            className={`h-4 w-4 shrink-0 text-[color:var(--ds-text-muted)] transition-transform ${
               expanded ? "rotate-90" : ""
             }`}
           />
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-[color:var(--ds-text-muted)] max-w-[120px] truncate font-mono text-xs">
+              <span className="max-w-[120px] truncate font-mono text-xs text-[color:var(--ds-text-muted)]">
                 {trace.trace_id.slice(0, 8)}...
               </span>
-              <span className="text-[color:var(--ds-text-muted)] text-xs">{time}</span>
+              <span className="text-xs text-[color:var(--ds-text-muted)]">{time}</span>
             </div>
             <div className="mt-1 flex items-center gap-2">
               {trace.guardrail_passed === true && (
@@ -332,7 +344,7 @@ function TraceRow({ trace }: { trace: ReasoningTrace }) {
             </div>
           </div>
         </div>
-        <div className="text-[color:var(--ds-text-muted)] flex shrink-0 items-center gap-4 text-xs">
+        <div className="flex shrink-0 items-center gap-4 text-xs text-[color:var(--ds-text-muted)]">
           <span className="flex items-center gap-1">
             <Cpu className="h-3 w-3" />
             {trace.model_used.split(":").pop()}
@@ -376,18 +388,20 @@ function TraceRow({ trace }: { trace: ReasoningTrace }) {
               </code>
             </div>
             <div>
-              <span className="text-[color:var(--ds-text-muted)]">Antwortlänge:</span> {trace.answer_length}{" "}
-              Zeichen
+              <span className="text-[color:var(--ds-text-muted)]">Antwortlänge:</span>{" "}
+              {trace.answer_length} Zeichen
             </div>
             <div>
               <span className="text-[color:var(--ds-text-muted)]">Regenerations:</span>{" "}
               {trace.regeneration_count}
             </div>
             <div>
-              <span className="text-[color:var(--ds-text-muted)]">Seiten gesammelt:</span> {trace.pages_gathered}
+              <span className="text-[color:var(--ds-text-muted)]">Seiten gesammelt:</span>{" "}
+              {trace.pages_gathered}
             </div>
             <div>
-              <span className="text-[color:var(--ds-text-muted)]">Graph-Hits:</span> {trace.graph_hits}
+              <span className="text-[color:var(--ds-text-muted)]">Graph-Hits:</span>{" "}
+              {trace.graph_hits}
             </div>
           </div>
           {trace.warnings.length > 0 && (

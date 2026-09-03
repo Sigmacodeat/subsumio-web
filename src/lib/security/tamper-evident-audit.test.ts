@@ -192,7 +192,7 @@ describe("Tamper-evident Audit: Chain Verification", () => {
   it("detects deleted entry (gap in chain)", () => {
     const chain = makeChain(10);
     // Remove entry 5 (index 4)
-    const deleted = chain.splice(4, 1)[0];
+    const _deleted = chain.splice(4, 1)[0];
     // Entry 5 (now at index 4) still points to entry 4's hash
     // But entry 4 is now the one that was at index 3
     // The prev_hash of the new index 4 should point to the deleted entry's hash

@@ -15,7 +15,7 @@
  */
 
 import type { ExpenseEntry } from "./legal-types";
-import type { RciidCase, RciidPricing, RciidCaseStatus } from "./rciid";
+import type { RciidCase, RciidCaseStatus } from "./rciid";
 
 export type RciidBillingMode = "flat" | "rvg_auslage" | "hourly";
 

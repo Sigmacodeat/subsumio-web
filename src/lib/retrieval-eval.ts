@@ -430,18 +430,6 @@ function extractLawFromSlug(slug: string): string | undefined {
   return undefined;
 }
 
-/**
- * Extract jurisdiction from slug.
- * E.g. "legal/norms/de/bgb/433" → "DE"
- */
-function extractJurisdictionFromSlug(slug: string): string | undefined {
-  const parts = slug.split("/");
-  if (parts.length >= 3 && parts[0] === "legal" && parts[1] === "norms") {
-    return parts[2]?.toUpperCase();
-  }
-  return undefined;
-}
-
 // ── nDCG Calculation ───────────────────────────────────────────────────
 
 /**
@@ -681,7 +669,7 @@ function evaluateQuery(
 function summarizeResults(
   results: RetrievalEvalResult[],
   K: number,
-  fixtures: RetrievalEvalFixture[]
+  _fixtures: RetrievalEvalFixture[]
 ): RetrievalEvalSummary {
   const totalQueries = results.length;
   const passedQueries = results.filter((r) => r.pass).length;

@@ -300,7 +300,7 @@ describe("Identity Lifecycle: SSO Login", () => {
       "org-1"
     );
 
-    const session1 = await createSession(user.id, user.email, user.role);
+    const _session1 = await createSession(user.id, user.email, user.role);
 
     // Second login — same user
     const { user: user2, created } = await provisionOrUpdateUser(
@@ -317,7 +317,7 @@ describe("Identity Lifecycle: SSO Login", () => {
     expect(user2.id).toBe(user.id);
     expect(user2.name).toContain("Updated");
 
-    const session2 = await createSession(user2.id, user2.email, user2.role);
+    const _session2 = await createSession(user2.id, user2.email, user2.role);
     // Sessions created in the same second with same payload produce the same token
     // The key assertion is that the user info was updated
     expect(user2.name).toContain("Updated");
@@ -460,7 +460,7 @@ describe("Identity Lifecycle: Deprovisioning", () => {
     await deprovisionUser(user.id, "org-1");
 
     // Even if someone tries to create a session for this user
-    const session = await createSession(user.id, user.email, user.role);
+    const _session = await createSession(user.id, user.email, user.role);
     // The session is created with a new version, but the user is deactivated
     // The auth check should reject deactivated users at the API layer
     expect(user.active).toBe(false);

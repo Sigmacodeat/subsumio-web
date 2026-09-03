@@ -58,7 +58,7 @@ export function LegalHoldWidget() {
     refetchInterval: 120_000,
   });
 
-  const stats = useMemo(() => {
+  const _stats = useMemo(() => {
     if (!data) return { total: 0, onHold: 0 };
     return { total: data.total, onHold: data.holds.length };
   }, [data]);

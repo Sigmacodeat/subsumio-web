@@ -12,7 +12,6 @@ import {
   missingFieldsForIntent,
   buildClarifyingQuestion,
   mergePartialIntent,
-  type ConversationState,
 } from "@/lib/whatsapp/conversation-state";
 
 interface NaturalChatContext {

@@ -14,7 +14,7 @@ interface SidebarQuickAccessProps {
 
 export function SidebarQuickAccess({ collapsed, onNavigate }: SidebarQuickAccessProps) {
   const { pinned, recent } = useRecentMatters();
-  const { t, lang } = useLang();
+  const { lang } = useLang();
   const pathname = usePathname();
 
   if (collapsed) return null;

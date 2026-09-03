@@ -115,7 +115,7 @@ export default function FeedbackTriagePage() {
   const [correction, setCorrection] = useState<string>("");
   const [reviewNotes, setReviewNotes] = useState<string>("");
 
-  const { data: statsData, isLoading: statsLoading } = useQuery({
+  const { data: statsData, isLoading: _statsLoading } = useQuery({
     queryKey: ["triage-stats"],
     queryFn: async () => {
       const res = await fetch("/api/admin/feedback-triage?action=stats");

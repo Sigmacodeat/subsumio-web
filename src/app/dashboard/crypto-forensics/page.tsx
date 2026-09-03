@@ -430,7 +430,7 @@ export default function CryptoForensicsPage() {
                   <div className="mt-2">
                     <RciidQualityScore
                       rciidCaseId={c.case_id}
-                      onImproveData={(missing) => {
+                      onImproveData={(_missing) => {
                         setScanCaseSlug(c.case_id);
                         setShowScanCase(true);
                       }}

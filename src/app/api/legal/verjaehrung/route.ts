@@ -11,7 +11,7 @@ import {
   daysUntilBarred,
   VERJAEHRUNG_PRESETS,
 } from "@/lib/legal-verjaehrung";
-import type { StatuteOfLimitations, CaseFrontmatter } from "@/lib/legal-types";
+import type { CaseFrontmatter } from "@/lib/legal-types";
 
 export const dynamic = "force-dynamic";
 

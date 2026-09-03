@@ -192,7 +192,7 @@ describe("ACL Runtime: Fail-Closed", () => {
   it("ACL resolution error denies access (fail-closed)", () => {
     // Simulate: aclGroupsMiddleware catches error → returns 500
     // User gets no data, not all data
-    const ctx: MockAclContext = {
+    const _ctx: MockAclContext = {
       pagePermissions: PAGE_PERMISSIONS,
       userGroups: [],
       role: "user",

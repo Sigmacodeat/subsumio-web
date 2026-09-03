@@ -448,7 +448,7 @@ export function inferMemoriesFromMessage(
   message: string
 ): Array<{ type: MemoryType; key: string; value: string }> {
   const inferred: Array<{ type: MemoryType; key: string; value: string }> = [];
-  const lower = message.toLowerCase();
+  const _lower = message.toLowerCase();
 
   // Preference patterns
   const prefPatterns = [

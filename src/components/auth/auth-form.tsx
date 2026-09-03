@@ -105,7 +105,7 @@ const COPY = {
 function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang }) {
   const t = (COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de;
   const m = t[mode];
-  const router = useRouter();
+  const _router = useRouter();
   const params = useSearchParams();
   // Pricing-tier CTAs deep-link with ?plan=pro|team → after signup, land on
   // billing with auto-checkout for that plan. Explicit ?next= wins.

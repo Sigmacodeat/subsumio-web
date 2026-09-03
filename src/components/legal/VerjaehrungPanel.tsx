@@ -62,7 +62,7 @@ const STATUS_LABELS_EN: Record<StatuteOfLimitations["status"], string> = {
 };
 
 export function VerjaehrungPanel({ caseSlug }: VerjaehrungPanelProps) {
-  const { t, lang } = useLang();
+  const { lang } = useLang();
   const { addToast } = useToast();
   const [items, setItems] = useState<VerjaehrungItem[]>([]);
   const [loading, setLoading] = useState(true);

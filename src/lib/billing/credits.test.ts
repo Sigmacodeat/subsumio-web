@@ -17,8 +17,8 @@ import {
 
 // These tests run against the in-memory fallback (no PG pool in test env)
 describe("Credit System", () => {
-  const ownerId = "test-user-1";
-  const ownerType = "user" as const;
+  const _ownerId = "test-user-1";
+  const _ownerType = "user" as const;
 
   // ── Credit Costs ────────────────────────────────────────────────────
 

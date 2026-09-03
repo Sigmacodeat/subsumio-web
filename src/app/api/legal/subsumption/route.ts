@@ -161,7 +161,7 @@ export const POST = createHandler(
 
     if (contentType.includes("text/event-stream")) {
       // Stream SSE chunks back to client
-      const decoder = new TextDecoder();
+      const _decoder = new TextDecoder();
       const reader = res.body?.getReader();
       if (!reader) {
         return Response.json(
