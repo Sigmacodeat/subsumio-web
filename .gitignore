@@ -29,6 +29,9 @@ package-lock.json
 .devin/.last-edit
 .devin/.dod-gate-passed
 
+# DB backups (lokal erzeugt, nicht ins Repo)
+backups/
+
 # Test artifacts
 test/.cache/
 test-results/
