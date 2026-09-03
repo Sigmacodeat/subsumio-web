@@ -116,7 +116,7 @@
     "@types/busboy": "^1.5.4",
     "ai": "^6.0.168",
     "busboy": "^1.6.0",
-    "chokidar": "^4.0.3",
+    "chokidar": "^5.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "eventsource-parser": "^3.0.8",
