@@ -13,6 +13,7 @@ const _deLegal = {
   privacy: "Datenschutz",
   terms: "AGB",
   imprint: "Impressum",
+  dpa: "AVV",
   draftNotice: "Entwurf — fachlich vollständig, vor Launch anwaltlich final prüfen.",
   imprintTitle: "Impressum",
   imprintSubtitle: "Angaben gemäß § 5 DDG (DE) bzw. § 5 ECG (AT), Art. 3 UWG (CH)",
@@ -20,6 +21,9 @@ const _deLegal = {
   privacySubtitle: "Stand: Juni 2026",
   termsTitle: "Allgemeine Geschäftsbedingungen",
   termsSubtitle: "Stand: Juni 2026 · gilt für den gehosteten Subsumio-Dienst",
+  dpaTitle: "Auftragsverarbeitungsvertrag (AVV)",
+  dpaSubtitle:
+    "Stand: Juni 2026 · Art. 28 DSGVO — Vorlage für Kunden der gehosteten Subsumio-Cloud",
 } as const;
 
 const T = {
@@ -29,6 +33,7 @@ const T = {
     privacy: "Privacy Policy",
     terms: "Terms of Service",
     imprint: "Imprint",
+    dpa: "DPA",
     draftNotice: "Draft — professionally complete, but have a lawyer review before launch.",
     imprintTitle: "Imprint",
     imprintSubtitle: "Provider information per § 5 DDG (DE), § 5 ECG (AT), Art. 3 UWG (CH)",
@@ -36,6 +41,9 @@ const T = {
     privacySubtitle: "As of June 2026",
     termsTitle: "Terms of Service",
     termsSubtitle: "As of June 2026 · applies to the hosted Subsumio service",
+    dpaTitle: "Data Processing Agreement (DPA)",
+    dpaSubtitle:
+      "As of June 2026 · Art. 28 GDPR — template for customers of the hosted Subsumio cloud",
   },
   de: _deLegal,
   at: _deLegal,
@@ -84,13 +92,14 @@ function LegalLinks({
   lang,
 }: {
   home: string;
-  exclude: "privacy" | "terms" | "imprint";
+  exclude: "privacy" | "terms" | "imprint" | "dpa";
   lang: Lang;
 }) {
   const t = (T as unknown as Record<string, typeof T.de>)[lang] ?? T.de;
   const links = [
     { key: "privacy" as const, href: `${home === "/" ? "" : home}/privacy`, label: t.privacy },
     { key: "terms" as const, href: `${home === "/" ? "" : home}/terms`, label: t.terms },
+    { key: "dpa" as const, href: `${home === "/" ? "" : home}/dpa`, label: t.dpa },
     { key: "imprint" as const, href: `${home === "/" ? "" : home}/imprint`, label: t.imprint },
   ].filter((l) => l.key !== exclude);
   return (
@@ -621,6 +630,444 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
       </p>
 
       <LegalLinks home={home} exclude="terms" lang={lang} />
+    </Shell>
+  );
+}
+
+export function DpaContent({ home, lang = "de" }: { home: string; lang?: Lang }) {
+  const t = (T as unknown as Record<string, typeof T.de>)[lang] ?? T.de;
+  if (lang === "en") {
+    return (
+      <Shell home={home} lang={lang} title={t.dpaTitle} subtitle={t.dpaSubtitle}>
+        <p className="text-xs [color:var(--mk-text-subtle)]">
+          {t.draftNotice} This template implements Art. 28 GDPR. Complete the placeholders, sign
+          with the Controller, and return to help@rciid.at before uploading personal data.
+        </p>
+
+        <H2>§ 1 Parties</H2>
+        <p>
+          <strong className="[color:var(--mk-text)]">Controller</strong> (the customer using
+          Subsumio to process personal data):
+        </p>
+        <p className="mt-1">
+          [Controller name]
+          <br />
+          [Address]
+          <br />
+          [Representative]
+          <br />
+          [Email]
+        </p>
+        <p className="mt-2">
+          <strong className="[color:var(--mk-text)]">Processor</strong> (the provider of the hosted
+          Subsumio service):
+        </p>
+        <p className="mt-1">
+          RCIID — Rocket Chain Investigation &amp; Intelligence Division
+          <br />
+          Hauslabgasse 42/3/2
+          <br />
+          1050 Vienna, Austria
+          <br />
+          Email: help@rciid.at
+        </p>
+
+        <H2>§ 2 Subject matter, duration, nature and purpose</H2>
+        <p>
+          (1) <strong className="[color:var(--mk-text)]">Subject matter:</strong> Provision of the
+          hosted Subsumio cloud service for organising, searching and synthesising documents and
+          case data.
+        </p>
+        <p>
+          (2) <strong className="[color:var(--mk-text)]">Duration:</strong> For the duration of the
+          main service contract (per the Terms of Service), unless terminated earlier.
+        </p>
+        <p>
+          (3) <strong className="[color:var(--mk-text)]">Nature and purpose:</strong> Storage,
+          full-text and semantic search, AI-assisted synthesis and agent workflows on documents
+          uploaded by the Controller. No use of content for AI model training.
+        </p>
+        <p>
+          (4) <strong className="[color:var(--mk-text)]">Type of personal data:</strong> Account
+          data (email, name), and any personal data the Controller uploads within content (e. g.
+          case files, client correspondence, invoices).
+        </p>
+        <p>
+          (5) <strong className="[color:var(--mk-text)]">Categories of data subjects:</strong>{" "}
+          Clients, opposing parties, witnesses, employees and other persons whose data appears in
+          the Controller&rsquo;s documents.
+        </p>
+
+        <H2>§ 3 Processor obligations (Art. 28(3) GDPR)</H2>
+        <p>The Processor shall:</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5">
+          <li>
+            Process personal data only on documented instructions from the Controller, including
+            with regard to transfers to third countries, unless required by EU or member state law.
+          </li>
+          <li>Ensure that persons authorised to process are bound by confidentiality.</li>
+          <li>Maintain appropriate technical and organisational measures (TOMs, § 5).</li>
+          <li>Respect the conditions for engaging sub-processors (§ 4).</li>
+          <li>Assist the Controller in responding to data subject rights requests.</li>
+          <li>
+            Assist the Controller in fulfilling its obligations under Arts. 32–36 GDPR (security,
+            breach notification, DPIA, prior consultation).
+          </li>
+          <li>
+            Delete or return all personal data after the end of the service, unless retention is
+            required by EU or member state law.
+          </li>
+          <li>
+            Make available all information necessary to demonstrate compliance and allow for and
+            contribute to audits.
+          </li>
+        </ul>
+
+        <H2>§ 4 Sub-processors</H2>
+        <p>
+          (1) The Controller grants general authorisation for the sub-processors listed in the
+          Privacy Policy (§ 7). The Processor shall inform the Controller of any intended changes
+          concerning the addition or replacement of sub-processors, giving the Controller the
+          opportunity to object.
+        </p>
+        <p>
+          (2) Current sub-processors: Hosting (Hetzner, DE/EU); LLM and embedding providers
+          (OpenRouter, US — EU Standard Contractual Clauses); Payment (Stripe, US — SCCs); Email
+          (Resend, US — SCCs); optional rate-limiting service (Upstash, US — SCCs).
+        </p>
+        <p>
+          (3) Where a sub-processor is outside the EEA, transfers are based on EU Standard
+          Contractual Clauses (Art. 46 GDPR) and supplementary measures where required.
+        </p>
+        <p>(4) The Processor remains fully liable for sub-processors as for its own processing.</p>
+
+        <H2>§ 5 Technical and organisational measures (Art. 32 GDPR)</H2>
+        <p>The Processor maintains the following TOMs:</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5">
+          <li>
+            <strong className="[color:var(--mk-text)]">Encryption:</strong> TLS 1.2+ in transit,
+            AES-256 at rest for database and backups.
+          </li>
+          <li>
+            <strong className="[color:var(--mk-text)]">Access control:</strong> Role-based access
+            (RBAC), least-privilege, unique user accounts, MFA available.
+          </li>
+          <li>
+            <strong className="[color:var(--mk-text)]">Authentication:</strong> Scrypt-hashed
+            passwords, session tokens signed with HMAC-SHA-256.
+          </li>
+          <li>
+            <strong className="[color:var(--mk-text)]">Network security:</strong> Firewall, isolated
+            database network, no public DB access.
+          </li>
+          <li>
+            <strong className="[color:var(--mk-text)]">Logging and monitoring:</strong> Immutable
+            audit log with hash chain (tamper-evident), Sentry error monitoring.
+          </li>
+          <li>
+            <strong className="[color:var(--mk-text)]">Backup:</strong> Daily encrypted backups with
+            verify and restore procedures; retention per legal requirements.
+          </li>
+          <li>
+            <strong className="[color:var(--mk-text)]">Data isolation:</strong> Multi-tenant
+            isolation via brain_id; source-level access control prevents cross-tenant data leaks.
+          </li>
+          <li>
+            <strong className="[color:var(--mk-text)]">Availability:</strong> Health checks,
+            auto-restart, Hetzner EU data centres.
+          </li>
+          <li>
+            <strong className="[color:var(--mk-text)]">Pseudonymisation:</strong> Internal IDs where
+            feasible; no use of content for AI training.
+          </li>
+          <li>
+            <strong className="[color:var(--mk-text)]">Incident response:</strong> Documented breach
+            notification process within 72 hours to the Controller.
+          </li>
+        </ul>
+
+        <H2>§ 6 Data subject rights assistance</H2>
+        <p>
+          The Processor shall assist the Controller in fulfilling its obligation to respond to data
+          subject rights requests (access, rectification, erasure, restriction, portability,
+          objection). The Controller can export all data via Settings → Account → Export data.
+          Deletion requests can be triggered via the GDPR data-deletion endpoint.
+        </p>
+
+        <H2>§ 7 Personal data breach</H2>
+        <p>
+          (1) The Processor shall notify the Controller without undue delay, and in any case within
+          48 hours, after becoming aware of a personal data breach.
+        </p>
+        <p>
+          (2) The notification shall describe the nature of the breach, the likely consequences, and
+          the measures taken or proposed. The Processor shall assist the Controller in notifying the
+          supervisory authority (Art. 33 GDPR) and data subjects (Art. 34 GDPR) where required.
+        </p>
+
+        <H2>§ 8 Audit rights</H2>
+        <p>
+          (1) The Controller has the right to audit the Processor&rsquo;s compliance with this DPA
+          and Art. 28 GDPR, upon reasonable notice and during business hours.
+        </p>
+        <p>
+          (2) Audits shall be conducted by the Controller&rsquo;s own staff or by a third party
+          bound by confidentiality. The Processor shall provide the necessary information and
+          access.
+        </p>
+        <p>
+          (3) The Processor&rsquo;s audit reports, certifications (e. g. ISO 27001 where available),
+          and the immutable audit log are available to the Controller on request.
+        </p>
+
+        <H2>§ 9 Deletion at end of service</H2>
+        <p>
+          At the Controller&rsquo;s request, the Processor shall delete all personal data after the
+          end of the service contract, unless retention is required by EU or member state law (DE: §
+          147 AO, § 257 HGB; AT: § 132 BAO; CH: OR 962). The Controller can trigger a full export
+          before deletion. Deletion is logged in the immutable audit trail.
+        </p>
+
+        <H2>§ 10 Liability</H2>
+        <p>
+          Liability under this DPA is governed by the Terms of Service (§ 8), supplemented by Art.
+          82 GDPR. The Processor is liable for damages caused by processing in violation of the GDPR
+          only where the Processor did not comply with its specific obligations.
+        </p>
+
+        <H2>§ 11 Final provisions</H2>
+        <p>
+          (1) This DPA is part of the main service contract and takes precedence in case of conflict
+          regarding data protection. (2) German law applies, excluding the CISG. (3) Exclusive venue
+          for merchants is Vienna, Austria. (4) Changes are communicated with reasonable notice.
+        </p>
+
+        <LegalLinks home={home} exclude="dpa" lang={lang} />
+      </Shell>
+    );
+  }
+  return (
+    <Shell home={home} lang={lang} title={t.dpaTitle} subtitle={t.dpaSubtitle}>
+      <p className="text-xs [color:var(--mk-text-subtle)]">
+        {t.draftNotice} Diese Vorlage implementiert Art. 28 DSGVO. Bitte fülle die Platzhalter aus,
+        unterzeichne mit dem Verantwortlichen und sende sie an help@rciid.at, bevor du
+        personenbezogene Daten hochlädst.
+      </p>
+
+      <H2>§ 1 Vertragsparteien</H2>
+      <p>
+        <strong className="[color:var(--mk-text)]">Verantwortlicher</strong> (der Kunde, der
+        Subsumio zur Verarbeitung personenbezogener Daten nutzt):
+      </p>
+      <p className="mt-1">
+        [Name des Verantwortlichen]
+        <br />
+        [Anschrift]
+        <br />
+        [Vertretungsberechtigter]
+        <br />
+        [E-Mail]
+      </p>
+      <p className="mt-2">
+        <strong className="[color:var(--mk-text)]">Auftragsverarbeiter</strong> (Anbieter des
+        gehosteten Subsumio-Dienstes):
+      </p>
+      <p className="mt-1">
+        RCIID — Rocket Chain Investigation &amp; Intelligence Division
+        <br />
+        Hauslabgasse 42/3/2
+        <br />
+        1050 Wien, Österreich
+        <br />
+        E-Mail: help@rciid.at
+      </p>
+
+      <H2>§ 2 Gegenstand, Dauer, Art und Zweck</H2>
+      <p>
+        (1) <strong className="[color:var(--mk-text)]">Gegenstand:</strong> Bereitstellung des
+        gehosteten Subsumio-Cloud-Dienstes zur Organisation, Suche und Synthese von Dokumenten und
+        Aktendaten.
+      </p>
+      <p>
+        (2) <strong className="[color:var(--mk-text)]">Dauer:</strong> Für die Laufzeit des
+        Hauptvertrags (gemäß AGB), sofern nicht früher beendet.
+      </p>
+      <p>
+        (3) <strong className="[color:var(--mk-text)]">Art und Zweck:</strong> Speicherung,
+        Volltext- und semantische Suche, KI-gestützte Synthese und Agenten-Workflows auf vom
+        Verantwortlichen hochgeladenen Dokumenten. Keine Nutzung von Inhalten zum KI-Training.
+      </p>
+      <p>
+        (4) <strong className="[color:var(--mk-text)]">Art personenbezogener Daten:</strong>{" "}
+        Bestandsdaten (E-Mail, Name) sowie alle personenbezogenen Daten, die der Verantwortliche
+        innerhalb von Inhalten hochlädt (z. B. Akten, Mandantenkorrespondenz, Rechnungen).
+      </p>
+      <p>
+        (5) <strong className="[color:var(--mk-text)]">Kategorien betroffener Personen:</strong>{" "}
+        Mandanten, Gegenseite, Zeugen, Mitarbeiter und weitere Personen, deren Daten in den
+        Dokumenten des Verantwortlichen enthalten sind.
+      </p>
+
+      <H2>§ 3 Pflichten des Auftragsverarbeiters (Art. 28 Abs. 3 DSGVO)</H2>
+      <p>Der Auftragsverarbeiter:</p>
+      <ul className="mt-2 list-disc space-y-1 pl-5">
+        <li>
+          verarbeitet personenbezogene Daten ausschließlich auf dokumentierte Weisung des
+          Verantwortlichen, einschließlich der Übermittlung an Drittländer, sofern nicht EU- oder
+          mitgliedstaatliches Recht dies erfordert;
+        </li>
+        <li>
+          stellt sicher, dass zur Verarbeitung befugte Personen einer Verschwiegenheitspflicht
+          unterliegen;
+        </li>
+        <li>trifft geeignete technische und organisatorische Maßnahmen (TOM, § 5);</li>
+        <li>beachtet die Bedingungen für die Heranziehung von Unterauftragsverarbeitern (§ 4);</li>
+        <li>
+          unterstützt den Verantwortlichen bei der Beantwortung von Auskunftsersuchen betroffener
+          Personen;
+        </li>
+        <li>
+          unterstützt den Verantwortlichen bei der Erfüllung seiner Pflichten nach den Art. 32–36
+          DSGVO (Sicherheit, Verletzungsmitteilung, DSFA, Vorabkonsultation);
+        </li>
+        <li>
+          löscht oder gibt alle personenbezogenen Daten nach Ende der Leistung zurück, sofern keine
+          gesetzliche Aufbewahrungspflicht besteht;
+        </li>
+        <li>
+          macht alle Informationen verfügbar, die zur Demonstration der Compliance erforderlich
+          sind, und ermöglicht und trägt zu Audits bei.
+        </li>
+      </ul>
+
+      <H2>§ 4 Unterauftragsverarbeiter</H2>
+      <p>
+        (1) Der Verantwortliche erteilt die allgemeine Genehmigung für die in der
+        Datenschutzerklärung (§ 7) aufgeführten Unterauftragsverarbeiter. Der Auftragsverarbeiter
+        informiert den Verantwortlichen über beabsichtigte Änderungen hinzuzufügender oder
+        ersetzender Unterauftragsverarbeiter und gibt ihm die Möglichkeit zum Widerspruch.
+      </p>
+      <p>
+        (2) Aktuelle Unterauftragsverarbeiter: Hosting (Hetzner, DE/EU); LLM- und Embedding-Anbieter
+        (OpenRouter, US — EU-Standardvertragsklauseln); Zahlung (Stripe, US — SCCs); E-Mail (Resend,
+        US — SCCs); optionaler Dienst zur Ratenbegrenzung (Upstash, US — SCCs).
+      </p>
+      <p>
+        (3) Bei Unterauftragsverarbeitern außerhalb des EWR erfolgen Übermittlungen auf Basis von
+        EU-Standardvertragsklauseln (Art. 46 DSGVO) und ergänzenden Maßnahmen, soweit erforderlich.
+      </p>
+      <p>
+        (4) Der Auftragsverarbeiter haftet voll für Unterauftragsverarbeiter wie für eigene
+        Verarbeitung.
+      </p>
+
+      <H2>§ 5 Technische und organisatorische Maßnahmen (Art. 32 DSGVO)</H2>
+      <p>Der Auftragsverarbeiter trifft folgende TOM:</p>
+      <ul className="mt-2 list-disc space-y-1 pl-5">
+        <li>
+          <strong className="[color:var(--mk-text)]">Verschlüsselung:</strong> TLS 1.2+ in Transit,
+          AES-256 at-rest für Datenbank und Backups.
+        </li>
+        <li>
+          <strong className="[color:var(--mk-text)]">Zugriffskontrolle:</strong> Rollenbasierte
+          Zugriffskontrolle (RBAC), Least-Privilege, eindeutige Benutzerkonten, MFA verfügbar.
+        </li>
+        <li>
+          <strong className="[color:var(--mk-text)]">Authentifizierung:</strong> Scrypt-gehashte
+          Passwörter, Session-Tokens signiert mit HMAC-SHA-256.
+        </li>
+        <li>
+          <strong className="[color:var(--mk-text)]">Netzwerksicherheit:</strong> Firewall,
+          isoliertes Datenbanknetzwerk, kein öffentlicher DB-Zugriff.
+        </li>
+        <li>
+          <strong className="[color:var(--mk-text)]">Protokollierung &amp; Monitoring:</strong>{" "}
+          Unveränderliches Audit-Log mit Hash-Chain (manipulationssicher), Sentry Fehler-Monitoring.
+        </li>
+        <li>
+          <strong className="[color:var(--mk-text)]">Backup:</strong> Tägliche verschlüsselte
+          Backups mit Verify- und Restore-Verfahren; Aufbewahrung nach gesetzlichen Vorgaben.
+        </li>
+        <li>
+          <strong className="[color:var(--mk-text)]">Datenisolation:</strong> Multi-Tenant-Isolation
+          via brain_id; Source-Level-Zugriffskontrolle verhindert Cross-Tenant-Datenlecks.
+        </li>
+        <li>
+          <strong className="[color:var(--mk-text)]">Verfügbarkeit:</strong> Health-Checks,
+          Auto-Restart, Hetzner EU-Rechenzentren.
+        </li>
+        <li>
+          <strong className="[color:var(--mk-text)]">Pseudonymisierung:</strong> Interne IDs wo
+          möglich; keine Nutzung von Inhalten zum KI-Training.
+        </li>
+        <li>
+          <strong className="[color:var(--mk-text)]">Incident Response:</strong> Dokumentiertes
+          Verletzungsmitteilungsverfahren innerhalb von 72 Stunden an den Verantwortlichen.
+        </li>
+      </ul>
+
+      <H2>§ 6 Unterstützung bei Betroffenenrechten</H2>
+      <p>
+        Der Auftragsverarbeiter unterstützt den Verantwortlichen bei der Erfüllung seiner Pflicht,
+        auf Auskunftsersuchen betroffener Personen zu antworten (Auskunft, Berichtigung, Löschung,
+        Einschränkung, Übertragbarkeit, Widerspruch). Der Verantwortliche kann alle Daten über{" "}
+        <span className="[color:var(--mk-text)]">Einstellungen → Account → Daten exportieren</span>{" "}
+        exportieren. Löschungsanfragen können über den GDPR-Data-Deletion-Endpunkt ausgelöst werden.
+      </p>
+
+      <H2>§ 7 Verletzung des Schutzes personenbezogener Daten</H2>
+      <p>
+        (1) Der Auftragsverarbeiter meldet dem Verantwortlichen eine Verletzung des Schutzes
+        personenbezogener Daten unverzüglich, spätestens jedoch innerhalb von 48 Stunden nach
+        Kenntniserlangung.
+      </p>
+      <p>
+        (2) Die Meldung beschreibt Art der Verletzung, voraussichtliche Folgen und ergriffene oder
+        vorgeschlagene Maßnahmen. Der Auftragsverarbeiter unterstützt den Verantwortlichen bei der
+        Meldung an die Aufsichtsbehörde (Art. 33 DSGVO) und betroffene Personen (Art. 34 DSGVO),
+        soweit erforderlich.
+      </p>
+
+      <H2>§ 8 Audit-Rechte</H2>
+      <p>
+        (1) Der Verantwortliche ist berechtigt, die Einhaltung dieses AVV und des Art. 28 DSGVO
+        durch den Auftragsverarbeiter zu prüfen, nach angemessener Ankündigung und während der
+        Geschäftszeiten.
+      </p>
+      <p>
+        (2) Prüfungen werden durch eigenes Personal des Verantwortlichen oder durch eine
+        verschwiegenheitsgebundene dritte Partei durchgeführt. Der Auftragsverarbeiter stellt die
+        erforderlichen Informationen und Zugänge bereit.
+      </p>
+      <p>
+        (3) Audit-Berichte, Zertifizierungen (z. B. ISO 27001 soweit verfügbar) und das
+        unveränderliche Audit-Log können beim Auftragsverarbeiter angefordert werden.
+      </p>
+
+      <H2>§ 9 Löschung bei Vertragsende</H2>
+      <p>
+        Auf Wunsch des Verantwortlichen löscht der Auftragsverarbeiter alle personenbezogenen Daten
+        nach Ende des Dienstvertrages, sofern keine gesetzliche Aufbewahrungspflicht (DE: § 147 AO,
+        § 257 HGB; AT: § 132 BAO; CH: OR 962) besteht. Ein vollständiger Export kann vor der
+        Löschung ausgelöst werden. Die Löschung wird im unveränderlichen Audit-Trail protokolliert.
+      </p>
+
+      <H2>§ 10 Haftung</H2>
+      <p>
+        Die Haftung unter diesem AVV richtet sich nach den AGB (§ 8), ergänzt durch Art. 82 DSGVO.
+        Der Auftragsverarbeiter haftet für Schäden, die durch eine Verarbeitung in Verletzung der
+        DSGVO entstanden sind, nur soweit er seinen spezifischen Pflichten nicht nachgekommen ist.
+      </p>
+
+      <H2>§ 11 Schlussbestimmungen</H2>
+      <p>
+        (1) Dieser AVV ist Teil des Hauptvertrags und geht im Konfliktfall bezüglich Datenschutz
+        vor. (2) Es gilt deutsches Recht unter Ausschluss des UN-Kaufrechts. (3) Ausschließlicher
+        Gerichtsstand für Kaufleute ist Wien, Österreich. (4) Änderungen werden mit angemessener
+        Frist mitgeteilt.
+      </p>
+
+      <LegalLinks home={home} exclude="dpa" lang={lang} />
     </Shell>
   );
 }

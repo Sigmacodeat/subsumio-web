@@ -17,12 +17,12 @@ const exportSchema = z.object({
   invoices: z
     .array(
       z.object({
-        invoice_number: z.string(),
-        invoice_date: z.string(),
-        client_name: z.string(),
+        invoice_number: z.string().max(100),
+        invoice_date: z.string().max(20),
+        client_name: z.string().max(300),
         net_amount: z.number(),
         tax_rate: z.number(),
-        client_number: z.string().optional(),
+        client_number: z.string().max(100).optional(),
       })
     )
     .optional(),

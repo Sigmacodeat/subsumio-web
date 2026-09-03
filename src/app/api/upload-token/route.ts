@@ -73,6 +73,22 @@ export const POST = createHandler(
     quota: "uploads",
     skipCsrf: false,
     body: uploadTokenSchema,
+    audit: (_ctx, body) => ({
+      action: "upload.token_issued" as const,
+      entityType: "upload_token",
+      details: {
+        source: body.source,
+        has_case_slug: Boolean(body.case_slug),
+        filename: body.filename,
+        size: body.size,
+        mime_type: body.mime_type,
+        pause_for_review: body.pause_for_review,
+        jurisdiction: body.jurisdiction,
+        doc_type: body.doc_type,
+        defer_pipeline: body.defer_pipeline,
+        has_password: Boolean(body.password_hash),
+      },
+    }),
   },
   async (ctx, body) => {
     const b = body as z.infer<typeof uploadTokenSchema>;

@@ -18,6 +18,12 @@ export const POST = createHandler(
     action: "settings.write",
     rateTier: "heavy",
     body: deletionSchema,
+    audit: (ctx, _body) => ({
+      action: "gdpr.data_deletion" as const,
+      entityType: "user",
+      entityId: ctx.user.id,
+      details: { user: ctx.user.email },
+    }),
   },
   async (ctx, _body, _query, _req) => {
     const store = getStore();

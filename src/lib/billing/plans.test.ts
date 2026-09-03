@@ -5,6 +5,9 @@ import {
   isBillingConfigured,
   stripePriceId,
   planForPriceId,
+  toSaasPlan,
+  fromSaasPlan,
+  saasPlanForUser,
 } from "./plans";
 
 describe("BILLABLE_PLANS", () => {
@@ -17,7 +20,7 @@ describe("BILLABLE_PLANS", () => {
     const pro = BILLABLE_PLANS.pro;
     expect(pro.id).toBe("pro");
     expect(pro.name).toBe("Solo");
-    expect(pro.monthlyEur).toBe(179);
+    expect(pro.monthlyEur).toBe(249);
     expect(pro.stripePriceEnv).toBe("STRIPE_PRICE_SOLO");
     expect(pro.pages).toBe(50_000);
     expect(pro.seats).toBe(1);
@@ -27,7 +30,7 @@ describe("BILLABLE_PLANS", () => {
     const team = BILLABLE_PLANS.team;
     expect(team.id).toBe("team");
     expect(team.name).toBe("Kanzlei");
-    expect(team.monthlyEur).toBe(999);
+    expect(team.monthlyEur).toBe(1499);
     expect(team.stripePriceEnv).toBe("STRIPE_PRICE_KANZLEI");
     expect(team.pages).toBe(200_000);
     expect(team.seats).toBe(5);
@@ -106,12 +109,12 @@ describe("BILLING_PLANS_DISPLAY", () => {
 
   test("pro plan displays the Solo monthly price", () => {
     const pro = BILLING_PLANS_DISPLAY.find((p) => p.id === "pro");
-    expect(pro?.price).toContain("179");
+    expect(pro?.price).toContain("249");
   });
 
   test("team plan displays the Kanzlei monthly price", () => {
     const team = BILLING_PLANS_DISPLAY.find((p) => p.id === "team");
-    expect(team?.price).toContain("999");
+    expect(team?.price).toContain("1.499");
   });
 
   test("all feature strings are non-empty", () => {
@@ -214,5 +217,46 @@ describe("planForPriceId", () => {
     delete process.env.STRIPE_PRICE_KANZLEI;
     expect(planForPriceId("price_team_real")).toBeNull();
     restore();
+  });
+});
+
+// ── SaaS Plan Mapping (pro↔solo, team↔kanzlei) ──────────────────────────
+
+describe("toSaasPlan", () => {
+  test("maps pro → solo", () => {
+    expect(toSaasPlan("pro")).toBe("solo");
+  });
+  test("maps team → kanzlei", () => {
+    expect(toSaasPlan("team")).toBe("kanzlei");
+  });
+  test("maps enterprise → enterprise", () => {
+    expect(toSaasPlan("enterprise")).toBe("enterprise");
+  });
+  test("maps free → null", () => {
+    expect(toSaasPlan("free")).toBeNull();
+  });
+});
+
+describe("fromSaasPlan", () => {
+  test("maps solo → pro", () => {
+    expect(fromSaasPlan("solo")).toBe("pro");
+  });
+  test("maps kanzlei → team", () => {
+    expect(fromSaasPlan("kanzlei")).toBe("team");
+  });
+  test("maps enterprise → enterprise", () => {
+    expect(fromSaasPlan("enterprise")).toBe("enterprise");
+  });
+});
+
+describe("saasPlanForUser", () => {
+  test("resolves pro → solo", () => {
+    expect(saasPlanForUser("pro")).toBe("solo");
+  });
+  test("resolves team → kanzlei", () => {
+    expect(saasPlanForUser("team")).toBe("kanzlei");
+  });
+  test("resolves free → null", () => {
+    expect(saasPlanForUser("free")).toBeNull();
   });
 });

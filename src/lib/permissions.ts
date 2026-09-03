@@ -86,6 +86,7 @@ export type RouteAction =
   | "legal.statute"
   | "legal.contradictions"
   | "legal.retrieval_feedback"
+  | "legal.eval_fixture_review"
   | "legal.strategy"
   | "legal.research"
   | "legal.subsumption"
@@ -95,6 +96,11 @@ export type RouteAction =
   | "legal.precedent_search"
   | "legal.translate"
   | "legal.receipt"
+  | "legal.berufungsgruende"
+  | "legal.opponent_simulation"
+  | "legal.reorder_gruende"
+  | "legal.case_investigation"
+  | "legal.case_investigation_review"
   | "tax.stbvv"
   | "tax.analyze"
   | "tax.summarize"
@@ -196,12 +202,18 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "admin.audit_export": ["admin"],
   "legal.contradictions": ["admin", "lawyer"],
   "legal.retrieval_feedback": ["admin", "lawyer", "assistant"],
+  "legal.eval_fixture_review": ["admin", "lawyer"],
   "legal.strategy": ["admin", "lawyer"],
   "legal.research": ["admin", "lawyer"],
   "legal.subsumption": ["admin", "lawyer"],
   "legal.ground": ["admin", "lawyer", "assistant"],
   "legal.translate": ["admin", "lawyer", "assistant"],
   "legal.receipt": ["admin", "lawyer", "assistant"],
+  "legal.berufungsgruende": ["admin", "lawyer", "assistant"],
+  "legal.opponent_simulation": ["admin", "lawyer", "assistant"],
+  "legal.reorder_gruende": ["admin", "lawyer", "assistant"],
+  "legal.case_investigation": ["admin", "lawyer"],
+  "legal.case_investigation_review": ["admin", "lawyer"],
   "legal.obligation_extract": ["admin", "lawyer", "assistant"],
   "legal.case_scanner": ["admin", "lawyer", "assistant"],
   "legal.precedent_search": ["admin", "lawyer", "assistant"],
@@ -293,12 +305,18 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "legal.statute": "legal.statute",
     "legal.contradictions": "legal.contradictions",
     "legal.retrieval_feedback": "legal.retrieval_feedback",
+    "legal.eval_fixture_review": "legal.eval_fixture_review",
     "legal.strategy": "legal.strategy",
     "legal.research": "legal.research",
     "legal.subsumption": "legal.subsumption",
     "legal.ground": "legal.ground",
     "legal.translate": "legal.translate",
     "legal.receipt": "legal.receipt",
+    "legal.berufungsgruende": "legal.berufungsgruende",
+    "legal.opponent_simulation": "legal.opponent_simulation",
+    "legal.reorder_gruende": "legal.reorder_gruende",
+    "legal.case_investigation": "legal.case_investigation",
+    "legal.case_investigation_review": "legal.case_investigation_review",
     "legal.obligation_extract": "legal.obligation_extract",
     "legal.case_scanner": "legal.case_scanner",
     "legal.precedent_search": "legal.precedent_search",

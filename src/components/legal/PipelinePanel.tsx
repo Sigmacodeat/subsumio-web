@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   RefreshCw,
@@ -17,6 +18,7 @@ import {
   Play,
   Users,
   AlertTriangle,
+  AlertCircle,
   Link2,
   Network,
   TrendingUp,
@@ -126,11 +128,13 @@ const LAYER_INFO: Array<{
 const SUB_TYPE_LABELS: Record<string, string> = {
   on_index: "ON-Index",
   person: "Entität",
+  completeness_check: "Vollständigkeitsprüfung",
   forensic_report: "Forensische Analyse",
   legal_grounding_map: "Rechtsgrundlagen (§-Retrieval)",
   precedent_match: "Präzedenzfälle (OGH/BGH/BVerfG)",
   burden_of_proof: "Beweislastverteilung",
   admissibility_check: "Zulässigkeitsprüfung",
+  subsumption_check: "Subsumtion (Obersatz → Schluss)",
   fact_gap_analysis: "Sachverhaltslücken",
   witness_expert_analysis: "Zeugen & Gutachter",
   evidence_quality_analysis: "Beweiskraft-Bewertung",
@@ -203,6 +207,297 @@ function fmtDate(iso?: string): string {
   }
 }
 
+// ── Specialized renderers for legal pipeline output pages ────────────────
+// These parse the JSON content written by the pipeline layers and render
+// it in a structured, anwalt-friendly way — instead of raw JSON dumps.
+
+interface MatchedParagraph {
+  paragraph?: string;
+  statute?: string;
+  source_text?: string;
+  confidence?: string;
+  verified?: boolean;
+  source_slug?: string;
+}
+
+interface LegalGroundingEntry {
+  finding?: string;
+  finding_type?: string;
+  on_reference?: string;
+  quote?: string;
+  matched_paragraphs?: MatchedParagraph[];
+}
+
+/** Renders legal_grounding_map pages — shows each finding with its matched
+ * §§ including the wörtliche Gesetzestext (source_text). This is the critical
+ * view for an anwalt to verify the subsumption: they see the §-text right
+ * next to the finding, not just "§ 1311 ABGB" as a label. */
+function LegalGroundingRenderer({ content }: { content: string }) {
+  let entries: LegalGroundingEntry[] = [];
+  try {
+    const parsed = JSON.parse(content);
+    entries = Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return <pre className="font-sans text-xs whitespace-pre-wrap">{content}</pre>;
+  }
+  if (entries.length === 0) {
+    return (
+      <p className="text-xs text-[color:var(--ds-text-muted)]">Keine Rechtsgrundlagen gefunden.</p>
+    );
+  }
+  return (
+    <div className="space-y-3">
+      {entries.map((entry, i) => (
+        <div key={i} className="rounded border border-[color:var(--ds-border)] p-2">
+          <div className="mb-1 flex items-center gap-2">
+            <Badge
+              variant="default"
+              className="border border-[color:var(--brand-primary)]/30 bg-[color:var(--brand-glow)] text-xs text-[color:var(--brand-primary)]"
+            >
+              {entry.finding_type ?? "Finding"}
+            </Badge>
+            <span className="text-xs font-medium text-[color:var(--ds-text)]">
+              {entry.finding ?? ""}
+            </span>
+          </div>
+          {entry.quote && (
+            <p className="mb-2 text-xs text-[color:var(--ds-text-muted)] italic">
+              „{entry.quote.slice(0, 200)}
+              {entry.quote.length > 200 ? "…" : ""}&ldquo;
+            </p>
+          )}
+          {entry.matched_paragraphs && entry.matched_paragraphs.length > 0 && (
+            <div className="space-y-2">
+              {entry.matched_paragraphs.map((mp, j) => (
+                <div
+                  key={j}
+                  className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-2"
+                >
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className="text-xs font-semibold text-[color:var(--brand-primary)]">
+                      {mp.paragraph ?? "?"} {mp.statute ?? ""}
+                    </span>
+                    {mp.verified && (
+                      <Badge
+                        variant="default"
+                        className="border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[10px] text-[color:var(--ds-success-text)]"
+                      >
+                        ✓ Verifiziert
+                      </Badge>
+                    )}
+                    {mp.confidence && (
+                      <span className="text-[10px] text-[color:var(--ds-text-muted)]">
+                        Konfidenz: {mp.confidence}
+                      </span>
+                    )}
+                  </div>
+                  {mp.source_text && (
+                    <p className="text-xs leading-relaxed text-[color:var(--ds-text)]">
+                      {mp.source_text.slice(0, 500)}
+                      {mp.source_text.length > 500 ? "…" : ""}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+interface CompletenessPiece {
+  role?: string;
+  status?: string;
+  severity?: string;
+  rationale?: string;
+  arrivedCount?: number;
+  expectedCount?: number;
+  matchedSlugs?: string[];
+}
+
+/** Renders completeness_check pages — shows the verdict prominently and
+ * lists each expected document piece with its status (OK/MISSING/EXPIRED). */
+function CompletenessCheckRenderer({
+  content,
+  frontmatter,
+}: {
+  content: string;
+  frontmatter: Record<string, unknown>;
+}) {
+  let pieces: CompletenessPiece[] = [];
+  try {
+    const parsed = JSON.parse(content);
+    pieces = Array.isArray(parsed?.pieces) ? parsed.pieces : [];
+  } catch {
+    return <pre className="font-sans text-xs whitespace-pre-wrap">{content}</pre>;
+  }
+  const verdict = String(frontmatter.verdict ?? "—");
+  const percent = Number(frontmatter.completeness_percent ?? 0);
+  const verdictColor =
+    verdict === "COMPLETE"
+      ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+      : verdict === "CHASE"
+        ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+        : "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]";
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <Badge variant="default" className={cn("border text-sm font-semibold", verdictColor)}>
+          {verdict === "COMPLETE"
+            ? "✓ Vollständig"
+            : verdict === "CHASE"
+              ? "⚠ Dokumente anfordern"
+              : "⛔ Unvollständig"}
+        </Badge>
+        <span className="text-sm font-semibold text-[color:var(--ds-text)]">
+          {percent}% vollständig
+        </span>
+        <span className="text-xs text-[color:var(--ds-text-muted)]">
+          Fall-Typ: {String(frontmatter.case_type ?? "—")}
+        </span>
+      </div>
+      {pieces.length > 0 && (
+        <div className="space-y-1">
+          {pieces.map((piece, i) => {
+            const statusColor =
+              piece.status === "OK"
+                ? "text-[color:var(--ds-success-text)]"
+                : piece.status === "MISSING"
+                  ? "text-[color:var(--ds-warning-text)]"
+                  : piece.status === "EXPIRED"
+                    ? "text-[color:var(--ds-danger-text)]"
+                    : "text-[color:var(--ds-text-muted)]";
+            return (
+              <div
+                key={i}
+                className="flex items-start gap-2 rounded border border-[color:var(--ds-border)] p-2"
+              >
+                <span className={cn("text-xs font-semibold", statusColor)}>
+                  {piece.status === "OK"
+                    ? "✓"
+                    : piece.status === "MISSING"
+                      ? "✗"
+                      : piece.status === "EXPIRED"
+                        ? "⏰"
+                        : "?"}
+                </span>
+                <div className="flex-1">
+                  <div className="text-xs font-medium text-[color:var(--ds-text)]">
+                    {piece.role ?? "Dokument"} ({piece.arrivedCount ?? 0}/{piece.expectedCount ?? 1}
+                    )
+                  </div>
+                  {piece.rationale && (
+                    <div className="text-[10px] text-[color:var(--ds-text-muted)]">
+                      {piece.rationale}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface SubsumptionStep {
+  step?: string;
+  label?: string;
+  text?: string;
+  merkmale?: string[];
+  conclusion?: string;
+  confidence?: number;
+  abstain?: boolean;
+  reason?: string;
+}
+
+/** Renders subsumption_check pages — shows the 4-step BenGER scaffold
+ * (Obersatz → Definition → Subsumtion → Schluss) in a structured way.
+ * Handles both JSON format (from our new subsumption.ts module) and
+ * markdown text format (from the existing subsumption-checker specialist). */
+function SubsumptionRenderer({ content }: { content: string }) {
+  let steps: SubsumptionStep[] = [];
+  let abstain = false;
+  let isJson = false;
+  try {
+    const parsed = JSON.parse(content);
+    isJson = true;
+    abstain = parsed?.abstain === true;
+    steps = Array.isArray(parsed?.steps) ? parsed.steps : Array.isArray(parsed) ? parsed : [];
+  } catch {
+    // Not JSON — fall through to markdown rendering
+  }
+  if (abstain) {
+    return (
+      <div className="rounded border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3">
+        <p className="text-sm font-semibold text-[color:var(--ds-warning-text)]">
+          ⚠ Subsumtion nicht möglich
+        </p>
+        <p className="text-xs text-[color:var(--ds-text-muted)]">
+          Der Sachverhalt ist unvollständig für eine zuverlässige Subsumtion. Weitere Fakten
+          erforderlich.
+        </p>
+      </div>
+    );
+  }
+  // If not JSON or no steps parsed, render as formatted text (the existing
+  // subsumption-checker writes markdown with a code block — display it nicely)
+  if (!isJson || steps.length === 0) {
+    // Strip markdown code fences for cleaner display
+    const cleanText = content
+      .replace(/^```\w*\n?/gm, "")
+      .replace(/\n```$/gm, "")
+      .trim();
+    return (
+      <pre className="font-sans text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
+        {cleanText}
+      </pre>
+    );
+  }
+  const stepLabels: Record<string, string> = {
+    obersatz: "Obersatz",
+    definition: "Definition",
+    subsumtion: "Subsumtion",
+    schluss: "Schluss",
+  };
+  return (
+    <div className="space-y-2">
+      {steps.map((step, i) => (
+        <div key={i} className="rounded border border-[color:var(--ds-border)] p-2">
+          <div className="mb-1 flex items-center gap-2">
+            <span className="text-xs font-semibold text-[color:var(--brand-primary)]">
+              {stepLabels[step.step ?? ""] ?? step.label ?? `Schritt ${i + 1}`}
+            </span>
+            {typeof step.confidence === "number" && (
+              <span className="text-[10px] text-[color:var(--ds-text-muted)]">
+                Konfidenz: {(step.confidence * 100).toFixed(0)}%
+              </span>
+            )}
+          </div>
+          {step.text && (
+            <p className="text-xs leading-relaxed text-[color:var(--ds-text)]">{step.text}</p>
+          )}
+          {step.merkmale && step.merkmale.length > 0 && (
+            <ul className="mt-1 list-disc pl-4 text-xs text-[color:var(--ds-text-muted)]">
+              {step.merkmale.map((m, j) => (
+                <li key={j}>{m}</li>
+              ))}
+            </ul>
+          )}
+          {step.conclusion && (
+            <p className="mt-1 text-xs font-semibold text-[color:var(--ds-text)]">
+              → {step.conclusion}
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function PipelinePanel({
   caseSlug,
   caseTitle,
@@ -211,11 +506,7 @@ export function PipelinePanel({
   recipientName,
 }: PipelinePanelProps) {
   const { addToast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [pipelineState, setPipelineState] = useState<PipelineState | null>(null);
-  const [outputPages, setOutputPages] = useState<Record<string, BrainPage>>({});
   const [expandedLayer, setExpandedLayer] = useState<number | null>(null);
-  const [drafts, setDrafts] = useState<DraftInfo[]>([]);
   const [triggering, setTriggering] = useState(false);
   const [showPartyCorrection, setShowPartyCorrection] = useState(false);
   const [partyOverrides, setPartyOverrides] = useState<
@@ -227,9 +518,17 @@ export function PipelinePanel({
   const [showCoherence, setShowCoherence] = useState(false);
   const [showLimitationScan, setShowLimitationScan] = useState(false);
 
-  const fetchPipelineData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // G11 fix: replace raw useEffect fetch with useQuery for caching, retry,
+  // error state, and AbortController cleanup. Pre-fix, errors were only
+  // console.error'd and requests could setState after unmount.
+  const {
+    data,
+    isLoading: loading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ["legal", "pipeline", caseSlug],
+    queryFn: async () => {
       const stateSlug = `pipeline/state-${caseSlug}`;
       let statePage: BrainPage | null = null;
       try {
@@ -238,87 +537,77 @@ export function PipelinePanel({
         // No pipeline state yet
       }
 
-      if (statePage) {
-        const fm = (statePage.frontmatter ?? {}) as Record<string, unknown>;
-        const state: PipelineState = {
-          case_slug: caseSlug,
-          status: String(fm.status ?? "unknown"),
-          current_layer: Number(fm.current_layer ?? 0),
-          layers: {},
+      if (!statePage) {
+        return {
+          pipelineState: null,
+          outputPages: {} as Record<string, BrainPage>,
+          drafts: [] as DraftInfo[],
         };
-        // Parse full state from the page content (JSON in compiled_truth)
-        try {
-          const raw = statePage.content || "";
-          const parsed = JSON.parse(raw) as PipelineState;
-          if (parsed.layers) state.layers = parsed.layers;
-          if (parsed.linked_cases) state.linked_cases = parsed.linked_cases;
-          if (parsed.cross_case_findings) state.cross_case_findings = parsed.cross_case_findings;
-          if (parsed.damage_overlap_warnings)
-            state.damage_overlap_warnings = parsed.damage_overlap_warnings;
-          if (parsed.ensemble_verdict) state.ensemble_verdict = parsed.ensemble_verdict;
-          if (parsed.warnings) state.warnings = parsed.warnings;
-          if (typeof parsed.contradiction_findings === "number")
-            state.contradiction_findings = parsed.contradiction_findings;
-          if (typeof parsed.cost_spent_usd === "number")
-            state.cost_spent_usd = parsed.cost_spent_usd;
-          if (typeof parsed.total_duration_ms === "number")
-            state.total_duration_ms = parsed.total_duration_ms;
-        } catch {
-          // Fallback: derive from frontmatter
-        }
-        setPipelineState(state);
-
-        // Fetch all output pages
-        const allSlugs: string[] = [];
-        for (const layer of Object.values(state.layers)) {
-          if (layer.output_slugs) allSlugs.push(...layer.output_slugs);
-        }
-        if (allSlugs.length > 0) {
-          const pages = await api.brain.getPages(allSlugs);
-          setOutputPages(pages);
-
-          // Extract drafts
-          const draftList: DraftInfo[] = [];
-          for (const [slug, page] of Object.entries(pages)) {
-            const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
-            if (fm.type === "legal_draft") {
-              draftList.push({
-                slug,
-                title: page.title,
-                draftType: String(fm.draft_type ?? ""),
-                status: String(fm.status ?? "draft"),
-                content: page.content || "",
-                attorneyReviewRequired: fm.attorney_review_required === true,
-                caseRef: String(fm.case_ref ?? caseSlug),
-                frontmatter: fm,
-              });
-            }
-          }
-          setDrafts(draftList);
-        }
-      } else {
-        setPipelineState(null);
-        setOutputPages({});
-        setDrafts([]);
       }
-    } catch (err) {
-      console.error("[pipeline] fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [caseSlug]);
 
-  useEffect(() => {
-    fetchPipelineData();
-  }, [fetchPipelineData]);
+      const fm = (statePage.frontmatter ?? {}) as Record<string, unknown>;
+      const state: PipelineState = {
+        case_slug: caseSlug,
+        status: String(fm.status ?? "unknown"),
+        current_layer: Number(fm.current_layer ?? 0),
+        layers: {},
+      };
+      try {
+        const raw = statePage.content || "";
+        const parsed = JSON.parse(raw) as PipelineState;
+        if (parsed.layers) state.layers = parsed.layers;
+        if (parsed.linked_cases) state.linked_cases = parsed.linked_cases;
+        if (parsed.cross_case_findings) state.cross_case_findings = parsed.cross_case_findings;
+        if (parsed.damage_overlap_warnings)
+          state.damage_overlap_warnings = parsed.damage_overlap_warnings;
+        if (parsed.ensemble_verdict) state.ensemble_verdict = parsed.ensemble_verdict;
+        if (parsed.warnings) state.warnings = parsed.warnings;
+        if (typeof parsed.contradiction_findings === "number")
+          state.contradiction_findings = parsed.contradiction_findings;
+        if (typeof parsed.cost_spent_usd === "number") state.cost_spent_usd = parsed.cost_spent_usd;
+        if (typeof parsed.total_duration_ms === "number")
+          state.total_duration_ms = parsed.total_duration_ms;
+      } catch {
+        // Fallback: derive from frontmatter
+      }
+
+      // Fetch all output pages
+      const allSlugs: string[] = [];
+      for (const layer of Object.values(state.layers)) {
+        if (layer.output_slugs) allSlugs.push(...layer.output_slugs);
+      }
+      let outputPages: Record<string, BrainPage> = {};
+      const drafts: DraftInfo[] = [];
+      if (allSlugs.length > 0) {
+        outputPages = await api.brain.getPages(allSlugs);
+        for (const [slug, page] of Object.entries(outputPages)) {
+          const pfm = (page.frontmatter ?? {}) as Record<string, unknown>;
+          if (pfm.type === "legal_draft") {
+            drafts.push({
+              slug,
+              title: page.title,
+              draftType: String(pfm.draft_type ?? ""),
+              status: String(pfm.status ?? "draft"),
+              content: page.content || "",
+              attorneyReviewRequired: pfm.attorney_review_required === true,
+              caseRef: String(pfm.case_ref ?? caseSlug),
+              frontmatter: pfm,
+            });
+          }
+        }
+      }
+      return { pipelineState: state, outputPages, drafts };
+    },
+    refetchInterval: 10_000, // auto-refresh every 10s for live pipeline updates
+  });
+
+  const pipelineState = data?.pipelineState ?? null;
+  const outputPages = data?.outputPages ?? {};
+  const drafts = data?.drafts ?? [];
 
   // Continuous polling while pipeline is running
-  useEffect(() => {
-    const status = pipelineState?.status;
-    if (status !== "running" && status !== "resuming" && status !== "awaiting_review") return;
-    const interval = setInterval(() => fetchPipelineData(), 5000);
-    return () => clearInterval(interval);
-  }, [pipelineState?.status, fetchPipelineData]);
+  // G11 fix: useQuery already handles auto-refresh via refetchInterval.
+  // The old manual polling interval is removed — useQuery does this better.
 
   // Fetch entities for party correction
   useEffect(() => {
@@ -388,7 +677,7 @@ export function PipelinePanel({
       });
 
       // Start polling for state updates
-      setTimeout(() => fetchPipelineData(), 3000);
+      setTimeout(() => refetch(), 3000);
     } catch (err) {
       addToast({
         type: "error",
@@ -399,7 +688,7 @@ export function PipelinePanel({
     } finally {
       setTriggering(false);
     }
-  }, [caseSlug, addToast, fetchPipelineData]);
+  }, [caseSlug, addToast, refetch]);
 
   const handleResumePipeline = useCallback(
     async (fromLayer: number) => {
@@ -435,7 +724,7 @@ export function PipelinePanel({
           duration: 4000,
         });
         setShowPartyCorrection(false);
-        setTimeout(() => fetchPipelineData(), 3000);
+        setTimeout(() => refetch(), 3000);
       } catch (err) {
         addToast({
           type: "error",
@@ -445,7 +734,7 @@ export function PipelinePanel({
         });
       }
     },
-    [caseSlug, partyOverrides, addToast, fetchPipelineData]
+    [caseSlug, partyOverrides, addToast, refetch]
   );
 
   if (loading) {
@@ -528,7 +817,7 @@ export function PipelinePanel({
               variant="secondary"
               size="sm"
               className="gap-1.5 text-xs"
-              onClick={fetchPipelineData}
+              onClick={() => refetch()}
             >
               <RefreshCw size={12} />
               Aktualisieren
@@ -690,9 +979,20 @@ export function PipelinePanel({
                               )}
                             </div>
                             <div className="max-h-[300px] overflow-y-auto rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] p-2">
-                              <pre className="font-sans text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
-                                {page.content || ""}
-                              </pre>
+                              {fm.type === "legal_grounding_map" && page.content ? (
+                                <LegalGroundingRenderer content={page.content} />
+                              ) : fm.type === "completeness_check" && page.content ? (
+                                <CompletenessCheckRenderer
+                                  content={page.content}
+                                  frontmatter={fm}
+                                />
+                              ) : fm.type === "subsumption_check" && page.content ? (
+                                <SubsumptionRenderer content={page.content} />
+                              ) : (
+                                <pre className="font-sans text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
+                                  {page.content || ""}
+                                </pre>
+                              )}
                             </div>
                           </div>
                         );
@@ -1299,14 +1599,32 @@ export function PipelinePanel({
               kanzleiName={kanzleiName}
               recipientEmail={recipientEmail}
               recipientName={recipientName}
-              onSaved={fetchPipelineData}
+              onSaved={refetch}
             />
           ))}
         </div>
       )}
 
       {/* Empty state */}
-      {!hasPipeline && !loading && (
+      {/* G11 fix: Error state — previously errors were only console.error'd */}
+      {isError && !loading && (
+        <div className="rounded-xl border border-[color:var(--ds-danger)] bg-[color:var(--ds-surface)] p-6 text-center">
+          <AlertCircle size={28} className="mx-auto mb-3 text-[color:var(--ds-danger)]" />
+          <p className="text-sm text-[color:var(--ds-text)]">
+            Pipeline-Daten konnten nicht geladen werden.
+          </p>
+          <button
+            onClick={() => refetch()}
+            className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[color:var(--brand-primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[color:var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:outline-none"
+          >
+            <RefreshCw size={14} />
+            Erneut versuchen
+          </button>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!hasPipeline && !loading && !isError && (
         <div className="rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-8 text-center">
           <Activity size={32} className="mx-auto mb-3 text-[color:var(--ds-text-muted)]" />
           <p className="text-sm text-[color:var(--ds-text-muted)]">

@@ -15,6 +15,11 @@ export const POST = createHandler(
     rateTier: "heavy",
     quota: "uploads",
     body: dmsImportSchema,
+    audit: (_ctx, body) => ({
+      action: "document.upload" as const,
+      entityType: "dms_document",
+      details: { documentId: body.documentId },
+    }),
   },
   async (ctx, body, _query, _req) => {
     const connector = await getConnector();

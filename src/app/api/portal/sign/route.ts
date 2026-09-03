@@ -28,6 +28,15 @@ export const POST = createPublicHandler(
     rateLimitKey: (req) => `portal-sign:${clientIp(req.headers)}`,
     rateLimitMax: 10,
     rateLimitWindowMs: 60_000,
+    audit: (_ctx, body) => ({
+      action: "signature.capture" as const,
+      entityType: "captured_signature",
+      entityId: body.document_slug,
+      details: {
+        document_type: body.document_type,
+        signature_format: body.signature_format,
+      },
+    }),
   },
   async (req, body) => {
     const payload = await verifyPortalToken(body.token);
@@ -52,10 +61,9 @@ export const POST = createPublicHandler(
     }
 
     // Check if already signed (idempotency)
-    const existingRes = await fetch(
-      `${ENGINE_URL}/api/pages?type=captured_signature&limit=500`,
-      { signal: AbortSignal.timeout(10_000) }
-    );
+    const existingRes = await fetch(`${ENGINE_URL}/api/pages?type=captured_signature&limit=500`, {
+      signal: AbortSignal.timeout(10_000),
+    });
     if (existingRes.ok) {
       const existingData = await existingRes.json();
       const existingPages: Array<{
@@ -65,11 +73,7 @@ export const POST = createPublicHandler(
         (p) => p.frontmatter?.document_slug === body.document_slug
       );
       if (alreadySigned) {
-        return apiError(
-          "already_signed",
-          "Dieses Dokument wurde bereits unterschrieben",
-          409
-        );
+        return apiError("already_signed", "Dieses Dokument wurde bereits unterschrieben", 409);
       }
     }
 

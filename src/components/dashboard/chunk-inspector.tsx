@@ -2,16 +2,19 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -158,8 +161,10 @@ const ROLE_COLORS: Record<string, string> = {
   leitsatz: "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
   entscheidungsgruende: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
   tenor: "bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)]",
-  sachverhalt: "bg-[color:var(--ds-category-violet-bg)] text-[color:var(--ds-category-violet-text)]",
-  metadata: "border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)]",
+  sachverhalt:
+    "bg-[color:var(--ds-category-violet-bg)] text-[color:var(--ds-category-violet-text)]",
+  metadata:
+    "border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)]",
   full: "bg-[color:var(--ds-category-teal-bg)] text-[color:var(--ds-category-teal-text)]",
   entscheidungstext: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
   absatz: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
@@ -181,7 +186,7 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
       setSource(initialSource);
       setPage(1);
     }
-  }, [initialSource]);
+  }, [initialSource, source]);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [sort, setSort] = useState("newest");
@@ -214,7 +219,11 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
         flag_verified: "Als verifiziert markiert",
         clear_flag: "Markierung entfernt",
       };
-      addToast({ title: labels[action] ?? action, description: `${selectedIds.size} Chunks`, type: "success" });
+      addToast({
+        title: labels[action] ?? action,
+        description: `${selectedIds.size} Chunks`,
+        type: "success",
+      });
       queryClient.invalidateQueries({ queryKey: ["chunk-inspector"] });
       setSelectedIds(new Set());
     },
@@ -291,7 +300,7 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
 
   const total = listQuery.data?.meta.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const chunks = listQuery.data?.data ?? [];
+  const chunks = useMemo(() => listQuery.data?.data ?? [], [listQuery.data?.data]);
 
   // CSV Export
   const onExportCSV = useCallback(() => {
@@ -299,7 +308,22 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
       addToast({ title: "Keine Daten", description: "Nichts zu exportieren", type: "warning" });
       return;
     }
-    const headers = ["ID", "Index", "Rolle", "Text", "Länge", "Court", "ECLI", "Case#", "Statute", "Paragraph", "Embedded", "Page Slug", "Page Title", "Source"];
+    const headers = [
+      "ID",
+      "Index",
+      "Rolle",
+      "Text",
+      "Länge",
+      "Court",
+      "ECLI",
+      "Case#",
+      "Statute",
+      "Paragraph",
+      "Embedded",
+      "Page Slug",
+      "Page Title",
+      "Source",
+    ];
     const rows = chunks.map((c) => [
       c.id,
       c.chunkIndex,
@@ -324,12 +348,25 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
     a.download = `chunks-${source}-${role}-p${page}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    addToast({ title: "Export", description: `${chunks.length} Chunks exportiert`, type: "success" });
+    addToast({
+      title: "Export",
+      description: `${chunks.length} Chunks exportiert`,
+      type: "success",
+    });
   }, [chunks, source, role, page, addToast]);
 
-  const onSourceChange = (v: string) => { setSource(v); setPage(1); };
-  const onRoleChange = (v: string) => { setRole(v); setPage(1); };
-  const onSortChange = (v: string) => { setSort(v); setPage(1); };
+  const onSourceChange = (v: string) => {
+    setSource(v);
+    setPage(1);
+  };
+  const onRoleChange = (v: string) => {
+    setRole(v);
+    setPage(1);
+  };
+  const onSortChange = (v: string) => {
+    setSort(v);
+    setPage(1);
+  };
 
   return (
     <div className="space-y-4">
@@ -343,7 +380,9 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
               </SelectTrigger>
               <SelectContent>
                 {SOURCE_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -354,7 +393,9 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
               </SelectTrigger>
               <SelectContent>
                 {ROLE_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -365,24 +406,26 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
               </SelectTrigger>
               <SelectContent>
                 {SORT_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--ds-text)]" />
+            <div className="relative min-w-[200px] flex-1">
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[color:var(--ds-text)]" />
               <Input
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && onSearchSubmit()}
                 placeholder="Suche im Chunk-Text…"
-                className="pl-9 pr-8"
+                className="pr-8 pl-9"
               />
               {searchInput && (
                 <button
                   onClick={onSearchClear}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-[color:var(--ds-text)] hover:text-[color:var(--ds-text)]"
+                  className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-0.5 text-[color:var(--ds-text)] hover:text-[color:var(--ds-text)]"
                   aria-label="Suche löschen"
                 >
                   <X className="h-4 w-4" />
@@ -463,21 +506,69 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
                   </span>
                   <div className="mx-1 h-4 w-px bg-[color:var(--ds-border)]" />
                   <div className="inline-flex items-center gap-0.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-0.5">
-                    <Button variant="ghost" size="sm" className="h-7 text-xs hover:bg-[color:var(--ds-surface)]" onClick={() => bulkActionMutation.mutate({ action: "reembed", ids: [...selectedIds] })} disabled={bulkActionMutation.isPending}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs hover:bg-[color:var(--ds-surface)]"
+                      onClick={() =>
+                        bulkActionMutation.mutate({ action: "reembed", ids: [...selectedIds] })
+                      }
+                      disabled={bulkActionMutation.isPending}
+                    >
                       <RefreshCw className="mr-1 h-3 w-3" /> Re-Embed
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-7 text-xs hover:bg-[color:var(--ds-surface)]" onClick={() => bulkActionMutation.mutate({ action: "flag_verified", ids: [...selectedIds] })} disabled={bulkActionMutation.isPending}>
-                      <CheckCircle2 className="mr-1 h-3 w-3 text-[color:var(--ds-success-text)]" /> Verifiziert
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs hover:bg-[color:var(--ds-surface)]"
+                      onClick={() =>
+                        bulkActionMutation.mutate({
+                          action: "flag_verified",
+                          ids: [...selectedIds],
+                        })
+                      }
+                      disabled={bulkActionMutation.isPending}
+                    >
+                      <CheckCircle2 className="mr-1 h-3 w-3 text-[color:var(--ds-success-text)]" />{" "}
+                      Verifiziert
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-7 text-xs hover:bg-[color:var(--ds-surface)]" onClick={() => bulkActionMutation.mutate({ action: "flag_needs_review", ids: [...selectedIds] })} disabled={bulkActionMutation.isPending}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs hover:bg-[color:var(--ds-surface)]"
+                      onClick={() =>
+                        bulkActionMutation.mutate({
+                          action: "flag_needs_review",
+                          ids: [...selectedIds],
+                        })
+                      }
+                      disabled={bulkActionMutation.isPending}
+                    >
                       <Flag className="mr-1 h-3 w-3 text-[color:var(--ds-warning-text)]" /> Review
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-7 text-xs hover:bg-[color:var(--ds-surface)]" onClick={() => bulkActionMutation.mutate({ action: "flag_defective", ids: [...selectedIds] })} disabled={bulkActionMutation.isPending}>
-                      <AlertTriangle className="mr-1 h-3 w-3 text-[color:var(--ds-danger-text)]" /> Defekt
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs hover:bg-[color:var(--ds-surface)]"
+                      onClick={() =>
+                        bulkActionMutation.mutate({
+                          action: "flag_defective",
+                          ids: [...selectedIds],
+                        })
+                      }
+                      disabled={bulkActionMutation.isPending}
+                    >
+                      <AlertTriangle className="mr-1 h-3 w-3 text-[color:var(--ds-danger-text)]" />{" "}
+                      Defekt
                     </Button>
                   </div>
                   <div className="flex-1" />
-                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setSelectedIds(new Set())}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setSelectedIds(new Set())}
+                  >
                     Auswahl aufheben
                   </Button>
                 </div>
@@ -488,19 +579,31 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
                 <table className="w-full text-sm text-[color:var(--ds-text)]">
                   <thead>
                     <tr className="border-b border-[color:var(--ds-border)] text-left text-xs text-[color:var(--ds-text)]">
-                      <th scope="col" className="pb-2 pr-2">
+                      <th scope="col" className="pr-2 pb-2">
                         <Checkbox
                           checked={selectedIds.size === chunks.length && chunks.length > 0}
                           onCheckedChange={toggleSelectAll}
                           aria-label="Alle auswählen"
                         />
                       </th>
-                      <th scope="col" className="pb-2 pr-3 font-medium">#</th>
-                      <th scope="col" className="pb-2 pr-3 font-medium">Rolle</th>
-                      <th scope="col" className="pb-2 pr-3 font-medium">Text-Preview</th>
-                      <th scope="col" className="pb-2 pr-3 font-medium">Court / ECLI</th>
-                      <th scope="col" className="pb-2 pr-3 text-right font-medium">Länge</th>
-                      <th scope="col" className="pb-2 pr-3 text-center font-medium">Embed</th>
+                      <th scope="col" className="pr-3 pb-2 font-medium">
+                        #
+                      </th>
+                      <th scope="col" className="pr-3 pb-2 font-medium">
+                        Rolle
+                      </th>
+                      <th scope="col" className="pr-3 pb-2 font-medium">
+                        Text-Preview
+                      </th>
+                      <th scope="col" className="pr-3 pb-2 font-medium">
+                        Court / ECLI
+                      </th>
+                      <th scope="col" className="pr-3 pb-2 text-right font-medium">
+                        Länge
+                      </th>
+                      <th scope="col" className="pr-3 pb-2 text-center font-medium">
+                        Embed
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -508,7 +611,7 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
                       <tr
                         key={c.id}
                         onClick={() => setSelectedChunkId(c.id)}
-                        className={`cursor-pointer border-b border-[color:var(--ds-border)] transition-colors duration-150 motion-reduce:transition-none hover:bg-[color:var(--ds-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] ${selectedIds.has(c.id) ? "bg-[color:var(--brand-primary-bg)]" : ""}`}
+                        className={`cursor-pointer border-b border-[color:var(--ds-border)] transition-colors duration-150 hover:bg-[color:var(--ds-surface-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none ${selectedIds.has(c.id) ? "bg-[color:var(--brand-primary-bg)]" : ""}`}
                         tabIndex={0}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") setSelectedChunkId(c.id);
@@ -521,7 +624,7 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
                             aria-label={`Chunk ${c.chunkIndex} auswählen`}
                           />
                         </td>
-                        <td className="py-2 pr-3 text-xs tabular-nums text-[color:var(--ds-text)]">
+                        <td className="py-2 pr-3 text-xs text-[color:var(--ds-text)] tabular-nums">
                           {c.chunkIndex}
                         </td>
                         <td className="py-2 pr-3">
@@ -532,7 +635,7 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
                             {ROLE_LABELS[c.chunkRole] || c.chunkRole || "—"}
                           </Badge>
                         </td>
-                        <td className="py-2 pr-3 max-w-[400px]">
+                        <td className="max-w-[400px] py-2 pr-3">
                           <div className="truncate font-mono text-xs text-[color:var(--ds-text)]">
                             {truncate(c.chunkTextPreview.replace(/\n/g, " "), 120)}
                           </div>
@@ -541,24 +644,41 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
                           </div>
                         </td>
                         <td className="py-2 pr-3 text-xs">
-                          {c.court && <div className="truncate max-w-[180px] text-[color:var(--ds-text)]">{c.court}</div>}
+                          {c.court && (
+                            <div className="max-w-[180px] truncate text-[color:var(--ds-text)]">
+                              {c.court}
+                            </div>
+                          )}
                           {c.ecli && (
-                            <div className="truncate max-w-[180px] text-[color:var(--ds-text)]">
+                            <div className="max-w-[180px] truncate text-[color:var(--ds-text)]">
                               {c.ecli}
                             </div>
                           )}
                           {!c.court && !c.ecli && c.statuteAbbr && (
-                            <div className="text-[color:var(--ds-text)]">{c.statuteAbbr} {c.paragraphRef ?? ""}</div>
+                            <div className="text-[color:var(--ds-text)]">
+                              {c.statuteAbbr} {c.paragraphRef ?? ""}
+                            </div>
                           )}
                         </td>
-                        <td className="py-2 pr-3 text-right tabular-nums text-xs text-[color:var(--ds-text)]">
+                        <td className="py-2 pr-3 text-right text-xs text-[color:var(--ds-text)] tabular-nums">
                           {fmt(c.chunkLength)}
                         </td>
-                        <td className="py-2 pr-3 text-center" title={c.embeddingStatus === "embedded" ? "Eingebettet" : "Nicht eingebettet"}>
+                        <td
+                          className="py-2 pr-3 text-center"
+                          title={
+                            c.embeddingStatus === "embedded" ? "Eingebettet" : "Nicht eingebettet"
+                          }
+                        >
                           {c.embeddingStatus === "embedded" ? (
-                            <Zap className="inline h-4 w-4 text-[color:var(--ds-success-text)]" aria-label="Eingebettet" />
+                            <Zap
+                              className="inline h-4 w-4 text-[color:var(--ds-success-text)]"
+                              aria-label="Eingebettet"
+                            />
                           ) : (
-                            <CircleDot className="inline h-4 w-4 text-[color:var(--ds-text)]" aria-label="Nicht eingebettet" />
+                            <CircleDot
+                              className="inline h-4 w-4 text-[color:var(--ds-text)]"
+                              aria-label="Nicht eingebettet"
+                            />
                           )}
                         </td>
                       </tr>
@@ -572,7 +692,7 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
                 {chunks.map((c) => (
                   <div
                     key={c.id}
-                    className={`rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 transition-colors duration-150 motion-reduce:transition-none ${selectedIds.has(c.id) ? "bg-[color:var(--brand-primary-bg)] border-[color:var(--brand-primary)]" : ""}`}
+                    className={`rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 transition-colors duration-150 motion-reduce:transition-none ${selectedIds.has(c.id) ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary-bg)]" : ""}`}
                   >
                     <div className="flex items-start gap-2">
                       <Checkbox
@@ -581,10 +701,7 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
                         aria-label={`Chunk ${c.chunkIndex} auswählen`}
                         className="mt-1"
                       />
-                      <button
-                        onClick={() => setSelectedChunkId(c.id)}
-                        className="flex-1 text-left"
-                      >
+                      <button onClick={() => setSelectedChunkId(c.id)} className="flex-1 text-left">
                         <div className="flex items-center justify-between gap-2">
                           <Badge
                             variant="default"
@@ -618,7 +735,8 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
               {/* Pagination */}
               <div className="mt-4 flex items-center justify-between">
                 <div className="text-xs text-[color:var(--ds-text)]">
-                  {fmt((page - 1) * pageSize + 1)}–{fmt(Math.min(page * pageSize, total))} von {fmt(total)}
+                  {fmt((page - 1) * pageSize + 1)}–{fmt(Math.min(page * pageSize, total))} von{" "}
+                  {fmt(total)}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -649,7 +767,7 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
 
       {/* Detail Dialog */}
       <Dialog open={!!selectedChunkId} onOpenChange={(open) => !open && setSelectedChunkId(null)}>
-        <DialogContent className="max-w-3xl h-[85vh] flex flex-col overflow-hidden p-0">
+        <DialogContent className="flex h-[85vh] max-w-3xl flex-col overflow-hidden p-0">
           <DialogHeader className="shrink-0 p-6 pb-2">
             <DialogTitle className="flex items-center gap-2">
               {detailQuery.isLoading && <Skeleton className="h-6 w-40" />}
@@ -659,10 +777,12 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
                     variant="default"
                     className={ROLE_COLORS[detailQuery.data.data.chunkRole] ?? ""}
                   >
-                    {ROLE_LABELS[detailQuery.data.data.chunkRole] ?? detailQuery.data.data.chunkRole}
+                    {ROLE_LABELS[detailQuery.data.data.chunkRole] ??
+                      detailQuery.data.data.chunkRole}
                   </Badge>
                   <span className="text-sm font-normal text-[color:var(--ds-text-muted)]">
-                    Chunk {detailQuery.data.data.chunkIndex} · {fmt(detailQuery.data.data.chunkLength)} Zchn
+                    Chunk {detailQuery.data.data.chunkIndex} ·{" "}
+                    {fmt(detailQuery.data.data.chunkLength)} Zchn
                   </span>
                 </>
               )}
@@ -690,14 +810,14 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
                 onClose={() => setSelectedChunkId(null)}
                 onOpenInSteward={(slug) => {
                   // Switch to file-steward tab with pre-selected file
-                const event = new CustomEvent("corpus-steward-open-file", { detail: slug });
-                window.dispatchEvent(event);
-                setSelectedChunkId(null);
-              }}
-            />
-          )}
-        </div>
-      </DialogContent>
+                  const event = new CustomEvent("corpus-steward-open-file", { detail: slug });
+                  window.dispatchEvent(event);
+                  setSelectedChunkId(null);
+                }}
+              />
+            )}
+          </div>
+        </DialogContent>
       </Dialog>
     </div>
   );
@@ -736,7 +856,16 @@ function ChunkDetailContent({
     setEditStatuteAbbr(detail.statuteAbbr ?? "");
     setEditParagraphRef(detail.paragraphRef ?? "");
     setIsEditing(false);
-  }, [detail.id]);
+  }, [
+    detail.id,
+    detail.chunkText,
+    detail.chunkRole,
+    detail.court,
+    detail.caseNumber,
+    detail.ecli,
+    detail.statuteAbbr,
+    detail.paragraphRef,
+  ]);
 
   // PATCH mutation
   const patchMutation = useMutation({
@@ -754,7 +883,11 @@ function ChunkDetailContent({
       return res.json();
     },
     onSuccess: () => {
-      addToast({ title: "Chunk aktualisiert", description: "Änderungen gespeichert, Embedding invalidiert", type: "success" });
+      addToast({
+        title: "Chunk aktualisiert",
+        description: "Änderungen gespeichert, Embedding invalidiert",
+        type: "success",
+      });
       queryClient.invalidateQueries({ queryKey: ["chunk-detail", detail.id] });
       queryClient.invalidateQueries({ queryKey: ["chunk-inspector"] });
       setIsEditing(false);
@@ -823,7 +956,11 @@ function ChunkDetailContent({
 
   const onSave = () => {
     if (!editText.trim()) {
-      addToast({ title: "Leerer Text", description: "Chunk-Text darf nicht leer sein", type: "warning" });
+      addToast({
+        title: "Leerer Text",
+        description: "Chunk-Text darf nicht leer sein",
+        type: "warning",
+      });
       return;
     }
     patchMutation.mutate({
@@ -843,7 +980,10 @@ function ChunkDetailContent({
     ["Rechtsgebiet", detail.legalArea],
     ["Entscheidungsdatum", detail.decisionDate],
     ["Embedding", detail.embeddingStatus === "embedded" ? "✅ Eingebettet" : "⏳ Ausstehend"],
-    ["Eingebettet am", detail.embeddedAt ? new Date(detail.embeddedAt).toLocaleString("de-AT") : null],
+    [
+      "Eingebettet am",
+      detail.embeddedAt ? new Date(detail.embeddedAt).toLocaleString("de-AT") : null,
+    ],
     ["Modell", detail.model],
     ["Token-Anzahl", detail.tokenCount != null ? String(detail.tokenCount) : null],
     ["Chunker-Version", detail.chunkerVersion != null ? `v${detail.chunkerVersion}` : null],
@@ -859,11 +999,24 @@ function ChunkDetailContent({
           size="sm"
           onClick={() => {
             if (!isEditing) setIsEditing(true);
-            else { setEditText(detail.chunkText); setEditRole(detail.chunkRole); setEditCourt(detail.court ?? ""); setEditCaseNumber(detail.caseNumber ?? ""); setEditEcli(detail.ecli ?? ""); setEditStatuteAbbr(detail.statuteAbbr ?? ""); setEditParagraphRef(detail.paragraphRef ?? ""); setIsEditing(false); }
+            else {
+              setEditText(detail.chunkText);
+              setEditRole(detail.chunkRole);
+              setEditCourt(detail.court ?? "");
+              setEditCaseNumber(detail.caseNumber ?? "");
+              setEditEcli(detail.ecli ?? "");
+              setEditStatuteAbbr(detail.statuteAbbr ?? "");
+              setEditParagraphRef(detail.paragraphRef ?? "");
+              setIsEditing(false);
+            }
           }}
           disabled={patchMutation.isPending}
         >
-          {isEditing ? <Save className="mr-1.5 h-3.5 w-3.5" /> : <Pencil className="mr-1.5 h-3.5 w-3.5" />}
+          {isEditing ? (
+            <Save className="mr-1.5 h-3.5 w-3.5" />
+          ) : (
+            <Pencil className="mr-1.5 h-3.5 w-3.5" />
+          )}
           {isEditing ? "Bearbeiten beenden" : "Bearbeiten"}
         </Button>
         {isEditing && (
@@ -871,7 +1024,20 @@ function ChunkDetailContent({
             <Button variant="primary" size="sm" onClick={onSave} disabled={patchMutation.isPending}>
               {patchMutation.isPending ? "Speichert…" : "Speichern"}
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => { setEditText(detail.chunkText); setEditRole(detail.chunkRole); setEditCourt(detail.court ?? ""); setEditCaseNumber(detail.caseNumber ?? ""); setEditEcli(detail.ecli ?? ""); setEditStatuteAbbr(detail.statuteAbbr ?? ""); setEditParagraphRef(detail.paragraphRef ?? ""); }} disabled={patchMutation.isPending}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setEditText(detail.chunkText);
+                setEditRole(detail.chunkRole);
+                setEditCourt(detail.court ?? "");
+                setEditCaseNumber(detail.caseNumber ?? "");
+                setEditEcli(detail.ecli ?? "");
+                setEditStatuteAbbr(detail.statuteAbbr ?? "");
+                setEditParagraphRef(detail.paragraphRef ?? "");
+              }}
+              disabled={patchMutation.isPending}
+            >
               Abbrechen
             </Button>
           </>
@@ -959,7 +1125,9 @@ function ChunkDetailContent({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium text-[color:var(--ds-text-muted)]">Parent-Datei</p>
-            <p className="mt-1 truncate text-sm font-medium text-[color:var(--ds-text)]">{detail.pageTitle}</p>
+            <p className="mt-1 truncate text-sm font-medium text-[color:var(--ds-text)]">
+              {detail.pageTitle}
+            </p>
             <p className="mt-0.5 truncate font-mono text-xs text-[color:var(--ds-text-muted)]">
               {detail.pageSlug}
             </p>
@@ -992,7 +1160,7 @@ function ChunkDetailContent({
             autoFocus
           />
         ) : (
-          <pre className="max-h-[300px] overflow-y-auto rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap break-words text-[color:var(--ds-text)]">
+          <pre className="max-h-[300px] overflow-y-auto rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap text-[color:var(--ds-text)]">
             {detail.chunkText}
           </pre>
         )}
@@ -1003,27 +1171,58 @@ function ChunkDetailContent({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs font-medium text-[color:var(--ds-text-muted)]">Rolle</label>
-            <Input value={editRole} onChange={(e) => setEditRole(e.target.value)} className="mt-1 text-xs" />
+            <Input
+              value={editRole}
+              onChange={(e) => setEditRole(e.target.value)}
+              className="mt-1 text-xs"
+            />
           </div>
           <div>
             <label className="text-xs font-medium text-[color:var(--ds-text-muted)]">Gericht</label>
-            <Input value={editCourt} onChange={(e) => setEditCourt(e.target.value)} className="mt-1 text-xs" placeholder="z.B. OGH, VwGH" />
+            <Input
+              value={editCourt}
+              onChange={(e) => setEditCourt(e.target.value)}
+              className="mt-1 text-xs"
+              placeholder="z.B. OGH, VwGH"
+            />
           </div>
           <div>
-            <label className="text-xs font-medium text-[color:var(--ds-text-muted)]">Aktenzahl</label>
-            <Input value={editCaseNumber} onChange={(e) => setEditCaseNumber(e.target.value)} className="mt-1 text-xs" />
+            <label className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+              Aktenzahl
+            </label>
+            <Input
+              value={editCaseNumber}
+              onChange={(e) => setEditCaseNumber(e.target.value)}
+              className="mt-1 text-xs"
+            />
           </div>
           <div>
             <label className="text-xs font-medium text-[color:var(--ds-text-muted)]">ECLI</label>
-            <Input value={editEcli} onChange={(e) => setEditEcli(e.target.value)} className="mt-1 text-xs font-mono" />
+            <Input
+              value={editEcli}
+              onChange={(e) => setEditEcli(e.target.value)}
+              className="mt-1 font-mono text-xs"
+            />
           </div>
           <div>
             <label className="text-xs font-medium text-[color:var(--ds-text-muted)]">Gesetz</label>
-            <Input value={editStatuteAbbr} onChange={(e) => setEditStatuteAbbr(e.target.value)} className="mt-1 text-xs" placeholder="z.B. ABGB, BGB" />
+            <Input
+              value={editStatuteAbbr}
+              onChange={(e) => setEditStatuteAbbr(e.target.value)}
+              className="mt-1 text-xs"
+              placeholder="z.B. ABGB, BGB"
+            />
           </div>
           <div>
-            <label className="text-xs font-medium text-[color:var(--ds-text-muted)]">Paragraph</label>
-            <Input value={editParagraphRef} onChange={(e) => setEditParagraphRef(e.target.value)} className="mt-1 text-xs" placeholder="z.B. § 1, Art 2" />
+            <label className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+              Paragraph
+            </label>
+            <Input
+              value={editParagraphRef}
+              onChange={(e) => setEditParagraphRef(e.target.value)}
+              className="mt-1 text-xs"
+              placeholder="z.B. § 1, Art 2"
+            />
           </div>
         </div>
       ) : (
@@ -1071,7 +1270,10 @@ function ChunkDetailContent({
             <Button
               variant="primary"
               size="sm"
-              onClick={() => { setConfirmDelete(false); deleteMutation.mutate(); }}
+              onClick={() => {
+                setConfirmDelete(false);
+                deleteMutation.mutate();
+              }}
               disabled={deleteMutation.isPending}
               className="bg-[color:var(--ds-danger)] text-white hover:bg-[color:var(--ds-danger-hover)]"
             >

@@ -406,8 +406,8 @@ printf 'From: alice-example@example.invalid\r\nTo: bob-example@example.invalid\r
 // ---------------------------------------------------------------------------
 
 describe("synthesizeDocumentMarkdown", () => {
-  test("builds frontmatter with filename-derived title, never a slug", () => {
-    const md = synthesizeDocumentMarkdown("akte/klage-2026.pdf", {
+  test("builds frontmatter with filename-derived title, never a slug", async () => {
+    const md = await synthesizeDocumentMarkdown("akte/klage-2026.pdf", {
       text: "Body text.",
       frontmatter: { type: "document", source_format: "pdf", pages: 3 },
       warnings: [],
@@ -419,13 +419,52 @@ describe("synthesizeDocumentMarkdown", () => {
     expect(md).not.toContain("slug:");
   });
 
-  test("keeps an extraction-provided title (eml subject)", () => {
-    const md = synthesizeDocumentMarkdown("mail/x.eml", {
+  test("keeps an extraction-provided title (eml subject)", async () => {
+    const md = await synthesizeDocumentMarkdown("mail/x.eml", {
       text: "Hi",
       frontmatter: { type: "email", source_format: "eml", title: "Fristsache" },
       warnings: [],
     });
     expect(md).toContain('title: "Fristsache"');
+  });
+
+  test("classifies court judgment text and sets type to court_decision", async () => {
+    const urteilText = `Das Landgericht Linz hat in der Rechtssache Anna Müller gegen Franz Huber wegen Schadenersatz nach mündlicher Verhandlung vom 15. März 2026 erkannt:
+Der Beklagte wird verurteilt, der Klägerin 15.000 Euro Schadenersatz zu bezahlen.
+Die Kosten des Verfahrens trägt der Beklagte.
+Das Urteil ist vorläufig vollstreckbar.
+Richter: Dr. Schmidt`;
+    const md = await synthesizeDocumentMarkdown("akte/urteil.pdf", {
+      text: urteilText,
+      frontmatter: { source_format: "pdf", pages: 2 },
+      warnings: [],
+    });
+    // The classifier may detect court_judgment or court_order — both map to
+    // type: "court_decision" which triggers the structure-aware legal-decision
+    // chunker. The key assertion is that type is set to court_decision.
+    expect(md).toContain('type: "court_decision"');
+    expect(md).toMatch(/doc_type: "(court_judgment|court_order)"/);
+  });
+
+  test("does not override explicit type from frontmatter", async () => {
+    const md = await synthesizeDocumentMarkdown("akte/vertrag.pdf", {
+      text: "Urteil erkannt: Der Beklagte wird verurteilt.",
+      frontmatter: { type: "contract", source_format: "pdf" },
+      warnings: [],
+    });
+    // Explicit type "contract" should be preserved, not overridden
+    expect(md).toContain('type: "contract"');
+    expect(md).not.toContain('type: "court_decision"');
+  });
+
+  test("leaves non-legal text as type document", async () => {
+    const md = await synthesizeDocumentMarkdown("akte/notiz.pdf", {
+      text: "Einkaufsliste: Milch, Brot, Eier. Nicht vergessen!",
+      frontmatter: { source_format: "pdf" },
+      warnings: [],
+    });
+    // No type set by classifier → no type in frontmatter (caller defaults)
+    expect(md).not.toContain("court_decision");
   });
 });
 

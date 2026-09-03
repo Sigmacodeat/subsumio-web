@@ -31,6 +31,11 @@ export const POST = createHandler(
     action: "settings.write",
     rateTier: "standard",
     body: z.object({ name: z.string().min(1) }),
+    audit: (ctx, body) => ({
+      action: "acl.group_create" as const,
+      entityType: "acl_group",
+      details: { name: body.name, created_by: ctx.user.email },
+    }),
   },
   async (ctx, body, _query, _req) => {
     try {

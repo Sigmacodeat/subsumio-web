@@ -4,5 +4,5 @@ export const size = ogImageSize;
 export const contentType = ogImageContentType;
 
 export default function Image() {
-  return renderOgImage("Pricing — private access, Solo €179/mo, Firm and Enterprise");
+  return renderOgImage("Pricing — private access, Solo €249/mo, Firm and Enterprise");
 }

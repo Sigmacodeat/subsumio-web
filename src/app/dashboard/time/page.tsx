@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Download, Edit, Trash2, Filter, FileText, Plus, Clock, Briefcase } from "lucide-react";
+import { Calendar, Download, Edit, Trash2, Filter, FileText, Plus } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
@@ -314,31 +314,31 @@ export default function TimeEntriesPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Gesamtzeit</CardTitle>
-            <Calendar className="text-[color:var(--ds-text-muted)] h-4 w-4" />
+            <Calendar className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalHours}h</div>
-            <p className="text-[color:var(--ds-text-muted)] text-xs">{totalMinutes} Minuten</p>
+            <p className="text-xs text-[color:var(--ds-text-muted)]">{totalMinutes} Minuten</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Abrechenbar</CardTitle>
-            <Calendar className="text-[color:var(--ds-text-muted)] h-4 w-4" />
+            <Calendar className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">€{billableAmount}</div>
-            <p className="text-[color:var(--ds-text-muted)] text-xs">Nicht abgerechnet</p>
+            <p className="text-xs text-[color:var(--ds-text-muted)]">Nicht abgerechnet</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Einträge</CardTitle>
-            <Calendar className="text-[color:var(--ds-text-muted)] h-4 w-4" />
+            <Calendar className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{filteredEntries.length}</div>
-            <p className="text-[color:var(--ds-text-muted)] text-xs">Gefiltert</p>
+            <p className="text-xs text-[color:var(--ds-text-muted)]">Gefiltert</p>
           </CardContent>
         </Card>
       </div>
@@ -387,7 +387,7 @@ export default function TimeEntriesPage() {
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <div className="text-[color:var(--ds-text-muted)] py-8 text-center">Laden...</div>
+                <div className="py-8 text-center text-[color:var(--ds-text-muted)]">Laden...</div>
               ) : filteredEntries.length > 0 ? (
                 <div className="space-y-4">
                   {filteredEntries.map((entry: TimeEntryWithMeta) => (
@@ -397,7 +397,7 @@ export default function TimeEntriesPage() {
                     >
                       <div className="flex-1">
                         <div className="font-medium">{entry.description}</div>
-                        <div className="text-[color:var(--ds-text-muted)] text-sm">
+                        <div className="text-sm text-[color:var(--ds-text-muted)]">
                           {formatDate(entry.date)} • {entry.case_slug || "Global"} • {entry.minutes}{" "}
                           min
                         </div>
@@ -420,7 +420,7 @@ export default function TimeEntriesPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-[color:var(--ds-text-muted)] py-8 text-center">
+                <div className="py-8 text-center text-[color:var(--ds-text-muted)]">
                   Keine Einträge gefunden
                 </div>
               )}
@@ -450,7 +450,8 @@ export default function TimeEntriesPage() {
                 <Label htmlFor="create-minutes">Minuten</Label>
                 <Input
                   id="create-minutes"
-                  type="number" inputMode="numeric"
+                  type="number"
+                  inputMode="numeric"
                   value={createForm.minutes}
                   onChange={(e) => setCreateForm({ ...createForm, minutes: e.target.value })}
                   placeholder="60"
@@ -468,7 +469,10 @@ export default function TimeEntriesPage() {
             </div>
             <div className="space-y-2">
               <Label>Akte</Label>
-              <Select value={createForm.case_slug} onValueChange={(v) => setCreateForm({ ...createForm, case_slug: v })}>
+              <Select
+                value={createForm.case_slug}
+                onValueChange={(v) => setCreateForm({ ...createForm, case_slug: v })}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Akte auswählen" />
                 </SelectTrigger>
@@ -484,7 +488,15 @@ export default function TimeEntriesPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Aktivität</Label>
-                <Select value={createForm.activity_type} onValueChange={(v) => setCreateForm({ ...createForm, activity_type: v as typeof createForm.activity_type })}>
+                <Select
+                  value={createForm.activity_type}
+                  onValueChange={(v) =>
+                    setCreateForm({
+                      ...createForm,
+                      activity_type: v as typeof createForm.activity_type,
+                    })
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -501,7 +513,8 @@ export default function TimeEntriesPage() {
                 <Label htmlFor="create-rate">Stundensatz (€)</Label>
                 <Input
                   id="create-rate"
-                  type="number" inputMode="decimal"
+                  type="number"
+                  inputMode="decimal"
                   step="0.01"
                   value={createForm.rate}
                   onChange={(e) => setCreateForm({ ...createForm, rate: e.target.value })}
@@ -533,7 +546,6 @@ export default function TimeEntriesPage() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editEntry} onOpenChange={(open) => !open && setEditEntry(null)}>
-
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>{t("time.edit_title")}</DialogTitle>
@@ -552,7 +564,8 @@ export default function TimeEntriesPage() {
                 <Label htmlFor="edit-minutes">Minuten</Label>
                 <Input
                   id="edit-minutes"
-                  type="number" inputMode="numeric"
+                  type="number"
+                  inputMode="numeric"
                   value={editForm.minutes}
                   onChange={(e) => setEditForm({ ...editForm, minutes: e.target.value })}
                 />
@@ -572,7 +585,8 @@ export default function TimeEntriesPage() {
                 <Label htmlFor="edit-rate">Stundensatz (€)</Label>
                 <Input
                   id="edit-rate"
-                  type="number" inputMode="decimal"
+                  type="number"
+                  inputMode="decimal"
                   step="0.01"
                   value={editForm.rate}
                   onChange={(e) => setEditForm({ ...editForm, rate: e.target.value })}
@@ -608,7 +622,9 @@ export default function TimeEntriesPage() {
           <DialogHeader>
             <DialogTitle>{t("time.delete_title")}</DialogTitle>
           </DialogHeader>
-          <p className="text-[color:var(--ds-text-muted)] py-4 text-sm">{t("time.delete_confirm")}</p>
+          <p className="py-4 text-sm text-[color:var(--ds-text-muted)]">
+            {t("time.delete_confirm")}
+          </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteEntry(null)}>
               {t("time.cancel")}

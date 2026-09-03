@@ -2,14 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import {
-  CalendarClock,
-  CheckSquare,
-  FileSignature,
-  FileText,
-  GitBranch,
-  AlertTriangle,
-} from "lucide-react";
+import { CalendarClock, CheckSquare, FileSignature, GitBranch, AlertTriangle } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 import type { CockpitData } from "@/components/dashboard/widget-dashboard";
 

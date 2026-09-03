@@ -2,8 +2,7 @@ import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { sendWhatsAppInteractive, sendWhatsAppMedia } from "@/lib/whatsapp/send";
 import { sendWhatsAppFlow } from "@/lib/whatsapp/flow-send";
-import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
-import { recordOutboundMessage } from "@/lib/whatsapp/outbound-tracker";
+import { sendGuardedWhatsAppMessage, sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { loadAllowedSenders, resolveSender, phoneHash } from "@/lib/whatsapp/verify";
 import { getWhatsAppIdentityStore } from "@/lib/whatsapp/identity-store";
 import { normalizePhone, type WhatsAppTemplateMessage } from "@/lib/whatsapp/types";
@@ -11,7 +10,11 @@ import type { OutboundScope } from "@/lib/whatsapp/outbound-gate";
 
 const sendSchema = z
   .object({
-    to: z.string().min(1, "recipient_required"),
+    to: z.string().min(1, "recipient_required").optional(),
+    to_phone_hash: z
+      .string()
+      .regex(/^[a-f0-9]{64}$/i, "recipient_hash_invalid")
+      .optional(),
     type: z.enum(["text", "template", "interactive", "media", "flow"]).default("text"),
     scope: z
       .enum([
@@ -95,7 +98,12 @@ const sendSchema = z
       })
       .optional(),
   })
-  .passthrough();
+  .passthrough()
+  .superRefine((value, ctx) => {
+    if (!value.to && !value.to_phone_hash) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["to"], message: "recipient_required" });
+    }
+  });
 
 export const POST = createHandler(
   {
@@ -105,7 +113,12 @@ export const POST = createHandler(
     audit: (ctx, body) => ({
       action: "settings.update" as const,
       entityType: "whatsapp_message",
-      details: { to: body.to.slice(-4), type: body.type, sentBy: ctx.user.email },
+      details: {
+        to: body.to?.slice(-4),
+        toPhoneHash: body.to_phone_hash,
+        type: body.type,
+        sentBy: ctx.user.email,
+      },
     }),
   },
   async (ctx, body, _query, _req) => {
@@ -119,26 +132,24 @@ export const POST = createHandler(
       );
     }
 
-    const allowedSenders = loadAllowedSenders();
-    if (allowedSenders.length === 0) {
-      return apiError(
-        "no_allowed_senders",
-        "Keine erlaubten WhatsApp-Teilnehmer konfiguriert",
-        403
-      );
-    }
-
-    const normalizedTo = normalizePhone(body.to);
+    const requestedHash = body.to_phone_hash?.toLowerCase();
+    const identityStore = getWhatsAppIdentityStore();
+    const storedIdentity = requestedHash
+      ? await identityStore.getByPhoneHash(requestedHash).catch(() => null)
+      : await identityStore.getByPhoneHash(phoneHash(normalizePhone(body.to!))).catch(() => null);
+    const normalizedTo = storedIdentity?.phone ?? normalizePhone(body.to!);
     const envSender = resolveSender(normalizedTo);
-    const storedIdentity = await getWhatsAppIdentityStore()
-      .getByPhoneHash(phoneHash(normalizedTo))
-      .catch(() => null);
     const storedAllowed = Boolean(
       storedIdentity &&
       storedIdentity.status === "active" &&
       storedIdentity.orgId === (ctx.user.orgId || ctx.brainId)
     );
-    if (!envSender && !storedAllowed) {
+    const envAllowed = loadAllowedSenders().some(
+      (sender) =>
+        sender.brainId === ctx.brainId &&
+        phoneHash(normalizePhone(sender.phone)) === phoneHash(normalizedTo)
+    );
+    if (!envSender && !storedAllowed && !envAllowed) {
       return apiError(
         "recipient_not_allowed",
         "Empfänger ist nicht in der Liste der erlaubten WhatsApp-Teilnehmer",
@@ -164,7 +175,12 @@ export const POST = createHandler(
               403
             );
           }
-          return Response.json({ ok: true, type: "text", sentTo: normalizedTo.slice(-4) });
+          return Response.json({
+            ok: true,
+            type: "text",
+            messageId: result.messageId,
+            sentTo: normalizedTo.slice(-4),
+          });
         }
         case "template": {
           if (!body.template) return apiError("template_required", "Template fehlt", 400);
@@ -192,8 +208,15 @@ export const POST = createHandler(
         case "interactive": {
           if (!body.interactive)
             return apiError("interactive_required", "Interactive message fehlt", 400);
-          const result = await sendWhatsAppInteractive(normalizedTo, body.interactive as never);
-          if (result.messageId) void recordOutboundMessage(result.messageId, ctx.brainId);
+          const result = await sendGuardedWhatsAppMessage({
+            to: normalizedTo,
+            brainId: ctx.brainId,
+            scope: body.scope as OutboundScope,
+            messageKind: "freeform",
+            send: () => sendWhatsAppInteractive(normalizedTo, body.interactive as never),
+            urgent: body.urgent === true,
+          });
+          if (!result.sent) return apiError("whatsapp_blocked", "WhatsApp-Versand geblockt", 403);
           return Response.json({
             ok: true,
             type: "interactive",
@@ -206,8 +229,15 @@ export const POST = createHandler(
           if (!body.media.mediaId && !body.media.link) {
             return apiError("media_id_or_link_required", "Media ID oder Link erforderlich", 400);
           }
-          const result = await sendWhatsAppMedia(normalizedTo, body.media);
-          if (result.messageId) void recordOutboundMessage(result.messageId, ctx.brainId);
+          const result = await sendGuardedWhatsAppMessage({
+            to: normalizedTo,
+            brainId: ctx.brainId,
+            scope: body.scope as OutboundScope,
+            messageKind: "freeform",
+            send: () => sendWhatsAppMedia(normalizedTo, body.media!),
+            urgent: body.urgent === true,
+          });
+          if (!result.sent) return apiError("whatsapp_blocked", "WhatsApp-Versand geblockt", 403);
           return Response.json({
             ok: true,
             type: "media",
@@ -217,19 +247,27 @@ export const POST = createHandler(
         }
         case "flow": {
           if (!body.flow) return apiError("flow_required", "Flow fehlt", 400);
-          const result = await sendWhatsAppFlow({
+          const result = await sendGuardedWhatsAppMessage({
             to: normalizedTo,
-            flowToken: body.flow.flowToken,
-            flowName: body.flow.flowName,
-            flowId: body.flow.flowId,
-            flowCta: body.flow.flowCta,
-            headerText: body.flow.headerText,
-            bodyText: body.flow.bodyText,
-            footerText: body.flow.footerText,
-            initialScreen: body.flow.initialScreen,
-            initialData: body.flow.initialData,
+            brainId: ctx.brainId,
+            scope: body.scope as OutboundScope,
+            messageKind: "freeform",
+            send: () =>
+              sendWhatsAppFlow({
+                to: normalizedTo,
+                flowToken: body.flow!.flowToken,
+                flowName: body.flow!.flowName,
+                flowId: body.flow!.flowId,
+                flowCta: body.flow!.flowCta,
+                headerText: body.flow!.headerText,
+                bodyText: body.flow!.bodyText,
+                footerText: body.flow!.footerText,
+                initialScreen: body.flow!.initialScreen,
+                initialData: body.flow!.initialData,
+              }),
+            urgent: body.urgent === true,
           });
-          if (result.messageId) void recordOutboundMessage(result.messageId, ctx.brainId);
+          if (!result.sent) return apiError("whatsapp_blocked", "WhatsApp-Versand geblockt", 403);
           return Response.json({
             ok: true,
             type: "flow",

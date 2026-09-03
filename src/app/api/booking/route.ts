@@ -67,6 +67,15 @@ export const POST = createHandler(
     action: "brain.write",
     rateTier: "standard",
     body: createBookingSchema,
+    audit: (_ctx, body) => ({
+      action: "booking.create" as const,
+      entityType: "booking",
+      details: {
+        kanzlei_slug: body.kanzlei_slug,
+        slot_id: body.slot_id,
+        legal_area: body.legal_area,
+      },
+    }),
   },
   async (ctx, body) => {
     const dateStr = body.slot_id.match(/^slot-(\d{4}-\d{2}-\d{2})/)?.[1];

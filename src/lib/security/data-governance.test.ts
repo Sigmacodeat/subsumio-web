@@ -21,7 +21,6 @@ import {
   type EncryptableField,
 } from "@/lib/key-rotation";
 import {
-  isProviderAllowedForOrg,
   isModelAllowedForOrg,
   getAllowedProviders,
   enforceProviderPolicy,

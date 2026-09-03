@@ -61,4 +61,8 @@ async function dunningRunHandler(_req: NextRequest): Promise<Response> {
   });
 }
 
+// Vercel Cron sends GET requests (not POST). The previous POST-only handler
+// meant the dunning-run cron NEVER fired — dunning escalations were silently
+// skipped. Added GET as the cron entry point; POST kept for manual triggers.
+export const GET = createCronHandler(dunningRunHandler, { maxDuration: 60 });
 export const POST = createCronHandler(dunningRunHandler, { maxDuration: 60 });

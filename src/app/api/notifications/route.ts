@@ -17,6 +17,14 @@ export const GET = createHandler(
       unread: z.string().optional(),
       limit: z.string().optional(),
     }),
+    audit: (_ctx, _body, query) => ({
+      action: "notifications.list" as const,
+      entityType: "notification",
+      details: {
+        unread_only: query.unread === "true",
+        limit: query.limit,
+      },
+    }),
   },
   async (ctx, _body, query, _req) => {
     const limit = query.limit ? Math.min(parseInt(query.limit, 10) || 50, 200) : 50;
@@ -57,6 +65,39 @@ export const POST = createHandler(
     body: z
       .union([markReadSchema, createDeadlineSchema, batchDeadlineSchema, markAllReadSchema])
       .optional(),
+    audit: (_ctx, body) => {
+      if (body && "id" in body && body.id) {
+        return {
+          action: "notifications.mark_read" as const,
+          entityType: "notification",
+          details: { notification_id: body.id },
+        };
+      }
+      if (body && "deadlines" in body && Array.isArray(body.deadlines)) {
+        return {
+          action: "notifications.deadline_batch_create" as const,
+          entityType: "notification",
+          details: { deadline_count: body.deadlines.length },
+        };
+      }
+      if (body && "caseTitle" in body && body.caseTitle) {
+        return {
+          action: "notifications.deadline_create" as const,
+          entityType: "notification",
+          details: {
+            case_slug: body.caseSlug,
+            deadline_date: body.deadlineDate,
+            days_remaining: body.daysRemaining,
+            is_overdue: body.isOverdue,
+          },
+        };
+      }
+      return {
+        action: "notifications.mark_all_read" as const,
+        entityType: "notification",
+        details: {},
+      };
+    },
   },
   async (ctx, body, _query, _req) => {
     if (body && "id" in body && body.id) {
@@ -107,6 +148,11 @@ export const PATCH = createHandler(
     action: "settings.write",
     rateTier: "standard",
     body: patchReadSchema,
+    audit: (_ctx, body) => ({
+      action: "notifications.mark_read" as const,
+      entityType: "notification",
+      details: { notification_id: body.id },
+    }),
   },
   async (ctx, body, _query, _req) => {
     await markNotificationRead(body.id, { userId: ctx.user.id, brainId: ctx.brainId });
@@ -124,6 +170,14 @@ export const DELETE = createHandler(
     action: "settings.write",
     rateTier: "standard",
     body: deleteSchema.optional(),
+    audit: (_ctx, body) => ({
+      action: "notifications.delete" as const,
+      entityType: "notification",
+      details: {
+        notification_id: body?.id,
+        delete_all_read: body?.deleteAllRead,
+      },
+    }),
   },
   async (ctx, body, _query, _req) => {
     if (body?.deleteAllRead) {

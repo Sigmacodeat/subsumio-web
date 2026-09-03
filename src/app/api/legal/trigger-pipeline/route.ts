@@ -27,6 +27,16 @@ export const POST = createHandler(
     action: "brain.write",
     rateTier: "heavy",
     body: triggerSchema,
+    audit: (_ctx, body) => ({
+      action: "legal.pipeline_trigger" as const,
+      entityType: "pipeline",
+      details: {
+        case_slug: body.case_slug,
+        jurisdiction: body.jurisdiction,
+        resume_from_layer: body.resume_from_layer,
+        part_count: body.part_slugs?.length ?? 0,
+      },
+    }),
   },
   async (ctx, body) => {
     const headers = await engineHeaders();
@@ -68,6 +78,11 @@ export const POST = createHandler(
       const triggerPayload: Record<string, unknown> = {
         case_slug: body.case_slug,
         part_slugs: partSlugs,
+        // Billing context: owner_id is org_id if user has org, else user.id.
+        // user_id is always the individual user (for saas_usage_ledger).
+        owner_id: ctx.user.orgId ?? ctx.user.id,
+        owner_type: ctx.user.orgId ? "org" : "user",
+        user_id: ctx.user.id,
       };
 
       const jurisdictionCandidate = String(

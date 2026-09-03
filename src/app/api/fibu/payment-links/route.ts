@@ -11,8 +11,13 @@ const createLinkSchema = z.object({
   client_name: z.string().min(1).max(300),
   client_email: z.string().email().optional(),
   case_slug: z.string().max(300).optional(),
-  iban: z.string().min(15).max(34),
+  iban: z
+    .string()
+    .min(15)
+    .max(34)
+    .regex(/^[A-Z]{2}[0-9]{2}[A-Z0-9]+$/i, "Ungültige IBAN"),
   bic: z.string().max(12).optional(),
+  recipient_name: z.string().min(1).max(70).optional(),
   remittance_text: z.string().max(140).optional(),
   due_date: z.string().optional(),
 });
@@ -60,7 +65,7 @@ export const POST = createHandler(
   },
   async (ctx, body) => {
     const remittanceText = body.remittance_text ?? `Rechnung ${body.invoice_number}`;
-    const recipientName = "Kanzlei";
+    const recipientName = body.recipient_name ?? "Kanzlei";
 
     const epcPayload = generateEpcQrPayload({
       iban: body.iban,

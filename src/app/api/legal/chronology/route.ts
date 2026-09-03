@@ -17,6 +17,17 @@ export const POST = createHandler(
     action: "brain.read",
     rateTier: "standard",
     body: postSchema,
+    audit: (_ctx, body) => ({
+      action: "legal.chronology_build" as const,
+      entityType: "chronology",
+      details: {
+        case_slug: body.case_slug,
+        has_forensic_report: Boolean(body.forensic_report),
+        on_table_count: body.on_table?.length ?? 0,
+        damage_table_count: body.damage_table?.length ?? 0,
+        deadline_calendar_count: body.deadline_calendar?.length ?? 0,
+      },
+    }),
   },
   async (_ctx, body) => {
     const chrono = buildChronology(body.case_slug, {

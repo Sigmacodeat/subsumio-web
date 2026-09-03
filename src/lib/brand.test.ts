@@ -1,8 +1,17 @@
 import { describe, test, expect, vi, afterEach } from "vitest";
-import { brandForHost, isExternalUrl, OTHER_VERTICAL_PATHS, type SiteBrand } from "./brand";
+import {
+  brandForHost,
+  isExternalUrl,
+  OTHER_VERTICAL_PATHS,
+  TAXUMIO_HOSTS,
+  SUBSUMIO_HOSTS,
+  industryForBrand,
+  marketingPathForBrand,
+  type SiteBrand,
+} from "./brand";
 
-// subsumioCanonical depends on module-level SUBSUMIO_SITE_URL which is
-// evaluated at import time. Use dynamic imports for env-dependent tests.
+// subsumioCanonical / taxumioCanonical depend on module-level env vars which
+// are evaluated at import time. Use dynamic imports for env-dependent tests.
 
 describe("brandForHost", () => {
   test("returns 'subsumio' for subsum.eu", () => {
@@ -15,6 +24,18 @@ describe("brandForHost", () => {
 
   test("returns 'subsumio' for subsum.io", () => {
     expect(brandForHost("subsum.io")).toBe("subsumio" as SiteBrand);
+  });
+
+  test("returns 'taxumio' for taxum.io", () => {
+    expect(brandForHost("taxum.io")).toBe("taxumio" as SiteBrand);
+  });
+
+  test("returns 'taxumio' for www.taxum.io", () => {
+    expect(brandForHost("www.taxum.io")).toBe("taxumio" as SiteBrand);
+  });
+
+  test("returns 'taxumio' for taxumio.com", () => {
+    expect(brandForHost("taxumio.com")).toBe("taxumio" as SiteBrand);
   });
 
   test("returns 'subsumio' for null host", () => {
@@ -31,19 +52,55 @@ describe("brandForHost", () => {
 
   test("strips port from host", () => {
     expect(brandForHost("subsum.eu:3000")).toBe("subsumio");
+    expect(brandForHost("taxum.io:443")).toBe("taxumio");
   });
 
   test("handles uppercase host", () => {
     expect(brandForHost("SUBSUM.EU")).toBe("subsumio");
+    expect(brandForHost("TAXUM.IO")).toBe("taxumio");
   });
 
-  test("handles unknown host (still subsumio in single-brand)", () => {
+  test("handles unknown host (defaults to subsumio)", () => {
     expect(brandForHost("example.com")).toBe("subsumio");
   });
 });
 
+describe("TAXUMIO_HOSTS", () => {
+  test("includes taxum.io and taxumio.com", () => {
+    expect(TAXUMIO_HOSTS).toContain("taxum.io");
+    expect(TAXUMIO_HOSTS).toContain("taxumio.com");
+  });
+});
+
+describe("SUBSUMIO_HOSTS", () => {
+  test("includes subsum.eu and subsum.io", () => {
+    expect(SUBSUMIO_HOSTS).toContain("subsum.eu");
+    expect(SUBSUMIO_HOSTS).toContain("subsum.io");
+  });
+});
+
+describe("industryForBrand", () => {
+  test("returns 'legal' for subsumio", () => {
+    expect(industryForBrand("subsumio")).toBe("legal");
+  });
+
+  test("returns 'tax' for taxumio", () => {
+    expect(industryForBrand("taxumio")).toBe("tax");
+  });
+});
+
+describe("marketingPathForBrand", () => {
+  test("returns '/' for subsumio", () => {
+    expect(marketingPathForBrand("subsumio")).toBe("/");
+  });
+
+  test("returns '/taxumio' for taxumio", () => {
+    expect(marketingPathForBrand("taxumio")).toBe("/taxumio");
+  });
+});
+
 describe("OTHER_VERTICAL_PATHS", () => {
-  test("is empty array in Subsumio-only build", () => {
+  test("is empty array", () => {
     expect(OTHER_VERTICAL_PATHS).toEqual([]);
   });
 });
@@ -86,7 +143,6 @@ describe("subsumioCanonical", () => {
   test("returns root for German (default env)", async () => {
     delete process.env.NEXT_PUBLIC_SUBSUMIO_URL;
     const { subsumioCanonical } = await freshImport();
-    // Default SUBSUMIO_SITE_URL is https://subsum.eu
     expect(subsumioCanonical("de")).toBe("https://subsum.eu");
   });
 
@@ -119,5 +175,44 @@ describe("subsumioCanonical", () => {
     process.env.NEXT_PUBLIC_SUBSUMIO_URL = "https://subsum.eu/";
     const { subsumioCanonical } = await freshImport();
     expect(subsumioCanonical("de")).toBe("https://subsum.eu");
+  });
+});
+
+describe("taxumioCanonical", () => {
+  const origEnv = { ...process.env };
+
+  afterEach(() => {
+    process.env = { ...origEnv };
+    vi.resetModules();
+  });
+
+  async function freshImport() {
+    vi.resetModules();
+    return await import("./brand");
+  }
+
+  test("returns /taxumio for German (default = relative)", async () => {
+    delete process.env.NEXT_PUBLIC_TAXUMIO_URL;
+    const { taxumioCanonical } = await freshImport();
+    expect(taxumioCanonical("de")).toBe("/taxumio");
+  });
+
+  test("returns /en/taxumio for English (default = relative)", async () => {
+    delete process.env.NEXT_PUBLIC_TAXUMIO_URL;
+    const { taxumioCanonical } = await freshImport();
+    expect(taxumioCanonical("en")).toBe("/en/taxumio");
+  });
+
+  test("returns full URL when TAXUMIO_SITE_URL is external", async () => {
+    process.env.NEXT_PUBLIC_TAXUMIO_URL = "https://taxum.io";
+    const { taxumioCanonical } = await freshImport();
+    expect(taxumioCanonical("de")).toBe("https://taxum.io");
+    expect(taxumioCanonical("en")).toBe("https://taxum.io/en");
+  });
+
+  test("strips trailing slash from external URL", async () => {
+    process.env.NEXT_PUBLIC_TAXUMIO_URL = "https://taxum.io/";
+    const { taxumioCanonical } = await freshImport();
+    expect(taxumioCanonical("de")).toBe("https://taxum.io");
   });
 });

@@ -6056,6 +6056,305 @@ export const MIGRATIONS: Migration[] = [
       ALTER TABLE search_telemetry ADD COLUMN IF NOT EXISTS vector_disabled INTEGER NOT NULL DEFAULT 0;
     `,
   },
+  {
+    version: 134,
+    name: "saas_billing_tables",
+    // SaaS Billing — orgs, subscriptions, usage_ledger, credit_balance,
+    // invoices. Enables per-customer token metering with markup-based
+    // pricing (saas-pricing.ts). Tables are multi-tenant ready (org_id
+    // on all tables). Uses IF NOT EXISTS for idempotency on both engines.
+    idempotent: true,
+    sql: `
+      CREATE TABLE IF NOT EXISTS saas_orgs (
+        id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name          TEXT NOT NULL,
+        slug          TEXT NOT NULL UNIQUE,
+        plan          TEXT NOT NULL DEFAULT 'standard',
+        seats         INTEGER NOT NULL DEFAULT 1,
+        byok_key_encrypted BYTEA,
+        byok_provider TEXT,
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+        updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+        CONSTRAINT chk_org_plan CHECK (plan IN ('solo','kanzlei','enterprise'))
+      );
+
+      CREATE TABLE IF NOT EXISTS saas_subscriptions (
+        id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id        UUID NOT NULL REFERENCES saas_orgs(id) ON DELETE CASCADE,
+        plan          TEXT NOT NULL DEFAULT 'standard',
+        seats         INTEGER NOT NULL DEFAULT 1,
+        status        TEXT NOT NULL DEFAULT 'active',
+        stripe_customer_id    TEXT,
+        stripe_subscription_id TEXT,
+        current_period_start  TIMESTAMPTZ,
+        current_period_end    TIMESTAMPTZ,
+        cancel_at_period_end  BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+        updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+        CONSTRAINT chk_sub_status CHECK (status IN ('active','past_due','canceled','trialing','paused'))
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_saas_subscriptions_org ON saas_subscriptions(org_id) WHERE status = 'active';
+
+      CREATE TABLE IF NOT EXISTS saas_usage_ledger (
+        id            BIGSERIAL PRIMARY KEY,
+        org_id        UUID NOT NULL REFERENCES saas_orgs(id) ON DELETE CASCADE,
+        user_id       TEXT,
+        workflow_id   TEXT,
+        workflow      TEXT NOT NULL DEFAULT 'generic',
+        model_id      TEXT NOT NULL,
+        provider      TEXT NOT NULL,
+        tokens_input      INTEGER NOT NULL DEFAULT 0,
+        tokens_output     INTEGER NOT NULL DEFAULT 0,
+        tokens_cache_read INTEGER NOT NULL DEFAULT 0,
+        is_embedding      BOOLEAN NOT NULL DEFAULT FALSE,
+        cost_usd      NUMERIC(12,6) NOT NULL DEFAULT 0,
+        sell_usd      NUMERIC(12,6) NOT NULL DEFAULT 0,
+        margin_usd    NUMERIC(12,6) NOT NULL DEFAULT 0,
+        plan          TEXT NOT NULL DEFAULT 'standard',
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
+      CREATE INDEX IF NOT EXISTS idx_saas_usage_org_date ON saas_usage_ledger(org_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_saas_usage_org_model ON saas_usage_ledger(org_id, model_id, created_at DESC);
+
+      CREATE TABLE IF NOT EXISTS saas_credit_balance (
+        org_id        UUID NOT NULL REFERENCES saas_orgs(id) ON DELETE CASCADE,
+        period_start  TIMESTAMPTZ NOT NULL,
+        period_end    TIMESTAMPTZ NOT NULL,
+        included_credit  NUMERIC(12,2) NOT NULL DEFAULT 0,
+        used_credit      NUMERIC(12,2) NOT NULL DEFAULT 0,
+        overage_usd      NUMERIC(12,2) NOT NULL DEFAULT 0,
+        updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (org_id, period_start)
+      );
+
+      CREATE TABLE IF NOT EXISTS saas_invoices (
+        id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id        UUID NOT NULL REFERENCES saas_orgs(id) ON DELETE CASCADE,
+        period_start  TIMESTAMPTZ NOT NULL,
+        period_end    TIMESTAMPTZ NOT NULL,
+        seats         INTEGER NOT NULL DEFAULT 1,
+        seat_subtotal NUMERIC(12,2) NOT NULL DEFAULT 0,
+        included_credit  NUMERIC(12,2) NOT NULL DEFAULT 0,
+        usage_cost    NUMERIC(12,2) NOT NULL DEFAULT 0,
+        overage_cost  NUMERIC(12,2) NOT NULL DEFAULT 0,
+        total         NUMERIC(12,2) NOT NULL DEFAULT 0,
+        currency      TEXT NOT NULL DEFAULT 'USD',
+        status        TEXT NOT NULL DEFAULT 'draft',
+        stripe_invoice_id  TEXT,
+        pdf_url       TEXT,
+        line_items    JSONB NOT NULL DEFAULT '[]',
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+        paid_at       TIMESTAMPTZ,
+        CONSTRAINT chk_invoice_status CHECK (status IN ('draft','open','paid','void','uncollectible'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_saas_invoices_org ON saas_invoices(org_id, period_start DESC);
+    `,
+  },
+  {
+    version: 135,
+    name: "saas_billing_eur_currency",
+    // v0.46.2 — Rename saas_* billing columns from _usd to _eur.
+    // The SaaS billing system uses EUR (matches existing credit system:
+    // 1 Credit = 1 EUR). The original v134 migration used _usd column
+    // names because model-pricing.ts is in USD; but selling prices are
+    // in EUR. This migration renames all currency columns to _eur.
+    // Idempotent: uses DO $$ / IF EXISTS blocks.
+    idempotent: true,
+    sql: `
+      -- saas_usage_ledger: cost_usd → cost_eur, sell_usd → sell_eur, margin_usd → margin_eur
+      DO $$ BEGIN
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'saas_usage_ledger' AND column_name = 'cost_usd') THEN
+          ALTER TABLE saas_usage_ledger RENAME COLUMN cost_usd TO cost_eur;
+        END IF;
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'saas_usage_ledger' AND column_name = 'sell_usd') THEN
+          ALTER TABLE saas_usage_ledger RENAME COLUMN sell_usd TO sell_eur;
+        END IF;
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'saas_usage_ledger' AND column_name = 'margin_usd') THEN
+          ALTER TABLE saas_usage_ledger RENAME COLUMN margin_usd TO margin_eur;
+        END IF;
+      END $$;
+
+      -- saas_credit_balance: overage_usd → overage_eur
+      DO $$ BEGIN
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'saas_credit_balance' AND column_name = 'overage_usd') THEN
+          ALTER TABLE saas_credit_balance RENAME COLUMN overage_usd TO overage_eur;
+        END IF;
+      END $$;
+
+      -- saas_invoices: seat_subtotal → seat_subtotal_eur, etc.
+      DO $$ BEGIN
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'saas_invoices' AND column_name = 'seat_subtotal') THEN
+          ALTER TABLE saas_invoices RENAME COLUMN seat_subtotal TO seat_subtotal_eur;
+        END IF;
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'saas_invoices' AND column_name = 'included_credit') THEN
+          ALTER TABLE saas_invoices RENAME COLUMN included_credit TO included_credit_eur;
+        END IF;
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'saas_invoices' AND column_name = 'usage_cost') THEN
+          ALTER TABLE saas_invoices RENAME COLUMN usage_cost TO usage_cost_eur;
+        END IF;
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'saas_invoices' AND column_name = 'overage_cost') THEN
+          ALTER TABLE saas_invoices RENAME COLUMN overage_cost TO overage_cost_eur;
+        END IF;
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'saas_invoices' AND column_name = 'total') THEN
+          ALTER TABLE saas_invoices RENAME COLUMN total TO total_eur;
+        END IF;
+      END $$;
+
+      -- Fix: v134 had DEFAULT 'standard' for plan columns, but the CHECK
+      -- constraint on saas_orgs only allows ('solo','kanzlei','enterprise').
+      -- A row inserted without explicit plan would crash with a constraint
+      -- violation. Change defaults to 'solo' (the entry-level plan).
+      -- Guarded with IF EXISTS: saas_credit_balance may not have a plan column
+      -- (v134 creates it on saas_orgs and saas_subscriptions, but not on
+      -- saas_credit_balance which only tracks credit/overage).
+      DO $$ BEGIN
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'saas_orgs' AND column_name = 'plan') THEN
+          ALTER TABLE saas_orgs ALTER COLUMN plan SET DEFAULT 'solo';
+        END IF;
+      END $$;
+      DO $$ BEGIN
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'saas_subscriptions' AND column_name = 'plan') THEN
+          ALTER TABLE saas_subscriptions ALTER COLUMN plan SET DEFAULT 'solo';
+        END IF;
+      END $$;
+      DO $$ BEGIN
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'saas_credit_balance' AND column_name = 'plan') THEN
+          ALTER TABLE saas_credit_balance ALTER COLUMN plan SET DEFAULT 'solo';
+        END IF;
+      END $$;
+
+      -- Add check constraint on saas_subscriptions.plan (v134 only had
+      -- a status check, not a plan check — a subscription with plan='standard'
+      -- would cause a runtime error in saas-pricing.ts which only knows
+      -- 'solo','kanzlei','enterprise').
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'chk_sub_plan'
+        ) THEN
+          ALTER TABLE saas_subscriptions ADD CONSTRAINT chk_sub_plan
+            CHECK (plan IN ('solo','kanzlei','enterprise'));
+        END IF;
+      END $$;
+    `,
+  },
+  {
+    version: 136,
+    name: "saas_credit_consolidation",
+    // v0.46.3 — Consolidate two parallel credit tables into one.
+    // Before: subsumio_credit_balance (customer wallet) + saas_credit_balance
+    // (internal metering). Now: saas_credit_balance is the single source.
+    // Added columns: purchased_credit (from credit packs, permanent),
+    // auto_reload_enabled/threshold/pack_id (auto-reload settings).
+    // Migrated data from subsumio_credit_balance → saas_credit_balance.
+    // Old tables are dropped after migration.
+    idempotent: true,
+    sql: `
+      -- 1. Add wallet columns to saas_credit_balance
+      ALTER TABLE saas_credit_balance ADD COLUMN IF NOT EXISTS purchased_credit NUMERIC(12,2) NOT NULL DEFAULT 0;
+      ALTER TABLE saas_credit_balance ADD COLUMN IF NOT EXISTS auto_reload_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+      ALTER TABLE saas_credit_balance ADD COLUMN IF NOT EXISTS auto_reload_threshold INTEGER NOT NULL DEFAULT 10;
+      ALTER TABLE saas_credit_balance ADD COLUMN IF NOT EXISTS auto_reload_pack_id TEXT;
+      -- Spend cap columns (migrated from subsumio_credit_balance)
+      ALTER TABLE saas_credit_balance ADD COLUMN IF NOT EXISTS credit_limit NUMERIC(12,2);
+      ALTER TABLE saas_credit_balance ADD COLUMN IF NOT EXISTS credit_limit_period TEXT DEFAULT 'monthly';
+      -- Negative balance config (migrated from subsumio_credit_balance)
+      ALTER TABLE saas_credit_balance ADD COLUMN IF NOT EXISTS allow_negative_balance BOOLEAN DEFAULT FALSE;
+      ALTER TABLE saas_credit_balance ADD COLUMN IF NOT EXISTS max_negative_balance NUMERIC(12,2) DEFAULT 0;
+
+      -- 2. Unique index on (org_id, period_start) already exists as PRIMARY KEY
+      --    from v134. No additional partial unique index needed — the PK
+      --    ensures one row per org+period, and resetMonthlyPeriod uses
+      --    ON CONFLICT (org_id, period_start) DO NOTHING for idempotency.
+      --    (A partial index with WHERE period_end > now() would fail on
+      --    Postgres because now() is volatile — not allowed in predicates.)
+
+      -- 2b. Ensure saas_subscriptions has a UNIQUE partial index on org_id
+      --    WHERE status='active' (needed for ON CONFLICT clause in
+      --    createSaasOrgForUser). v134 created a non-unique index; replace it.
+      DROP INDEX IF EXISTS idx_saas_subscriptions_org;
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_saas_subscriptions_org
+        ON saas_subscriptions (org_id) WHERE status = 'active';
+
+      -- 3. Migrate data from subsumio_credit_balance to saas_credit_balance.
+      --    For each owner in the old table, find or create a current-period
+      --    row in saas_credit_balance and copy balance → purchased_credit +
+      --    auto_reload settings.
+      --    owner_id in old table = org_id in new table (V1: user is own org).
+      --    Only migrate if saas_orgs exists with matching slug.
+      DO $$ BEGIN
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'subsumio_credit_balance') THEN
+          INSERT INTO saas_credit_balance
+            (org_id, period_start, period_end, included_credit, used_credit,
+             overage_eur, purchased_credit, auto_reload_enabled,
+             auto_reload_threshold, auto_reload_pack_id)
+          SELECT
+            o.id,
+            date_trunc('month', now()),
+            date_trunc('month', now()) + interval '1 month',
+            0, -- included_credit: will be set by createSaasOrgForUser on next checkout
+            0, -- used_credit: fresh start
+            0, -- overage_eur
+            old.balance, -- purchased_credit: carry over old balance
+            old.auto_reload_enabled,
+            old.auto_reload_threshold,
+            old.auto_reload_pack_id
+          FROM subsumio_credit_balance old
+          JOIN saas_orgs o ON o.slug = 'user-' || left(old.owner_id, 8)
+          WHERE NOT EXISTS (
+            SELECT 1 FROM saas_credit_balance scb
+            WHERE scb.org_id = o.id AND scb.period_start = date_trunc('month', now())
+          )
+          ON CONFLICT (org_id, period_start) DO NOTHING;
+        END IF;
+      END $$;
+
+      -- 4. Drop old tables (data already migrated above).
+      --    Keep subsumio_credit_transactions for historical audit trail.
+      DO $$ BEGIN
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'subsumio_credit_balance') THEN
+          DROP TABLE subsumio_credit_balance;
+        END IF;
+      END $$;
+    `,
+  },
+  {
+    version: 137,
+    name: "auto_reload_dedup",
+    // v0.46.4 — Auto-Reload dedup: prevents the auto-reload cron (every 2h)
+    // from creating duplicate Stripe Checkout Sessions when the user hasn't
+    // paid the previous one yet. The cron only triggers if
+    // auto_reload_last_triggered_at is NULL or older than 24h.
+    // Reset to NULL on checkout.session.completed (credits added → balance
+    // above threshold → no re-trigger anyway, but clean state for next time).
+    idempotent: true,
+    sql: `
+      ALTER TABLE saas_credit_balance
+        ADD COLUMN IF NOT EXISTS auto_reload_last_triggered_at timestamptz;
+    `,
+  },
+  {
+    version: 138,
+    name: "saas_invoices_unique_period",
+    // v0.46.5 — Idempotency for billMonthlyOverage: prevents duplicate
+    // invoices when the monthly-invoice cron runs twice (Vercel retry,
+    // manual trigger). The old non-unique index is replaced with a
+    // UNIQUE index on (org_id, period_start) so ON CONFLICT can be used.
+    idempotent: true,
+    sql: `
+      DROP INDEX IF EXISTS idx_saas_invoices_org;
+      -- Delete duplicate invoices before creating the UNIQUE index.
+      -- Without this, the CREATE UNIQUE INDEX fails if duplicates already
+      -- exist (which is likely — the duplicates are the reason we need
+      -- the unique constraint). Keep the latest invoice per (org_id, period_start).
+      DELETE FROM saas_invoices a
+        USING saas_invoices b
+        WHERE a.org_id = b.org_id
+          AND a.period_start = b.period_start
+          AND a.id < b.id;
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_saas_invoices_org_period
+        ON saas_invoices (org_id, period_start);
+    `,
+  },
 ];
 
 export const LATEST_VERSION =

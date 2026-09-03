@@ -18,6 +18,7 @@
 
 import { readFileSync, existsSync, writeFileSync, appendFileSync } from "fs";
 import { bootstrapCI, bootstrapMeanCI, latencyPercentiles, formatCI } from "../stats.ts";
+import { AT_LAW_SOURCES_ALL, AT_PRIMARY_STATUTE_SOURCE } from "../../core/legal/jurisdiction.ts";
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -320,13 +321,13 @@ export function getSearchOpts(q: LegalQuestion, topK: number, llmRerank: boolean
     string,
     { sourceId?: string; sourceIds: string[]; jurisdiction?: string }
   > = {
-    at: { sourceId: "law-at", sourceIds: ["law-at", "law-eu"], jurisdiction: "at" },
+    at: { sourceId: AT_PRIMARY_STATUTE_SOURCE, sourceIds: AT_LAW_SOURCES_ALL, jurisdiction: "at" },
     de: { sourceId: "law-de", sourceIds: ["law-de", "law-eu"], jurisdiction: "de" },
     ch: { sourceId: "law-ch", sourceIds: ["law-ch", "law-eu"], jurisdiction: "ch" },
     eu: { sourceId: "law-eu", sourceIds: ["law-eu", "law-de", "law-ch"], jurisdiction: "eu" },
     xj: {
       sourceId: undefined,
-      sourceIds: ["law-at", "law-de", "law-ch", "law-eu"],
+      sourceIds: [...AT_LAW_SOURCES_ALL, "law-de", "law-ch"],
       jurisdiction: undefined,
     },
   };

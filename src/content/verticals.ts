@@ -31,7 +31,7 @@ export interface VerticalContent {
   ctaButton: string;
 }
 
-export const VERTICAL_SLUGS = ["legal"] as const;
+export const VERTICAL_SLUGS = ["legal", "tax"] as const;
 export type VerticalSlug = (typeof VERTICAL_SLUGS)[number];
 
 const _verticalsDe = {
@@ -167,6 +167,141 @@ const _verticalsDe = {
       "Starte mit einem abgeschlossenen Mandat als Pilot. Keine Mandantendaten müssen das Haus verlassen.",
     ctaButton: "Kostenlos testen",
   },
+  tax: {
+    slug: "tax",
+    navLabel: "Steuerberatungen",
+    metaTitle: "Taxumio — KI-Steuerberatungssoftware AT · DE · CH",
+    metaDesc:
+      "KI-Steuerberatungssoftware für Steuerberater in AT, DE & CH: Steuererklärungen, Bescheide, AO-Fristen, StBVV-Gebührenrechner, GoBD-konform. DSGVO-konform, EU-gehostet.",
+    badge: "Steuerberatungssoftware für AT · DE · CH",
+    h1a: "800 Belege.",
+    h1b: "Eine Frage entfernt.",
+    sub: "Taxumio ist KI-Steuerberatungssoftware für Österreich, Deutschland und die Schweiz: Steuererklärungen verwalten, AO-Fristen automatisieren, Bescheide mit KI analysieren und Fundstellen erhalten — GoBD-konform, DSGVO-konform, EU-gehostet oder self-hosted.",
+    painsTitle: "Kommt dir bekannt vor?",
+    pains: [
+      {
+        title: "Mandantenwissen in Excel-Chaos",
+        desc: "Der entscheidende Bescheid liegt irgendwo in einer Mappe mit 47 Tabellenblättern, und niemand weiß mehr, welche Version aktuell ist.",
+      },
+      {
+        title: "Fristen gehen verloren",
+        desc: "Einspruchsfristen nach § 355 AO, Festsetzungsverjährung, Anmeldungsfristen — ein verpasster Termin kostet den Mandanten Geld und dich das Mandat.",
+      },
+      {
+        title: "Wissen geht mit den Köpfen",
+        desc: "Wenn ein erfahrener Mitarbeiter geht, gehen Jahre an Mandantenkontext mit — außer das Kanzleiwissen liegt dauerhaft und abfragbar an einem Ort.",
+      },
+    ],
+    demo: {
+      windowTitle: "taxumio — mandanten brain",
+      you: "Du",
+      q: "Welche Bescheide haben noch offene Einspruchsfristen und welche Widersprüche gibt es zur Erklärung?",
+      a: `2 Bescheide mit offener Frist:
+
+1. **ESt 2024 — Müller GmbH** — Einspruchsfrist endet am 15. März (§ 355 AO, 1 Monat). Widerspruch: Erklärung enthält 45.000€ Betriebsausgaben, Bescheid nur 32.000€.
+2. **USt 2024 Q3 — Müller GmbH** — Einspruchsfrist endet am 28. Februar. Vorsteuer aus Rechnung RE-2024-0892 nicht berücksichtigt (8.450€).
+
+⚠️ Hinweis: Festsetzungsverjährung für VZ 2020 endet am 31.12.2024 (§ 169 AO).`,
+      sourcesLabel: "Quellen:",
+      sources: [
+        "mandant/mueller-gmbh/est-2024/bescheid",
+        "mandant/mueller-gmbh/ust-2024-q3/bescheid",
+        "est-2024/erklaerung",
+      ],
+    },
+    featuresTitle: "Gebaut für GoBD und Fristen-Disziplin",
+    features: [
+      {
+        icon: "CalendarClock",
+        title: "AO-Fristen-Engine",
+        desc: "Automatische Fristberechnung nach Abgabenordnung: Einspruchsfristen (§ 355 AO), Anmeldungsfristen (§ 149 AO), Festsetzungsverjährung (§ 169 AO) — mit Wochenend- und Feiertagsverschiebung.",
+      },
+      {
+        icon: "Calculator",
+        title: "StBVV-Gebührenrechner",
+        desc: "Gebührenberechnung nach Steuerberatervergütungsverordnung — analog zum bewährten RVG-Rechner für Anwälte. Transparent, nachvollziehbar, mandantenfähig.",
+      },
+      {
+        icon: "FileText",
+        title: "Steuererklärungen & Bescheide",
+        desc: "ESt, USt, GewSt, KSt, LSt — strukturiert erfasst mit Status-Tracking vom Entwurf bis zum Bescheid. Bescheid-Management mit Einspruchsfrist-Tracking und Kontext-Verlinkung.",
+      },
+      {
+        icon: "ShieldCheck",
+        title: "GoBD & Verfahrensdokumentation",
+        desc: "GoBD-konforme Archivierung, Verfahrensdokumentation, manipulationssicherer Speicher — bereits im Legal-Product erprobt und vom Datenschutzbeauftragten geprüft.",
+      },
+      {
+        icon: "Brain",
+        title: "Mandantengedächtnis als Finanz-Graph",
+        desc: "Steuererklärungen, Bescheide, Fristen und Dokumente bleiben als Finanz-Graph verbunden. Kompiliertes Wissen pro Mandant — abfragbar, mit Fundstellen.",
+      },
+      {
+        icon: "Landmark",
+        title: "ELSTER-Integration (geplant)",
+        desc: "Direkte Übermittlung von Steuererklärungen über ELSTER/ERiC. Status-Tracking vom Entwurf bis zur Bestätigung — ohne Medienbruch.",
+      },
+      {
+        icon: "Shield",
+        title: "Dein Server, deine Jurisdiktion",
+        desc: "Volle Engine self-hosted auf Kanzlei-Hardware mit lokalem Speicher — oder EU-Cloud mit AVV und dauerhaftem Objektspeicher. Mandantendaten verlassen nie deine Kontrolle.",
+      },
+      {
+        icon: "Zap",
+        title: "Offline-first Steuerberater-Alltag",
+        desc: "Steuererklärungen, Bescheide, Fristen, Dokumente nutzen lokale Caches und synchronisieren Änderungen, sobald die Cloud wieder erreichbar ist.",
+      },
+      {
+        icon: "Search",
+        title: "Jede Aussage belegt",
+        desc: "KI-Antworten zitieren die exakten Fundstellen aus Bescheiden, Erklärungen und Schreiben. Ein Klick zur Verifikation, bevor etwas in den Einspruch geht.",
+      },
+      {
+        icon: "Layers",
+        title: "Trennung pro Mandant",
+        desc: "Zugriff pro Mandant und Nutzer gescoped — fuzz-getestet, null Leaks zwischen Mandanten oder Teams.",
+      },
+      {
+        icon: "MessageSquare",
+        title: "WhatsApp-Mandanten-Copilot",
+        desc: "Mitarbeiter erfassen Zeiten, Notizen, Aufgaben, Fristen, Auslagen, Fragen, PDFs, Fotos und Sprachnotizen direkt vom Handy. Taxumio ordnet Medien per Mandantennummer zu.",
+      },
+      {
+        icon: "FolderOpen",
+        title: "Dokumenten-Vault mit dauerhaftem Speicher",
+        desc: "Belege, Bescheide, Schreiben und Buchungsdaten im Vault mit Hash, Quelle, Größe und Storage-Metadaten — lokal auf Hetzner EU-Servern oder S3-kompatibel (Cloudflare R2).",
+      },
+    ],
+    proofTitle: "Engine-Klasse Retrieval, kein Chat-Wrapper",
+    proof:
+      "Der Retrieval-Kern erreicht 99,8 % Recall@8 auf LongMemEval (500 Fragen) mit Hybrid-Suche und Wissensgraph — und weil er auf Infrastruktur läuft, die du kontrollierst, steuert deine IT jedes System, das Mandantendaten berührt.",
+    faq: [
+      {
+        q: "Ist das Steuerberatungs-Software?",
+        a: "Taxumio organisiert und synthetisiert deine Dokumente, Bescheide und Notizen. Die steuerliche Bewertung bleibt bei den Steuerberatern — das Brain stellt sicher, dass ihnen nichts entgeht. Keine automatische Steuerberechnung, kein Ersatz für DATEV oder Lexware.",
+      },
+      {
+        q: "Kann ich komplett offline arbeiten?",
+        a: "Die Engine läuft self-hosted auf deiner Hardware und das Dashboard hält lokale Caches plus Änderungs-Warteschlange für die wichtigsten Steuer-Workflows. Die Synthese nutzt LLM-APIs deiner Wahl; Enterprise-Setups können über EU-Endpunkte oder ein eigenes Gateway routen.",
+      },
+      {
+        q: "Wie viel Daten kann ich speichern?",
+        a: "Self-hosted nutzt deinen eigenen Speicher oder S3-kompatiblen Objektspeicher. Gehostete Pakete enthalten Cloud-Dateispeicher je Paket; Enterprise bekommt individuelle Speichermengen und Aufbewahrungsregeln.",
+      },
+      {
+        q: "Was ist mit GoBD, DSGVO und Berufsrecht?",
+        a: "Self-hosted heißt: Daten verlassen deine Infrastruktur nicht. Gehostete Pläne kommen mit EU-Hosting und AVV. GoBD-konforme Archivierung und Verfahrensdokumentation sind integriert. § 203 StGB (Steuerberater-Geheimhaltung) wird durch Architektur sichergestellt, nicht durch Versprechen.",
+      },
+      {
+        q: "Wie unterscheidet sich das von DATEV, Lexware oder taxx?",
+        a: "Das sind etablierte Steuer-Software-Suiten für Berechnung und Übermittlung. Taxumio ist kein DATEV-Ersatz — es ist das Mandantengedächtnis darüber: KI-gestützte Synthese über alle Bescheide, Erklärungen und Schreiben hinweg, mit Fundstellen und Fristen-Engine. Es ergänzt deine bestehende Software, nicht ersetzt sie.",
+      },
+    ],
+    ctaTitle: "Der Mandant kennt die Antwort. Jetzt auch du.",
+    ctaSub:
+      "Starte mit einem abgeschlossenen Mandanten als Pilot. Keine Mandantendaten müssen das Haus verlassen.",
+    ctaButton: "Kostenlos testen",
+  },
 };
 
 const _enVerticals: Record<VerticalSlug, VerticalContent> = {
@@ -299,6 +434,140 @@ const _enVerticals: Record<VerticalSlug, VerticalContent> = {
     ],
     ctaTitle: "The file knows the answer. Now you do too.",
     ctaSub: "Start with one closed matter as a pilot. No client data needs to leave your building.",
+    ctaButton: "Try free",
+  },
+  tax: {
+    slug: "tax",
+    navLabel: "Tax Advisors",
+    metaTitle: "Taxumio — AI Tax Software AT · DE · CH",
+    metaDesc:
+      "AI tax software for tax advisors in AT, DE & CH: tax returns, assessments, AO deadlines, StBVV fee calculator, GoBD-compliant. GDPR-compliant, EU-hosted.",
+    badge: "Tax software for AT · DE · CH",
+    h1a: "800 receipts.",
+    h1b: "One question away.",
+    sub: "Taxumio is AI tax software for Austria, Germany and Switzerland: manage tax returns, automate AO deadlines, analyse assessments with AI and page-level citations — GoBD-compliant, GDPR-compliant, EU-hosted or self-hosted.",
+    painsTitle: "Sound familiar?",
+    pains: [
+      {
+        title: "Client knowledge in Excel chaos",
+        desc: "The decisive assessment is somewhere in a folder with 47 spreadsheets, and nobody knows which version is current.",
+      },
+      {
+        title: "Deadlines get lost",
+        desc: "Appeal deadlines under § 355 AO, statute of limitations, filing deadlines — one missed deadline costs the client money and you the mandate.",
+      },
+      {
+        title: "Knowledge walks out with people",
+        desc: "When an experienced staff member leaves, years of client context leave too — unless the firm's knowledge lives somewhere durable and answerable.",
+      },
+    ],
+    demo: {
+      windowTitle: "taxumio — client brain",
+      you: "You",
+      q: "Which assessments still have open appeal deadlines and what contradictions exist with the return?",
+      a: `2 assessments with open deadlines:
+
+1. **Income tax 2024 — Müller GmbH** — Appeal deadline ends March 15 (§ 355 AO, 1 month). Contradiction: Return declares €45,000 business expenses, assessment only €32,000.
+2. **VAT 2024 Q3 — Müller GmbH** — Appeal deadline ends February 28. Input tax from invoice RE-2024-0892 not considered (€8,450).
+
+⚠️ Note: Statute of limitations for tax year 2020 ends Dec 31, 2024 (§ 169 AO).`,
+      sourcesLabel: "Sources:",
+      sources: [
+        "client/mueller-gmbh/est-2024/assessment",
+        "client/mueller-gmbh/ust-2024-q3/assessment",
+        "est-2024/return",
+      ],
+    },
+    featuresTitle: "Built for GoBD and deadline discipline",
+    features: [
+      {
+        icon: "CalendarClock",
+        title: "AO deadline engine",
+        desc: "Automatic deadline calculation per Abgabenordnung: appeal deadlines (§ 355 AO), filing deadlines (§ 149 AO), statute of limitations (§ 169 AO) — with weekend and holiday roll-forward.",
+      },
+      {
+        icon: "Calculator",
+        title: "StBVV fee calculator",
+        desc: "Fee calculation per Steuerberatervergütungsverordnung — analogous to the proven RVG calculator for lawyers. Transparent, auditable, client-ready.",
+      },
+      {
+        icon: "FileText",
+        title: "Tax returns & assessments",
+        desc: "ESt, USt, GewSt, KSt, LSt — structured capture with status tracking from draft to assessment. Assessment management with appeal deadline tracking and context linking.",
+      },
+      {
+        icon: "ShieldCheck",
+        title: "GoBD & procedural documentation",
+        desc: "GoBD-compliant archiving, procedural documentation, tamper-proof storage — proven in the legal product and reviewed by data protection officers.",
+      },
+      {
+        icon: "Brain",
+        title: "Client memory as financial graph",
+        desc: "Tax returns, assessments, deadlines and documents stay connected as a financial graph. Compiled knowledge per client — queryable, with citations.",
+      },
+      {
+        icon: "Landmark",
+        title: "ELSTER integration (planned)",
+        desc: "Direct submission of tax returns via ELSTER/ERiC. Status tracking from draft to confirmation — without media breaks.",
+      },
+      {
+        icon: "Shield",
+        title: "Your server, your jurisdiction",
+        desc: "Self-host the full engine on firm hardware with local storage, or choose EU-hosted cloud with DPA and durable object storage. Client data never leaves your control.",
+      },
+      {
+        icon: "Zap",
+        title: "Offline-first tax advisor workflow",
+        desc: "Tax returns, assessments, deadlines, documents keep local caches and queue changes until the cloud is reachable again.",
+      },
+      {
+        icon: "Search",
+        title: "Every claim, sourced",
+        desc: "AI answers cite the exact pages from assessments, returns and letters. Verify in one click before anything goes into an appeal.",
+      },
+      {
+        icon: "Layers",
+        title: "Per-client isolation",
+        desc: "Scoped access per client and per user — fuzz-tested, zero leaks between clients or teams.",
+      },
+      {
+        icon: "MessageSquare",
+        title: "WhatsApp client copilot",
+        desc: "Staff can capture time entries, notes, tasks, deadlines, expenses, questions, PDFs, photos and voice notes from their phone. Taxumio links media to the right client by client number.",
+      },
+      {
+        icon: "FolderOpen",
+        title: "Document vault with durable storage",
+        desc: "Receipts, assessments, letters and booking data in the vault with hash, source, size and storage metadata — local on Hetzner EU servers or S3-compatible (Cloudflare R2).",
+      },
+    ],
+    proofTitle: "Engine-grade retrieval, not a chat wrapper",
+    proof:
+      "The retrieval core benchmarks at 99.8% Recall@8 on LongMemEval (500 questions) with hybrid search and a knowledge graph — and because it runs on infrastructure you control, your IT governs every system that touches client data.",
+    faq: [
+      {
+        q: "Is this tax advisory software?",
+        a: "Taxumio organises and synthesises your documents, assessments and notes. Tax judgement stays with the tax advisors — the brain just makes sure nothing escapes them. No automatic tax calculation, no replacement for DATEV or Lexware.",
+      },
+      {
+        q: "Can we run it fully offline?",
+        a: "The engine self-hosts on your hardware and the dashboard keeps local caches with a mutation queue for core tax workflows. Synthesis uses LLM APIs of your choosing; enterprise setups can route through EU endpoints or your own gateway.",
+      },
+      {
+        q: "How much data can we store?",
+        a: "Self-hosted uses your own disk or S3-compatible storage. Hosted plans include cloud file storage by package and can scale to custom retention and storage volumes for enterprise firms.",
+      },
+      {
+        q: "What about GoBD, GDPR and professional secrecy?",
+        a: "Self-hosted means data never leaves your infrastructure. Hosted plans come with EU hosting and a DPA. GoBD-compliant archiving and procedural documentation are integrated. § 203 StGB (tax advisor confidentiality) is enforced by architecture, not by promise.",
+      },
+      {
+        q: "How is this different from DATEV, Lexware or taxx?",
+        a: "Those are established tax software suites for calculation and submission. Taxumio is not a DATEV replacement — it's the client memory layer above: AI-powered synthesis across all assessments, returns and letters, with citations and a deadline engine. It complements your existing software, not replaces it.",
+      },
+    ],
+    ctaTitle: "The client knows the answer. Now you do too.",
+    ctaSub: "Start with one closed client as a pilot. No client data needs to leave your building.",
     ctaButton: "Try free",
   },
 };

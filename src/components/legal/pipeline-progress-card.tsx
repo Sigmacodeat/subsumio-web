@@ -42,7 +42,6 @@ function formatTokens(n: number): string {
 }
 
 export function PipelineProgressCard({
-  caseSlug,
   status,
   currentLayer,
   totalLayers = 27,

@@ -76,7 +76,7 @@ export default function MemoryManagementPage() {
     } finally {
       setLoading(false);
     }
-  }, [addToast]);
+  }, [addToast, t]);
 
   useEffect(() => {
     loadMemories();
@@ -96,7 +96,7 @@ export default function MemoryManagementPage() {
     } finally {
       setSearching(false);
     }
-  }, [searchQuery, addToast]);
+  }, [searchQuery, addToast, t]);
 
   const handlePin = useCallback(
     async (id: string, pinned: boolean) => {
@@ -108,7 +108,7 @@ export default function MemoryManagementPage() {
         addToast({ title: t("memory.err_pin"), type: "error" });
       }
     },
-    [addToast]
+    [addToast, t]
   );
 
   const handleDelete = useCallback(
@@ -121,7 +121,7 @@ export default function MemoryManagementPage() {
         addToast({ title: t("memory.err_delete"), type: "error" });
       }
     },
-    [addToast]
+    [addToast, t]
   );
 
   const handleCreate = useCallback(async () => {
@@ -140,7 +140,7 @@ export default function MemoryManagementPage() {
     } catch {
       addToast({ title: t("memory.err_save"), type: "error" });
     }
-  }, [newMemory, addToast, loadMemories]);
+  }, [newMemory, addToast, loadMemories, t]);
 
   const displayMemories = searchResults ?? memories;
   const filtered = displayMemories.filter((m) => {

@@ -63,6 +63,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useLang } from "@/lib/use-lang";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -230,6 +231,7 @@ interface Props {
 }
 
 export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange }: Props) {
+  const { t } = useLang();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -876,9 +878,13 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
           {/* Bulk-Aktionen */}
           {selectedPaths.size > 0 && (
             <div className="flex flex-wrap items-center gap-2 rounded-md border border-[color:var(--ds-accent)]/30 bg-[color:var(--ds-accent)]/5 p-3">
-              <span className="text-sm font-medium">{selectedPaths.size} ausgewählt</span>
+              <span className="text-sm font-medium">
+                {selectedPaths.size} {t("cfb.selected")}
+              </span>
               <div className="ml-auto flex flex-wrap items-center gap-2">
-                <span className="text-xs text-[color:var(--ds-text-muted)]">Status setzen:</span>
+                <span className="text-xs text-[color:var(--ds-text-muted)]">
+                  {t("cfb.set_status")}
+                </span>
                 {FLAG_OPTIONS.map((f) => (
                   <Button
                     key={f.value}
@@ -897,7 +903,7 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
                   disabled={bulkEditMut.isPending}
                 >
                   <Edit3 className="h-3 w-3" aria-hidden="true" />
-                  Bulk-Edit
+                  {t("cfb.bulk_edit")}
                 </Button>
                 <Button
                   size="sm"

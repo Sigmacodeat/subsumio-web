@@ -36,7 +36,7 @@ export default function EthicalWallPage() {
     } finally {
       setLoading(false);
     }
-  }, [caseSlug, addToast]);
+  }, [caseSlug, addToast, t]);
 
   useEffect(() => {
     void load();

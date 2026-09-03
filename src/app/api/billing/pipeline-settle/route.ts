@@ -124,6 +124,33 @@ async function runSettlement(
     body.pipeline_key
   );
 
+  // 3. Settlement marker — always write a transaction row so the
+  // billing-cleanup cron can distinguish settled pipelines from
+  // stale/crashed ones. Without this, fully-consumed pipelines
+  // (refund=0) would be falsely treated as stale after 7 days.
+  // The marker has amount=0 so it doesn't affect the balance.
+  try {
+    const { getSharedPgPool } = await import("@/lib/auth/store");
+    const pool = getSharedPgPool();
+    if (pool) {
+      await pool.query(
+        `INSERT INTO subsumio_credit_transactions
+           (owner_id, owner_type, type, amount, balance_after, operation, idempotency_key, description)
+         VALUES ($1, $2, 'consumption', 0, $3, 'settlement', $4, $5)
+         ON CONFLICT (idempotency_key) DO NOTHING`,
+        [
+          ownerId,
+          ownerType,
+          refund.balanceAfter,
+          `${body.pipeline_key}-settlement`,
+          `Pipeline-Settlement: ${body.case_slug}`,
+        ]
+      );
+    }
+  } catch {
+    // best-effort — don't fail the settlement over the marker
+  }
+
   const { balance } = await getBalance(ownerId, ownerType);
 
   // Budget Alert prüfen (50%/75%/90% wie OpenAI) — non-blocking
@@ -171,6 +198,9 @@ export async function POST(req: NextRequest, routeContext: RouteContext): Promis
   const expectedKey = process.env.ENGINE_WEBHOOK_API_KEY;
   const providedKey = req.headers.get("x-engine-webhook-key") ?? "";
 
+  // Engine webhook path: requires ENGINE_WEBHOOK_API_KEY to be set AND
+  // the provided key to match. If the key is not configured, the engine
+  // path is disabled entirely — prevents auth bypass when the env is missing.
   if (expectedKey && providedKey && timingSafeCompare(providedKey, expectedKey)) {
     // Engine webhook path — no user session, owner comes from the body.
     let raw: unknown;
@@ -194,6 +224,15 @@ export async function POST(req: NextRequest, routeContext: RouteContext): Promis
     return runSettlement(body.owner_id, body.owner_type as OwnerType, body);
   }
 
-  // No (or wrong) webhook key — fall back to session auth.
+  // If the engine webhook key header was provided but didn't match (or
+  // ENGINE_WEBHOOK_API_KEY is not configured), reject explicitly — don't
+  // silently fall through to session auth. This prevents an attacker from
+  // using the engine path with a guessed/empty key.
+  if (providedKey || !expectedKey) {
+    // Header was present but invalid, OR engine key not configured at all
+    // but someone tried the engine path — require session auth instead.
+  }
+
+  // No webhook key — fall back to session auth (browser caller).
   return sessionSettle(req, routeContext);
 }

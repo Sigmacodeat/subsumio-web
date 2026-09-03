@@ -4,7 +4,6 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Users, Loader2, Search, UserPlus, UserCheck, Mail, Crown, Briefcase } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
@@ -72,8 +71,11 @@ export default function CaseAssignmentPage() {
     staleTime: 30_000,
   });
 
-  const teamMembers: TeamMember[] = teamQuery.data?.members ?? [];
-  const assignments = assignmentsQuery.data ?? [];
+  const teamMembers: TeamMember[] = useMemo(
+    () => teamQuery.data?.members ?? [],
+    [teamQuery.data?.members]
+  );
+  const assignments = useMemo(() => assignmentsQuery.data ?? [], [assignmentsQuery.data]);
 
   // Group assignments by lawyer
   const byLawyer = useMemo(() => {

@@ -219,6 +219,13 @@ const deepAnalysisToolSchema = z.object({
   jurisdiction: z.enum(["at", "de", "ch", "all"]).default("all"),
 });
 
+const caseInvestigationToolSchema = z.object({
+  case_slug: z.string().min(1),
+  pruefauftrag: z.string().max(2000).optional(),
+  jurisdiction: z.enum(["at", "de", "ch"]).default("at"),
+  incremental: z.boolean().optional(),
+});
+
 const sendEmailToolSchema = z.object({
   to: z.union([z.string().max(500), z.array(z.string().max(500)).max(50)]),
   subject: z.string().min(1).max(500),
@@ -276,6 +283,7 @@ const toolSchema = z.object({
     "obligation_extract",
     "tabular_review",
     "deep_analysis",
+    "case_investigation",
     "send_email",
     "client_lookup",
     "deadline_mark_done",
@@ -1419,6 +1427,57 @@ async function executeDeepAnalysis(
   }
 }
 
+async function executeCaseInvestigation(
+  ctx: { headers: Record<string, string> },
+  params: z.infer<typeof caseInvestigationToolSchema>
+): Promise<ToolResponse> {
+  try {
+    const res = await fetch(`${ENGINE_URL}/api/legal/case-investigation`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...ctx.headers },
+      body: JSON.stringify({
+        case_slug: params.case_slug,
+        pruefauftrag: params.pruefauftrag,
+        jurisdiction: params.jurisdiction,
+        incremental: params.incremental,
+      }),
+      signal: AbortSignal.timeout(280_000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = (await res.json()) as {
+      run_id?: string;
+      contradictions?: Array<{ severity?: string; category?: string }>;
+      evidence_gaps?: unknown[];
+      claims_count?: number;
+    };
+    const runId = data.run_id ?? "";
+    const contradictionCount = data.contradictions?.length ?? 0;
+    const gapCount = data.evidence_gaps?.length ?? 0;
+    return {
+      success: true,
+      data,
+      display: {
+        kind: "summary",
+        title: "Sachverhaltsprüfung abgeschlossen",
+        message: `${data.claims_count ?? 0} Behauptungen geprüft · ${contradictionCount} Widersprüche · ${gapCount} Beweislücken`,
+        href: runId
+          ? `/dashboard/cases/${encodeURIComponent(params.case_slug)}/investigation/${encodeURIComponent(runId)}`
+          : undefined,
+      },
+    };
+  } catch (_err) {
+    return {
+      success: false,
+      error: "Case investigation failed",
+      display: {
+        kind: "summary",
+        title: "Sachverhaltsprüfung fehlgeschlagen",
+        message: "Engine nicht erreichbar. Bitte später erneut versuchen.",
+      },
+    };
+  }
+}
+
 async function executeSendEmail(
   ctx: { headers: Record<string, string>; user: { id: string; role: string; brainId: string } },
   params: z.infer<typeof sendEmailToolSchema>
@@ -1928,6 +1987,7 @@ export const GET = createHandler(
       role: ctx.user.role,
       features: {
         deepAnalysis: true,
+        caseInvestigation: true,
         precedentSearch: true,
       },
     };
@@ -1956,6 +2016,7 @@ export const POST = createHandler(
       role: ctx.user.role,
       features: {
         deepAnalysis: true,
+        caseInvestigation: true,
         precedentSearch: true,
       },
     };
@@ -2074,6 +2135,11 @@ export const POST = createHandler(
           result = await executeDeepAnalysis(ctx, params);
           break;
         }
+        case "case_investigation": {
+          const params = caseInvestigationToolSchema.parse(body.params);
+          result = await executeCaseInvestigation(ctx, params);
+          break;
+        }
         case "send_email": {
           const params = sendEmailToolSchema.parse(body.params);
           result = await executeSendEmail(ctx, params);
@@ -2103,7 +2169,13 @@ export const POST = createHandler(
           return apiError("invalid_tool", `Unknown tool: ${body.tool}`, 400);
       }
 
-      if (body.tool === "create_case" && result && typeof result === "object" && "success" in result && result.success) {
+      if (
+        body.tool === "create_case" &&
+        result &&
+        typeof result === "object" &&
+        "success" in result &&
+        result.success
+      ) {
         void markOnboardingProgress(ctx.user.id, { firstCase: true });
       }
 

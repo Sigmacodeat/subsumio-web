@@ -115,8 +115,8 @@ function makeFeedbackStats(overrides: Partial<FeedbackStats> = {}): FeedbackStat
 // ── Tests ─────────────────────────────────────────────────────────────
 
 describe("Eval Harness Reuse — Registry", () => {
-  it("has 10 harnesses in registry", () => {
-    expect(HARNESS_REGISTRY).toHaveLength(10);
+  it("has 11 harnesses in registry", () => {
+    expect(HARNESS_REGISTRY).toHaveLength(11);
   });
 
   it("includes all required harness ids", () => {
@@ -149,7 +149,7 @@ describe("Eval Harness Reuse — Registry", () => {
 describe("Eval Harness Reuse — Stats", () => {
   it("getHarnessStats returns correct counts", () => {
     const stats = getHarnessStats();
-    expect(stats.total).toBe(10);
+    expect(stats.total).toBe(11);
     expect(stats.enabled).toBeGreaterThan(0);
     expect(stats.blocking).toBeGreaterThan(0);
     expect(stats.disabled).toBeGreaterThanOrEqual(0);

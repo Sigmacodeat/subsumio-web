@@ -94,24 +94,44 @@ export function autoMatchTransaction(
   const searchText =
     `${txn.reference ?? ""} ${txn.purpose ?? ""} ${txn.sender_name ?? ""}`.toLowerCase();
 
-  // 1. Invoice number in reference
-  for (const item of openItems) {
-    if (item.status === "paid") continue;
+  // Items that are eligible for matching (not paid, not written off)
+  const eligibleItems = openItems.filter(
+    (item) => item.status !== "paid" && item.status !== "written_off"
+  );
+
+  // 1. Invoice number in reference — require minimum length to avoid
+  //    false positives (e.g. invoice number "1" matching everything).
+  //    Also prefer the LONGEST matching invoice number to avoid
+  //    "RE-2024-01" matching when "RE-2024-012" is the real target.
+  const invoiceNumberMatches: { item: OpenItem; reason: string }[] = [];
+  for (const item of eligibleItems) {
     const invNumLower = item.invoice_number.toLowerCase();
-    if (searchText.includes(invNumLower)) {
-      return {
-        transaction: txn,
-        invoice_id: item.invoice_id,
-        case_slug: item.case_slug,
-        confidence: "high",
-        matchReason: `Rechnungsnummer ${item.invoice_number} in Verwendungszweck gefunden`,
-      };
+    // Require at least 4 chars to avoid trivial matches
+    if (invNumLower.length >= 4 && searchText.includes(invNumLower)) {
+      invoiceNumberMatches.push({
+        item,
+        reason: `Rechnungsnummer ${item.invoice_number} in Verwendungszweck gefunden`,
+      });
     }
+  }
+  if (invoiceNumberMatches.length > 0) {
+    // Sort by invoice_number length descending — longest match wins
+    invoiceNumberMatches.sort(
+      (a, b) => b.item.invoice_number.length - a.item.invoice_number.length
+    );
+    const best = invoiceNumberMatches[0]!;
+    return {
+      transaction: txn,
+      invoice_id: best.item.invoice_id,
+      case_slug: best.item.case_slug,
+      confidence: "high",
+      matchReason: best.reason,
+    };
   }
 
   // 2. Case slug in reference + exact amount
-  for (const item of openItems) {
-    if (item.status === "paid" || !item.case_slug) continue;
+  for (const item of eligibleItems) {
+    if (!item.case_slug) continue;
     if (
       searchText.includes(item.case_slug.toLowerCase()) &&
       Math.abs(txn.amount - item.open_amount) < 0.01
@@ -127,8 +147,7 @@ export function autoMatchTransaction(
   }
 
   // 3. Exact amount match
-  for (const item of openItems) {
-    if (item.status === "paid") continue;
+  for (const item of eligibleItems) {
     if (Math.abs(txn.amount - item.open_amount) < 0.01) {
       return {
         transaction: txn,
@@ -141,10 +160,9 @@ export function autoMatchTransaction(
   }
 
   // 4. Partial amount match within 5%
-  for (const item of openItems) {
-    if (item.status === "paid") continue;
+  for (const item of eligibleItems) {
     const diff = Math.abs(txn.amount - item.open_amount);
-    if (diff > 0 && diff / item.open_amount <= 0.05) {
+    if (diff > 0 && item.open_amount > 0 && diff / item.open_amount <= 0.05) {
       return {
         transaction: txn,
         invoice_id: item.invoice_id,
@@ -162,7 +180,7 @@ export function applyMatch(
   txn: BankTransaction,
   match: MatchResult,
   openItems: OpenItem[]
-): { transaction: BankTransaction; openItems: OpenItem[] } {
+): { transaction: BankTransaction; openItems: OpenItem[]; surplus: number } {
   const updatedTxn: BankTransaction = {
     ...txn,
     matched_invoice_id: match.invoice_id,
@@ -171,20 +189,26 @@ export function applyMatch(
     status: "matched",
   };
 
+  let surplus = 0;
   const updatedItems = openItems.map((item) => {
     if (item.invoice_id !== match.invoice_id) return item;
     const newPaidAmount = item.paid_amount + txn.amount;
-    const newOpenAmount = Math.max(0, item.amount + item.dunning_fee - newPaidAmount);
+    const totalDue = item.amount + item.dunning_fee;
+    const newOpenAmount = Math.max(0, totalDue - newPaidAmount);
+    // Track surplus (overpayment) — previously lost silently via Math.max(0, ...)
+    if (newPaidAmount > totalDue) {
+      surplus = newPaidAmount - totalDue;
+    }
     return {
       ...item,
-      paid_amount: newPaidAmount,
+      paid_amount: Math.min(newPaidAmount, totalDue),
       open_amount: newOpenAmount,
       status: newOpenAmount <= 0 ? ("paid" as const) : item.status,
       updated_at: new Date().toISOString(),
     };
   });
 
-  return { transaction: updatedTxn, openItems: updatedItems };
+  return { transaction: updatedTxn, openItems: updatedItems, surplus };
 }
 
 // ── OPOS (Open Items) Management ──────────────────────────────────────
@@ -236,13 +260,23 @@ const DUNNING_LABELS = ["", "Mahnung 1", "Mahnung 2", "Mahnung 3"];
 
 export function processDunningRun(openItems: OpenItem[], currentDate?: Date): DunningRunResult[] {
   const now = currentDate ?? new Date();
+  // Use UTC midnight for both now and due_date to avoid timezone skew
+  // when due_date is a date-only string (e.g. "2024-01-15" parses as UTC midnight)
+  const nowUtcMidnight = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  );
   const results: DunningRunResult[] = [];
 
   for (const item of openItems) {
     if (item.status === "paid" || item.status === "written_off") continue;
 
     const dueDate = new Date(item.due_date);
-    const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+    const dueUtcMidnight = new Date(
+      Date.UTC(dueDate.getUTCFullYear(), dueDate.getUTCMonth(), dueDate.getUTCDate())
+    );
+    const daysOverdue = Math.floor(
+      (nowUtcMidnight.getTime() - dueUtcMidnight.getTime()) / (1000 * 60 * 60 * 24)
+    );
 
     let newLevel = item.dunning_level;
     let feeAdded = 0;
@@ -319,11 +353,13 @@ export function getOposSummary(openItems: OpenItem[]): {
   return openItems.reduce(
     (acc, item) => {
       acc.total++;
-      acc.totalOpenAmount += item.open_amount;
+      // Round to 2 decimals to avoid float accumulation errors
+      acc.totalOpenAmount = Math.round((acc.totalOpenAmount + item.open_amount) * 100) / 100;
       if (item.status === "paid") acc.paid++;
       else if (item.status === "overdue" || new Date(item.due_date) < now) {
         acc.overdue++;
-        acc.totalOverdueAmount += item.open_amount;
+        acc.totalOverdueAmount =
+          Math.round((acc.totalOverdueAmount + item.open_amount) * 100) / 100;
       } else if (item.status === "reminded") acc.reminded++;
       else acc.open++;
       return acc;

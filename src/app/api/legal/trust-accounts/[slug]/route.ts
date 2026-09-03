@@ -15,17 +15,17 @@ const VALID_TX_TYPES = [
 ] as const;
 
 const transactionSchema = z.object({
-  id: z.string(),
+  id: z.string().max(200),
   type: z.enum(VALID_TX_TYPES),
   amount: z.number(),
   currency: z.string().default("EUR"),
-  date: z.string(),
-  description: z.string(),
+  date: z.string().max(20),
+  description: z.string().max(5000),
   matterSlug: z.string().optional(),
   matterTitle: z.string().optional(),
   reference: z.string().optional(),
   createdBy: z.string().optional(),
-  createdAt: z.string(),
+  createdAt: z.string().max(50),
 });
 
 const updateSchema = z.object({
@@ -34,8 +34,8 @@ const updateSchema = z.object({
   reconciliations: z
     .array(
       z.object({
-        id: z.string(),
-        date: z.string(),
+        id: z.string().max(200),
+        date: z.string().max(20),
         bankBalance: z.number(),
         bookBalance: z.number(),
         difference: z.number(),

@@ -146,6 +146,15 @@ export const POST = createHandler(
   {
     action: "admin.*",
     body: bodySchema,
+    audit: (ctx, body) => ({
+      action: "corpus_files.publish" as const,
+      entityType: "corpus_import_queue",
+      details: {
+        trigger: body.trigger,
+        pathsCount: body.paths?.length ?? null,
+        user: ctx.user.email,
+      },
+    }),
   },
   async (ctx, body) => {
     // Wenn keine paths angegeben, alle abräumen

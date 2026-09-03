@@ -150,6 +150,11 @@ export const POST = createHandler(
     rateTier: "standard",
     body: presenceSchema,
     skipCsrf: true,
+    audit: (ctx, body) => ({
+      action: "presence.update" as const,
+      entityType: "presence",
+      details: { user: ctx.user.email, page: body.page, action: body.action },
+    }),
   },
   async (ctx, body) => {
     const { page, action = "heartbeat", cursor } = body;

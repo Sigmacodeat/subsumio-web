@@ -15,20 +15,20 @@ import { z } from "zod";
 export const dynamic = "force-dynamic";
 
 const updateGroupSchema = z.object({
-  schemas: z.array(z.string()),
-  displayName: z.string().optional(),
-  externalId: z.string().optional(),
-  id: z.string().optional(),
+  schemas: z.array(z.string().max(200)).max(20),
+  displayName: z.string().max(500).optional(),
+  externalId: z.string().max(200).optional(),
+  id: z.string().max(200).optional(),
   members: z.array(z.any()).max(1000).optional(),
 });
 
 const patchRequestSchema = z.object({
-  schemas: z.array(z.string()),
+  schemas: z.array(z.string().max(200)).max(20),
   Operations: z
     .array(
       z.object({
-        op: z.string(),
-        path: z.string().optional(),
+        op: z.string().max(50),
+        path: z.string().max(500).optional(),
         value: z.any().optional(),
       })
     )

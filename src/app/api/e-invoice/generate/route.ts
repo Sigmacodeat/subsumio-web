@@ -18,17 +18,17 @@ const generateSchema = z.object({
   settings: z.custom<KanzleiSettings>((v) => typeof v === "object" && v !== null),
   options: z
     .object({
-      leitwegId: z.string().optional(),
-      buyerReference: z.string().optional(),
+      leitwegId: z.string().max(200).optional(),
+      buyerReference: z.string().max(200).optional(),
       buyerAddress: z
         .object({
-          name: z.string(),
-          street: z.string().optional(),
-          zip: z.string(),
-          city: z.string(),
-          country: z.string(),
-          vatId: z.string().optional(),
-          email: z.string().optional(),
+          name: z.string().max(300),
+          street: z.string().max(300).optional(),
+          zip: z.string().max(20),
+          city: z.string().max(200),
+          country: z.string().max(10),
+          vatId: z.string().max(50).optional(),
+          email: z.string().max(320).optional(),
         })
         .optional(),
       pdfBytes: z.array(z.number()).optional(),

@@ -16,6 +16,7 @@
 import { readFileSync, writeFileSync, existsSync, appendFileSync } from "fs";
 import { evaluateClaims } from "../claim-evaluation.ts";
 import type { ChatOpts, ChatResult } from "../lab-dach/rubric-judge.ts";
+import { AT_LAW_SOURCES_ALL, AT_PRIMARY_STATUTE_SOURCE } from "../../core/legal/jurisdiction.ts";
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -253,9 +254,8 @@ async function main() {
     await reconfigureGatewayWithEngine(engine);
   } catch {}
 
-  const sourceIds =
-    opts.jurisdiction === "at" ? ["law-at", "law-at-judikatur", "law-eu"] : ["law-de", "law-eu"];
-  const sourceId = opts.jurisdiction === "at" ? "law-at" : "law-de";
+  const sourceIds = opts.jurisdiction === "at" ? AT_LAW_SOURCES_ALL : ["law-de", "law-eu"];
+  const sourceId = opts.jurisdiction === "at" ? AT_PRIMARY_STATUTE_SOURCE : "law-de";
   const lawPrefix = opts.jurisdiction === "at" ? `legal/statutes/at/` : `legal/statutes/de/`;
 
   const results: CaseResult[] = [];

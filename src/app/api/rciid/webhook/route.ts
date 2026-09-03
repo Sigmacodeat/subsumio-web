@@ -38,7 +38,7 @@ const webhookSchema = z.object({
   ]),
   progress_percent: z.number().min(0).max(100).optional(),
   current_phase: z.string().max(200).optional(),
-  timestamp: z.string(),
+  timestamp: z.string().max(50),
   data: z.record(z.unknown()).optional(),
 });
 

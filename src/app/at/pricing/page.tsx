@@ -6,7 +6,7 @@ import { professionalPricing } from "@/content/audiences";
 export const metadata: Metadata = {
   title: "Subsumio Preise — Privat, Solo, Kanzlei und Enterprise",
   description:
-    "Getrennte Preise für Privatpersonen und professionelle Aktenarbeit. Solo 179 €/Monat, Kanzlei 999 €/Monat inklusive 5 Nutzern, monatlich kündbar.",
+    "Getrennte Preise für Privatpersonen und professionelle Aktenarbeit. Solo 249 €/Monat, Kanzlei 1.499 €/Monat inklusive 5 Nutzern, monatlich kündbar.",
   alternates: {
     canonical: "/at/pricing",
     languages: {
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Subsumio Preise — Privat, Solo, Kanzlei und Enterprise",
     description:
-      "Getrennte Preise für Privatpersonen und professionelle Aktenarbeit. Solo 179 €/Monat, monatlich kündbar.",
+      "Getrennte Preise für Privatpersonen und professionelle Aktenarbeit. Solo 249 €/Monat, monatlich kündbar.",
     url: "/at/pricing",
     type: "website",
   },

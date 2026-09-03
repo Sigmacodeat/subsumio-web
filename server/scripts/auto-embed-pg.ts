@@ -33,6 +33,7 @@ const { values } = parseArgs({
     "max-errors": { type: "string", default: "10" },
     "error-log": { type: "string", default: "/tmp/embed-errors.log" },
     "allow-mixed-models": { type: "boolean", default: false },
+    source: { type: "string" },
     help: { type: "boolean", default: false },
   },
   allowPositionals: false,
@@ -51,6 +52,7 @@ Options:
   --max-errors   Max consecutive batch errors before exit (default: 10)
   --error-log    Path to error log file (default: /tmp/embed-errors.log)
   --allow-mixed-models  Repair-only override; permits adding vectors to a mixed index
+  --source       Nur chunks einer bestimmten Quelle embedden (z.B. law-at-judikatur-bvwg)
   --help         Diese Hilfe
 `);
   process.exit(0);
@@ -61,6 +63,7 @@ const DRY_RUN = values["dry-run"] as boolean;
 const MAX_ERRORS = parseInt(String(values["max-errors"]), 10) || 10;
 const ERROR_LOG = String(values["error-log"] || "/tmp/embed-errors.log");
 const ALLOW_MIXED_MODELS = values["allow-mixed-models"] as boolean;
+const SOURCE_FILTER = (values["source"] as string) || null;
 const CLAIM_TTL_MINUTES = 30;
 
 function isTransientError(err: unknown): boolean {
@@ -107,6 +110,7 @@ async function main() {
   console.log("═══════════════════════════════════════════════════════════");
   console.log(`Batch-Größe: ${BATCH_SIZE}`);
   console.log(`Dry-Run: ${DRY_RUN ? "JA" : "Nein"}`);
+  console.log(`Source-Filter: ${SOURCE_FILTER ?? "alle"}`);
   console.log("");
 
   const tStart = Date.now();
@@ -135,11 +139,18 @@ async function main() {
   console.log("Skipping pending count (fast startup mode)...");
 
   if (DRY_RUN) {
-    const countResult = await engine.executeRaw(
-      `SELECT count(*) as cnt FROM content_chunks WHERE embedding IS NULL`
-    );
+    const countResult = SOURCE_FILTER
+      ? await engine.executeRaw(
+          `SELECT count(*) as cnt FROM content_chunks c JOIN pages p ON c.page_id = p.id WHERE c.embedding IS NULL AND p.source_id = $1`,
+          [SOURCE_FILTER]
+        )
+      : await engine.executeRaw(
+          `SELECT count(*) as cnt FROM content_chunks WHERE embedding IS NULL`
+        );
     const pendingCount = Number((countResult[0] as { cnt: number }).cnt);
-    console.log(`[DRY-RUN] Würde ${pendingCount} chunks embedden.`);
+    console.log(
+      `[DRY-RUN] Würde ${pendingCount} chunks embedden${SOURCE_FILTER ? ` (source: ${SOURCE_FILTER})` : ""}.`
+    );
     await engine.disconnect();
     return;
   }
@@ -156,27 +167,51 @@ async function main() {
     // statement commits, before the network embedding call starts. The claim
     // marker survives that boundary and prevents parallel workers from doing
     // the same paid work. Crashed claims become eligible after the TTL.
-    const rows = await engine.executeRaw(
-      `WITH candidates AS (
-         SELECT id
-         FROM content_chunks
-         WHERE embedding IS NULL
-           AND (
-             model NOT LIKE 'embedding-claim:%'
-             OR embedded_at IS NULL
-             OR embedded_at < now() - ($3::int * interval '1 minute')
+    const rows = SOURCE_FILTER
+      ? await engine.executeRaw(
+          `WITH candidates AS (
+             SELECT c.id
+             FROM content_chunks c
+             JOIN pages p ON c.page_id = p.id
+             WHERE c.embedding IS NULL
+               AND p.source_id = $4
+               AND (
+                 c.model NOT LIKE 'embedding-claim:%'
+                 OR c.embedded_at IS NULL
+                 OR c.embedded_at < now() - ($3::int * interval '1 minute')
+               )
+             ORDER BY c.id
+             FOR UPDATE SKIP LOCKED
+             LIMIT $1
            )
-         ORDER BY id
-         FOR UPDATE SKIP LOCKED
-         LIMIT $1
-       )
-       UPDATE content_chunks AS c
-       SET model = $2, embedded_at = now()
-       FROM candidates
-       WHERE c.id = candidates.id
-       RETURNING c.id, c.chunk_text`,
-      [BATCH_SIZE, claim, CLAIM_TTL_MINUTES]
-    );
+           UPDATE content_chunks AS c
+           SET model = $2, embedded_at = now()
+           FROM candidates
+           WHERE c.id = candidates.id
+           RETURNING c.id, c.chunk_text`,
+          [BATCH_SIZE, claim, CLAIM_TTL_MINUTES, SOURCE_FILTER]
+        )
+      : await engine.executeRaw(
+          `WITH candidates AS (
+             SELECT id
+             FROM content_chunks
+             WHERE embedding IS NULL
+               AND (
+                 model NOT LIKE 'embedding-claim:%'
+                 OR embedded_at IS NULL
+                 OR embedded_at < now() - ($3::int * interval '1 minute')
+               )
+             ORDER BY id
+             FOR UPDATE SKIP LOCKED
+             LIMIT $1
+           )
+           UPDATE content_chunks AS c
+           SET model = $2, embedded_at = now()
+           FROM candidates
+           WHERE c.id = candidates.id
+           RETURNING c.id, c.chunk_text`,
+          [BATCH_SIZE, claim, CLAIM_TTL_MINUTES]
+        );
     const chunks = rows as unknown as PendingChunk[];
     if (chunks.length === 0) break;
 

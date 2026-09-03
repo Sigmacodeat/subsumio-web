@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Sparkles, RefreshCw, Clock, Mail, FileCheck, ArrowRight } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 import { csrfFetch } from "@/lib/csrf";
+import { AI_BADGE_LABEL } from "@/lib/ai-act";
 import { StaggerContainer, StaggerItem } from "@/components/marketing/motion-system";
 
 interface BriefingData {
@@ -264,6 +265,12 @@ export function MorningBriefing() {
           <p className="text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
             {briefing.narrative}
           </p>
+
+          {!briefing.usedFallback && (
+            <p className="mt-2 text-[11px] font-medium text-[color:var(--ds-text-subtle)]">
+              {AI_BADGE_LABEL}
+            </p>
+          )}
 
           {quickStats.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">

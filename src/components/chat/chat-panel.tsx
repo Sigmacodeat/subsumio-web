@@ -1339,7 +1339,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         }
       }
     },
-    [persistHistory, activeSessionId, setMessages]
+    [persistHistory, activeSessionId, setMessages, context.caseSlug, selectedCaseSlug]
   );
 
   const handleToolCancel = useCallback(
@@ -1477,7 +1477,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         }
       }
     },
-    [persistHistory, activeSessionId, setMessages]
+    [persistHistory, activeSessionId, setMessages, context.caseSlug, selectedCaseSlug]
   );
 
   // Clear chat

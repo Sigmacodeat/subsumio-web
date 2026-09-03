@@ -159,7 +159,7 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
         </Reveal>
 
         <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {c.pillars.map((pillar, i) => {
+          {c.pillars.map((pillar, _i) => {
             const Icon = pillar.icon;
             const sig = SIGNAL[pillar.signal];
             return (

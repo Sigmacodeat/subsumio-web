@@ -112,6 +112,11 @@ export const POST = createPublicHandler(
     rateLimitKey: (req) => `portal-upload:ip:${clientIp(req.headers)}`,
     rateLimitMax: 20,
     rateLimitWindowMs: 60_000,
+    audit: (_ctx, _body, _query) => ({
+      action: "document.upload" as const,
+      entityType: "document",
+      details: { source: "portal" },
+    }),
   },
   async (req) => {
     const formData = await req.formData();

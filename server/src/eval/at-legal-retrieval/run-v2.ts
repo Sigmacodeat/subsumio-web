@@ -29,6 +29,7 @@ import {
 import { expandLegalQuery } from "../../core/think/legal-query-expand.ts";
 import { fuseLegalSearchResults } from "./fusion.ts";
 import type { SearchResult } from "../../core/types.ts";
+import { AT_LAW_SOURCES_ALL, AT_PRIMARY_STATUTE_SOURCE } from "../../core/legal/jurisdiction.ts";
 
 // ─── Legal Post-Fusion Reranking ──────────────────────────────────────────
 
@@ -38,7 +39,12 @@ import type { SearchResult } from "../../core/types.ts";
  */
 function detectStatute(query: string): string | null {
   // Normalize umlauts so regex patterns match both "Schäden" and "Schaden"
-  const q = query.toLowerCase().replace(/ä/g, "a").replace(/ö/g, "o").replace(/ü/g, "u").replace(/ß/g, "ss");
+  const q = query
+    .toLowerCase()
+    .replace(/ä/g, "a")
+    .replace(/ö/g, "o")
+    .replace(/ü/g, "u")
+    .replace(/ß/g, "ss");
   if (/berufung.*urteil|urteil.*berufung|rechtsmittel.*urteil/.test(q)) return "zpo";
   if (/insolvenz|sanierungsplan|insolvenzverfahren/.test(q)) return "io";
   if (/vorstand|aktiengesellschaft|grundkapital|aufsichtsrat/.test(q)) return "aktg";
@@ -55,10 +61,14 @@ function detectStatute(query: string): string | null {
  */
 function extractConcept(query: string): string | null {
   // "Was ist ein Sanierungsplan in der Insolvenzordnung?" → "sanierungsplan"
-  const m1 = query.match(/Was ist (?:ein |eine |der |die |das )?(.+?)(?:\s+in\s+|\s+im\s+|\s+nach\s+|\?|$)/i);
+  const m1 = query.match(
+    /Was ist (?:ein |eine |der |die |das )?(.+?)(?:\s+in\s+|\s+im\s+|\s+nach\s+|\?|$)/i
+  );
   if (m1) return m1[1].trim().toLowerCase();
   // "Was sind die Voraussetzungen für ... durch Willensübereinstimmung?" → "willensübereinstimmung"
-  const m2 = query.match(/Was sind die Voraussetzungen\s+für\s+(?:einen\s+|eine\s+|der\s+|die\s+|das\s+)?(.+?)(?:\s+durch\s+|\?|$)/i);
+  const m2 = query.match(
+    /Was sind die Voraussetzungen\s+für\s+(?:einen\s+|eine\s+|der\s+|die\s+|das\s+)?(.+?)(?:\s+durch\s+|\?|$)/i
+  );
   if (m2) {
     // If there's a "durch X" part, extract X as the concept
     const durchMatch = query.match(/durch\s+(\S+?)(?:\s|\?|$)/i);
@@ -84,7 +94,7 @@ function extractConcept(query: string): string | null {
  * Used as a last-resort boost when the definition-sentence detection can't find the concept.
  */
 const CONCEPT_PARAGRAPH_MAP: Record<string, string> = {
-  "willensübereinstimmung": "legal/statutes/at/abgb/p-861",
+  willensübereinstimmung: "legal/statutes/at/abgb/p-861",
 };
 
 function legalRerank(results: SearchResult[], query: string): SearchResult[] {
@@ -115,7 +125,9 @@ function legalRerank(results: SearchResult[], query: string): SearchResult[] {
   let definitionSlug: string | null = null;
   if (concept && isDefinitionQuery) {
     const conceptLower = concept.toLowerCase();
-    const conceptRegex = new RegExp(`\\b${conceptLower.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:s|es|n|en)?\\b`);
+    const conceptRegex = new RegExp(
+      `\\b${conceptLower.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:s|es|n|en)?\\b`
+    );
     let lowestPara = Infinity;
     for (const r of filtered) {
       const paraMatch = r.slug.match(/\/p-(\d+[a-z]?)$/);
@@ -135,10 +147,32 @@ function legalRerank(results: SearchResult[], query: string): SearchResult[] {
   }
 
   // Extract significant query nouns for first-sentence keyword matching
-  const queryNouns = query.toLowerCase()
-    .replace(/ä/g, "a").replace(/ö/g, "o").replace(/ü/g, "u").replace(/ß/g, "ss")
+  const queryNouns = query
+    .toLowerCase()
+    .replace(/ä/g, "a")
+    .replace(/ö/g, "o")
+    .replace(/ü/g, "u")
+    .replace(/ß/g, "ss")
     .split(/\s+/)
-    .filter((w) => w.length >= 5 && !["welche", "welcher", "welchem", "welches", "einer", "eines", "einen", "haben", "vorliegen", "abgrenzen", "insolvenzordnung", "aktiengesellschaft", "strafgesetzbuch"].includes(w));
+    .filter(
+      (w) =>
+        w.length >= 5 &&
+        ![
+          "welche",
+          "welcher",
+          "welchem",
+          "welches",
+          "einer",
+          "eines",
+          "einen",
+          "haben",
+          "vorliegen",
+          "abgrenzen",
+          "insolvenzordnung",
+          "aktiengesellschaft",
+          "strafgesetzbuch",
+        ].includes(w)
+    );
 
   return filtered
     .map((r) => {
@@ -179,8 +213,13 @@ function legalRerank(results: SearchResult[], query: string): SearchResult[] {
       // First-sentence keyword match: check first 150 chars of chunk_text
       // for query nouns. This helps disambiguate within the same statute
       // (e.g. "Vorstand" in § 70 first sentence vs absent in § 95).
-      const firstSentence = (r.chunk_text || "").slice(0, 150).toLowerCase()
-        .replace(/ä/g, "a").replace(/ö/g, "o").replace(/ü/g, "u").replace(/ß/g, "ss");
+      const firstSentence = (r.chunk_text || "")
+        .slice(0, 150)
+        .toLowerCase()
+        .replace(/ä/g, "a")
+        .replace(/ö/g, "o")
+        .replace(/ü/g, "u")
+        .replace(/ß/g, "ss");
       let keywordMatches = 0;
       for (const noun of queryNouns) {
         if (firstSentence.includes(noun)) keywordMatches++;
@@ -235,27 +274,57 @@ function parseArgs(argv: string[]): ParsedArgs {
   const args = argv.slice(2);
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === "--top-k" && i + 1 < args.length) { out.topK = parseInt(args[++i], 10); continue; }
-    if (a === "--output" && i + 1 < args.length) { out.outputPath = args[++i]; continue; }
-    if (a === "--append") { out.append = true; continue; }
-    if (a === "--by-type") { out.byType = true; continue; }
-    if (a === "--save-baseline" && i + 1 < args.length) { out.saveBaseline = args[++i]; continue; }
-    if (a === "--compare-baseline") { out.compareBaseline = true; continue; }
-    if (a === "--approve-baseline") { out.approveBaseline = true; continue; }
-    if (a === "--prompt-version" && i + 1 < args.length) { out.promptVersion = args[++i]; continue; }
-    if (a === "--no-expansion") { out.queryExpansion = false; continue; }
-    if (a === "--no-graph") { out.legalGraph = false; continue; }
+    if (a === "--top-k" && i + 1 < args.length) {
+      out.topK = parseInt(args[++i], 10);
+      continue;
+    }
+    if (a === "--output" && i + 1 < args.length) {
+      out.outputPath = args[++i];
+      continue;
+    }
+    if (a === "--append") {
+      out.append = true;
+      continue;
+    }
+    if (a === "--by-type") {
+      out.byType = true;
+      continue;
+    }
+    if (a === "--save-baseline" && i + 1 < args.length) {
+      out.saveBaseline = args[++i];
+      continue;
+    }
+    if (a === "--compare-baseline") {
+      out.compareBaseline = true;
+      continue;
+    }
+    if (a === "--approve-baseline") {
+      out.approveBaseline = true;
+      continue;
+    }
+    if (a === "--prompt-version" && i + 1 < args.length) {
+      out.promptVersion = args[++i];
+      continue;
+    }
+    if (a === "--no-expansion") {
+      out.queryExpansion = false;
+      continue;
+    }
+    if (a === "--no-graph") {
+      out.legalGraph = false;
+      continue;
+    }
     if (a === "--help" || a === "-h") {
       process.stderr.write(
         `Usage: bun run src/eval/at-legal-retrieval/run-v2.ts <fixture.jsonl> [options]\n` +
-        `  --top-k N              Top-K results (default: 8)\n` +
-        `  --output PATH          Write JSONL results to PATH\n` +
-        `  --save-baseline LABEL  Save results as a versioned baseline\n` +
-        `  --compare-baseline     Compare against latest approved baseline\n` +
-        `  --approve-baseline     Mark saved baseline as approved\n` +
-        `  --prompt-version V     Prompt version identifier (default: at-legal-v2)\n` +
-        `  --no-expansion         Disable legal query expansion\n` +
-        `  --no-graph             Disable legal graph fan-out\n`
+          `  --top-k N              Top-K results (default: 8)\n` +
+          `  --output PATH          Write JSONL results to PATH\n` +
+          `  --save-baseline LABEL  Save results as a versioned baseline\n` +
+          `  --compare-baseline     Compare against latest approved baseline\n` +
+          `  --approve-baseline     Mark saved baseline as approved\n` +
+          `  --prompt-version V     Prompt version identifier (default: at-legal-v2)\n` +
+          `  --no-expansion         Disable legal query expansion\n` +
+          `  --no-graph             Disable legal graph fan-out\n`
       );
       process.exit(0);
     }
@@ -270,7 +339,10 @@ function parseArgs(argv: string[]): ParsedArgs {
 
 function loadFixture(path: string): { questions: AtLegalQuestion[]; version: string } {
   const raw = readFileSync(path, "utf-8");
-  const lines = raw.trim().split("\n").filter((l) => l.trim() && !l.startsWith("#"));
+  const lines = raw
+    .trim()
+    .split("\n")
+    .filter((l) => l.trim() && !l.startsWith("#"));
   let version = "1.0.0";
   let questionLines = lines;
   try {
@@ -279,13 +351,18 @@ function loadFixture(path: string): { questions: AtLegalQuestion[]; version: str
       version = first.version ?? first.fixture_metadata?.version ?? "1.0.0";
       questionLines = lines.slice(1);
     }
-  } catch { /* first line is a question */ }
+  } catch {
+    /* first line is a question */
+  }
   const questions = questionLines.map((l) => JSON.parse(l) as AtLegalQuestion);
   return { questions, version };
 }
 
 class JsonlEmitter {
-  constructor(private path: string, private append: boolean) {
+  constructor(
+    private path: string,
+    private append: boolean
+  ) {
     if (!append && existsSync(path)) writeFileSync(path, "");
   }
   emit(obj: Record<string, unknown>): void {
@@ -299,8 +376,12 @@ async function main() {
   const opts = parseArgs(process.argv);
   const { questions, version: fixtureVersion } = loadFixture(opts.fixturePath);
 
-  process.stderr.write(`[at-legal-eval-v2] loaded ${questions.length} questions (fixture v${fixtureVersion})\n`);
-  process.stderr.write(`[at-legal-eval-v2] top-k=${opts.topK} expansion=${opts.queryExpansion} graph=${opts.legalGraph}\n`);
+  process.stderr.write(
+    `[at-legal-eval-v2] loaded ${questions.length} questions (fixture v${fixtureVersion})\n`
+  );
+  process.stderr.write(
+    `[at-legal-eval-v2] top-k=${opts.topK} expansion=${opts.queryExpansion} graph=${opts.legalGraph}\n`
+  );
 
   // Increase query embed timeout for OpenRouter latency
   process.env.GBRAIN_QUERY_EMBED_TIMEOUT_MS = "30000";
@@ -310,7 +391,8 @@ async function main() {
   const { loadConfig, toEngineConfig } = await import("../../core/config.ts");
   const { createEngine } = await import("../../core/engine-factory.ts");
   const { buildGatewayConfig } = await import("../../core/ai/build-gateway-config.ts");
-  const { configureGateway, reconfigureGatewayWithEngine } = await import("../../core/ai/gateway.ts");
+  const { configureGateway, reconfigureGatewayWithEngine } =
+    await import("../../core/ai/gateway.ts");
 
   const cfg = loadConfig();
   if (!cfg) {
@@ -323,13 +405,17 @@ async function main() {
   process.stderr.write(`[at-legal-eval-v2] connecting to configured engine...\n`);
   const engine = await createEngine(toEngineConfig(cfg));
   await engine.connect(toEngineConfig(cfg));
-  try { await reconfigureGatewayWithEngine(engine); } catch { /* non-fatal */ }
+  try {
+    await reconfigureGatewayWithEngine(engine);
+  } catch {
+    /* non-fatal */
+  }
 
   // Capture all run parameters
   const params = captureRunParams({
     promptVersion: opts.promptVersion,
     topK: opts.topK,
-    sourceIds: ["law-at"],
+    sourceIds: AT_LAW_SOURCES_ALL,
     embeddingModel: "openrouter:openai/text-embedding-3-small",
     embeddingDimensions: 1536,
     queryExpansionEnabled: opts.queryExpansion,
@@ -337,9 +423,17 @@ async function main() {
     jurisdiction: "AT",
   });
 
-  const metadata = createRunMetadata("retrieval", opts.fixturePath, fixtureVersion, questions.length, params);
+  const metadata = createRunMetadata(
+    "retrieval",
+    opts.fixturePath,
+    fixtureVersion,
+    questions.length,
+    params
+  );
 
-  process.stderr.write(`[at-legal-eval-v2] run_id=${metadata.run_id} git=${params.git_commit.slice(0, 8)}\n`);
+  process.stderr.write(
+    `[at-legal-eval-v2] run_id=${metadata.run_id} git=${params.git_commit.slice(0, 8)}\n`
+  );
   process.stderr.write(`[at-legal-eval-v2] corpus_version=${params.corpus_version}\n`);
 
   // Run retrieval for each question
@@ -353,7 +447,7 @@ async function main() {
       const candidateLimit = Math.max(opts.topK * 3, 30);
       const searchOpts = {
         limit: candidateLimit,
-        sourceId: "law-at",
+        sourceId: AT_PRIMARY_STATUTE_SOURCE,
         embeddingColumn: {
           name: "embedding",
           type: "vector" as const,
@@ -484,7 +578,9 @@ async function main() {
   // Save baseline if requested
   if (opts.saveBaseline) {
     const baseline = saveBaseline(runResult, opts.saveBaseline, opts.approveBaseline);
-    process.stderr.write(`[at-legal-eval-v2] baseline saved: ${baseline.version} (approved=${opts.approveBaseline})\n`);
+    process.stderr.write(
+      `[at-legal-eval-v2] baseline saved: ${baseline.version} (approved=${opts.approveBaseline})\n`
+    );
   }
 
   // Write JSONL output

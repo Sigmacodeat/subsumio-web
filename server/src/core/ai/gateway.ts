@@ -124,6 +124,22 @@ let _config: AIGatewayConfig | null = null;
 const _modelCache = new Map<string, any>();
 
 /**
+ * v0.42.38.0+ — Module-level flag for OpenRouter prompt caching.
+ * Set by chat()/chatStream() before each generateText call, read by
+ * openRouterTransform at request time.
+ *
+ * RACE CONDITION NOTE: This is a module-level mutable. If the worker runs
+ * with concurrency > 1, two parallel chat() calls could interleave the flag.
+ * Mitigation: (1) default worker concurrency is 1, (2) all subagent calls
+ * in a single pipeline run use the same cacheSystem setting, (3) the flag
+ * is set synchronously immediately before the await generateText() call,
+ * so the window is <1ms. A proper fix would pass useCache through
+ * providerOptions, but createOpenAICompatible doesn't forward custom
+ * providerOptions to the request body. Tracked for v0.43.
+ */
+let _openRouterCacheEnabled = false;
+
+/**
  * v0.31.12 recipe-models merge: per-gateway-instance set of model ids the
  * user opted into via config. Keyed by provider id (`anthropic`, `openai`,
  * etc.). Passed into `assertTouchpoint` so native-recipe allowlist checks
@@ -2383,6 +2399,97 @@ function estimateChatInputTokens(opts: {
  */
 export type ChatRole = "system" | "user" | "assistant" | "tool";
 
+/**
+ * v0.42.38.0+ — Sanitize tool output for AI SDK v6 ModelMessage[] schema.
+ *
+ * The AI SDK's `jsonValueSchema` (Zod) does NOT allow `undefined` values in
+ * JSON objects — only `null`, string, number, boolean, array, record. When
+ * brain tool handlers return JS objects with optional fields that are
+ * `undefined` (e.g. `page.frontmatter?.court` when not set), the schema
+ * validation fails with:
+ *   "Invalid prompt: The messages do not match the ModelMessage[] schema."
+ *
+ * Fix (per AI SDK issue #9172): deep-convert `undefined` → `null` before
+ * adding tool outputs to messages. Also strips functions/symbols (non-JSON).
+ */
+export function sanitizeForJson(value: unknown): unknown {
+  return sanitizeForJsonInner(value, new WeakSet(), 0);
+}
+
+const SANITIZE_MAX_DEPTH = 100;
+
+function sanitizeForJsonInner(value: unknown, seen: WeakSet<object>, depth: number): unknown {
+  if (depth > SANITIZE_MAX_DEPTH) return null; // depth guard
+  if (value === undefined || value === null) return null;
+  if (typeof value === "string" || typeof value === "boolean") return value;
+  if (typeof value === "number") {
+    // JSON doesn't have NaN/Infinity — Zod's jsonValueSchema rejects them.
+    // Convert to null so the schema validates cleanly.
+    if (!Number.isFinite(value)) return null;
+    return value;
+  }
+  if (typeof value === "bigint") return value.toString();
+  if (typeof value === "symbol") return value.description ?? null;
+  if (value instanceof Date) {
+    // v0.42.38.0+ — Guard against Invalid Date (new Date(NaN)).
+    // toISOString() throws RangeError on invalid dates.
+    if (isNaN(value.getTime())) return null;
+    return value.toISOString();
+  }
+  if (value instanceof RegExp) return value.toString();
+  if (value instanceof URL) return value.toString();
+  if (value instanceof Error) {
+    return {
+      name: value.name,
+      message: value.message,
+      ...(value.stack ? { stack: value.stack } : {}),
+      ...("code" in value ? { code: (value as Record<string, unknown>).code } : {}),
+    };
+  }
+  if (value instanceof Map) {
+    const result: Record<string, unknown> = {};
+    for (const [k, v] of value) {
+      result[String(k)] = sanitizeForJsonInner(v, seen, depth + 1);
+    }
+    return result;
+  }
+  if (value instanceof Set) {
+    return Array.from(value).map((v) => sanitizeForJsonInner(v, seen, depth + 1));
+  }
+  if (ArrayBuffer.isView(value) && !(value instanceof DataView)) {
+    // Uint8Array, Int32Array, Float64Array, etc.
+    return Array.from(value as unknown as ArrayLike<number>);
+  }
+  if (value instanceof ArrayBuffer) {
+    return null; // raw buffer → null (no useful JSON representation)
+  }
+  if (Array.isArray(value)) {
+    if (seen.has(value)) return null; // circular reference → null
+    seen.add(value);
+    return value.map((v) => sanitizeForJsonInner(v, seen, depth + 1));
+  }
+  if (typeof value === "object") {
+    if (seen.has(value)) return null; // circular reference → null
+    seen.add(value);
+    const result: Record<string, unknown> = {};
+    for (const key of Object.keys(value as Record<string, unknown>)) {
+      // v0.42.38.0+ — Guard against getters that throw (Object.keys lists
+      // them, but accessing the property triggers the getter which may throw).
+      try {
+        result[key] = sanitizeForJsonInner(
+          (value as Record<string, unknown>)[key],
+          seen,
+          depth + 1
+        );
+      } catch {
+        result[key] = null;
+      }
+    }
+    return result;
+  }
+  return null; // functions, etc. → null
+}
+
 export type ChatBlock =
   | { type: "text"; text: string }
   | { type: "tool-call"; toolCallId: string; toolName: string; input: unknown }
@@ -2452,7 +2559,7 @@ export function toModelMessages(messages: ChatMessage[]): unknown[] {
                   }
                 : typeof b.output === "string"
                   ? { type: "text" as const, value: b.output }
-                  : { type: "json" as const, value: (b.output ?? null) as never },
+                  : { type: "json" as const, value: sanitizeForJson(b.output) as never },
             },
           ],
         });
@@ -2506,6 +2613,8 @@ export interface ChatOpts {
   model?: string;
   /** System prompt. */
   system?: string;
+  /** v0.42.38.0+ — Separate cacheable context (2nd Anthropic cache breakpoint). */
+  cachedContext?: string;
   messages: ChatMessage[];
   tools?: ChatToolDef[];
   maxTokens?: number;
@@ -2615,6 +2724,101 @@ async function resolveChatProvider(
   return { model, recipe, modelId: parsed.modelId };
 }
 
+/**
+ * v0.42.38.0+ — Inner logic for openRouterTransform, extracted so the outer
+ * wrapper can catch any exception and return the body unmodified (degraded
+ * but not broken). Handles:
+ * 1. Duplicate tool_call id deduplication (OpenRouter → Bedrock non-unique ids)
+ * 2. reasoning_content injection for thinking-mode round-trip
+ * 3. cache_control injection for Anthropic models (prompt caching)
+ *
+ * All field accesses are type-guarded — malformed messages are skipped, not
+ * crashed on.
+ */
+function openRouterTransformInner(body: Record<string, unknown>): Record<string, unknown> {
+  const messages = body.messages;
+  const useCacheNow = _openRouterCacheEnabled;
+
+  if (Array.isArray(messages)) {
+    // 1. Deduplicate tool_call ids within each assistant message.
+    for (const msg of messages) {
+      if (
+        msg &&
+        typeof msg === "object" &&
+        (msg as Record<string, unknown>).role === "assistant" &&
+        Array.isArray((msg as Record<string, unknown>).tool_calls) &&
+        ((msg as Record<string, unknown>).tool_calls as unknown[]).length > 1
+      ) {
+        const toolCalls = (msg as Record<string, unknown>).tool_calls as Array<
+          Record<string, unknown>
+        >;
+        const seen = new Map<string, number>();
+        for (const tc of toolCalls) {
+          const origId = tc.id;
+          if (typeof origId !== "string" || !origId) continue;
+          const count = seen.get(origId) ?? 0;
+          if (count > 0) {
+            const newId = `${origId}__dup${count}`;
+            tc.id = newId;
+            // Rewrite matching tool-role messages.
+            for (const tm of messages) {
+              if (
+                tm &&
+                typeof tm === "object" &&
+                (tm as Record<string, unknown>).role === "tool" &&
+                (tm as Record<string, unknown>).tool_call_id === origId
+              ) {
+                (tm as Record<string, unknown>).tool_call_id = newId;
+                break;
+              }
+            }
+          }
+          seen.set(origId, count + 1);
+        }
+      }
+    }
+
+    // 2. Inject reasoning_content into assistant messages with tool_calls
+    // but no reasoning (thinking-mode round-trip for OpenRouter).
+    let injected = 0;
+    for (const msg of messages) {
+      if (
+        msg &&
+        typeof msg === "object" &&
+        (msg as Record<string, unknown>).role === "assistant" &&
+        Array.isArray((msg as Record<string, unknown>).tool_calls) &&
+        ((msg as Record<string, unknown>).tool_calls as unknown[]).length > 0 &&
+        !(msg as Record<string, unknown>).reasoning_content &&
+        !(msg as Record<string, unknown>).reasoning
+      ) {
+        (msg as Record<string, unknown>).reasoning_content =
+          "Analysis complete. Proceeding with tool execution.";
+        injected++;
+      }
+    }
+    if (injected > 0) {
+      console.error(
+        `[openRouterTransform] injected reasoning_content into ${injected} assistant msgs`
+      );
+    }
+  }
+
+  // 3. Prompt caching for OpenRouter/Anthropic models.
+  // OpenRouter supports cache_control at the top level of the request body
+  // for Anthropic models. The createOpenAICompatible provider does NOT forward
+  // providerOptions to the request body, so we inject directly here.
+  // Guard: only apply for Anthropic models (cache_control is Anthropic-specific).
+  if (useCacheNow) {
+    const modelStr = typeof body.model === "string" ? body.model : "";
+    // Robust model detection: check for "anthropic/" prefix or known Claude model names.
+    if (modelStr.startsWith("anthropic/") || modelStr.includes("/claude-")) {
+      body.cache_control = { type: "ephemeral" };
+    }
+  }
+
+  return body;
+}
+
 function instantiateChat(recipe: Recipe, modelId: string, cfg: AIGatewayConfig): any {
   switch (recipe.implementation) {
     case "native-openai": {
@@ -2649,43 +2853,18 @@ function instantiateChat(recipe: Recipe, modelId: string, cfg: AIGatewayConfig):
       const openRouterTransform =
         recipe.id === "openrouter"
           ? (body: Record<string, unknown>) => {
-              const messages = body.messages;
-              if (Array.isArray(messages)) {
-                // Debug: log message structure
-                const summary = messages
-                  .map((m: any) => {
-                    if (m.role === "assistant") {
-                      const tc = Array.isArray(m.tool_calls) ? m.tool_calls.length : 0;
-                      const rc = m.reasoning_content ? "yes" : m.reasoning ? "yes" : "no";
-                      return `asst(tc=${tc},rc=${rc})`;
-                    }
-                    if (m.role === "tool") {
-                      return `tool(id=${m.tool_call_id?.slice(0, 12)})`;
-                    }
-                    return `${m.role}`;
-                  })
-                  .join(" ");
-                console.error(`[openRouterTransform] msgs=${messages.length} [${summary}]`);
-                let injected = 0;
-                for (const msg of messages) {
-                  if (
-                    msg.role === "assistant" &&
-                    Array.isArray(msg.tool_calls) &&
-                    msg.tool_calls.length > 0 &&
-                    !msg.reasoning_content &&
-                    !msg.reasoning
-                  ) {
-                    msg.reasoning_content = "Analysis complete. Proceeding with tool execution.";
-                    injected++;
-                  }
-                }
-                if (injected > 0) {
-                  console.error(
-                    `[openRouterTransform] injected reasoning_content into ${injected} assistant msgs`
-                  );
-                }
+              // v0.42.38.0+ — Hardened: entire transform wrapped in try/catch.
+              // If anything throws, we return the original body unmodified so
+              // the request still goes through (degraded but not broken).
+              try {
+                return openRouterTransformInner(body);
+              } catch (err) {
+                console.error(
+                  `[openRouterTransform] ERROR (returning unmodified body):`,
+                  err instanceof Error ? err.message : String(err)
+                );
+                return body;
               }
-              return body;
             }
           : undefined;
       console.error(
@@ -2896,6 +3075,10 @@ export async function chat(opts: ChatOpts): Promise<ChatResult> {
 
   const supportsCache = recipe.touchpoints.chat?.supports_prompt_cache === true;
   const useCache = !!opts.cacheSystem && supportsCache;
+  // v0.42.38.0+ — Set module-level flag for openRouterTransform to read at
+  // request time. The transform closure can't capture useCache directly
+  // because the model instance is cached across calls with different cache settings.
+  _openRouterCacheEnabled = useCache;
 
   // Build messages. Anthropic prompt-cache markers ride on system + last tool
   // via providerOptions; the AI SDK accepts the system as a string for
@@ -2918,8 +3101,53 @@ export async function chat(opts: ChatOpts): Promise<ChatResult> {
 
   const providerOptions: Record<string, any> = {};
   if (useCache) {
-    providerOptions.anthropic = { cacheControl: { type: "ephemeral" } };
+    // v0.42.38.0+ — OpenRouter cache_control is injected via transformRequestBody
+    // (openRouterTransform) because createOpenAICompatible doesn't forward
+    // providerOptions to the request body. For direct Anthropic, use
+    // providerOptions.anthropic which the AI SDK Anthropic provider supports natively.
+    if (recipe.id !== "openrouter") {
+      providerOptions.anthropic = { cacheControl: { type: "ephemeral" } };
+    }
   }
+
+  // v0.42.38.0+ — System prompt with cache_control on the PART, not top-level.
+  // The AI SDK requires cacheControl on the system part itself, not on the
+  // top-level providerOptions (known issue: vercel/ai#5883 — top-level
+  // providerOptions.anthropic.cacheControl is not forwarded to the system
+  // message). Passing system as an array of parts with providerOptions on
+  // each part is the documented way to enable system-prompt caching.
+  // Without this, the gateway path silently does NOT cache the system prompt
+  // — meaning cached_context (contextJson in system) is billed full price
+  // on every call instead of 0.1× after the first write.
+  //
+  // v0.42.38.0+ — 2 cache breakpoints with mixed TTLs:
+  // 1. Base system: ttl="1h" (stable across layers, survives >5min gaps)
+  // 2. cachedContext: ttl="5m" (per-layer, only needs to survive map batches)
+  // Per Anthropic docs: longer-TTL entries must appear before shorter.
+  // No separate tool breakpoint needed — system breakpoint caches tools+system.
+  const systemForSdk =
+    useCache && recipe.id !== "openrouter" && opts.system
+      ? opts.cachedContext
+        ? [
+            {
+              role: "system" as const,
+              content: opts.system,
+              providerOptions: { anthropic: { cacheControl: { type: "ephemeral", ttl: "1h" } } },
+            },
+            {
+              role: "system" as const,
+              content: opts.cachedContext,
+              providerOptions: { anthropic: { cacheControl: { type: "ephemeral", ttl: "5m" } } },
+            },
+          ]
+        : [
+            {
+              role: "system" as const,
+              content: opts.system,
+              providerOptions: { anthropic: { cacheControl: { type: "ephemeral", ttl: "1h" } } },
+            },
+          ]
+      : opts.system;
 
   let _budgetRecorded = false;
   const _recordBudget = (modelLabel: string, inputTokens: number, outputTokens: number): void => {
@@ -2960,7 +3188,7 @@ export async function chat(opts: ChatOpts): Promise<ChatResult> {
     console.error(`[chat] model=${opts.model} msgs=${modelMessages.length} [${msgSummary}]`);
     const result = await generateText({
       model,
-      system: opts.system,
+      system: systemForSdk,
       messages: modelMessages as any,
       tools: opts.tools && opts.tools.length > 0 ? tools : undefined,
       maxOutputTokens: opts.maxTokens ?? 4096,
@@ -3007,10 +3235,35 @@ export async function chat(opts: ChatOpts): Promise<ChatResult> {
 
     const usage = (result as any).usage ?? {};
     const providerMetadata = (result as any).providerMetadata as Record<string, any> | undefined;
+    // v0.42.38.0+ — Robust number extraction: Number(undefined) === NaN, so we
+    // use a helper that returns 0 for any non-finite value.
+    const safeNum = (v: unknown): number => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    };
+    // v0.42.38.0+ — OpenRouter returns cache stats under providerMetadata.openrouter,
+    // not providerMetadata.anthropic. Check both for compatibility.
     const anthropicCache = providerMetadata?.anthropic ?? {};
+    const openrouterCache = providerMetadata?.openrouter ?? {};
+    const cacheReadTokens = safeNum(
+      anthropicCache.cacheReadInputTokens ??
+        anthropicCache.cache_read_input_tokens ??
+        openrouterCache.cacheReadInputTokens ??
+        openrouterCache.cache_read_input_tokens ??
+        (usage as any)?.inputTokenDetails?.cacheReadTokens ??
+        0
+    );
+    const cacheCreationTokens = safeNum(
+      anthropicCache.cacheCreationInputTokens ??
+        anthropicCache.cache_creation_input_tokens ??
+        openrouterCache.cacheCreationInputTokens ??
+        openrouterCache.cache_creation_input_tokens ??
+        (usage as any)?.inputTokenDetails?.cacheWriteTokens ??
+        0
+    );
 
-    const inTok = Number(usage.inputTokens ?? usage.promptTokens ?? 0);
-    const outTok = Number(usage.outputTokens ?? usage.completionTokens ?? 0);
+    const inTok = safeNum(usage.inputTokens ?? usage.promptTokens ?? 0);
+    const outTok = safeNum(usage.outputTokens ?? usage.completionTokens ?? 0);
     _recordBudget(`${recipe.id}:${modelId}`, inTok, outTok);
 
     return {
@@ -3023,12 +3276,8 @@ export async function chat(opts: ChatOpts): Promise<ChatResult> {
       usage: {
         input_tokens: inTok,
         output_tokens: outTok,
-        cache_read_tokens: Number(
-          anthropicCache.cacheReadInputTokens ?? anthropicCache.cache_read_input_tokens ?? 0
-        ),
-        cache_creation_tokens: Number(
-          anthropicCache.cacheCreationInputTokens ?? anthropicCache.cache_creation_input_tokens ?? 0
-        ),
+        cache_read_tokens: cacheReadTokens,
+        cache_creation_tokens: cacheCreationTokens,
       },
       model: `${recipe.id}:${modelId}`,
       providerId: recipe.id,
@@ -3148,6 +3397,10 @@ export async function* chatStream(
 
   const supportsCache = recipe.touchpoints.chat?.supports_prompt_cache === true;
   const useCache = !!opts.cacheSystem && supportsCache;
+  // v0.42.38.0+ — Set module-level flag for openRouterTransform to read at
+  // request time. The transform closure can't capture useCache directly
+  // because the model instance is cached across calls with different cache settings.
+  _openRouterCacheEnabled = useCache;
 
   const tools = (opts.tools ?? []).reduce(
     (acc, t) => {
@@ -3162,8 +3415,53 @@ export async function* chatStream(
 
   const providerOptions: Record<string, any> = {};
   if (useCache) {
-    providerOptions.anthropic = { cacheControl: { type: "ephemeral" } };
+    // v0.42.38.0+ — OpenRouter cache_control is injected via transformRequestBody
+    // (openRouterTransform) because createOpenAICompatible doesn't forward
+    // providerOptions to the request body. For direct Anthropic, use
+    // providerOptions.anthropic which the AI SDK Anthropic provider supports natively.
+    if (recipe.id !== "openrouter") {
+      providerOptions.anthropic = { cacheControl: { type: "ephemeral" } };
+    }
   }
+
+  // v0.42.38.0+ — System prompt with cache_control on the PART, not top-level.
+  // The AI SDK requires cacheControl on the system part itself, not on the
+  // top-level providerOptions (known issue: vercel/ai#5883 — top-level
+  // providerOptions.anthropic.cacheControl is not forwarded to the system
+  // message). Passing system as an array of parts with providerOptions on
+  // each part is the documented way to enable system-prompt caching.
+  // Without this, the gateway path silently does NOT cache the system prompt
+  // — meaning cached_context (contextJson in system) is billed full price
+  // on every call instead of 0.1× after the first write.
+  //
+  // v0.42.38.0+ — 2 cache breakpoints with mixed TTLs:
+  // 1. Base system: ttl="1h" (stable across layers, survives >5min gaps)
+  // 2. cachedContext: ttl="5m" (per-layer, only needs to survive map batches)
+  // Per Anthropic docs: longer-TTL entries must appear before shorter.
+  // No separate tool breakpoint needed — system breakpoint caches tools+system.
+  const systemForSdk =
+    useCache && recipe.id !== "openrouter" && opts.system
+      ? opts.cachedContext
+        ? [
+            {
+              role: "system" as const,
+              content: opts.system,
+              providerOptions: { anthropic: { cacheControl: { type: "ephemeral", ttl: "1h" } } },
+            },
+            {
+              role: "system" as const,
+              content: opts.cachedContext,
+              providerOptions: { anthropic: { cacheControl: { type: "ephemeral", ttl: "5m" } } },
+            },
+          ]
+        : [
+            {
+              role: "system" as const,
+              content: opts.system,
+              providerOptions: { anthropic: { cacheControl: { type: "ephemeral", ttl: "1h" } } },
+            },
+          ]
+      : opts.system;
 
   let _budgetRecorded = false;
   const _recordBudget = (inputTokens: number, outputTokens: number): void => {
@@ -3184,7 +3482,7 @@ export async function* chatStream(
   try {
     const stream = await streamText({
       model,
-      system: opts.system,
+      system: systemForSdk,
       messages: toModelMessages(opts.messages) as any,
       tools: opts.tools && opts.tools.length > 0 ? tools : undefined,
       maxOutputTokens: maxOutputTokens,
@@ -3226,11 +3524,18 @@ export async function* chatStream(
     const usage = await stream.usage;
     const providerMetadata = await stream.providerMetadata;
     const finishReason = await stream.finishReason;
-    const inTok = Number(usage?.inputTokens ?? 0);
-    const outTok = Number(usage?.outputTokens ?? 0);
+    // v0.42.38.0+ — Robust number extraction (Number(undefined) === NaN)
+    const safeNum = (v: unknown): number => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    };
+    const inTok = safeNum(usage?.inputTokens ?? 0);
+    const outTok = safeNum(usage?.outputTokens ?? 0);
     _recordBudget(inTok, outTok);
 
+    // v0.42.38.0+ — OpenRouter returns cache stats under providerMetadata.openrouter
     const anthropicMeta = (providerMetadata?.anthropic ?? {}) as Record<string, any>;
+    const openrouterMeta = (providerMetadata?.openrouter ?? {}) as Record<string, any>;
     const result: ChatResult = {
       text: finalText ?? "",
       blocks,
@@ -3238,15 +3543,19 @@ export async function* chatStream(
       usage: {
         input_tokens: inTok,
         output_tokens: outTok,
-        cache_read_tokens: Number(
+        cache_read_tokens: safeNum(
           anthropicMeta.cacheReadInputTokens ??
             anthropicMeta.cache_read_input_tokens ??
+            openrouterMeta.cacheReadInputTokens ??
+            openrouterMeta.cache_read_input_tokens ??
             usage?.inputTokenDetails?.cacheReadTokens ??
             0
         ),
-        cache_creation_tokens: Number(
+        cache_creation_tokens: safeNum(
           anthropicMeta.cacheCreationInputTokens ??
             anthropicMeta.cache_creation_input_tokens ??
+            openrouterMeta.cacheCreationInputTokens ??
+            openrouterMeta.cache_creation_input_tokens ??
             usage?.inputTokenDetails?.cacheWriteTokens ??
             0
         ),
@@ -3307,6 +3616,14 @@ export interface ToolLoopOpts {
   model?: string;
   /** System prompt (provider-neutral). Cached when caching supported + cacheSystem true. */
   system?: string;
+  /**
+   * v0.42.38.0+ — Separate cacheable context (2nd Anthropic cache breakpoint).
+   * When set + caching enabled + Anthropic provider, this becomes a 2nd
+   * system part with its own cache_control marker. The base system prompt
+   * stays cached independently — switching layers only invalidates the
+   * context cache, not the base system cache.
+   */
+  cachedContext?: string;
   /**
    * Initial user message(s). When `replayState` is set, these are prepended only
    * if `replayState.priorMessages` is empty — typically empty on a fresh call,
@@ -3460,7 +3777,7 @@ export async function toolLoop(opts: ToolLoopOpts): Promise<ToolLoopResult> {
             type: "tool-result",
             toolCallId: call.toolCallId,
             toolName: call.toolName,
-            output: cached.output,
+            output: sanitizeForJson(cached.output),
           });
         } else if (cached?.status === "failed") {
           toolResultBlocks.push({
@@ -3492,7 +3809,7 @@ export async function toolLoop(opts: ToolLoopOpts): Promise<ToolLoopResult> {
               type: "tool-result",
               toolCallId: call.toolCallId,
               toolName: call.toolName,
-              output,
+              output: sanitizeForJson(output),
             });
           } catch (err) {
             const errMsg = err instanceof Error ? err.message : String(err);

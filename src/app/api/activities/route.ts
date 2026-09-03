@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { createActivityEvent, type ActivityEvent } from "@/lib/passive-time";
+import type { AuditAction } from "@/lib/audit";
 
 const recordActivitySchema = z.object({
   type: z.enum([
@@ -20,7 +21,7 @@ const recordActivitySchema = z.object({
   ]),
   case_slug: z.string().max(300).optional(),
   description: z.string().min(1).max(500),
-  started_at: z.string(),
+  started_at: z.string().max(50),
   ended_at: z.string().optional(),
   metadata: z.record(z.unknown()).optional(),
 });
@@ -30,6 +31,11 @@ export const POST = createHandler(
     action: "brain.write",
     rateTier: "standard",
     body: recordActivitySchema,
+    audit: (_ctx, body) => ({
+      action: "activity.record" as unknown as AuditAction,
+      entityType: "activity_event",
+      details: { type: body.type, hasCaseSlug: Boolean(body.case_slug) },
+    }),
   },
   async (ctx, body) => {
     const event = createActivityEvent({
@@ -71,6 +77,11 @@ export const GET = createHandler(
     action: "brain.read",
     rateTier: "standard",
     query: listActivityQuerySchema,
+    audit: (_ctx, _body) => ({
+      action: "activity.list" as unknown as AuditAction,
+      entityType: "activity_event",
+      details: {},
+    }),
   },
   async (ctx, _body, query) => {
     const params = new URLSearchParams({

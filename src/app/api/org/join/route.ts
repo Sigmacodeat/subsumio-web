@@ -15,6 +15,12 @@ export const POST = createHandler(
     action: "brain.read",
     rateTier: "standard",
     body: joinSchema,
+    audit: (ctx, body) => ({
+      action: "org.join" as const,
+      entityType: "org",
+      entityId: body.org,
+      details: { user: ctx.user.email },
+    }),
   },
   async (ctx, body, _query, _req) => {
     const orgId = body.org.trim();

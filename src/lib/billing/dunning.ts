@@ -84,6 +84,57 @@ export async function incrementFailure(
 ): Promise<DunningState> {
   const now = new Date().toISOString();
   const nextRetryIso = nextRetryAt?.toISOString() ?? null;
+
+  const pool = getSharedPgPool();
+  if (pool) {
+    try {
+      await ensureDunningSchema();
+      // Atomic increment: use a single UPSERT that increments failure_count
+      // server-side. This prevents the read-modify-write race condition where
+      // two concurrent invoice.payment_failed events both read failureCount=1,
+      // compute newCount=2, and overwrite — losing one increment.
+      // The RETURNING clause gives us the authoritative post-increment state.
+      const result = await pool.query<{
+        failure_count: number;
+        first_failed_at: string | null;
+        status: string;
+      }>(
+        `INSERT INTO subsumio_dunning_state (org_id, failure_count, first_failed_at, last_failed_at, next_retry_at, status, updated_at)
+         VALUES ($1, 1, $2, $2, $3, 'ok', now())
+         ON CONFLICT (org_id) DO UPDATE SET
+           failure_count = subsumio_dunning_state.failure_count + 1,
+           last_failed_at = EXCLUDED.last_failed_at,
+           next_retry_at = EXCLUDED.next_retry_at,
+           status = CASE
+             WHEN subsumio_dunning_state.failure_count + 1 >= 3 THEN 'suspended'
+             WHEN subsumio_dunning_state.failure_count + 1 >= 2 THEN 'past_due'
+             ELSE 'ok'
+           END,
+           updated_at = now()
+         RETURNING failure_count, first_failed_at, status`,
+        [orgId, now, nextRetryIso]
+      );
+      const row = result.rows[0];
+      if (row) {
+        const updated: DunningState = {
+          orgId,
+          failureCount: row.failure_count,
+          firstFailedAt: row.first_failed_at ?? now,
+          lastFailedAt: now,
+          nextRetryAt: nextRetryIso,
+          status: row.status as DunningState["status"],
+        };
+        inMemoryDunning.set(orgId, updated);
+        return updated;
+      }
+    } catch (err) {
+      log.error("incrementFailure DB error", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  // In-memory fallback (non-atomic — dev mode only)
   const current = await getDunningState(orgId);
   const newCount = current.failureCount + 1;
   const newStatus: DunningState["status"] =
@@ -97,25 +148,6 @@ export async function incrementFailure(
     nextRetryAt: nextRetryIso,
     status: newStatus,
   };
-
-  const pool = getSharedPgPool();
-  if (pool) {
-    try {
-      await ensureDunningSchema();
-      await pool.query(
-        `INSERT INTO subsumio_dunning_state (org_id, failure_count, first_failed_at, last_failed_at, next_retry_at, status, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, now())
-         ON CONFLICT (org_id) DO UPDATE SET
-           failure_count = $2, last_failed_at = $4,
-           next_retry_at = $5, status = $6, updated_at = now()`,
-        [orgId, newCount, updated.firstFailedAt, now, nextRetryIso, newStatus]
-      );
-    } catch (err) {
-      log.error("incrementFailure DB error", {
-        error: err instanceof Error ? err.message : String(err),
-      });
-    }
-  }
   inMemoryDunning.set(orgId, updated);
   return updated;
 }
@@ -131,7 +163,7 @@ export async function resetFailure(orgId: string): Promise<void> {
          ON CONFLICT (org_id) DO UPDATE SET
            failure_count = 0, status = 'ok',
            first_failed_at = NULL, last_failed_at = NULL,
-           next_retry_at = NULL, updated_at = now()`,
+           next_retry_at = NULL, pre_dunning_plan = NULL, updated_at = now()`,
         [orgId]
       );
     } catch (err) {
@@ -156,17 +188,38 @@ export async function applyDunningToPlan(orgId: string, dunningState: DunningSta
   };
   const newPlan = planMap[dunningState.status];
   if (newPlan && newPlan !== user.plan) {
-    // Save the original plan before overwriting, so reactivation can restore it
-    const originalPlan = user.plan;
+    // Save the original plan before overwriting, so reactivation can restore it.
+    // Only save if not already in dunning — otherwise we'd overwrite the real
+    // pre-dunning plan with an intermediate dunning state (e.g. "past_due").
+    // The first dunning escalation saves the real plan ("pro"); subsequent
+    // escalations (past_due → suspended) must preserve that original.
+    const currentDunning = await getDunningState(orgId);
+    const alreadyDunning = currentDunning.status !== "ok" && currentDunning.preDunningPlan;
+    const originalPlan = alreadyDunning ? (currentDunning.preDunningPlan as Plan) : user.plan;
+
     await store.update(orgId, { plan: newPlan });
 
     const pool = getSharedPgPool();
     if (pool) {
       try {
         await ensureDunningSchema();
+        // Only update pre_dunning_plan on the FIRST escalation (status was "ok").
+        // Subsequent escalations keep the original pre-dunning plan intact.
+        if (!alreadyDunning) {
+          await pool.query(
+            `UPDATE subsumio_dunning_state SET pre_dunning_plan = $2 WHERE org_id = $1`,
+            [orgId, originalPlan]
+          );
+        }
+        // SaaS Billing Sync: update saas_subscriptions.status to match dunning state.
+        // This prevents resetMonthlyPeriod from creating credit rows for suspended orgs.
+        const saasStatus = dunningState.status === "suspended" ? "paused" : "past_due";
+        const orgSlug = `user-${orgId.slice(0, 8)}`;
         await pool.query(
-          `UPDATE subsumio_dunning_state SET pre_dunning_plan = $2 WHERE org_id = $1`,
-          [orgId, originalPlan]
+          `UPDATE saas_subscriptions SET status = $2, updated_at = now()
+           WHERE org_id = (SELECT id FROM saas_orgs WHERE slug = $1)
+             AND status = 'active'`,
+          [orgSlug, saasStatus]
         );
       } catch (err) {
         log.error("applyDunningToPlan: failed to save preDunningPlan", {
@@ -174,10 +227,12 @@ export async function applyDunningToPlan(orgId: string, dunningState: DunningSta
         });
       }
     }
-    // Also update in-memory store
+    // Also update in-memory store — but only set preDunningPlan on first escalation
     const memState = inMemoryDunning.get(orgId);
     if (memState) {
-      inMemoryDunning.set(orgId, { ...memState, preDunningPlan: originalPlan });
+      if (!alreadyDunning) {
+        inMemoryDunning.set(orgId, { ...memState, preDunningPlan: originalPlan });
+      }
     }
   }
 }

@@ -45,6 +45,18 @@ export const POST = createHandler(
     action: "agent.write",
     rateTier: "standard",
     body: createPolicySchema,
+    audit: (_ctx, body) => ({
+      action: "autopilot.policy_create" as const,
+      entityType: "autopilot_policy",
+      details: {
+        name: body.name,
+        trigger: body.trigger,
+        action_type: body.action,
+        max_executions_per_hour: body.maxExecutionsPerHour,
+        priority: body.jobConfig.priority,
+        skip_critic: body.jobConfig.skipCritic,
+      },
+    }),
   },
   async (ctx, body) => {
     const policy = createPolicy({
@@ -77,6 +89,11 @@ export const GET = createHandler(
   {
     action: "agent.write",
     rateTier: "standard",
+    audit: (_ctx, _body) => ({
+      action: "autopilot.policy_list" as const,
+      entityType: "autopilot_policy",
+      details: {},
+    }),
   },
   async (ctx, _body, _query) => {
     const params = new URLSearchParams({ type: "autopilot_policy", limit: "100" });
@@ -107,6 +124,16 @@ export const PATCH = createHandler(
     action: "agent.write",
     rateTier: "standard",
     body: patchPolicySchema,
+    audit: (_ctx, body) => ({
+      action: "autopilot.policy_update" as const,
+      entityType: "autopilot_policy",
+      details: {
+        policy_id: body.id,
+        enabled: body.enabled,
+        name: body.name,
+        has_description: Boolean(body.description),
+      },
+    }),
   },
   async (ctx, body) => {
     const params = new URLSearchParams({ type: "autopilot_policy", limit: "100" });

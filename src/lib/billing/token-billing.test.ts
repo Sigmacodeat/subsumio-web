@@ -9,14 +9,13 @@
  *   - getTokenUsageByModel: Dashboard-Query
  */
 
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect, beforeEach } from "vitest";
 import {
   addCredits,
   getBalance,
   reserveCredits,
   refundCredits,
   deductTokenCredits,
-  getTokenUsageByModel,
   type OwnerType,
 } from "@/lib/billing/credits";
 import { calculateTokenCredits, type TokenUsage } from "@/lib/billing/credit-rate-card";
@@ -106,14 +105,14 @@ describe("token-based credit billing", () => {
     it("deducts credits based on token usage + model rate", async () => {
       const usage: TokenUsage = {
         modelId: "anthropic:claude-haiku-4-5",
-        inputTokens: 500_000, // 0.5M × 2 = 1 credit
+        inputTokens: 500_000, // 0.5M × 12 (canonical 1.0 × margin 12) = 6 credits
         cachedInputTokens: 0,
         cacheCreateTokens: 0,
-        outputTokens: 100_000, // 0.1M × 10 = 1 credit
+        outputTokens: 100_000, // 0.1M × 60 (canonical 5.0 × margin 12) = 6 credits
       };
       const result = await deductTokenCredits(OWNER_ID, OWNER_TYPE, usage, "deduct-1", "test-case");
       expect(result.ok).toBe(true);
-      expect(result.credits).toBe(2); // 1 + 1 = 2 credits
+      expect(result.credits).toBe(12); // 6 + 6 = 12 credits (canonical-derived rates)
       expect(result.idempotent).toBe(false);
     });
 
@@ -233,8 +232,8 @@ describe("token-based credit billing", () => {
       const pipelineKey = "pipeline-flow-test-1";
       const startingBalance = (await getBalance(OWNER_ID, OWNER_TYPE)).balance;
 
-      // 1. Reserve 20 credits
-      const reservation = await reserveCredits(OWNER_ID, OWNER_TYPE, 20, pipelineKey);
+      // 1. Reserve 50 credits (canonical-derived rates are higher than old fallbacks)
+      const reservation = await reserveCredits(OWNER_ID, OWNER_TYPE, 50, pipelineKey);
       expect(reservation.ok).toBe(true);
 
       // 2. Simulate 3 layer calls. Token usage is measured, not debited:
@@ -267,9 +266,9 @@ describe("token-based credit billing", () => {
         calculateTokenCredits(layer3);
 
       // 3. Refund unused reservation
-      const refund = await refundCredits(OWNER_ID, OWNER_TYPE, 20, actualTotal, pipelineKey);
+      const refund = await refundCredits(OWNER_ID, OWNER_TYPE, 50, actualTotal, pipelineKey);
       expect(refund.refunded).toBeGreaterThan(0);
-      expect(refund.refunded).toBe(roundCredits(20 - actualTotal));
+      expect(refund.refunded).toBe(roundCredits(50 - actualTotal));
 
       const finalBalance = await getBalance(OWNER_ID, OWNER_TYPE);
       expect(finalBalance.balance).toBeCloseTo(startingBalance - actualTotal, 2);

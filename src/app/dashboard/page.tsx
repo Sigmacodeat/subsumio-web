@@ -31,6 +31,9 @@ import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
 import type { BrainStats } from "@/lib/types";
 import { StaggerContainer, StaggerItem } from "@/components/marketing/motion-system";
+import { KanzleiOperationsPanel } from "@/components/dashboard/kanzlei-operations-panel";
+import { SecretaryGateWarning } from "@/components/dashboard/secretary-gate-warning";
+import { RecentMattersBar } from "@/components/dashboard/recent-matters-bar";
 
 const WidgetBoard = dynamic(
   () => import("@/components/dashboard/widget-board").then((m) => m.WidgetBoard),
@@ -161,7 +164,7 @@ function CalmGreeting({ name }: { name: string | null }) {
         />
         <button
           type="submit"
-          className="absolute top-1/2 right-2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-colors hover:text-[color:var(--ds-text)]"
+          className="absolute top-1/2 right-1 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
           aria-label={t("aria.send")}
         >
           <ArrowRight size={14} />
@@ -326,14 +329,50 @@ function ProactiveActionBanner() {
 
 function DashboardQuickActions() {
   const { t } = useLang();
-  const actions = [
+  const meQuery = useMe();
+  const role = meQuery.data?.user?.role;
+
+  type Action = {
+    label: string;
+    icon: typeof Briefcase;
+    event?: string;
+    href?: string;
+    roles?: string[]; // if omitted, visible to all
+  };
+
+  const allActions: Action[] = [
     { label: t("dashboard.quick_deadline"), icon: CalendarPlus, event: "subsumio:create-deadline" },
     { label: t("cockpit.action_case"), icon: Briefcase, event: "subsumio:create-case" },
-    { label: "Neue Mandatsannahme", icon: FilePlus, href: "/dashboard/intake?new=1" },
+    {
+      label: "Neue Mandatsannahme",
+      icon: FilePlus,
+      href: "/dashboard/intake?new=1",
+      roles: ["admin", "lawyer"],
+    },
     { label: t("dashboard.quick_upload"), icon: Upload, href: "/dashboard/upload" },
-    { label: t("dashboard.quick_drafting"), icon: FileText, href: "/dashboard/drafting" },
-    { label: t("dashboard.quick_research"), icon: Gavel, href: "/dashboard/research" },
+    {
+      label: t("dashboard.quick_drafting"),
+      icon: FileText,
+      href: "/dashboard/drafting",
+      roles: ["admin", "lawyer"],
+    },
+    {
+      label: t("dashboard.quick_research"),
+      icon: Gavel,
+      href: "/dashboard/research",
+      roles: ["admin", "lawyer"],
+    },
+    { label: "Posteingang", icon: Mail, href: "/dashboard/inbox", roles: ["assistant", "admin"] },
+    {
+      label: "Dokument-Anforderung",
+      icon: FileCheck,
+      href: "/dashboard/document-requests",
+      roles: ["assistant", "admin"],
+    },
   ];
+
+  const actions = allActions.filter((a) => !a.roles || a.roles.includes(role ?? "lawyer"));
+
   return (
     <section aria-label={t("dashboard.quick_actions")} className="overflow-x-auto">
       <div className="flex min-w-max gap-2">
@@ -345,7 +384,7 @@ function DashboardQuickActions() {
             </>
           );
           const classes =
-            "inline-flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]";
+            "inline-flex min-h-11 items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]";
           return href ? (
             <Link key={label} href={href} className={classes}>
               {content}
@@ -363,7 +402,7 @@ function DashboardQuickActions() {
         })}
         <button
           type="button"
-          className="inline-flex items-center gap-2 rounded-lg border border-[color:var(--brand-primary)]/40 bg-[color:var(--brand-glow)] px-3 py-2 text-xs font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color] hover:border-[color:var(--brand-primary)]/70 hover:bg-[color:var(--brand-glow)]"
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[color:var(--brand-primary)]/40 bg-[color:var(--brand-glow)] px-3 py-2 text-xs font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color] hover:border-[color:var(--brand-primary)]/70 hover:bg-[color:var(--brand-glow)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
           onClick={() => {
             window.dispatchEvent(new CustomEvent("subsumio:copilot:open"));
           }}
@@ -392,8 +431,16 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const stored = localStorage.getItem("subsumio:dashboard-view");
-    if (stored === "today" || stored === "dashboard") setDashboardView(stored);
-  }, []);
+    if (stored === "today" || stored === "dashboard") {
+      setDashboardView(stored);
+    } else {
+      // Role-based default: admins see the widget dashboard (firm overview),
+      // lawyers and assistants see "today" (their personal daily agenda).
+      const role = meQuery.data?.user?.role;
+      if (role === "admin") setDashboardView("dashboard");
+      else setDashboardView("today");
+    }
+  }, [meQuery.data?.user?.role]);
 
   const selectDashboardView = (view: "today" | "dashboard") => {
     setDashboardView(view);
@@ -430,8 +477,9 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
-      {!isFirstTime && <ProactiveActionBanner />}
-      <WeeklyReview />
+      <CalmGreeting name={userName} />
+
+      {!isFirstTime && <RecentMattersBar />}
 
       {isFirstTime && (
         <StaggerContainer>
@@ -475,9 +523,11 @@ export default function DashboardPage() {
         </StaggerContainer>
       )}
 
-      <CalmGreeting name={userName} />
+      {!isFirstTime && <ProactiveActionBanner />}
 
       <DashboardQuickActions />
+      <SecretaryGateWarning />
+      <KanzleiOperationsPanel />
 
       <div
         className="flex w-fit rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1"
@@ -497,8 +547,8 @@ export default function DashboardPage() {
             onKeyDown={(e) => handleDashboardViewTabKeyDown(e, view)}
             className={
               dashboardView === view
-                ? "rounded-md bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-sm font-medium text-[color:var(--ds-text)]"
-                : "rounded-md px-3 py-1.5 text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                ? "rounded-md bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-sm font-medium text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+                : "rounded-md px-3 py-1.5 text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
             }
           >
             {t(view === "today" ? "today.title" : "today.dashboard")}
@@ -507,6 +557,7 @@ export default function DashboardPage() {
       </div>
 
       {!isFirstTime && <MorningBriefing />}
+      {!isFirstTime && <WeeklyReview />}
 
       <div
         role="tabpanel"
@@ -514,6 +565,9 @@ export default function DashboardPage() {
         aria-labelledby="dashboard-view-tab-today"
         hidden={dashboardView !== "today"}
       >
+        <h2 id="dashboard-view-heading-today" className="sr-only">
+          {t("today.title")}
+        </h2>
         {dashboardView === "today" && <TodayView />}
       </div>
       <div
@@ -522,6 +576,9 @@ export default function DashboardPage() {
         aria-labelledby="dashboard-view-tab-dashboard"
         hidden={dashboardView !== "dashboard"}
       >
+        <h2 id="dashboard-view-heading-dashboard" className="sr-only">
+          {t("today.dashboard")}
+        </h2>
         {dashboardView === "dashboard" && (isTax ? <TaxWidgetBoard /> : <WidgetBoard />)}
       </div>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   Loader2,
   Lightbulb,
@@ -57,10 +58,38 @@ import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 export function OverviewTab() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
+  const router = useRouter();
   const [moreActionsOpen, setMoreActionsOpen] = useState(false);
+  const [investigationLoading, setInvestigationLoading] = useState(false);
   const moreActionsRef = useRef<HTMLDivElement>(null);
   const { grounding, isGrounding, groundAnswer } = useGroundedAnswer();
   const strategy = ctx.caseData?.strategy;
+
+  const startInvestigation = useCallback(
+    async (caseSlug: string) => {
+      setInvestigationLoading(true);
+      try {
+        const result = await api.legal.caseInvestigation({
+          case_slug: caseSlug,
+          pruefauftrag:
+            lang === "en"
+              ? "Identify contradictions between party claims and documentary evidence"
+              : "Widersprüche zwischen Parteiaussagen und Dokumenten identifizieren",
+          jurisdiction: "at",
+        });
+        router.push(
+          `/dashboard/cases/${encodeURIComponent(caseSlug)}/investigation/${encodeURIComponent(result.run_id)}`
+        );
+      } catch (err) {
+        ctx.setSaveError(
+          err instanceof Error ? err.message : "Sachverhaltsprüfung konnte nicht gestartet werden"
+        );
+      } finally {
+        setInvestigationLoading(false);
+      }
+    },
+    [lang, router, ctx]
+  );
 
   useEffect(() => {
     if (!strategy) return;
@@ -863,7 +892,8 @@ export function OverviewTab() {
           />
           <input
             {...ctx.expenseForm.register("amount")}
-            type="number" inputMode="decimal"
+            type="number"
+            inputMode="decimal"
             step="0.01"
             placeholder={t("cases.detail_exp_amount_ph")}
             aria-label={t("cases.amount")}
@@ -950,11 +980,27 @@ export function OverviewTab() {
       {/* Contradictions */}
       {caseData.contradictions && caseData.contradictions.length > 0 && (
         <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
-          <div className="mb-2 flex items-center gap-2">
-            <AlertTriangle size={14} className="text-[color:var(--ds-warning-text)]" />
-            <h3 className="text-sm font-semibold text-[color:var(--ds-warning-text)]">
-              Widersprüche erkannt ({caseData.contradictions.length})
-            </h3>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={14} className="text-[color:var(--ds-warning-text)]" />
+              <h3 className="text-sm font-semibold text-[color:var(--ds-warning-text)]">
+                Widersprüche erkannt ({caseData.contradictions.length})
+              </h3>
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={investigationLoading}
+              onClick={() => startInvestigation(caseData.slug)}
+              className="h-7 gap-1 text-xs text-[color:var(--ds-warning-text)] hover:bg-[color:var(--ds-warning-bg-hover)] hover:text-[color:var(--ds-warning-text)]"
+            >
+              {investigationLoading ? (
+                <Loader2 size={12} className="animate-spin" />
+              ) : (
+                <Scale size={12} />
+              )}
+              {lang === "en" ? "Full investigation" : "Vollständige Prüfung"}
+            </Button>
           </div>
           <div className="space-y-2">
             {caseData.contradictions.map((c, i) => (

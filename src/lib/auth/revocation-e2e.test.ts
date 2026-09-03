@@ -6,7 +6,6 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { createHash } from "crypto";
 
 // ── Mock Revocation Store ────────────────────────────────────────────
 

@@ -27,6 +27,17 @@ export const POST = createHandler(
     action: "brain.read",
     rateTier: "standard",
     body: postSchema,
+    audit: (_ctx, body) => ({
+      action: "legal.knowledge_sources" as const,
+      entityType: "knowledge_source",
+      details: {
+        action: body.action,
+        has_query: Boolean(body.query),
+        law: body.law,
+        paragraph: body.paragraph,
+        court: body.court,
+      },
+    }),
   },
   async (_ctx, body) => {
     const ks = getKnowledgeSources();

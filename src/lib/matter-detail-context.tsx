@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useParams, useRouter } from "next/navigation";
@@ -328,6 +336,8 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [documentPassword, setDocumentPassword] = useState("");
   const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
+  // G8 fix: ref for the current upload's AbortController, for cancellation.
+  const uploadAbortRef = useRef<AbortController | null>(null);
   const [docTypeFilter, setDocTypeFilter] = useState<string>("all");
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [linkSearchQuery, setLinkSearchQuery] = useState("");
@@ -1064,14 +1074,30 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
         status: "queued" as const,
       }));
       setUploadQueue((prev) => [...prev, ...queueItems]);
-      const fileMap = new Map<string, string>();
-      validFiles.forEach((f, i) => fileMap.set(f.name, queueItems[i].id));
+      // G8 fix: key by index instead of filename to handle duplicate filenames.
+      // Pre-fix, fileMap was keyed by f.name — two files with the same name
+      // would overwrite each other, causing wrong queue-item updates.
+      const indexToQueueId = new Map<number, string>();
+      validFiles.forEach((_, i) => indexToQueueId.set(i, queueItems[i].id));
+      // G8 fix: AbortController for cancellation when user leaves the page.
+      const uploadAbortController = new AbortController();
+      uploadAbortRef.current = uploadAbortController;
       const results = await presignedUploadFiles(validFiles, {
         caseSlug: caseData.slug,
         source: "legal_case",
         password: documentPassword || undefined,
+        signal: uploadAbortController.signal,
         onProgress: (p: PresignedProgress) => {
-          const qId = fileMap.get(p.filename);
+          // G8 fix: find queue item by index, not by filename.
+          const qId =
+            indexToQueueId.get(p.fileIndex ?? -1) ??
+            (() => {
+              // Fallback: try filename match for backward compat
+              for (let i = 0; i < validFiles.length; i++) {
+                if (validFiles[i].name === p.filename) return indexToQueueId.get(i);
+              }
+              return undefined;
+            })();
           if (!qId) return;
           const now = Date.now();
           setUploadQueue((prev) =>
@@ -1112,8 +1138,10 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
           );
         },
       });
-      for (const r of results) {
-        const qId = fileMap.get(r.file.name);
+      // G8 fix: map results by index, not by filename.
+      for (let i = 0; i < results.length; i++) {
+        const r = results[i];
+        const qId = indexToQueueId.get(i);
         if (!qId) continue;
         if (r.error) {
           setUploadQueue((prev) =>

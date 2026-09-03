@@ -1,14 +1,10 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
-import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
+import { createHandler, apiSuccess } from "@/lib/api-handler";
 import { collectSSEChunks } from "@/lib/sse-stream";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
 import { buildTaxTriagePrompt, type TaxJurisdiction } from "@/lib/tax-prompts";
-import {
-  triageMessage,
-  type TriageCard,
-  type TriageInput,
-} from "@/lib/triage";
+import { triageMessage, type TriageCard, type TriageInput } from "@/lib/triage";
 
 export const maxDuration = 60;
 
@@ -151,12 +147,14 @@ export const POST = createHandler(
           enrichment = {
             document_type: String(parsed.document_type ?? "sonstiges"),
             tax_area: String(parsed.tax_area ?? "sonstiges"),
-            deadline_type: parsed.deadline_type && parsed.deadline_type !== "null"
-              ? String(parsed.deadline_type)
-              : null,
-            deadline_date: parsed.deadline_date && parsed.deadline_date !== "null"
-              ? String(parsed.deadline_date)
-              : null,
+            deadline_type:
+              parsed.deadline_type && parsed.deadline_type !== "null"
+                ? String(parsed.deadline_type)
+                : null,
+            deadline_date:
+              parsed.deadline_date && parsed.deadline_date !== "null"
+                ? String(parsed.deadline_date)
+                : null,
             deadline_legal_basis:
               parsed.deadline_legal_basis && parsed.deadline_legal_basis !== "null"
                 ? String(parsed.deadline_legal_basis)

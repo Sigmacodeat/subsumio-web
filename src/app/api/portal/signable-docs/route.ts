@@ -39,15 +39,15 @@ export const GET = createPublicHandler(
     const [sigRes, poaRes] = await Promise.all([
       fetch(`${ENGINE_URL}/api/pages?type=signature_request&limit=100`, {
         signal: AbortSignal.timeout(10_000),
-      }),
+      }).catch(() => null),
       fetch(`${ENGINE_URL}/api/pages?type=power_of_attorney&limit=100`, {
         signal: AbortSignal.timeout(10_000),
-      }),
+      }).catch(() => null),
     ]);
 
     const docs: SignableDoc[] = [];
 
-    if (sigRes.ok) {
+    if (sigRes?.ok) {
       const sigData = await sigRes.json();
       const sigPages: Array<{
         slug: string;
@@ -73,7 +73,7 @@ export const GET = createPublicHandler(
       }
     }
 
-    if (poaRes.ok) {
+    if (poaRes?.ok) {
       const poaData = await poaRes.json();
       const poaPages: Array<{
         slug: string;

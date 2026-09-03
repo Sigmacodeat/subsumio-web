@@ -20,6 +20,15 @@ export const POST = createHandler(
     action: "brain.write",
     rateTier: "standard",
     body: createAbsenceSchema,
+    audit: (_ctx, body) => ({
+      action: "absence.create" as const,
+      entityType: "absence_record",
+      details: {
+        start_date: body.start_date,
+        end_date: body.end_date,
+        auto_route_enabled: body.auto_route_enabled,
+      },
+    }),
   },
   async (ctx, body) => {
     if (new Date(body.end_date) < new Date(body.start_date)) {

@@ -40,6 +40,16 @@ export const POST = createHandler(
   {
     action: "admin.*",
     body: bodySchema,
+    audit: (ctx, body) => ({
+      action: "corpus_files.bulk_edit" as const,
+      entityType: "corpus_file",
+      details: {
+        operation: body.operation,
+        field: body.field,
+        pathsCount: body.paths.length,
+        user: ctx.user.email,
+      },
+    }),
   },
   async (ctx, body) => {
     const { paths, operation, field, value, text } = body;

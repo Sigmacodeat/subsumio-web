@@ -23,6 +23,12 @@ export const POST = createHandler(
   {
     action: "admin.*",
     body: bodySchema,
+    audit: (ctx, body) => ({
+      action: "corpus_files.restore" as const,
+      entityType: "corpus_file",
+      entityId: body.path,
+      details: { path: body.path, version: body.version, user: ctx.user.email },
+    }),
   },
   async (ctx, body) => {
     const success = restoreVersion(body.path, body.version, ctx.user.email);

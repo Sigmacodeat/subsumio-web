@@ -5,7 +5,8 @@
  * Credits token-genaue pro Modell und Token-Typ (input / cached input / output).
  *
  * 1 Credit = 1 EUR (wie bestehende CREDIT_PACKS).
- * Rates: credits per 1M tokens, mit 2x Marge über kanonischen API-Preisen.
+ * Rates: credits per 1M tokens, mit 12× Marge über kanonischen API-Preisen.
+ * Aligned mit saas-pricing.ts (Solo Plan: 12× markup → 91.7% Marge).
  * Cached-Input Rate = 10% von Input (Anthropic Prompt Caching: 50-80% Cache-Hits).
  *
  * Formel (wie OpenAI Rate Card):
@@ -41,12 +42,12 @@ import { CANONICAL_PRICING } from "../../../server/src/core/model-pricing";
 
 /**
  * Credit-Rate pro Modell: credits per 1M tokens.
- * Abgeleitet aus CANONICAL_PRICING mit 2x Marge.
+ * Abgeleitet aus CANONICAL_PRICING mit 12× Marge (aligned mit saas-pricing.ts Solo).
  *
  * Beispiel Haiku 4.5 ($1/$5 per MTok):
- *   input:  $1 × 2 (Marge) = $2 → 2 credits/1M
- *   cached: 2 × 0.1 (10% von input) = 0.2 credits/1M
- *   output: $5 × 2 = $10 → 10 credits/1M
+ *   input:  $1 × 12 (Marge) = $12 → 12 credits/1M
+ *   cached: 12 × 0.1 (10% von input) = 1.2 credits/1M
+ *   output: $5 × 12 = $60 → 60 credits/1M
  */
 export interface ModelCreditRate {
   /** Credits per 1M input tokens. */
@@ -59,8 +60,11 @@ export interface ModelCreditRate {
   output: number;
 }
 
-/** Marge über kanonischem API-Preis (server/src/core/model-pricing.ts). */
-const RATE_CARD_MARGIN = 2;
+/** Marge über kanonischem API-Preis (server/src/core/model-pricing.ts).
+ *  Aligned mit saas-pricing.ts Solo Plan (12× markup → 91.7% Marge).
+ *  Previously was 2× (50% Marge) — updated 2026-08-29 based on competitive
+ *  analysis: Harvey 85-98.5%, Irys 93%, Legora 70-85%. 12× matches Solo plan. */
+const RATE_CARD_MARGIN = 12;
 /** Cached-Input-Rate als Anteil der Input-Rate (Anthropic Prompt Caching: 50-80% Cache-Hits). */
 const CACHED_INPUT_FACTOR = 0.1;
 /** Cache-Create-Rate als Faktor der Input-Rate (Anthropic: cache write = 1.25× input). */

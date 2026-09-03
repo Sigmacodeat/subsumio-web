@@ -11,7 +11,17 @@ import { fetchAllActImportItems, fetchEnginePage } from "@/lib/act-import-server
 const REFRESH_BATCH_SIZE = 10;
 
 export const POST = createHandler(
-  { action: "brain.write", rateTier: "heavy" },
+  {
+    action: "brain.write",
+    rateTier: "heavy",
+    audit: (_ctx, _body) => ({
+      action: "act_import.refresh" as const,
+      entityType: "act_import_session",
+      details: {
+        refreshed: true,
+      },
+    }),
+  },
   async (ctx, _body, _query, req) => {
     const { id: rawId } = await (req as unknown as { params: Promise<{ id: string }> }).params;
     const id = safeImportId(rawId);

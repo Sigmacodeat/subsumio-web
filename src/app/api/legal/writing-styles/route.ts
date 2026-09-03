@@ -47,6 +47,19 @@ export const POST = createHandler(
     action: "brain.write",
     rateTier: "standard",
     body: postSchema,
+    audit: (_ctx, body) => ({
+      action: "legal.writing_style_save" as const,
+      entityType: "writing_style",
+      entityId: body.id,
+      details: {
+        name: body.name,
+        has_description: Boolean(body.description),
+        has_tone: Boolean(body.tone),
+        has_formality: Boolean(body.formality),
+        has_sentenceLength: Boolean(body.sentenceLength),
+        has_customInstructions: Boolean(body.customInstructions),
+      },
+    }),
   },
   async (_ctx, body) => {
     const style = body as unknown as WritingStyle;
@@ -59,6 +72,12 @@ export const DELETE = createHandler(
   {
     action: "brain.write",
     rateTier: "standard",
+    audit: (_ctx, _body, _query, req) => ({
+      action: "legal.writing_style_delete" as const,
+      entityType: "writing_style",
+      entityId: req?.nextUrl.searchParams.get("id") ?? "unknown",
+      details: {},
+    }),
   },
   async (_ctx, _body, _query, req) => {
     const id = req.nextUrl.searchParams.get("id");

@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { explainRetrieval } from "@/lib/matter-context";
 import type { QueryMode } from "@/lib/matter-context-types";
+
+const explainBodySchema = z.object({
+  query: z.string().min(1).max(2000),
+  answer: z.string().min(1).max(10000),
+  mode: z.enum(["conservative", "balanced", "tokenmax"]).optional(),
+});
 
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
@@ -106,17 +113,26 @@ export const POST = createHandler(
   {
     action: "brain.read",
     rateTier: "search",
+    body: explainBodySchema,
+    audit: (_ctx, body) => {
+      const b = body as { mode?: string; query?: string; answer?: string };
+      return {
+        action: "copilot.explain" as const,
+        entityType: "document",
+        details: {
+          mode: b.mode,
+          queryLength: b.query?.length ?? 0,
+          hasAnswer: Boolean(b.answer),
+        },
+      };
+    },
   },
   async (ctx, body) => {
-    const { query, answer, mode } = (body ?? {}) as {
-      query?: string;
-      answer?: string;
+    const { query, answer, mode } = body as {
+      query: string;
+      answer: string;
       mode?: QueryMode;
     };
-
-    if (!query || !answer) {
-      return apiError("bad_request", "query and answer are required", 400);
-    }
 
     try {
       // Get retrieval explanations for the query

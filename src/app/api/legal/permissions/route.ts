@@ -40,6 +40,14 @@ export const POST = createHandler(
     action: "brain.read",
     rateTier: "standard",
     body: postSchema,
+    audit: (ctx, body) => ({
+      action: "legal.permissions_check" as const,
+      entityType: "permission",
+      details: {
+        actorId: ctx.user.id,
+        permission: body.permission,
+      },
+    }),
   },
   async (ctx, body) => {
     const headers = new Headers(ctx.headers as Record<string, string>);

@@ -1,9 +1,5 @@
 import type { IntakeRequestFrontmatter } from "@/lib/intake";
-import {
-  buildCaseMandateAcceptance,
-  validateAcceptanceForConversion,
-  type CaseMandateAcceptance,
-} from "@/lib/intake-acceptance";
+import { buildCaseMandateAcceptance, type CaseMandateAcceptance } from "@/lib/intake-acceptance";
 
 export interface IntakeConversionInput {
   slug: string;

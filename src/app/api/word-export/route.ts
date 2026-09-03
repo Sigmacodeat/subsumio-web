@@ -62,6 +62,15 @@ export const POST = createHandler(
     action: "brain.read",
     rateTier: "standard",
     body: postSchema,
+    audit: (_ctx, body) => ({
+      action: "drafting.export" as const,
+      entityType: "document",
+      details: {
+        hasSlug: Boolean(body.slug),
+        hasMarkdown: Boolean(body.markdown),
+        hasFormData: Boolean(body.formData),
+      },
+    }),
   },
   async (ctx, body) => {
     // ── Verification policy check (export_docx) ──

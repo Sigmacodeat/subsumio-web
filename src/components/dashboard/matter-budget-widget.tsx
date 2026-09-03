@@ -2,14 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import {
-  Wallet,
-  Loader2,
-  AlertTriangle,
-  TrendingUp,
-  TrendingDown,
-  CheckCircle2,
-} from "lucide-react";
+import { Wallet, Loader2, AlertTriangle, TrendingUp, CheckCircle2 } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";

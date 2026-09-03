@@ -76,7 +76,21 @@ function flattenParams(obj: Record<string, unknown>, params: URLSearchParams, pr
 // ── GET: Proration Preview ────────────────────────────────────────────
 
 export const GET = createHandler(
-  { action: "billing.read", rateTier: "standard" },
+  {
+    action: "billing.read",
+    rateTier: "standard",
+    audit: (_ctx, _body, _query, req) => {
+      const url = req ? new URL(req.url) : null;
+      return {
+        action: "billing.proration_preview" as const,
+        entityType: "subscription",
+        details: {
+          new_price_id: url?.searchParams.get("newPriceId"),
+          quantity: parseInt(url?.searchParams.get("quantity") ?? "1", 10),
+        },
+      };
+    },
+  },
   async (ctx, _body, _query, req: NextRequest) => {
     if (!STRIPE_SECRET) return apiError("stripe_not_configured", "Stripe secret key not set", 501);
 
@@ -149,7 +163,19 @@ export const GET = createHandler(
 // ── POST: Execute Plan Change with Proration ─────────────────────────
 
 export const POST = createHandler(
-  { action: "billing.write", rateTier: "standard", body: planChangeSchema },
+  {
+    action: "billing.write",
+    rateTier: "standard",
+    body: planChangeSchema,
+    audit: (_ctx, body) => ({
+      action: "billing.plan_change" as const,
+      entityType: "subscription",
+      details: {
+        new_price_id: body.newPriceId,
+        quantity: body.quantity,
+      },
+    }),
+  },
   async (ctx, body, _query, _req) => {
     if (!STRIPE_SECRET) return apiError("stripe_not_configured", "Stripe secret key not set", 501);
 

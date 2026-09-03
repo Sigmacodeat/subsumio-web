@@ -11,6 +11,11 @@ export const POST = createHandler(
     action: "settings.write",
     rateTier: "standard",
     body: qrcodeSchema,
+    audit: (_ctx, body) => ({
+      action: "security.2fa_qrcode" as const,
+      entityType: "user",
+      details: { size: body.size },
+    }),
   },
   async (_ctx, body, _query, _req) => {
     const size = Math.min(Math.max(body.size ?? 200, 100), 400);

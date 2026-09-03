@@ -19,7 +19,18 @@ export const GET = createHandler({ action: "brain.read", rateTier: "standard" },
 });
 
 export const PUT = createHandler(
-  { action: "brain.write", rateTier: "standard", body: schema },
+  {
+    action: "brain.write",
+    rateTier: "standard",
+    body: schema,
+    audit: (_ctx, body) => ({
+      action: "time_tracking.passive_preference" as const,
+      entityType: "passive_time_preference",
+      details: {
+        enabled: body.enabled,
+      },
+    }),
+  },
   async (ctx, body) => {
     const userKey = encodeURIComponent(ctx.user.email.toLowerCase());
     const response = await fetch(`${ENGINE_URL}/api/pages`, {

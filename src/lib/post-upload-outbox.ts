@@ -48,6 +48,13 @@ function encodeSlug(slug: string): string {
 /**
  * Enqueue a post-upload task. Idempotent: if a pending task already exists
  * for this (doc_slug, task_type) it is left unchanged.
+ *
+ * G10 fix: the pre-fix code did a GET-then-POST race — two concurrent
+ * enqueues could both see 404 and both create. Now we skip the GET and
+ * rely on the deterministic slug + PUT (upsert) semantics. If the page
+ * already exists with status "pending", the PUT overwrites it with the
+ * same pending state (idempotent). If it exists with "done"/"exhausted",
+ * we check first via GET but treat 409/conflict as "already queued".
  */
 export async function enqueuePostUploadTask(
   task: Omit<PostUploadTask, "attempts" | "next_attempt_at" | "status">,
@@ -59,7 +66,8 @@ export async function enqueuePostUploadTask(
     "Content-Type": "application/json",
   };
 
-  // Check if a pending task already exists (idempotency)
+  // Quick idempotency check: if a pending task already exists, skip.
+  // This is best-effort — the PUT below is the real idempotency guarantee.
   try {
     const existing = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
       headers,
@@ -70,7 +78,7 @@ export async function enqueuePostUploadTask(
       if (page.frontmatter?.status === "pending") return; // already queued
     }
   } catch {
-    /* not found or unreachable — proceed to create */
+    /* not found or unreachable — proceed to upsert */
   }
 
   const payload: PostUploadTask = {
@@ -80,8 +88,11 @@ export async function enqueuePostUploadTask(
     status: "pending",
   };
 
-  const create = await fetch(`${ENGINE_URL}/api/pages`, {
-    method: "POST",
+  // Use PUT (upsert) instead of POST (create) — if the page already exists
+  // (race condition with concurrent enqueue), PUT overwrites it idempotently
+  // with the same pending state. A 409 conflict is treated as "already queued".
+  const upsert = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
+    method: "PUT",
     headers,
     body: JSON.stringify({
       slug,
@@ -91,13 +102,20 @@ export async function enqueuePostUploadTask(
     }),
     signal: AbortSignal.timeout(10_000),
   });
-  if (!create.ok) {
-    throw new Error(`task_create_failed_${create.status}: ${(await create.text()).slice(0, 300)}`);
+  if (!upsert.ok && upsert.status !== 409) {
+    throw new Error(`task_upsert_failed_${upsert.status}: ${(await upsert.text()).slice(0, 300)}`);
   }
+  // 409 = another concurrent enqueue won the race — that's fine, the task
+  // is queued either way. No error needed.
 }
 
 /**
  * Enqueue all standard post-upload tasks for a document in one call.
+ *
+ * G9 fix: added retry logic (3 attempts with 1s backoff) to handle
+ * transient engine failures. Pre-fix, a single failed enqueue would
+ * silently lose the task — the document was already persisted but no
+ * analysis/reconcile/contradiction task was ever queued.
  */
 export async function enqueueAllPostUploadTasks(params: {
   doc_slug: string;
@@ -121,8 +139,36 @@ export async function enqueueAllPostUploadTasks(params: {
     tasks.push("reconcile_case", "contradiction");
   }
 
-  // Fire all enqueues in parallel — each is idempotent
-  await Promise.all(
-    tasks.map((task_type) => enqueuePostUploadTask({ ...base, task_type }, params.brain_id))
+  // G9 fix: retry each enqueue up to 3 times with 1s backoff.
+  // Each enqueue is idempotent, so retrying is safe.
+  const MAX_RETRIES = 3;
+  const results = await Promise.allSettled(
+    tasks.map(async (task_type) => {
+      let lastErr: unknown;
+      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          await enqueuePostUploadTask({ ...base, task_type }, params.brain_id);
+          return; // success
+        } catch (err) {
+          lastErr = err;
+          if (attempt < MAX_RETRIES) {
+            await new Promise((r) => setTimeout(r, 1000 * attempt));
+          }
+        }
+      }
+      // All retries exhausted — log and rethrow so caller knows
+      console.error(
+        `[post-upload-outbox] Failed to enqueue ${task_type} for ${params.doc_slug} after ${MAX_RETRIES} attempts:`,
+        lastErr
+      );
+      throw lastErr;
+    })
   );
+
+  // If any task failed after all retries, throw the first failure
+  // so the caller can handle it (e.g. return an error to the user).
+  const firstFailure = results.find((r) => r.status === "rejected");
+  if (firstFailure && firstFailure.status === "rejected") {
+    throw firstFailure.reason;
+  }
 }

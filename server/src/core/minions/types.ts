@@ -508,6 +508,18 @@ export interface SubagentHandlerData {
    */
   system_no_tool_preamble?: boolean;
   /**
+   * v0.42.38.0+ — Cacheable context prefix appended to the system prompt.
+   *
+   * Used by map-reduce layers to share `contextJson` across all batches via
+   * Anthropic prompt caching (the system block has `cache_control: ephemeral`).
+   * Without this, contextJson was inlined in the user prompt and billed N×
+   * (once per batch). Now it's billed once per layer.
+   *
+   * The content is appended AFTER the tool preamble so the cache marker
+   * covers the full stable prefix (system + tools + context).
+   */
+  cached_context?: string;
+  /**
    * v0.41 E6 — opt OUT of classifier-gated auto-resubmit on terminal
    * failures. Default behavior (omitted or false) runs the
    * `RECOVERABLE_CLUSTERS` self-fix path when the failure classifies as

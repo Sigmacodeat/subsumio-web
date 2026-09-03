@@ -15,15 +15,24 @@ export const GET = createHandler(
       const perPage = 100;
       let hasMore = true;
 
+      let engineError = false;
       while (hasMore && page < 50) {
         const res = await fetch(
           `${ENGINE_URL}/api/pages?limit=${perPage}&offset=${page * perPage}`,
           {
             headers: ctx.headers,
+            signal: AbortSignal.timeout(30_000),
           }
         );
-        if (!res.ok) break;
-        const raw = await res.json();
+        if (!res.ok) {
+          engineError = true;
+          break;
+        }
+        const raw = await res.json().catch(() => null);
+        if (!raw) {
+          engineError = true;
+          break;
+        }
         const pages = Array.isArray(raw)
           ? raw
           : Array.isArray((raw as Record<string, unknown>)?.pages)
@@ -33,8 +42,18 @@ export const GET = createHandler(
           hasMore = false;
         } else {
           allPages.push(...pages);
+          // Stop early if we got fewer than requested — last page
+          if (pages.length < perPage) hasMore = false;
           page++;
         }
+      }
+
+      if (engineError && allPages.length === 0) {
+        return apiError(
+          "backup_failed",
+          "Engine nicht erreichbar, Backup konnte nicht erstellt werden",
+          503
+        );
       }
 
       const exportData = {
@@ -46,6 +65,9 @@ export const GET = createHandler(
           total_pages: allPages.length,
           format: "JSON",
           description: "Complete backup of all Brain-Pages for migration or compliance archiving",
+          ...(engineError
+            ? { warning: "Backup ist unvollständig — Engine-Fehler während der Paginierung" }
+            : {}),
         },
         data: allPages,
       };

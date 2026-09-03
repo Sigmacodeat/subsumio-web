@@ -38,6 +38,15 @@ export const POST = createHandler(
     body: analyzeSchema,
     maxDuration: 120,
     allowInternal: true,
+    audit: (_ctx, b) => ({
+      action: "legal.document_review" as const,
+      entityType: "document",
+      details: {
+        documentSlug: typeof b.document_slug === "string" ? b.document_slug : undefined,
+        jurisdiction: typeof b.jurisdiction === "string" ? b.jurisdiction : undefined,
+        hasInlineText: typeof b.text === "string" && b.text.length > 0,
+      },
+    }),
   },
   async (ctx, body, _query, _req) => {
     const isInternal = ctx.brainId === "internal";

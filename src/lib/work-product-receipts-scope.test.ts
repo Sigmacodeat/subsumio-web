@@ -16,7 +16,6 @@ import { join } from "node:path";
 import {
   ALL_WORK_PRODUCT_TYPES,
   buildWorkProductReceipt,
-  computeOutputHash,
   invalidateReceipt,
   isReceiptValid,
   type WorkProductReceipt,
@@ -246,9 +245,7 @@ describe("Receipt Tamper Evidence", () => {
       output: "same output",
       brain_id: "brain-1",
     });
-    expect(r1.receipt_id).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
-    );
+    expect(r1.receipt_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
   });
 
   it("receipt_id differs for different brain_id", () => {

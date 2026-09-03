@@ -10,7 +10,7 @@
  */
 
 import { AI_NOTICE, AI_BADGE_LABEL } from "@/lib/ai-act";
-import { getModelById, type ModelEntry } from "@/lib/model-config";
+import { getModelById } from "@/lib/model-config";
 
 export type CertificationStatus =
   | "pending" // AI generated, awaiting attorney review

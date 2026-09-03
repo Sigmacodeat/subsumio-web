@@ -16,6 +16,7 @@ export const GET = createHandler(
   {
     action: "connector.read",
     rateTier: "standard",
+    admin: true,
   },
   async (ctx) => {
     if (ctx.user.role !== "admin") {

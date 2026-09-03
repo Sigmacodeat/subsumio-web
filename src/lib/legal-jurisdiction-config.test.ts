@@ -24,7 +24,6 @@ import {
   normalizeJurisdiction,
   requireJurisdiction,
   JurisdictionMissingError,
-  getJurisdictionConfig,
   getPracticeAreaConfig,
   getAllowedStatutes,
   getForbiddenStatutes,
@@ -46,9 +45,7 @@ import {
 
 describe("Abbreviation Collisions", () => {
   it("KSchG is registered as a collision between AT and DE", () => {
-    const collision = LAW_ABBREVIATION_COLLISIONS.find(
-      (c) => c.abbreviation === "KSchG"
-    );
+    const collision = LAW_ABBREVIATION_COLLISIONS.find((c) => c.abbreviation === "KSchG");
     expect(collision).toBeDefined();
     expect(collision!.jurisdictions.AT.fullName).toBe("Konsumentenschutzgesetz");
     expect(collision!.jurisdictions.DE.fullName).toBe("Kündigungsschutzgesetz");
@@ -67,9 +64,7 @@ describe("Abbreviation Collisions", () => {
   });
 
   it("StGB exists in DE, AT, and CH — triple collision", () => {
-    const collision = LAW_ABBREVIATION_COLLISIONS.find(
-      (c) => c.abbreviation === "StGB"
-    );
+    const collision = LAW_ABBREVIATION_COLLISIONS.find((c) => c.abbreviation === "StGB");
     expect(collision).toBeDefined();
     expect(collision!.jurisdictions.DE.fullName).toContain("Deutschland");
     expect(collision!.jurisdictions.AT.fullName).toContain("Österreich");
@@ -107,9 +102,7 @@ describe("Abbreviation Collisions", () => {
   });
 
   it("InsO has different names across jurisdictions", () => {
-    const collision = LAW_ABBREVIATION_COLLISIONS.find(
-      (c) => c.abbreviation === "InsO"
-    );
+    const collision = LAW_ABBREVIATION_COLLISIONS.find((c) => c.abbreviation === "InsO");
     expect(collision).toBeDefined();
     expect(collision!.jurisdictions.DE.fullName).toBe("Insolvenzordnung");
     expect(collision!.jurisdictions.AT.fullName).toBe("N/A");
@@ -614,11 +607,7 @@ describe("Jurisdiction Config Structure", () => {
   });
 
   it("AT config has correct law source IDs", () => {
-    expect(JURISDICTION_CONFIGS.AT.lawSourceIds).toEqual([
-      "law-at",
-      "law-at-judikatur",
-      "law-eu",
-    ]);
+    expect(JURISDICTION_CONFIGS.AT.lawSourceIds).toEqual(["law-at", "law-at-judikatur", "law-eu"]);
   });
 
   it("CH config has correct law source IDs", () => {
@@ -627,18 +616,14 @@ describe("Jurisdiction Config Structure", () => {
 
   it("AT config includes collision warnings", () => {
     expect(JURISDICTION_CONFIGS.AT.collisionWarnings.length).toBeGreaterThan(0);
-    const kschgWarning = JURISDICTION_CONFIGS.AT.collisionWarnings.find((w) =>
-      w.includes("KSchG")
-    );
+    const kschgWarning = JURISDICTION_CONFIGS.AT.collisionWarnings.find((w) => w.includes("KSchG"));
     expect(kschgWarning).toBeDefined();
     expect(kschgWarning).toContain("Konsumentenschutzgesetz");
   });
 
   it("DE config includes collision warnings", () => {
     expect(JURISDICTION_CONFIGS.DE.collisionWarnings.length).toBeGreaterThan(0);
-    const kschgWarning = JURISDICTION_CONFIGS.DE.collisionWarnings.find((w) =>
-      w.includes("KSchG")
-    );
+    const kschgWarning = JURISDICTION_CONFIGS.DE.collisionWarnings.find((w) => w.includes("KSchG"));
     expect(kschgWarning).toBeDefined();
     expect(kschgWarning).toContain("Kündigungsschutzgesetz");
   });
@@ -683,10 +668,12 @@ describe("Negative Cases: No Foreign Law Without EU/Cross-Border", () => {
     { description: "FamFG in AT context", jurisdiction: "AT", foreignLaw: "FamFG" },
     { description: "TzBfG in AT context", jurisdiction: "AT", foreignLaw: "TzBfG" },
     { description: "AGG in AT context", jurisdiction: "AT", foreignLaw: "AGG" },
-    { description: "MuSchG (DE) in AT context", jurisdiction: "AT", foreignLaw: "MuSchG" },
+    // MuSchG removed — AT has its own MuSchG (at-normen/muschg/), so it's not foreign
     { description: "NachwG in AT context", jurisdiction: "AT", foreignLaw: "NachwG" },
     { description: "ArbGG in AT context", jurisdiction: "AT", foreignLaw: "ArbGG" },
     { description: "VwVfG in AT context", jurisdiction: "AT", foreignLaw: "VwVfG" },
+    { description: "BauGB in AT context", jurisdiction: "AT", foreignLaw: "BauGB" },
+    { description: "ZVG in AT context", jurisdiction: "AT", foreignLaw: "ZVG" },
 
     // CH context should NOT allow DE or AT laws
     { description: "BGB in CH context", jurisdiction: "CH", foreignLaw: "BGB" },
@@ -702,7 +689,11 @@ describe("Negative Cases: No Foreign Law Without EU/Cross-Border", () => {
     { description: "IO in CH context", jurisdiction: "CH", foreignLaw: "IO" },
 
     // KSchG collision: AT KSchG ≠ DE KSchG
-    { description: "KSchG AT is NOT Kündigungsschutz", jurisdiction: "AT", foreignLaw: "KSchG-DE-meaning" },
+    {
+      description: "KSchG AT is NOT Kündigungsschutz",
+      jurisdiction: "AT",
+      foreignLaw: "KSchG-DE-meaning",
+    },
 
     // OR is CH-only, should NOT appear in DE or AT
     { description: "OR in DE context", jurisdiction: "DE", foreignLaw: "OR" },
@@ -712,9 +703,9 @@ describe("Negative Cases: No Foreign Law Without EU/Cross-Border", () => {
     { description: "ZGB in DE context", jurisdiction: "DE", foreignLaw: "ZGB" },
     { description: "ZGB in AT context", jurisdiction: "AT", foreignLaw: "ZGB" },
 
-    // SchKG is CH-only
+    // SchKG is CH-only — but AT has its own SchKG (at-normen/schkg/), so only block in DE
     { description: "SchKG in DE context", jurisdiction: "DE", foreignLaw: "SchKG" },
-    { description: "SchKG in AT context", jurisdiction: "AT", foreignLaw: "SchKG" },
+    // SchKG in AT context removed — AT has its own SchKG, so it's not foreign
 
     // MWSTG is CH-only (not UStG)
     { description: "MWSTG in DE context", jurisdiction: "DE", foreignLaw: "MWSTG" },

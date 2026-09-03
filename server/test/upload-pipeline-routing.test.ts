@@ -21,6 +21,29 @@ describe("canonical upload pipeline routing", () => {
     expect(shouldAutoTriggerUploadPipeline(undefined)).toBe(true);
   });
 
+  it("triggers pipeline for legal sources (documents, legal_case, legal)", () => {
+    expect(shouldAutoTriggerUploadPipeline(undefined, "documents")).toBe(true);
+    expect(shouldAutoTriggerUploadPipeline(undefined, "legal_case")).toBe(true);
+    expect(shouldAutoTriggerUploadPipeline(undefined, "legal")).toBe(true);
+  });
+
+  it("does NOT trigger pipeline for non-legal sources (wiki, meetings, etc.)", () => {
+    expect(shouldAutoTriggerUploadPipeline(undefined, "wiki")).toBe(false);
+    expect(shouldAutoTriggerUploadPipeline(undefined, "meetings")).toBe(false);
+    expect(shouldAutoTriggerUploadPipeline(undefined, "ideas")).toBe(false);
+    expect(shouldAutoTriggerUploadPipeline(undefined, "people")).toBe(false);
+    expect(shouldAutoTriggerUploadPipeline(undefined, "companies")).toBe(false);
+    expect(shouldAutoTriggerUploadPipeline(undefined, "chat")).toBe(false);
+  });
+
+  it("defaults to documents source when source is undefined (backward compat)", () => {
+    expect(shouldAutoTriggerUploadPipeline(undefined, undefined)).toBe(true);
+  });
+
+  it("respects defer_pipeline even for legal sources", () => {
+    expect(shouldAutoTriggerUploadPipeline("true", "documents")).toBe(false);
+  });
+
   it("uses a stable order-independent idempotency key per corpus and version", () => {
     const a = legalPipelineIdempotencyKey("tenant-a", "cases/1", ["docs/b", "docs/a"]);
     const b = legalPipelineIdempotencyKey("tenant-a", "cases/1", ["docs/a", "docs/b"]);

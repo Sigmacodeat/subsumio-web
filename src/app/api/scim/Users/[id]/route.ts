@@ -20,39 +20,45 @@ export const dynamic = "force-dynamic";
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu";
 
 const updateUserSchema = z.object({
-  schemas: z.array(z.string()),
-  userName: z.string().optional(),
+  schemas: z.array(z.string().max(200)).max(20),
+  userName: z.string().max(500).optional(),
   emails: z
     .array(
-      z.object({ value: z.string(), type: z.string().optional(), primary: z.boolean().optional() })
+      z.object({
+        value: z.string().max(500),
+        type: z.string().max(50).optional(),
+        primary: z.boolean().optional(),
+      })
     )
+    .max(20)
     .optional(),
-  externalId: z.string().optional(),
-  id: z.string().optional(),
+  externalId: z.string().max(200).optional(),
+  id: z.string().max(200).optional(),
   name: z
     .object({
-      givenName: z.string().optional(),
-      familyName: z.string().optional(),
-      formatted: z.string().optional(),
+      givenName: z.string().max(200).optional(),
+      familyName: z.string().max(200).optional(),
+      formatted: z.string().max(500).optional(),
     })
     .optional(),
-  displayName: z.string().optional(),
+  displayName: z.string().max(500).optional(),
   active: z.boolean().optional(),
-  title: z.string().optional(),
-  userType: z.string().optional(),
-  department: z.string().optional(),
+  title: z.string().max(200).optional(),
+  userType: z.string().max(200).optional(),
+  department: z.string().max(200).optional(),
 });
 
 const patchRequestSchema = z.object({
-  schemas: z.array(z.string()),
+  schemas: z.array(z.string().max(200)).max(20),
   Operations: z
     .array(
       z.object({
-        op: z.string(),
-        path: z.string().optional(),
+        op: z.string().max(50),
+        path: z.string().max(500).optional(),
         value: z.any().optional(),
       })
     )
+    .max(100)
     .optional(),
 });
 

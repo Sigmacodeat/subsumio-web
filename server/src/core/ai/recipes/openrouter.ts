@@ -134,7 +134,12 @@ export const openrouter: Recipe = {
       supports_tools: true,
       // Informational only — real gate is isAnthropicProvider() upstream.
       supports_subagent_loop: false,
-      supports_prompt_cache: false,
+      // v0.42.38.0+ — OpenRouter supports prompt caching for Anthropic models
+      // via cache_control. OpenRouter uses provider sticky routing to maximize
+      // cache hits. The gateway sets cache_control via providerOptions.openrouter
+      // when this flag is true. Saves 50-90% on input tokens for multi-turn agents.
+      // Ref: https://openrouter.ai/docs/guides/best-practices/prompt-caching
+      supports_prompt_cache: true,
       // No max_context_tokens: catalog spans 128K to 1M+; a single recipe-wide
       // value is either unsafe for smaller models or wasteful for larger ones.
       // Let upstream errors surface per-model.

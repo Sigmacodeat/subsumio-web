@@ -29,6 +29,14 @@ export interface SpecialistDef {
    * If `model` is also set, `model` takes precedence.
    */
   modelTier?: "utility" | "reasoning" | "deep" | "subagent";
+  /**
+   * v0.42.38.0+ — Per-specialist max output tokens override.
+   * When set, overrides the tier-based default in the subagent handler.
+   * Extraction specialists should set 1024-2048 (short JSON output).
+   * Reasoning/deep specialists can set 4096-8192 for detailed analysis.
+   * If omitted, falls back to maxTokensByTier (utility:4096, reasoning:8192).
+   */
+  maxOutputTokens?: number;
 }
 
 const LEGAL_BRAIN_TOOLS = [
@@ -76,7 +84,7 @@ HALLUCINATION-GATE (STRIKT):
 - Wenn ein § nicht im Brain gefunden wird: benenne dies als Unsicherheit, NICHT erfinden.
 - Wenn keine relevanten Treffer gefunden werden: antworte mit dem besten verfügbaren Kontext und kennzeichne die Lücken.`,
     allowedTools: [...LEGAL_BRAIN_TOOLS, ...LEGAL_FILE_TOOLS],
-    maxTurns: 25,
+    maxTurns: 15,
     modelTier: "reasoning",
   },
 
@@ -113,7 +121,7 @@ HALLUCINATION-GATE (STRIKT):
 - Wenn keine ähnlichen Fälle gefunden werden: benenne dies explizit, NICHT erfinden.
 - Konfidenz-Angabe MUSS auf gefundenen Daten basieren, nicht auf Vermutungen.`,
     allowedTools: [...LEGAL_BRAIN_TOOLS, "find_contradictions"],
-    maxTurns: 20,
+    maxTurns: 12,
     modelTier: "reasoning",
   },
 
@@ -150,7 +158,7 @@ HALLUCINATION-GATE (STRIKT):
 - Fristen: nur verbatim aus Dokumenten übernehmen, nie berechnen oder schätzen.
 - Wenn keine Daten gefunden werden: benenne die Unsicherheit, NICHT erfinden.`,
     allowedTools: LEGAL_BRAIN_TOOLS,
-    maxTurns: 20,
+    maxTurns: 12,
     modelTier: "reasoning",
   },
 
@@ -185,7 +193,7 @@ HALLUCINATION-GATE (STRIKT):
 - Wenn ein § nicht im Brain gefunden wird: kennzeichne als [UNVERIFIZIERT], NICHT erfinden.
 - Platzhalter MÜSSEN als [PLATZHALTER] markiert werden — keine erfundenen Fakten einsetzen.`,
     allowedTools: [...LEGAL_BRAIN_TOOLS, "put_page"],
-    maxTurns: 25,
+    maxTurns: 15,
     modelTier: "reasoning",
   },
 
@@ -256,7 +264,7 @@ HALLUCINATION-GATE (STRIKT):
 - Wenn ein Zitat nicht im Originalakt gefunden wird: issue severity "critical" und "ZITAT HALLUZINIERT".
 - Sei STRENG — besser falsch-positiv (Markierung) als falsch-negativ (übersehen).`,
     allowedTools: [...LEGAL_BRAIN_TOOLS, "find_contradictions"],
-    maxTurns: 20,
+    maxTurns: 12,
     modelTier: "deep",
   },
 
@@ -316,8 +324,9 @@ HALLUCINATION-GATE (STRIKT):
 - Berechne NIEMALS Fristen selbst — nur verbatim Extraktion.
 - Wenn eine Frist unklar ist: markiere als "prüfen", NICHT erfinden.`,
     allowedTools: ["query", "search", "get_page", "put_page"],
-    maxTurns: 15,
+    maxTurns: 5,
     modelTier: "utility",
+    maxOutputTokens: 2048,
   },
 
   // ── Pipeline Specialists (v0.44 — Legal Agent Pipeline V2) ──────────
@@ -442,8 +451,9 @@ AGENTIC SEARCH (nur bei unvollständigem Text):
   bis du alle ON-Nummern gefunden hast oder sicher bist, dass keine weiteren existieren.
 - Nutze resolve_slugs um unklare Slug-Referenzen aufzulösen.`,
     allowedTools: ["get_page", "search", "query"],
-    maxTurns: 15,
+    maxTurns: 4,
     modelTier: "utility",
+    maxOutputTokens: 2048,
   },
 
   {
@@ -528,8 +538,9 @@ AGENTIC SEARCH (nur bei unvollständigem Text):
   zusätzlichen Terms (Fall-Nummer, ON-Referenz), bis du die Person gefunden hast.
 - Nutze resolve_slugs um unklare Slug-Referenzen aufzulösen.`,
     allowedTools: ["get_page", "search", "query", "resolve_slugs"],
-    maxTurns: 15,
+    maxTurns: 4,
     modelTier: "utility",
+    maxOutputTokens: 2048,
   },
 
   {
@@ -639,7 +650,7 @@ OUTPUT-FORMAT: JSON mit folgender Struktur:
   "verfahrensverstoesse_gegenseite": [{ "verstoß": "...", "paragraph": "...", "on": "...", "quote": "...", "severity": "kritisch|warnung|info" }]
 }`,
     allowedTools: ["query", "search", "get_page", "traverse_graph"],
-    maxTurns: 25,
+    maxTurns: 8,
     modelTier: "reasoning",
   },
 
@@ -727,8 +738,9 @@ OUTPUT-FORMAT: JSON mit:
   ]
 }`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 30,
+    maxTurns: 8,
     modelTier: "utility",
+    maxOutputTokens: 4096,
   },
 
   {
@@ -844,8 +856,9 @@ AGENTIC SEARCH (iterativ):
 
 OUTPUT: JSON mit { "damage_table": [...], "deadline_calendar": [...] }`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 20,
-    modelTier: "reasoning",
+    maxTurns: 5,
+    modelTier: "utility",
+    maxOutputTokens: 2048,
   },
 
   {
@@ -924,7 +937,7 @@ HALLUCINATION-GATE (STRIKT):
 - source_text MUSS wörtlich aus dem Brain kommen.
 - Wenn kein Gegenargument gefunden wird: counter_arguments = [] — NICHT erfinden.`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 25,
+    maxTurns: 15,
     modelTier: "deep",
   },
 
@@ -1020,8 +1033,9 @@ HALLUCINATION-GATE (STRIKT):
 - source_text MUSS wörtlich aus dem Brain kommen.
 - Wenn ein § nicht gefunden wird: verified = false, status = "unsicher".`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 20,
-    modelTier: "reasoning",
+    maxTurns: 5,
+    modelTier: "utility",
+    maxOutputTokens: 2048,
   },
 
   {
@@ -1110,7 +1124,7 @@ HALLUCINATION-GATE (STRIKT):
 - source_text MUSS wörtlich aus dem Brain kommen.
 - Wenn eine Subsumtion nicht geprüft werden kann: verdict = "unsicher".`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 25,
+    maxTurns: 15,
     modelTier: "deep",
   },
 
@@ -1199,8 +1213,9 @@ HALLUCINATION-GATE (STRIKT):
 - Wenn keine Judikatur gefunden wird: precedent_matches = [], precedent_gaps mit Warnung.
 - verified = false wenn Quelle unsicher ist.`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 25,
-    modelTier: "reasoning",
+    maxTurns: 8,
+    modelTier: "utility",
+    maxOutputTokens: 4096,
   },
 
   {
@@ -1296,7 +1311,7 @@ HALLUCINATION-GATE (STRIKT):
 - ERFINDE KEINE §§. Beweislastregeln müssen im Brain verifiziert werden.
 - Wenn Beweislast unklar: beweis_kraft = "unzureichend", warnung mit Begründung.`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 25,
+    maxTurns: 15,
     modelTier: "reasoning",
   },
 
@@ -1411,7 +1426,7 @@ HALLUCINATION-GATE (STRIKT):
 - Wenn keine Schadenshöhe verfügbar: schadenshoehe = 0, kosten_nutzen_urteil = "BEDINGT EMPFOHLEN".
 - Kostenberechnung muss plausibel sein (RVG/StBVV/AHGB-Tarife).`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 20,
+    maxTurns: 12,
     modelTier: "reasoning",
   },
 
@@ -1513,8 +1528,9 @@ HALLUCINATION-GATE (STRIKT):
 - Wenn Zulässigkeit nicht geprüft werden kann: status = "unsicher", warnung mit Begründung.
 - Verjährung MUSS mit der Fristen-Validierung abgeglichen werden.`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 25,
-    modelTier: "reasoning",
+    maxTurns: 5,
+    modelTier: "utility",
+    maxOutputTokens: 2048,
   },
 
   {
@@ -1609,7 +1625,7 @@ HALLUCINATION-GATE (STRIKT):
 - Wenn keine Cost-Benefit-Analyse verfügbar: batna_mandant.ev = 0, vergleich_empfehlung = "BEDINGT EMPFOHLEN".
 - ZOPA MUSS mathematisch korrekt sein: untergrenze ≤ obergrenze wenn überlappung = true.`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 20,
+    maxTurns: 12,
     modelTier: "reasoning",
   },
 
@@ -1697,7 +1713,7 @@ HALLUCINATION-GATE (STRIKT):
 - Wenn ein Merkmal nicht im Brain gefunden wird: status = "unsicher", nicht "luecke".
 - Klaerungsfragen müssen spezifisch und auf den Einzelfall zugeschnitten sein.`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 25,
+    maxTurns: 15,
     modelTier: "reasoning",
   },
 
@@ -1811,7 +1827,7 @@ HALLUCINATION-GATE (STRIKT):
 - Wenn Vermögenslage unbekannt: unsicherheit = "hoch", geschaetzte_vermoegenshoehe = 0.
 - ERFINDE KEINE §§. Jede Exekutionsregel MUSS durch search/get_page im Brain gefunden werden.`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 25,
+    maxTurns: 15,
     modelTier: "reasoning",
   },
 
@@ -1918,7 +1934,7 @@ HALLUCINATION-GATE (STRIKT):
 - Wenn keine Pipeline-Outputs verfügbar: berufungsgruende = [], gesamt_wahrscheinlichkeit = 50 (unsicher).
 - ERFINDE KEINE §§. Jede Berufungsregel MUSS durch search/get_page im Brain gefunden werden.`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 25,
+    maxTurns: 15,
     modelTier: "reasoning",
   },
 
@@ -2061,7 +2077,7 @@ HALLUCINATION-GATE (STRIKT):
 - Kosten MÜSSEN plausibel sein (basierend auf Cost-Benefit-Analyse wenn verfügbar).
 - Wenn keine Pipeline-Outputs verfügbar: empfohlene_schritte = [], overall_strategie_score = 0.`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 25,
+    maxTurns: 15,
     modelTier: "reasoning",
   },
 
@@ -2166,7 +2182,7 @@ HALLUCINATION-GATE (STRIKT):
 - Wenn Versicherung unbekannt: versicherer = "unbekannt", schaden_gedeckt = "unsicher".
 - ERFINDE KEINE §§. Jede Versicherungsregel MUSS durch search/get_page im Brain gefunden werden.`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 20,
+    maxTurns: 12,
     modelTier: "reasoning",
   },
 
@@ -2294,7 +2310,7 @@ HALLUCINATION-GATE (STRIKT):
 - Steuersätze MÜSSEN plausibel sein (Einkommensteuersatz AT: 0-55%, DE: 14-45%, CH: 0-45%).
 - Schmerzensgeld ist in AT/DE/CH steuerfrei — das MUSS korrekt erkannt werden.`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 20,
+    maxTurns: 12,
     modelTier: "reasoning",
   },
 
@@ -2409,7 +2425,7 @@ HALLUCINATION-GATE (STRIKT):
 - ERFINDE KEINE §§. Jede Verfahrensregel MUSS durch search/get_page im Brain gefunden werden.
 - Gutachterkosten MÜSSEN plausibel sein (medizinisch €2-8k, technisch €3-15k).`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 20,
+    maxTurns: 12,
     modelTier: "reasoning",
   },
 
@@ -2529,7 +2545,7 @@ HALLUCINATION-GATE (STRIKT):
 - ERFINDE KEINE §§. Jede Verfahrensregel MUSS durch search/get_page im Brain gefunden werden.
 - Widerklage-Wahrscheinlichkeit MUSS plausibel sein (0-100%).`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 20,
+    maxTurns: 12,
     modelTier: "reasoning",
   },
 
@@ -2637,7 +2653,7 @@ HALLUCINATION-GATE (STRIKT):
 - Wenn keine ON-Tabelle verfügbar: beweise = [], beweisqualitaet_score = 0.
 - ERFINDE KEINE §§. Jede Verfahrensregel MUSS durch search/get_page im Brain gefunden werden.`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 20,
+    maxTurns: 12,
     modelTier: "reasoning",
   },
 
@@ -2750,7 +2766,7 @@ HALLUCINATION-GATE (STRIKT):
 - Erfolgswahrscheinlichkeiten MÜSSEN plausibel sein (Mediation 60-85%, Schiedsverfahren 70-90%, Schlichtung 50-70%).
 - Kosten MÜSSEN plausibel sein (Mediation €1-5k, Schiedsverfahren €10-50k, Schlichtung €0-1k).`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 20,
+    maxTurns: 12,
     modelTier: "reasoning",
   },
 
@@ -2894,8 +2910,9 @@ HALLUCINATION-GATE (STRIKT):
 - Das Feld "gegner" ist PFLICHT — ohne Gegner-Zuordnung kein "verjährt/nicht verjährt"-Urteil.
 - Wenn keine Schadentabelle verfügbar: ansprueche = [], score = 0.`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 20,
-    modelTier: "reasoning",
+    maxTurns: 5,
+    modelTier: "utility",
+    maxOutputTokens: 2048,
   },
 
   {
@@ -2967,7 +2984,7 @@ HALLUCINATION-GATE (STRIKT):
 - Jeder Eintrag in der Master-Schadenstabelle MUSS einer case_slug zugeordnet sein.
 - Wenn nur eine Akte verknüpft ist: erstelle trotzdem die Matrix (Single-Case-Modus).`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 25,
+    maxTurns: 15,
     modelTier: "reasoning",
   },
 
@@ -3167,7 +3184,7 @@ HALLUCINATION-GATE (STRIKT):
 - Erstattung = eigene Kosten * Erfolgsquote (bei Teilgewinn).
 - Wenn keine Cost-Benefit-Analyse verfügbar: szenarien = [], score = 0.`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 20,
+    maxTurns: 12,
     modelTier: "reasoning",
   },
 
@@ -3343,7 +3360,7 @@ HALLUCINATION-GATE (STRIKT):
 - Steuersätze MÜSSEN plausibel sein (DE EStG: 14-45%, AT EStG: 0-55%, CH DBG: 0-11,5%).
 - Bei Unklarheit: steuerberater_empfohlen = true.`,
     allowedTools: ["query", "search", "get_page", "list_pages"],
-    maxTurns: 20,
+    maxTurns: 12,
     modelTier: "reasoning",
   },
 
@@ -3402,8 +3419,9 @@ HALLUCINATION-GATE (STRIKT):
 - Risiko-Bewertungen müssen plausibel sein (Reverse Charge Fehler = hoch, nicht kritisch).
 - Selbstanzeige-Hinweis nur wenn Gesetz im Corpus gefunden wurde.`,
     allowedTools: ["query", "search", "get_page"],
-    maxTurns: 15,
-    modelTier: "reasoning",
+    maxTurns: 5,
+    modelTier: "utility",
+    maxOutputTokens: 2048,
   },
 
   {

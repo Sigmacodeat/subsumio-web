@@ -1,6 +1,7 @@
 import { ENGINE_URL } from "@/lib/engine";
 import { runEval } from "@/lib/rag-eval";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
+import type { AuditAction } from "@/lib/audit";
 import {
   appendEvalHistory,
   loadEvalHistory,
@@ -15,6 +16,11 @@ export const POST = createHandler(
   {
     action: "admin.*",
     rateTier: "heavy",
+    audit: (_ctx, _body) => ({
+      action: "admin.rag_eval" as unknown as AuditAction,
+      entityType: "rag_eval",
+      details: { action: "run" },
+    }),
   },
   async (ctx, _body, _query, _req) => {
     try {
@@ -55,6 +61,11 @@ export const GET = createHandler(
   {
     action: "admin.*",
     rateTier: "standard",
+    audit: (_ctx, _body) => ({
+      action: "admin.rag_eval" as unknown as AuditAction,
+      entityType: "rag_eval",
+      details: { action: "history" },
+    }),
   },
   async (ctx, _body, _query, _req) => {
     try {
@@ -77,6 +88,11 @@ export const PUT = createHandler(
   {
     action: "admin.*",
     rateTier: "standard",
+    audit: (_ctx, _body) => ({
+      action: "admin.rag_eval" as unknown as AuditAction,
+      entityType: "rag_eval",
+      details: { action: "set_baseline" },
+    }),
   },
   async (ctx, _body, _query, _req) => {
     try {

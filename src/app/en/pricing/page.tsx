@@ -6,7 +6,7 @@ import { professionalPricing } from "@/content/audiences";
 export const metadata: Metadata = {
   title: "Subsumio Pricing — Private, Solo, Firm and Enterprise",
   description:
-    "Separate pricing for private orientation and professional case work. Solo €179/month, Firm €999/month including five users, cancel monthly.",
+    "Separate pricing for private orientation and professional case work. Solo €249/month, Firm €1.499/month including five users, cancel monthly.",
   alternates: {
     canonical: "/en/pricing",
     languages: {
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Subsumio Pricing — Private, Solo, Firm and Enterprise",
     description:
-      "Separate pricing for private orientation and professional case work. Solo €179/month, cancel monthly.",
+      "Separate pricing for private orientation and professional case work. Solo €249/month, cancel monthly.",
     url: "/en/pricing",
     type: "website",
   },

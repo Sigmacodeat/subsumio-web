@@ -15,7 +15,6 @@ import {
   Check,
   Brain as BrainIcon,
   HelpCircle,
-  PanelRightOpen,
   Plus,
   Briefcase,
   CalendarClock,
@@ -142,9 +141,11 @@ export function Topbar({
     }>
   >([]);
   const [loadingNotifs, setLoadingNotifs] = useState(false);
+  const [notificationError, setNotificationError] = useState(false);
   const [readInlineIds, setReadInlineIds] = useState<Set<string>>(new Set());
 
   const fetchNotifications = async () => {
+    setNotificationError(false);
     try {
       const res = await csrfFetch("/api/notifications?unread=true&limit=20");
       if (res.ok) {
@@ -179,9 +180,11 @@ export function Topbar({
           }
         );
         setApiNotifications(mapped);
+      } else {
+        setNotificationError(true);
       }
     } catch {
-      // silently skip — notifications are non-critical
+      setNotificationError(true);
     }
   };
 
@@ -558,6 +561,21 @@ export function Topbar({
                     </button>
                   </div>
                 </div>
+                {notificationError && (
+                  <div
+                    className="flex items-center justify-between gap-2 border-b border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-2 text-xs text-[color:var(--ds-danger-text)]"
+                    role="alert"
+                  >
+                    <span>{t("topbar.notifications_error")}</span>
+                    <button
+                      type="button"
+                      onClick={() => void fetchNotifications()}
+                      className="font-medium underline underline-offset-2 focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+                    >
+                      {t("common.retry")}
+                    </button>
+                  </div>
+                )}
                 <div
                   className="flex gap-1 border-b border-[color:var(--ds-border)] p-2"
                   role="tablist"
@@ -658,7 +676,7 @@ export function Topbar({
                                   );
                                 } catch {}
                               }}
-                              className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                              className="flex h-11 w-11 shrink-0 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
                               aria-label={t("topbar.mark_read")}
                             >
                               <Check size={12} />

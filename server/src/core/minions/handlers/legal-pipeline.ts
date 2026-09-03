@@ -59,13 +59,23 @@
 import type { MinionJobContext } from "../types.ts";
 import type { BrainEngine } from "../../engine.ts";
 import { MinionQueue } from "../queue.ts";
+import { createHash } from "node:crypto";
 import { resolveSpecialist } from "../specialist-defs.ts";
 import { getLayerDeclaration } from "../pipeline-registry.ts";
+import { assertProviderCredits } from "../../ai/credits-preflight.ts";
 import { parseMarkdown } from "../../markdown.ts";
 import { groundQuotes, normalizeForMatch, tryParseJSON } from "../../legal/llm-util.ts";
 import { BudgetTracker, BudgetExhausted } from "../../budget/budget-tracker.ts";
 import { inheritBudgetOwner } from "../budget-tracker.ts";
+import { recordUsage as recordSaaSUsage } from "../../billing.ts";
 import { classifyLegalDocument, legalDocTypeLabel } from "../../legal/doc-classifier.ts";
+import { AT_LAW_SOURCES_ALL } from "../../legal/jurisdiction.ts";
+import {
+  runCompletenessCheck,
+  detectCaseType,
+  type ArrivedDocument,
+  type CompletenessResult,
+} from "../../legal/completeness-check.ts";
 import {
   validiereGZ,
   pruefeGZKonsistenz,
@@ -182,9 +192,29 @@ function buildFactsFence(rows: FactRow[]): string {
  * Jurisdiction → law corpus sources mapping for the legal pipeline.
  * Mirrors the engine-side JURISDICTION_LAW_SOURCES in web-api.ts.
  * EU law applies to all DACH jurisdictions.
+ *
+ * v0.46: AT sources expanded from ["law-at", "law-at-judikatur"] to include
+ * all granular AT sources. The original "law-at" source has 0 pages because
+ * the 148.198 AT norms were imported via batch-import-from-disk.ts under
+ * granular source IDs (law-at-normen, law-at-landesrecht, etc.). Without
+ * this expansion, the Law-Matcher searched an empty source and found no
+ * AT statutes — a critical bug that made the pipeline non-functional for
+ * AT cases. The granular sources are:
+ *   - law-at-normen: 147.749 federal statutes (ABGB, StGB, ZPO, etc.)
+ *   - law-at-landesrecht: 108.297 state statutes
+ *   - law-at-gemeinden: 19.992 municipal law
+ *   - law-at-bezirke: 2.510 district law
+ *   - law-at-bmerl: 1.110 ministerial decrees
+ *   - law-at-avsv: 2.651 administrative court precedents (VwGH)
+ *   - law-at-avn: 699 administrative court precedents (other)
+ *   - law-at-spg: 76 sports law
+ *   - law-at-kmger: 53 competition court
+ *   - law-at-staatsvertraege: 1.048 treaties
+ *   - law-at-literatur: 125 legal literature
+ *   - law-at-judikatur-*: 422.836 court decisions (all courts)
  */
 const PIPELINE_JURISDICTION_LAW_SOURCES: Record<string, string[]> = {
-  at: ["law-at", "law-at-judikatur", "law-eu"],
+  at: AT_LAW_SOURCES_ALL,
   de: ["law-de", "law-eu"],
   ch: ["law-ch", "law-eu"],
   eu: ["law-eu"],
@@ -217,6 +247,10 @@ export interface LegalPipelineData {
   owner_id?: string;
   /** F1 fix: Owner type ('user' | 'org') for billing settlement. */
   owner_type?: string;
+  /** The actual user who triggered the pipeline (for saas_usage_ledger).
+   *  When owner_type='org', owner_id is the org_id and user_id is the
+   *  individual user. Falls back to owner_id for backward compat. */
+  user_id?: string;
   /** F1 fix: Pre-pipeline reserved credits (EUR) — used by setOwnerBudget
    *  to set the DB-level budget cap on the owner job row. */
   reserved_credits?: number;
@@ -305,7 +339,7 @@ export interface LegalPipelineData {
   as_of_date?: string;
 }
 
-interface PipelineState {
+export interface PipelineState {
   case_slug: string;
   status:
     | "pending"
@@ -326,6 +360,14 @@ interface PipelineState {
       duration_ms?: number;
       output_slugs?: string[];
       error?: string;
+      // v0.42.38.0+ — Per-layer token usage for cost observability.
+      // Aggregated from child subagent results. Lets us measure which
+      // layers consume the most tokens and validate optimizations.
+      tokens_in?: number;
+      tokens_out?: number;
+      cache_read_tokens?: number;
+      cache_create_tokens?: number;
+      cost_usd?: number;
     }
   >;
   manual_overrides?: LegalPipelineData["manual_overrides"];
@@ -342,6 +384,10 @@ interface PipelineState {
   owner_id?: string;
   owner_type?: string;
   reserved_credits?: number;
+  /** The actual user who triggered the pipeline (for saas_usage_ledger).
+   *  When owner_type='org', owner_id is the org_id and user_id is the
+   *  individual user. Falls back to owner_id for backward compat. */
+  user_id?: string;
   /** Warnings accumulated during pipeline execution (e.g. state persistence failures) */
   warnings?: string[];
   /** Risk-based verification state from guardrail + cross-verify (Phase 0A) */
@@ -551,6 +597,172 @@ interface MapResult {
   result: unknown;
 }
 
+// v0.42.38.0+ — Deterministic context distillation for inter-layer context.
+// Instead of passing the FULL JSON of all prior layer outputs to the next
+// layer, we extract only the fields the next layer actually needs and strip
+// verbose fields (long quotes, full text excerpts) that are only needed
+// during the layer that produced them.
+//
+// Research (PAACE, SUPO, Agentic Engineering Guide) shows deterministic
+// compression > LLM summarization for production: reproducible, debuggable,
+// no extra cost, no non-determinism.
+//
+// Savings: forensic_report alone can be 3-5k tokens with full chronologie
+// + geldfluss arrays. Distilled to summary + key findings = ~500-800 tokens.
+// Across 4-5 context propagations, this saves 8-15k tokens per pipeline run.
+
+interface DistillOpts {
+  /** Strip long quote fields from on_table entries (keep on_nummer, datum, typ, personen) */
+  stripOnQuotes?: boolean;
+  /** Strip quote + metadata + description from entities (keep name, type, role, aliases) */
+  stripEntityDetails?: boolean;
+  /** Reduce forensic_report to summary + array lengths (drop full arrays) */
+  distillForensicReport?: boolean;
+  /** Strip full grounding text from legal_grounding_map (keep norm, paragraph, score) */
+  stripGroundingText?: boolean;
+  /** Strip beleg_on + quote from damage_table (keep position, topf, betrag, waehrung) */
+  stripDamageDetails?: boolean;
+}
+
+function distillOnTable(onTable: OnEntry[], stripQuotes: boolean): unknown[] {
+  if (!stripQuotes) return onTable;
+  return onTable.map((e) => ({
+    on_nummer: e.on_nummer,
+    datum: e.datum,
+    typ: e.typ,
+    personen: e.personen,
+    verfahren: e.verfahren,
+    mappe: e.mappe,
+    // quote stripped — only needed during ON extraction, not for downstream layers
+  }));
+}
+
+function distillEntities(entities: EntityEntry[], stripDetails: boolean): unknown[] {
+  if (!stripDetails) return entities;
+  return entities.map((e) => ({
+    name: e.name,
+    type: e.type,
+    role: e.role,
+    aliases: e.aliases,
+    on_references: e.on_references,
+    accusations: e.accusations,
+    // quote + metadata + description stripped — verbose, only needed during extraction
+  }));
+}
+
+function distillForensicReport(report: ForensicReport | null, distill: boolean): unknown {
+  if (!report) return null;
+  if (!distill) return report;
+  // Keep summary + array lengths only. Downstream layers (law-matcher, drafter)
+  // need to know WHAT was found, not the full chronologie/geldfluss arrays.
+  // If they need detail, they can get_page the forensic report slug.
+  return {
+    summary: report.summary,
+    chronologie_count: report.chronologie?.length ?? 0,
+    unterlassene_massnahmen_count: report.unterlassene_massnahmen?.length ?? 0,
+    nicht_vernommene_personen_count: report.nicht_vernommene_personen?.length ?? 0,
+    geldfluss_count: report.geldfluss?.length ?? 0,
+    amtshaftungspunkte_count: report.amtshaftungspunkte?.length ?? 0,
+    verfahrensverstoesse_gegenseite_count: report.verfahrensverstoesse_gegenseite?.length ?? 0,
+  };
+}
+
+function distillLegalGroundingMap(map: unknown[], stripText: boolean): unknown[] {
+  if (!stripText || !Array.isArray(map)) return map;
+  return map.map((g) => {
+    const entry = g as Record<string, unknown>;
+    return {
+      norm: entry.norm,
+      paragraph: entry.paragraph,
+      score: entry.score,
+      match_type: entry.match_type,
+      // full grounding text + evidence stripped — verbose
+    };
+  });
+}
+
+function distillDamageTable(table: unknown[], stripDetails: boolean): unknown[] {
+  if (!stripDetails || !Array.isArray(table)) return table;
+  return table.map((d) => {
+    const entry = d as Record<string, unknown>;
+    return {
+      position: entry.position,
+      topf: entry.topf,
+      betrag: entry.betrag,
+      waehrung: entry.waehrung,
+      // beleg_on + quote stripped
+    };
+  });
+}
+
+/**
+ * Build a distilled context JSON for inter-layer propagation.
+ * Only includes fields the consuming layer actually needs.
+ */
+function buildDistilledContext(base: Record<string, unknown>, opts: DistillOpts): string {
+  const result: Record<string, unknown> = { ...base };
+
+  if (result.on_table && opts.stripOnQuotes) {
+    result.on_table = distillOnTable(result.on_table as OnEntry[], true);
+  }
+  if (result.entities && opts.stripEntityDetails) {
+    result.entities = distillEntities(result.entities as EntityEntry[], true);
+  }
+  if (result.forensic_report && opts.distillForensicReport) {
+    result.forensic_report = distillForensicReport(
+      result.forensic_report as ForensicReport | null,
+      true
+    );
+  }
+  if (result.legal_grounding_map && opts.stripGroundingText) {
+    result.legal_grounding_map = distillLegalGroundingMap(
+      result.legal_grounding_map as unknown[],
+      true
+    );
+  }
+  if (result.damage_table && opts.stripDamageDetails) {
+    result.damage_table = distillDamageTable(result.damage_table as unknown[], true);
+  }
+
+  return JSON.stringify(result);
+}
+
+// v0.42.38.0+ — Aggregate token usage from child results for per-layer tracking.
+// Extracts { in, out, cache_read, cache_create } from child result.tokens.
+function aggregateTokenUsage(results: Array<{ result: unknown } | undefined>): {
+  tokens_in: number;
+  tokens_out: number;
+  cache_read_tokens?: number;
+  cache_create_tokens?: number;
+  cost_usd?: number;
+} {
+  let tokens_in = 0;
+  let tokens_out = 0;
+  let cache_read_tokens = 0;
+  let cache_create_tokens = 0;
+  for (const r of results) {
+    if (!r?.result) continue;
+    const tokens = (
+      r.result as {
+        tokens?: {
+          in?: number;
+          out?: number;
+          cache_read?: number;
+          cache_create?: number;
+          cost_usd?: number;
+        };
+      } | null
+    )?.tokens;
+    if (tokens) {
+      tokens_in += tokens.in ?? 0;
+      tokens_out += tokens.out ?? 0;
+      cache_read_tokens += tokens.cache_read ?? 0;
+      cache_create_tokens += tokens.cache_create ?? 0;
+    }
+  }
+  return { tokens_in, tokens_out, cache_read_tokens, cache_create_tokens };
+}
+
 // ── Batching constants ──────────────────────────────────────
 
 const HAIKU_BATCH_SIZE = 4; // ~200K tokens per batch (reduced for DeepSeek)
@@ -564,6 +776,10 @@ type PipelineBillingContext = {
   owner_id?: string;
   owner_type?: string;
   model_policy?: "any" | "eu_only";
+  /** The actual user who triggered the pipeline (for saas_usage_ledger).
+   *  When owner_type='org', owner_id is the org_id and user_id is the
+   *  individual user. Falls back to owner_id for backward compat. */
+  user_id?: string;
 };
 
 // Workers use a Promise pool and can therefore process several pipelines in
@@ -595,19 +811,53 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
       throw new Error(`legal-pipeline: unknown workflow_id "${String(data.workflow_id)}"`);
     }
 
+    // v0.42.38.0+ — full_pipeline deprecation warning.
+    // full_pipeline runs ALL 29 layers — 3× more expensive than a targeted
+    // workflow (memo=9, fristen_report=11, schriftsatz=14). Most callers
+    // only need a subset. Warn loudly so callers switch to a targeted workflow.
+    if (data.workflow_id === "full_pipeline") {
+      console.warn(
+        `[legal-pipeline] ⚠️  WARN: workflow_id="full_pipeline" runs ALL 29 layers ` +
+          `(3× token cost vs targeted workflows). Consider using "memo", ` +
+          `"fristen_report", or "schriftsatz" instead. This warning will ` +
+          `become a hard error in a future release.`
+      );
+    }
+    // v0.42.38.0+ — No workflow_id set: warn about the implicit full_pipeline
+    // behavior. We do NOT auto-default to "memo" to avoid breaking existing
+    // callers that rely on the full set, but the warning nudges them to
+    // switch explicitly.
+    if (!data.workflow_id) {
+      console.warn(
+        `[legal-pipeline] ⚠️  WARN: no workflow_id set — running ALL layers ` +
+          `(full_pipeline behavior, 3× token cost). Pass workflow_id=` +
+          `"memo"|"fristen_report"|"schriftsatz" for a targeted, cheaper run.`
+      );
+    }
+
+    // v0.42.38.0+ — Pre-Flight: check provider credits BEFORE starting the
+    // pipeline. Fails fast with an actionable error instead of crashing
+    // mid-flight after partial work (wasting specialist turns + tokens).
+    // 60s cache means this adds <1ms on rapid re-runs.
+    await assertProviderCredits();
+
     return billingContextStore.run(
       {
         pipeline_key: data.pipeline_key,
         owner_id: data.owner_id,
         owner_type: data.owner_type,
         model_policy: data.model_policy,
+        user_id: data.user_id,
       },
       async () => {
-        const rawData = data as unknown as Record<string, unknown>;
+        // Source-isolation stamp: read from the typed `data.source_id` field
+        // (LegalPipelineData declares `source_id?: string`). Pre-fix this
+        // read `rawData._source_id` which was NEVER set by any caller —
+        // all callers send `source_id`, not `_source_id`. This caused
+        // `sourceStamp` to always be `undefined`, making all engine calls
+        // unscoped → cross-tenant data leak in multi-tenant deployments.
         const sourceStamp =
-          typeof rawData._source_id === "string" && rawData._source_id
-            ? (rawData._source_id as string)
-            : undefined;
+          typeof data.source_id === "string" && data.source_id ? data.source_id : undefined;
         // Resolve federated law corpus sources from the case's jurisdiction.
         // This gives pipeline subagents (Law Matcher, Counter-Arguments, etc.)
         // search access to the correct national law corpus + EU law.
@@ -621,16 +871,17 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
         // as the cost cap when max_cost_usd is not explicitly set. This ties
         // the in-process budget gate to the actual credits the user reserved,
         // not a hardcoded $50 default. Convert EUR → USD (conservative 1.08).
-        const costCap =
+        // NOTE: BudgetTracker is created AFTER discoverAllCaseDocuments below,
+        // so the cost cap can be re-scaled based on the accumulated case size.
+        // Pre-fix, the cap was based on the trigger batch (e.g. 1 document),
+        // but the pipeline processes the full accumulated case (e.g. 50 docs)
+        // — BudgetExhausted would abort mid-pipeline.
+        const baseCostCap =
           typeof data.max_cost_usd === "number" && data.max_cost_usd > 0
             ? data.max_cost_usd
             : typeof data.reserved_credits === "number" && data.reserved_credits > 0
               ? data.reserved_credits * 1.08
               : DEFAULT_COST_CAP_USD;
-        const budget = new BudgetTracker({
-          maxCostUsd: costCap,
-          label: `legal-pipeline/${data.case_slug}`,
-        });
 
         // ── Gap 16: Resume from layer (if resume_from_layer is set) ──
         // F2 fix: also auto-resume from persisted state on queue-level retry.
@@ -704,6 +955,44 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
           onTable = await loadOnTableFromPage(engine, data.case_slug, sourceStamp);
           entities = await loadEntitiesFromPages(engine, data.case_slug, sourceStamp);
         } else {
+          // Archive previous pipeline state before overwriting (BUG #2 fix).
+          // Without this, each re-run (incremental upload) destroys the
+          // previous state — no audit trail of which layers ran, what they
+          // cost, or what warnings occurred. For a legal product, this
+          // traceability is important for liability and quality assurance.
+          try {
+            const existingState = await engine.getPage(
+              stateSlug,
+              sourceStamp !== undefined ? { sourceId: sourceStamp } : undefined
+            );
+            if (existingState) {
+              const archiveSlug = `${stateSlug}/archived-${new Date().toISOString().replace(/[:.]/g, "-")}`;
+              await engine.putPage(
+                archiveSlug,
+                {
+                  type: "pipeline_state",
+                  title: `${existingState.title ?? stateSlug} (archiviert)`,
+                  compiled_truth: String(existingState.compiled_truth ?? ""),
+                  frontmatter: {
+                    ...((existingState.frontmatter ?? {}) as Record<string, unknown>),
+                    archived_from: stateSlug,
+                    archived_at: new Date().toISOString(),
+                    archived_reason: "pipeline_rerun",
+                  },
+                },
+                sourceStamp !== undefined ? { sourceId: sourceStamp } : undefined
+              );
+              console.log(
+                `[legal-pipeline] Archived previous pipeline state ${stateSlug} → ${archiveSlug}`
+              );
+            }
+          } catch (archiveErr) {
+            // Best-effort — don't block the pipeline if archiving fails
+            console.warn(
+              `[legal-pipeline] Failed to archive previous state: ` +
+                (archiveErr instanceof Error ? archiveErr.message : String(archiveErr))
+            );
+          }
           state = {
             case_slug: data.case_slug,
             status: "running",
@@ -721,7 +1010,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             total_duration_ms: 0,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-            cost_cap_usd: costCap,
+            cost_cap_usd: baseCostCap,
             // F1 fix: persist billing context for server-side settlement.
             pipeline_key: data.pipeline_key,
             owner_id: data.owner_id,
@@ -762,6 +1051,80 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
         };
         const shouldRunAnyLayer = (...layerIds: string[]): boolean =>
           layerIds.some((layerId) => shouldRunLayerById(layerId));
+
+        // ── Accumulate case documents ────────────────────────────
+        // The pipeline must see the full case file, not just the newly
+        // uploaded documents. Without this, incremental uploads (the normal
+        // workflow: Klageschrift week 1, Beweis week 2) re-analyze only the
+        // new document and overwrite the previous analysis. We discover all
+        // pages stamped with case_slug in their frontmatter (the canonical
+        // case-membership signal) and merge them with the trigger slugs.
+        // This ensures every layer (ON-Scanner, Entity-Extractor, Forensic
+        // Analyst, Completeness-Check, etc.) processes the accumulated case.
+        const triggerBatchSizeCapture = data.part_slugs.length;
+        try {
+          const discoveredSlugs = await discoverAllCaseDocuments(
+            engine,
+            data.case_slug,
+            sourceStamp
+          );
+          const existingSlugs = new Set(data.part_slugs);
+          const newSlugs = discoveredSlugs.filter((s) => !existingSlugs.has(s));
+          if (newSlugs.length > 0) {
+            const triggerCount = existingSlugs.size;
+            const accumulatedCount = triggerCount + newSlugs.length;
+            data.part_slugs = [...data.part_slugs, ...newSlugs];
+            console.log(
+              `[legal-pipeline] Accumulated case: +${newSlugs.length} discovered documents ` +
+                `(total ${data.part_slugs.length}, trigger had ${triggerCount})`
+            );
+          }
+        } catch (err) {
+          // Discovery is best-effort — if it fails, fall back to trigger-only
+          // slugs (the pre-fix behavior). The pipeline still runs, just without
+          // case accumulation. Logged for ops visibility.
+          console.warn(
+            `[legal-pipeline] Case document discovery failed: ` +
+              `${err instanceof Error ? err.message : String(err)} — ` +
+              `falling back to trigger-only slugs (${data.part_slugs.length})`
+          );
+        }
+
+        // ── Create BudgetTracker with accumulated-case-aware cost cap ──
+        // After discoverAllCaseDocuments expanded data.part_slugs, re-scale
+        // the cost cap proportionally if the accumulated case is larger than
+        // the trigger batch. Pre-fix, the cap was based on the trigger batch
+        // (e.g. 1 document), but the pipeline processes the full accumulated
+        // case (e.g. 50 docs) — BudgetExhausted would abort mid-pipeline,
+        // producing a partial analysis. We only scale when the cap was
+        // derived from reserved_credits or the default (not an explicit
+        // max_cost_usd, which is a user-set hard limit). Capped at $500 to
+        // prevent runaway costs on very large cases.
+        const triggerBatchSize = triggerBatchSizeCapture;
+        const accumulatedSize = data.part_slugs.length;
+        let costCap = baseCostCap;
+        if (
+          triggerBatchSize > 0 &&
+          accumulatedSize > triggerBatchSize &&
+          !(typeof data.max_cost_usd === "number" && data.max_cost_usd > 0)
+        ) {
+          const scaleFactor = accumulatedSize / triggerBatchSize;
+          const scaledCap = Math.min(baseCostCap * scaleFactor, 500);
+          if (scaledCap > baseCostCap) {
+            costCap = scaledCap;
+            console.log(
+              `[legal-pipeline] Budget cap re-scaled: $${baseCostCap.toFixed(2)} → ` +
+                `$${costCap.toFixed(2)} (scale=${scaleFactor.toFixed(1)}x, ` +
+                `${triggerBatchSize}→${accumulatedSize} docs)`
+            );
+          }
+        }
+        const budget = new BudgetTracker({
+          maxCostUsd: costCap,
+          label: `legal-pipeline/${data.case_slug}`,
+        });
+        // Update state with the final (potentially re-scaled) cost cap
+        state.cost_cap_usd = costCap;
 
         // ── Load all sub-page texts (haystack for validation) ────
         const rawTexts = await loadAllSubPages(engine, data.part_slugs, sourceStamp);
@@ -812,6 +1175,63 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             } catch {
               // Classification is best-effort — don't fail the pipeline if a page can't be updated
             }
+          }
+        }
+
+        // ── Layer 0.5: Completeness Check (deterministic, $0) ──
+        // Checks whether the uploaded case file contains all expected document
+        // types for its case type (zivil/straf/verwaltungs/arbeits). Produces
+        // a CHASE/COMPLETE/WARNING verdict + missing-doc list. Runs after
+        // doc-classifier (needs doc_type stamps) and before ON-Scanner.
+        let completenessResult: CompletenessResult | null = null;
+        if (shouldRunLayerById("completeness-check")) {
+          try {
+            // Build ArrivedDocument[] from classified sub-pages
+            const arrived: ArrivedDocument[] = [];
+            for (let i = 0; i < data.part_slugs.length; i++) {
+              const partSlug = data.part_slugs[i]!;
+              const partText = allTexts[i] ?? "";
+              if (!partText) continue;
+              const classification = classifyLegalDocument(partText);
+              arrived.push({
+                slug: partSlug,
+                title: partSlug.split("/").pop() ?? partSlug,
+                docType: classification.type,
+                confidence: classification.confidence,
+              });
+            }
+            // Detect case type from arrived documents
+            const caseType = detectCaseType(arrived);
+            // Run completeness check (deterministic, no LLM)
+            completenessResult = runCompletenessCheck(caseType, arrived);
+            // Write result as a pipeline page so the dashboard can display it
+            const completenessSlug = `completeness-checks/${data.case_slug}`;
+            const completenessBody = JSON.stringify(completenessResult, null, 2);
+            await engine.putPage(
+              completenessSlug,
+              {
+                type: "completeness_check",
+                title: `Completeness Check — ${data.case_slug}`,
+                compiled_truth: completenessBody,
+                frontmatter: {
+                  case_ref: data.case_slug,
+                  verdict: completenessResult.verdict,
+                  completeness_percent: completenessResult.completenessPercent,
+                  case_type: completenessResult.caseType,
+                  missing_count: completenessResult.pieces.filter((p) => p.status === "MISSING")
+                    .length,
+                  checked_at: completenessResult.checkedAt,
+                },
+              },
+              { sourceId: sourceStamp }
+            );
+            console.log(
+              `[legal-pipeline] Layer 0.5 completeness-check: verdict=${completenessResult.verdict}, completeness=${completenessResult.completenessPercent}%, missing=${completenessResult.pieces.filter((p) => p.status === "MISSING").length}`
+            );
+          } catch (err) {
+            console.error(
+              `[legal-pipeline] Layer 0.5 completeness-check failed: ${err instanceof Error ? err.message : String(err)}`
+            );
           }
         }
 
@@ -992,9 +1412,19 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               }
             }
 
-            await updateLayerState(ctx, state, stateSlug, 1, "completed", engine, sourceStamp, [
-              onIndexSlug,
-            ]);
+            await updateLayerState(
+              ctx,
+              state,
+              stateSlug,
+              1,
+              "completed",
+              engine,
+              sourceStamp,
+              [onIndexSlug],
+              (onResult as Record<string, unknown>)?.tokens_aggregated as
+                | Record<string, number>
+                | undefined
+            );
           } else {
             // Load existing ON table from page
             onTable = await loadOnTableFromPage(engine, data.case_slug, sourceStamp);
@@ -1075,7 +1505,10 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               "completed",
               engine,
               sourceStamp,
-              entitySlugs
+              entitySlugs,
+              (entityResult as Record<string, unknown>)?.tokens_aggregated as
+                | Record<string, number>
+                | undefined
             );
 
             // ── Gap 16: Human-in-the-Loop Checkpoint ──────────────
@@ -1118,13 +1551,17 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             const jurisdiction = data.jurisdiction ?? "at";
             const verfahrenstyp =
               onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges";
-            const contextJson = JSON.stringify({
-              on_table: onTable,
-              entities,
-              manual_overrides: data.manual_overrides,
-              jurisdiction,
-              verfahrenstyp,
-            });
+            const contextJson = buildDistilledContext(
+              {
+                on_table: onTable,
+                entities,
+                manual_overrides: data.manual_overrides,
+                jurisdiction,
+                verfahrenstyp,
+              },
+              // Layer 3 (forensic) needs ON + entities but NOT the full quotes
+              { stripOnQuotes: true, stripEntityDetails: true }
+            );
             const forensicResult = await runMapReduceLayer({
               ctx,
               queue,
@@ -1193,9 +1630,19 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               forensicReport,
               sourceStamp
             );
-            await updateLayerState(ctx, state, stateSlug, 3, "completed", engine, sourceStamp, [
-              forensicSlug,
-            ]);
+            await updateLayerState(
+              ctx,
+              state,
+              stateSlug,
+              3,
+              "completed",
+              engine,
+              sourceStamp,
+              [forensicSlug],
+              (forensicResult as Record<string, unknown>)?.tokens_aggregated as
+                | Record<string, number>
+                | undefined
+            );
           } else {
             await updateLayerState(ctx, state, stateSlug, 3, "skipped", engine, sourceStamp);
           }
@@ -1302,219 +1749,252 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             }
 
             // ── Layer 4b: Precedent Match (Rechtsprechung) ──────
-            // Searches for relevant case law (OGH/BGH/BVerfG) that supports
-            // or endangers the legal claims. Non-blocking.
-            if (shouldRunLayerById("precedent-matcher"))
-              try {
-                const precedentSlug = await runPrecedentMatchLayer({
-                  ctx,
-                  queue,
-                  engine,
-                  caseSlug: data.case_slug,
-                  legalGroundingMap,
-                  forensicReport,
-                  jurisdiction: data.jurisdiction ?? "at",
-                  verfahrenstyp:
-                    data.verfahrenstyp ??
-                    (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-                  sourceStamp,
-                  lawSourceIds,
-                  budget,
-                });
-                if (precedentSlug) {
+            // v0.42.38.0+ — Layer 4b+4c parallelized with Promise.allSettled.
+            // These sub-layers are independent (both only need legalGroundingMap
+            // + forensicReport) and were previously awaited sequentially.
+            // Parallel execution saves 30-120s wall-clock time per pipeline run.
+            // State mutations (output_slugs, warnings) are collected locally
+            // and merged after both complete to avoid race conditions.
+            const layer4ParallelTasks: Promise<{
+              slug?: string | null;
+              warning?: string;
+              needsPrecedentMerge?: boolean;
+            }>[] = [];
+
+            if (shouldRunLayerById("precedent-matcher")) {
+              layer4ParallelTasks.push(
+                (async () => {
+                  try {
+                    const precedentSlug = await runPrecedentMatchLayer({
+                      ctx,
+                      queue,
+                      engine,
+                      caseSlug: data.case_slug,
+                      legalGroundingMap,
+                      forensicReport,
+                      jurisdiction: data.jurisdiction ?? "at",
+                      verfahrenstyp:
+                        data.verfahrenstyp ??
+                        (onTable.length > 0
+                          ? (onTable[0]?.verfahrenstyp ?? "sonstiges")
+                          : "sonstiges"),
+                      sourceStamp,
+                      lawSourceIds,
+                      budget,
+                    });
+                    return { slug: precedentSlug, needsPrecedentMerge: !!precedentSlug };
+                  } catch (err) {
+                    const msg = err instanceof Error ? err.message : String(err);
+                    return { warning: `Precedent match failed: ${msg}` };
+                  }
+                })()
+              );
+            }
+
+            if (shouldRunLayerById("burden-of-proof")) {
+              layer4ParallelTasks.push(
+                (async () => {
+                  try {
+                    const burdenSlug = await runBurdenOfProofLayer({
+                      ctx,
+                      queue,
+                      engine,
+                      caseSlug: data.case_slug,
+                      forensicReport,
+                      legalGroundingMap,
+                      damageTable,
+                      jurisdiction: data.jurisdiction ?? "at",
+                      verfahrenstyp:
+                        data.verfahrenstyp ??
+                        (onTable.length > 0
+                          ? (onTable[0]?.verfahrenstyp ?? "sonstiges")
+                          : "sonstiges"),
+                      sourceStamp,
+                      lawSourceIds,
+                    });
+                    return { slug: burdenSlug };
+                  } catch (err) {
+                    const msg = err instanceof Error ? err.message : String(err);
+                    return { warning: `Burden of proof analysis failed: ${msg}` };
+                  }
+                })()
+              );
+            }
+
+            // Execute 4b+4c in parallel
+            const layer4ParallelResults = await Promise.allSettled(layer4ParallelTasks);
+            for (const r of layer4ParallelResults) {
+              if (r.status === "fulfilled") {
+                if (r.value.slug) {
                   state.layers[4]!.output_slugs = [
                     ...(state.layers[4]!.output_slugs ?? []),
-                    precedentSlug,
+                    r.value.slug,
                   ];
-                  // Merge precedent matches into the claim-evidence graph
-                  try {
-                    await mergePrecedentsIntoGraph(
-                      engine,
-                      precedentSlug,
-                      claimEvidenceSlug,
-                      data.case_slug,
-                      sourceStamp
-                    );
-                  } catch (mergeErr) {
-                    console.warn(
-                      `[legal-pipeline] Precedent→graph merge error: ${mergeErr instanceof Error ? mergeErr.message : String(mergeErr)}`
-                    );
+                  // Precedent merge happens after slug is recorded
+                  if (r.value.needsPrecedentMerge) {
+                    try {
+                      await mergePrecedentsIntoGraph(
+                        engine,
+                        r.value.slug,
+                        claimEvidenceSlug,
+                        data.case_slug,
+                        sourceStamp
+                      );
+                    } catch (mergeErr) {
+                      console.warn(
+                        `[legal-pipeline] Precedent→graph merge error: ${mergeErr instanceof Error ? mergeErr.message : String(mergeErr)}`
+                      );
+                    }
                   }
                 }
-              } catch (err) {
-                const msg = err instanceof Error ? err.message : String(err);
-                state.warnings = [...(state.warnings ?? []), `Precedent match failed: ${msg}`];
-                console.warn(`[legal-pipeline] Precedent match error: ${msg}`);
-              }
-
-            // ── Layer 4c: Burden of Proof (Beweislast) ──────────
-            // Analyzes who must prove what, whether evidence is sufficient,
-            // and whether burden reversal applies. Non-blocking.
-            if (shouldRunLayerById("burden-of-proof"))
-              try {
-                const burdenSlug = await runBurdenOfProofLayer({
-                  ctx,
-                  queue,
-                  engine,
-                  caseSlug: data.case_slug,
-                  forensicReport,
-                  legalGroundingMap,
-                  damageTable,
-                  jurisdiction: data.jurisdiction ?? "at",
-                  verfahrenstyp:
-                    data.verfahrenstyp ??
-                    (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-                  sourceStamp,
-                  lawSourceIds,
-                });
-                if (burdenSlug) {
-                  state.layers[4]!.output_slugs = [
-                    ...(state.layers[4]!.output_slugs ?? []),
-                    burdenSlug,
-                  ];
+                if (r.value.warning) {
+                  state.warnings = [...(state.warnings ?? []), r.value.warning];
+                  console.warn(`[legal-pipeline] ${r.value.warning}`);
                 }
-              } catch (err) {
-                const msg = err instanceof Error ? err.message : String(err);
-                state.warnings = [
-                  ...(state.warnings ?? []),
-                  `Burden of proof analysis failed: ${msg}`,
-                ];
-                console.warn(`[legal-pipeline] Burden of proof error: ${msg}`);
               }
+            }
           } else {
             await updateLayerState(ctx, state, stateSlug, 4, "skipped", engine, sourceStamp);
           }
 
+          // v0.42.38.0+ — Layer 4d+4e+4f+4g parallelized with Promise.allSettled.
+          // These 4 sub-layers are independent (all only need legalGroundingMap
+          // + forensicReport) and were previously awaited sequentially.
+          // Parallel execution saves 2-8 minutes wall-clock time per pipeline run.
+          const layer4bParallelTasks: Promise<{ slug?: string | null; warning?: string }>[] = [];
+
           // ── Layer 4d: Admissibility Check (Zulässigkeitsprüfung) ──
-          // Checks procedural admissibility: jurisdiction, exhaustion of
-          // remedies, statute of limitations, capacity, attorney requirement.
-          // Non-blocking.
           if (shouldRunLayerById("admissibility-checker") && legalGroundingMap.length > 0) {
-            try {
-              const admissibilitySlug = await runAdmissibilityCheckLayer({
-                ctx,
-                queue,
-                engine,
-                caseSlug: data.case_slug,
-                legalGroundingMap,
-                forensicReport,
-                jurisdiction: data.jurisdiction ?? "at",
-                verfahrenstyp:
-                  data.verfahrenstyp ??
-                  (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-                sourceStamp,
-                lawSourceIds,
-              });
-              if (admissibilitySlug) {
-                state.layers[4]!.output_slugs = [
-                  ...(state.layers[4]!.output_slugs ?? []),
-                  admissibilitySlug,
-                ];
-              }
-            } catch (err) {
-              const msg = err instanceof Error ? err.message : String(err);
-              state.warnings = [...(state.warnings ?? []), `Admissibility check failed: ${msg}`];
-              console.warn(`[legal-pipeline] Admissibility check error: ${msg}`);
-            }
+            layer4bParallelTasks.push(
+              (async () => {
+                try {
+                  const slug = await runAdmissibilityCheckLayer({
+                    ctx,
+                    queue,
+                    engine,
+                    caseSlug: data.case_slug,
+                    legalGroundingMap,
+                    forensicReport,
+                    jurisdiction: data.jurisdiction ?? "at",
+                    verfahrenstyp:
+                      data.verfahrenstyp ??
+                      (onTable.length > 0
+                        ? (onTable[0]?.verfahrenstyp ?? "sonstiges")
+                        : "sonstiges"),
+                    sourceStamp,
+                    lawSourceIds,
+                  });
+                  return { slug };
+                } catch (err) {
+                  const msg = err instanceof Error ? err.message : String(err);
+                  return { warning: `Admissibility check failed: ${msg}` };
+                }
+              })()
+            );
           }
 
           // ── Layer 4e: Fact Gap Detection (Sachverhaltslücken) ──
-          // Identifies missing facts needed for legal claims and generates
-          // targeted client questions. Runs after Layer 4 so legalGroundingMap
-          // is populated and Tatbestandsmerkmale can be checked.
-          // Non-blocking.
           if (shouldRunLayerById("fact-gap-detector") && legalGroundingMap.length > 0) {
-            try {
-              const factGapSlug = await runFactGapDetectionLayer({
-                ctx,
-                queue,
-                engine,
-                caseSlug: data.case_slug,
-                forensicReport,
-                legalGroundingMap,
-                jurisdiction: data.jurisdiction ?? "at",
-                verfahrenstyp:
-                  data.verfahrenstyp ??
-                  (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-                sourceStamp,
-                lawSourceIds,
-              });
-              if (factGapSlug) {
-                state.layers[4]!.output_slugs = [
-                  ...(state.layers[4]!.output_slugs ?? []),
-                  factGapSlug,
-                ];
-              }
-            } catch (err) {
-              const msg = err instanceof Error ? err.message : String(err);
-              state.warnings = [...(state.warnings ?? []), `Fact gap detection failed: ${msg}`];
-              console.warn(`[legal-pipeline] Fact gap detection error: ${msg}`);
-            }
+            layer4bParallelTasks.push(
+              (async () => {
+                try {
+                  const slug = await runFactGapDetectionLayer({
+                    ctx,
+                    queue,
+                    engine,
+                    caseSlug: data.case_slug,
+                    forensicReport,
+                    legalGroundingMap,
+                    jurisdiction: data.jurisdiction ?? "at",
+                    verfahrenstyp:
+                      data.verfahrenstyp ??
+                      (onTable.length > 0
+                        ? (onTable[0]?.verfahrenstyp ?? "sonstiges")
+                        : "sonstiges"),
+                    sourceStamp,
+                    lawSourceIds,
+                  });
+                  return { slug };
+                } catch (err) {
+                  const msg = err instanceof Error ? err.message : String(err);
+                  return { warning: `Fact gap detection failed: ${msg}` };
+                }
+              })()
+            );
           }
 
           // ── Layer 4f: Evidence Quality Assessment ──
-          // Rates each piece of evidence by probative value.
-          // Non-blocking.
-          if (shouldRunLayerById("evidence-quality"))
-            try {
-              const evidenceQualitySlug = await runEvidenceQualityLayer({
-                ctx,
-                queue,
-                engine,
-                caseSlug: data.case_slug,
-                jurisdiction: data.jurisdiction ?? "at",
-                verfahrenstyp:
-                  data.verfahrenstyp ??
-                  (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-                sourceStamp,
-                lawSourceIds,
-              });
-              if (evidenceQualitySlug) {
-                state.layers[4]!.output_slugs = [
-                  ...(state.layers[4]!.output_slugs ?? []),
-                  evidenceQualitySlug,
-                ];
-              }
-            } catch (err) {
-              const msg = err instanceof Error ? err.message : String(err);
-              state.warnings = [
-                ...(state.warnings ?? []),
-                `Evidence quality assessment failed: ${msg}`,
-              ];
-              console.warn(`[legal-pipeline] Evidence quality error: ${msg}`);
-            }
+          if (shouldRunLayerById("evidence-quality")) {
+            layer4bParallelTasks.push(
+              (async () => {
+                try {
+                  const slug = await runEvidenceQualityLayer({
+                    ctx,
+                    queue,
+                    engine,
+                    caseSlug: data.case_slug,
+                    jurisdiction: data.jurisdiction ?? "at",
+                    verfahrenstyp:
+                      data.verfahrenstyp ??
+                      (onTable.length > 0
+                        ? (onTable[0]?.verfahrenstyp ?? "sonstiges")
+                        : "sonstiges"),
+                    sourceStamp,
+                    lawSourceIds,
+                  });
+                  return { slug };
+                } catch (err) {
+                  const msg = err instanceof Error ? err.message : String(err);
+                  return { warning: `Evidence quality assessment failed: ${msg}` };
+                }
+              })()
+            );
+          }
 
           // ── Layer 4g: Witness & Expert Analysis ──
-          // Evaluates witness credibility and identifies needed expert witnesses.
-          // Non-blocking.
-          if (shouldRunLayerById("witness-expert"))
-            try {
-              const witnessSlug = await runWitnessExpertLayer({
-                ctx,
-                queue,
-                engine,
-                caseSlug: data.case_slug,
-                jurisdiction: data.jurisdiction ?? "at",
-                verfahrenstyp:
-                  data.verfahrenstyp ??
-                  (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-                sourceStamp,
-                lawSourceIds,
-              });
-              if (witnessSlug) {
+          if (shouldRunLayerById("witness-expert")) {
+            layer4bParallelTasks.push(
+              (async () => {
+                try {
+                  const slug = await runWitnessExpertLayer({
+                    ctx,
+                    queue,
+                    engine,
+                    caseSlug: data.case_slug,
+                    jurisdiction: data.jurisdiction ?? "at",
+                    verfahrenstyp:
+                      data.verfahrenstyp ??
+                      (onTable.length > 0
+                        ? (onTable[0]?.verfahrenstyp ?? "sonstiges")
+                        : "sonstiges"),
+                    sourceStamp,
+                    lawSourceIds,
+                  });
+                  return { slug };
+                } catch (err) {
+                  const msg = err instanceof Error ? err.message : String(err);
+                  return { warning: `Witness & expert analysis failed: ${msg}` };
+                }
+              })()
+            );
+          }
+
+          // Execute 4d+4e+4f+4g in parallel
+          const layer4bResults = await Promise.allSettled(layer4bParallelTasks);
+          for (const r of layer4bResults) {
+            if (r.status === "fulfilled") {
+              if (r.value.slug) {
                 state.layers[4]!.output_slugs = [
                   ...(state.layers[4]!.output_slugs ?? []),
-                  witnessSlug,
+                  r.value.slug,
                 ];
               }
-            } catch (err) {
-              const msg = err instanceof Error ? err.message : String(err);
-              state.warnings = [
-                ...(state.warnings ?? []),
-                `Witness & expert analysis failed: ${msg}`,
-              ];
-              console.warn(`[legal-pipeline] Witness & expert error: ${msg}`);
+              if (r.value.warning) {
+                state.warnings = [...(state.warnings ?? []), r.value.warning];
+                console.warn(`[legal-pipeline] ${r.value.warning}`);
+              }
             }
+          }
 
           // ── Layer 5: Damage + Deadline Extractor (with retry) ──
           if (
@@ -1535,17 +2015,27 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             )
           ) {
             await updateLayerState(ctx, state, stateSlug, 5, "running", engine, sourceStamp);
-            const damageContextJson = JSON.stringify({
-              on_table: onTable,
-              entities,
-              forensic_report: forensicReport,
-              legal_grounding_map: legalGroundingMap,
-              manual_overrides: data.manual_overrides,
-              jurisdiction: data.jurisdiction ?? "at",
-              verfahrenstyp:
-                data.verfahrenstyp ??
-                (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-            });
+            const damageContextJson = buildDistilledContext(
+              {
+                on_table: onTable,
+                entities,
+                forensic_report: forensicReport,
+                legal_grounding_map: legalGroundingMap,
+                manual_overrides: data.manual_overrides,
+                jurisdiction: data.jurisdiction ?? "at",
+                verfahrenstyp:
+                  data.verfahrenstyp ??
+                  (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+              },
+              // Layer 5 (damage-extractor) needs ON + entities + forensic + grounding
+              // but NOT full quotes, full forensic arrays, or full grounding text
+              {
+                stripOnQuotes: true,
+                stripEntityDetails: true,
+                distillForensicReport: true,
+                stripGroundingText: true,
+              }
+            );
             const damageResult = await runMapReduceLayer({
               ctx,
               queue,
@@ -2031,7 +2521,10 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               "completed",
               engine,
               sourceStamp,
-              outputSlugs
+              outputSlugs,
+              (damageResult as Record<string, unknown>)?.tokens_aggregated as
+                | Record<string, number>
+                | undefined
             );
           } else {
             await updateLayerState(ctx, state, stateSlug, 5, "skipped", engine, sourceStamp);
@@ -2431,6 +2924,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               failed_at_layer: undefined,
               total_layers: totalLayers,
               workflow_id: data.workflow_id,
+              user_id: data.user_id,
             }).catch((err: unknown) => {
               // best-effort — don't fail the pipeline if settlement fails
               console.warn(
@@ -2531,6 +3025,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               failed_at_layer: failedLayer,
               total_layers: totalLayers,
               workflow_id: data.workflow_id,
+              user_id: data.user_id,
             }).catch((settleErr: unknown) => {
               console.warn(
                 `[legal-pipeline] server-side settlement (failed) failed: ${settleErr instanceof Error ? settleErr.message : String(settleErr)}`
@@ -2606,54 +3101,72 @@ async function runMapReduceLayer(opts: {
   );
   const childIds: number[] = [];
 
-  for (let i = 0; i < batches.length; i++) {
-    const batch = batches[i]!;
-    const userPrompt = buildMapPrompt(
-      batch.text,
-      contextJson,
-      i + 1,
-      batches.length,
-      specialistName
-    );
+  // G14 fix: submit all map children in parallel instead of sequentially.
+  // Pre-fix, each `queue.add` was awaited in a for-loop, adding serial
+  // latency before any map work could start. Now all children are submitted
+  // concurrently, so the queue can process them in parallel.
+  const mapFailPolicy = layerId ? getChildFailPolicy(layerId) : "continue";
+  const childJobs = await Promise.all(
+    batches.map(async (batch, i) => {
+      // v0.42.38.0+ — contextJson moved to cached_context (appended to the
+      // cached system prompt) instead of inline in the user prompt. This means
+      // the shared context is billed ONCE per layer (via Anthropic prompt
+      // caching) instead of N× (once per batch). For a 12-batch layer with
+      // 3k-token context, this saves ~33k input tokens per layer.
+      const userPrompt = buildMapPrompt(
+        batch.text,
+        "", // contextJson now passed via cached_context
+        i + 1,
+        batches.length,
+        specialistName
+      );
 
-    const childData: Record<string, unknown> = {
-      prompt: retryFeedback
-        ? userPrompt + "\n\n## KORREKTUR-HINWEISE (Retry)\n" + retryFeedback
-        : userPrompt,
-      subagent_def: specialistName,
-      max_turns: def.maxTurns ?? MAX_TURNS_DEFAULT,
-      allowed_tools: [],
-    };
-    // F7 fix: append structured output instruction to map-phase prompt
-    if (structuredSchema) {
-      childData.prompt =
-        (childData.prompt as string) + buildStructuredOutputInstruction(structuredSchema);
-    }
-    if (def.model) childData.model = def.model;
-    if (sourceStamp) childData._source_id = sourceStamp;
-    if (lawSourceIds) childData._source_ids = lawSourceIds;
-    stampDecisionTracing(childData, caseSlug);
-    // v0.43.x Decision Tracing: pass context for audit record
-    if (caseSlug) childData._case_slug = caseSlug;
-    if (layerNumber !== undefined) childData._layer_number = layerNumber;
-    if (layerName) childData._layer_name = layerName;
+      const childData: Record<string, unknown> = {
+        // v0.42.38.0+ — retryFeedback is NOT injected into map batches.
+        // Map batches do extraction on raw text — they don't need correction
+        // feedback. Only the reduce phase (which synthesizes map results)
+        // needs the feedback. Previously feedback was billed N× (once per
+        // batch + once in reduce = 13× for 12 batches). Now it's billed 1×.
+        prompt: userPrompt,
+        subagent_def: specialistName,
+        max_turns: def.maxTurns ?? MAX_TURNS_DEFAULT,
+        allowed_tools: [],
+      };
+      // v0.42.38.0+ — Pass contextJson as cached_context (appended to system
+      // prompt, which has cache_control: ephemeral). Shared across all batches.
+      if (contextJson) {
+        childData.cached_context = contextJson;
+      }
+      // F7 fix: append structured output instruction to map-phase prompt
+      if (structuredSchema) {
+        childData.prompt =
+          (childData.prompt as string) + buildStructuredOutputInstruction(structuredSchema);
+      }
+      if (def.model) childData.model = def.model;
+      if (sourceStamp) childData._source_id = sourceStamp;
+      if (lawSourceIds) childData._source_ids = lawSourceIds;
+      stampDecisionTracing(childData, caseSlug);
+      // v0.43.x Decision Tracing: pass context for audit record
+      if (caseSlug) childData._case_slug = caseSlug;
+      if (layerNumber !== undefined) childData._layer_number = layerNumber;
+      if (layerName) childData._layer_name = layerName;
 
-    // T5.4: Resolve failure policy from registry — mandatory layers use "fail_parent"
-    const mapFailPolicy = layerId ? getChildFailPolicy(layerId) : "continue";
-    const child = await queue.add(
-      "subagent",
-      childData,
-      {
-        parent_job_id: ctx.id,
-        on_child_fail: mapFailPolicy,
-        max_stalled: 3,
-      },
-      { allowProtectedSubmit: true }
-    );
-    // F2 fix: inherit budget ownership for DB-level CAS gate.
-    await inheritBudgetOwner(engine, child.id, ctx.id).catch(() => {});
-    childIds.push(child.id);
-  }
+      const child = await queue.add(
+        "subagent",
+        childData,
+        {
+          parent_job_id: ctx.id,
+          on_child_fail: mapFailPolicy,
+          max_stalled: 3,
+        },
+        { allowProtectedSubmit: true }
+      );
+      // F2 fix: inherit budget ownership for DB-level CAS gate.
+      await inheritBudgetOwner(engine, child.id, ctx.id).catch(() => {});
+      return child;
+    })
+  );
+  for (const child of childJobs) childIds.push(child.id);
 
   // ── Collect all map results in parallel ──────────────────────
   const mapResults: MapResult[] = [];
@@ -2708,14 +3221,27 @@ async function runMapReduceLayer(opts: {
   });
 
   // ── Reduce phase: synthesize ──────────────────────────────
-  const reducePrompt = buildReducePrompt(mapResults, specialistName, contextJson);
+  // v0.42.38.0+ — contextJson moved to cached_context (same as map phase).
+  const reducePrompt = buildReducePrompt(mapResults, specialistName, "");
   const reduceChildData: Record<string, unknown> = {
     prompt: retryFeedback
       ? reducePrompt + "\n\n## KORREKTUR-HINWEISE (Retry)\n" + retryFeedback
       : reducePrompt,
     subagent_def: specialistName,
-    max_turns: def.maxTurns ?? MAX_TURNS_DEFAULT,
+    // v0.42.38.0+ — Reduce phase: limit to 3 turns (synthesis + maybe 1
+    // correction). Was using def.maxTurns (up to 15) which let the reduce
+    // agent loop endlessly. Reduce is a single synthesis step, not a
+    // multi-turn research task.
+    max_turns: 3,
+    // v0.42.38.0+ — Reduce phase: no tools needed. The reduce agent
+    // synthesizes map results, it doesn't search the brain. Removing
+    // tools saves ~300-700 tokens of tool schema per reduce call and
+    // prevents the model from making unnecessary brain_search calls.
+    allowed_tools: [],
   };
+  if (contextJson) {
+    reduceChildData.cached_context = contextJson;
+  }
   // F7 fix: append structured output instruction to reduce-phase prompt
   if (structuredSchema) {
     reduceChildData.prompt =
@@ -2763,6 +3289,15 @@ async function runMapReduceLayer(opts: {
       // best-effort
     }
   }
+  // v0.42.38.0+ — Attach aggregated token usage to the reduce result
+  // so callers can pass it to updateLayerState for per-layer tracking.
+  try {
+    const allResults = [...mapResults.map((r) => ({ result: r.result })), { result: reduceResult }];
+    const usage = aggregateTokenUsage(allResults);
+    (reduceResult as Record<string, unknown>).tokens_aggregated = usage;
+  } catch {
+    // best-effort
+  }
   return reduceResult;
 }
 
@@ -2797,13 +3332,18 @@ async function runLawMatcherLayer(opts: {
   const def = resolveSpecialist("law-matcher");
   if (!def) throw new Error("legal-pipeline: law-matcher specialist not found");
 
-  const contextJson = JSON.stringify({
-    on_table: onTable,
-    entities,
-    forensic_report: forensicReport,
-    jurisdiction,
-    verfahrenstyp,
-  });
+  const contextJson = buildDistilledContext(
+    {
+      on_table: onTable,
+      entities,
+      forensic_report: forensicReport,
+      jurisdiction,
+      verfahrenstyp,
+    },
+    // Layer 4 (law-matcher) needs ON + entities + forensic summary
+    // but NOT full forensic arrays or entity quotes
+    { stripOnQuotes: true, stripEntityDetails: true, distillForensicReport: true }
+  );
 
   const prompt = [
     "## AUFGABE: Legal Grounding — Match forensische Befunde gegen Gesetzeskorpus",
@@ -3045,7 +3585,8 @@ async function writeCounterArgumentsPage(
 
   const md = lines.join("\n");
   const parsed = parseMarkdown(md);
-  await engine.putPage(
+  await safePutPipelineOutput(
+    engine,
     slug,
     {
       type: "counter_arguments",
@@ -3435,18 +3976,30 @@ async function runDraftLayer(opts: {
     nebenverfahren: nebenverfahren as Nebenverfahren[] | undefined,
   });
 
-  const contextJson = JSON.stringify({
-    on_table: onTable,
-    entities,
-    forensic_report: forensicReport,
-    legal_grounding_map: legalGroundingMap,
-    damage_table: damageTable,
-    deadline_calendar: deadlineCalendar,
-    manual_overrides: manualOverrides,
-    jurisdiction,
-    verfahrenstyp,
-    parteirolle,
-  });
+  const contextJson = buildDistilledContext(
+    {
+      on_table: onTable,
+      entities,
+      forensic_report: forensicReport,
+      legal_grounding_map: legalGroundingMap,
+      damage_table: damageTable,
+      deadline_calendar: deadlineCalendar,
+      manual_overrides: manualOverrides,
+      jurisdiction,
+      verfahrenstyp,
+      parteirolle,
+    },
+    // Layer 6 (drafter) needs ALL prior outputs but in distilled form.
+    // Full quotes, full forensic arrays, full grounding text = 10-15k tokens.
+    // Distilled = ~3-5k tokens. Drafter can get_page for detail if needed.
+    {
+      stripOnQuotes: true,
+      stripEntityDetails: true,
+      distillForensicReport: true,
+      stripGroundingText: true,
+      stripDamageDetails: true,
+    }
+  );
 
   const childIds: number[] = [];
   for (const pkg of packages) {
@@ -3572,11 +4125,17 @@ async function runDraftLayer(opts: {
 
 // ── Ensemble Critic Layer (3-Model Consensus) ──────────────
 
-/** Default models for the ensemble critic — diverse perspectives for robust quality gate. */
+/** Default models for the ensemble critic — diverse perspectives for robust quality gate.
+ * v0.42.38.0+ — Switched to Anthropic models to benefit from prompt caching.
+ * The critic prompt is large (case + outputs + subsumption context) and runs
+ * 3× in parallel. With Anthropic prompt caching, the shared prefix is billed
+ * once and cached for 5min. Non-Anthropic models (OpenRouter) pay full price
+ * on every call. Override via SUBSUMIO_ENSEMBLE_CRITIC_MODELS env var.
+ */
 const DEFAULT_ENSEMBLE_CRITIC_MODELS = [
-  "openrouter:openai/gpt-5.4", // Strong legal reasoning (BenGER 83.5)
-  "openrouter:deepseek/deepseek-chat", // Different training, cost-effective (LEXam 57.42)
-  "openrouter:google/gemini-3-flash-preview", // Different perspective, fast
+  "anthropic:claude-sonnet-4-6", // Strong legal reasoning + prompt caching
+  "anthropic:claude-haiku-4-5", // Fast, cheap, different tier perspective
+  "openrouter:openai/gpt-5.4", // Cross-vendor diversity (non-Anthropic for genuine ensemble)
 ];
 
 /**
@@ -3765,7 +4324,8 @@ async function writeSubsumptionCheckPage(
 
   const md = lines.join("\n");
   const parsed = parseMarkdown(md);
-  await engine.putPage(
+  await safePutPipelineOutput(
+    engine,
     slug,
     {
       type: "subsumption_check",
@@ -5556,7 +6116,11 @@ function sanitizeSlug(slug: string): string | null {
   const trimmed = slug.trim();
   if (!trimmed) return null;
   if (trimmed.length > 200) return null;
-  if (!/^[a-zA-Z0-9._-]+$/.test(trimmed)) return null;
+  // v0.42.38.0+ — allow slashes in caseSlugs (e.g. "legal/cases/vasic-doskar-covid-betrug").
+  // The previous regex [a-zA-Z0-9._-]+ rejected slashes, causing valid case slugs
+  // to be silently dropped in precedent-match, mediation/ADR, limitation-scan,
+  // and cost-award layers.
+  if (!/^[a-zA-Z0-9._\/-]+$/.test(trimmed)) return null;
   return trimmed;
 }
 
@@ -5584,6 +6148,10 @@ export async function settlePipeline(
     failed_at_layer?: number;
     total_layers: number;
     workflow_id?: string;
+    /** Optional: the actual user who triggered the pipeline (for saas_usage_ledger).
+     *  When owner_type='org', owner_id is the org_id and user_id is the individual
+     *  user who ran the pipeline. When owner_type='user', both are the same. */
+    user_id?: string;
   }
 ): Promise<void> {
   const settlementUrl = process.env.ENGINE_SETTLEMENT_URL ?? "";
@@ -5639,6 +6207,59 @@ export async function settlePipeline(
     outputTokens: usage.outputTokens,
   }));
 
+  // SaaS Usage Ledger — record internal cost tracking per model.
+  // This is SEPARATE from the credit-based settlement below: the credit
+  // system deducts credits from the user's balance (customer-facing),
+  // while saas_usage_ledger tracks our internal cost vs selling price
+  // (margin analysis, profitability monitoring).
+  //
+  // org_id resolution:
+  //   - owner_type='org':  owner_id IS the org_id (UUID), user_id is the individual
+  //   - owner_type='user': owner_id is the user; look up the org_id from
+  //     saas_orgs via slug = 'user-{owner_id.slice(0,8)}' (1:1 mapping in V1).
+  //   - params.user_id (optional): the actual user who triggered the pipeline.
+  //     Falls back to owner_id for backward compat.
+  // saas_usage_ledger.org_id is UUID FK on saas_orgs(id) — passing a user-id
+  // string would violate the FK constraint on Postgres (or write garbage on PGLite).
+  let saasOrgId: string | null = params.owner_id;
+  if (params.owner_type === "user") {
+    try {
+      const orgRows = await engine.executeRaw<{ id: string }>(
+        `SELECT id FROM saas_orgs WHERE slug = $1`,
+        [`user-${params.owner_id.slice(0, 8)}`]
+      );
+      saasOrgId = orgRows[0]?.id ?? null;
+    } catch {
+      // saas_orgs table not available (PGLite dev) — skip usage ledger
+      saasOrgId = null;
+    }
+  }
+  const saasUserId = params.user_id ?? params.owner_id;
+  if (saasOrgId) {
+    for (const [modelId, usage] of byModel) {
+      try {
+        await recordSaaSUsage(engine, {
+          org_id: saasOrgId,
+          user_id: saasUserId,
+          workflow_id: params.workflow_id ?? params.pipeline_key,
+          workflow: params.workflow_id ?? "legal_pipeline",
+          model_id: modelId,
+          provider: modelId.split(":")[0] ?? "unknown",
+          tokens_input: usage.inputTokens,
+          tokens_output: usage.outputTokens,
+          tokens_cache_read: usage.cachedInputTokens,
+          is_embedding: false,
+        });
+      } catch (err: unknown) {
+        // Best-effort — don't fail settlement if usage ledger write fails
+        console.warn(
+          `[legal-pipeline] saas_usage_ledger write failed for model=${modelId}: ` +
+            `${err instanceof Error ? err.message : String(err)}`
+        );
+      }
+    }
+  }
+
   const settlementApiKey = process.env.ENGINE_WEBHOOK_API_KEY ?? "";
   let settlementError: string | undefined;
   try {
@@ -5655,6 +6276,9 @@ export async function settlePipeline(
         // session — there is no browser session on this server-side call.
         owner_id: params.owner_id,
         owner_type: params.owner_type,
+        // user_id: the actual user who triggered the pipeline (for saas_usage_ledger).
+        // When owner_type='org', owner_id is the org; user_id is the individual.
+        ...(params.user_id ? { user_id: params.user_id } : {}),
         case_slug: params.case_slug,
         reserved_credits: params.reserved_credits,
         token_usage,
@@ -5835,6 +6459,7 @@ function stampDecisionTracing(
     owner_id?: string;
     owner_type?: string;
     model_policy?: "any" | "eu_only";
+    user_id?: string;
   }
 ): void {
   if (caseSlug) childData._case_slug = caseSlug;
@@ -5846,6 +6471,7 @@ function stampDecisionTracing(
   if (ctx?.pipeline_key) childData._pipeline_key = ctx.pipeline_key;
   if (ctx?.owner_id !== undefined) childData._owner_id = ctx.owner_id;
   if (ctx?.owner_type) childData._owner_type = ctx.owner_type;
+  if (ctx?.user_id) childData._user_id = ctx.user_id;
   // F4 fix: stamp model policy so the subagent handler can enforce EU-only
   if (ctx?.model_policy) childData._model_policy = ctx.model_policy;
 }
@@ -8131,13 +8757,16 @@ async function rerunSpecificLayer(
         allTexts,
         batchSize: HAIKU_BATCH_SIZE,
         sourceStamp,
-        contextJson: JSON.stringify({
-          on_table: onTable,
-          jurisdiction: data.jurisdiction ?? "at",
-          verfahrenstyp:
-            data.verfahrenstyp ??
-            (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-        }),
+        contextJson: buildDistilledContext(
+          {
+            on_table: onTable,
+            jurisdiction: data.jurisdiction ?? "at",
+            verfahrenstyp:
+              data.verfahrenstyp ??
+              (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+          },
+          { stripOnQuotes: true }
+        ),
         retryFeedback,
         layerId: "entity-extractor",
         budget,
@@ -8371,17 +9000,26 @@ async function rerunSpecificLayer(
     }
     case 5: {
       // Damage+Deadline Extractor
-      const contextJson = JSON.stringify({
-        on_table: onTable,
-        entities,
-        forensic_report: forensicReport,
-        legal_grounding_map: legalGroundingMap,
-        manual_overrides: data.manual_overrides,
-        jurisdiction: data.jurisdiction ?? "at",
-        verfahrenstyp:
-          data.verfahrenstyp ??
-          (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
-      });
+      const contextJson = buildDistilledContext(
+        {
+          on_table: onTable,
+          entities,
+          forensic_report: forensicReport,
+          legal_grounding_map: legalGroundingMap,
+          manual_overrides: data.manual_overrides,
+          jurisdiction: data.jurisdiction ?? "at",
+          verfahrenstyp:
+            data.verfahrenstyp ??
+            (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+        },
+        // Layer 5 retry: same distillation as original layer 5
+        {
+          stripOnQuotes: true,
+          stripEntityDetails: true,
+          distillForensicReport: true,
+          stripGroundingText: true,
+        }
+      );
       const result = await runMapReduceLayer({
         ctx,
         queue,
@@ -8793,29 +9431,20 @@ async function runContradictionProbeAuto(opts: {
   // Generate queries from pipeline output pages — use the first 200 chars
   // of each page's compiled_truth as a search query. The probe will retrieve
   // similar chunks and judge them for contradictions.
+  // G3 fix: parallelize getPage calls with bounded concurrency.
   const queries: string[] = [];
-  for (const slug of outputSlugs) {
-    try {
-      const page = await engine.getPage(slug, { sourceId: sourceStamp });
+  const allQuerySlugs = [...outputSlugs, ...partSlugs];
+  const QUERY_CONCURRENCY = 8;
+  for (let i = 0; i < allQuerySlugs.length; i += QUERY_CONCURRENCY) {
+    const batch = allQuerySlugs.slice(i, i + QUERY_CONCURRENCY);
+    const pages = await Promise.all(
+      batch.map((slug) => engine.getPage(slug, { sourceId: sourceStamp }).catch(() => null))
+    );
+    for (const page of pages) {
       if (page?.compiled_truth) {
         const q = page.compiled_truth.replace(/\s+/g, " ").trim().slice(0, 200);
         if (q.length > 20) queries.push(q);
       }
-    } catch {
-      // skip unreadable pages
-    }
-  }
-
-  // Also add queries from the original case sub-pages
-  for (const slug of partSlugs) {
-    try {
-      const page = await engine.getPage(slug, { sourceId: sourceStamp });
-      if (page?.compiled_truth) {
-        const q = page.compiled_truth.replace(/\s+/g, " ").trim().slice(0, 200);
-        if (q.length > 20) queries.push(q);
-      }
-    } catch {
-      // skip unreadable pages
     }
   }
 
@@ -8869,6 +9498,13 @@ async function runContradictionProbeAuto(opts: {
 
 async function waitForChild(ctx: MinionJobContext, childId: number): Promise<unknown> {
   const deadline = Date.now() + CHILD_TIMEOUT_MS;
+  // G13 fix: exponential backoff instead of fixed 3s interval.
+  // Pre-fix, polling every 3s for up to 60min = 1200 polls, each scanning
+  // the full inbox. Now: start at 2s, double up to max 15s, reducing
+  // poll count by ~80% for long waits.
+  let pollInterval = 2_000;
+  const MAX_POLL_INTERVAL = 15_000;
+  const start = Date.now();
   while (Date.now() < deadline) {
     const messages = await ctx.readInbox();
     for (const m of messages) {
@@ -8878,7 +9514,16 @@ async function waitForChild(ctx: MinionJobContext, childId: number): Promise<unk
         throw new Error(`Child ${childId} failed: ${payload.error ?? "unknown error"}`);
       }
     }
-    await sleep(3000);
+    // Log when approaching deadline for observability
+    const remaining = deadline - Date.now();
+    if (remaining < 10_000 && remaining > 0) {
+      console.warn(
+        `[waitForChild] child ${childId} approaching timeout, ` +
+          `${Math.round(remaining / 1000)}s remaining (waited ${Math.round((Date.now() - start) / 1000)}s)`
+      );
+    }
+    await sleep(pollInterval);
+    pollInterval = Math.min(pollInterval * 2, MAX_POLL_INTERVAL);
   }
   throw new Error(`Child ${childId} timed out after ${CHILD_TIMEOUT_MS / 1000}s`);
 }
@@ -9810,13 +10455,18 @@ async function writeEntityPages(
   sourceId?: string
 ): Promise<string[]> {
   const slugs: string[] = [];
+  // G4 fix: include a case-hash in the entity slug to prevent cross-case
+  // collisions. Pre-fix, two cases with a person named "Müller" both wrote
+  // to `people/mueller` — the second case silently overwrote the first
+  // case's entity page. Now: `people/<caseHash>-<name>` is unique per case.
+  const caseHash = createHash("sha256").update(caseSlug).digest("hex").slice(0, 8);
   for (const e of entities) {
     const slugBase = e.name
       .toLowerCase()
       .replace(/[^a-z0-9äöüß]/g, "-")
       .replace(/-+/g, "-")
       .replace(/^-|-$/g, "");
-    const slug = `people/${slugBase}`;
+    const slug = `people/${caseHash}-${slugBase}`;
     const lines: string[] = [];
     lines.push("---");
     lines.push(`title: "${e.name}"`);
@@ -10527,6 +11177,74 @@ async function runCrossVerifyForDrafts(
   return result;
 }
 
+/**
+ * Write a pipeline-output page, preserving manually-edited content.
+ *
+ * BUG #3 fix: when the pipeline re-runs (e.g. after an incremental upload),
+ * it overwrites all output pages — including legal drafts the attorney may
+ * have manually edited. This function checks if the existing page has
+ * `manually_edited: true` in its frontmatter (set by the DraftEditor when
+ * the attorney saves). If so, the old content is archived to a versioned
+ * slug before the new pipeline output is written, preventing data loss.
+ *
+ * Archive naming: `{slug}/archived-{ISO-timestamp}` — discoverable but
+ * not conflicting with the canonical slug.
+ */
+async function safePutPipelineOutput(
+  engine: BrainEngine,
+  slug: string,
+  page: {
+    type: string;
+    title: string;
+    compiled_truth: string;
+    frontmatter: Record<string, unknown>;
+  },
+  opts?: { sourceId?: string }
+): Promise<void> {
+  // Check if existing page was manually edited
+  const existing = await engine.getPage(
+    slug,
+    opts?.sourceId !== undefined ? { sourceId: opts.sourceId } : undefined
+  );
+  if (existing) {
+    const fm = (existing.frontmatter ?? {}) as Record<string, unknown>;
+    if (fm.manually_edited === true) {
+      // Archive the manually-edited version before overwriting
+      const archiveSlug = `${slug}/archived-${new Date().toISOString().replace(/[:.]/g, "-")}`;
+      try {
+        await engine.putPage(
+          archiveSlug,
+          {
+            type: existing.type ?? page.type,
+            title: `${existing.title ?? page.title} (archiviert)`,
+            compiled_truth: String(existing.compiled_truth ?? ""),
+            frontmatter: {
+              ...fm,
+              archived_from: slug,
+              archived_at: new Date().toISOString(),
+              archived_reason: "pipeline_rerun_overwrite_protection",
+            },
+          },
+          opts
+        );
+        console.log(
+          `[legal-pipeline] Archived manually-edited page ${slug} → ${archiveSlug} ` +
+            `(pipeline re-run would have overwritten attorney edits)`
+        );
+      } catch (archiveErr) {
+        // Archiving is best-effort — don't block the pipeline if it fails.
+        // But log prominently so ops can recover the content from the DB.
+        console.error(
+          `[legal-pipeline] FAILED to archive manually-edited page ${slug}: ` +
+            `${archiveErr instanceof Error ? archiveErr.message : String(archiveErr)} — ` +
+            `ATTORNEY EDITS MAY BE LOST`
+        );
+      }
+    }
+  }
+  await engine.putPage(slug, page, opts);
+}
+
 async function writeLegalDraftPage(
   engine: BrainEngine,
   slug: string,
@@ -10538,7 +11256,8 @@ async function writeLegalDraftPage(
   const text = typeof result === "string" ? result : JSON.stringify(result, null, 2);
   const md = `---\ntitle: "${pkg.title}"\ntype: legal_draft\ncase_ref: ${caseSlug}\ndraft_type: ${pkg.type}\nstatus: draft\nattorney_review_required: true\n---\n\n${text}`;
   const parsed = parseMarkdown(md);
-  await engine.putPage(
+  await safePutPipelineOutput(
+    engine,
     slug,
     {
       type: "legal_draft",
@@ -10564,7 +11283,8 @@ async function writeQualityAuditPage(
     parsed && typeof parsed.recommendation === "string" ? parsed.recommendation : "revise";
   const md = `---\ntitle: "Qualitäts-Audit — ${caseSlug}"\ntype: quality_audit\ncase_ref: ${caseSlug}\ntotal_score: ${score}\nrecommendation: ${recommendation}\n---\n\n${text}`;
   const parsedMd = parseMarkdown(md);
-  await engine.putPage(
+  await safePutPipelineOutput(
+    engine,
     slug,
     {
       type: "quality_audit",
@@ -10586,7 +11306,15 @@ async function updateLayerState(
   status: PipelineState["layers"][number]["status"],
   engine: BrainEngine,
   sourceId?: string,
-  outputSlugs?: string[]
+  outputSlugs?: string[],
+  // v0.42.38.0+ — Per-layer token usage for cost observability.
+  tokenUsage?: {
+    tokens_in?: number;
+    tokens_out?: number;
+    cache_read_tokens?: number;
+    cache_create_tokens?: number;
+    cost_usd?: number;
+  }
 ): Promise<void> {
   const now = new Date().toISOString();
   const layer = state.layers[layerNum]!;
@@ -10601,6 +11329,14 @@ async function updateLayerState(
       layer.duration_ms = new Date(now).getTime() - new Date(layer.started_at).getTime();
     }
     if (outputSlugs) layer.output_slugs = outputSlugs;
+    // v0.42.38.0+ — Record token usage per layer
+    if (tokenUsage) {
+      layer.tokens_in = tokenUsage.tokens_in;
+      layer.tokens_out = tokenUsage.tokens_out;
+      layer.cache_read_tokens = tokenUsage.cache_read_tokens;
+      layer.cache_create_tokens = tokenUsage.cache_create_tokens;
+      layer.cost_usd = tokenUsage.cost_usd;
+    }
   }
   state.current_layer = layerNum;
   state.updated_at = now;
@@ -10674,17 +11410,102 @@ async function persistPipelineState(
 
 // ── Helpers ─────────────────────────────────────────────────
 
+/**
+ * Discover all document pages belonging to a case by filtering on the
+ * `case_slug` frontmatter stamp. This is the canonical source of truth for
+ * case membership — the same pattern used by `fetchCaseDocumentsBySlug` in
+ * the web app's matter-context.ts.
+ *
+ * Without this, the pipeline only sees the documents from the current
+ * upload batch (`data.part_slugs`) and re-analyzes them in isolation,
+ * overwriting previous analysis. With this, every pipeline run sees the
+ * accumulated case file, producing correct ON-tables, forensic reports,
+ * and completeness checks even when documents are uploaded incrementally.
+ *
+ * Filters out:
+ *   - Split-parent pages (is_split_parent: true) — they contain only a
+ *     link list, not document text; their parts are discovered individually.
+ *   - Unassigned pages (assignment_status: "unassigned").
+ *   - Tombstoned pages (status: "tombstoned").
+ *   - Pipeline-output pages (on_index, forensic_report, etc.) — these are
+ *     NOT document types and are excluded by the type filter.
+ */
+const CASE_DOCUMENT_TYPES = [
+  "document",
+  "email",
+  "email_archive",
+  "image",
+  "transcription",
+  "document_archive",
+  "court_decision",
+] as const;
+
+export async function discoverAllCaseDocuments(
+  engine: BrainEngine,
+  caseSlug: string,
+  sourceId?: string
+): Promise<string[]> {
+  const slugs: string[] = [];
+  // Paginate to avoid missing documents in large cases. Pre-fix, a single
+  // `limit: 500` call per type silently truncated cases with >500 documents
+  // of one type (e.g. 600 emails → 100 oldest never analyzed). We now page
+  // through all results in batches of 500.
+  const PAGE_SIZE = 500;
+  for (const type of CASE_DOCUMENT_TYPES) {
+    try {
+      let offset = 0;
+      let batch: Page[] = [];
+      do {
+        batch = await engine.listPages({
+          type,
+          limit: PAGE_SIZE,
+          offset,
+          ...(sourceId !== undefined ? { sourceId } : {}),
+        });
+        for (const p of batch) {
+          const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+          if (fm.case_slug !== caseSlug) continue;
+          if (fm.assignment_status === "unassigned") continue;
+          if (fm.status === "tombstoned") continue;
+          if (fm.is_split_parent === true) continue;
+          slugs.push(p.slug);
+        }
+        offset += batch.length;
+      } while (batch.length === PAGE_SIZE);
+    } catch (err) {
+      // G12 fix: log the error instead of silently swallowing it.
+      // Pre-fix, missing tables/columns or DB errors were invisible.
+      console.error(
+        `[discoverAllCaseDocuments] listPages failed for type=${type} ` +
+          `case=${caseSlug} source=${sourceId ?? "default"}:`,
+        err instanceof Error ? err.message : String(err)
+      );
+    }
+  }
+  return [...new Set(slugs)];
+}
+
 async function loadAllSubPages(
   engine: BrainEngine,
   partSlugs: string[],
   sourceId?: string
 ): Promise<string[]> {
+  // G3 fix: parallelize getPage calls with bounded concurrency (8 parallel)
+  // to avoid N+1 serial DB round-trips. Pre-fix, 50 documents = 50 sequential
+  // queries before the first pipeline layer could start.
+  const CONCURRENCY = 8;
   const texts: string[] = [];
-  for (const slug of partSlugs) {
-    const page = await engine.getPage(slug, sourceId !== undefined ? { sourceId } : undefined);
-    if (page) {
-      const text = String((page as { compiled_truth?: string }).compiled_truth ?? "");
-      if (text.trim()) texts.push(text);
+  const opts = sourceId !== undefined ? { sourceId } : undefined;
+  for (let i = 0; i < partSlugs.length; i += CONCURRENCY) {
+    const batch = partSlugs.slice(i, i + CONCURRENCY);
+    const pages = await Promise.all(
+      batch.map((slug) => engine.getPage(slug, opts).catch(() => null))
+    );
+    for (const page of pages) {
+      if (page) {
+        const text = String((page as { compiled_truth?: string }).compiled_truth ?? "");
+        if (text.trim()) texts.push(text);
+      }
     }
   }
   return texts;
@@ -10813,41 +11634,52 @@ async function loadEntitiesFromPages(
   caseSlug: string,
   sourceId?: string
 ): Promise<EntityEntry[]> {
-  // List all person pages — they are stored under people/ slug prefix
-  const pages = await engine.listPages({
-    type: "person",
-    slugPrefix: "people/",
-    limit: 200,
-  });
+  // List all person pages — they are stored under people/ slug prefix.
+  // G2 fix: pass sourceId to engine.listPages to avoid reading entities
+  // from other tenants. Also paginate (was limit:200 with no pagination).
   const entities: EntityEntry[] = [];
-  for (const page of pages) {
-    const fm = (page as { frontmatter?: Record<string, unknown> }).frontmatter;
-    if (!fm) continue;
-    // Only include entities for this case
-    const caseRef = String(fm.case_ref ?? "");
-    if (caseRef !== caseSlug) continue;
-    const name = String(fm.title ?? fm.name ?? "");
-    if (!name) continue;
-    entities.push({
-      name,
-      type: String(fm.type ?? "person"),
-      role: String(fm.role ?? ""),
-      aliases: Array.isArray(fm.aliases) ? (fm.aliases as string[]) : [],
-      on_references: Array.isArray(fm.on_references) ? (fm.on_references as string[]) : [],
-      quote:
-        String((page as { compiled_truth?: string }).compiled_truth ?? "")
-          .split("\n")
-          .find((l) => l.startsWith("> "))
-          ?.slice(2) ?? "",
-      accusations: Array.isArray(fm.accusations) ? (fm.accusations as string[]) : undefined,
-      context_description:
-        typeof fm.context_description === "string" ? fm.context_description : undefined,
-      represents: typeof fm.represents === "string" ? fm.represents : undefined,
-      verfahren_refs: Array.isArray(fm.verfahren_refs)
-        ? (fm.verfahren_refs as string[])
-        : undefined,
+  const PAGE_SIZE = 200;
+  let offset = 0;
+  let batch: { frontmatter?: Record<string, unknown>; compiled_truth?: string; slug: string }[] =
+    [];
+  do {
+    batch = await engine.listPages({
+      type: "person",
+      slugPrefix: "people/",
+      limit: PAGE_SIZE,
+      offset,
+      ...(sourceId !== undefined ? { sourceId } : {}),
     });
-  }
+    for (const page of batch) {
+      const fm = page.frontmatter;
+      if (!fm) continue;
+      // Only include entities for this case
+      const caseRef = String(fm.case_ref ?? "");
+      if (caseRef !== caseSlug) continue;
+      const name = String(fm.title ?? fm.name ?? "");
+      if (!name) continue;
+      entities.push({
+        name,
+        type: String(fm.type ?? "person"),
+        role: String(fm.role ?? ""),
+        aliases: Array.isArray(fm.aliases) ? (fm.aliases as string[]) : [],
+        on_references: Array.isArray(fm.on_references) ? (fm.on_references as string[]) : [],
+        quote:
+          String(page.compiled_truth ?? "")
+            .split("\n")
+            .find((l) => l.startsWith("> "))
+            ?.slice(2) ?? "",
+        accusations: Array.isArray(fm.accusations) ? (fm.accusations as string[]) : undefined,
+        context_description:
+          typeof fm.context_description === "string" ? fm.context_description : undefined,
+        represents: typeof fm.represents === "string" ? fm.represents : undefined,
+        verfahren_refs: Array.isArray(fm.verfahren_refs)
+          ? (fm.verfahren_refs as string[])
+          : undefined,
+      });
+    }
+    offset += batch.length;
+  } while (batch.length === PAGE_SIZE);
   return entities;
 }
 

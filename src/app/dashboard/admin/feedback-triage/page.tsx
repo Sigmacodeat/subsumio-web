@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -29,9 +28,6 @@ import {
   RefreshCw,
   Filter,
   Inbox,
-  TrendingUp,
-  TrendingDown,
-  MinusCircle,
   Loader2,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -82,10 +78,14 @@ interface Labels {
 }
 
 const STATE_COLORS: Record<string, string> = {
-  candidate: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
-  confirmed: "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
-  rejected: "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)] border-[color:var(--ds-border)]",
-  needs_info: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
+  candidate:
+    "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
+  confirmed:
+    "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
+  rejected:
+    "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)] border-[color:var(--ds-border)]",
+  needs_info:
+    "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
@@ -229,10 +229,10 @@ export default function FeedbackTriagePage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[color:var(--ds-text-muted)] text-sm">Gesamt</p>
+                <p className="text-sm text-[color:var(--ds-text-muted)]">Gesamt</p>
                 <p className="text-2xl font-bold">{stats?.total ?? "—"}</p>
               </div>
-              <ClipboardList className="text-[color:var(--ds-text-muted)] h-8 w-8" />
+              <ClipboardList className="h-8 w-8 text-[color:var(--ds-text-muted)]" />
             </div>
           </CardContent>
         </Card>
@@ -240,7 +240,7 @@ export default function FeedbackTriagePage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[color:var(--ds-text-muted)] text-sm">Wartend</p>
+                <p className="text-sm text-[color:var(--ds-text-muted)]">Wartend</p>
                 <p className="text-2xl font-bold">{stats?.pending_count ?? "—"}</p>
               </div>
               <Inbox className="h-8 w-8 text-[color:var(--ds-info-text)]" />
@@ -251,7 +251,7 @@ export default function FeedbackTriagePage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[color:var(--ds-text-muted)] text-sm">Bestätigt</p>
+                <p className="text-sm text-[color:var(--ds-text-muted)]">Bestätigt</p>
                 <p className="text-2xl font-bold">
                   {stats ? `${(stats.confirmation_rate * 100).toFixed(0)}%` : "—"}
                 </p>
@@ -264,7 +264,7 @@ export default function FeedbackTriagePage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[color:var(--ds-text-muted)] text-sm">Offene Fixtures</p>
+                <p className="text-sm text-[color:var(--ds-text-muted)]">Offene Fixtures</p>
                 <p className="text-2xl font-bold">{stats?.unmined_confirmed ?? "—"}</p>
               </div>
               <AlertCircle className="h-8 w-8 text-[color:var(--ds-warning-text)]" />
@@ -275,7 +275,7 @@ export default function FeedbackTriagePage() {
 
       {/* Filter Bar */}
       <div className="flex items-center gap-3">
-        <Filter className="text-[color:var(--ds-text-muted)] h-4 w-4" />
+        <Filter className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
         <Select value={filterState} onValueChange={setFilterState}>
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder={t("admin.feedback.filter_status")} />
@@ -302,11 +302,11 @@ export default function FeedbackTriagePage() {
       <div className="space-y-3">
         {queueLoading ? (
           <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
-            <Loader2 className="text-[color:var(--ds-text-muted)] h-6 w-6 animate-spin" />
+            <Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-muted)]" />
           </div>
         ) : entries.length === 0 ? (
           <Card>
-            <CardContent className="text-[color:var(--ds-text-muted)] py-12 text-center">
+            <CardContent className="py-12 text-center text-[color:var(--ds-text-muted)]">
               Keine Einträge in diesem Filter
             </CardContent>
           </Card>
@@ -337,11 +337,11 @@ export default function FeedbackTriagePage() {
                       )}
                     </div>
                     <p className="truncate text-sm font-medium">{entry.query}</p>
-                    <p className="text-[color:var(--ds-text-muted)] mt-1 line-clamp-2 text-xs">
+                    <p className="mt-1 line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
                       {entry.answer_excerpt}
                     </p>
                     {entry.user_comment && (
-                      <p className="text-[color:var(--ds-text-muted)] mt-1 text-xs italic">
+                      <p className="mt-1 text-xs text-[color:var(--ds-text-muted)] italic">
                         &ldquo;{entry.user_comment}&rdquo;
                       </p>
                     )}
@@ -357,7 +357,7 @@ export default function FeedbackTriagePage() {
                         {labels.root_causes[entry.root_cause] ?? entry.root_cause}
                       </p>
                     )}
-                    <p className="text-[color:var(--ds-text-muted)] mt-1 text-xs">
+                    <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
                       {new Date(entry.created_at).toLocaleString("de-DE")}
                     </p>
                   </div>
@@ -386,20 +386,20 @@ export default function FeedbackTriagePage() {
             <div className="space-y-4">
               <div>
                 <p className="mb-1 text-sm font-medium">Query:</p>
-                <p className="text-[color:var(--ds-text-muted)] bg-[color:var(--ds-surface-2)] rounded p-2 text-sm">
+                <p className="rounded bg-[color:var(--ds-surface-2)] p-2 text-sm text-[color:var(--ds-text-muted)]">
                   {selectedEntry.query}
                 </p>
               </div>
               <div>
                 <p className="mb-1 text-sm font-medium">AI-Antwort:</p>
-                <p className="text-[color:var(--ds-text-muted)] bg-[color:var(--ds-surface-2)] rounded p-2 text-sm">
+                <p className="rounded bg-[color:var(--ds-surface-2)] p-2 text-sm text-[color:var(--ds-text-muted)]">
                   {selectedEntry.answer_excerpt}
                 </p>
               </div>
               {selectedEntry.user_comment && (
                 <div>
                   <p className="mb-1 text-sm font-medium">Nutzer-Kommentar:</p>
-                  <p className="text-[color:var(--ds-text-muted)] text-sm italic">
+                  <p className="text-sm text-[color:var(--ds-text-muted)] italic">
                     &ldquo;{selectedEntry.user_comment}&rdquo;
                   </p>
                 </div>

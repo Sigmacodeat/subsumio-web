@@ -24,11 +24,8 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
-  XCircle,
   Download,
   Clock,
-  TrendingUp,
-  FileText,
 } from "lucide-react";
 import {
   RCIID_STATUS_LABELS_DE,

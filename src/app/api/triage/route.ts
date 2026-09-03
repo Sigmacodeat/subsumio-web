@@ -25,6 +25,14 @@ export const POST = createHandler(
     action: "brain.read",
     rateTier: "standard",
     body: triageSchema,
+    audit: (_ctx, body) => ({
+      action: "triage.classify" as const,
+      entityType: "triage_card",
+      details: {
+        count: body.messages.length,
+        sources: body.messages.map((m) => m.source),
+      },
+    }),
   },
   async (_ctx, body) => {
     const inputs: TriageInput[] = body.messages.map((m) => ({

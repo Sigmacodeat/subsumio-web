@@ -44,7 +44,7 @@ export const GET = createHandler(
       ...ctx.headers,
     };
 
-    const types = ["bea_message", "portal_message", "activity_event"];
+    const types = ["bea_message", "portal_message", "chat_inbox", "activity_event"];
     const pagesByType: Record<string, Array<Record<string, unknown>>> = {};
 
     await Promise.all(
@@ -92,6 +92,20 @@ export const GET = createHandler(
         sender: String(fm.sender ?? fm.author ?? "Mandant"),
         caseSlug: fm.case_slug as string | undefined,
         createdAt: String(fm.created_at ?? ""),
+        read: Boolean(fm.read ?? false),
+      });
+    }
+
+    for (const page of pagesByType.chat_inbox ?? []) {
+      const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
+      messages.push({
+        slug: String(page.slug ?? ""),
+        title: String(page.title ?? "WhatsApp-Nachricht"),
+        channel: "whatsapp",
+        body: String(page.content ?? fm.body ?? fm.text ?? ""),
+        sender: String(fm.from_name ?? fm.from_phone_hash ?? "WhatsApp-Mandant"),
+        caseSlug: typeof fm.case_slug === "string" ? fm.case_slug : undefined,
+        createdAt: String(fm.received_at ?? fm.created_at ?? page.created_at ?? ""),
         read: Boolean(fm.read ?? false),
       });
     }

@@ -20,8 +20,7 @@ import { createT, type Lang, type TFunc } from "@/content/dashboard";
 
 // SSR-safe useLayoutEffect — falls back to useEffect during server rendering
 // to avoid the "useLayoutEffect does nothing on the server" warning.
-const useIsoLayoutEffect =
-  typeof window !== "undefined" ? useLayoutEffect : useEffect;
+const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 function useTourTranslation(): TFunc {
   const [lang, setLang] = useState<Lang>("de");
@@ -253,7 +252,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
 
   const skipTour = useCallback(() => {
     completeTour();
-  }, []);
+  }, [completeTour]);
 
   const value = useMemo<TourContextValue>(
     () => ({
@@ -471,9 +470,9 @@ function TourArrow({ placement }: { placement: TourStep["placement"] }) {
 
   // SVG triangle points: tip faces the target, base sits on the tooltip edge
   const points: Record<string, string> = {
-    top: `${size / 2},${size} 0,0 ${size},0`,        // tip down (tooltip above target)
+    top: `${size / 2},${size} 0,0 ${size},0`, // tip down (tooltip above target)
     bottom: `${size / 2},0 0,${size} ${size},${size}`, // tip up (tooltip below target)
-    left: `${size},${size / 2} 0,0 0,${size}`,        // tip right (tooltip left of target)
+    left: `${size},${size / 2} 0,0 0,${size}`, // tip right (tooltip left of target)
     right: `0,${size / 2} ${size},0 ${size},${size}`, // tip left (tooltip right of target)
   };
 

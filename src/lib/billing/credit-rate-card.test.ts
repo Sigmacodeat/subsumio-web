@@ -9,7 +9,7 @@
  *   - Idempotency der Berechnung
  */
 
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
 import {
   CREDIT_RATE_CARD,
   DEFAULT_CREDIT_RATE,
@@ -29,30 +29,30 @@ describe("credit-rate-card", () => {
   describe("getCreditRate", () => {
     it("returns Haiku 4.5 rate", () => {
       const rate = getCreditRate("anthropic:claude-haiku-4-5");
-      expect(rate.input).toBe(2);
-      expect(rate.cachedInput).toBe(0.2);
-      expect(rate.output).toBe(10);
+      expect(rate.input).toBe(12);
+      expect(rate.cachedInput).toBe(1.2);
+      expect(rate.output).toBe(60);
     });
 
     it("returns Opus 4.8 rate", () => {
       const rate = getCreditRate("anthropic:claude-opus-4-8");
-      expect(rate.input).toBe(10);
-      expect(rate.cachedInput).toBe(1);
-      expect(rate.output).toBe(50);
+      expect(rate.input).toBe(60);
+      expect(rate.cachedInput).toBe(6);
+      expect(rate.output).toBe(300);
     });
 
     it("returns Sonnet 5 rate", () => {
       const rate = getCreditRate("anthropic:claude-sonnet-5");
-      expect(rate.input).toBe(4);
-      expect(rate.cachedInput).toBe(0.4);
-      expect(rate.output).toBe(20);
+      expect(rate.input).toBe(24);
+      expect(rate.cachedInput).toBe(2.4);
+      expect(rate.output).toBe(120);
     });
 
     it("returns GPT-5.4 rate", () => {
       const rate = getCreditRate("openai:gpt-5.4");
-      expect(rate.input).toBe(10);
-      expect(rate.cachedInput).toBe(1);
-      expect(rate.output).toBe(30);
+      expect(rate.input).toBe(60);
+      expect(rate.cachedInput).toBe(6);
+      expect(rate.output).toBe(180);
     });
 
     it("falls back to DEFAULT_CREDIT_RATE for unknown model", () => {
@@ -79,8 +79,8 @@ describe("credit-rate-card", () => {
         cacheCreateTokens: 0,
         outputTokens: 0,
       };
-      // 1M × 2 credits/1M = 2 credits
-      expect(calculateTokenCredits(usage)).toBe(2);
+      // 1M × 12 credits/1M = 12 credits
+      expect(calculateTokenCredits(usage)).toBe(12);
     });
 
     it("calculates credits for 1M Haiku output tokens", () => {
@@ -91,8 +91,8 @@ describe("credit-rate-card", () => {
         cacheCreateTokens: 0,
         outputTokens: 1_000_000,
       };
-      // 1M × 10 credits/1M = 10 credits
-      expect(calculateTokenCredits(usage)).toBe(10);
+      // 1M × 60 credits/1M = 60 credits
+      expect(calculateTokenCredits(usage)).toBe(60);
     });
 
     it("calculates credits for 1M cached Haiku input tokens (10% rate)", () => {
@@ -103,8 +103,8 @@ describe("credit-rate-card", () => {
         cacheCreateTokens: 0,
         outputTokens: 0,
       };
-      // 1M × 0.2 credits/1M = 0.2 credits
-      expect(calculateTokenCredits(usage)).toBe(0.2);
+      // 1M × 1.2 credits/1M = 1.2 credits
+      expect(calculateTokenCredits(usage)).toBe(1.2);
     });
 
     it("calculates credits for 1M cache-create Haiku tokens (1.25x input rate)", () => {
@@ -115,20 +115,20 @@ describe("credit-rate-card", () => {
         cacheCreateTokens: 1_000_000,
         outputTokens: 0,
       };
-      // 1M × 2.5 credits/1M = 2.5 credits (1.25x input rate of 2)
-      expect(calculateTokenCredits(usage)).toBe(2.5);
+      // 1M × 15 credits/1M = 15 credits (1.25x input rate of 12)
+      expect(calculateTokenCredits(usage)).toBe(15);
     });
 
     it("calculates credits for mixed Haiku call (input + cached + output)", () => {
       const usage: TokenUsage = {
         modelId: "anthropic:claude-haiku-4-5",
-        inputTokens: 500_000, // 0.5M × 2 = 1
-        cachedInputTokens: 300_000, // 0.3M × 0.2 = 0.06
+        inputTokens: 500_000, // 0.5M × 12 = 6
+        cachedInputTokens: 300_000, // 0.3M × 1.2 = 0.36
         cacheCreateTokens: 0,
-        outputTokens: 200_000, // 0.2M × 10 = 2
+        outputTokens: 200_000, // 0.2M × 60 = 12
       };
-      // Total: 1 + 0.06 + 2 = 3.06
-      expect(calculateTokenCredits(usage)).toBe(3.06);
+      // Total: 6 + 0.36 + 12 = 18.36
+      expect(calculateTokenCredits(usage)).toBe(18.36);
     });
 
     it("calculates Opus credits (10x teurer als Haiku)", () => {
@@ -139,8 +139,8 @@ describe("credit-rate-card", () => {
         cacheCreateTokens: 0,
         outputTokens: 0,
       };
-      // 1M × 10 credits/1M = 10 credits (vs Haiku 2 credits)
-      expect(calculateTokenCredits(usage)).toBe(10);
+      // 1M × 60 credits/1M = 60 credits (vs Haiku 12 credits)
+      expect(calculateTokenCredits(usage)).toBe(60);
     });
 
     it("returns 0 for zero tokens", () => {
@@ -195,11 +195,11 @@ describe("credit-rate-card", () => {
           outputTokens: 10_000,
         },
       ];
-      // Haiku: 0.1×2 + 0.05×10 = 0.2 + 0.5 = 0.7
-      // Sonnet: 0.08×4 + 0.04×20 = 0.32 + 0.8 = 1.12
-      // Opus: 0.02×10 + 0.01×50 = 0.2 + 0.5 = 0.7
-      // Total: 0.7 + 1.12 + 0.7 = 2.52
-      expect(calculateTotalCredits(usages)).toBe(2.52);
+      // Haiku: 0.1×12 + 0.05×60 = 1.2 + 3 = 4.2
+      // Sonnet: 0.08×24 + 0.04×120 = 1.92 + 4.8 = 6.72
+      // Opus: 0.02×60 + 0.01×300 = 1.2 + 3 = 4.2
+      // Total: 4.2 + 6.72 + 4.2 = 15.12
+      expect(calculateTotalCredits(usages)).toBe(15.12);
     });
 
     it("returns 0 for empty array", () => {
@@ -225,23 +225,23 @@ describe("credit-rate-card", () => {
       expect(estimate.tier).toBe(1);
       expect(estimate.layerCount).toBe(5);
       expect(estimate.estimatedCredits).toBeGreaterThan(0);
-      expect(estimate.estimatedCredits).toBeLessThan(5); // Small case < 5 credits
+      expect(estimate.estimatedCredits).toBeLessThan(30); // Small case < 30 credits (12× markup)
     });
 
     it("estimates Tier 2 for medium case (50 pages)", () => {
       const estimate = estimatePipelineCredits(50, 2);
       expect(estimate.tier).toBe(2);
       expect(estimate.layerCount).toBe(13);
-      expect(estimate.estimatedCredits).toBeGreaterThan(2);
-      expect(estimate.estimatedCredits).toBeLessThan(20);
+      expect(estimate.estimatedCredits).toBeGreaterThan(12);
+      expect(estimate.estimatedCredits).toBeLessThan(120);
     });
 
     it("estimates Tier 3 for large case (200 pages)", () => {
       const estimate = estimatePipelineCredits(200, 3);
       expect(estimate.tier).toBe(3);
       expect(estimate.layerCount).toBe(27);
-      expect(estimate.estimatedCredits).toBeGreaterThan(5);
-      expect(estimate.estimatedCredits).toBeLessThan(100);
+      expect(estimate.estimatedCredits).toBeGreaterThan(30);
+      expect(estimate.estimatedCredits).toBeLessThan(600);
     });
 
     it("larger cases cost more credits (monotonic)", () => {
@@ -293,26 +293,26 @@ describe("credit-rate-card", () => {
   // ── Real-world Szenarien ───────────────────────────────────────────────
 
   describe("real-world scenarios", () => {
-    it("small case (10 pages, Tier 1) costs < 2 credits (€2)", () => {
+    it("small case (10 pages, Tier 1) costs < 12 credits (€12)", () => {
       const estimate = estimatePipelineCredits(10, 1);
-      expect(estimate.estimatedCredits).toBeLessThan(2);
+      expect(estimate.estimatedCredits).toBeLessThan(12);
     });
 
-    it("medium case (50 pages, Tier 2) costs 2-10 credits (€2-10)", () => {
+    it("medium case (50 pages, Tier 2) costs 12-60 credits (€12-60)", () => {
       const estimate = estimatePipelineCredits(50, 2);
-      expect(estimate.estimatedCredits).toBeGreaterThanOrEqual(2);
-      expect(estimate.estimatedCredits).toBeLessThanOrEqual(10);
+      expect(estimate.estimatedCredits).toBeGreaterThanOrEqual(12);
+      expect(estimate.estimatedCredits).toBeLessThanOrEqual(60);
     });
 
-    it("large case (200 pages, Tier 3) costs 10-50 credits (€10-50)", () => {
+    it("large case (200 pages, Tier 3) costs 60-300 credits (€60-300)", () => {
       const estimate = estimatePipelineCredits(200, 3);
-      expect(estimate.estimatedCredits).toBeGreaterThanOrEqual(10);
-      expect(estimate.estimatedCredits).toBeLessThanOrEqual(50);
+      expect(estimate.estimatedCredits).toBeGreaterThanOrEqual(60);
+      expect(estimate.estimatedCredits).toBeLessThanOrEqual(300);
     });
 
-    it("huge case (1000 pages, Tier 3) costs < 200 credits (€200)", () => {
+    it("huge case (1000 pages, Tier 3) costs < 1200 credits (€1200)", () => {
       const estimate = estimatePipelineCredits(1000, 3);
-      expect(estimate.estimatedCredits).toBeLessThan(200);
+      expect(estimate.estimatedCredits).toBeLessThan(1200);
     });
   });
 
@@ -322,7 +322,7 @@ describe("credit-rate-card", () => {
   // in this file while CANONICAL_PRICING said $5/$30. A trip-wire, not an
   // exhaustive re-implementation — one representative id per provider.
   describe("DRIFT GUARD — CREDIT_RATE_CARD stays derived from CANONICAL_PRICING", () => {
-    const MARGIN = 2;
+    const MARGIN = 12;
     const CACHED_FACTOR = 0.1;
 
     const sampleIds = [

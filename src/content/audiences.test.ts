@@ -33,7 +33,7 @@ describe("audience packaging", () => {
   });
 
   it("uses CHF for the Swiss packages", () => {
-    expect(professionalPricing("ch").tiers[0].price).toBe("CHF 179");
+    expect(professionalPricing("ch").tiers[0].price).toBe("CHF 249");
     expect(privateOffers("ch").offers[1].price).toBe("CHF 19");
   });
 });

@@ -3,8 +3,6 @@ import type { ChatMessage } from "@/components/chat/chat-types";
 import {
   buildJurisdictionPromptSection,
   buildCollisionWarningSection,
-  JURISDICTION_CONFIGS,
-  normalizeJurisdiction,
 } from "@/lib/legal-jurisdiction-config";
 
 export const JURISDICTION_LABELS: Record<Jurisdiction, string> = {

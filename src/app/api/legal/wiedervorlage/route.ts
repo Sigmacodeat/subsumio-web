@@ -24,6 +24,21 @@ export const POST = createHandler(
     action: "brain.write",
     rateTier: "heavy",
     body: schema,
+    audit: (_ctx, body) => ({
+      action: "legal.wiedervorlage_create" as const,
+      entityType: "deadline",
+      entityId: body.case_slug,
+      details: {
+        case_slug: body.case_slug,
+        verjaehrung_score: body.verjaehrung_score,
+        urgent_count: body.urgent_ansprueche.length,
+        ansprueche: body.urgent_ansprueche.map((a) => ({
+          anspruch: a.anspruch,
+          restzeit_tage: a.restzeit_tage,
+          paragraph: a.paragraph,
+        })),
+      },
+    }),
   },
   async (ctx, body) => {
     const headers = await engineHeaders();

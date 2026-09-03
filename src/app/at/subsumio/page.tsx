@@ -38,7 +38,7 @@ export default function Page() {
           name: product.name,
           description: product.metaDesc,
           url: canonical,
-          price: "299",
+          price: "249",
         })}
       />
       <JsonLd

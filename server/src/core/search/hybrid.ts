@@ -2122,6 +2122,14 @@ export async function embedQueryBounded(
 }
 
 const DEFAULT_LLM_RERANK_MODEL = "openrouter:deepseek/deepseek-chat";
+// v0.46: Fallback chain for LLM reranker. If primary model fails (credits,
+// rate-limit, network), try the next. All are OpenRouter models with the
+// same chat API — the reranker prompt works with any instruction-following LLM.
+// Order: deepseek-chat (best value) → gemini-flash (fast, cheap) → qwen-turbo (cheapest).
+const LLM_RERANK_FALLBACK_CHAIN = [
+  "openrouter:google/gemini-2.5-flash",
+  "openrouter:qwen/qwen-2.5-72b-instruct",
+];
 const DEFAULT_LLM_RERANK_TOP_N_IN = 25;
 const DEFAULT_LLM_RERANK_TIMEOUT_MS = 15000;
 
@@ -2168,24 +2176,41 @@ export async function applyLLMReranker(
 
   const user = `Rechtsfrage: ${query}\n\nGefundene Gesetzestexte:\n${snippets.join("\n\n")}\n\nOrdne die Indizes nach direkter Relevanz für die Rechtsfrage (0-basiert, kommagetrennt):`;
 
-  let response: string;
-  try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(new Error("llm-rerank timed out")), timeoutMs);
+  let response = "";
+  // v0.46: Try primary model first, then fallback chain. Each model gets
+  // its own timeout. Fail-open: if ALL models fail, return unreranked results.
+  const modelsToTry = [model, ...LLM_RERANK_FALLBACK_CHAIN.filter((m) => m !== model)];
+  let lastError: unknown = null;
+  let succeeded = false;
+  for (const tryModel of modelsToTry) {
     try {
-      const result = await gatewayChat({
-        system,
-        messages: [{ role: "user", content: user }],
-        maxTokens: 512,
-        model,
-        abortSignal: ctrl.signal,
-      });
-      response = result.text;
-    } finally {
-      clearTimeout(timer);
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(new Error("llm-rerank timed out")), timeoutMs);
+      try {
+        const result = await gatewayChat({
+          system,
+          messages: [{ role: "user", content: user }],
+          maxTokens: 512,
+          model: tryModel,
+          abortSignal: ctrl.signal,
+        });
+        response = result.text;
+        succeeded = true;
+        if (tryModel !== model) {
+          console.warn(`[llm-rerank] primary model failed, used fallback: ${tryModel}`);
+        }
+        break;
+      } finally {
+        clearTimeout(timer);
+      }
+    } catch (err: any) {
+      lastError = err;
+      console.error(`[llm-rerank] model ${tryModel} failed:`, err?.message ?? err);
+      // Continue to next fallback model
     }
-  } catch (err: any) {
-    console.error("[llm-rerank] error:", err?.message ?? err);
+  }
+  if (!succeeded) {
+    console.error("[llm-rerank] all models failed, returning unreranked results:", lastError);
     return results;
   }
 

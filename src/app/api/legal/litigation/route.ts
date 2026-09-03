@@ -26,7 +26,7 @@ const createSchema = z.object({
   steps: z
     .array(
       z.object({
-        id: z.string(),
+        id: z.string().max(200),
         type: z.enum([
           "task",
           "filing",
@@ -39,7 +39,7 @@ const createSchema = z.object({
           "settlement",
           "enforcement",
         ]),
-        title: z.string(),
+        title: z.string().max(500),
         description: z.string().optional(),
         status: z
           .enum(["pending", "in_progress", "completed", "blocked", "skipped"])

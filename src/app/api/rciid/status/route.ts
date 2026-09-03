@@ -14,6 +14,12 @@ export const POST = createHandler(
     action: "brain.read",
     rateTier: "standard",
     body: statusSchema,
+    audit: (_ctx, body) => ({
+      action: "rciid.status_updated" as const,
+      entityType: "case",
+      entityId: body.rciidCaseId,
+      details: {},
+    }),
   },
   async (_ctx, body) => {
     if (!isConfigured()) {

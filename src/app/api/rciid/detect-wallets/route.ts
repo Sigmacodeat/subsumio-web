@@ -1,9 +1,7 @@
 import { z } from "zod";
 import { createHandler, apiSuccess } from "@/lib/api-handler";
 import {
-  detectWallets,
   detectAndValidateWallets,
-  classifyBlockchain,
   isKnownFraudWallet,
   validateWalletAddress,
 } from "@/lib/crypto-wallet-detector";

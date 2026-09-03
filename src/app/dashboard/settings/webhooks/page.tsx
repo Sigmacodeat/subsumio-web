@@ -53,7 +53,7 @@ export default function WebhooksPage() {
     } finally {
       setLoading(false);
     }
-  }, [addToast]);
+  }, [addToast, t]);
 
   useEffect(() => {
     void load();

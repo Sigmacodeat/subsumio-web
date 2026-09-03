@@ -29,6 +29,11 @@ export const GET = createPublicHandler(
     rateLimitKey: (req) => `portal-doc-req:${clientIp(req.headers)}`,
     rateLimitMax: 30,
     rateLimitWindowMs: 60_000,
+    audit: (_ctx, _body, _query) => ({
+      action: "case.view" as const,
+      entityType: "document_request",
+      details: { source: "portal" },
+    }),
   },
   async (_req, _body, query) => {
     const payload = await verifyPortalToken(query.token);

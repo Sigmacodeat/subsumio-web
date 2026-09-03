@@ -82,9 +82,9 @@ export const INDUSTRY_PROFILES = {
   tax: {
     key: "tax",
     label: { en: "Tax advisory / accounting", de: "Steuerberatung / Buchhaltung" },
-    brand: "Subsumio Tax",
+    brand: "Taxumio",
     dashboardHref: "/dashboard",
-    marketingHref: "/tax",
+    marketingHref: "/taxumio",
     pack: "subsumio-tax",
     signature: {
       title: {

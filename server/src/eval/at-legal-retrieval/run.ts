@@ -183,6 +183,8 @@ async function main() {
   const { buildGatewayConfig } = await import("../../core/ai/build-gateway-config.ts");
   const { configureGateway, reconfigureGatewayWithEngine } =
     await import("../../core/ai/gateway.ts");
+  const { AT_LAW_SOURCES_STATUTES, AT_PRIMARY_STATUTE_SOURCE } =
+    await import("../../core/legal/jurisdiction.ts");
 
   const cfg = loadConfig();
   if (!cfg) {
@@ -211,8 +213,10 @@ async function main() {
         limit: opts.topK,
         innerLimit: 50,
         useBM25: true,
-        sourceId: "law-at",
-        sourceIds: ["law-at", "law-at-judikatur", "law-eu"],
+        // v0.46: Vector search re-enabled with partial IVFFlat indexes +
+        // enable_indexscan=off to force the planner to use them.
+        sourceId: AT_PRIMARY_STATUTE_SOURCE,
+        sourceIds: AT_LAW_SOURCES_STATUTES,
         jurisdiction: "at",
         embeddingColumn: {
           name: "embedding",

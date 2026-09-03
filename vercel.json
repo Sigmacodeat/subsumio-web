@@ -17,15 +17,19 @@
     { "path": "/api/cron/case-law", "schedule": "0 9 * * *" },
     { "path": "/api/cron/regulatory-monitors", "schedule": "0 10 * * *" },
     { "path": "/api/cron/retention", "schedule": "0 8 * * *" },
+    { "path": "/api/cron/billing-cleanup", "schedule": "0 3 * * *" },
     { "path": "/api/cron/document-request-reminders", "schedule": "30 8 * * *" },
     { "path": "/api/cron/queue-alert", "schedule": "*/5 * * * *" },
     { "path": "/api/cron/analysis-retry", "schedule": "*/15 * * * *" },
+    { "path": "/api/cron/settlement-retry", "schedule": "*/15 * * * *" },
     { "path": "/api/cron/autopilot", "schedule": "0 4 * * *" },
     { "path": "/api/cron/dunning-run", "schedule": "0 9 * * *" },
     { "path": "/api/cron/time-suggestions", "schedule": "0 19 * * *" },
     { "path": "/api/cron/outlook-sync", "schedule": "*/15 * * * *" },
     { "path": "/api/cron/deadline-alerts", "schedule": "*/30 * * * *" },
     { "path": "/api/cron/time-tracking/inactivity-check", "schedule": "0 * * * *" },
-    { "path": "/api/billing/auto-reload-cron", "schedule": "0 */2 * * *" }
+    { "path": "/api/billing/auto-reload-cron", "schedule": "0 */2 * * *" },
+    { "path": "/api/billing/monthly-invoice", "schedule": "0 0 1 * *" },
+    { "path": "/api/billing/expire-credits", "schedule": "0 3 * * *" }
   ]
 }

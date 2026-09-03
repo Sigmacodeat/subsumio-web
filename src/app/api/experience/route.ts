@@ -147,6 +147,18 @@ export const POST = createHandler(
     action: "brain.read",
     rateTier: "standard",
     body: upsertSchema,
+    audit: (ctx, body) => ({
+      action: "experience.profile_update" as const,
+      entityType: "experience_profile",
+      entityId: ctx.user.id,
+      details: {
+        user: ctx.user.email,
+        practice_area_count: body.practice_areas.length,
+        language_count: body.languages.length,
+        qualification_count: body.qualifications.length,
+        visibility: body.visibility,
+      },
+    }),
   },
   async (ctx, body) => {
     const userId = ctx.user.id;

@@ -20,6 +20,16 @@ import {
   type MatterRiskItem,
   type MatterUnderstandingPanel,
   type RecentlyChangedSource,
+  type CaseInvestigationContradiction,
+  type CaseInvestigationContradictionCategory,
+  type CaseInvestigationSeverity,
+  type CaseInvestigationMateriality,
+  type CaseInvestigationEvidenceGap,
+  type CaseInvestigationHypothesis,
+  type CaseInvestigationQuestion,
+  type CaseInvestigationResult,
+  type CaseInvestigationSuggestion,
+  type CaseInvestigationSuggestionIndicators,
 } from "./matter-context-types";
 
 describe("QUERY_MODE_LABELS", () => {
@@ -315,5 +325,188 @@ describe("Type instantiation", () => {
       "reviewed",
     ];
     expect(changeTypes).toHaveLength(4);
+  });
+
+  // ── Case Investigation Types ─────────────────────────────────────
+
+  test("MatterFactEntry mit Case-Investigation-Erweiterung", () => {
+    const fact: MatterFactEntry = {
+      id: "f1",
+      statement: "Ich war am 14.05. in Linz.",
+      source: "D-12",
+      confidence: "medium",
+      speaker_entity: "Zeuge Z",
+      source_page: 4,
+      source_span: "S.4 Abs.2",
+      exact_quote: "Am 14.05. war ich bis ca. 13:30 Uhr ausschließlich beim Kunden in Linz.",
+      perception_type: "eigen",
+      beweis_anforderung: "vollbeweis",
+      on_norm_ref: "ON 1923",
+      extraction_confidence: 0.87,
+      provenance: {
+        extractor_version: "1.0.0",
+        extracted_at: "2026-08-23T10:00:00Z",
+        content_hash: "abc123",
+      },
+    };
+    expect(fact.speaker_entity).toBe("Zeuge Z");
+    expect(fact.perception_type).toBe("eigen");
+    expect(fact.extraction_confidence).toBe(0.87);
+  });
+
+  test("MatterFactEntry review_status mit neuen Werten", () => {
+    const statuses: MatterFactEntry["review_status"][] = [
+      "pending",
+      "approved",
+      "party_assertion",
+      "corrected",
+      "dismissed",
+      "no_contradiction",
+    ];
+    expect(statuses).toHaveLength(6);
+  });
+
+  test("CaseInvestigationContradictionCategory hat alle Kategorien", () => {
+    const categories: CaseInvestigationContradictionCategory[] = [
+      "direkt",
+      "zeitlich",
+      "räumlich",
+      "identität",
+      "mengen",
+      "kausal",
+      "semantisch",
+      "dokumentarisch",
+      "aussageentwicklung",
+      "rechtlich",
+    ];
+    expect(categories).toHaveLength(10);
+  });
+
+  test("CaseInvestigationContradiction mit allen Feldern", () => {
+    const c: CaseInvestigationContradiction = {
+      id: "W-07",
+      case_slug: "mueller-vs-huber",
+      claim_a_id: "f43",
+      claim_b_id: "f89",
+      category: "zeitlich",
+      severity: "hoch",
+      materiality: "zentral",
+      is_direct: true,
+      alternative_explanations: ["Telefonisch?", "Zeit geschätzt?"],
+      belastende_interpretation: "Zeuge kann nicht an beiden Orten gewesen sein",
+      entlastende_interpretation: "Zeitangabe könnte geschätzt sein",
+      resolution_questions: ["Wo waren Sie unmittelbar davor/danach?"],
+      zpo_relevanz: "§ 226 ZPO",
+      audit_verified: true,
+      audit_confidence: 0.92,
+      review_status: "pending",
+    };
+    expect(c.category).toBe("zeitlich");
+    expect(c.audit_confidence).toBe(0.92);
+  });
+
+  test("CaseInvestigationSeverity hat 3 Stufen", () => {
+    const severities: CaseInvestigationSeverity[] = ["niedrig", "mittel", "hoch"];
+    expect(severities).toHaveLength(3);
+  });
+
+  test("CaseInvestigationMateriality hat 3 Stufen", () => {
+    const materialities: CaseInvestigationMateriality[] = [
+      "nicht_erkennbar",
+      "möglicherweise",
+      "zentral",
+    ];
+    expect(materialities).toHaveLength(3);
+  });
+
+  test("CaseInvestigationEvidenceGap mit allen Feldern", () => {
+    const gap: CaseInvestigationEvidenceGap = {
+      id: "L-01",
+      case_slug: "mueller-vs-huber",
+      beschreibung: "Keine Reisekostenabrechnung für Linz am 14.05.",
+      fehlendes_beweismittel: "Hotelrechnung, Tankquittung",
+      erwartete_quelle: "Buchhaltung Müller GmbH",
+      beweisbedeutung: "Stützt oder widerlegt Aufenthalt in Linz",
+    };
+    expect(gap.fehlendes_beweismittel).toContain("Hotelrechnung");
+  });
+
+  test("CaseInvestigationHypothesis mit Indizien", () => {
+    const h: CaseInvestigationHypothesis = {
+      id: "H-01",
+      case_slug: "mueller-vs-huber",
+      beschreibung: "Gespräch fand telefonisch statt, nicht persönlich",
+      stuetzende_indizien: ["Keine Reisekosten", "Kalender zeigt keinen Termin"],
+      gegen_indizien: ['Zeuge sagt „persönlich"'],
+    };
+    expect(h.stuetzende_indizien).toHaveLength(2);
+  });
+
+  test("CaseInvestigationQuestion mit PEACE-Struktur", () => {
+    const q: CaseInvestigationQuestion = {
+      id: "Q-01",
+      case_slug: "mueller-vs-huber",
+      ziel_person: "Zeuge Z",
+      einstiegsfrage: "Schildern Sie das Gespräch mit Frau X am 14.05.",
+      praezisierungsfragen: ["Wo befanden Sie sich davor/danach?"],
+      konfrontationsfrage: "Müller sagt, Sie waren in Linz — stimmt das?",
+      beweisbedeutung: "Klärung des Aufenthaltsorts",
+    };
+    expect(q.einstiegsfrage).toContain("Schildern Sie");
+  });
+
+  test("CaseInvestigationResult mit allen Feldern", () => {
+    const r: CaseInvestigationResult = {
+      run_id: "run-001",
+      case_slug: "mueller-vs-huber",
+      jurisdiction: "at",
+      pruefauftrag: "Sachverhaltsprüfung Müller vs. Huber",
+      rechtlicher_rahmen: {
+        zpo_vorschriften: ["§ 226 ZPO", "§ 272 ZPO", "§ 274 ZPO"],
+        verfahrensschritt: "Verhandlungsmaxime — beweisbedürftige Tatsachen",
+      },
+      claims_count: 312,
+      contradictions: [],
+      evidence_gaps: [],
+      alternative_hypotheses: [],
+      neutral_questions: [],
+      pruefbedarf_hinweis: "anwaltlich zu prüfen",
+      generated_at: "2026-08-23T10:00:00Z",
+      engine_reachable: true,
+    };
+    expect(r.jurisdiction).toBe("at");
+    expect(r.rechtlicher_rahmen.zpo_vorschriften).toHaveLength(3);
+  });
+
+  test("CaseInvestigationSuggestion mit Indikatoren", () => {
+    const s: CaseInvestigationSuggestion = {
+      suggest: true,
+      reason: "Fall Müller vs. Huber: 10 Dokumente, 3 Widersprüche",
+      urgency: "high",
+      indicators: {
+        has_opposing_parties: true,
+        known_contradictions: 3,
+        ready_documents: 10,
+        has_gaps: false,
+        has_communication: false,
+      },
+      estimated_credits: 2,
+      estimated_duration_seconds: 45,
+      case_slug: "mueller-vs-huber",
+      case_title: "Müller vs. Huber",
+    };
+    expect(s.suggest).toBe(true);
+    expect(s.indicators.known_contradictions).toBe(3);
+  });
+
+  test("CaseInvestigationSuggestionIndicators mit allen Feldern", () => {
+    const ind: CaseInvestigationSuggestionIndicators = {
+      has_opposing_parties: false,
+      known_contradictions: 0,
+      ready_documents: 0,
+      has_gaps: false,
+      has_communication: false,
+    };
+    expect(ind.has_opposing_parties).toBe(false);
   });
 });

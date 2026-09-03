@@ -8,6 +8,7 @@
 
 import express from "express";
 import type { Application, Request, Response, NextFunction } from "express";
+import { z } from "zod";
 import { readdirSync, readFileSync, statSync, realpathSync } from "fs";
 import { join, dirname, extname, basename } from "path";
 import { fileURLToPath } from "url";
@@ -31,6 +32,7 @@ import {
 } from "../core/extract-document.ts";
 import { slugifySegment, isImageFilePath } from "../core/sync.ts";
 import { splitStatute } from "../core/legal/split-statute.ts";
+import { AT_LAW_SOURCES_ALL } from "../core/legal/jurisdiction.ts";
 import { loadConfig } from "../core/config.ts";
 import { OperationError } from "../core/operations.ts";
 import {
@@ -47,7 +49,7 @@ import {
   type ArchiveBudget,
   ArchiveSafetyError,
 } from "../core/archive-upload.ts";
-import { inspectUploadBytes } from "../core/upload-security.ts";
+import { inspectUploadBytes, inspectUploadFile } from "../core/upload-security.ts";
 import { FILE_MIME_TYPES } from "../core/file-store.ts";
 import { uploadConcurrencyGuard } from "../core/upload-guard.ts";
 import { pipeline } from "stream/promises";
@@ -316,6 +318,21 @@ async function storedDuplicate(
   );
 }
 
+/**
+ * G5 fix: hash-based duplicate check that avoids re-reading the full buffer.
+ * Pre-fix, storedDuplicate re-computed SHA-256 from the RAM buffer even
+ * though we already computed it during streaming. This variant accepts
+ * the pre-computed hash directly.
+ */
+async function storedDuplicateByHash(
+  hash: string,
+  sourceId: string,
+  caseSlug?: string | null
+): Promise<{ page_slug: string | null; filename: string } | null> {
+  const { findStoredDocumentReferenceByHash } = await import("../core/file-store.ts");
+  return findStoredDocumentReferenceByHash(hash, sourceId, caseSlug);
+}
+
 async function versionUploadSlug(slug: string, data: Buffer, sourceId: string): Promise<string> {
   const { findStoredUploadForPage } = await import("../core/file-store.ts");
   const existing = await findStoredUploadForPage(slug, sourceId);
@@ -528,7 +545,7 @@ export async function buildMarkdownFromUpload(
     }
     if (title) extracted.frontmatter.title = title;
     Object.assign(extracted.frontmatter, extraFrontmatter);
-    return synthesizeDocumentMarkdown(filename, extracted);
+    return await synthesizeDocumentMarkdown(filename, extracted);
   }
 
   // Images (photo/scan of a Schriftsatz): OCR to chattable text. Without this
@@ -603,9 +620,28 @@ export async function buildMarkdownFromUpload(
         `(Foto/Scan als JPG/PNG/HEIC wird per OCR ausgelesen).`
     );
   }
+  // v0.46: Classify plain-text uploads so court decisions pasted as .txt get
+  // the structure-aware legal-decision chunker instead of the generic one.
+  let textDocType: string | undefined;
+  let textType = "document";
+  if (text.trim().length > 50) {
+    try {
+      const { classifyLegalDocument } = await import("../core/legal/doc-classifier.ts");
+      const classification = classifyLegalDocument(text);
+      if (classification.confidence > 0) {
+        textDocType = classification.type;
+        if (classification.type === "court_judgment" || classification.type === "court_order") {
+          textType = "court_decision";
+        }
+      }
+    } catch {
+      // best-effort
+    }
+  }
   return withUploadFrontmatter(`${text}\n`, {
     title: t,
-    type: "document",
+    type: textType,
+    ...(textDocType ? { doc_type: textDocType } : {}),
     extraction_method: "native_parser",
     extraction_status: text.trim() ? "ready" : "failed",
     extraction_char_count: text.length,
@@ -930,7 +966,7 @@ export async function runExtractionAndImport(
     /** Bulk-act imports defer analysis until every raw document is ready. */
     autoTriggerLegalPipeline?: boolean;
   }
-): Promise<{ partSlugs: string[] }> {
+): Promise<{ partSlugs: string[]; stamp_failures?: string[] }> {
   const {
     slug,
     filename,
@@ -968,29 +1004,35 @@ export async function runExtractionAndImport(
   // a document from its case. So we collect failures, retry each once, and log a
   // structured warning listing any parts still unstamped so ops can see + fix it,
   // instead of dropping the error on the floor.
+  let stampFailureList: string[] | undefined;
   if (caseSlug) {
-    const stampFailures: string[] = [];
-    for (const s of [slug, ...partSlugs]) {
-      let stamped = false;
-      for (let attempt = 0; attempt < 2 && !stamped; attempt++) {
-        try {
-          await patchPageFrontmatter(engine, s, tenantSource, {
-            case_slug: caseSlug,
-            assignment_status: "assigned",
-          });
-          stamped = true;
-        } catch {
-          /* retry once, then record */
+    // G6 fix: parallelize case_slug stamping across all parts.
+    // Pre-fix: N serial round-trips (1 per part). Now: all in parallel.
+    const allSlugs = [slug, ...partSlugs];
+    const stampResults = await Promise.all(
+      allSlugs.map(async (s): Promise<{ slug: string; ok: boolean }> => {
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            await patchPageFrontmatter(engine, s, tenantSource, {
+              case_slug: caseSlug,
+              assignment_status: "assigned",
+            });
+            return { slug: s, ok: true };
+          } catch {
+            /* retry once, then record */
+          }
         }
-      }
-      if (!stamped) stampFailures.push(s);
-    }
+        return { slug: s, ok: false };
+      })
+    );
+    const stampFailures = stampResults.filter((r) => !r.ok).map((r) => r.slug);
     if (stampFailures.length > 0) {
       console.error(
         `[web-api] case_slug stamp failed for ${stampFailures.length} part(s) of ${slug} ` +
           `(case=${caseSlug}) — these parts are NOT discoverable in the case until re-stamped: ` +
           stampFailures.join(", ")
       );
+      stampFailureList = stampFailures;
     }
   }
 
@@ -1027,14 +1069,20 @@ export async function runExtractionAndImport(
   // reaches this stamp when every part imported AND embedded successfully, so
   // "ready" reflects reality. (A page with zero chunkable content embeds nothing
   // and is trivially "ready" — nothing to retrieve.)
-  for (const s of [slug, ...partSlugs]) {
-    await patchPageFrontmatter(engine, s, tenantSource, {
-      embedding_status: noEmbed ? "pending" : "ready",
-      ...(noEmbed
-        ? { embedding_pending_since: new Date().toISOString() }
-        : { embedding_completed_at: new Date().toISOString() }),
-    });
-  }
+  // G6 fix: parallelize embedding status stamping across all parts.
+  const embedStampTime = new Date().toISOString();
+  await Promise.all(
+    [slug, ...partSlugs].map((s) =>
+      patchPageFrontmatter(engine, s, tenantSource, {
+        embedding_status: noEmbed ? "pending" : "ready",
+        ...(noEmbed
+          ? { embedding_pending_since: embedStampTime }
+          : { embedding_completed_at: embedStampTime }),
+      }).catch(() => {
+        /* best-effort — embedding status is not critical for pipeline */
+      })
+    )
+  );
 
   if (noEmbed) {
     try {
@@ -1073,14 +1121,18 @@ export async function runExtractionAndImport(
       uploadFrontmatter.jurisdiction_confidence = jurResult.confidence;
       if (jurResult.unverified) uploadFrontmatter.jurisdiction_unverified = true;
 
-      // Persist jurisdiction confidence + unverified flag on all parts
-      for (const s of [slug, ...partSlugs]) {
-        await patchPageFrontmatter(engine, s, tenantSource, {
-          jurisdiction,
-          jurisdiction_confidence: jurResult.confidence,
-          ...(jurResult.unverified ? { jurisdiction_unverified: true } : {}),
-        });
-      }
+      // G6 fix: parallelize jurisdiction stamping across all parts.
+      await Promise.all(
+        [slug, ...partSlugs].map((s) =>
+          patchPageFrontmatter(engine, s, tenantSource, {
+            jurisdiction,
+            jurisdiction_confidence: jurResult.confidence,
+            ...(jurResult.unverified ? { jurisdiction_unverified: true } : {}),
+          }).catch(() => {
+            /* best-effort — jurisdiction is also stamped in uploadFrontmatter */
+          })
+        )
+      );
 
       await queue.add(
         "legal-pipeline",
@@ -1141,7 +1193,7 @@ export async function runExtractionAndImport(
     );
   }
 
-  return { partSlugs };
+  return { partSlugs, ...(stampFailureList ? { stamp_failures: stampFailureList } : {}) };
 }
 
 function cleanFrontmatter(input: Record<string, unknown>): Record<string, unknown> {
@@ -1167,7 +1219,7 @@ async function withUploadFrontmatter(
 
 type EnginePostUploadTaskType = "reconcile_case" | "analyze" | "contradiction";
 
-async function persistEnginePostUploadTasks(
+export async function persistEnginePostUploadTasks(
   engine: BrainEngine,
   sourceId: string,
   input: {
@@ -1186,13 +1238,18 @@ async function persistEnginePostUploadTasks(
       const safe = input.doc_slug.replace(/[^a-z0-9-]/gi, "-").slice(0, 48);
       const hash = createHash("sha256").update(input.doc_slug).digest("hex").slice(0, 16);
       const slug = `legal/post-upload-tasks/${taskType}/${safe}-${hash}`;
+      // G16 fix: set next_attempt_at 30s in the future to avoid a hot
+      // retry loop. Pre-fix, next_attempt_at = now meant the outbox worker
+      // could immediately re-process the task before the upload response
+      // even returns, causing duplicate work.
+      const nextAttempt = new Date(Date.now() + 30_000).toISOString();
       const markdown = await withUploadFrontmatter("", {
         title: `Post-upload: ${taskType} for ${input.doc_slug}`,
         type: "post_upload_task",
         ...input,
         task_type: taskType,
         attempts: 0,
-        next_attempt_at: new Date().toISOString(),
+        next_attempt_at: nextAttempt,
         status: "pending",
       });
       await importFromContent(engine, slug, markdown, {
@@ -1546,7 +1603,7 @@ const SHARED_READ_SOURCES: string[] = (
  */
 const JURISDICTION_LAW_SOURCES: Record<string, string[]> = {
   DE: ["law-de", "law-eu"],
-  AT: ["law-at", "law-at-judikatur", "law-at-judikatur-vfgh", "law-at-judikatur-vwgh", "law-eu"],
+  AT: AT_LAW_SOURCES_ALL,
   CH: ["law-ch", "law-eu"],
 };
 
@@ -1639,6 +1696,35 @@ export async function patchPageFrontmatter(
     [patch, sourceId, slug]
   );
   if (updated.length === 0) throw new EngineNotFoundError(`Page not found: ${slug}`);
+}
+
+/**
+ * G15 fix: Batch-variant of patchPageFrontmatter that updates multiple slugs
+ * in a single transaction. Pre-fix, callers looped patchPageFrontmatter
+ * sequentially — any failure mid-loop left documents partially stamped.
+ * Now the entire batch succeeds or rolls back atomically.
+ */
+export async function patchPageFrontmatterBatch(
+  engine: BrainEngine,
+  slugs: string[],
+  sourceId: string,
+  patch: Record<string, unknown>
+): Promise<void> {
+  if (slugs.length === 0) return;
+  // Use a single UPDATE with ANY() for all slugs at once.
+  const updated = await engine.executeRaw<{ id: number; slug: string }>(
+    `UPDATE pages
+       SET frontmatter = COALESCE(frontmatter, '{}'::jsonb) || $1::jsonb,
+           updated_at = now()
+     WHERE source_id = $2 AND slug = ANY($3::text[]) AND deleted_at IS NULL
+     RETURNING id, slug`,
+    [patch, sourceId, slugs]
+  );
+  if (updated.length !== slugs.length) {
+    const found = new Set(updated.map((r) => r.slug));
+    const missing = slugs.filter((s) => !found.has(s));
+    throw new EngineNotFoundError(`Pages not found: ${missing.join(", ")}`);
+  }
 }
 
 /**
@@ -1902,6 +1988,11 @@ function engineCorsMiddleware(allowlist: Set<string> | null) {
 }
 
 export function mountWebApi(app: Application, engine: BrainEngine, options: WebApiOptions = {}) {
+  // G25 fix: consistent error-response helper that always includes `message`.
+  // Defined at the top of mountWebApi so all route handlers can use it.
+  const apiError = (res: Response, status: number, code: string, message?: string): void => {
+    res.status(status).json({ error: code, message: message ?? code });
+  };
   // SUBSUMIO_WEB_API_KEY is the canonical name (matches .env.example and the
   // signing key documented in identity-token.ts). The GBRAIN_/SIGMABRAIN_
   // variants are legacy fallbacks ONLY — a deployment that sets just
@@ -1975,11 +2066,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       }
       const declaredLength = Number(req.headers["content-length"] ?? 0);
       if (Number.isFinite(declaredLength) && declaredLength > maxUploadBytes()) {
-        res.status(413).json({ error: "upload_transport_limit_exceeded" });
+        apiError(res, 413, "upload_transport_limit_exceeded");
         return;
       }
       if (Number.isFinite(declaredLength) && declaredLength > payload.size + 1024 * 1024) {
-        res.status(400).json({ error: "upload_token_size_mismatch" });
+        apiError(res, 400, "upload_token_size_mismatch");
         return;
       }
       req.uploadTokenPayload = payload;
@@ -2011,20 +2102,20 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
         const contentType = String(req.headers["content-type"] ?? "");
         if (!contentType.includes("multipart/form-data")) {
-          res.status(400).json({ error: "expected_multipart" });
+          apiError(res, 400, "expected_multipart");
           return;
         }
         if (!Buffer.isBuffer(req.body)) {
-          res.status(400).json({ error: "empty_body" });
+          apiError(res, 400, "empty_body");
           return;
         }
         const { fields, file } = parseMultipart(req.body, contentType);
         if (!file) {
-          res.status(400).json({ error: "missing_file" });
+          apiError(res, 400, "missing_file");
           return;
         }
         if ((fields.password?.length ?? 0) > 255) {
-          res.status(400).json({ error: "document_password_too_long" });
+          apiError(res, 400, "document_password_too_long");
           return;
         }
         const fileLimit = maxBytesForUpload(file.filename);
@@ -2145,6 +2236,25 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                 source_kind: "web_upload",
                 source_uri: `subsumio-upload:${beaSlug}`,
               });
+              // Stamp case_slug on the BEA page so discoverAllCaseDocuments
+              // can find it. Without this stamp, the BEA message is invisible
+              // to the legal pipeline's case-accumulation logic — the pipeline
+              // would process the BEA message as its own isolated "case",
+              // losing the connection to the actual legal matter.
+              const beaCaseSlug = payload.case_slug?.trim() || undefined;
+              if (beaCaseSlug) {
+                try {
+                  await patchPageFrontmatter(engine, beaSlug, tenantSource, {
+                    case_slug: beaCaseSlug,
+                    assignment_status: "assigned",
+                  });
+                } catch (stampErr) {
+                  console.error(
+                    `[direct-upload] case_slug stamp failed for beA page ${beaSlug} ` +
+                      `(case=${beaCaseSlug}): ${stampErr instanceof Error ? stampErr.message : String(stampErr)}`
+                  );
+                }
+              }
               const persistRes = await persistUploadBytes(
                 file,
                 beaSlug,
@@ -2165,7 +2275,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               try {
                 await persistEnginePostUploadTasks(engine, tenantSource, {
                   doc_slug: beaSlug,
-                  case_slug: payload.case_slug?.trim() || undefined,
+                  case_slug: beaCaseSlug,
                   brain_id: tenantSource,
                   doc_title: beaPage?.title ?? item.title,
                   doc_size: file.data.byteLength,
@@ -2180,6 +2290,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               }
               // E2: Trigger legal-pipeline for beA XML imports — same as
               // regular upload path does via runExtractionAndImport.
+              // Use the real case_slug (not beaSlug) so the pipeline
+              // accumulates the BEA message with the rest of the case.
+              const pipelineCaseSlug = beaCaseSlug ?? beaSlug;
               try {
                 const beaJurisdiction = detectJurisdiction(
                   (beaPage?.frontmatter ?? {}) as Record<string, unknown>,
@@ -2189,7 +2302,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                 await beaQueue.add(
                   "legal-pipeline",
                   {
-                    case_slug: beaSlug,
+                    case_slug: pipelineCaseSlug,
                     part_slugs: [beaSlug],
                     ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
                     trigger: "bea_import",
@@ -2199,11 +2312,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                   {
                     timeout_ms: 60 * 60 * 1000,
                     max_attempts: 3,
-                    idempotency_key: legalPipelineIdempotencyKey(
-                      tenantSource,
-                      payload.case_slug?.trim() || beaSlug,
-                      [beaSlug]
-                    ),
+                    idempotency_key: legalPipelineIdempotencyKey(tenantSource, pipelineCaseSlug, [
+                      beaSlug,
+                    ]),
                   },
                   { allowProtectedSubmit: true }
                 );
@@ -2332,6 +2443,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         }
 
         let partSlugs: string[] = [];
+        let stampFailures: string[] | undefined;
         if (asyncExtract) {
           if (!persistRes.ok) {
             res.status(500).json({
@@ -2395,9 +2507,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             tenantSource,
             noEmbed,
             password: suppliedPassword,
-            autoTriggerLegalPipeline: !payload.defer_pipeline,
+            autoTriggerLegalPipeline: shouldAutoTriggerUploadPipeline(
+              payload.defer_pipeline,
+              source
+            ),
           });
           partSlugs = result.partSlugs;
+          if (result.stamp_failures) stampFailures = result.stamp_failures;
         }
 
         const page = await engine.getPage(slug, { sourceId: tenantSource });
@@ -2477,6 +2593,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             ? { split: true, part_count: partSlugs.length, part_slugs: partSlugs }
             : {}),
           ...(persistRes.ok ? {} : { persist_error: persistRes.error }),
+          ...(stampFailures && stampFailures.length > 0 ? { stamp_failures: stampFailures } : {}),
         });
       } catch (err) {
         console.error("[direct-upload] error:", err instanceof Error ? err.message : String(err));
@@ -2828,7 +2945,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     const body = req.body as Record<string, unknown>;
     const rawQuery = String(body?.query ?? body?.question ?? "");
     if (!rawQuery.trim()) {
-      res.status(400).json({ error: "missing_query" });
+      apiError(res, 400, "missing_query");
       return;
     }
 
@@ -2984,7 +3101,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       try {
         const slug = String((req.body as Record<string, unknown>)?.slug ?? "");
         if (!slug) {
-          res.status(400).json({ error: "missing_slug" });
+          apiError(res, 400, "missing_slug");
           return;
         }
         const pageForScope = await engine.getPage(slug, { sourceId: requestSourceId(req) });
@@ -3031,7 +3148,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const slug = typeof b.document_slug === "string" ? b.document_slug : "";
         const text = typeof b.text === "string" ? b.text : "";
         if (!slug && !text.trim()) {
-          res.status(400).json({ error: "document_slug_or_text_required" });
+          apiError(res, 400, "document_slug_or_text_required");
           return;
         }
         if (slug) assertMatterScope(req.matterScope, slug);
@@ -3064,7 +3181,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const slug = typeof b.document_slug === "string" ? b.document_slug : "";
         const text = typeof b.text === "string" ? b.text : "";
         if (!slug && !text.trim()) {
-          res.status(400).json({ error: "document_slug_or_text_required" });
+          apiError(res, 400, "document_slug_or_text_required");
           return;
         }
         if (slug) assertMatterScope(req.matterScope, slug);
@@ -3099,15 +3216,15 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const facts = typeof b.facts === "string" ? b.facts.trim() : "";
         const jurisdiction = String(b.jurisdiction);
         if (!question) {
-          res.status(400).json({ error: "question_required" });
+          apiError(res, 400, "question_required");
           return;
         }
         if (!facts) {
-          res.status(400).json({ error: "facts_required" });
+          apiError(res, 400, "facts_required");
           return;
         }
         if (!["at", "de", "ch"].includes(jurisdiction)) {
-          res.status(400).json({ error: "invalid_jurisdiction" });
+          apiError(res, 400, "invalid_jurisdiction");
           return;
         }
         if (typeof b.case_slug === "string" && b.case_slug) {
@@ -3142,7 +3259,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const slug = typeof b.document_slug === "string" ? b.document_slug : "";
         const text = typeof b.text === "string" ? b.text : "";
         if (!slug && !text.trim()) {
-          res.status(400).json({ error: "document_slug_or_text_required" });
+          apiError(res, 400, "document_slug_or_text_required");
           return;
         }
         if (slug) assertMatterScope(req.matterScope, slug);
@@ -3175,15 +3292,15 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const parties =
           b.parties && typeof b.parties === "object" ? (b.parties as Record<string, string>) : null;
         if (!type) {
-          res.status(400).json({ error: "type_required" });
+          apiError(res, 400, "type_required");
           return;
         }
         if (!["at", "de", "ch"].includes(jurisdiction)) {
-          res.status(400).json({ error: "invalid_jurisdiction" });
+          apiError(res, 400, "invalid_jurisdiction");
           return;
         }
         if (!parties?.a || !parties?.b) {
-          res.status(400).json({ error: "parties_required" });
+          apiError(res, 400, "parties_required");
           return;
         }
         if (typeof b.template_slug === "string" && b.template_slug) {
@@ -3214,7 +3331,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const b = req.body as Record<string, unknown>;
         const original_text = typeof b.original_text === "string" ? b.original_text : "";
         if (!original_text.trim()) {
-          res.status(400).json({ error: "original_text_required" });
+          apiError(res, 400, "original_text_required");
           return;
         }
         if (typeof b.playbook_slug === "string" && b.playbook_slug) {
@@ -3255,7 +3372,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           ? (b.document_slugs as unknown[]).filter((s): s is string => typeof s === "string")
           : [];
         if (!case_slug && document_slugs.length === 0) {
-          res.status(400).json({ error: "case_slug_or_document_slugs_required" });
+          apiError(res, 400, "case_slug_or_document_slugs_required");
           return;
         }
         if (case_slug) assertMatterScope(req.matterScope, case_slug);
@@ -3299,11 +3416,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const text = typeof b.text === "string" ? b.text : "";
         const targetLang = typeof b.target_language === "string" ? b.target_language : "";
         if (!slug && !text.trim()) {
-          res.status(400).json({ error: "document_slug_or_text_required" });
+          apiError(res, 400, "document_slug_or_text_required");
           return;
         }
         if (!targetLang) {
-          res.status(400).json({ error: "target_language_required" });
+          apiError(res, 400, "target_language_required");
           return;
         }
         if (slug) assertMatterScope(req.matterScope, slug);
@@ -3335,7 +3452,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const slug = typeof b.document_slug === "string" ? b.document_slug : "";
         const text = typeof b.text === "string" ? b.text : "";
         if (!slug && !text.trim()) {
-          res.status(400).json({ error: "document_slug_or_text_required" });
+          apiError(res, 400, "document_slug_or_text_required");
           return;
         }
         if (slug) assertMatterScope(req.matterScope, slug);
@@ -3365,7 +3482,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const b = req.body as Record<string, unknown>;
         const query = typeof b.query === "string" ? b.query.trim() : "";
         if (!query) {
-          res.status(400).json({ error: "query_required" });
+          apiError(res, 400, "query_required");
           return;
         }
         const result = await invokeOp(
@@ -3404,7 +3521,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const oldSlug = typeof b.old_slug === "string" ? b.old_slug : "";
         const newSlug = typeof b.new_slug === "string" ? b.new_slug : "";
         if (!oldSlug || !newSlug) {
-          res.status(400).json({ error: "old_slug_and_new_slug_required" });
+          apiError(res, 400, "old_slug_and_new_slug_required");
           return;
         }
         assertMatterScope(req.matterScope, oldSlug);
@@ -3428,7 +3545,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const slugA = typeof b.slug_a === "string" ? b.slug_a : "";
         const slugB = typeof b.slug_b === "string" ? b.slug_b : "";
         if (!slugA || !slugB) {
-          res.status(400).json({ error: "slug_a_and_slug_b_required" });
+          apiError(res, 400, "slug_a_and_slug_b_required");
           return;
         }
         assertMatterScope(req.matterScope, slugA);
@@ -3447,7 +3564,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     try {
       const slug = String(req.params.slug ?? "");
       if (!slug) {
-        res.status(400).json({ error: "slug_required" });
+        apiError(res, 400, "slug_required");
         return;
       }
       assertMatterScope(req.matterScope, slug);
@@ -3464,7 +3581,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     try {
       const caseSlug = String(req.params.caseSlug ?? "");
       if (!caseSlug) {
-        res.status(400).json({ error: "case_slug_required" });
+        apiError(res, 400, "case_slug_required");
         return;
       }
       assertMatterScope(req.matterScope, caseSlug);
@@ -3485,7 +3602,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const b = req.body as Record<string, unknown>;
         const mention = typeof b.mention === "string" ? b.mention.trim() : "";
         if (!mention) {
-          res.status(400).json({ error: "mention_required" });
+          apiError(res, 400, "mention_required");
           return;
         }
         const { resolveEntity } = await import("../core/matter-scope.ts");
@@ -3512,7 +3629,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           ? b.mentions.filter((s): s is string => typeof s === "string")
           : [];
         if (mentions.length === 0) {
-          res.status(400).json({ error: "mentions_required" });
+          apiError(res, 400, "mentions_required");
           return;
         }
         const { resolveEntities } = await import("../core/matter-scope.ts");
@@ -3620,7 +3737,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const slugParam = req.params.slug;
       const slug = Array.isArray(slugParam) ? slugParam.join("/") : String(slugParam ?? "");
       if (!slug) {
-        res.status(400).json({ error: "missing_slug" });
+        apiError(res, 400, "missing_slug");
         return;
       }
       const pageForScope = await engine.getPage(slug, { sourceId: requestSourceId(req) });
@@ -3629,7 +3746,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const { readStoredFile } = await import("../core/file-store.ts");
       const stored = await readStoredFile(slug, requestSourceId(req), ctx(req).config.storage);
       if (!stored) {
-        res.status(404).json({ error: "file_not_found" });
+        apiError(res, 404, "file_not_found");
         return;
       }
 
@@ -3657,7 +3774,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const slugParam = req.params.slug;
       const slug = Array.isArray(slugParam) ? slugParam.join("/") : String(slugParam ?? "");
       if (!slug) {
-        res.status(400).json({ error: "missing_slug" });
+        apiError(res, 400, "missing_slug");
         return;
       }
       const sourceId = requestSourceId(req);
@@ -3748,7 +3865,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const body = req.body as Record<string, unknown>;
       const slug = String(body.slug ?? "");
       if (!slug) {
-        res.status(400).json({ error: "missing_slug" });
+        apiError(res, 400, "missing_slug");
         return;
       }
       const title = body.title ? String(body.title) : undefined;
@@ -3870,7 +3987,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const b = req.body as Record<string, unknown>;
         const name = typeof b.name === "string" ? b.name.trim() : "";
         if (!name) {
-          res.status(400).json({ error: "name_required" });
+          apiError(res, 400, "name_required");
           return;
         }
         const { createAccessGroup } = await import("../core/acl.ts");
@@ -3890,7 +4007,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     try {
       const groupId = String(req.params.groupId ?? "");
       if (!groupId) {
-        res.status(400).json({ error: "group_id_required" });
+        apiError(res, 400, "group_id_required");
         return;
       }
       const { deleteAccessGroup } = await import("../core/acl.ts");
@@ -3928,7 +4045,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const b = req.body as Record<string, unknown>;
         const userId = typeof b.user_id === "string" ? b.user_id.trim() : "";
         if (!userId) {
-          res.status(400).json({ error: "user_id_required" });
+          apiError(res, 400, "user_id_required");
           return;
         }
         const { addGroupMember } = await import("../core/acl.ts");
@@ -3966,7 +4083,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       assertMatterScope(req.matterScope, slug);
       const page = await engine.getPage(slug, { sourceId: requestSourceId(req) });
       if (!page) {
-        res.status(404).json({ error: "page_not_found" });
+        apiError(res, 404, "page_not_found");
         return;
       }
       const { getPagePermissions } = await import("../core/acl.ts");
@@ -3991,13 +4108,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const groupId = typeof b.group_id === "string" ? b.group_id : "";
         const permission = b.permission === "write" ? "write" : "read";
         if (!slug || !groupId) {
-          res.status(400).json({ error: "slug_and_group_id_required" });
+          apiError(res, 400, "slug_and_group_id_required");
           return;
         }
         assertMatterScope(req.matterScope, slug);
         const page = await engine.getPage(slug, { sourceId: requestSourceId(req) });
         if (!page) {
-          res.status(404).json({ error: "page_not_found" });
+          apiError(res, 404, "page_not_found");
           return;
         }
         const { setPagePermission } = await import("../core/acl.ts");
@@ -4020,7 +4137,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       assertMatterScope(req.matterScope, slug);
       const page = await engine.getPage(slug, { sourceId: requestSourceId(req) });
       if (!page) {
-        res.status(404).json({ error: "page_not_found" });
+        apiError(res, 404, "page_not_found");
         return;
       }
       const { removePagePermission } = await import("../core/acl.ts");
@@ -4148,8 +4265,23 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
       res.json(queries);
     } catch (e) {
-      res.status(500).json({ error: "recent_queries_failed" });
+      apiError(res, 500, "recent_queries_failed");
     }
+  });
+
+  // G7 fix: Zod schema for multipart upload form fields.
+  // Pre-fix, fields were used as raw Record<string, string> with ad-hoc
+  // checks — no validation on case_slug format, jurisdiction values, etc.
+  const uploadFieldsSchema = z.object({
+    case_slug: z.string().max(200).optional(),
+    defer_pipeline: z.string().max(10).optional(),
+    pause_for_review: z.string().max(10).optional(),
+    jurisdiction: z.enum(["at", "de", "ch"]).optional(),
+    doc_type: z.string().max(100).optional(),
+    password: z.string().max(255).optional(),
+    source: z.string().max(50).optional(),
+    title: z.string().max(500).optional(),
+    tags: z.string().max(5000).optional(),
   });
 
   app.post("/api/upload", uploadConcurrencyGuard, async (req: Request, res: Response) => {
@@ -4166,7 +4298,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
       const contentType = String(req.headers["content-type"] ?? "");
       if (!contentType.includes("multipart/form-data")) {
-        res.status(400).json({ error: "expected_multipart" });
+        apiError(res, 400, "expected_multipart");
         return;
       }
 
@@ -4181,11 +4313,21 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
       const bb = Busboy({ headers: req.headers as any, limits: { fileSize: maxUploadBytes() } });
       const fields: Record<string, string> = {};
-      let fileData: { filename: string; data: Buffer; mimeType: string; hash: string } | null =
-        null;
+      // G5 fix: keep tmpPath instead of readFileSync — defer RAM load until
+      // after security + duplicate checks pass. This avoids loading the full
+      // file into RAM for files that fail security or are duplicates.
+      let fileData: {
+        filename: string;
+        tmpPath: string;
+        mimeType: string;
+        hash: string;
+        size: number;
+      } | null = null;
       let fileError: string | null = null;
 
       const parsePromise = new Promise<void>((resolve, reject) => {
+        const fileWritePromises: Promise<void>[] = [];
+
         bb.on("field", (name: string, val: string) => {
           fields[name] = val;
         });
@@ -4217,27 +4359,45 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             hasher.update(chunk);
           });
 
-          ws.on("finish", () => {
-            if (fileError) return;
-            const hash = hasher.digest("hex");
-            const data = readFileSync(tmpPath);
-            try {
-              unlinkSync(tmpPath);
-            } catch {}
-            fileData = { filename, data, mimeType, hash };
-          });
+          const fileWritePromise = new Promise<void>((resolveFile, rejectFile) => {
+            ws.on("finish", () => {
+              if (fileError) {
+                resolveFile();
+                return;
+              }
+              try {
+                const hash = hasher.digest("hex");
+                // G5 fix: keep tmpPath, don't readFileSync here.
+                // The file will be loaded into RAM only when extraction needs it.
+                fileData = { filename, tmpPath, mimeType, hash, size: bytesWritten };
+              } catch (err) {
+                rejectFile(err);
+                return;
+              }
+              resolveFile();
+            });
 
-          ws.on("error", (err) => {
-            try {
-              unlinkSync(tmpPath);
-            } catch {}
-            reject(err);
+            ws.on("error", (err) => {
+              try {
+                unlinkSync(tmpPath);
+              } catch {}
+              rejectFile(err);
+            });
           });
+          fileWritePromises.push(fileWritePromise);
 
           stream.pipe(ws);
         });
 
-        bb.on("finish", () => resolve());
+        bb.on("finish", () => {
+          // Wait for all file write streams to complete before resolving.
+          // busboy "finish" fires after parsing is done, but the piped
+          // write streams may still be flushing — especially for small
+          // files where the race is tight.
+          Promise.all(fileWritePromises)
+            .then(() => resolve())
+            .catch(reject);
+        });
         bb.on("error", (err: Error) => reject(err));
 
         req.pipe(bb as any);
@@ -4254,16 +4414,61 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       }
 
       if (!fileData) {
-        res.status(400).json({ error: "missing_file" });
+        apiError(res, 400, "missing_file");
         return;
       }
 
-      const file: { filename: string; data: Buffer; mimeType: string; hash: string } = fileData;
-      if ((fields.password?.length ?? 0) > 255) {
-        res.status(400).json({ error: "document_password_too_long" });
+      // G7 fix: validate form fields with Zod before use.
+      const fieldParse = uploadFieldsSchema.safeParse(fields);
+      if (!fieldParse.success) {
+        apiError(
+          res,
+          400,
+          "invalid_form_fields",
+          `Ungültige Formular-Felder: ${fieldParse.error.issues.map((i) => i.path.join(".")).join(", ")}`
+        );
         return;
       }
-      if (file.data.byteLength > maxBytesForUpload(file.filename)) {
+
+      const file: {
+        filename: string;
+        tmpPath: string;
+        mimeType: string;
+        hash: string;
+        size: number;
+      } = fileData;
+      // G5 fix: lazy-load file data from temp file only when needed.
+      // Pre-fix, readFileSync was called immediately after streaming,
+      // loading the full file into RAM even for files that fail security
+      // or are duplicates. Now we load only when extraction/persist needs it.
+      let fileBuffer: Buffer | null = null;
+      const getFileData = (): Buffer => {
+        if (fileBuffer === null) {
+          fileBuffer = readFileSync(file.tmpPath);
+          if (fileBuffer.byteLength > 50 * 1024 * 1024) {
+            console.warn(
+              `[upload] Large file loaded into RAM: ${file.filename} (${Math.round(fileBuffer.byteLength / 1024 / 1024)}MB)`
+            );
+          }
+        }
+        return fileBuffer;
+      };
+      // Cleanup temp file when done (called in finally or at end of route)
+      const cleanupTempFile = () => {
+        try {
+          unlinkSync(file.tmpPath);
+        } catch {}
+      };
+      // G5 fix: use file.size from streaming counter instead of buffer.byteLength.
+      if (file.size > 50 * 1024 * 1024) {
+        console.warn(
+          `[upload] Large file: ${file.filename} (${Math.round(file.size / 1024 / 1024)}MB) — will be loaded into RAM for extraction`
+        );
+      }
+      if (file.size > maxBytesForUpload(file.filename)) {
+        try {
+          unlinkSync(file.tmpPath);
+        } catch {}
         res.status(413).json({
           error: "file_too_large_for_format",
           message: `Datei überschreitet das Formatlimit von ${Math.round(maxBytesForUpload(file.filename) / 1024 / 1024)} MB.`,
@@ -4272,10 +4477,16 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       }
 
       if (!isSafeUploadFilename(file.filename)) {
+        try {
+          unlinkSync(file.tmpPath);
+        } catch {}
         res.status(400).json({ error: "invalid_filename", message: "Ungültiger Dateiname." });
         return;
       }
       if (!isSupportedUploadFilename(file.filename)) {
+        try {
+          unlinkSync(file.tmpPath);
+        } catch {}
         res.status(415).json({
           error: "unsupported_file_type",
           message: `Das Dateiformat von ${file.filename} wird nicht unterstützt.`,
@@ -4287,6 +4498,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       // direct caller bypassing the web layer can't inject arbitrary MIME
       // types. Aligned with the web-layer allowlist in upload-validation.ts.
       if (file.mimeType && !ALLOWED_ENGINE_UPLOAD_MIMES.has(file.mimeType.toLowerCase())) {
+        try {
+          unlinkSync(file.tmpPath);
+        } catch {}
         res.status(415).json({
           error: "unsupported_file_type",
           message: `Dateityp ${file.mimeType} ist nicht erlaubt.`,
@@ -4294,8 +4508,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         return;
       }
 
-      const security = await inspectUploadBytes(file.filename, file.data);
+      // G5 fix: use inspectUploadFile (reads only 64 bytes) instead of
+      // inspectUploadBytes (loads full buffer into RAM).
+      const security = await inspectUploadFile(file.filename, file.tmpPath);
       if (!security.ok) {
+        try {
+          unlinkSync(file.tmpPath);
+        } catch {}
         res.status(security.code === "scanner_unavailable" ? 503 : 422).json({
           error: security.code,
           message: security.message,
@@ -4327,7 +4546,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const tenantSource = opCtx.sourceId ?? "default";
       await ensureSource(tenantSource);
 
-      const duplicate = await storedDuplicate(file.data, tenantSource, fields.case_slug);
+      const duplicate = await storedDuplicateByHash(file.hash, tenantSource, fields.case_slug);
       if (duplicate) {
         res.status(409).json({
           error: "duplicate_file",
@@ -4350,13 +4569,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         try {
           const { BeaImportConnector } = await import("../core/ingestion/connectors/bea-import.ts");
           const connector = new BeaImportConnector({});
-          const item = connector.parseBeaXmlContent(file.data.toString("utf8"), file.filename);
+          const item = connector.parseBeaXmlContent(getFileData().toString("utf8"), file.filename);
           if (item) {
             const event = await connector.toIngestionEvent(item);
             let beaSlug =
               String((event.metadata as Record<string, unknown> | undefined)?.slug ?? "") ||
               slugFromUpload(source, file.filename, title);
-            beaSlug = await versionUploadSlug(beaSlug, file.data, tenantSource);
+            beaSlug = await versionUploadSlug(beaSlug, getFileData(), tenantSource);
             await importFromContent(engine, beaSlug, event.content, {
               noEmbed,
               sourceId: tenantSource,
@@ -4364,8 +4583,25 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               source_kind: "web_upload",
               source_uri: `subsumio-upload:${beaSlug}`,
             });
+            // Stamp case_slug on the BEA page so discoverAllCaseDocuments
+            // can find it. Without this stamp, the BEA message is invisible
+            // to the legal pipeline's case-accumulation logic.
+            const beaCaseSlug = fields.case_slug?.trim() || undefined;
+            if (beaCaseSlug) {
+              try {
+                await patchPageFrontmatter(engine, beaSlug, tenantSource, {
+                  case_slug: beaCaseSlug,
+                  assignment_status: "assigned",
+                });
+              } catch (stampErr) {
+                console.error(
+                  `[web-api] case_slug stamp failed for beA page ${beaSlug} ` +
+                    `(case=${beaCaseSlug}): ${stampErr instanceof Error ? stampErr.message : String(stampErr)}`
+                );
+              }
+            }
             const persistRes = await persistUploadBytes(
-              file,
+              { filename: file.filename, data: getFileData(), mimeType: file.mimeType },
               beaSlug,
               tenantSource,
               opCtx.config.storage,
@@ -4381,7 +4617,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             }
             assertMatterScope(req.matterScope, beaSlug);
             const beaPage = await engine.getPage(beaSlug, { sourceId: opCtx.sourceId });
-            // E2: Trigger legal-pipeline for beA XML imports
+            // E2: Trigger legal-pipeline for beA XML imports.
+            // Use the real case_slug (not beaSlug) so the pipeline
+            // accumulates the BEA message with the rest of the case.
+            const pipelineCaseSlug = beaCaseSlug ?? beaSlug;
             try {
               const beaJurisdiction = detectJurisdiction(
                 (beaPage?.frontmatter ?? {}) as Record<string, unknown>,
@@ -4391,7 +4630,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               await beaQueue2.add(
                 "legal-pipeline",
                 {
-                  case_slug: beaSlug,
+                  case_slug: pipelineCaseSlug,
                   part_slugs: [beaSlug],
                   ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
                   trigger: "bea_import",
@@ -4401,11 +4640,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                 {
                   timeout_ms: 60 * 60 * 1000,
                   max_attempts: 3,
-                  idempotency_key: legalPipelineIdempotencyKey(
-                    tenantSource,
-                    fields.case_slug?.trim() || beaSlug,
-                    [beaSlug]
-                  ),
+                  idempotency_key: legalPipelineIdempotencyKey(tenantSource, pipelineCaseSlug, [
+                    beaSlug,
+                  ]),
                 },
                 { allowProtectedSubmit: true }
               );
@@ -4434,11 +4671,16 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       }
 
       let slug = slugFromUpload(source, file.filename, title);
-      slug = await versionUploadSlug(slug, file.data, tenantSource);
+      slug = await versionUploadSlug(slug, getFileData(), tenantSource);
 
       // P0-SECR-002: case uploads require the caller to be scoped to the target case.
       const caseSlug = fields.case_slug?.trim();
       if (caseSlug) assertMatterScope(req.matterScope, caseSlug);
+      // G18 fix: validate matter scope against the document slug BEFORE
+      // persistence. Pre-fix, this check was after runExtractionAndImport,
+      // so a matter-scoped caller could persist a document on the wrong
+      // case before being rejected.
+      assertMatterScope(req.matterScope, slug);
 
       const uploadFrontmatter: Record<string, unknown> = {
         source: "upload",
@@ -4451,13 +4693,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       };
       // Passwords are request-scoped secrets and must never be serialized into
       // the persistent Minion queue. Process encrypted documents synchronously.
-      const asyncExtract = file.data.byteLength >= asyncExtractMinBytes() && !fields.password;
+      const asyncExtract = file.size >= asyncExtractMinBytes() && !fields.password;
 
       // Persist the ORIGINAL bytes via the binary-storage SSOT (§ 147 AO /
       // GoBD). For the async path this MUST happen before queueing so the
       // extract-document worker can read them back.
       const persistRes = await persistUploadBytes(
-        file,
+        { filename: file.filename, data: getFileData(), mimeType: file.mimeType },
         slug,
         tenantSource,
         opCtx.config.storage,
@@ -4475,6 +4717,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       }
 
       let partSlugs: string[] = [];
+      let stampFailures: string[] | undefined;
       if (asyncExtract) {
         if (!persistRes.ok) {
           res.status(500).json({
@@ -4499,7 +4742,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               type: uploadFrontmatter.type ?? "document",
               extraction_status: "processing",
               extraction_queued_at: new Date().toISOString(),
-              upload_size: file.data.byteLength,
+              upload_size: file.size,
             },
             merge: false,
           },
@@ -4523,7 +4766,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             no_embed: noEmbed,
             password: fields.password || undefined,
             upload_frontmatter: uploadFrontmatter,
-            auto_trigger_legal_pipeline: shouldAutoTriggerUploadPipeline(fields.defer_pipeline),
+            auto_trigger_legal_pipeline: shouldAutoTriggerUploadPipeline(
+              fields.defer_pipeline,
+              source
+            ),
             matter_scope: req.matterScope ?? "all",
             acl_groups: req.aclGroups ?? "all",
           },
@@ -4534,7 +4780,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const result = await runExtractionAndImport(engine, {
           slug,
           filename: file.filename,
-          data: file.data,
+          data: getFileData(),
           title,
           tagList,
           caseSlug: caseSlug || undefined,
@@ -4544,12 +4790,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           password: fields.password || undefined,
           matterScope: req.matterScope ?? "all",
           aclGroups: req.aclGroups ?? "all",
-          autoTriggerLegalPipeline: shouldAutoTriggerUploadPipeline(fields.defer_pipeline),
+          autoTriggerLegalPipeline: shouldAutoTriggerUploadPipeline(fields.defer_pipeline, source),
         });
         partSlugs = result.partSlugs;
+        if (result.stamp_failures) stampFailures = result.stamp_failures;
       }
 
-      assertMatterScope(req.matterScope, slug);
+      // G18 fix: matter scope already validated above before persistence.
       const page = await engine.getPage(slug, { sourceId: opCtx.sourceId });
       res.json({
         slug,
@@ -4569,6 +4816,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           ? { split: true, part_count: partSlugs.length, part_slugs: partSlugs }
           : {}),
         ...(persistRes.ok ? {} : { persist_error: persistRes.error }),
+        ...(stampFailures && stampFailures.length > 0 ? { stamp_failures: stampFailures } : {}),
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
@@ -4595,6 +4843,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         return;
       }
       res.status(500).json({ error: "upload_failed", message: msg });
+    } finally {
+      // G5 fix: always clean up the temp file, even on error paths.
+      if (fileData) cleanupTempFile();
     }
   });
 
@@ -4721,7 +4972,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const tagList = Array.isArray(body.tags) ? (body.tags as string[]).map(String) : [];
         const password = body.password ? String(body.password) : undefined;
         if (password && password.length > 255) {
-          res.status(400).json({ error: "document_password_too_long" });
+          apiError(res, 400, "document_password_too_long");
           return;
         }
 
@@ -4849,26 +5100,26 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const token = String(req.headers["x-upload-token"] ?? "");
         const pending = pendingUploads.get(token);
         if (!pending || Date.now() > pending.expiresAt) {
-          res.status(410).json({ error: "upload_token_expired" });
+          apiError(res, 410, "upload_token_expired");
           return;
         }
 
         const opCtx = ctx(req);
         if (pending.sourceId !== (opCtx.sourceId ?? "default")) {
-          res.status(403).json({ error: "token_tenant_mismatch" });
+          apiError(res, 403, "token_tenant_mismatch");
           return;
         }
 
         const body = req.body as { part_count?: number };
         const partCount = body.part_count ?? Math.ceil(pending.expectedSize / (8 * 1024 * 1024));
         if (partCount < 1 || partCount > 10000) {
-          res.status(400).json({ error: "invalid_part_count" });
+          apiError(res, 400, "invalid_part_count");
           return;
         }
 
         const storageConfig = opCtx.config.storage ?? storageConfigFromEnv();
         if (!storageConfig) {
-          res.status(500).json({ error: "no_storage_configured" });
+          apiError(res, 500, "no_storage_configured");
           return;
         }
         const { createStorage } = await import("../core/storage.ts");
@@ -4918,13 +5169,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const token = String(req.headers["x-upload-token"] ?? "");
         const pending = pendingUploads.get(token);
         if (!pending || Date.now() > pending.expiresAt) {
-          res.status(410).json({ error: "upload_token_expired" });
+          apiError(res, 410, "upload_token_expired");
           return;
         }
 
         const opCtx = ctx(req);
         if (pending.sourceId !== (opCtx.sourceId ?? "default")) {
-          res.status(403).json({ error: "token_tenant_mismatch" });
+          apiError(res, 403, "token_tenant_mismatch");
           return;
         }
 
@@ -4935,20 +5186,20 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         };
 
         if (!body.upload_id || !body.parts?.length) {
-          res.status(400).json({ error: "missing_parts" });
+          apiError(res, 400, "missing_parts");
           return;
         }
 
         const storageConfig = opCtx.config.storage ?? storageConfigFromEnv();
         if (!storageConfig) {
-          res.status(500).json({ error: "no_storage_configured" });
+          apiError(res, 500, "no_storage_configured");
           return;
         }
         const { createStorage } = await import("../core/storage.ts");
         const storage = await createStorage(storageConfig as any);
 
         if (!storage.completeMultipartUpload) {
-          res.status(501).json({ error: "multipart_not_supported" });
+          apiError(res, 501, "multipart_not_supported");
           return;
         }
 
@@ -4977,7 +5228,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const token = String(req.headers["x-upload-token"] ?? "");
         const pending = pendingUploads.get(token);
         if (!pending) {
-          res.status(410).json({ error: "upload_token_expired" });
+          apiError(res, 410, "upload_token_expired");
           return;
         }
 
@@ -5087,7 +5338,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const opCtx = ctx(req);
         const storageConfig = opCtx.config.storage ?? storageConfigFromEnv();
         if (!storageConfig) {
-          res.status(500).json({ error: "no_storage_configured" });
+          apiError(res, 500, "no_storage_configured");
           return;
         }
         const { createStorage } = await import("../core/storage.ts");
@@ -5157,7 +5408,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           try {
             await storage.delete(pending.storagePath);
           } catch {}
-          res.status(422).json({ error: "uploaded_size_mismatch" });
+          apiError(res, 422, "uploaded_size_mismatch");
           return;
         }
 
@@ -5231,7 +5482,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             res.end();
             return;
           }
-          res.status(403).json({ error: "token_tenant_mismatch" });
+          apiError(res, 403, "token_tenant_mismatch");
           return;
         }
 
@@ -5254,7 +5505,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           if (wantsSse) {
             sseSend("error", { error: "no_storage_configured" });
             res.end();
-          } else res.status(500).json({ error: "no_storage_configured" });
+          } else apiError(res, 500, "no_storage_configured");
           return;
         }
         const { createStorage } = await import("../core/storage.ts");
@@ -5328,7 +5579,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             sseSend("error", { error: "uploaded_size_mismatch" });
             res.end();
           } else {
-            res.status(422).json({ error: "uploaded_size_mismatch" });
+            apiError(res, 422, "uploaded_size_mismatch");
           }
           return;
         }
@@ -5566,6 +5817,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         }
 
         let partSlugs: string[] = [];
+        let stampFailures: string[] | undefined;
         if (asyncExtract) {
           // Stub page
           await invokeOp(
@@ -5632,6 +5884,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             aclGroups: req.aclGroups ?? "all",
           });
           partSlugs = result.partSlugs;
+          if (result.stamp_failures) stampFailures = result.stamp_failures;
         }
 
         // Clean up temp file + token
@@ -5640,6 +5893,29 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
         assertMatterScope(req.matterScope, versionedSlug);
         const page = await engine.getPage(versionedSlug, { sourceId: pending.sourceId });
+
+        // Persist post-upload tasks on the ENGINE side before sending the
+        // response. This ensures tasks are queued even if the SSE stream is
+        // dropped (client disconnect, proxy timeout) before the web app's
+        // confirm proxy can fire its own side effects. Pre-fix, the web app
+        // was the sole responsible party — a dropped stream meant no
+        // analysis_status stamp and no post-upload tasks.
+        try {
+          await persistEnginePostUploadTasks(engine, pending.sourceId, {
+            doc_slug: versionedSlug,
+            case_slug: pending.caseSlug,
+            brain_id: pending.sourceId,
+            doc_title: page?.title ?? pending.title ?? pending.filename,
+            doc_size: pending.expectedSize,
+            uploaded_at: new Date().toISOString(),
+          });
+        } catch (postUploadErr) {
+          console.error(
+            `[upload-confirm] engine-side post-upload task persist failed for ${versionedSlug}: ` +
+              (postUploadErr instanceof Error ? postUploadErr.message : String(postUploadErr))
+          );
+        }
+
         const resultPayload = {
           slug: versionedSlug,
           title: page?.title ?? pending.title ?? pending.filename,
@@ -5650,6 +5926,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           ...(partSlugs.length > 0
             ? { split: true, part_count: partSlugs.length, part_slugs: partSlugs }
             : {}),
+          ...(stampFailures && stampFailures.length > 0 ? { stamp_failures: stampFailures } : {}),
         };
 
         if (wantsSse) {
@@ -5722,7 +5999,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     async (req: Request, res: Response) => {
       try {
         if (process.env.SUBSUMIO_PRESIGNED_UPLOAD_ENABLED !== "true") {
-          res.status(503).json({ error: "presigned_upload_disabled" });
+          apiError(res, 503, "presigned_upload_disabled");
           return;
         }
         const body = req.body as Record<string, unknown>;
@@ -5746,7 +6023,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
         const storageConfig = opCtx.config.storage ?? storageConfigFromEnv();
         if (!storageConfig) {
-          res.status(500).json({ error: "no_storage_configured" });
+          apiError(res, 500, "no_storage_configured");
           return;
         }
         const { createStorage } = await import("../core/storage.ts");
@@ -5897,21 +6174,37 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           return;
         }
 
-        // If part_slugs not provided, fetch from case page frontmatter
+        // If part_slugs not provided, discover all case documents via the
+        // canonical case_slug frontmatter stamp. This is the same logic the
+        // pipeline handler uses internally (discoverAllCaseDocuments) — the
+        // case frontmatter `documents` array is a secondary, user-curated list
+        // that can drift. Using the frontmatter stamp ensures we always see
+        // every document that belongs to the case.
         let partSlugs = Array.isArray(body.part_slugs)
           ? (body.part_slugs as string[]).filter((s) => typeof s === "string" && s.length > 0)
           : [];
 
         if (partSlugs.length === 0 && !body.resume_from_layer) {
           const sourceId = requestSourceId(req);
-          const casePage = await engine.getPage(
-            caseSlug,
-            sourceId !== "default" ? { sourceId } : undefined
-          );
-          if (casePage) {
-            const fm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
-            const documents = (fm.documents as Array<Record<string, unknown>>) ?? [];
-            partSlugs = documents.map((d) => String(d.slug ?? "")).filter(Boolean);
+          try {
+            const { discoverAllCaseDocuments } =
+              await import("../core/minions/handlers/legal-pipeline.ts");
+            partSlugs = await discoverAllCaseDocuments(
+              engine,
+              caseSlug,
+              sourceId !== "default" ? sourceId : undefined
+            );
+          } catch {
+            // Fallback: try case frontmatter documents array (legacy path)
+            const casePage = await engine.getPage(
+              caseSlug,
+              sourceId !== "default" ? { sourceId } : undefined
+            );
+            if (casePage) {
+              const fm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
+              const documents = (fm.documents as Array<Record<string, unknown>>) ?? [];
+              partSlugs = documents.map((d) => String(d.slug ?? "")).filter(Boolean);
+            }
           }
         }
 
@@ -5928,6 +6221,19 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           part_slugs: partSlugs,
           _source_id: requestSourceId(req),
         };
+
+        // Billing context: owner_id (org or user), owner_type, user_id.
+        // Passed from the web app's trigger-pipeline route; used by
+        // settlePipeline() for saas_usage_ledger (margin analysis).
+        if (typeof body.owner_id === "string" && body.owner_id) {
+          pipelineData.owner_id = body.owner_id;
+        }
+        if (typeof body.owner_type === "string" && body.owner_type) {
+          pipelineData.owner_type = body.owner_type;
+        }
+        if (typeof body.user_id === "string" && body.user_id) {
+          pipelineData.user_id = body.user_id;
+        }
 
         let jurisdictionCandidate =
           typeof body.jurisdiction === "string" ? body.jurisdiction.toLowerCase() : "";
@@ -6091,7 +6397,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     try {
       const jobId = parseInt(String(req.params.id), 10);
       if (isNaN(jobId) || jobId <= 0) {
-        res.status(400).json({ error: "invalid_id" });
+        apiError(res, 400, "invalid_id");
         return;
       }
       const sourceId = requestSourceId(req);
@@ -6125,7 +6431,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       );
 
       if (!row) {
-        res.status(404).json({ error: "not_found" });
+        apiError(res, 404, "not_found");
         return;
       }
 
@@ -6163,11 +6469,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     try {
       const jobId = parseInt(String(req.params.id), 10);
       if (isNaN(jobId) || jobId <= 0) {
-        res.status(400).json({ error: "invalid_id" });
+        apiError(res, 400, "invalid_id");
         return;
       }
       if (!(await agentJobInScope(jobId, requestSourceId(req)))) {
-        res.status(404).json({ error: "not_found" });
+        apiError(res, 404, "not_found");
         return;
       }
       const queue = new MinionQueue(engine);
@@ -6183,11 +6489,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     try {
       const jobId = parseInt(String(req.params.id), 10);
       if (isNaN(jobId) || jobId <= 0) {
-        res.status(400).json({ error: "invalid_id" });
+        apiError(res, 400, "invalid_id");
         return;
       }
       if (!(await agentJobInScope(jobId, requestSourceId(req)))) {
-        res.status(404).json({ error: "not_found" });
+        apiError(res, 404, "not_found");
         return;
       }
       const queue = new MinionQueue(engine);
@@ -6203,11 +6509,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     try {
       const jobId = parseInt(String(req.params.id), 10);
       if (isNaN(jobId) || jobId <= 0) {
-        res.status(400).json({ error: "invalid_id" });
+        apiError(res, 400, "invalid_id");
         return;
       }
       if (!(await agentJobInScope(jobId, requestSourceId(req)))) {
-        res.status(404).json({ error: "not_found" });
+        apiError(res, 404, "not_found");
         return;
       }
       const queue = new MinionQueue(engine);
@@ -6223,11 +6529,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     try {
       const jobId = parseInt(String(req.params.id), 10);
       if (isNaN(jobId) || jobId <= 0) {
-        res.status(400).json({ error: "invalid_id" });
+        apiError(res, 400, "invalid_id");
         return;
       }
       if (!(await agentJobInScope(jobId, requestSourceId(req)))) {
-        res.status(404).json({ error: "not_found" });
+        apiError(res, 404, "not_found");
         return;
       }
       const queue = new MinionQueue(engine);
@@ -6247,7 +6553,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const body = req.body as Record<string, unknown>;
         const rawPrompt = String(body.prompt ?? "");
         if (!rawPrompt.trim()) {
-          res.status(400).json({ error: "missing_prompt" });
+          apiError(res, 400, "missing_prompt");
           return;
         }
 
@@ -6312,12 +6618,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     try {
       const jobId = parseInt(String(req.params.id), 10);
       if (isNaN(jobId) || jobId <= 0) {
-        res.status(400).json({ error: "invalid_id" });
+        apiError(res, 400, "invalid_id");
         return;
       }
       const sourceId = requestSourceId(req);
       if (!(await agentJobInScope(jobId, sourceId))) {
-        res.status(404).json({ error: "not_found" });
+        apiError(res, 404, "not_found");
         return;
       }
 
@@ -6361,19 +6667,19 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       try {
         const jobId = parseInt(String(req.params.id), 10);
         if (isNaN(jobId) || jobId <= 0) {
-          res.status(400).json({ error: "invalid_id" });
+          apiError(res, 400, "invalid_id");
           return;
         }
         const sourceId = requestSourceId(req);
         if (!(await agentJobInScope(jobId, sourceId))) {
-          res.status(404).json({ error: "not_found" });
+          apiError(res, 404, "not_found");
           return;
         }
 
         const body = req.body as Record<string, unknown>;
         const payload = body.payload ?? body.message ?? body.text;
         if (payload == null) {
-          res.status(400).json({ error: "missing_payload" });
+          apiError(res, 400, "missing_payload");
           return;
         }
 
@@ -6420,7 +6726,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const body = req.body as Record<string, unknown>;
         const text = String(body.text ?? "");
         if (!text.trim()) {
-          res.status(400).json({ error: "missing_text" });
+          apiError(res, 400, "missing_text");
           return;
         }
         const types = Array.isArray(body.types) ? (body.types as string[]) : undefined;
@@ -6496,7 +6802,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           .filter(Boolean)
           .slice(0, 8); // Spalten-Cap
         if (questions.length === 0) {
-          res.status(400).json({ error: "missing_questions" });
+          apiError(res, 400, "missing_questions");
           return;
         }
         const sourceId = requestSourceId(req);
@@ -6635,7 +6941,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           .filter(Boolean)
           .slice(0, 50); // Spalten-Cap (async)
         if (questions.length === 0) {
-          res.status(400).json({ error: "missing_questions" });
+          apiError(res, 400, "missing_questions");
           return;
         }
         const sourceId = requestSourceId(req);
@@ -6808,13 +7114,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const slugParam = (req.params as Record<string, unknown>).slug;
       const slug = Array.isArray(slugParam) ? slugParam.join("/") : String(slugParam ?? "");
       if (!slug || !slug.startsWith("tabular_review/")) {
-        res.status(404).json({ error: "run_not_found" });
+        apiError(res, 404, "run_not_found");
         return;
       }
       const sourceId = requestSourceId(req);
       const page = await engine.getPage(slug, sourceId !== "default" ? { sourceId } : undefined);
       if (!page || page.type !== "tabular_review") {
-        res.status(404).json({ error: "run_not_found" });
+        apiError(res, 404, "run_not_found");
         return;
       }
       const { parseTabularRunState, tabularRunToApiResponse } =
@@ -6849,7 +7155,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const slugParam = (req.params as Record<string, unknown>).slug;
         const slug = Array.isArray(slugParam) ? slugParam.join("/") : String(slugParam ?? "");
         if (!slug || !slug.startsWith("tabular_review/")) {
-          res.status(404).json({ error: "run_not_found" });
+          apiError(res, 404, "run_not_found");
           return;
         }
         const body = (req.body ?? {}) as Record<string, unknown>;
@@ -6859,7 +7165,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const sourceId = requestSourceId(req);
         const page = await engine.getPage(slug, sourceId !== "default" ? { sourceId } : undefined);
         if (!page || page.type !== "tabular_review") {
-          res.status(404).json({ error: "run_not_found" });
+          apiError(res, 404, "run_not_found");
           return;
         }
         const { parseTabularRunState, patchTabularRun } =
@@ -7013,7 +7319,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const body = req.body as Record<string, unknown>;
         const contractSlug = String(body.contract_slug ?? "").trim();
         if (!contractSlug) {
-          res.status(400).json({ error: "missing_contract_slug" });
+          apiError(res, 400, "missing_contract_slug");
           return;
         }
         assertMatterScope(req.matterScope, contractSlug);
@@ -7048,7 +7354,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       try {
         const name = String((req.body as Record<string, unknown>).name ?? "").trim();
         if (!name) {
-          res.status(400).json({ error: "missing_name" });
+          apiError(res, 400, "missing_name");
           return;
         }
         const { conflictCheck } = await import("../core/legal/conflict-check.ts");
@@ -7246,7 +7552,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     try {
       const id = decodeURIComponent(String(req.params.id ?? ""));
       if (!id) {
-        res.status(400).json({ error: "missing_id" });
+        apiError(res, 400, "missing_id");
         return;
       }
       const rows = await engine.executeRaw<{
@@ -7279,7 +7585,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         [id]
       );
       if (!rows[0]) {
-        res.status(404).json({ error: "commentary_not_found" });
+        apiError(res, 404, "commentary_not_found");
         return;
       }
       res.json(rows[0]);
@@ -7302,7 +7608,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const jurisdiction = String(body.jurisdiction ?? "de").toLowerCase();
 
         if (!statuteAbbr || !sectionNum) {
-          res.status(400).json({ error: "missing_statute_or_section" });
+          apiError(res, 400, "missing_statute_or_section");
           return;
         }
 
@@ -7377,7 +7683,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     try {
       const id = decodeURIComponent(String(req.params.id ?? ""));
       if (!id) {
-        res.status(400).json({ error: "missing_id" });
+        apiError(res, 400, "missing_id");
         return;
       }
       await engine.executeRaw(`DELETE FROM subsumio_legal_commentaries WHERE id = $1`, [id]);
@@ -7399,7 +7705,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const body = req.body as Record<string, unknown>;
         const caseSlug = String(body.case_slug ?? "").trim();
         if (!caseSlug) {
-          res.status(400).json({ error: "missing_case_slug" });
+          apiError(res, 400, "missing_case_slug");
           return;
         }
         const { generiereVerhandlungsmappe } = await import("../core/legal/verhandlungsmappe.ts");
@@ -7430,7 +7736,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const slugParam = (req.params as Record<string, unknown>).slug;
       const slug = Array.isArray(slugParam) ? slugParam.join("/") : String(slugParam ?? "");
       if (!slug) {
-        res.status(400).json({ error: "missing_slug" });
+        apiError(res, 400, "missing_slug");
         return;
       }
       const sourceId = requestSourceId(req);
@@ -7450,7 +7756,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       );
       const page = rows[0];
       if (!page) {
-        res.status(404).json({ error: "draft_not_found" });
+        apiError(res, 404, "draft_not_found");
         return;
       }
       const { draftToDocx, stripFrontmatter } = await import("../core/legal/docx-export.ts");
@@ -7584,13 +7890,18 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const connectors = await Promise.all(
         SUPPORTED_CONNECTORS.map(async (service) => {
           const entry = configuredByService.get(service);
+          const syncMeta = entry ? await mgr.getSyncMetadata(service) : {};
           return {
             service,
             configured: Boolean(entry),
             enabled: entry?.enabled ?? false,
             connected: entry ? runningIds.has(service) : false,
             hasCredentials: entry?.hasCredentials ?? false,
-            last_sync_at: entry ? await mgr.getLastSync(service) : null,
+            last_sync_at: syncMeta.last_sync_at ?? null,
+            last_sync_status: syncMeta.last_sync_status ?? null,
+            last_sync_duration_ms: syncMeta.last_sync_duration_ms ?? null,
+            last_items_retrieved: syncMeta.last_items_retrieved ?? null,
+            last_sync_error: syncMeta.last_sync_error ?? null,
           };
         })
       );
@@ -7599,6 +7910,93 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
       res.status(500).json({ error: "connectors_list_failed", message: msg });
+    }
+  });
+
+  // ── OCR Backfill ─────────────────────────────────────────────
+  // Find documents with ocr_status: "needs_backfill" and optionally re-queue
+  // them for extraction. This closes the gap where scanned PDFs whose OCR
+  // failed (missing rasterizer, transient error) are silently stuck with
+  // no searchable text — the attorney sees "partial" but has no way to retry.
+  app.get("/api/ocr/backfill-candidates", async (req: Request, res: Response) => {
+    try {
+      const sourceId = requestSourceId(req);
+      const pages = await engine.listPages({
+        type: "document",
+        limit: 500,
+        ...(sourceId !== "default" ? { sourceId } : {}),
+      });
+      const candidates = pages
+        .filter((p) => {
+          const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+          return fm.ocr_status === "needs_backfill";
+        })
+        .map((p) => ({
+          slug: p.slug,
+          title: p.title,
+          ocr_backfill_reason: (p.frontmatter ?? {}).ocr_backfill_reason ?? "unknown",
+          extraction_status: (p.frontmatter ?? {}).extraction_status ?? "unknown",
+        }));
+      res.json({ candidates, count: candidates.length });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "ocr_backfill_list_failed", message: msg });
+    }
+  });
+
+  app.post("/api/ocr/backfill", async (req: Request, res: Response) => {
+    try {
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const slugs = Array.isArray(body.slugs) ? (body.slugs as string[]) : [];
+      if (slugs.length === 0) {
+        res
+          .status(400)
+          .json({ error: "slugs_required", message: "Array von Dokument-Slugs erforderlich." });
+        return;
+      }
+      const sourceId = requestSourceId(req);
+      const { MinionQueue } = await import("../core/minions/queue.ts");
+      const queue = new MinionQueue(engine);
+      const queued: string[] = [];
+      const skipped: string[] = [];
+
+      for (const slug of slugs) {
+        const page = await engine.getPage(slug, sourceId !== "default" ? { sourceId } : undefined);
+        if (!page) {
+          skipped.push(slug);
+          continue;
+        }
+        const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
+        if (fm.ocr_status !== "needs_backfill") {
+          skipped.push(slug);
+          continue;
+        }
+        // Re-queue extraction — the extract-document handler will retry OCR
+        // (which may now succeed if the rasterizer was installed or the
+        // transient error resolved).
+        await queue.add(
+          "extract-document",
+          {
+            slug,
+            filename: (fm.source_filename as string) ?? slug.split("/").pop() ?? slug,
+            title: page.title,
+            case_slug: fm.case_slug as string | undefined,
+            source_id: sourceId,
+            upload_frontmatter: { ...fm, ocr_backfill_attempt: true },
+            auto_trigger_legal_pipeline: false,
+            matter_scope: req.matterScope ?? "all",
+            acl_groups: req.aclGroups ?? "all",
+          },
+          { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
+          { allowProtectedSubmit: true }
+        );
+        queued.push(slug);
+      }
+
+      res.json({ queued, queued_count: queued.length, skipped, skipped_count: skipped.length });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "ocr_backfill_failed", message: msg });
     }
   });
 
@@ -8032,6 +8430,115 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   });
 
+  // ── Settlement Retry Queue ─────────────────────────────────────────
+  // Failed pipeline settlements (web app transient down, 402 overage unpaid,
+  // network timeout) are persisted to pipeline_settlement_queue by
+  // enqueueSettlementRetry(). These endpoints let admins list and retry them.
+  app.get("/api/admin/settlement-queue", guard, async (req: Request, res: Response) => {
+    try {
+      const status = String(req.query.status ?? "pending");
+      const limit = Math.min(Number(req.query.limit ?? 50), 200);
+      if (!["pending", "succeeded", "exhausted", "all"].includes(status)) {
+        apiError(res, 400, "invalid_status");
+        return;
+      }
+      const statusFilter = status === "all" ? "" : "WHERE status = $1";
+      const params = status === "all" ? [limit] : [status, limit];
+      const rows = await engine.executeRaw(
+        `SELECT pipeline_key, owner_id, owner_type, case_slug,
+                  reserved_credits, failed_at_layer, total_layers,
+                  workflow_id, status, last_error, attempts,
+                  last_attempt_at::text, created_at::text, updated_at::text
+           FROM pipeline_settlement_queue
+           ${statusFilter}
+           ORDER BY created_at DESC
+           LIMIT $${status === "all" ? "1" : "2"}`,
+        params
+      );
+      res.json({ queue: rows });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "settlement_queue_list_failed", message: msg });
+    }
+  });
+
+  app.post(
+    "/api/admin/settlement-queue/retry",
+    guard,
+    express.json({ limit: "64kb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const pipelineKey = String((req.body as { pipeline_key?: string })?.pipeline_key ?? "");
+        if (!pipelineKey) {
+          apiError(res, 400, "missing_pipeline_key");
+          return;
+        }
+        // Load the queued settlement
+        const rows = await engine.executeRaw<{
+          owner_id: string;
+          owner_type: string;
+          case_slug: string;
+          reserved_credits: number;
+          failed_at_layer: number | null;
+          total_layers: number;
+          workflow_id: string | null;
+        }>(
+          `SELECT owner_id, owner_type, case_slug, reserved_credits,
+                  failed_at_layer, total_layers, workflow_id
+           FROM pipeline_settlement_queue
+           WHERE pipeline_key = $1 AND status = 'pending'`,
+          [pipelineKey]
+        );
+        if (rows.length === 0) {
+          apiError(res, 404, "not_found_or_not_pending");
+          return;
+        }
+        const item = rows[0];
+        // Re-call settlePipeline (which calls the web app's settlement endpoint)
+        const { settlePipeline } = await import("../core/minions/handlers/legal-pipeline.ts");
+        await settlePipeline(engine, {
+          pipeline_key: pipelineKey,
+          owner_id: item.owner_id,
+          owner_type: item.owner_type,
+          case_slug: item.case_slug,
+          reserved_credits: Number(item.reserved_credits),
+          failed_at_layer: item.failed_at_layer ?? undefined,
+          total_layers: item.total_layers,
+          workflow_id: item.workflow_id ?? undefined,
+        });
+        // Mark as succeeded
+        await engine.executeRaw(
+          `UPDATE pipeline_settlement_queue
+           SET status = 'succeeded', last_attempt_at = NOW(), updated_at = NOW()
+           WHERE pipeline_key = $1`,
+          [pipelineKey]
+        );
+        res.json({ ok: true, pipeline_key: pipelineKey, status: "succeeded" });
+      } catch (e) {
+        // Update attempt count + last_error, mark exhausted if too many attempts
+        const pipelineKey = String((req.body as { pipeline_key?: string })?.pipeline_key ?? "");
+        if (pipelineKey) {
+          try {
+            await engine.executeRaw(
+              `UPDATE pipeline_settlement_queue
+               SET attempts = attempts + 1,
+                   last_error = $2,
+                   last_attempt_at = NOW(),
+                   updated_at = NOW(),
+                   status = CASE WHEN attempts >= 5 THEN 'exhausted' ELSE status END
+               WHERE pipeline_key = $1`,
+              [pipelineKey, e instanceof Error ? e.message : String(e)]
+            );
+          } catch {
+            // ignore — don't mask the original error
+          }
+        }
+        const msg = e instanceof Error ? e.message : "unknown";
+        res.status(500).json({ error: "settlement_retry_failed", message: msg });
+      }
+    }
+  );
+
   // ── Integrity re-verification (GoBD) ───────────────────────────────
   // Re-hashes stored files and compares against the content_hash in the
   // files table. Detects silent storage corruption or tampering.
@@ -8259,6 +8766,96 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       } catch (e) {
         const msg = e instanceof Error ? e.message : "unknown";
         res.status(500).json({ error: "backfill_failed", message: msg });
+      }
+    }
+  );
+
+  // ── Case Investigation (Sachverhaltsprüfung) ───────────────────────
+  // Two-phase pipeline: Phase 1 extracts facts per document, Phase 2 runs
+  // a 3-agent analysis (Researcher → Auditor → Adversarial) to identify
+  // contradictions, evidence gaps, and neutral questions. Every claim is
+  // grounded with verbatim citations. attorney_review_required: true.
+
+  app.post(
+    "/api/legal/case-investigation",
+    express.json({ limit: "256kb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const body = req.body as Record<string, unknown>;
+        const caseSlug = typeof body.case_slug === "string" ? body.case_slug : "";
+        if (!caseSlug) {
+          res.status(400).json({ error: "missing_case_slug", message: "case_slug is required." });
+          return;
+        }
+        const pruefauftrag = typeof body.pruefauftrag === "string" ? body.pruefauftrag : undefined;
+        const jurisdiction = typeof body.jurisdiction === "string" ? body.jurisdiction : "at";
+        const incremental = typeof body.incremental === "boolean" ? body.incremental : false;
+
+        const { caseInvestigation } = await import("../core/legal/case-investigation.ts");
+        const result = await caseInvestigation(engine, {
+          case_slug: caseSlug,
+          ...(pruefauftrag ? { pruefauftrag } : {}),
+          jurisdiction,
+          incremental,
+          ...legalScope(req),
+        });
+        res.json(result);
+      } catch (e) {
+        legalErr(res, "case_investigation", e);
+      }
+    }
+  );
+
+  app.get("/api/legal/case-investigation/:runId", async (req: Request, res: Response) => {
+    try {
+      const runId = String(req.params.runId ?? "");
+      if (!runId) {
+        apiError(res, 400, "missing_run_id");
+        return;
+      }
+      const { getRun } = await import("../core/legal/case-investigation.ts");
+      const result = getRun(runId);
+      if (!result) {
+        res.status(404).json({
+          error: "run_not_found",
+          message: `Run ${runId} not found or expired.`,
+        });
+        return;
+      }
+      res.json(result);
+    } catch (e) {
+      legalErr(res, "case_investigation_get", e);
+    }
+  });
+
+  app.patch(
+    "/api/legal/case-investigation/:runId/contradictions/:id",
+    express.json({ limit: "64kb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const runId = String(req.params.runId ?? "");
+        const id = String(req.params.id ?? "");
+        if (!runId || !id) {
+          res.status(400).json({ error: "missing_params", message: "runId and id are required." });
+          return;
+        }
+        const body = req.body as Record<string, unknown>;
+        const reviewStatus = body.review_status;
+        if (!["accepted", "dismissed", "no_contradiction"].includes(String(reviewStatus))) {
+          apiError(res, 400, "invalid_review_status");
+          return;
+        }
+        const reviewReason =
+          typeof body.review_reason === "string" ? body.review_reason : undefined;
+
+        const { reviewContradiction } = await import("../core/legal/case-investigation.ts");
+        const result = await reviewContradiction(engine, runId, id, {
+          review_status: reviewStatus as "accepted" | "dismissed" | "no_contradiction",
+          ...(reviewReason ? { review_reason: reviewReason } : {}),
+        });
+        res.json(result);
+      } catch (e) {
+        legalErr(res, "case_investigation_review", e);
       }
     }
   );

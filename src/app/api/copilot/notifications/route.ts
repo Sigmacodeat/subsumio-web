@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import {
   getCopilotNotifications,
   generateCopilotNotifications,
   dismissCopilotNotification,
 } from "@/lib/copilot-notifications";
+
+const notifPostSchema = z.object({
+  action: z.enum(["dismiss", "refresh"]).optional(),
+  notificationId: z.string().max(200).optional(),
+  lang: z.enum(["de", "en"]).optional(),
+});
 
 export const dynamic = "force-dynamic";
 
@@ -39,11 +46,26 @@ export const POST = createHandler(
   {
     action: "brain.write",
     rateTier: "standard",
+    body: notifPostSchema,
+    audit: (ctx, body) => {
+      const b = body as { action?: string; notificationId?: string; lang?: string };
+      return {
+        action: "copilot.notification_dismiss" as const,
+        entityType: "notification",
+        entityId: b.notificationId,
+        details: {
+          subAction: b.action,
+          notificationId: b.notificationId,
+          lang: b.lang,
+          user: ctx.user.email,
+        },
+      };
+    },
   },
   async (ctx, body) => {
     const brainId = ctx.brainId;
     const userId = ctx.user.id;
-    const { action, notificationId, lang } = (body ?? {}) as {
+    const { action, notificationId, lang } = body as {
       action?: string;
       notificationId?: string;
       lang?: string;

@@ -63,7 +63,7 @@ describe("industry-pack", () => {
   test("tax has complete brand profile and theme", () => {
     const profile = profileForIndustry("tax");
     expect(profile).toBeTruthy();
-    expect(profile?.brand).toBe("Subsumio Tax");
+    expect(profile?.brand).toBe("Taxumio");
     expect(profile?.dashboardHref).toBe("/dashboard");
     expect(profile?.marketingHref.startsWith("/")).toBe(true);
     expect(profile?.pack).toBe("subsumio-tax");

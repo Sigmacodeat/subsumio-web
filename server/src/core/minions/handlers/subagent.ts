@@ -43,7 +43,7 @@ import { acquireLease, releaseLease, renewLeaseWithBackoff } from "../rate-lease
 import { logSubagentSubmission, logSubagentHeartbeat } from "./subagent-audit.ts";
 import { resolveModel, isAnthropicProvider, TIER_DEFAULTS } from "../../model-config.ts";
 import { buildSystemPrompt, DEFAULT_SUBAGENT_SYSTEM } from "../system-prompt.ts";
-import { toolLoop as gatewayToolLoop } from "../../ai/gateway.ts";
+import { toolLoop as gatewayToolLoop, sanitizeForJson } from "../../ai/gateway.ts";
 import type {
   ChatToolDef,
   ChatMessage,
@@ -322,6 +322,14 @@ export function makeSubagentHandler(deps: SubagentDeps) {
       no_tool_preamble: data.system_no_tool_preamble,
     });
 
+    // v0.42.38.0+ — Pass cached_context separately so the gateway can split
+    // it into a 2nd cache breakpoint (base system + context). Previously
+    // concatenated into one string, which meant changing context invalidated
+    // the base system cache. Now the base system stays cached across layers.
+    const cachedContext = data.cached_context
+      ? "## KONTEXT (aus vorherigen Layern)\n" + String(data.cached_context)
+      : undefined;
+
     logSubagentSubmission({
       caller: "worker",
       remote: true,
@@ -331,6 +339,12 @@ export function makeSubagentHandler(deps: SubagentDeps) {
       allowed_tools: toolDefs.map((t) => t.name),
     });
 
+    // v0.42.38.0+ — extract modelTier + maxOutputTokens from specialist def.
+    // Shared by both gateway and legacy paths.
+    const tierDef = data.subagent_def ? resolveSpecialist(data.subagent_def) : null;
+    const modelTier = tierDef?.modelTier;
+    const maxOutputTokens = tierDef?.maxOutputTokens;
+
     // v0.38 S1.5 — gateway path. Route here when the feature flag is on.
     if (useGatewayLoop) {
       return await runSubagentViaGateway({
@@ -339,8 +353,11 @@ export function makeSubagentHandler(deps: SubagentDeps) {
         data,
         model,
         systemPrompt,
+        cachedContext,
         toolDefs,
         maxTurns,
+        modelTier,
+        maxOutputTokens,
       });
     }
 
@@ -651,22 +668,52 @@ export function makeSubagentHandler(deps: SubagentDeps) {
           // `model` stays qualified everywhere else (persistence, recipe
           // lookup at recipeIdFromModel(), capability gate).
           model: stripProviderPrefix(model),
-          max_tokens: 4096,
-          system: [
-            { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
-          ] as any,
+          // v0.42.38.0+ — Use per-specialist maxOutputTokens if set, else
+          // tier-based default. Was hardcoded 4096 for all legacy-path calls.
+          max_tokens: maxOutputTokens ?? MAX_TOKENS_BY_TIER[modelTier ?? "subagent"] ?? 4096,
+          // v0.42.38.0+ — Split system into 2 cache breakpoints with mixed TTLs:
+          // 1. Base system prompt: ttl="1h" (stable across ALL calls to this
+          //    specialist, survives layer transitions that may take >5 min)
+          // 2. cached_context: ttl="5m" (changes per layer, only needs to
+          //    survive within a layer's map batches)
+          // Per Anthropic docs: longer-TTL entries must appear before shorter.
+          // The system breakpoint caches tools + system together (render order
+          // is tools → system → messages), so NO separate tool breakpoint is
+          // needed — that would waste a 3rd breakpoint slot.
+          // Total: 2 of 4 breakpoints used (2 spare for future message-level).
+          system: data.cached_context
+            ? ([
+                {
+                  type: "text",
+                  text: systemPrompt,
+                  cache_control: { type: "ephemeral", ttl: "1h" },
+                },
+                {
+                  type: "text",
+                  text: "## KONTEXT (aus vorherigen Layern)\n" + String(data.cached_context),
+                  cache_control: { type: "ephemeral", ttl: "5m" },
+                },
+              ] as any)
+            : ([
+                {
+                  type: "text",
+                  text: systemPrompt,
+                  cache_control: { type: "ephemeral", ttl: "1h" },
+                },
+              ] as any),
           messages: anthroMessages,
           ...(toolDefs.length > 0
             ? {
-                tools: toolDefs.map((t, i) => {
+                tools: toolDefs.map((t) => {
                   const def: any = {
                     name: t.name,
                     description: t.description,
                     input_schema: t.input_schema,
                   };
-                  // Cache only the last tool def — Anthropic treats cache_control
-                  // as "cache everything up to and including this block".
-                  if (i === toolDefs.length - 1) def.cache_control = { type: "ephemeral" };
+                  // v0.42.38.0+ — NO cache_control on tools. The system
+                  // breakpoint above already caches tools + system together
+                  // (Anthropic render order: tools → system → messages).
+                  // A separate tool breakpoint was redundant and wasted a slot.
                   return def;
                 }),
               }
@@ -850,7 +897,11 @@ export function makeSubagentHandler(deps: SubagentDeps) {
           // GAP-04: Iterative Agentic Search — if brain_search returned
           // sparse results, append a refinement hint to encourage the LLM
           // to try alternative terms in the next turn.
-          let resultContent = asStringIfNotObject(output);
+          // v0.42.38.0+ — Apply trimToolOutput BEFORE serialization (was missing
+          // in legacy path, causing 10-30k token brain_get_page results to
+          // bloat conversation history).
+          const trimmedOutput = trimToolOutput(output);
+          let resultContent = asStringIfNotObject(trimmedOutput);
           if (
             toolName === "brain_search" &&
             typeof output === "object" &&
@@ -935,8 +986,14 @@ interface GatewayRunArgs {
   data: SubagentHandlerData;
   model: string;
   systemPrompt: string;
+  /** v0.42.38.0+ — Separate cacheable context (2nd cache breakpoint). */
+  cachedContext?: string;
   toolDefs: ToolDef[];
   maxTurns: number;
+  /** v0.42.38.0+ — specialist model tier, drives maxTokens. */
+  modelTier?: "utility" | "reasoning" | "deep" | "subagent";
+  /** v0.42.38.0+ — per-specialist max output tokens override. */
+  maxOutputTokens?: number;
 }
 
 /**
@@ -953,8 +1010,138 @@ interface GatewayRunArgs {
  * from `(job_id, message_idx, content_blocks index, tool_name)` so the
  * reconciler sees both shapes uniformly.
  */
+
+// ── Module-level tool-output trimming (shared by gateway + legacy paths) ──
+// v0.42.38.0+ — Extracted from runSubagentViaGateway so BOTH code paths
+// (gateway + legacy Anthropic-direct) apply the same trimming. Previously
+// the legacy path fed full untrimmed tool outputs (10-30k tokens for
+// brain_get_page) back into the conversation, causing massive token bloat.
+const TOOL_OUTPUT_MAX_RESULTS = 5;
+const TOOL_OUTPUT_MAX_CHARS = 800;
+const STRIP_FIELDS = new Set([
+  "base_score",
+  "statute_area_boost",
+  "legal_authority_boost",
+  "cognitive_tier_boost",
+  "legal_para_boost",
+  "chunk_index",
+  "chunk_id",
+  "chunk_source",
+  "stale",
+  "source_id",
+  "effective_date_source",
+  "evidence",
+  "create_safety",
+  "score",
+]);
+function stripScoreFields(item: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const key of Object.keys(item)) {
+    if (!STRIP_FIELDS.has(key)) {
+      result[key] = item[key];
+    }
+  }
+  return result;
+}
+function trimChunkText(obj: Record<string, unknown>): Record<string, unknown> {
+  if (typeof obj.chunk_text === "string" && obj.chunk_text.length > TOOL_OUTPUT_MAX_CHARS) {
+    return { ...obj, chunk_text: obj.chunk_text.slice(0, TOOL_OUTPUT_MAX_CHARS) + " […]" };
+  }
+  return obj;
+}
+function trimResultItem(item: unknown): unknown {
+  if (item && typeof item === "object") {
+    return trimChunkText(stripScoreFields(item as Record<string, unknown>));
+  }
+  return item;
+}
+function trimToolOutputInner(output: unknown): unknown {
+  if (!output) return output;
+  if (Array.isArray(output)) {
+    return output.slice(0, TOOL_OUTPUT_MAX_RESULTS).map(trimResultItem);
+  }
+  if (typeof output === "object" && output !== null) {
+    const obj = output as Record<string, unknown>;
+    const trimmed: Record<string, unknown> = { ...obj };
+    if (
+      typeof trimmed.compiled_truth === "string" &&
+      trimmed.compiled_truth.length > TOOL_OUTPUT_MAX_CHARS * 4
+    ) {
+      trimmed.compiled_truth = trimmed.compiled_truth.slice(0, TOOL_OUTPUT_MAX_CHARS * 4) + " […]";
+    }
+    if (
+      typeof trimmed.frontmatter === "string" &&
+      trimmed.frontmatter.length > TOOL_OUTPUT_MAX_CHARS * 2
+    ) {
+      trimmed.frontmatter = trimmed.frontmatter.slice(0, TOOL_OUTPUT_MAX_CHARS * 2) + " […]";
+    }
+    if (Array.isArray(trimmed.results)) {
+      trimmed.results = (trimmed.results as unknown[])
+        .slice(0, TOOL_OUTPUT_MAX_RESULTS)
+        .map(trimResultItem);
+    }
+    return trimmed;
+  }
+  return output;
+}
+export function trimToolOutput(output: unknown): unknown {
+  try {
+    return trimToolOutputInner(output);
+  } catch (err) {
+    console.error(
+      `[trimToolOutput] ERROR (returning placeholder):`,
+      err instanceof Error ? err.message : String(err)
+    );
+    return { error: "tool_output_trim_failed", output: null };
+  }
+}
+
+// v0.42.38.0+ — Module-level maxTokensByTier (shared by gateway + legacy paths).
+// utility (Haiku): 4096 — short extraction tasks
+// reasoning (Sonnet): 8192 — detailed legal analysis
+// deep (Sonnet/Opus): 8192 — complex multi-step reasoning
+// subagent (Haiku): 4096 — meta-loop, short turns
+const MAX_TOKENS_BY_TIER: Record<string, number> = {
+  utility: 4096,
+  reasoning: 8192,
+  deep: 8192,
+  subagent: 4096,
+};
+
+// v0.42.38.0+ — Pipeline-shared tool cache. Keyed by caseSlug so all
+// specialists in the same pipeline share get_page results. GC'd after
+// 10min idle to prevent memory leaks from abandoned pipelines.
+interface PipelineCacheEntry {
+  cache: Map<string, { value: unknown; size: number }>;
+  bytes: number;
+  order: string[];
+  lastAccess: number;
+}
+const PIPELINE_TOOL_CACHES = new Map<string, PipelineCacheEntry>();
+const PIPELINE_CACHE_GC_INTERVAL_MS = 10 * 60 * 1000; // 10min
+const PIPELINE_CACHE_MAX_IDLE_MS = 10 * 60 * 1000; // 10min idle → GC
+// Run GC periodically (lazy: only checks when a new cache is created)
+function gcPipelineCaches(): void {
+  const now = Date.now();
+  for (const [key, entry] of PIPELINE_TOOL_CACHES) {
+    if (now - entry.lastAccess > PIPELINE_CACHE_MAX_IDLE_MS) {
+      PIPELINE_TOOL_CACHES.delete(key);
+    }
+  }
+}
+
 async function runSubagentViaGateway(args: GatewayRunArgs): Promise<SubagentResult> {
-  const { engine, ctx, data, model, systemPrompt, toolDefs, maxTurns } = args;
+  const {
+    engine,
+    ctx,
+    data,
+    model,
+    systemPrompt,
+    cachedContext,
+    toolDefs,
+    maxTurns,
+    maxOutputTokens,
+  } = args;
 
   // Map ToolDef → ChatToolDef (gateway shape). The gateway's chat() bridges
   // this to provider-specific tool definitions via the Vercel AI SDK.
@@ -967,16 +1154,136 @@ async function runSubagentViaGateway(args: GatewayRunArgs): Promise<SubagentResu
   // Map ToolDef → ToolHandler (gateway shape). Each handler is a thin wrapper
   // that invokes the existing brain-tool dispatch.
   const toolHandlers = new Map<string, ToolHandler>();
+  // v0.42.38.0+ — Tool-output trimming for cost optimization.
+  // brain_query/brain_search return arrays of results with full chunk_text.
+  // Each result ~500-2000 chars. With 10 results = 10-20K tokens per tool-call.
+  // In multi-turn loops (4-8 turns × 4-8 tool-calls), this balloons to 160K+ tokens
+  // of tool-results PER specialist. Trimming to top-5 results + 500 chars each
+  // cuts tool-result tokens by 80% without losing signal.
+  // v0.42.38.0+ — Trim functions extracted to module level (shared with legacy path).
+  // v0.42.38.0+ — In-process LRU cache for idempotent read tools.
+  // Multiple specialists in the same pipeline run often read the same page
+  // via get_page (e.g. "§ 146 StGB" is read by both legal-grounding and
+  // damage-extractor). The engine's query_cache handles search/query on the
+  // DB side, but get_page always hits the DB. This cache short-circuits
+  // identical get_page calls within the same process, saving DB load and
+  // tool dispatch overhead.
+  // v0.42.38.0+ — SHARED across specialists in the same pipeline via a
+  // pipeline-level cache keyed by caseSlug. Previously per-specialist, meaning
+  // 5 specialists reading "§ 146 StGB" = 5 DB calls. Now 1 DB call, 5 cache hits.
+  // Falls back to per-job cache if no caseSlug is provided.
+  // Only caches get_page (deterministic by slug); search/query have variable
+  // results depending on index state so they're left to the engine's query_cache.
+  // v0.42.38.0+ — Hardened: size-budgeted LRU (max 50 entries AND max 2MB total).
+  const TOOL_CACHE_MAX_ENTRIES = 50;
+  const TOOL_CACHE_MAX_BYTES = 2 * 1024 * 1024; // 2MB
+  const cacheableToolNames = new Set(["get_page", "brain_get_page"]);
+  const cacheKey = (toolName: string, input: unknown): string => {
+    try {
+      return `${toolName}:${JSON.stringify(input)}`;
+    } catch {
+      return `${toolName}:${String(input)}`;
+    }
+  };
+  const estimateBytes = (v: unknown): number => {
+    try {
+      return JSON.stringify(v).length * 2; // ~2 bytes per char (UTF-16)
+    } catch {
+      return 4096; // fallback estimate for non-serializable
+    }
+  };
+
+  // Pipeline-shared cache: keyed by caseSlug, shared across all specialists
+  // in the same pipeline run. Created once per pipeline, GC'd after 10min idle.
+  const pipelineCacheKey = (ctx.data as Record<string, unknown>)?._case_slug as string | undefined;
+  let toolCache: Map<string, { value: unknown; size: number }>;
+  let toolCacheBytes: number;
+  let toolCacheOrder: string[];
+  if (pipelineCacheKey) {
+    if (!PIPELINE_TOOL_CACHES.has(pipelineCacheKey)) {
+      gcPipelineCaches(); // lazy GC of stale pipeline caches
+      PIPELINE_TOOL_CACHES.set(pipelineCacheKey, {
+        cache: new Map(),
+        bytes: 0,
+        order: [],
+        lastAccess: Date.now(),
+      });
+    }
+    const shared = PIPELINE_TOOL_CACHES.get(pipelineCacheKey)!;
+    shared.lastAccess = Date.now();
+    toolCache = shared.cache;
+    toolCacheBytes = shared.bytes;
+    toolCacheOrder = shared.order;
+  } else {
+    // Fallback: per-job cache (no pipeline context)
+    toolCache = new Map();
+    toolCacheBytes = 0;
+    toolCacheOrder = [];
+  }
+  const evictOne = () => {
+    const oldest = toolCacheOrder.shift();
+    if (oldest) {
+      const entry = toolCache.get(oldest);
+      if (entry) {
+        toolCacheBytes -= entry.size;
+        toolCache.delete(oldest);
+        if (pipelineCacheKey) {
+          const shared = PIPELINE_TOOL_CACHES.get(pipelineCacheKey);
+          if (shared) shared.bytes = toolCacheBytes;
+        }
+      }
+    }
+  };
   for (const t of toolDefs) {
+    const isCacheable = cacheableToolNames.has(t.name) && t.idempotent === true;
     toolHandlers.set(t.name, {
       idempotent: t.idempotent === true,
       async execute(input: unknown, signal: AbortSignal): Promise<unknown> {
-        return await t.execute(input, {
+        if (isCacheable) {
+          const key = cacheKey(t.name, input);
+          const cached = toolCache.get(key);
+          if (cached) {
+            // LRU: move to end (most recently used)
+            const idx = toolCacheOrder.indexOf(key);
+            if (idx >= 0) toolCacheOrder.splice(idx, 1);
+            toolCacheOrder.push(key);
+            return cached.value;
+          }
+        }
+        const raw = await t.execute(input, {
           engine,
           jobId: ctx.id,
           remote: true,
           signal,
         });
+        const trimmed = trimToolOutput(raw);
+        if (isCacheable) {
+          const key = cacheKey(t.name, input);
+          const size = estimateBytes(trimmed);
+          // Only cache if the value is reasonably sized (skip >1MB single entries)
+          if (size < 1024 * 1024) {
+            // Evict until we have room
+            while (
+              toolCacheOrder.length >= TOOL_CACHE_MAX_ENTRIES ||
+              toolCacheBytes + size > TOOL_CACHE_MAX_BYTES
+            ) {
+              if (toolCacheOrder.length === 0) break;
+              evictOne();
+            }
+            toolCache.set(key, { value: trimmed, size });
+            toolCacheOrder.push(key);
+            toolCacheBytes += size;
+            // Sync shared pipeline cache bytes
+            if (pipelineCacheKey) {
+              const shared = PIPELINE_TOOL_CACHES.get(pipelineCacheKey);
+              if (shared) {
+                shared.bytes = toolCacheBytes;
+                shared.lastAccess = Date.now();
+              }
+            }
+          }
+        }
+        return trimmed;
       },
     });
   }
@@ -1009,6 +1316,105 @@ async function runSubagentViaGateway(args: GatewayRunArgs): Promise<SubagentResu
     role: m.role as "user" | "assistant",
     content: adaptContentBlocksToChatBlocks(m.content_blocks),
   }));
+
+  // v0.42.38.0+ — Reconstruct missing tool-result user messages.
+  //
+  // The gateway toolLoop pushes tool-results as `role: "user"` messages, but
+  // only the assistant turn is persisted via onAssistantTurn. The tool-result
+  // user message is NOT persisted (no callback for it). On crash-replay, the
+  // loaded priorMessages contain assistant messages with tool-call blocks but
+  // NO corresponding tool-result user messages — causing "Tool results are
+  // missing for tool calls" errors on the next API call.
+  //
+  // Fix: after loading priorMessages, scan for assistant messages that contain
+  // tool-call blocks. If the next message is NOT a user message with tool-result
+  // blocks, synthesize one from the persisted subagent_tool_executions rows.
+  // This ensures the replay conversation is consistent before entering the loop.
+  //
+  // Edge case: when the provider returns duplicate tool_use IDs (e.g. all
+  // "toolu_bdrk_0"), we can't match by toolUseId alone. Instead we match by
+  // (toolUseId, toolName, ordinal-within-turn) — consuming tools in order so
+  // each duplicate ID maps to the next unconsumed row.
+  if (priorChatMessages.length > 0) {
+    // Build a consumable list of priorTools ordered by message_idx + ordinal.
+    // We consume from the front as we match each tool-call.
+    const orderedTools = [...priorTools].sort((a, b) => {
+      const aIdx = a.messageIdx ?? 0;
+      const bIdx = b.messageIdx ?? 0;
+      if (aIdx !== bIdx) return aIdx - bIdx;
+      return (a.ordinal ?? 0) - (b.ordinal ?? 0);
+    });
+    const reconstructed: ChatMessage[] = [];
+    for (let i = 0; i < priorChatMessages.length; i++) {
+      reconstructed.push(priorChatMessages[i]);
+      const msg = priorChatMessages[i];
+      // Check if this is an assistant message with tool-call blocks.
+      if (
+        msg.role === "assistant" &&
+        Array.isArray(msg.content) &&
+        msg.content.some((b) => b.type === "tool-call")
+      ) {
+        // Check if the next message is a user message with tool-result blocks.
+        const next = priorChatMessages[i + 1];
+        const hasNextToolResults =
+          next &&
+          next.role === "user" &&
+          Array.isArray(next.content) &&
+          next.content.some((b) => b.type === "tool-result");
+        if (!hasNextToolResults) {
+          // Reconstruct tool-result blocks from subagent_tool_executions.
+          const toolCalls = msg.content.filter(
+            (b): b is { type: "tool-call"; toolCallId: string; toolName: string; input: unknown } =>
+              b.type === "tool-call"
+          );
+          const toolResultBlocks: ChatBlock[] = [];
+          for (const tc of toolCalls) {
+            // Find the matching tool execution by provider tool_use_id.
+            // For duplicate IDs, consume the next matching unconsumed row.
+            // Only match by exact toolUseId — null toolUseId means the row
+            // was persisted before the provider returned an id, so we can't
+            // safely match it to any tool-call.
+            const matchIdx = orderedTools.findIndex((t) => t.toolUseId === tc.toolCallId);
+            if (matchIdx >= 0) {
+              const matchingTool = orderedTools.splice(matchIdx, 1)[0];
+              toolResultBlocks.push({
+                type: "tool-result",
+                toolCallId: tc.toolCallId,
+                toolName: tc.toolName,
+                output:
+                  matchingTool.status === "failed"
+                    ? matchingTool.error
+                    : sanitizeForJson(matchingTool.output),
+                isError: matchingTool.status === "failed",
+              });
+            } else {
+              // No matching tool execution found — synthesize an error result
+              // so the conversation is at least consistent (the API won't
+              // reject it for missing tool-results).
+              toolResultBlocks.push({
+                type: "tool-result",
+                toolCallId: tc.toolCallId,
+                toolName: tc.toolName,
+                output: "tool execution result not found in replay state",
+                isError: true,
+              });
+            }
+          }
+          if (toolResultBlocks.length > 0) {
+            reconstructed.push({ role: "user", content: toolResultBlocks });
+          }
+        }
+      }
+    }
+    // Replace priorChatMessages with the reconstructed version.
+    if (reconstructed.length > priorChatMessages.length) {
+      console.error(
+        `[subagent-gateway] reconstructed ${reconstructed.length - priorChatMessages.length} missing tool-result message(s) for job ${ctx.id}`
+      );
+      priorChatMessages.length = 0;
+      priorChatMessages.push(...reconstructed);
+    }
+  }
 
   // Initial seed message if no prior state.
   const initialMessages: ChatMessage[] =
@@ -1044,13 +1450,29 @@ async function runSubagentViaGateway(args: GatewayRunArgs): Promise<SubagentResu
   };
 
   // Run the loop.
+  // v0.42.38.0+ — maxTokens based on model tier.
+  // utility (Haiku): 4096 — short extraction tasks
+  // reasoning (Sonnet): 8192 — detailed legal analysis
+  // deep (Sonnet/Opus): 8192 — complex multi-step reasoning
+  // subagent (Haiku): 4096 — meta-loop, short turns
+  // v0.42.38.0+ — Moved to module level so both gateway + legacy paths share it.
+  // v0.42.38.0+ — Per-specialist maxOutputTokens overrides tier default.
+  // Extraction specialists set 1024-2048 (short JSON), reasoning sets 4096.
+  const maxTokens = maxOutputTokens ?? MAX_TOKENS_BY_TIER[args.modelTier ?? "subagent"] ?? 4096;
+
+  // v0.42.38.0+ — Pass cachedContext separately to the gateway so it can
+  // create a 2nd cache breakpoint (base system + context). Previously
+  // concatenated into one string, which meant changing context invalidated
+  // the base system cache. Now the gateway splits them into 2 system parts.
   const result = await gatewayToolLoop({
     model,
     system: systemPrompt,
+    cachedContext,
     initialMessages,
     tools: chatTools,
     toolHandlers,
     maxTurns,
+    maxTokens,
     abortSignal: ctx.signal,
     cacheSystem,
     // ALWAYS pass replayState (even on fresh runs) so the gateway loop's
@@ -1258,6 +1680,12 @@ interface PriorToolV2Row {
   status: "pending" | "complete" | "failed";
   output: unknown;
   error: string | null;
+  /** v0.42.38.0+: message_idx from the DB row, used for reconstructing
+   *  missing tool-result user messages in replay. */
+  messageIdx?: number;
+  /** v0.42.38.0+: ordinal within the assistant turn, used to disambiguate
+   *  duplicate provider tool_use_ids. */
+  ordinal?: number | null;
 }
 
 /**
@@ -1294,6 +1722,8 @@ async function loadPriorToolsV2(engine: BrainEngine, jobId: number): Promise<Pri
       status: r.status as "pending" | "complete" | "failed",
       output: r.output,
       error: (r.error as string | null) ?? null,
+      messageIdx: r.message_idx as number | undefined,
+      ordinal: (r.ordinal as number | null) ?? null,
     };
   });
 }

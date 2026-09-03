@@ -100,13 +100,37 @@ export function extractBodyAbbreviation(text: string): string | null {
 function isGenericAbbr(abbr: string): boolean {
   const norm = normalizeAbbr(abbr);
   const generic = new Set([
-    "ABKOMMEN", "UBEREINKOMMEN", "VEREINBARUNG", "PROTOKOLL", "KONVENTION",
-    "ABANDERUNG", "VERORDNUNG", "GESETZ", "BUNDESGESETZ", "LANDESGESETZ",
-    "BURGENLANDISCHES", "BURGENLAND", "KARNTNER", "KARNTEN", "STEIRISCHES",
-    "STEIERMARK", "TIROLER", "TIROL", "VORARLBERGER", "VORARLBERG",
-    "OBEROSTERREICHISCHES", "OBEROSTERREICH", "NIEDEROSTERREICHISCHES",
-    "NIEDEROSTERREICH", "SALZBURGER", "SALZBURG", "WIENER", "WIEN",
-    "EUROPAISCHE", "EUROPAISCHES", "REPUBLIK",
+    "ABKOMMEN",
+    "UBEREINKOMMEN",
+    "VEREINBARUNG",
+    "PROTOKOLL",
+    "KONVENTION",
+    "ABANDERUNG",
+    "VERORDNUNG",
+    "GESETZ",
+    "BUNDESGESETZ",
+    "LANDESGESETZ",
+    "BURGENLANDISCHES",
+    "BURGENLAND",
+    "KARNTNER",
+    "KARNTEN",
+    "STEIRISCHES",
+    "STEIERMARK",
+    "TIROLER",
+    "TIROL",
+    "VORARLBERGER",
+    "VORARLBERG",
+    "OBEROSTERREICHISCHES",
+    "OBEROSTERREICH",
+    "NIEDEROSTERREICHISCHES",
+    "NIEDEROSTERREICH",
+    "SALZBURGER",
+    "SALZBURG",
+    "WIENER",
+    "WIEN",
+    "EUROPAISCHE",
+    "EUROPAISCHES",
+    "REPUBLIK",
   ]);
   return norm.length <= 2 || generic.has(norm);
 }
@@ -119,9 +143,7 @@ function mapMetaType(fmType: string | null, file: string): MetaType {
 }
 
 function slugifyBase(filename: string): string {
-  return basename(filename, ".md")
-    .replace(/-/g, "_")
-    .toLowerCase();
+  return basename(filename, ".md").replace(/-/g, "_").toLowerCase();
 }
 
 function normalizeAbbr(abbr: string): string {
@@ -146,13 +168,12 @@ function resolveSlugKeys(entries: StatuteEntry[]): Map<string, string> {
   }
 
   // 2. For cross-jurisdiction collisions, pick a canonical jurisdiction to keep the bare slug
-  const jurPreference: Jurisdiction[] = ["at", "de", "ch", "eu"];
+  // DE keeps the bare slug (primary jurisdiction), AT/CH/EU get _at/_ch/_eu suffix
+  const jurPreference: Jurisdiction[] = ["de", "at", "ch", "eu"];
   const slugWinner = new Map<string, Jurisdiction>();
   for (const [slug, count] of slugCounts) {
     if (count <= 1) continue;
-    const jurs = new Set(
-      entries.filter((e) => e.slugKey === slug).map((e) => e.jurisdiction)
-    );
+    const jurs = new Set(entries.filter((e) => e.slugKey === slug).map((e) => e.jurisdiction));
     for (const jur of jurPreference) {
       if (jurs.has(jur)) {
         slugWinner.set(slug, jur);
@@ -181,27 +202,43 @@ function resolveSlugKeys(entries: StatuteEntry[]): Map<string, string> {
         e.type === "state_law"
           ? e.stateCode || e.jurisdiction
           : e.type === "state_treaty"
-          ? "st"
-          : e.jurisdiction;
-    } else if (crossCollision) {
-      prefix = e.jurisdiction;
+            ? "st"
+            : e.jurisdiction;
     }
 
-    result.set(`${e.jurisdiction}/${e.file}`, prefix ? `${prefix}_${e.slugKey}` : e.slugKey);
+    if (withinCollision) {
+      result.set(`${e.jurisdiction}/${e.file}`, `${prefix}_${e.slugKey}`);
+    } else if (crossCollision) {
+      // Cross-jurisdiction collision: AT gets suffix (stgb_at), CH gets prefix (ch_stgb)
+      if (e.jurisdiction === "at") {
+        result.set(`${e.jurisdiction}/${e.file}`, `${e.slugKey}_${e.jurisdiction}`);
+      } else {
+        result.set(`${e.jurisdiction}/${e.file}`, `${e.jurisdiction}_${e.slugKey}`);
+      }
+    } else {
+      result.set(`${e.jurisdiction}/${e.file}`, e.slugKey);
+    }
   }
   return result;
 }
 
 export function collectStatutes(): StatuteEntry[] {
   const entries: StatuteEntry[] = [];
-  const sources: { jur: Jurisdiction; dir: string; depth: "top" | "one" | "mixed" }[] = [
-    { jur: "at", dir: "at", depth: "top" },
-    { jur: "de", dir: "de", depth: "top" },
-    { jur: "ch", dir: "ch", depth: "top" },
-    { jur: "eu", dir: "eu", depth: "top" },
-    { jur: "at", dir: "at-staatsvertraege", depth: "top" },
-    { jur: "at", dir: "at-landesrecht", depth: "mixed" as const },
-  ];
+  const sources: { jur: Jurisdiction; dir: string; depth: "top" | "one" | "mixed" | "law-dirs" }[] =
+    [
+      { jur: "at", dir: "at", depth: "top" },
+      { jur: "de", dir: "de", depth: "top" },
+      { jur: "ch", dir: "ch", depth: "top" },
+      { jur: "ch", dir: "ch-it", depth: "top" },
+      { jur: "ch", dir: "ch-fr", depth: "top" },
+      { jur: "eu", dir: "eu", depth: "top" },
+      { jur: "at", dir: "at-staatsvertraege", depth: "top" },
+      { jur: "at", dir: "at-landesrecht", depth: "mixed" as const },
+      // AT-Normen: each subdirectory is one law (abgb, ugb, stgb, etc.)
+      // with many .md files inside (one per article/paragraph).
+      // We scan the first .md file in each directory for frontmatter.
+      { jur: "at", dir: "at-normen", depth: "law-dirs" as const },
+    ];
 
   for (const source of sources) {
     const dir = join(CORPUS_DIR, source.dir);
@@ -228,6 +265,61 @@ export function collectStatutes(): StatuteEntry[] {
           .filter((f) => f.endsWith(".md") && !f.startsWith("."))
           .map((f) => `${source.dir}/${sub}/${f}`);
         files.push(...subFiles);
+      }
+    }
+    if (source.depth === "law-dirs") {
+      // Each subdirectory is one law (e.g. at-normen/abgb/).
+      // Scan the first .md file for frontmatter, use the directory name as slugKey.
+      const subdirs = readdirSync(dir)
+        .filter((d) => !d.startsWith("."))
+        .map((d) => join(dir, d))
+        .filter((d) => statSync(d).isDirectory());
+      // Deduplicate by slugKey: when multiple directories map to the same
+      // slugKey (e.g. spg-10004285 and spg-10005792 both → "spg"), keep only
+      // the one with the lowest gesetzesnummer (deterministic).
+      const seenSlugKeys = new Map<
+        string,
+        { sub: string; gn: number; firstFile: string; fm: ReturnType<typeof parseFrontmatter> }
+      >();
+      for (const subDir of subdirs) {
+        const sub = basename(subDir);
+        const mdFiles = readdirSync(subDir)
+          .filter((f) => f.endsWith(".md") && !f.startsWith("."))
+          .sort();
+        if (mdFiles.length === 0) continue;
+        const firstFile = mdFiles[0];
+        const filePath = join(subDir, firstFile);
+        try {
+          const text = readFileSync(filePath, "utf8");
+          const fm = parseFrontmatter(text);
+          if (!fm) continue;
+          const slugKey = sub.replace(/-\d+$/, "");
+          const gn = parseGesetzesnummer(fm.gesetzesnummer);
+          const existing = seenSlugKeys.get(slugKey);
+          if (!existing || gn < existing.gn) {
+            seenSlugKeys.set(slugKey, { sub, gn, firstFile, fm });
+          }
+        } catch {
+          // skip unreadable files
+        }
+      }
+      for (const [slugKey, { sub, firstFile, fm }] of seenSlugKeys) {
+        const abbr = fm!.abbreviation || sub;
+        const label = abbr;
+        // Detect treaty type from the `typ` frontmatter field
+        const typ = (fm! as { typ?: string }).typ || "";
+        const isTreaty = /vertrag/i.test(typ) || /staatsvertrag/i.test(typ);
+        entries.push({
+          slugKey,
+          jurisdiction: source.jur,
+          label,
+          file: `${source.dir}/${sub}/${firstFile}`,
+          abbr,
+          gesetzesnummer: fm!.gesetzesnummer,
+          title: fm!.title,
+          type: isTreaty ? "state_treaty" : "statute",
+          stateCode: undefined,
+        });
       }
     }
 
@@ -315,19 +407,20 @@ export function resolveCollisions(entries: StatuteEntry[]): CollisionResolution 
     }
 
     // Deterministic tie-breaker:
-    // 1. lowest numeric gesetzesnummer
-    // 2. non-statute category (state_treaty before state_law before statute)
+    // 1. non-statute category (state_treaty before state_law before statute)
+    //    — treaties and state laws are curated entries, prefer them over
+    //    raw at-normen article files with the same abbreviation
+    // 2. lowest numeric gesetzesnummer
     // 3. deterministic file path order
     const sorted = [...group].sort((a, b) => {
-      const gnA = parseGesetzesnummer(a.gesetzesnummer);
-      const gnB = parseGesetzesnummer(b.gesetzesnummer);
-      if (gnA !== gnB) return gnA - gnB;
-
-      const typeOrder = (t: MetaType) =>
-        t === "state_treaty" ? 0 : t === "state_law" ? 1 : 2;
+      const typeOrder = (t: MetaType) => (t === "state_treaty" ? 0 : t === "state_law" ? 1 : 2);
       if (typeOrder(a.type) !== typeOrder(b.type)) {
         return typeOrder(a.type) - typeOrder(b.type);
       }
+
+      const gnA = parseGesetzesnummer(a.gesetzesnummer);
+      const gnB = parseGesetzesnummer(b.gesetzesnummer);
+      if (gnA !== gnB) return gnA - gnB;
 
       return a.file.localeCompare(b.file);
     });
@@ -356,6 +449,9 @@ export function resolveCollisions(entries: StatuteEntry[]): CollisionResolution 
     }
   }
 
+  // Cross-jurisdiction slugKey collisions are already handled by resolveSlugKeys
+  // in collectStatutes (DE keeps bare slug, AT/CH/EU get _at/_ch/_eu suffix).
+
   // Cross-jurisdiction label collisions: add jurisdiction suffix
   const labelMap = new Map<string, number>();
   for (const e of resolved) {
@@ -363,7 +459,12 @@ export function resolveCollisions(entries: StatuteEntry[]): CollisionResolution 
   }
   for (const e of resolved) {
     if (labelMap.get(e.label.toUpperCase())! > 1) {
-      e.label = `${e.label} (${e.jurisdiction.toUpperCase()})`;
+      // AT uses hyphen format (StGB-AT), CH/EU use parens format (StGB (CH))
+      if (e.jurisdiction === "at") {
+        e.label = `${e.label}-${e.jurisdiction.toUpperCase()}`;
+      } else {
+        e.label = `${e.label} (${e.jurisdiction.toUpperCase()})`;
+      }
     }
   }
 
@@ -379,7 +480,36 @@ export function resolveCollisions(entries: StatuteEntry[]): CollisionResolution 
     }
   }
 
-  return { entries: resolved, excluded };
+  // slugKey deduplication: multiple entries can share the same slugKey
+  // (e.g. "at_anl_0" from anl-0.md in different gnr-* directories).
+  // The TS object literal would silently keep only the last one. Instead,
+  // make each slugKey unique by appending a short hash of the file path.
+  const slugKeyCounts = new Map<string, number>();
+  for (const e of resolved) {
+    slugKeyCounts.set(e.slugKey, (slugKeyCounts.get(e.slugKey) || 0) + 1);
+  }
+  const slugKeySeen = new Map<string, number>();
+  const deduped: StatuteEntry[] = [];
+  for (const e of resolved) {
+    const count = slugKeyCounts.get(e.slugKey)!;
+    if (count === 1) {
+      deduped.push(e);
+      continue;
+    }
+    const seen = slugKeySeen.get(e.slugKey) || 0;
+    slugKeySeen.set(e.slugKey, seen + 1);
+    if (seen === 0) {
+      // First occurrence keeps the original key
+      deduped.push(e);
+    } else {
+      // Subsequent occurrences get a suffix
+      const suffix = `_${seen}`;
+      const newEntry = { ...e, slugKey: `${e.slugKey}${suffix}` };
+      deduped.push(newEntry);
+    }
+  }
+
+  return { entries: deduped, excluded };
 }
 
 export function generateTypeScript(entries: StatuteEntry[]): string {
@@ -480,6 +610,18 @@ function main() {
 
   const output = generateTypeScript(resolved);
   writeFileSync(OUTPUT_FILE, output, "utf8");
+
+  // Cap the excluded report at 500 entries to avoid a 500K-line JSON file.
+  // The full count is preserved in `total_excluded`; the summary by reason
+  // gives the complete picture without dumping every single duplicate.
+  const reasonCounts = new Map<string, number>();
+  for (const { reason } of excluded) {
+    const key = reason
+      .replace(/"[^"]*"/g, '"…"')
+      .replace(/\s+/g, " ")
+      .trim();
+    reasonCounts.set(key, (reasonCounts.get(key) || 0) + 1);
+  }
   writeFileSync(
     EXCLUDED_REPORT_FILE,
     JSON.stringify(
@@ -488,7 +630,7 @@ function main() {
         total_collected: rawEntries.length,
         total_resolved: resolved.length,
         total_excluded: excluded.length,
-        excluded: excluded.map(({ entry, reason }) => ({
+        excluded_sample: excluded.slice(0, 500).map(({ entry, reason }) => ({
           file: entry.file,
           label: entry.label,
           abbreviation: entry.abbr,
@@ -496,6 +638,9 @@ function main() {
           gesetzesnummer: entry.gesetzesnummer,
           reason,
         })),
+        excluded_by_reason: [...reasonCounts.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .map(([reason, count]) => ({ reason, count })),
       },
       null,
       2
@@ -507,7 +652,9 @@ function main() {
   console.log(`  ✅ Written: ${OUTPUT_FILE}`);
   console.log(`  ✅ Excluded report: ${EXCLUDED_REPORT_FILE}`);
   console.log(`  Total entries: ${resolved.length}`);
-  console.log(`  Jurisdictions: at=${byJurCount(resolved, "at")}, de=${byJurCount(resolved, "de")}, ch=${byJurCount(resolved, "ch")}, eu=${byJurCount(resolved, "eu")}`);
+  console.log(
+    `  Jurisdictions: at=${byJurCount(resolved, "at")}, de=${byJurCount(resolved, "de")}, ch=${byJurCount(resolved, "ch")}, eu=${byJurCount(resolved, "eu")}`
+  );
   console.log("");
 }
 

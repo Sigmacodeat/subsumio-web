@@ -435,12 +435,21 @@ function SyncStatusSection({
                 >
                   <div
                     className={cn(
-                      "col-span-3 truncate font-mono",
+                      "col-span-3 flex items-center gap-1.5 truncate font-mono",
                       r.fullyComplete && "text-[color:var(--ds-success-text)]"
                     )}
                     title={r.corpus}
                   >
-                    {r.corpus}
+                    <span className="truncate">{r.corpus}</span>
+                    {r.newOnRis > 0 && (
+                      <span
+                        className="inline-flex shrink-0 items-center justify-center rounded-full bg-[color:var(--ds-info-bg)] px-1.5 py-0.5 text-[10px] font-semibold text-[color:var(--ds-info-text)]"
+                        aria-label={`${r.newOnRis} neue RIS-Dokumente`}
+                        title={`${r.newOnRis} neue RIS-Dokumente seit letztem Sync`}
+                      >
+                        +{fmt(r.newOnRis)}
+                      </span>
+                    )}
                   </div>
                   <div
                     className="col-span-1 text-right tabular-nums"

@@ -68,11 +68,29 @@ export const SUPPORTED_CONNECTORS = Object.keys(CONNECTOR_REGISTRY);
 
 export class ConnectorManager {
   private connectors: Map<string, BaseConnector> = new Map();
+  // G21/G22 fix: maintain a service→connectorId index so list()/remove()/
+  // syncOne() can look up connectors by service name. Pre-fix, the map was
+  // keyed by connector.id but lookups used service name → always missed.
+  private serviceToId: Map<string, string> = new Map();
 
   constructor(private readonly baseDir?: string) {}
 
   private _registryPath(): string {
     return join(this.baseDir ?? homedir(), ".gbrain", "connectors.json");
+  }
+
+  /** Find a connector's ID by service name. */
+  private _findConnectorIdByService(service: string): string | undefined {
+    // Check the index first (fast path)
+    const indexed = this.serviceToId.get(service);
+    if (indexed && this.connectors.has(indexed)) return indexed;
+    // Fallback: scan the map (covers connectors loaded before index was added)
+    for (const [id, conn] of this.connectors) {
+      if (conn.service === service || id.startsWith(`${service}-`) || id === service) {
+        return id;
+      }
+    }
+    return undefined;
   }
 
   /**
@@ -93,6 +111,7 @@ export class ConnectorManager {
       try {
         const connector = new ctor(entry.config);
         this.connectors.set(connector.id, connector);
+        this.serviceToId.set(entry.service, connector.id);
         sources.push(connector);
       } catch (err) {
         console.warn(
@@ -135,6 +154,7 @@ export class ConnectorManager {
     await this._saveRegistry(entries);
 
     this.connectors.set(connector.id, connector);
+    this.serviceToId.set(service, connector.id);
     return connector;
   }
 
@@ -151,7 +171,12 @@ export class ConnectorManager {
     if (existsSync(statePath)) {
       await import("node:fs/promises").then((fs) => fs.unlink(statePath));
     }
-    this.connectors.delete(service);
+    // G22 fix: delete by the actual connector.id, not by service name.
+    const connectorId = this._findConnectorIdByService(service);
+    if (connectorId) {
+      this.connectors.delete(connectorId);
+      this.serviceToId.delete(service);
+    }
   }
 
   /** Enable or disable a connector. */
@@ -171,24 +196,81 @@ export class ConnectorManager {
     return entries.map((e) => ({
       service: e.service,
       enabled: e.enabled,
-      connected: this.connectors.has(e.service),
+      // G21 fix: look up by service→id index, not by raw service name.
+      connected: this._findConnectorIdByService(e.service) !== undefined,
       hasCredentials: !!(e.config.client_id || e.config.client_secret || e.config.api_key),
     }));
   }
 
   /** Trigger a one-shot sync for a connector. */
   async syncOne(service: string, ctx: IngestionSourceContext): Promise<void> {
-    const connector = this.connectors.get(service);
+    // G21 fix: look up by service→id index, not by raw service name.
+    const connectorId = this._findConnectorIdByService(service);
+    const connector = connectorId ? this.connectors.get(connectorId) : undefined;
     if (!connector) throw new Error(`Connector not running: ${service}`);
-    await connector.sync(ctx);
-    // Persist last_sync_at into state file.
+    const startedAt = Date.now();
+    let syncError: string | undefined;
+    let itemsRetrieved = 0;
+    // G23 fix: add a 5-minute timeout to prevent indefinite hangs.
+    // Pre-fix, connector.sync() could hang forever with no abort signal.
+    const SYNC_TIMEOUT_MS = 5 * 60 * 1000;
+    try {
+      const result = await Promise.race([
+        connector.sync(ctx),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error(`sync_timeout_${SYNC_TIMEOUT_MS / 1000}s`)),
+            SYNC_TIMEOUT_MS
+          )
+        ),
+      ]);
+      if (result && typeof result === "object" && "itemsCount" in result) {
+        itemsRetrieved = (result as { itemsCount: number }).itemsCount;
+      }
+    } catch (err) {
+      syncError = err instanceof Error ? err.message : String(err);
+      await this._persistSyncMetadata(service, {
+        last_sync_at: startedAt,
+        last_sync_duration_ms: Date.now() - startedAt,
+        last_sync_status: "error",
+        last_sync_error: syncError,
+        last_items_retrieved: 0,
+      });
+      throw err;
+    }
+    await this._persistSyncMetadata(service, {
+      last_sync_at: startedAt,
+      last_sync_duration_ms: Date.now() - startedAt,
+      last_sync_status: "ok",
+      last_sync_error: undefined,
+      last_items_retrieved: itemsRetrieved,
+    });
+  }
+
+  /** Persist sync metadata into the connector state file. */
+  private async _persistSyncMetadata(
+    service: string,
+    metadata: Record<string, unknown>
+  ): Promise<void> {
     const statePath = join(this.baseDir ?? homedir(), ".gbrain", "connectors", `${service}.json`);
+    let state: Record<string, unknown> = {};
     if (existsSync(statePath)) {
-      const { readFileSync, writeFileSync } = await import("node:fs");
-      const raw = readFileSync(statePath, "utf-8");
-      const state = JSON.parse(raw) as Record<string, unknown>;
-      state.last_sync_at = Date.now();
+      try {
+        const { readFileSync } = await import("node:fs");
+        const raw = readFileSync(statePath, "utf-8");
+        state = JSON.parse(raw) as Record<string, unknown>;
+      } catch {
+        // Corrupt state file — start fresh
+      }
+    }
+    Object.assign(state, metadata);
+    try {
+      const { writeFileSync, mkdirSync } = await import("node:fs");
+      const { dirname } = await import("node:path");
+      mkdirSync(dirname(statePath), { recursive: true });
       writeFileSync(statePath, JSON.stringify(state, null, 2));
+    } catch {
+      // Best-effort — don't fail the sync if state persistence fails
     }
   }
 
@@ -201,14 +283,31 @@ export class ConnectorManager {
 
   /** Get last successful sync timestamp from the connector state file. */
   async getLastSync(service: string): Promise<number | null> {
+    const meta = await this.getSyncMetadata(service);
+    return meta.last_sync_at ?? null;
+  }
+
+  /** Get full sync metadata (timestamp, status, duration, items, error). */
+  async getSyncMetadata(service: string): Promise<{
+    last_sync_at?: number;
+    last_sync_status?: "ok" | "error";
+    last_sync_duration_ms?: number;
+    last_items_retrieved?: number;
+    last_sync_error?: string;
+  }> {
     const statePath = join(this.baseDir ?? homedir(), ".gbrain", "connectors", `${service}.json`);
-    if (!existsSync(statePath)) return null;
+    if (!existsSync(statePath)) return {};
     try {
       const raw = await readFile(statePath, "utf-8");
-      const state = JSON.parse(raw) as { last_sync_at?: number };
-      return state.last_sync_at ?? null;
+      return JSON.parse(raw) as {
+        last_sync_at?: number;
+        last_sync_status?: "ok" | "error";
+        last_sync_duration_ms?: number;
+        last_items_retrieved?: number;
+        last_sync_error?: string;
+      };
     } catch {
-      return null;
+      return {};
     }
   }
 

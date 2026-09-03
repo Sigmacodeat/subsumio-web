@@ -76,7 +76,7 @@ export function classifyIntent(question: string): Intent {
 // ─────────────────────────────────────────────────────────────────
 // Legal complexity classification for intent-specific model routing.
 // Complex questions → deep tier (Grok 4.3, Claude Opus)
-// Simple questions → reasoning tier (DeepSeek V4 Flash)
+// Simple questions → reasoning tier (Claude Sonnet 4.6)
 // ─────────────────────────────────────────────────────────────────
 
 export type LegalComplexity = "simple" | "moderate" | "complex";

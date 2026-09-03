@@ -14,6 +14,7 @@ export const GET = createHandler(
   {
     action: "brain.read",
     rateTier: "standard",
+    admin: true,
     cacheMaxAge: 15,
   },
   async (ctx, _body, _query, _req) => {

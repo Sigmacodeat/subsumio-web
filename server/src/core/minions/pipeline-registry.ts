@@ -66,6 +66,27 @@ export const LAYER_REGISTRY: LayerDeclaration[] = [
       "Heuristic classification of each sub-page by document type (urteil, klage, vertrag, etc.)",
   },
 
+  // ── Layer 0.5: Completeness Check ──
+  // Deterministic ($0 LLM) check whether the uploaded case file contains the
+  // documents expected for its case type (zivil/straf/verwaltungs/arbeits).
+  // Runs after doc-classifier (needs doc_type stamps) and before ON-Scanner
+  // (downstream layers can use completeness verdict to gate or warn).
+  {
+    id: "completeness-check",
+    layerNumber: 0,
+    name: "Completeness Check",
+    // No specialist — uses runCompletenessCheck() deterministic function
+    inputs: ["part_slugs", "allTexts", "doc_types", "verfahrenstyp"],
+    outputs: ["completeness_verdict", "missing_documents", "completeness_warnings"],
+    sideEffects: ["writePage:completeness-checks/{case_slug}"],
+    risk: "low",
+    timeoutSec: 30,
+    failurePolicy: "continue",
+    mandatory: false,
+    description:
+      "Deterministic check whether the case file contains all expected document types for its verfahrenstyp. Produces CHASE/COMPLETE/WARNING verdict + missing-doc list.",
+  },
+
   // ── Layer 1: ON-Scanner ──
   {
     id: "on-scanner",

@@ -25,6 +25,13 @@ export const POST = createHandler(
   {
     action: "brain.write",
     rateTier: "standard",
+    audit: (_ctx, _body) => ({
+      action: "time_tracking.stop" as const,
+      entityType: "time_entry",
+      details: {
+        stopped: true,
+      },
+    }),
   },
   stopActivityHandler
 );

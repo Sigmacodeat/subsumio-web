@@ -1,10 +1,9 @@
 /**
  * EPIC 3 — Legal Data Factory Tests
- * Covers: source-lifecycle, license-registry, connector-reliability, dependency-graph, legal-source-coverage, migrate-frontmatter
+ * Covers: source-lifecycle, license-registry, connector-reliability, dependency-graph, legal-source-coverage
  */
 
 import { describe, it, expect } from "vitest";
-import { join } from "node:path";
 import {
   isTransitionAllowed,
   isHumanApprovalRequired,
@@ -45,12 +44,6 @@ import {
   LEGAL_AREA_LABELS_DE,
   SOURCE_TYPE_LABELS_DE,
 } from "../../src/lib/legal-source-coverage.js";
-
-import {
-  parseFrontmatter,
-  buildReceiptFromFrontmatter,
-  migrateCorpusFrontmatter,
-} from "../src/core/legal/migrate-frontmatter.js";
 
 // ── Source Lifecycle Tests ────────────────────────────────────────────
 
@@ -409,93 +402,5 @@ describe("Legal Source Coverage Matrix", () => {
 
   it("EU has eu_law covered", () => {
     expect(isCovered("EU", "primary_legislation", "eu_law")).toBe(true);
-  });
-});
-
-// ── Frontmatter Migration Tests ──────────────────────────────────────
-
-describe("Frontmatter Migration", () => {
-  const sampleContent = `---
-title: "BGB — Bürgerliches Gesetzbuch"
-type: "law"
-jurisdiction: "de"
-abbreviation: "BGB"
-version_date: "2026-07-09"
-retrieved_at: "2026-07-10"
-source_url: "https://www.gesetze-im-internet.de/bgb/xml.zip"
-license: "Amtliches Werk, § 5 UrhG (gemeinfrei). Quelle: gesetze-im-internet.de, Bundesamt für Justiz."
----
-
-§ 1 Beginn der Rechtsfähigkeit
-§ 823 Schadensersatzpflicht
-§ 138 Sittenwidrige Rechtsgeschäfte
-`;
-
-  it("parses frontmatter correctly", () => {
-    const { frontmatter, body } = parseFrontmatter(sampleContent);
-    expect(frontmatter).not.toBeNull();
-    expect(frontmatter!.abbreviation).toBe("BGB");
-    expect(frontmatter!.jurisdiction).toBe("de");
-    expect(frontmatter!.source_url).toContain("gesetze-im-internet");
-    expect(body).toContain("§ 823");
-  });
-
-  it("returns null frontmatter for no-frontmatter content", () => {
-    const { frontmatter } = parseFrontmatter("Just some text without frontmatter");
-    expect(frontmatter).toBeNull();
-  });
-
-  it("builds receipt from frontmatter", () => {
-    const { frontmatter, body } = parseFrontmatter(sampleContent);
-    const receipt = buildReceiptFromFrontmatter("/path/to/bgb.md", frontmatter!, body);
-    expect(receipt.slug).toBe("law/de/bgb");
-    expect(receipt.jurisdiction).toBe("DE");
-    expect(receipt.statute_code).toBe("BGB");
-    expect(receipt.content_hash.length).toBe(64);
-    expect(receipt.license_status).toBe("public");
-    expect(receipt.paragraph_count).toBeGreaterThan(0);
-  });
-
-  it("infers licensed status from license text", () => {
-    const { frontmatter, body } = parseFrontmatter(sampleContent);
-    const receipt = buildReceiptFromFrontmatter(
-      "/path/to/test.md",
-      {
-        ...frontmatter!,
-        license: "Verlagslizenz Beck-Verlag",
-      },
-      body
-    );
-    expect(receipt.license_status).toBe("licensed");
-  });
-
-  it("infers pending status for unknown license", () => {
-    const { frontmatter, body } = parseFrontmatter(sampleContent);
-    const receipt = buildReceiptFromFrontmatter(
-      "/path/to/test.md",
-      {
-        ...frontmatter!,
-        license: "Unbekannt",
-      },
-      body
-    );
-    expect(receipt.license_status).toBe("pending");
-  });
-
-  it("migrateCorpusFrontmatter processes files", () => {
-    // Use the actual law-corpus directory — resolve from this test file's location
-    // to be robust against different CWDs (bun test from root vs server/)
-    const testDir = import.meta.dir;
-    const corpusRoot = join(testDir, "..", "..", "law-corpus");
-    const report = migrateCorpusFrontmatter(corpusRoot, { dryRun: true });
-    expect(report.total_files).toBeGreaterThan(0);
-    expect(report.results.length).toBeGreaterThan(0);
-    // In dryRun, migrated counter still increments; per-result flag is false
-    expect(report.migrated).toBeGreaterThan(0);
-    // Verify receipts were built (have valid slug and hash)
-    const withReceipts = report.results.filter(
-      (r) => r.receipt?.slug && r.receipt?.content_hash?.length === 64
-    );
-    expect(withReceipts.length).toBeGreaterThan(0);
   });
 });

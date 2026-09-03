@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import {
   listMemories,
@@ -11,6 +12,17 @@ import {
   type MemoryType,
 } from "@/lib/copilot-memory";
 import { extractMemoriesWithLLM, isLLMExtractionAvailable } from "@/lib/copilot-memory-llm";
+
+const memoryPostSchema = z.object({
+  action: z.enum(["create", "update", "delete", "infer", "search"]).optional(),
+  type: z.enum(["preference", "fact", "instruction", "context", "deadline"]).optional(),
+  key: z.string().max(200).optional(),
+  value: z.string().max(5000).optional(),
+  source: z.enum(["user_explicit", "inferred", "system"]).optional(),
+  caseSlug: z.string().max(200).optional(),
+  pinned: z.boolean().optional(),
+  message: z.string().max(5000).optional(),
+});
 
 export const dynamic = "force-dynamic";
 
@@ -41,9 +53,32 @@ export const POST = createHandler(
   {
     action: "brain.write",
     rateTier: "standard",
+    body: memoryPostSchema,
+    audit: (_ctx, body) => {
+      const b = body as {
+        action?: string;
+        type?: string;
+        key?: string;
+        source?: string;
+        caseSlug?: string;
+        pinned?: boolean;
+      };
+      return {
+        action: "copilot.memory_create" as const,
+        entityType: "memory",
+        details: {
+          subAction: b.action,
+          type: b.type,
+          key: b.key,
+          source: b.source,
+          caseSlug: b.caseSlug,
+          pinned: b.pinned,
+        },
+      };
+    },
   },
   async (ctx, body) => {
-    const { action, type, key, value, source, caseSlug, pinned, message } = (body ?? {}) as {
+    const { action, type, key, value, source, caseSlug, pinned, message } = body as {
       action?: string;
       type?: MemoryType;
       key?: string;
@@ -153,6 +188,15 @@ export const PATCH = createHandler(
   {
     action: "brain.write",
     rateTier: "standard",
+    audit: (_ctx, body) => {
+      const b = (body ?? {}) as { id?: string; pinned?: boolean; type?: string };
+      return {
+        action: "copilot.memory_update" as const,
+        entityType: "memory",
+        entityId: b.id,
+        details: { pinned: b.pinned, type: b.type },
+      };
+    },
   },
   async (ctx, body) => {
     const { id, value, pinned, type } = (body ?? {}) as {
@@ -183,6 +227,15 @@ export const DELETE = createHandler(
   {
     action: "brain.write",
     rateTier: "standard",
+    audit: (_ctx, body) => {
+      const b = (body ?? {}) as { id?: string };
+      return {
+        action: "copilot.memory_delete" as const,
+        entityType: "memory",
+        entityId: b.id,
+        details: {},
+      };
+    },
   },
   async (ctx, body) => {
     const { id } = (body ?? {}) as { id?: string };

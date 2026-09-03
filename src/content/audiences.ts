@@ -73,7 +73,7 @@ export function professionalPricing(lang: Lang): {
         {
           id: "pro",
           name: "Solo",
-          price: "€179",
+          price: "€249",
           period: "/month",
           blurb: "For one lawyer or legal professional working with their own matters.",
           features: [
@@ -90,7 +90,7 @@ export function professionalPricing(lang: Lang): {
         {
           id: "team",
           name: "Firm",
-          price: "€999",
+          price: "€1.499",
           period: "/month, 5 users included",
           blurb: "For firms that need a shared, permissioned knowledge and communication layer.",
           features: [
@@ -135,7 +135,7 @@ export function professionalPricing(lang: Lang): {
       {
         id: "pro",
         name: "Solo",
-        price: amount("179"),
+        price: amount("249"),
         period: "/Monat",
         blurb: "Für einen Berufsträger oder Legal Professional mit eigenen Akten.",
         features: [
@@ -152,7 +152,7 @@ export function professionalPricing(lang: Lang): {
       {
         id: "team",
         name: "Kanzlei",
-        price: amount("999"),
+        price: amount("1.499"),
         period: "/Monat, 5 Nutzer inkl.",
         blurb: "Für Teams mit gemeinsamem, berechtigtem Kanzleiwissen und Kommunikationsprozessen.",
         features: [

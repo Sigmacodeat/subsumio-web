@@ -18,7 +18,7 @@
  * case data, entity relationships.
  */
 
-import { buildMemoryContext, searchMemories, type CopilotMemoryEntry } from "@/lib/copilot-memory";
+import { buildMemoryContext, type CopilotMemoryEntry } from "@/lib/copilot-memory";
 
 export type MemoryLayer = "session" | "agent" | "brain";
 

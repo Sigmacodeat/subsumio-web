@@ -8,7 +8,7 @@ import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { z } from "zod";
 
 const resetPasswordSchema = z.object({
-  token: z.string(),
+  token: z.string().max(500),
   password: passwordSchema,
 });
 

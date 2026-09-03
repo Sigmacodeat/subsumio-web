@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
-import { logAudit } from "@/lib/audit";
 import { getConnectorByEngineService } from "@/lib/connector-coverage";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +15,20 @@ export const POST = createHandler(
     action: "connector.write",
     rateTier: "standard",
     body: folderConfigSchema,
+    audit: (ctx, body, _query, req) => {
+      const service = req ? new URL(req.url).pathname.split("/")[3] : undefined;
+      return {
+        action: "connector.configure" as const,
+        entityType: "connector",
+        entityId: service,
+        details: {
+          service,
+          watch_dir: body.watch_dir,
+          poll_interval_ms: body.poll_interval_ms,
+          by: ctx.user.email,
+        },
+      };
+    },
   },
   async (ctx, body, _query, req) => {
     const { service } = await (req as unknown as { params: Promise<{ service: string }> }).params;
@@ -39,10 +52,6 @@ export const POST = createHandler(
       if (!upstream.ok) {
         return Response.json(result, { status: upstream.status });
       }
-      void logAudit("connector.add", "connector", {
-        entityId: service,
-        details: { service, by: ctx.user.email },
-      });
       return Response.json(result);
     } catch (error) {
       console.error(

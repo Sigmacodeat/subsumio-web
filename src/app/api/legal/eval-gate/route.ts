@@ -12,6 +12,15 @@ export const POST = createHandler(
     action: "brain.read",
     rateTier: "standard",
     body: postSchema,
+    audit: (_ctx, body) => ({
+      action: "legal.eval_gate" as const,
+      entityType: "eval",
+      details: {
+        specialist: body.specialist,
+        leave_one_out: body.leave_one_out ?? false,
+        threshold: body.threshold ?? 0.8,
+      },
+    }),
   },
   async (_ctx, body) => {
     const result = {

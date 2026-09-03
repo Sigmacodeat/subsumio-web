@@ -10,7 +10,19 @@ const schema = z.object({
 });
 
 export const POST = createHandler(
-  { action: "brain.write", rateTier: "heavy", body: schema },
+  {
+    action: "brain.write",
+    rateTier: "heavy",
+    body: schema,
+    audit: (_ctx, body) => ({
+      action: "act_import.finalize" as const,
+      entityType: "act_import_session",
+      details: {
+        allow_partial: body.allow_partial,
+        max_cost_usd: body.max_cost_usd,
+      },
+    }),
+  },
   async (ctx, body, _query, req) => {
     const { id: rawId } = await (req as unknown as { params: Promise<{ id: string }> }).params;
     const id = safeImportId(rawId);
@@ -93,6 +105,10 @@ export const POST = createHandler(
         verfahrenstyp: sfm.verfahrenstyp ?? "sonstiges",
         snapshot_id: snapshotId,
         import_session_id: id,
+        // Billing context: owner_id is org_id if user has org, else user.id.
+        owner_id: ctx.user.orgId ?? ctx.user.id,
+        owner_type: ctx.user.orgId ? "org" : "user",
+        user_id: ctx.user.id,
         ...(body.max_cost_usd ? { max_cost_usd: body.max_cost_usd } : {}),
       }),
       signal: AbortSignal.timeout(30_000),

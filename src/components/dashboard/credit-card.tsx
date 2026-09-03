@@ -7,11 +7,21 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { csrfFetch } from "@/lib/csrf";
 import { useLang } from "@/lib/use-lang";
+import { useToast } from "@/components/ui/toast";
 
 interface CreditBalance {
   ownerId: string;
   ownerType: string;
+  /** Available credits = included + purchased - used. */
   balance: number;
+  /** Monthly included credits from SaaS plan (€60 Solo / €200 Kanzlei/seat). */
+  includedCredit: number;
+  /** Credits used this billing period. */
+  usedCredit: number;
+  /** Permanent purchased credits (from credit packs). */
+  purchasedCredit: number;
+  /** Overage this period (used - included, if positive). */
+  overage: number;
   autoReloadEnabled: boolean;
   autoReloadThreshold: number;
   autoReloadPackId: string | null;
@@ -66,6 +76,7 @@ const TX_TYPE_LABELS: Record<string, string> = {
 
 export function CreditCard() {
   const { t } = useLang();
+  const { addToast } = useToast();
   const [data, setData] = useState<CreditsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState<string | null>(null);
@@ -121,7 +132,7 @@ export function CreditCard() {
   async function saveAutoReload() {
     setSavingAutoReload(true);
     try {
-      await csrfFetch("/api/billing/credits", {
+      const res = await csrfFetch("/api/billing/credits", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -130,9 +141,15 @@ export function CreditCard() {
           packId: autoReloadEnabled ? autoReloadPack : null,
         }),
       });
-      void fetchCredits();
+      if (res.ok) {
+        addToast({ type: "success", title: "Auto-Reload gespeichert" });
+        void fetchCredits();
+      } else {
+        const json = (await res.json()) as { message?: string };
+        addToast({ type: "error", title: json.message ?? "Speichern fehlgeschlagen" });
+      }
     } catch {
-      // Non-critical
+      addToast({ type: "error", title: "Netzwerkfehler" });
     }
     setSavingAutoReload(false);
   }
@@ -148,14 +165,60 @@ export function CreditCard() {
         a.download = `ai-costs-per-case-${new Date().toISOString().slice(0, 10)}.csv`;
         a.click();
         URL.revokeObjectURL(url);
+      } else {
+        addToast({ type: "error", title: "Export fehlgeschlagen" });
       }
     } catch {
-      // Non-critical
+      addToast({ type: "error", title: "Netzwerkfehler beim Export" });
     }
   }
 
-  if (loading) return null;
-  if (!data) return null;
+  if (loading) {
+    return (
+      <Card>
+        <div className="space-y-5 p-6">
+          <div className="flex items-center gap-2.5">
+            <Coins size={18} className="brand-text animate-pulse" aria-hidden />
+            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              {t("billing.credits_title") || "Credits"}
+            </h2>
+          </div>
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-16 animate-pulse rounded-md bg-[color:var(--ds-border)]" />
+            ))}
+          </div>
+        </div>
+      </Card>
+    );
+  }
+  if (!data) {
+    return (
+      <Card>
+        <div className="space-y-4 p-6">
+          <div className="flex items-center gap-2.5">
+            <Coins size={18} className="brand-text" aria-hidden />
+            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              {t("billing.credits_title") || "Credits"}
+            </h2>
+          </div>
+          <div className="flex flex-col items-center gap-3 py-8 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--ds-border)]">
+              <Coins size={20} className="text-[color:var(--ds-text-muted)]" aria-hidden />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-[color:var(--ds-text)]">
+                Credits nicht verfügbar
+              </p>
+              <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                Billing ist noch nicht konfiguriert.
+              </p>
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   const { balance, transactions, creditPacks, creditCosts } = data;
   const lowBalance = balance.balance <= 5;
@@ -185,6 +248,49 @@ export function CreditCard() {
             </span>
           </div>
         </div>
+
+        {/* Credit breakdown: included + purchased - used = available */}
+        {(balance.includedCredit > 0 || balance.purchasedCredit > 0) && (
+          <div className="grid grid-cols-3 gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+            <div className="text-center">
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("billing.credits_included") || "Inklusiv"}
+              </p>
+              <p className="text-lg font-semibold text-[color:var(--ds-text)]">
+                {balance.includedCredit}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("billing.credits_purchased") || "Gekauft"}
+              </p>
+              <p className="text-lg font-semibold text-[color:var(--ds-text)]">
+                {balance.purchasedCredit}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("billing.credits_used") || "Verbraucht"}
+              </p>
+              <p className="text-lg font-semibold text-[color:var(--ds-text)]">
+                {balance.usedCredit}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Overage warning */}
+        {balance.overage > 0 && (
+          <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3">
+            <TrendingDown size={14} className="text-[color:var(--ds-warning-text)]" />
+            <p className="text-xs text-[color:var(--ds-warning-text)]">
+              {(
+                t("billing.overage_notice") ||
+                "Überplan-Nutzung: {overage} Credits über dem Inklusiv-Kontingent — wird am Periodenende abgerechnet."
+              ).replace("{overage}", String(balance.overage))}
+            </p>
+          </div>
+        )}
 
         {/* Low balance warning */}
         {lowBalance && (
@@ -381,6 +487,12 @@ export function CreditCard() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+        {showHistory && transactions.length === 0 && (
+          <div className="flex flex-col items-center gap-2 py-6 text-center">
+            <History size={24} className="text-[color:var(--ds-text-muted)]" aria-hidden />
+            <p className="text-xs text-[color:var(--ds-text-muted)]">Noch keine Transaktionen.</p>
           </div>
         )}
 

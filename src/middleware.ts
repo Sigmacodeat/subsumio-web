@@ -12,6 +12,7 @@ import { verifySessionCore, SESSION_COOKIE } from "@/lib/auth/session-core";
 import { generateCsrfToken, CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf";
 import { env } from "@/lib/env";
 import { hasValidInternalSecret } from "@/lib/auth/internal";
+import { TAXUMIO_HOSTS } from "@/lib/brand";
 
 // --- CSP nonce generation ---
 function generateCspNonce(): string {
@@ -57,6 +58,9 @@ const APP_HOSTS = new Set(
     .map((host) => host.trim().toLowerCase())
     .filter(Boolean)
 );
+
+// Taxumio-branded hosts (taxum.io, taxumio.com, …) — resolve to /taxumio
+const TAXUMIO_HOSTS_SET = new Set(TAXUMIO_HOSTS.map((h) => h.toLowerCase()));
 
 // --- IP Allow-listing (G8: Enterprise Security) ---
 // When SUBSUMIO_IP_ALLOWLIST is set, only requests from these IPs/CIDRs
@@ -187,6 +191,11 @@ export async function middleware(req: NextRequest) {
 
   function applyCsp(response: NextResponse): NextResponse {
     response.headers.set("Content-Security-Policy", cspHeader);
+    // Other security headers (X-Frame-Options, X-Content-Type-Options,
+    // Referrer-Policy, Permissions-Policy, HSTS, COOP, COEP) are set
+    // globally in next.config.ts headers() — they apply to all routes
+    // and overwrite any middleware-set values. Only CSP needs per-request
+    // nonce generation, so it's the only header set here.
     return response;
   }
 
@@ -209,6 +218,16 @@ export async function middleware(req: NextRequest) {
     const dashboard = req.nextUrl.clone();
     dashboard.pathname = "/dashboard";
     return applyCsp(NextResponse.redirect(dashboard));
+  }
+
+  // --- Taxumio host routing: taxum.io / taxumio.com → /taxumio ---
+  // When a Taxumio-branded host is detected, rewrite the root path to the
+  // Taxumio landing page. Other paths (e.g. /dashboard, /api) pass through
+  // unchanged so the shared platform core works on both domains.
+  if (TAXUMIO_HOSTS_SET.has(host) && pathname === "/") {
+    const taxumio = req.nextUrl.clone();
+    taxumio.pathname = "/taxumio";
+    return applyCsp(NextResponse.rewrite(taxumio));
   }
 
   // --- Canonical domain: redirect /de/ and /de to / (DE is default, no prefix) ---

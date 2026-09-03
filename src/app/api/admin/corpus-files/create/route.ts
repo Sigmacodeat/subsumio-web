@@ -24,6 +24,15 @@ export const POST = createHandler(
   {
     action: "admin.*",
     body: bodySchema,
+    audit: (ctx, body) => ({
+      action: "corpus.file_create" as const,
+      entityType: "corpus_file",
+      entityId: body.path,
+      details: {
+        doc_class: body.frontmatter.doc_class,
+        created_by: ctx.user.email,
+      },
+    }),
   },
   async (ctx, body) => {
     // Validate path — BUG 41: vorher nur at-/at/, jetzt alle Jurisdiktionen.

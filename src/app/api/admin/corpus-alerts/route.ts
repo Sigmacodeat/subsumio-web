@@ -43,6 +43,11 @@ export const GET = createHandler(
 export const POST = createHandler(
   {
     action: "admin.*",
+    audit: (_ctx, _body) => ({
+      action: "corpus_alerts.mark_read" as const,
+      entityType: "corpus_alert",
+      details: { scope: "all" },
+    }),
   },
   async () => {
     const marked = await markAllCorpusDeltaNotificationsRead();

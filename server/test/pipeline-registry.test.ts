@@ -173,7 +173,21 @@ describe("Pipeline Layer Registry", () => {
     expect(optional.length).toBeGreaterThan(0);
     expect(optional).toContain("doc-classifier");
     expect(optional).toContain("precedent-matcher");
+    expect(optional).toContain("completeness-check");
     expect(optional).not.toContain("forensic-analyst");
+  });
+
+  it("completeness-check layer is registered with correct properties", () => {
+    const layer = getLayerDeclaration("completeness-check");
+    expect(layer).toBeDefined();
+    expect(layer!.id).toBe("completeness-check");
+    expect(layer!.layerNumber).toBe(0);
+    expect(layer!.mandatory).toBe(false);
+    expect(layer!.failurePolicy).toBe("continue");
+    expect(layer!.risk).toBe("low");
+    expect(layer!.specialist).toBeUndefined();
+    expect(layer!.outputs).toContain("completeness_verdict");
+    expect(layer!.outputs).toContain("missing_documents");
   });
 
   it("mandatory + optional = all layers", () => {

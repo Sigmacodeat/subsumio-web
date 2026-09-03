@@ -6,12 +6,13 @@ import {
   extractZustellungsdatum,
   type DetectedDeadline,
 } from "@/lib/ai-deadline-detect";
-import { berechneFristAuto } from "@/lib/legal/frist-engine";
 
 describe("frist-engine integration in ai-deadline-detect", () => {
   describe("extractZustellungsdatum", () => {
     test("extracts DD.MM.YYYY format", () => {
-      expect(extractZustellungsdatum("Das Urteil wurde zugestellt am 15.03.2024.")).toBe("2024-03-15");
+      expect(extractZustellungsdatum("Das Urteil wurde zugestellt am 15.03.2024.")).toBe(
+        "2024-03-15"
+      );
     });
 
     test("extracts ISO format", () => {
@@ -32,7 +33,8 @@ describe("frist-engine integration in ai-deadline-detect", () => {
   });
 
   describe("enrichDetectedDeadline — Berufung", () => {
-    const text = "Das Urteil des Landesgerichts Linz wurde zugestellt am 15.07.2024. Berufungsfrist vier Wochen.";
+    const text =
+      "Das Urteil des Landesgerichts Linz wurde zugestellt am 15.07.2024. Berufungsfrist vier Wochen.";
 
     test("detects Berufung and enriches with frist-engine", () => {
       const detected = detectDeadlines(text);
@@ -58,7 +60,9 @@ describe("frist-engine integration in ai-deadline-detect", () => {
       // So: 2024-08-12 + 33 days = 2024-09-14
       // 2024-09-14 is Saturday → shifted to 2024-09-16 (Monday) per § 126 Abs 2 ZPO
       expect(enriched.fristResult!.fristende).toBe("2024-09-16");
-      expect(enriched.fristResult!.hinweise.some((h) => h.includes("verhandlungsfreie"))).toBe(true);
+      expect(enriched.fristResult!.hinweise.some((h) => h.includes("verhandlungsfreie"))).toBe(
+        true
+      );
     });
 
     test("Berufungsfrist outside vhfZ is 4 weeks", () => {
@@ -69,7 +73,9 @@ describe("frist-engine integration in ai-deadline-detect", () => {
 
       // 4 weeks from 2024-03-15 = 2024-04-12 (Friday, no shift needed)
       expect(enriched.fristResult!.fristende).toBe("2024-04-12");
-      expect(enriched.fristResult!.hinweise.some((h) => h.includes("verhandlungsfreie Zeit"))).toBe(false);
+      expect(enriched.fristResult!.hinweise.some((h) => h.includes("verhandlungsfreie Zeit"))).toBe(
+        false
+      );
     });
   });
 
@@ -107,7 +113,9 @@ describe("frist-engine integration in ai-deadline-detect", () => {
       // 3 years from 2024-01-15 = 2027-01-15
       expect(enriched.fristResult!.fristende).toBe("2027-01-15");
       // No End-Tag-Verschiebung for materiellrechtliche Fristen
-      expect(enriched.fristResult!.hinweise.some((h) => h.includes("Materiellrechtliche Frist"))).toBe(true);
+      expect(
+        enriched.fristResult!.hinweise.some((h) => h.includes("Materiellrechtliche Frist"))
+      ).toBe(true);
     });
   });
 

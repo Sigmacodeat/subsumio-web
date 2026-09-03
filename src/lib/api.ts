@@ -793,6 +793,29 @@ export const api = {
       return { redline };
     },
 
+    /** Case investigation: two-phase pipeline (extract facts + 3-agent analysis). */
+    async caseInvestigation(input: {
+      case_slug: string;
+      pruefauftrag?: string;
+      jurisdiction?: "at" | "de" | "ch";
+      incremental?: boolean;
+    }): Promise<{
+      run_id: string;
+      case_slug: string;
+      jurisdiction: string;
+      claims_count: number;
+      contradictions: unknown[];
+      evidence_gaps: unknown[];
+      alternative_hypotheses: unknown[];
+      neutral_questions: unknown[];
+      generated_at: string;
+    }> {
+      return request("/api/legal/case-investigation", {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+    },
+
     /** Contradictions check: cross-check documents in a case for conflicting data. */
     async contradictionsCheck(caseSlug: string): Promise<{
       contradictions: Array<{
@@ -1269,6 +1292,172 @@ export const api = {
           method: "DELETE",
         });
       },
+    },
+
+    /** Generate Berufungsgründe (appeal grounds) for a case. */
+    async berufungsgruende(input: {
+      case_slug: string;
+      analysis?: {
+        summary?: string;
+        recommended?: string;
+        recommendedApproach?: string;
+        risks?: Array<{
+          description: string;
+          probability: "high" | "medium" | "low";
+          impact: "high" | "medium" | "low";
+          mitigation: string;
+        }>;
+        next_steps?: string[];
+        success_probability?: number;
+      };
+      jurisdiction?: "at" | "de" | "ch" | "all";
+      language?: "de" | "en";
+    }): Promise<{
+      gruende: Array<{
+        id: string;
+        titel: string;
+        beschreibung: string;
+        erfolgsprognose: 1 | 2 | 3 | 4 | 5;
+        label: "stark" | "mittel" | "schwach";
+        quelle?: string;
+      }>;
+    }> {
+      return request("/api/legal/berufungsgruende", {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+    },
+
+    /** Persist the new order of Berufungsgründe. */
+    async reorderGruende(input: {
+      case_slug: string;
+      gruende_order: string[];
+    }): Promise<{ success: boolean }> {
+      return request("/api/legal/reorder-gruende", {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+    },
+
+    /** Generate a Schriftsatz (legal brief) with streaming. */
+    async schriftsatz(input: {
+      case_slug: string;
+      document_type?: string;
+      instructions: string;
+      jurisdiction: "at" | "de" | "ch";
+      court?: string;
+      file_number?: string;
+      language?: string;
+      template_slug?: string;
+      onChunk?: (chunk: string) => void;
+    }): Promise<{ content: string }> {
+      const res = await csrfFetch(`${BASE_URL}/api/legal/schriftsatz`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new ApiRequestError(
+          (err as Record<string, unknown>).error?.toString() ?? "schriftsatz_failed",
+          res.status
+        );
+      }
+      let content = "";
+      if (res.body) {
+        await consumeSSEStream(res.body, (data, parsed) => {
+          if (data === "[DONE]") return;
+          if (parsed && typeof parsed.chunk === "string") {
+            content += parsed.chunk;
+            input.onChunk?.(parsed.chunk);
+          } else if (!parsed) {
+            content += data;
+            input.onChunk?.(data);
+          }
+        });
+      }
+      return { content };
+    },
+
+    /** Simulate the opponent on a draft with streaming. */
+    async opponentSimulation(input: {
+      case_slug: string;
+      draft_content: string;
+      selected_gruende: Array<{
+        titel: string;
+        beschreibung: string;
+        erfolgsprognose: number;
+      }>;
+      jurisdiction?: "at" | "de" | "ch" | "all";
+      language?: "de" | "en";
+      onChunk?: (chunk: string) => void;
+    }): Promise<{
+      findings: Array<{
+        argument: string;
+        severity: "kritisch" | "mittel" | "niedrig";
+        gegenargument: string;
+        empfehlung: string;
+      }>;
+      overall_assessment: string;
+      recommended_response: string;
+    }> {
+      const res = await csrfFetch(`${BASE_URL}/api/legal/opponent-simulation`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new ApiRequestError(
+          (err as Record<string, unknown>).error?.toString() ?? "opponent_simulation_failed",
+          res.status
+        );
+      }
+      // Try SSE streaming first, fall back to JSON
+      const ct = res.headers.get("content-type") ?? "";
+      if (ct.includes("text/event-stream") && res.body) {
+        let result: {
+          findings: Array<{
+            argument: string;
+            severity: "kritisch" | "mittel" | "niedrig";
+            gegenargument: string;
+            empfehlung: string;
+          }>;
+          overall_assessment: string;
+          recommended_response: string;
+        } = { findings: [], overall_assessment: "", recommended_response: "" };
+        let streamBuffer = "";
+        await consumeSSEStream(res.body, (data, parsed) => {
+          if (data === "[DONE]") return;
+          if (parsed && typeof parsed.chunk === "string") {
+            streamBuffer += parsed.chunk;
+            input.onChunk?.(parsed.chunk);
+          } else if (parsed && parsed.findings) {
+            result = parsed as typeof result;
+          } else if (!parsed) {
+            streamBuffer += data;
+            input.onChunk?.(data);
+          }
+        });
+        if (result.findings.length === 0 && streamBuffer) {
+          try {
+            result = JSON.parse(streamBuffer) as typeof result;
+          } catch {
+            result.overall_assessment = streamBuffer;
+          }
+        }
+        return result;
+      }
+      return res.json() as Promise<{
+        findings: Array<{
+          argument: string;
+          severity: "kritisch" | "mittel" | "niedrig";
+          gegenargument: string;
+          empfehlung: string;
+        }>;
+        overall_assessment: string;
+        recommended_response: string;
+      }>;
     },
   },
 
@@ -1899,10 +2088,23 @@ export const api = {
       });
     },
 
-    sendText(to: string, message: string): Promise<{ ok: boolean; type: string; sentTo: string }> {
+    sendText(
+      to: string,
+      message: string
+    ): Promise<{ ok: boolean; type: string; sentTo: string; messageId?: string }> {
       return request("/api/whatsapp/send", {
         method: "POST",
         body: JSON.stringify({ to, type: "text", message }),
+      });
+    },
+
+    sendReply(
+      toPhoneHash: string,
+      message: string
+    ): Promise<{ ok: boolean; type: string; sentTo: string; messageId?: string }> {
+      return request("/api/whatsapp/send", {
+        method: "POST",
+        body: JSON.stringify({ to_phone_hash: toPhoneHash, type: "text", message }),
       });
     },
 
@@ -2405,10 +2607,17 @@ export const api = {
   },
 
   onboarding: {
-    get(): Promise<{ onboardingCompletedAt: string | null; industry: string | null; jurisdiction: string | null; progress: import("@/lib/types").OnboardingProgress }> {
+    get(): Promise<{
+      onboardingCompletedAt: string | null;
+      industry: string | null;
+      jurisdiction: string | null;
+      progress: import("@/lib/types").OnboardingProgress;
+    }> {
       return request("/api/onboarding");
     },
-    updateProgress(progress: Partial<import("@/lib/types").OnboardingProgress>): Promise<{ ok: boolean; progress: import("@/lib/types").OnboardingProgress }> {
+    updateProgress(
+      progress: Partial<import("@/lib/types").OnboardingProgress>
+    ): Promise<{ ok: boolean; progress: import("@/lib/types").OnboardingProgress }> {
       return request("/api/onboarding", { method: "PATCH", body: JSON.stringify({ progress }) });
     },
   },

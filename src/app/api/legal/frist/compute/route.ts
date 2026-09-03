@@ -31,6 +31,17 @@ export const POST = createHandler(
     action: "brain.read",
     rateTier: "standard",
     body: computeSchema,
+    audit: (_ctx, body) => ({
+      action: "legal.frist_compute" as const,
+      entityType: "frist",
+      details: {
+        start_date: body.start_date,
+        frist_type: body.frist_type,
+        days: body.days,
+        law: body.law,
+        case_slug: body.case_slug,
+      },
+    }),
   },
   async (ctx, body) => {
     try {

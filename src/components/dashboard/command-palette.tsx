@@ -25,6 +25,11 @@ import {
   Network,
   Database,
   GitCompare,
+  Activity,
+  CheckCircle2,
+  AlertTriangle,
+  Focus,
+  Inbox,
   FileSignature,
   Library,
   Share2,
@@ -126,6 +131,8 @@ const CMD_LABEL_KEYS: Record<string, DashboardKey> = {
   commentaries: "nav.commentaries",
   autonomous: "nav.autonomous",
   "red-team": "nav.red_team",
+  "berufungs-agent": "nav.berufungs_agent",
+  "war-room": "nav.war_room",
   "document-interviews": "nav.document_interviews",
   "court-analytics": "nav.court_analytics",
   "online-booking": "nav.online_booking",
@@ -201,11 +208,13 @@ export function CommandPalette({
     documents: SearchResult[];
   }>({ cases: [], contacts: [], deadlines: [], documents: [] });
   // Value intentionally unused for now — state drives future loading UI.
-  const [_searching, setSearching] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [searchFailures, setSearchFailures] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchRequestIdRef = useRef(0);
   const { reduceMotion, panelTransition, modalInitial, modalAnimate, modalExit } =
     useDashboardMotion();
 
@@ -451,6 +460,71 @@ export function CommandPalette({
       section: t("cmd.section.admin"),
       keywords: "model compare ai models vergleiche benchmark evaluation",
     });
+    // Operations Cockpit — quick access + filter presets
+    cmds.push({
+      id: "operations-cockpit",
+      label: "Operations Cockpit",
+      icon: Activity,
+      href: "/dashboard/operations",
+      section: t("cmd.section.actions"),
+      keywords: "operations cockpit vorgänge work items queue operations",
+    });
+    cmds.push({
+      id: "ops-today",
+      label: "Heutige Vorgänge",
+      icon: CalendarClock,
+      href: "/dashboard/operations?due=today&sort=attention",
+      section: t("cmd.section.actions"),
+      keywords: "heute today fällig due attention tagesvorgänge daily operations",
+    });
+    cmds.push({
+      id: "ops-focus",
+      label: "Fokus — Top 3 Vorgänge",
+      icon: Focus,
+      href: "/dashboard/operations?focus=top3&sort=attention",
+      section: t("cmd.section.actions"),
+      keywords: "fokus focus top3 dringend urgent attention operations",
+    });
+    cmds.push({
+      id: "ops-approvals",
+      label: "Freigaben — Operations",
+      icon: CheckCircle2,
+      href: "/dashboard/operations?kind=approval",
+      section: t("cmd.section.actions"),
+      keywords: "freigaben approvals operations pending review",
+    });
+    cmds.push({
+      id: "ops-failed",
+      label: "Fehlgeschlagene Vorgänge",
+      icon: AlertTriangle,
+      href: "/dashboard/operations?failed=1",
+      section: t("cmd.section.actions"),
+      keywords: "failed fehlgeschlagen error retry operations",
+    });
+    cmds.push({
+      id: "ops-critical",
+      label: "Kritische Vorgänge",
+      icon: AlertTriangle,
+      href: "/dashboard/operations?priority=critical",
+      section: t("cmd.section.actions"),
+      keywords: "critical kritisch urgent wichtig operations",
+    });
+    cmds.push({
+      id: "ops-deadlines",
+      label: "Fristen — nach Datum sortiert",
+      icon: CalendarClock,
+      href: "/dashboard/operations?kind=deadline&sort=due",
+      section: t("cmd.section.actions"),
+      keywords: "fristen deadlines due date sort operations",
+    });
+    cmds.push({
+      id: "ops-communications",
+      label: "Kommunikation — Operations",
+      icon: Inbox,
+      href: "/dashboard/operations?kind=communication",
+      section: t("cmd.section.actions"),
+      keywords: "kommunikation communication inbox messages operations",
+    });
     return cmds;
   }, [navCommands, onToggleTheme, onToggleSidebar, t]);
 
@@ -468,9 +542,11 @@ export function CommandPalette({
   // Federated search: fetch brain pages + cases + contacts + deadlines + documents in parallel
   useEffect(() => {
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    const requestId = ++searchRequestIdRef.current;
     if (!query.trim() || query.trim().length < 2) {
       setSearchResults([]);
       setFedResults({ cases: [], contacts: [], deadlines: [], documents: [] });
+      setSearchFailures(0);
       setSearching(false);
       return;
     }
@@ -485,6 +561,7 @@ export function CommandPalette({
           api.search(q, 5, "deadline"),
           api.search(q, 5, "document"),
         ]);
+        if (requestId !== searchRequestIdRef.current) return;
         setSearchResults(brainRes.status === "fulfilled" ? brainRes.value : []);
         setFedResults({
           cases: casesRes.status === "fulfilled" ? casesRes.value : [],
@@ -492,11 +569,18 @@ export function CommandPalette({
           deadlines: deadlinesRes.status === "fulfilled" ? deadlinesRes.value : [],
           documents: docsRes.status === "fulfilled" ? docsRes.value : [],
         });
+        setSearchFailures(
+          [brainRes, casesRes, contactsRes, deadlinesRes, docsRes].filter(
+            (result) => result.status === "rejected"
+          ).length
+        );
       } catch {
+        if (requestId !== searchRequestIdRef.current) return;
         setSearchResults([]);
         setFedResults({ cases: [], contacts: [], deadlines: [], documents: [] });
+        setSearchFailures(5);
       } finally {
-        setSearching(false);
+        if (requestId === searchRequestIdRef.current) setSearching(false);
       }
     }, 200);
     return () => {
@@ -760,11 +844,26 @@ export function CommandPalette({
                 role="combobox"
                 aria-expanded="true"
                 aria-controls="command-list"
+                aria-activedescendant={
+                  flatList.length > 0 ? `command-option-${activeIndex}` : undefined
+                }
               />
               <kbd className="shrink-0 rounded border border-[color:var(--ds-border)] px-1.5 py-0.5 font-mono text-xs text-[color:var(--ds-text-muted)]">
                 ESC
               </kbd>
             </div>
+            {(searching || searchFailures > 0) && (
+              <div
+                className="flex items-center justify-between border-b border-[color:var(--ds-border)] px-4 py-2 text-xs text-[color:var(--ds-text-muted)]"
+                role="status"
+                aria-live="polite"
+              >
+                <span>{searching ? t("cmd.searching") : t("cmd.search_partial_error")}</span>
+                {!searching && searchFailures > 0 && (
+                  <span className="tabular-nums">{searchFailures}/5</span>
+                )}
+              </div>
+            )}
 
             {/* Results */}
             <div
@@ -804,6 +903,7 @@ export function CommandPalette({
                                   <button
                                     key={cmd.id}
                                     data-idx={idx}
+                                    id={`command-option-${idx}`}
                                     onClick={() => navigate(cmd)}
                                     onMouseEnter={() => setActiveIndex(idx)}
                                     className={cn(
@@ -841,6 +941,7 @@ export function CommandPalette({
                           <button
                             key={`recent-${cmd.id}`}
                             data-idx={idx}
+                            id={`command-option-${idx}`}
                             onClick={() => navigate(cmd)}
                             onMouseEnter={() => setActiveIndex(idx)}
                             className={cn(
@@ -881,6 +982,7 @@ export function CommandPalette({
                           <button
                             key={cmd.id}
                             data-idx={idx}
+                            id={`command-option-${idx}`}
                             onClick={() => navigate(cmd)}
                             onMouseEnter={() => setActiveIndex(idx)}
                             className={cn(

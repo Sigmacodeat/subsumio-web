@@ -31,6 +31,7 @@
 
 import { readFileSync, existsSync, writeFileSync } from "fs";
 import { bootstrapCI, formatCI } from "./stats.ts";
+import { AT_LAW_SOURCES_ALL } from "../core/legal/jurisdiction.ts";
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -160,7 +161,7 @@ function loadFixtures(jurisdictionFilter?: string): AbstentionQuestion[] {
 
 function getSearchOpts(q: AbstentionQuestion, topK: number) {
   const sourceMap: Record<string, { sourceIds: string[]; jurisdiction?: string }> = {
-    at: { sourceIds: ["law-at", "law-eu"], jurisdiction: "at" },
+    at: { sourceIds: AT_LAW_SOURCES_ALL, jurisdiction: "at" },
     de: { sourceIds: ["law-de", "law-eu"], jurisdiction: "de" },
     ch: { sourceIds: ["law-ch", "law-eu"], jurisdiction: "ch" },
     eu: { sourceIds: ["law-eu", "law-de", "law-ch"], jurisdiction: "eu" },

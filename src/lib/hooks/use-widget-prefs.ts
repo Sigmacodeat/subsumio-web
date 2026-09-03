@@ -103,7 +103,7 @@ export function useWidgetPrefs(preset: WidgetPreset = "associate") {
       window.removeEventListener("storage", onChange);
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
-  }, [preset]);
+  }, [preset, presetPrefs]);
 
   const save = useCallback(
     (next: WidgetPref[]) => {
@@ -151,7 +151,7 @@ export function useWidgetPrefs(preset: WidgetPreset = "associate") {
     setPrefs(defaults);
     writeLocal(defaults);
     persistToServer(defaults);
-  }, [persistToServer, preset]);
+  }, [persistToServer, presetPrefs]);
 
   return { prefs, loaded, save, toggleVisible, reorder, reset };
 }

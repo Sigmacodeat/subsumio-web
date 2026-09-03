@@ -590,9 +590,10 @@ export function sourceScopeOpts(ctx: OperationContext): {
  * When sourceIds is set, only results with matching `source_id` pass.
  * When only scalar sourceId is set, only results with matching `source_id` pass.
  */
-export function hardSourceFilter<
-  T extends { source_id?: string },
->(results: T[], ctx: OperationContext): T[] {
+export function hardSourceFilter<T extends { source_id?: string }>(
+  results: T[],
+  ctx: OperationContext
+): T[] {
   const scope = sourceScopeOpts(ctx);
   if (scope.sourceIds) {
     const allowed = new Set(scope.sourceIds);
@@ -831,7 +832,7 @@ function maybeCaptureSearch(
         expansion_applied: false,
       },
       latency_ms,
-      remote: ctx.remote ?? false,
+      remote: ctx.remote !== false,
       expand_enabled: false,
       detail: null,
       job_id: ctx.jobId ?? null,
@@ -1878,7 +1879,8 @@ const search: Operation = {
     },
     as_of: {
       type: "string",
-      description: "Historical legal cutoff (YYYY-MM-DD). Selects statute versions available on that date.",
+      description:
+        "Historical legal cutoff (YYYY-MM-DD). Selects statute versions available on that date.",
     },
     refine_query: {
       type: "boolean",
@@ -2042,7 +2044,8 @@ const query: Operation = {
     },
     as_of: {
       type: "string",
-      description: "Historical legal cutoff (YYYY-MM-DD). Selects statute versions available on that date.",
+      description:
+        "Historical legal cutoff (YYYY-MM-DD). Selects statute versions available on that date.",
     },
     // v0.20.0 Cathedral II Layer 10 C1/C2: language + symbol-kind filters.
     lang: {
@@ -2137,6 +2140,25 @@ const query: Operation = {
       type: "boolean",
       description:
         "v0.43 — relational recall arm. SMART DEFAULT (on in balanced/tokenmax). When the question is about a RELATIONSHIP ('who invested in widget-co', 'who introduced me to alice', 'what connects fund-a and fund-b'), the brain resolves the named entity and walks its typed-edge graph (invested_in, works_at, founded, …), surfacing the answer even when no passage mentions both sides. Pure no-op for non-relational questions. Pass FALSE to force lexical/vector-only retrieval (e.g. debugging why a graph answer appeared). You almost never set this.",
+    },
+    llm_rerank: {
+      type: "boolean",
+      description:
+        "v0.46 — LLM re-ranker for paragraph-level precision. When TRUE, sends query + top chunk snippets to an LLM (default: DeepSeek via OpenRouter) which re-orders by direct legal relevance. Eval: para Hit@1 29%→79% for natural questions. Fail-open: any error returns pre-rerank order. Costs ~$0.0001/query.",
+    },
+    llm_rerank_model: {
+      type: "string",
+      description:
+        "v0.46 — Override the LLM reranker model (default: openrouter:deepseek/deepseek-chat). Format: provider:model. Must be a chat-capable model.",
+    },
+    llm_rerank_top_n_in: {
+      type: "number",
+      description:
+        "v0.46 — How many top results to send to the LLM reranker (default 25). Higher = better recall but more tokens.",
+    },
+    llm_rerank_timeout_ms: {
+      type: "number",
+      description: "v0.46 — Per-call timeout in ms for the LLM reranker (default 15000).",
     },
   },
   handler: async (ctx, p) => {
@@ -2254,6 +2276,27 @@ const query: Operation = {
       // v0.43 — relational recall override. Omitted = smart default (mode bundle).
       relationalRetrieval:
         typeof p.relational === "boolean" ? (p.relational as boolean) : undefined,
+      // v0.46 — LLM re-ranker for paragraph-level precision. When enabled,
+      // sends query + chunk snippets to an LLM (default: DeepSeek via
+      // OpenRouter) and re-orders by LLM-judged relevance. Eval showed
+      // para Hit@1 from 29% → 79% for natural questions.
+      // Fail-open: any error returns pre-LLM-rerank order.
+      llmRerank:
+        typeof p.llm_rerank === "boolean"
+          ? {
+              enabled: p.llm_rerank as boolean,
+              model:
+                typeof p.llm_rerank_model === "string" ? (p.llm_rerank_model as string) : undefined,
+              topNIn:
+                typeof p.llm_rerank_top_n_in === "number"
+                  ? (p.llm_rerank_top_n_in as number)
+                  : undefined,
+              timeoutMs:
+                typeof p.llm_rerank_timeout_ms === "number"
+                  ? (p.llm_rerank_timeout_ms as number)
+                  : undefined,
+            }
+          : undefined,
     });
     const latency_ms = Date.now() - startedAt;
 
@@ -2282,7 +2325,7 @@ const query: Operation = {
           results,
           meta,
           latency_ms,
-          remote: ctx.remote ?? false,
+          remote: ctx.remote !== false,
           expand_enabled: expand,
           detail: detail ?? null,
           job_id: ctx.jobId ?? null,
@@ -6149,6 +6192,37 @@ const legal_deep_analysis: Operation = {
   },
 };
 
+const legal_case_investigation: Operation = {
+  name: "legal_case_investigation",
+  description:
+    "Sachverhaltsprüfung (ZPO § 226/272/274): Two-phase pipeline — Phase 1 extracts fact claims per document (anti-suggestive), Phase 2 runs a 3-agent analysis (Researcher → Auditor → Adversarial) to identify contradictions, evidence gaps, and neutral PEACE-style questions. Every claim grounded with verbatim citations. Returns attorney_review_required: true.",
+  params: {
+    case_slug: { type: "string", required: true, description: "Case slug to investigate" },
+    pruefauftrag: {
+      type: "string",
+      description:
+        "Custom investigation scope (default: identify contradictions between party claims)",
+    },
+    jurisdiction: { type: "string", description: "Jurisdiction code (at, de, ch)" },
+    incremental: {
+      type: "boolean",
+      description: "If true, only analyze new documents since last run",
+    },
+  },
+  scope: "read",
+  handler: async (ctx, p) => {
+    const scope = sourceScopeOpts(ctx);
+    const { caseInvestigation } = await import("./legal/case-investigation.ts");
+    return caseInvestigation(ctx.engine, {
+      case_slug: String(p.case_slug ?? ""),
+      ...(typeof p.pruefauftrag === "string" ? { pruefauftrag: p.pruefauftrag } : {}),
+      jurisdiction: typeof p.jurisdiction === "string" ? p.jurisdiction : "at",
+      incremental: typeof p.incremental === "boolean" ? p.incremental : false,
+      ...scope,
+    });
+  },
+};
+
 const legal_portfolio_insights: Operation = {
   name: "legal_portfolio_insights",
   description:
@@ -7571,6 +7645,7 @@ export const operations: Operation[] = [
   legal_document_review,
   legal_summarize,
   legal_deep_analysis,
+  legal_case_investigation,
   legal_portfolio_insights,
   legal_memo,
   legal_risk_analysis,

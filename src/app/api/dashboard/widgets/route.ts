@@ -7,7 +7,7 @@ import { env } from "@/lib/env";
 import { createSchemaInit } from "@/lib/schema-init";
 
 const widgetSchema = z.object({
-  id: z.string(),
+  id: z.string().max(200),
   type: z.string().optional(),
   visible: z.boolean(),
   order: z.number(),
@@ -69,6 +69,11 @@ export const POST = createHandler(
     action: "settings.write",
     rateTier: "standard",
     body: widgetsPostSchema,
+    audit: (ctx, body) => ({
+      action: "settings.update" as const,
+      entityType: "widget_prefs",
+      details: { user: ctx.user.email, count: body.widgets.length },
+    }),
   },
   async (ctx, body, _query, _req) => {
     const pool = getSharedPgPool();

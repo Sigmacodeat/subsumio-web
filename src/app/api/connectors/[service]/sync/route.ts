@@ -1,6 +1,5 @@
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
-import { logAudit } from "@/lib/audit";
 import { getConnectorByEngineService } from "@/lib/connector-coverage";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +9,15 @@ export const POST = createHandler(
   {
     action: "connector.write",
     rateTier: "heavy",
+    audit: (ctx, _body, _query, req) => {
+      const service = req ? new URL(req.url).pathname.split("/")[3] : undefined;
+      return {
+        action: "connector.sync" as const,
+        entityType: "connector",
+        entityId: service,
+        details: { service, by: ctx.user.email },
+      };
+    },
   },
   async (ctx, _body, _query, req) => {
     const { service } = await (req as unknown as { params: Promise<{ service: string }> }).params;
@@ -28,10 +36,6 @@ export const POST = createHandler(
         return apiError("service_unavailable", "Sync fehlgeschlagen", 503);
       }
       const result = await res.json();
-      void logAudit("connector.sync", "connector", {
-        entityId: service,
-        details: { service, by: ctx.user.email },
-      });
       return Response.json(result);
     } catch (err) {
       console.error("[connector/sync] failed:", err instanceof Error ? err.message : String(err));

@@ -82,7 +82,7 @@ export default function VersionHistoryPage() {
     } finally {
       setLoading(false);
     }
-  }, [slug]);
+  }, [slug, t]);
 
   const currentVersion =
     typeof page?.frontmatter?.version === "number" ? page.frontmatter.version : undefined;

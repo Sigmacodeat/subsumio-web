@@ -50,6 +50,15 @@ export const POST = createHandler(
     body: analyzeSchema,
     maxDuration: 120,
     allowInternal: true,
+    audit: (_ctx, body) => ({
+      action: "tax.analyze" as const,
+      entityType: "document",
+      entityId: body.document_slug,
+      details: {
+        jurisdiction: body.jurisdiction,
+        source: body.document_slug ? "document_slug" : "inline_text",
+      },
+    }),
   },
   async (ctx, body, _query, _req) => {
     const isInternal = ctx.brainId === "internal";

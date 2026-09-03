@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import type { BrainPage } from "@/lib/types";
 import { useLang } from "@/lib/use-lang";
+import { useToast } from "@/components/ui/toast";
 import type { DashboardKey } from "@/content/dashboard";
 
 interface ChatMessage {
@@ -37,9 +38,23 @@ function str(val: unknown): string {
   return typeof val === "string" ? val : "";
 }
 
+function deliveryLabel(status: string | undefined): string | null {
+  if (!status) return null;
+  const labels: Record<string, string> = {
+    submitted: "Übermittelt",
+    sent: "Gesendet",
+    delivered: "Zugestellt",
+    read: "Gelesen",
+    failed: "Fehlgeschlagen",
+  };
+  return labels[status] ?? status;
+}
+
 export function WhatsAppInbox() {
   const { t } = useLang();
+  const { addToast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedHash, setSelectedHash] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -48,6 +63,7 @@ export function WhatsAppInbox() {
 
   const loadMessages = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const [inbound, outbound] = await Promise.all([
         api.brain.listPages({ type: "chat_inbox", limit: 200 }),
@@ -69,7 +85,7 @@ export function WhatsAppInbox() {
           slug: p.slug,
           direction: "outbound" as const,
           content: p.content || "",
-          timestamp: str(fm(p).sent_at) || p.created_at || "",
+          timestamp: str(fm(p).sent_at) || str(fm(p).status_timestamp) || p.created_at || "",
           messageType: str(fm(p).message_type) || "text",
           status: str(fm(p).status),
           intent: str(fm(p).intent),
@@ -119,8 +135,10 @@ export function WhatsAppInbox() {
       );
 
       setConversations(sorted);
-    } catch {
-      // Non-blocking
+    } catch (error) {
+      setLoadError(
+        error instanceof Error ? error.message : "Nachrichten konnten nicht geladen werden."
+      );
     } finally {
       setLoading(false);
     }
@@ -128,6 +146,8 @@ export function WhatsAppInbox() {
 
   useEffect(() => {
     void loadMessages();
+    const interval = window.setInterval(() => void loadMessages(), 30_000);
+    return () => window.clearInterval(interval);
   }, [loadMessages]);
 
   const filteredConversations = useMemo(() => {
@@ -149,37 +169,58 @@ export function WhatsAppInbox() {
     if (!replyText.trim() || !selectedConversation) return;
     setSending(true);
     try {
-      // Send via proactive message API
+      const message = replyText.trim().slice(0, 3900);
+      const result = await api.whatsapp.sendReply(selectedConversation.senderHash, message);
       await api.brain.createPage({
-        slug: `legal/chat/whatsapp-outbox/manual-${Date.now()}`,
-        title: `WhatsApp Reply manuell`,
+        slug: `legal/chat/whatsapp-outbox/${result.messageId || `manual-${Date.now()}`}`,
+        title: "WhatsApp-Antwort manuell",
         type: "chat_outbox",
-        content: replyText.slice(0, 3900),
+        content: message,
         frontmatter: {
           type: "chat_outbox",
           provider: "whatsapp",
           to_phone_hash: selectedConversation.senderHash,
+          message_id: result.messageId,
           direction: "outbound",
           message_type: "text",
           sent_at: new Date().toISOString(),
-          status: "sent",
+          status: "submitted",
           intent: "manual_reply",
         },
       });
 
       setReplyText("");
+      addToast({ type: "success", title: "WhatsApp-Nachricht versendet" });
       await loadMessages();
-    } catch {
-      // Non-blocking
+    } catch (error) {
+      addToast({
+        type: "error",
+        title: "WhatsApp-Nachricht konnte nicht versendet werden",
+        description: error instanceof Error ? error.message : undefined,
+      });
     } finally {
       setSending(false);
     }
-  }, [replyText, selectedConversation, loadMessages]);
+  }, [addToast, replyText, selectedConversation, loadMessages]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
         <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center gap-3 py-12 text-center"
+        role="alert"
+      >
+        <p className="text-sm text-[color:var(--ds-danger-text)]">{loadError}</p>
+        <Button variant="outline" onClick={() => void loadMessages()}>
+          {t("common.retry" as DashboardKey)}
+        </Button>
       </div>
     );
   }
@@ -251,6 +292,18 @@ export function WhatsAppInbox() {
                       month: "2-digit",
                     })}
                   </span>
+                  {msg.status && msg.direction === "outbound" && (
+                    <Badge
+                      variant="default"
+                      className={
+                        msg.status === "failed"
+                          ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]"
+                          : "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
+                      }
+                    >
+                      {deliveryLabel(msg.status)}
+                    </Badge>
+                  )}
                   {msg.intent && msg.intent !== "manual_reply" && (
                     <Badge variant="default" className="text-xs opacity-70">
                       {msg.intent}

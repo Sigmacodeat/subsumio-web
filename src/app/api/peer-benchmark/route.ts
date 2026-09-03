@@ -19,8 +19,8 @@ const exportSchema = z.object({
   total_cases: z.number().min(0),
   won_cases: z.number().min(0),
   durations: z.array(z.number().min(0)),
-  period_from: z.string(),
-  period_to: z.string(),
+  period_from: z.string().max(20),
+  period_to: z.string().max(20),
 });
 
 export const POST = createHandler(

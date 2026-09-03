@@ -6,7 +6,7 @@ import { env } from "@/lib/env";
 import { z } from "zod";
 
 const verifySchema = z.object({
-  token: z.string(),
+  token: z.string().max(500),
 });
 
 export const GET = createPublicHandler(

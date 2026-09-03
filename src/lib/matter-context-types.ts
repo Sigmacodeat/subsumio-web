@@ -106,8 +106,28 @@ export interface MatterFactEntry {
   date?: string;
   superseded_by?: string;
   contradicts?: string[];
-  review_status?: "pending" | "approved" | "party_assertion" | "corrected";
+  review_status?:
+    | "pending"
+    | "approved"
+    | "party_assertion"
+    | "corrected"
+    | "dismissed"
+    | "no_contradiction";
   original_statement?: string;
+  // ── Case Investigation Erweiterung (rückwärtskompatibel) ──
+  speaker_entity?: string;
+  source_page?: number;
+  source_span?: string;
+  exact_quote?: string;
+  perception_type?: "eigen" | "mitgeteilt" | "schluss" | "unbekannt";
+  beweis_anforderung?: "vollbeweis" | "glaubhaftmachung" | "offen";
+  on_norm_ref?: string;
+  extraction_confidence?: number; // 0..1
+  provenance?: {
+    extractor_version: string;
+    extracted_at: string;
+    content_hash: string;
+  };
 }
 
 export interface MatterKnowledgeReview {
@@ -377,4 +397,115 @@ export interface MatterUnderstandingPanel {
   /** Whether the engine was reachable for this assessment. */
   engine_reachable: boolean;
   generated_at: string;
+}
+
+// ── Case Investigation: Sachverhaltsprüfung ───────────────────────────
+//
+// Recherchefundiert (ACL 2026 LegalGraphRAG, magelegal 6-Layer, parthac.me
+// Production-Architektur, PleadProof, ConflictRAG, W3C PROV, NIST AI RMF,
+// College of Policing PEACE, NCSC Hallucination Guide, RIS § 226/272/274 ZPO).
+// Siehe docs/blueprints/CASE-INVESTIGATION.md.
+
+export type CaseInvestigationContradictionCategory =
+  | "direkt"
+  | "zeitlich"
+  | "räumlich"
+  | "identität"
+  | "mengen"
+  | "kausal"
+  | "semantisch"
+  | "dokumentarisch"
+  | "aussageentwicklung"
+  | "rechtlich";
+
+export type CaseInvestigationSeverity = "niedrig" | "mittel" | "hoch";
+
+export type CaseInvestigationMateriality = "nicht_erkennbar" | "möglicherweise" | "zentral";
+
+export interface CaseInvestigationContradiction {
+  id: string;
+  case_slug: string;
+  claim_a_id: string;
+  claim_b_id: string;
+  category: CaseInvestigationContradictionCategory;
+  severity: CaseInvestigationSeverity;
+  materiality: CaseInvestigationMateriality;
+  is_direct: boolean;
+  alternative_explanations: string[];
+  belastende_interpretation: string;
+  entlastende_interpretation: string;
+  resolution_questions: string[];
+  zpo_relevanz?: string;
+  audit_verified: boolean;
+  audit_confidence?: number; // 0..1
+  review_status?: "pending" | "accepted" | "dismissed" | "no_contradiction";
+  review_reason?: string;
+  reviewed_at?: string;
+}
+
+export interface CaseInvestigationEvidenceGap {
+  id: string;
+  case_slug: string;
+  beschreibung: string;
+  fehlendes_beweismittel: string;
+  erwartete_quelle: string;
+  beweisbedeutung: string;
+}
+
+export interface CaseInvestigationHypothesis {
+  id: string;
+  case_slug: string;
+  beschreibung: string;
+  stuetzende_indizien: string[];
+  gegen_indizien: string[];
+}
+
+export interface CaseInvestigationQuestion {
+  id: string;
+  case_slug: string;
+  ziel_person: string;
+  einstiegsfrage: string;
+  praezisierungsfragen: string[];
+  konfrontationsfrage?: string;
+  beweisbedeutung: string;
+}
+
+export interface CaseInvestigationResult {
+  run_id: string;
+  case_slug: string;
+  jurisdiction: "at" | "de" | "ch";
+  pruefauftrag: string;
+  rechtlicher_rahmen: {
+    zpo_vorschriften: string[];
+    verfahrensschritt: string;
+  };
+  claims_count: number;
+  contradictions: CaseInvestigationContradiction[];
+  evidence_gaps: CaseInvestigationEvidenceGap[];
+  alternative_hypotheses: CaseInvestigationHypothesis[];
+  neutral_questions: CaseInvestigationQuestion[];
+  pruefbedarf_hinweis: string;
+  generated_at: string;
+  engine_reachable: boolean;
+}
+
+// ── Copilot-Empfehlung (proaktiv) ─────────────────────────────────────
+
+export interface CaseInvestigationSuggestionIndicators {
+  has_opposing_parties: boolean;
+  known_contradictions: number;
+  ready_documents: number;
+  has_gaps: boolean;
+  has_communication: boolean;
+}
+
+export interface CaseInvestigationSuggestion {
+  suggest: boolean;
+  reason: string;
+  urgency: "low" | "medium" | "high";
+  indicators: CaseInvestigationSuggestionIndicators;
+  estimated_credits: number;
+  estimated_duration_seconds: number;
+  case_slug: string;
+  case_title: string;
 }

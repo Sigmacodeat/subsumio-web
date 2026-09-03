@@ -11,6 +11,14 @@ export const POST = createHandler(
     action: "brain.read",
     rateTier: "standard",
     body: batchSchema,
+    audit: (_ctx, body) => ({
+      action: "pages.batch_read" as const,
+      entityType: "page",
+      details: {
+        slug_count: body.slugs.length,
+        slug_sample: body.slugs.slice(0, 5),
+      },
+    }),
   },
   async (ctx, body) => {
     const results: Record<string, unknown> = {};

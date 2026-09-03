@@ -20,6 +20,7 @@ import {
   MoreHorizontal,
   StickyNote,
   Phone,
+  Scale,
 } from "lucide-react";
 import {
   useMatterData,
@@ -42,6 +43,7 @@ const TAB_ICONS: Record<MatterTab, typeof FileText> = {
   contacts: Users,
   notes: StickyNote,
   "phone-notes": Phone,
+  investigation: Scale,
 };
 
 const TAB_LABELS_DE: Record<MatterTab, string> = {
@@ -55,6 +57,7 @@ const TAB_LABELS_DE: Record<MatterTab, string> = {
   contacts: "Kontakte",
   notes: "Notizen",
   "phone-notes": "Telefon",
+  investigation: "Sachverhalt",
 };
 
 const TAB_LABELS_EN: Record<MatterTab, string> = {
@@ -68,6 +71,7 @@ const TAB_LABELS_EN: Record<MatterTab, string> = {
   contacts: "Contacts",
   notes: "Notes",
   "phone-notes": "Phone",
+  investigation: "Investigation",
 };
 
 export function MatterTabBar() {

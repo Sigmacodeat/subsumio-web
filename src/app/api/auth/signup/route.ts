@@ -14,8 +14,14 @@ import { z } from "zod";
 
 // Extended schema with trimmed email and name for internal validation
 const signupSchemaInternal = signupSchema.extend({
-  email: z.string().transform((val) => val.trim().toLowerCase()),
-  name: z.string().transform((val) => val.trim()),
+  email: z
+    .string()
+    .max(320)
+    .transform((val) => val.trim().toLowerCase()),
+  name: z
+    .string()
+    .max(200)
+    .transform((val) => val.trim()),
 });
 
 export const POST = createPublicHandler(

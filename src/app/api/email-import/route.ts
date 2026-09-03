@@ -22,6 +22,17 @@ export const POST = createHandler(
     action: "brain.write",
     rateTier: "heavy",
     body: emailImportSchema,
+    audit: (_ctx, body) => ({
+      action: "email.import" as const,
+      entityType: "email_import",
+      details: {
+        has_message_id: Boolean(body.message_id),
+        has_in_reply_to: Boolean(body.in_reply_to),
+        has_references: Boolean(body.references),
+        forced_case_slug: body.force_case_slug,
+        has_date: Boolean(body.date),
+      },
+    }),
   },
   async (ctx, body, _query, _req) => {
     try {

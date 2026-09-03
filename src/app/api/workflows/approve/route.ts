@@ -7,8 +7,8 @@ import { z } from "zod";
 export const dynamic = "force-dynamic";
 
 const approvalSchema = z.object({
-  workflowSlug: z.string(),
-  stepId: z.string(),
+  workflowSlug: z.string().max(200),
+  stepId: z.string().max(200),
   action: z.enum(["approve", "reject"]),
   comment: z.string().optional(),
 });

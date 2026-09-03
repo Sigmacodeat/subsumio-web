@@ -67,6 +67,19 @@ export const POST = createHandler(
     action: "legal.judgements",
     rateTier: "standard",
     body: importSchema,
+    audit: (_ctx, body) => ({
+      action: "legal.judgements_import" as const,
+      entityType: "judgement",
+      details: {
+        action: body.action,
+        maxPages: body.maxPages,
+        pageSize: body.pageSize,
+        batchSize: body.batchSize,
+        maxItems: body.maxItems,
+        fetchDetails: body.fetchDetails,
+        hasDateAfter: Boolean(body.dateAfter),
+      },
+    }),
   },
   async (_ctx, body, _query, _req) => {
     const pool = getSharedPgPool();

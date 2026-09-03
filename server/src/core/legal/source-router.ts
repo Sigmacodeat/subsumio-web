@@ -18,7 +18,12 @@
  *   Sub-Queries mit source_type + jurisdiction + as_of_date
  */
 
-import { LEGAL_SOURCE_BY_JURISDICTION, type LegalJurisdiction } from "./jurisdiction.ts";
+import {
+  LEGAL_SOURCE_BY_JURISDICTION,
+  AT_LAW_SOURCES_STATUTES,
+  AT_LAW_SOURCES_JUDIKATUR,
+  type LegalJurisdiction,
+} from "./jurisdiction.ts";
 
 // ── Source Types ──────────────────────────────────────────────────────
 
@@ -55,11 +60,21 @@ export function sourceTypeToIds(
 
   switch (sourceType) {
     case "statute":
+      // v0.46: AT statutes are in granular sources (law-at-normen, etc.)
+      // because the 148.198 AT norms were imported via batch-import-from-disk
+      // under granular source IDs, not under the legacy "law-at" source
+      // (which has 0 pages). Returning only "law-at" would search an empty
+      // source — a critical bug that returned no AT statutes.
+      if (jur === "at") {
+        return AT_LAW_SOURCES_STATUTES;
+      }
       return lawSource ? [lawSource] : [];
 
     case "judgement":
-      // AT has a separate judikatur source
-      if (jur === "at") return ["law-at-judikatur"];
+      // AT has separate judikatur sources per court
+      if (jur === "at") {
+        return AT_LAW_SOURCES_JUDIKATUR;
+      }
       // DE/CH judgements are in the main law source for now
       return lawSource ? [lawSource] : [];
 
@@ -79,7 +94,11 @@ export function sourceTypeToIds(
     default: {
       const ids = new Set<string>();
       if (lawSource) ids.add(lawSource);
-      if (jur === "at") ids.add("law-at-judikatur");
+      if (jur === "at") {
+        // v0.46: include all granular AT sources for "all" queries
+        for (const sid of AT_LAW_SOURCES_STATUTES) ids.add(sid);
+        for (const sid of AT_LAW_SOURCES_JUDIKATUR) ids.add(sid);
+      }
       // EU law always included for DACH
       ids.add("law-eu");
       if (ownSourceId) ids.add(ownSourceId);

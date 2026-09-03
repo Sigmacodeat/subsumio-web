@@ -50,11 +50,11 @@ export function softwareApplicationLd(lang: Lang) {
       {
         "@type": "Offer",
         name: "Solo",
-        price: "179",
+        price: "249",
         priceCurrency: "EUR",
         priceSpecification: {
           "@type": "UnitPriceSpecification",
-          price: "179",
+          price: "249",
           priceCurrency: "EUR",
           unitText: lang === "en" ? "per seat per month" : "pro Nutzer und Monat",
         },
@@ -69,16 +69,18 @@ export function verticalSoftwareApplicationLd(opts: {
   description: string;
   url: string;
   price?: string;
+  category?: string;
+  basedOn?: string;
 }) {
   return {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     name: opts.name,
-    applicationCategory: "LegalService",
+    applicationCategory: opts.category ?? "LegalService",
     operatingSystem: "Web, Self-hosted",
     url: opts.url.startsWith("http") ? opts.url : `${BASE}${opts.url}`,
     description: opts.description,
-    isBasedOn: { "@type": "SoftwareApplication", name: "Subsumio", url: BASE },
+    isBasedOn: { "@type": "SoftwareApplication", name: opts.basedOn ?? "Subsumio", url: BASE },
     ...(opts.price
       ? { offers: { "@type": "Offer", price: opts.price, priceCurrency: "EUR" } }
       : {}),

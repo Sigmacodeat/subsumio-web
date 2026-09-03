@@ -51,6 +51,15 @@ export const POST = createHandler(
     action: "legal.rvg",
     rateTier: "standard",
     body: bodySchema,
+    audit: (_ctx, body) => ({
+      action: "legal.rvg" as const,
+      entityType: "pkh_form",
+      details: {
+        means_test: !!body.means_test,
+        beratungshilfe: !!body.beratungshilfe,
+        pkh_form: !!body.pkh_form,
+      },
+    }),
   },
   async (_ctx, body) => {
     const result: {

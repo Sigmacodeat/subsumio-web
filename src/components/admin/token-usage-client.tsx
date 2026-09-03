@@ -18,20 +18,18 @@ import {
   TrendingUp,
   Users,
   Zap,
-  Database,
   Gauge,
   Coins,
   Calendar,
   Download,
   Trophy,
-  Activity,
   ChevronRight,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
-import { apiGet, ApiGetError } from "@/lib/queries/settings";
+import { apiGet } from "@/lib/queries/settings";
 import { getModelById } from "@/lib/model-config";
 import { cn } from "@/lib/utils";
 

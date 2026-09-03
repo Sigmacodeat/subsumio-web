@@ -21,6 +21,21 @@ export const POST = createHandler(
     action: "brain.write",
     rateTier: "heavy",
     body: batchSchema,
+    audit: (_ctx, body) => ({
+      action: "legal.batch_pipeline" as const,
+      entityType: "pipeline",
+      details: {
+        case_count: body.case_slugs.length,
+        case_slugs: body.case_slugs,
+        parallel: body.parallel,
+        has_overrides: Boolean(body.manual_overrides),
+        override_keys: body.manual_overrides
+          ? Object.keys(body.manual_overrides).filter(
+              (k) => body.manual_overrides?.[k as keyof typeof body.manual_overrides] !== undefined
+            )
+          : [],
+      },
+    }),
   },
   async (ctx, body) => {
     const headers = await engineHeaders();
@@ -72,6 +87,10 @@ export const POST = createHandler(
             const triggerPayload: Record<string, unknown> = {
               case_slug: caseSlug,
               part_slugs: partSlugs,
+              // Billing context: owner_id is org_id if user has org, else user.id.
+              owner_id: ctx.user.orgId ?? ctx.user.id,
+              owner_type: ctx.user.orgId ? "org" : "user",
+              user_id: ctx.user.id,
             };
 
             if (body.manual_overrides) {

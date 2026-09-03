@@ -8,7 +8,7 @@
  *  - Sync-Status Tabelle mit Fehlt-Spalte und Aktualisieren-Button
  *  - API-Unreachable wird als Fehler gerendert
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { CorpusCommandCenter } from "./corpus-command-center";
@@ -21,9 +21,7 @@ function withQueryClient(ui: React.ReactElement) {
       queries: { retry: false, gcTime: 0, staleTime: 0 },
     },
   });
-  return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
-  );
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 }
 
 const MOCK_DATA = {
@@ -316,7 +314,9 @@ describe("CorpusCommandCenter: Filter-Dropdown (alle/unvollständig/vollständig
       expect(screen.getByText("law-at")).toBeInTheDocument();
     });
     // Select-Trigger ist vorhanden
-    expect(screen.getByRole("combobox", { name: /Corpus-Vollständigkeit filtern/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: /Corpus-Vollständigkeit filtern/i })
+    ).toBeInTheDocument();
   });
 
   it("filtert default auf 'Unvollständig' — zeigt nur nicht-fullyComplete Rows", async () => {

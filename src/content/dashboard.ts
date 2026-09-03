@@ -176,6 +176,7 @@ export const D = {
   "nav.templates": { de: "Vorlagen", en: "Templates" },
   "nav.litigation": { de: "Prozessführung", en: "Litigation" },
   "nav.review_queue": { de: "Review-Warteschlange", en: "Review Queue" },
+  "nav.operations_cockpit": { de: "Operations-Cockpit", en: "Operations Cockpit" },
   "nav.version_history": { de: "Versionshistorie", en: "Version History" },
   "nav.monitoring": { de: "Monitoring", en: "Monitoring" },
   "nav.compliance_export": { de: "Compliance-Audit", en: "Compliance Audit" },
@@ -186,6 +187,7 @@ export const D = {
   "nav.feedback_triage": { de: "Feedback-Triage", en: "Feedback Triage" },
   "nav.guardrails": { de: "Guardrails", en: "Guardrails" },
   "nav.rag_optimizer": { de: "RAG-Optimizer", en: "RAG Optimizer" },
+  "nav.eval_review": { de: "Eval-Fixture-Review", en: "Eval Fixture Review" },
 
   // ── Sidebar: nav items (drafts & billing) ──
   "nav.drafting": { de: "Schriftsatz", en: "Drafting" },
@@ -1065,7 +1067,7 @@ export const D = {
 
   // ── Sidebar: UI strings ──
   "sidebar.brand": { de: "Subsumio", en: "Subsumio" },
-  "sidebar.brand_tax": { de: "Subsumio Tax", en: "Subsumio Tax" },
+  "sidebar.brand_tax": { de: "Taxumio", en: "Taxumio" },
   "sidebar.brain_status": { de: "Wissensbasis", en: "Knowledge base" },
   "sidebar.active": { de: "Aktiv", en: "Active" },
   "sidebar.pages_entities": { de: "Seiten", en: "pages" },
@@ -1179,6 +1181,10 @@ export const D = {
   "topbar.filter_system": { de: "System", en: "System" },
   "topbar.close": { de: "Schließen", en: "Close" },
   "topbar.no_notifications": { de: "Keine neuen Benachrichtigungen", en: "No new notifications" },
+  "topbar.notifications_error": {
+    de: "Benachrichtigungen konnten nicht geladen werden.",
+    en: "Notifications could not be loaded.",
+  },
   "topbar.mark_read": { de: "Als gelesen markieren", en: "Mark as read" },
   "topbar.user_menu": { de: "Benutzermenü", en: "User menu" },
   "topbar.open_menu": { de: "Menü öffnen", en: "Open menu" },
@@ -2778,6 +2784,8 @@ export const D = {
   // ── Sidebar: additional nav items ──
   "nav.playbooks": { de: "Playbooks", en: "Playbooks" },
   "nav.process_strategy": { de: "Prozessstrategie", en: "Process Strategy" },
+  "nav.berufungs_agent": { de: "Berufungs-Agent", en: "Appeals Agent" },
+  "nav.war_room": { de: "Perspektivenraum", en: "War Room" },
   "nav.ai_model": { de: "KI-Modell", en: "AI Model" },
   "nav.memory": { de: "Gedächtnis", en: "Memory" },
   "nav.tooltip.memory": {
@@ -2802,6 +2810,14 @@ export const D = {
     en: "Search pages or run actions…",
   },
   "cmd.search_aria": { de: "Command Palette Suche", en: "Command Palette search" },
+  "cmd.searching": {
+    de: "Suche in Akten, Dokumenten und Fristen …",
+    en: "Searching cases, documents and deadlines …",
+  },
+  "cmd.search_partial_error": {
+    de: "Einige Suchbereiche sind derzeit nicht verfügbar.",
+    en: "Some search areas are currently unavailable.",
+  },
   "cmd.no_results": { de: "Keine Treffer für", en: "No results for" },
   "cmd.recent": { de: "Zuletzt verwendet", en: "Recently used" },
   "cmd.navigate": { de: "navigieren", en: "navigate" },
@@ -4558,6 +4574,13 @@ export const D = {
   },
   "billing.credits_title": { de: "Credits", en: "Credits" },
   "billing.credits_remaining": { de: "Credits verfügbar", en: "credits available" },
+  "billing.credits_included": { de: "Inklusiv", en: "Included" },
+  "billing.credits_purchased": { de: "Gekauft", en: "Purchased" },
+  "billing.credits_used": { de: "Verbraucht", en: "Used" },
+  "billing.overage_notice": {
+    de: "Überplan-Nutzung: {overage} Credits über dem Inklusiv-Kontingent — wird am Periodenende abgerechnet.",
+    en: "Overage: {overage} credits above the included quota — will be billed at period end.",
+  },
   "billing.low_credits": {
     de: "Wenige Credits übrig — kaufe ein Paket, um KI-Funktionen weiter zu nutzen.",
     en: "Few credits remaining — buy a pack to continue using AI features.",
@@ -8963,6 +8986,7 @@ export const D = {
   "common.cancel": { de: "Abbrechen", en: "Cancel" },
   "common.close": { de: "Schließen", en: "Close" },
   "common.error": { de: "Fehler", en: "Error" },
+  "common.retry": { de: "Erneut versuchen", en: "Retry" },
   "common.save": { de: "Speichern", en: "Save" },
   "common.delete": { de: "Löschen", en: "Delete" },
   "mattertab.notes": { de: "Notizen", en: "Notes" },
@@ -9636,7 +9660,10 @@ export const D = {
   "poa.scope_label": { de: "Akte", en: "Case" },
   "poa.expires_label": { de: "Ablauf", en: "Expires" },
   "poa.btn_pdf": { de: "PDF", en: "PDF" },
-  "poa.btn_pdf_aria": { de: "Vollmacht als PDF generieren", en: "Generate power of attorney as PDF" },
+  "poa.btn_pdf_aria": {
+    de: "Vollmacht als PDF generieren",
+    en: "Generate power of attorney as PDF",
+  },
   "poa.btn_sign": { de: "Unterschreiben", en: "Sign" },
   "poa.btn_sign_aria": { de: "Vollmacht unterschreiben", en: "Sign power of attorney" },
   "poa.pdf_generated": { de: "PDF generiert", en: "PDF generated" },
@@ -10565,6 +10592,163 @@ export const D = {
     en: "Hello {{1}}, your appointment on {{2}}...",
   },
   "reviewsets.ph_name": { de: "Review-Set Q3 2026", en: "Review Set Q3 2026" },
+
+  // ── Perspektivenraum (war-room) ──
+  "perspektiven.title": { de: "Perspektivenraum", en: "Perspective Room" },
+  "perspektiven.description": {
+    de: "Analysiere einen Fall aus verschiedenen Richtern-, Gegner- und Mandanten-Perspektiven.",
+    en: "Analyze a case from different judge, opponent, and client perspectives.",
+  },
+  "perspektiven.role.richter": { de: "Richter", en: "Judge" },
+  "perspektiven.role.gegenanwalt": { de: "Gegneranwalt", en: "Opposing Counsel" },
+  "perspektiven.role.mandant": { de: "Mandant", en: "Client" },
+  "perspektiven.role.geschworene": { de: "Geschworene", en: "Jury" },
+  "perspektiven.case_slug": { de: "Akte auswählen", en: "Select case" },
+  "perspektiven.err_load": { de: "Fehler beim Laden der Akten", en: "Error loading cases" },
+  "perspektiven.err_required": { de: "Bitte eine Akte auswählen", en: "Please select a case" },
+  "perspektiven.ok_analyze": { de: "Analyse gestartet", en: "Analysis started" },
+  "perspektiven.err_analyze": { de: "Analyse fehlgeschlagen", en: "Analysis failed" },
+  "perspektiven.new": { de: "Neue Perspektive", en: "New perspective" },
+  "perspektiven.dial_evidence": { de: "Beweislage", en: "Evidence" },
+  "perspektiven.dial_evidence_schwach": { de: "Schwach", en: "Weak" },
+  "perspektiven.dial_evidence_neutral": { de: "Neutral", en: "Neutral" },
+  "perspektiven.dial_evidence_stark": { de: "Stark", en: "Strong" },
+  "perspektiven.dial_posture": { de: "Verhandlungshaltung", en: "Negotiation posture" },
+  "perspektiven.dial_posture_kompromissbereit": {
+    de: "Kompromissbereit",
+    en: "Willing to compromise",
+  },
+  "perspektiven.dial_posture_hart": { de: "Hart", en: "Hard" },
+  "perspektiven.dial_time": { de: "Zeithorizont", en: "Time horizon" },
+  "perspektiven.dial_time_entspannt": { de: "Entspannt", en: "Relaxed" },
+  "perspektiven.dial_time_eng": { de: "Eng", en: "Tight" },
+  "perspektiven.analyzing": { de: "Analysiere…", en: "Analyzing…" },
+  "perspektiven.submit": { de: "Perspektive generieren", en: "Generate perspective" },
+  "perspektiven.empty": {
+    de: "Noch keine Perspektiven generiert.",
+    en: "No perspectives generated yet.",
+  },
+
+  // ── Decision Records ──
+  "decision_records.title": { de: "Entscheidungs-Register", en: "Decision Records" },
+  "decision_records.search_placeholder": {
+    de: "Suche nach Aktenzeichen, Gericht, Titel…",
+    en: "Search by file number, court, title…",
+  },
+  "decision_records.error_loading": {
+    de: "Fehler beim Laden der Entscheidungen.",
+    en: "Error loading decisions.",
+  },
+  "decision_records.empty": { de: "Keine Entscheidungen gefunden.", en: "No decisions found." },
+  "decision_records.initial": {
+    de: "Geben Sie einen Suchbegriff ein, um zu starten.",
+    en: "Enter a search term to get started.",
+  },
+  "decision_records.records_found": { de: "Entscheidungen gefunden", en: "decisions found" },
+
+  // ── Billing balance ──
+  "billing.balance_label": { de: "Guthaben", en: "Credit balance" },
+  "billing.balance_tooltip": {
+    de: "Ihr aktuelles KI-Credit-Guthaben",
+    en: "Your current AI credit balance",
+  },
+
+  // ── Act Analysis (berufungs-agent) ──
+  "act_analysis.step_title": { de: "Aktenanalyse", en: "Case analysis" },
+  "act_analysis.step_desc": {
+    de: "Analysiere die Akte und identifiziere Berufungsgründe.",
+    en: "Analyze the case and identify appeal grounds.",
+  },
+  "act_analysis.select_case": { de: "Akte auswählen", en: "Select case" },
+  "act_analysis.loading_cases": { de: "Lade Akten…", en: "Loading cases…" },
+  "act_analysis.analyze": { de: "Akten analysieren", en: "Analyze case" },
+  "act_analysis.analyzing": { de: "Analysiere…", en: "Analyzing…" },
+  "act_analysis.next": { de: "Weiter zu Berufungsgründen", en: "Continue to appeal grounds" },
+
+  // ── Berufungs-Agent: Opponent ──
+  "berufung.opponent.title": { de: "Gegner-Simulation", en: "Opponent simulation" },
+  "berufung.opponent.desc": {
+    de: "Simuliere den Gegner und finde Schwachstellen.",
+    en: "Simulate the opponent and find weaknesses.",
+  },
+  "berufung.opponent.no_draft": { de: "Kein Entwurf vorhanden", en: "No draft available" },
+  "berufung.opponent.no_draft_desc": {
+    de: "Bitte zuerst einen Entwurf im vorherigen Schritt erstellen.",
+    en: "Please create a draft in the previous step first.",
+  },
+  "berufung.opponent.intro": {
+    de: "Simuliere den Gegner zu deinem Entwurf.",
+    en: "Simulate the opponent on your draft.",
+  },
+  "berufung.opponent.start": { de: "Gegner-Simulation starten", en: "Start opponent simulation" },
+  "berufung.opponent.running": { de: "Simulation läuft…", en: "Simulation running…" },
+  "berufung.opponent.failed": { de: "Simulation fehlgeschlagen", en: "Simulation failed" },
+  "berufung.opponent.retry": { de: "Erneut versuchen", en: "Retry" },
+  "berufung.opponent.overall": { de: "Gesamtbewertung", en: "Overall assessment" },
+  "berufung.opponent.weaknesses": { de: "Schwachstellen", en: "Weaknesses" },
+  "berufung.opponent.resimulate": { de: "Neu simulieren", en: "Re-simulate" },
+  "berufung.opponent.severity.kritisch": { de: "Kritisch", en: "Critical" },
+  "berufung.opponent.severity.mittel": { de: "Mittel", en: "Medium" },
+  "berufung.opponent.severity.niedrig": { de: "Niedrig", en: "Low" },
+  "berufung.opponent.counterarg": { de: "Gegenargument", en: "Counter-argument" },
+  "berufung.opponent.recommendation": { de: "Empfehlung", en: "Recommendation" },
+  "berufung.opponent.strategy": { de: "Strategie-Empfehlung", en: "Strategy recommendation" },
+  "berufung.opponent.back": { de: "Zurück", en: "Back" },
+  "berufung.opponent.next": { de: "Weiter zum Export", en: "Continue to export" },
+  "berufung.opponent.toast_done": {
+    de: "Gegner-Simulation abgeschlossen",
+    en: "Opponent simulation completed",
+  },
+  "berufung.opponent.toast_weaknesses": { de: "Schwachstellen gefunden", en: "Weaknesses found" },
+
+  // ── Export (berufungs-agent) ──
+  "export.step_title": { de: "Export", en: "Export" },
+  "export.step_desc": {
+    de: "Exportiere den Entwurf als DOCX oder speichere im Brain.",
+    en: "Export the draft as DOCX or save to the brain.",
+  },
+  "export.summary": { de: "Zusammenfassung", en: "Summary" },
+  "export.docx_title": { de: "Als DOCX exportieren", en: "Export as DOCX" },
+  "export.brain_page": { de: "Im Brain speichern", en: "Save to brain" },
+
+  // ── Stepper (berufungs-agent) ──
+  "stepper.aria_nav": { de: "Schrittnavigation", en: "Step navigation" },
+  "stepper.aria_step": { de: "Schritt", en: "Step" },
+
+  // ── Blog ──
+  "blog.index_title": { de: "Blog", en: "Blog" },
+  "blog.index_sub": {
+    de: "Analysen, Updates und Rechtsprechung aus dem KI-Recht",
+    en: "Analyses, updates and case law from AI law",
+  },
+  "blog.read_minutes": { de: "Min. Lesezeit", en: "min read" },
+  "blog.back_to_overview": { de: "Zurück zur Übersicht", en: "Back to overview" },
+
+  // ── City pages ──
+  "city.breadcrumb.cities": { de: "Städte", en: "Cities" },
+  "city.jurisdiction": { de: "Rechtsraum", en: "Jurisdiction" },
+  "city.courts": { de: "Gerichte", en: "Courts" },
+  "city.features_for": { de: "Funktionen für", en: "Features for" },
+  "city.faq": { de: "Häufige Fragen", en: "FAQ" },
+  "city.cta_title": { de: "Bereit loszulegen?", en: "Ready to get started?" },
+  "city.cta_and_everywhere": { de: "— und überall in DACH", en: "— and everywhere in DACH" },
+  "city.cta_desc": {
+    de: "Testen Sie Subsumio 30 Tage kostenlos.",
+    en: "Try Subsumio free for 30 days.",
+  },
+  "city.cta_btn": { de: "Kostenlos starten", en: "Get started free" },
+  "city.link.pricing": { de: "Preise", en: "Pricing" },
+  "city.link.features": { de: "Funktionen", en: "Features" },
+  "city.link.security": { de: "Sicherheit", en: "Security" },
+  "city.link.blog": { de: "Blog", en: "Blog" },
+
+  // ── Corpus File Browser ──
+  "cfb.selected": { de: "ausgewählt", en: "selected" },
+  "cfb.set_status": { de: "Status setzen:", en: "Set status:" },
+  "cfb.bulk_edit": { de: "Bulk-Edit", en: "Bulk edit" },
+
+  // ── Sheet (UI) ──
+  "sheet.aria_close": { de: "Schließen", en: "Close" },
 } satisfies Record<string, BiString>;
 
 export type DashboardKey = keyof typeof D;

@@ -23,6 +23,16 @@ export const POST = createHandler(
   {
     action: "admin.*",
     body: bodySchema,
+    audit: (ctx, body) => ({
+      action: "corpus_files.flag" as const,
+      entityType: "corpus_file",
+      details: {
+        flag: body.flag,
+        path: body.path ?? null,
+        pathsCount: body.paths?.length ?? null,
+        user: ctx.user.email,
+      },
+    }),
   },
   async (ctx, body) => {
     const flag = body.flag as QualityFlag;
@@ -48,5 +58,5 @@ export const POST = createHandler(
     }
 
     return apiError("validation_failed", "Either 'path' or 'paths' is required", 400);
-  },
+  }
 );

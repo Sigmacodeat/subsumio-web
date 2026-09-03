@@ -112,6 +112,9 @@ export interface HandlerOptions<
   skipCsrf?: boolean;
   /** Whether this is a public route (no auth required). */
   public?: boolean;
+  /** Whether this route requires admin role (ctx.user.role === "admin").
+   * Also automatically enforced when action starts with "admin". */
+  admin?: boolean;
   /** Whether to allow internal service calls via x-internal-secret header (skips auth/CSRF). */
   allowInternal?: boolean;
   /** Whether to add CORS headers for cross-origin access (portal, webhooks). */
@@ -378,7 +381,23 @@ export function createHandler<
       }
     }
 
-    // 3. CSRF (state-changing methods only, skip for internal, API key, and custom auth)
+    // 3. RBAC: admin-only enforcement.
+    // If action starts with "admin" OR options.admin is true,
+    // require ctx.user.role === "admin". This prevents any
+    // authenticated non-admin user from accessing /api/admin/* routes.
+    // Pre-fix: createHandler only checked auth (session/API-key) but
+    // never checked the user's role — so any logged-in user could
+    // access admin endpoints (feature flags, corpus files, backups, etc.).
+    const isAdminAction = options.admin === true || options.action.startsWith("admin");
+    if (isAdminAction && ctx.user?.role !== "admin") {
+      return withCorsHeaders(
+        apiError("forbidden", "Admin access required", 403),
+        options.cors ?? false,
+        req
+      );
+    }
+
+    // 4. CSRF (state-changing methods only, skip for internal, API key, and custom auth)
     if (!internalContext && !isApiKeyAuth && !customContext) {
       const csrfError = checkCsrf(req, options.skipCsrf ?? false);
       if (csrfError) return withCorsHeaders(csrfError, options.cors ?? false, req);
@@ -392,6 +411,19 @@ export function createHandler<
       const result = await parseAndValidateBody(options.body, req);
       if ("error" in result) return withCorsHeaders(result.error, options.cors ?? false, req);
       body = result.data as ValidatedBody<B>;
+    } else if (!options.body && isStateChanging(req.method)) {
+      // CRITICAL FIX: parse the raw JSON body even when no Zod schema is
+      // provided. Pre-fix, `body` stayed `undefined` and handlers that did
+      // `(body ?? {}) as { ... }` got an empty object — the request body
+      // was silently dropped. This broke 26+ POST routes (copilot/explain,
+      // copilot/plan, admin/dr, admin/feedback-triage, etc.) which accepted
+      // body data but never received it.
+      try {
+        body = (await req.json()) as ValidatedBody<B>;
+      } catch {
+        // Body is not JSON (e.g. empty, form-encoded, or binary) — leave as undefined
+        // Handlers that need body data should provide a Zod schema.
+      }
     }
 
     if (options.query && req.method === "GET") {

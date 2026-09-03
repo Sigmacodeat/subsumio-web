@@ -34,6 +34,19 @@ export const POST = createHandler(
     action: "admin.*",
     rateTier: "standard",
     body: reviewSchema,
+    audit: (_ctx, body) => ({
+      action: "human_review.submit" as const,
+      entityType: "review_feedback",
+      details: {
+        source_endpoint: body.source_endpoint,
+        verdict: body.verdict,
+        category: body.category,
+        jurisdiction: body.jurisdiction,
+        has_comment: Boolean(body.comment),
+        flagged_citations_count: body.flagged_citations?.length ?? 0,
+        has_suggested_correction: Boolean(body.suggested_correction),
+      },
+    }),
   },
   async (ctx, body, _query, _req) => {
     try {
@@ -65,6 +78,10 @@ export const GET = createHandler(
   {
     action: "admin.*",
     rateTier: "standard",
+    audit: (_ctx, _body, _query, _req) => ({
+      action: "human_review.summary" as const,
+      entityType: "review_feedback",
+    }),
   },
   async (ctx, _body, _query, _req) => {
     try {

@@ -20,8 +20,8 @@ const VALID_PHASES = [
 ] as const;
 
 const findingSchema = z.object({
-  id: z.string(),
-  issue: z.string(),
+  id: z.string().max(200),
+  issue: z.string().max(10000),
   amount: z.number().nullable().optional(),
   accepted: z.boolean().optional(),
   resolvedAt: z.string().nullable().optional(),

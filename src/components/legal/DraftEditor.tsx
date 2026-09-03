@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Save,
   Download,
@@ -61,6 +62,7 @@ export function DraftEditor({
   onSaved,
 }: DraftEditorProps) {
   const { addToast } = useToast();
+  const qc = useQueryClient();
   const [mode, setMode] = useState<EditorMode>("view");
   const [content, setContent] = useState(draft.content);
   const [saving, setSaving] = useState(false);
@@ -90,6 +92,7 @@ export function DraftEditor({
           frontmatter: {
             status: "reviewed",
             attorney_reviewed_at: new Date().toISOString(),
+            manually_edited: true,
           },
           merge: true,
         }),
@@ -103,6 +106,12 @@ export function DraftEditor({
         description: "Die Änderungen wurden übernommen.",
         duration: 3000,
       });
+      // G26 fix: invalidate React Query caches so other views don't show
+      // stale content. Pre-fix, only onSaved?.() was called and the page
+      // query + case query were never invalidated.
+      qc.invalidateQueries({ queryKey: ["brain", "page", draft.slug] });
+      qc.invalidateQueries({ queryKey: ["brain", "pages"] });
+      if (caseSlug) qc.invalidateQueries({ queryKey: ["legal", "case", caseSlug] });
       onSaved?.();
     } catch (err) {
       addToast({
@@ -114,7 +123,7 @@ export function DraftEditor({
     } finally {
       setSaving(false);
     }
-  }, [content, draft.slug, addToast, onSaved]);
+  }, [content, draft.slug, caseSlug, addToast, qc, onSaved]);
 
   const handleExportPdf = useCallback(async () => {
     setExporting(true);
@@ -370,7 +379,7 @@ export function DraftEditor({
                   value={emailTo}
                   onChange={(e) => setEmailTo(e.target.value)}
                   placeholder="empfaenger@gericht.gv.at"
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-3 py-2 text-base sm:text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-3 py-2 text-base text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 sm:text-sm"
                 />
                 {recipientName && !emailTo && recipientEmail && (
                   <button

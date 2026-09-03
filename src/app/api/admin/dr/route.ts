@@ -1,5 +1,11 @@
-import { createHandler } from "@/lib/api-handler";
+import { z } from "zod";
+import { createHandler, apiSuccess } from "@/lib/api-handler";
 import { getDRStatus, getBackupTargets } from "@/lib/dr-client";
+
+const drPostSchema = z.object({
+  action: z.enum(["create_backup", "run_drill", "restore"]),
+  simulate: z.boolean().optional(),
+});
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -37,23 +43,18 @@ export const POST = createHandler(
   {
     action: "admin.*",
     cacheMaxAge: 0,
-    audit: (_ctx, _body) => ({
+    body: drPostSchema,
+    audit: (_ctx, body) => ({
       action: "admin.dr" as const,
       entityType: "dr",
-      details: { action: "dr_action" },
+      details: { action: (body as { action?: string })?.action ?? "dr_action" },
     }),
   },
-  async (_ctx, body, _query, req) => {
-    let parsedBody: Record<string, unknown> = {};
-    try {
-      parsedBody = await req.json();
-    } catch {
-      // empty body is fine
-    }
-    const action = parsedBody?.action as string | undefined;
+  async (_ctx, body) => {
+    const { action } = body as { action: string; simulate?: boolean };
 
     // Server-side actions require the engine module — return info response
-    return Response.json({
+    return apiSuccess({
       success: false,
       error: `Action "${action}" requires engine-side execution. Use the server CLI or engine API directly.`,
       hint: "The Next.js API route provides read-only DR status. Backup creation, drills, and restores are orchestrated via the engine process.",

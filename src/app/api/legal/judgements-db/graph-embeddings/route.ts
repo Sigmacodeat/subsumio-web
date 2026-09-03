@@ -30,6 +30,11 @@ export const GET = createHandler(
     rateTier: "standard",
     query: graphSchema,
     cacheMaxAge: 30,
+    audit: (_ctx, _body, query) => ({
+      action: "judgements.search" as const,
+      entityType: "graph_embeddings",
+      details: { action: query.action },
+    }),
   },
   async (_ctx, _body, query, _req) => {
     const pool = getSharedPgPool();
@@ -58,6 +63,16 @@ export const POST = createHandler(
     action: "legal.judgements",
     rateTier: "standard",
     body: graphSchema,
+    audit: (_ctx, body) => ({
+      action: "legal.judgements_sync" as const,
+      entityType: "graph_embeddings",
+      details: {
+        action: body.action,
+        hops: body.hops,
+        sampleSize: body.sampleSize,
+        batchSize: body.batchSize,
+      },
+    }),
   },
   async (_ctx, body, _query, _req) => {
     const pool = getSharedPgPool();

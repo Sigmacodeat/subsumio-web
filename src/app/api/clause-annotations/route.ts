@@ -105,6 +105,17 @@ export const POST = createHandler(
     action: "brain.write",
     rateTier: "standard",
     body: postSchema,
+    audit: (_ctx, body) => ({
+      action: "legal.clause_annotation" as const,
+      entityType: "clause_annotation",
+      details: {
+        contract_slug: body.contract_slug,
+        clause_type: body.clause_type,
+        clause_title: body.clause_title,
+        risk_level: body.risk_level,
+        playbook_rule_id: body.playbook_rule_id,
+      },
+    }),
   },
   async (ctx, body, _query, _req) => {
     try {
@@ -178,6 +189,14 @@ export const PATCH = createHandler(
     action: "brain.write",
     rateTier: "standard",
     body: patchSchema,
+    audit: (_ctx, body) => ({
+      action: "legal.clause_annotation_review" as const,
+      entityType: "clause_annotation",
+      entityId: body.slug,
+      details: {
+        status: body.status,
+      },
+    }),
   },
   async (ctx, body, _query, _req) => {
     try {

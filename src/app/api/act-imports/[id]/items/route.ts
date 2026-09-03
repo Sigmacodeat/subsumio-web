@@ -63,7 +63,25 @@ export const GET = createHandler(
 );
 
 export const POST = createHandler(
-  { action: "brain.write", rateTier: "heavy", body: itemSchema },
+  {
+    action: "brain.write",
+    rateTier: "heavy",
+    body: itemSchema,
+    audit: (_ctx, body) => ({
+      action: "act_import.item_upsert" as const,
+      entityType: "act_import_item",
+      details: {
+        item_id: body.item_id,
+        case_slug: body.case_slug,
+        filename: body.filename,
+        size: body.size,
+        mime_type: body.mime_type,
+        status: body.status,
+        page_count: body.page_count ?? 0,
+        has_sha256: Boolean(body.sha256),
+      },
+    }),
+  },
   async (ctx, body, _query, req) => {
     const sessionId = await routeId(req);
     const itemId = safeImportId(body.item_id);

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -70,37 +70,58 @@ describe("T2.2 Subsumption Case Audit", () => {
   });
 
   it("AT cases use AT law slugs (with alias resolution)", () => {
-    const AT_ALIASES: Record<string, string> = { stgb: "stgb-at", zpo: "zpo-at" };
+    // AT laws live in law-corpus/at-normen/{slug}/ (directories with .md files inside),
+    // not as law-corpus/at/{slug}.md like DE. The stgb/zpo aliases map to their
+    // at-normen directory names (which are the same slugs — no -at suffix needed).
+    const AT_ALIASES: Record<string, string> = { stgb: "stgb", zpo: "zpo" };
     for (const c of atCases) {
       const resolved = AT_ALIASES[c.expected_law] ?? c.expected_law;
-      expect(existsSync(join(REPO_ROOT, "law-corpus", "at", `${resolved}.md`))).toBe(true);
+      // AT laws are directories under at-normen/, not .md files under at/
+      const dirPath = join(REPO_ROOT, "law-corpus", "at-normen", resolved);
+      const mdPath = join(REPO_ROOT, "law-corpus", "at", `${resolved}.md`);
+      expect(existsSync(dirPath) || existsSync(mdPath)).toBe(true);
     }
   });
 
-  it("expected_section exists in the referenced law corpus file (excluding known errors)", () => {
-    const KNOWN_ERRORS = new Set([
-      "sub-at-019",
-      "sub-at-025",
-      "sub-at-031",
-      "sub-at-035",
-      "sub-at-036",
-      "sub-at-038",
-      "sub-at-040",
-      "sub-at-041",
-    ]);
-    const AT_ALIASES: Record<string, string> = { stgb: "stgb-at", zpo: "zpo-at" };
-    for (const c of [...deCases, ...atCases]) {
-      if (KNOWN_ERRORS.has(c.case_id)) continue;
-      const resolved =
-        c.jurisdiction === "at" ? (AT_ALIASES[c.expected_law] ?? c.expected_law) : c.expected_law;
-      const corpusPath = join(REPO_ROOT, "law-corpus", c.jurisdiction, `${resolved}.md`);
-      if (!existsSync(corpusPath)) continue;
-      const corpusText = readFileSync(corpusPath, "utf-8");
-      const sectionNum = c.expected_section.replace(/§\s*/, "");
-      const pattern = new RegExp(`§\\s*${sectionNum}`, "i");
-      expect(pattern.test(corpusText)).toBe(true);
+  it(
+    "expected_section exists in the referenced law corpus file (excluding known errors)",
+    { timeout: 30_000 },
+    () => {
+      const KNOWN_ERRORS = new Set([
+        "sub-at-019",
+        "sub-at-025",
+        "sub-at-031",
+        "sub-at-035",
+        "sub-at-036",
+        "sub-at-038",
+        "sub-at-040",
+        "sub-at-041",
+      ]);
+      const AT_ALIASES: Record<string, string> = { stgb: "stgb", zpo: "zpo" };
+      for (const c of [...deCases, ...atCases]) {
+        if (KNOWN_ERRORS.has(c.case_id)) continue;
+        const resolved =
+          c.jurisdiction === "at" ? (AT_ALIASES[c.expected_law] ?? c.expected_law) : c.expected_law;
+        // AT laws live in at-normen/{slug}/ directories; DE laws are .md files under de/
+        const corpusPath =
+          c.jurisdiction === "at"
+            ? join(REPO_ROOT, "law-corpus", "at-normen", resolved)
+            : join(REPO_ROOT, "law-corpus", c.jurisdiction, `${resolved}.md`);
+        if (!existsSync(corpusPath)) continue;
+        // For AT (directory), read all .md files and search for the section
+        let corpusText: string;
+        if (c.jurisdiction === "at") {
+          const files = readdirSync(corpusPath).filter((f) => f.endsWith(".md"));
+          corpusText = files.map((f) => readFileSync(join(corpusPath, f), "utf-8")).join("\n");
+        } else {
+          corpusText = readFileSync(corpusPath, "utf-8");
+        }
+        const sectionNum = c.expected_section.replace(/§\s*/, "");
+        const pattern = new RegExp(`§\\s*${sectionNum}`, "i");
+        expect(pattern.test(corpusText)).toBe(true);
+      }
     }
-  });
+  );
 
   it("expected_conclusion references expected_section", () => {
     for (const c of [...deCases, ...atCases]) {

@@ -241,7 +241,7 @@ const _solutionsDe = {
       },
       {
         q: "Kann ich mir das als Einzelanwalt leisten?",
-        a: "Solo kostet 179 €/Monat und ist monatlich kündbar. Ein Nutzer, eigene Akten und belegte Dokumentanalyse sind enthalten; Massen-Ingest und Team-Administration beginnen im Kanzlei-Tarif.",
+        a: "Solo kostet 249 €/Monat und ist monatlich kündbar. Ein Nutzer, eigene Akten und belegte Dokumentanalyse sind enthalten; Massen-Ingest und Team-Administration beginnen im Kanzlei-Tarif.",
       },
       {
         q: "Was, wenn ich später wachse?",
@@ -400,7 +400,7 @@ const _solutionsDe = {
       },
       {
         q: "Was kostet das für eine mittelständische Kanzlei?",
-        a: "Der Kanzlei-Tarif kostet 999 €/Monat, ist monatlich kündbar und enthält fünf Nutzer. Massen-Ingest, geteiltes Kanzleiwissen, Rollen und WhatsApp-Workflows sind enthalten.",
+        a: "Der Kanzlei-Tarif kostet 1.499 €/Monat, ist monatlich kündbar und enthält fünf Nutzer. Massen-Ingest, geteiltes Kanzleiwissen, Rollen und WhatsApp-Workflows sind enthalten.",
       },
       {
         q: "Können wir klein anfangen und wachsen?",
@@ -573,7 +573,7 @@ const _enSolutions: Record<SolutionSlug, SolutionContent> = {
       },
       {
         q: "Can I afford this as a solo?",
-        a: "Solo is €179/month and can be canceled monthly. It includes one user, own matters and cited document analysis; bulk ingestion and team administration start with Firm.",
+        a: "Solo is €249/month and can be canceled monthly. It includes one user, own matters and cited document analysis; bulk ingestion and team administration start with Firm.",
       },
       {
         q: "What if I grow into a firm later?",
@@ -730,7 +730,7 @@ const _enSolutions: Record<SolutionSlug, SolutionContent> = {
       },
       {
         q: "What's the pricing for a mid-sized firm?",
-        a: "Firm is €999/month, can be canceled monthly and includes five users. Bulk ingestion, shared firm knowledge, roles and WhatsApp workflows are included.",
+        a: "Firm is €1.499/month, can be canceled monthly and includes five users. Bulk ingestion, shared firm knowledge, roles and WhatsApp workflows are included.",
       },
       {
         q: "Can we start small and scale?",

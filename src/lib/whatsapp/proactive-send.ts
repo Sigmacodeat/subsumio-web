@@ -49,25 +49,37 @@ export interface ProactiveSendResult {
   messageId?: string;
 }
 
-export async function sendProactiveMessage(
-  params: ProactiveSendParams
+interface GuardedSendParams {
+  to: string;
+  brainId: string;
+  scope: OutboundScope;
+  messageKind: "freeform" | "template";
+  send: () => Promise<{ messageId: string }>;
+  urgent?: boolean;
+  quietHours?: QuietHours;
+  now?: Date;
+}
+
+/**
+ * Applies the outbound compliance gate to every WhatsApp payload type.
+ * Non-template payloads are only allowed inside the 24-hour service window.
+ */
+export async function sendGuardedWhatsAppMessage(
+  params: GuardedSendParams
 ): Promise<ProactiveSendResult> {
   const normalized = normalizePhone(params.to);
   const hash = phoneHash(normalized);
   const now = params.now ?? new Date();
-
   const [lastInboundAt, consented] = await Promise.all([
     getWhatsAppWindowStore().getLastInbound(hash),
     hasActiveConsent(getWhatsAppConsentStore(), hash, params.scope),
   ]);
-
-  const messageKind = params.template ? "template" : "freeform";
   const decision = evaluateOutbound({
     now,
     lastInboundAt,
     hasConsent: consented,
     scope: params.scope,
-    messageKind,
+    messageKind: params.messageKind,
     urgent: params.urgent,
     quietHours: params.quietHours,
   });
@@ -80,45 +92,38 @@ export async function sendProactiveMessage(
     return { sent: false, decision };
   }
 
-  // Send: template is mandatory outside the window; inside it, prefer free-form.
-  let messageId = "";
-  if (decision.mustUseTemplate || (!params.freeform && params.template)) {
-    if (!params.template) {
-      // Defensive: gate said send-with-template but none supplied. Treat as block.
-      const guarded: OutboundDecision = {
-        decision: "block",
-        mustUseTemplate: true,
-        reason: "template_required",
-      };
-      await logAudit("whatsapp.outbound_blocked", "whatsapp_outbound", {
-        brainId: params.brainId,
-        details: { phoneHash: hash, scope: params.scope, reason: guarded.reason },
-      });
-      return { sent: false, decision: guarded };
-    }
-    ({ messageId } = await sendWhatsAppTemplate(normalized, params.template));
-  } else {
-    ({ messageId } = await sendWhatsAppText(normalized, params.freeform ?? ""));
-  }
-
+  const { messageId } = await params.send();
   await logAudit("whatsapp.outbound_sent", "whatsapp_outbound", {
     brainId: params.brainId,
     details: {
       phoneHash: hash,
       scope: params.scope,
-      kind: decision.mustUseTemplate ? "template" : "freeform",
+      kind: params.messageKind,
       withinWindow: !decision.mustUseTemplate,
-      // Always true: a send only happens after the gate confirmed active consent.
-      // Persisted so the secretary eval gate can verify consent compliance from data.
       hadConsent: true,
     },
   });
-
-  // Record the message ID → brain ID mapping so status webhooks can resolve
-  // the correct tenant for status updates (delivered/read/failed).
-  if (messageId) {
-    void recordOutboundMessage(messageId, params.brainId);
-  }
-
+  if (messageId) void recordOutboundMessage(messageId, params.brainId);
   return { sent: true, decision, messageId: messageId || undefined };
+}
+
+export async function sendProactiveMessage(
+  params: ProactiveSendParams
+): Promise<ProactiveSendResult> {
+  const messageKind = params.template ? "template" : "freeform";
+  return sendGuardedWhatsAppMessage({
+    to: params.to,
+    brainId: params.brainId,
+    scope: params.scope,
+    messageKind,
+    urgent: params.urgent,
+    quietHours: params.quietHours,
+    now: params.now,
+    send: async () => {
+      if (messageKind === "template") {
+        return sendWhatsAppTemplate(params.to, params.template!);
+      }
+      return sendWhatsAppText(params.to, params.freeform ?? "");
+    },
+  });
 }

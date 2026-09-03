@@ -2,13 +2,12 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { Shield, ShieldOff, Loader2, Lock, Unlock } from "lucide-react";
+import { Shield, Loader2, Lock, Unlock } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { useToast } from "@/components/ui/toast";
-import { cn } from "@/lib/utils";
 
 interface CasePage {
   slug: string;

@@ -40,6 +40,9 @@ export interface ConfirmResult {
 
 export interface UploadProgress {
   filename: string;
+  /** G8 fix: index of the file in the original upload array, for reliable
+   * queue-item mapping even with duplicate filenames. */
+  fileIndex?: number;
   phase: "presigning" | "uploading" | "confirming" | "done" | "error";
   uploadedBytes: number;
   totalBytes: number;
@@ -54,6 +57,7 @@ export interface UploadOptions {
   tags?: string[];
   password?: string;
   source?: string;
+  deferPipeline?: boolean;
   onProgress?: (progress: UploadProgress) => void;
   signal?: AbortSignal;
 }
@@ -141,6 +145,7 @@ export async function uploadFile(file: File, opts: UploadOptions = {}): Promise<
       tags: opts.tags,
       password: opts.password,
       source: opts.source,
+      defer_pipeline: opts.deferPipeline ? "true" : undefined,
     }),
     signal,
   });
@@ -251,6 +256,7 @@ export async function uploadFile(file: File, opts: UploadOptions = {}): Promise<
       upload_token: presign.upload_token,
       case_slug: opts.caseSlug,
       source: opts.source,
+      defer_pipeline: opts.deferPipeline ? "true" : undefined,
     }),
     signal,
   });
@@ -382,9 +388,17 @@ export async function uploadFiles(
 
   async function worker() {
     while (index < files.length) {
-      const current = files[index++];
+      const myIndex = index++;
+      const current = files[myIndex];
+      // G8 fix: wrap onProgress to inject fileIndex for reliable queue mapping.
+      const fileOpts: UploadOptions = {
+        ...opts,
+        onProgress: opts.onProgress
+          ? (p: UploadProgress) => opts.onProgress!({ ...p, fileIndex: myIndex })
+          : undefined,
+      };
       try {
-        const result = await uploadFile(current, opts);
+        const result = await uploadFile(current, fileOpts);
         results.push({ file: current, result });
       } catch (err) {
         results.push({
@@ -443,6 +457,7 @@ async function uploadFilesBatch(
       })),
       case_slug: opts.caseSlug,
       source: opts.source,
+      defer_pipeline: opts.deferPipeline ? "true" : undefined,
     }),
     signal,
   });
@@ -556,6 +571,7 @@ async function uploadFilesBatch(
             upload_token: presign.upload_token,
             case_slug: opts.caseSlug,
             source: opts.source,
+            defer_pipeline: opts.deferPipeline ? "true" : undefined,
           }),
           signal,
         });

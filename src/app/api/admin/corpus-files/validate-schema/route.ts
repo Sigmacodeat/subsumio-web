@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
+import { createHandler, apiSuccess } from "@/lib/api-handler";
 import { validateFrontmatter, listSchemas, getSchema } from "@/lib/corpus-schema";
 
 export const dynamic = "force-dynamic";
@@ -32,16 +32,21 @@ export const GET = createHandler(
       return apiSuccess({ schema });
     }
     return apiSuccess({ schemas: listSchemas() });
-  },
+  }
 );
 
 export const POST = createHandler(
   {
     action: "admin.*",
     body: bodySchema,
+    audit: (_ctx, body) => ({
+      action: "corpus_files.validate_schema" as const,
+      entityType: "corpus_file",
+      details: { docClass: body.docClass ?? null },
+    }),
   },
   async (ctx, body) => {
     const result = validateFrontmatter(body.frontmatter, body.docClass);
     return apiSuccess(result);
-  },
+  }
 );

@@ -13,14 +13,12 @@ import {
   Lightbulb,
   Loader2,
   MessageCircle,
-  Mail,
   Send,
   UserPlus,
   X,
   Zap,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
@@ -389,7 +387,7 @@ export function ReviewInboxTab() {
     },
   });
 
-  const allItems = reviewQuery.data?.items ?? [];
+  const allItems = useMemo(() => reviewQuery.data?.items ?? [], [reviewQuery.data?.items]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: allItems.length };

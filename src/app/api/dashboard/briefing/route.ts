@@ -351,6 +351,11 @@ export const POST = createHandler(
     action: "brain.read",
     rateTier: "standard",
     body: briefingSchema,
+    audit: (ctx, body) => ({
+      action: "dashboard.briefing" as const,
+      entityType: "briefing",
+      details: { user: ctx.user.email, language: body.language },
+    }),
   },
   async (ctx, body, _query, _req) => {
     const data = await fetchCockpitData(ctx.headers);

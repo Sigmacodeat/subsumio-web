@@ -18,10 +18,10 @@ const listQuerySchema = z.object({
 });
 
 const createGroupSchema = z.object({
-  schemas: z.array(z.string()),
-  displayName: z.string().optional(),
-  externalId: z.string().optional(),
-  id: z.string().optional(),
+  schemas: z.array(z.string().max(200)).max(20),
+  displayName: z.string().max(500).optional(),
+  externalId: z.string().max(200).optional(),
+  id: z.string().max(200).optional(),
   members: z.array(z.any()).max(1000).optional(),
 });
 

@@ -11,6 +11,12 @@ export const GET = createHandler(
     action: "legal.judgements",
     rateTier: "standard",
     cacheMaxAge: 300,
+    audit: (_ctx, _body, _query, req) => ({
+      action: "case.view" as const,
+      entityType: "judgement",
+      entityId: req ? new URL(req.url).pathname.split("/").pop() : undefined,
+      details: {},
+    }),
   },
   async (_ctx, _body, _query, req) => {
     const pool = getSharedPgPool();
@@ -45,6 +51,12 @@ export const POST = createHandler(
   {
     action: "legal.judgements",
     rateTier: "standard",
+    audit: (_ctx, _body, _query, req) => ({
+      action: "judgements.search" as const,
+      entityType: "judgement",
+      entityId: req ? new URL(req.url).pathname.split("/").pop() : undefined,
+      details: { action: "aggregate" },
+    }),
   },
   async (_ctx, _body, _query, req) => {
     const pool = getSharedPgPool();

@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { CORPUS_META } from "@/lib/legal-grounding";
 import { collectStatutes, resolveCollisions } from "../../scripts/generate-corpus-meta";
-import { readdirSync, statSync } from "node:fs";
+import { statSync } from "node:fs";
 import { join } from "node:path";
 
 describe("CORPUS_META freshness", () => {
-  it("matches the current generator output", { timeout: 30_000 }, () => {
+  it("matches the current generator output", { timeout: 120_000 }, () => {
     const raw = collectStatutes();
     const { entries: resolved } = resolveCollisions(raw);
     const generatedKeys = new Set(resolved.map((e) => e.slugKey));

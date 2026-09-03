@@ -16,7 +16,23 @@ const createSchema = z.object({
 });
 
 export const POST = createHandler(
-  { action: "brain.write", rateTier: "heavy", body: createSchema },
+  {
+    action: "brain.write",
+    rateTier: "heavy",
+    body: createSchema,
+    audit: (_ctx, body) => ({
+      action: "act_import.create" as const,
+      entityType: "act_import_session",
+      details: {
+        case_slug: body.case_slug,
+        title: body.title,
+        jurisdiction: body.jurisdiction,
+        verfahrenstyp: body.verfahrenstyp,
+        expected_files: body.expected_files ?? 0,
+        expected_bytes: body.expected_bytes ?? 0,
+      },
+    }),
+  },
   async (ctx, body) => {
     const id = safeImportId(body.id ?? `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`);
     const slug = actImportSessionSlug(id);

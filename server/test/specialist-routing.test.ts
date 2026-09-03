@@ -7,23 +7,13 @@
  */
 
 import { describe, it, expect } from "bun:test";
-import {
-  EMBEDDED_SPECIALISTS,
-  resolveSpecialist,
-} from "../src/core/minions/specialist-defs.ts";
-import {
-  TIER_DEFAULTS,
-  isAnthropicProvider,
-} from "../src/core/model-config.ts";
+import { EMBEDDED_SPECIALISTS, resolveSpecialist } from "../src/core/minions/specialist-defs.ts";
+import { TIER_DEFAULTS, isAnthropicProvider } from "../src/core/model-config.ts";
 
 // ── Expected tier assignments (source of truth for routing) ──────────────
 // These are the specialists that MUST be on "deep" tier — the ones that
 // do critical juristic reasoning and need the strongest model.
-const DEEP_SPECIALISTS = new Set([
-  "legal-critic",
-  "opponent-simulator",
-  "subsumption-checker",
-]);
+const DEEP_SPECIALISTS = new Set(["legal-critic", "opponent-simulator", "subsumption-checker"]);
 
 // Specialists on "utility" tier — lightweight extraction/structuring/retrieval.
 const UTILITY_SPECIALISTS = new Set([
@@ -77,8 +67,8 @@ describe("TIER_DEFAULTS routing correctness", () => {
     expect(TIER_DEFAULTS.deep).toBe("openrouter:xai/grok-4.3");
   });
 
-  it("reasoning tier resolves to DeepSeek V4 Flash", () => {
-    expect(TIER_DEFAULTS.reasoning).toBe("openrouter:deepseek/deepseek-chat");
+  it("reasoning tier resolves to Claude Sonnet 4.6 (v0.43.1 upgrade)", () => {
+    expect(TIER_DEFAULTS.reasoning).toBe("anthropic:claude-sonnet-4-6");
   });
 
   it("utility tier resolves to DeepSeek V4 Flash", () => {
@@ -132,11 +122,11 @@ describe("Specialist resolution + tier chain", () => {
     expect(TIER_DEFAULTS[def!.modelTier!]).toBe("openrouter:xai/grok-4.3");
   });
 
-  it("legal-researcher routes to reasoning tier (DeepSeek V4 Flash)", () => {
+  it("legal-researcher routes to reasoning tier (Claude Sonnet 4.6)", () => {
     const def = resolveSpecialist("legal-researcher");
     expect(def).not.toBeNull();
     expect(def!.modelTier).toBe("reasoning");
-    expect(TIER_DEFAULTS[def!.modelTier!]).toBe("openrouter:deepseek/deepseek-chat");
+    expect(TIER_DEFAULTS[def!.modelTier!]).toBe("anthropic:claude-sonnet-4-6");
   });
 
   it("on-scanner routes to utility tier (DeepSeek V4 Flash)", () => {

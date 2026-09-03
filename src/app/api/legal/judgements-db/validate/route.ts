@@ -33,6 +33,16 @@ export const POST = createHandler(
     action: "legal.judgements",
     rateTier: "standard",
     body: validateSchema,
+    audit: (_ctx, body) => ({
+      action: "legal.judgements_sync" as const,
+      entityType: "judgement_validation",
+      entityId: body.judgementId || undefined,
+      details: {
+        action: body.action,
+        batchSize: body.batchSize,
+        maxItems: body.maxItems,
+      },
+    }),
   },
   async (_ctx, body, _query, _req) => {
     const pool = getSharedPgPool();

@@ -23,6 +23,21 @@ export const POST = createHandler(
     action: "invoice.read",
     rateTier: "standard",
     body: createClaimSchema,
+    audit: (_ctx, body) => ({
+      action: "claim.create" as const,
+      entityType: "claim",
+      details: {
+        case_slug: body.case_slug,
+        principal_amount: body.principal_amount,
+        interest_amount: body.interest_amount,
+        costs_amount: body.costs_amount,
+        interest_rate: body.interest_rate,
+        interest_from: body.interest_from,
+        due_date: body.due_date,
+        court: body.court,
+        claim_number: body.claim_number,
+      },
+    }),
   },
   async (ctx, body) => {
     const claim = createClaim(body);
@@ -62,6 +77,14 @@ export const GET = createHandler(
     action: "invoice.read",
     rateTier: "standard",
     query: listQuerySchema,
+    audit: (_ctx, _body, query) => ({
+      action: "claim.list" as const,
+      entityType: "claim",
+      details: {
+        case_slug: query?.case_slug,
+        status: query?.status,
+      },
+    }),
   },
   async (ctx, _body, query) => {
     const params = new URLSearchParams({ type: "claim", limit: "200" });
@@ -96,6 +119,14 @@ export const PATCH = createHandler(
     action: "invoice.read",
     rateTier: "standard",
     body: paymentSchema,
+    audit: (_ctx, body) => ({
+      action: "claim.payment_allocate" as const,
+      entityType: "claim",
+      entityId: body.claim_id,
+      details: {
+        amount: body.amount,
+      },
+    }),
   },
   async (ctx, body) => {
     const params = new URLSearchParams({ type: "claim", limit: "200" });

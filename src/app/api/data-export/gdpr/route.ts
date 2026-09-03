@@ -34,6 +34,7 @@ export const GET = createHandler(
               `${ENGINE_URL}/api/pages?type=${type}&limit=${perPage}&offset=${offset}`,
               {
                 headers: ctx.headers,
+                signal: AbortSignal.timeout(30_000),
               }
             );
             if (res.ok) {

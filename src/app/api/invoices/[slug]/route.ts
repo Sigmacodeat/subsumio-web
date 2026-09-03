@@ -50,6 +50,11 @@ export const PATCH = createHandler(
     action: "invoice.write",
     rateTier: "standard",
     body: patchSchema,
+    audit: (_ctx, body) => ({
+      action: "invoice.update" as const,
+      entityType: "invoice",
+      details: { fields: Object.keys(body).filter((k) => k !== "_allow_status_override") },
+    }),
   },
   async (ctx, body, _query, req) => {
     const { slug: rawSlug } = await (req as unknown as { params: Promise<{ slug: string }> })
@@ -106,6 +111,11 @@ export const DELETE = createHandler(
   {
     action: "invoice.write",
     rateTier: "standard",
+    audit: (_ctx, _body) => ({
+      action: "invoice.delete" as const,
+      entityType: "invoice",
+      details: { reason: "manual_delete" },
+    }),
   },
   async (ctx, _body, _query, req) => {
     const { slug: rawSlug } = await (req as unknown as { params: Promise<{ slug: string }> })

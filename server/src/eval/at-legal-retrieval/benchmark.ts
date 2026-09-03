@@ -8,6 +8,7 @@
 import { readFileSync, existsSync, writeFileSync, appendFileSync } from "node:fs";
 import type { BrainEngine } from "../../core/engine.ts";
 import type { SearchResult, ResolvedColumn } from "../../core/types.ts";
+import { AT_LAW_SOURCES_ALL, AT_PRIMARY_STATUTE_SOURCE } from "../../core/legal/jurisdiction.ts";
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -135,7 +136,7 @@ export async function runBenchmark(
     log(`[at-legal-retrieval] LLM re-ranker: ENABLED`);
   }
 
-  const sourceIds = opts.sourceIds ?? ["law-at", "law-at-judikatur", "law-eu"];
+  const sourceIds = opts.sourceIds ?? AT_LAW_SOURCES_ALL;
   const llmRerankModel = opts.llmRerankModel ?? "openrouter:deepseek/deepseek-chat";
   const llmRerankTopNIn = opts.llmRerankTopNIn ?? 50;
   const embeddingColumn = opts.embeddingColumn ?? {
@@ -156,7 +157,7 @@ export async function runBenchmark(
       const searchResults = await hybridSearch(engine, q.question, {
         limit: opts.topK,
         innerLimit: 50,
-        sourceId: "law-at",
+        sourceId: AT_PRIMARY_STATUTE_SOURCE,
         sourceIds,
         jurisdiction: opts.jurisdiction ?? "at",
         useBM25: true,

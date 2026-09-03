@@ -23,6 +23,15 @@ export const POST = createHandler(
   {
     action: "admin.*",
     body: bodySchema,
+    audit: (ctx, body) => ({
+      action: "corpus.file_delete" as const,
+      entityType: "corpus_file",
+      details: {
+        path: body.path,
+        paths: body.paths,
+        deleted_by: ctx.user.email,
+      },
+    }),
   },
   async (ctx, body) => {
     // Single delete

@@ -16,6 +16,11 @@ import {
   Activity,
   ToggleRight,
   MessageCircle,
+  ShieldCheck,
+  Brain,
+  HardDrive,
+  FileSearch,
+  GitBranch,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { getStore } from "@/lib/auth/store";
@@ -23,6 +28,8 @@ import { listMarketingLeads } from "@/lib/marketing/leads";
 import { BILLABLE_PLANS } from "@/lib/billing/plans";
 import { StatCard, PlanBadge } from "@/components/admin/admin-stat-card";
 import AuditTrail from "@/components/admin/audit-trail";
+import { SecretaryGateCard } from "@/components/admin/secretary-gate-card";
+import { CreditsHealthCard } from "@/components/admin/credits-health-card";
 import { PageHeader } from "@/components/dashboard/page-header";
 
 export const metadata = { title: "Admin Dashboard" };
@@ -82,7 +89,14 @@ export default async function AdminPage({
 
   return (
     <div className="mx-0 w-full space-y-6 p-4 md:p-6 lg:p-8">
-      <PageHeader title="Admin Dashboard" breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Admin" }, { label: "Übersicht" }]} />
+      <PageHeader
+        title="Admin Dashboard"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Admin" },
+          { label: "Übersicht" },
+        ]}
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -102,10 +116,15 @@ export default async function AdminPage({
         />
       </div>
 
+      {/* Provider Credits Health — live status widget */}
+      <CreditsHealthCard />
+
       {/* Plan distribution + Industry breakdown + Quick links */}
       <div className="grid gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border border-[color:var(--ds-border)] p-5 bg-[color:var(--ds-surface)] lg:col-span-1">
-          <h2 className="mb-4 text-sm font-semibold text-[color:var(--ds-text)]">Plan-Verteilung</h2>
+        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 lg:col-span-1">
+          <h2 className="mb-4 text-sm font-semibold text-[color:var(--ds-text)]">
+            Plan-Verteilung
+          </h2>
           <div className="space-y-3">
             {(["free", "pro", "team", "enterprise"] as const).map((p) => (
               <div key={p} className="flex items-center justify-between">
@@ -118,7 +137,7 @@ export default async function AdminPage({
           </div>
         </div>
 
-        <div className="rounded-xl border border-[color:var(--ds-border)] p-5 bg-[color:var(--ds-surface)] lg:col-span-1">
+        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 lg:col-span-1">
           <h2 className="mb-4 text-sm font-semibold text-[color:var(--ds-text)]">Produkte</h2>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -131,7 +150,7 @@ export default async function AdminPage({
             </div>
             <div className="flex items-center justify-between">
               <span className="inline-flex items-center gap-2 text-xs font-medium text-[color:var(--ds-success-text)]">
-                <Calculator size={14} /> Subsumio Tax
+                <Calculator size={14} /> Taxumio
               </span>
               <span className="text-sm font-medium text-[color:var(--ds-text)]">
                 {industryBreakdown.tax}
@@ -156,20 +175,113 @@ export default async function AdminPage({
           </div>
         </div>
 
-        <div className="rounded-xl border border-[color:var(--ds-border)] p-5 bg-[color:var(--ds-surface)] lg:col-span-1">
+        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 lg:col-span-1">
           <h2 className="mb-4 text-sm font-semibold text-[color:var(--ds-text)]">Schnellzugriff</h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <QuickLink href="/dashboard/admin/users" icon={Users} label="Kunden verwalten" />
-            <QuickLink href="/dashboard/admin/corpus" icon={Database} label="Corpus &amp; Chunks" />
-            <QuickLink href="/dashboard/admin/mailbox" icon={Mail} label="Mailbox" />
-            <QuickLink href="/dashboard/admin/slo" icon={Activity} label="SLO-Monitoring" />
-            <QuickLink href="/dashboard/admin/feature-flags" icon={ToggleRight} label="Feature Flags" />
-            <QuickLink href="/dashboard/admin/feedback-triage" icon={MessageCircle} label="Feedback" />
-            <QuickLink href="/dashboard/admin?tab=leads" icon={MessageSquare} label="Sales-Leads" />
-            <QuickLink href="/dashboard/admin?tab=audit" icon={ClipboardList} label="Audit-Trail" />
+          <div className="space-y-4">
+            <div>
+              <p className="mb-2 text-[10px] font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                Kanzlei-Operationen
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <QuickLink
+                  href="/dashboard/operations"
+                  icon={Activity}
+                  label="Operations-Cockpit"
+                />
+                <QuickLink href="/dashboard/admin/users" icon={Users} label="Kunden verwalten" />
+                <QuickLink href="/dashboard/admin/mailbox" icon={Mail} label="Mailbox" />
+                <QuickLink
+                  href="/dashboard/admin/feature-flags"
+                  icon={ToggleRight}
+                  label="Feature Flags"
+                />
+              </div>
+            </div>
+            <div>
+              <p className="mb-2 text-[10px] font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                AI-Qualität &amp; Pipeline
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <QuickLink
+                  href="/dashboard/admin/pipeline"
+                  icon={GitBranch}
+                  label="Pipeline-Monitor"
+                />
+                <QuickLink
+                  href="/dashboard/admin/rag-optimizer"
+                  icon={Scale}
+                  label="AI Eval &amp; RAG"
+                />
+                <QuickLink
+                  href="/dashboard/admin/guardrails"
+                  icon={ShieldCheck}
+                  label="Guardrails"
+                />
+                <QuickLink
+                  href="/dashboard/admin/decision-records"
+                  icon={FileSearch}
+                  label="Decision Records"
+                />
+                <QuickLink href="/dashboard/admin/dissensus" icon={Brain} label="Dissensus" />
+                <QuickLink
+                  href="/dashboard/admin/token-usage"
+                  icon={Activity}
+                  label="Token-Usage"
+                />
+              </div>
+            </div>
+            <div>
+              <p className="mb-2 text-[10px] font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                Compliance &amp; System
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <QuickLink href="/dashboard/admin/slo" icon={Activity} label="SLO-Monitoring" />
+                <QuickLink
+                  href="/dashboard/admin/compliance-export"
+                  icon={Database}
+                  label="Compliance Export"
+                />
+                <QuickLink href="/dashboard/admin/backup" icon={HardDrive} label="Backup" />
+                <QuickLink
+                  href="/dashboard/admin/dr"
+                  icon={ShieldCheck}
+                  label="Disaster Recovery"
+                />
+                <QuickLink
+                  href="/dashboard/admin/feedback-triage"
+                  icon={MessageCircle}
+                  label="Feedback"
+                />
+                <QuickLink
+                  href="/dashboard/admin/corpus"
+                  icon={Database}
+                  label="Corpus &amp; Chunks"
+                />
+              </div>
+            </div>
+            <div>
+              <p className="mb-2 text-[10px] font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                Vertrieb &amp; Audit
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <QuickLink
+                  href="/dashboard/admin?tab=leads"
+                  icon={MessageSquare}
+                  label="Sales-Leads"
+                />
+                <QuickLink
+                  href="/dashboard/admin?tab=audit"
+                  icon={ClipboardList}
+                  label="Audit-Trail"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Secretary compliance gate */}
+      <SecretaryGateCard />
 
       {/* Tab content */}
       {tab === "audit" ? (
@@ -206,7 +318,7 @@ export default async function AdminPage({
                               ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
                               : lead.leadScore === "high"
                                 ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
-                                : "border-[color:var(--ds-border-hover)] text-[color:var(--ds-text-muted)] bg-[color:var(--ds-surface-2)]"
+                                : "border-[color:var(--ds-border-hover)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)]"
                           }`}
                         >
                           {lead.leadScore}
@@ -221,7 +333,7 @@ export default async function AdminPage({
                       {lead.notified.slack ? "sent" : "off"}
                     </div>
                   </div>
-                  <pre className="mt-4 rounded-lg border border-[color:var(--ds-border)] p-3 text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text-muted)] bg-[color:var(--ds-surface-2)]">
+                  <pre className="mt-4 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3 text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
                     {lead.summary}
                   </pre>
                 </div>
@@ -242,49 +354,51 @@ export default async function AdminPage({
           </div>
           <div className="overflow-x-auto rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
             <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[color:var(--ds-border)] text-left text-xs tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
-                    <th className="px-5 py-3 font-medium">Name</th>
-                    <th className="px-5 py-3 font-medium">E-Mail</th>
-                    <th className="px-5 py-3 font-medium">Plan</th>
-                    <th className="px-5 py-3 font-medium">Rolle</th>
-                    <th className="px-5 py-3 font-medium">Registriert</th>
+              <thead>
+                <tr className="border-b border-[color:var(--ds-border)] text-left text-xs tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                  <th className="px-5 py-3 font-medium">Name</th>
+                  <th className="px-5 py-3 font-medium">E-Mail</th>
+                  <th className="px-5 py-3 font-medium">Plan</th>
+                  <th className="px-5 py-3 font-medium">Rolle</th>
+                  <th className="px-5 py-3 font-medium">Registriert</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="px-5 py-10 text-center text-[color:var(--ds-text-subtle)]"
+                    >
+                      Noch keine Kunden.
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {users.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={5}
-                        className="px-5 py-10 text-center text-[color:var(--ds-text-subtle)]"
-                      >
-                        Noch keine Kunden.
+                )}
+                {users
+                  .slice(-5)
+                  .reverse()
+                  .map((u) => (
+                    <tr
+                      key={u.id}
+                      className="border-b border-[color:var(--ds-border)]/50 last:border-0 hover:bg-[color:var(--ds-surface-hover)]"
+                    >
+                      <td className="px-5 py-3 font-medium text-[color:var(--ds-text)]">
+                        {u.name}
+                      </td>
+                      <td className="px-5 py-3 text-[color:var(--ds-text-muted)]">{u.email}</td>
+                      <td className="px-5 py-3">
+                        <PlanBadge plan={u.plan} />
+                      </td>
+                      <td className="px-5 py-3 text-[color:var(--ds-text-muted)] capitalize">
+                        {u.role}
+                      </td>
+                      <td className="px-5 py-3 text-xs text-[color:var(--ds-text-subtle)]">
+                        {u.createdAt.slice(0, 10)}
                       </td>
                     </tr>
-                  )}
-                  {users
-                    .slice(-5)
-                    .reverse()
-                    .map((u) => (
-                      <tr
-                        key={u.id}
-                        className="border-b border-[color:var(--ds-border)]/50 last:border-0 hover:bg-[color:var(--ds-surface-hover)]"
-                      >
-                        <td className="px-5 py-3 font-medium text-[color:var(--ds-text)]">{u.name}</td>
-                        <td className="px-5 py-3 text-[color:var(--ds-text-muted)]">{u.email}</td>
-                        <td className="px-5 py-3">
-                          <PlanBadge plan={u.plan} />
-                        </td>
-                        <td className="px-5 py-3 text-[color:var(--ds-text-muted)] capitalize">
-                          {u.role}
-                        </td>
-                        <td className="px-5 py-3 text-xs text-[color:var(--ds-text-subtle)]">
-                          {u.createdAt.slice(0, 10)}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
+                  ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
@@ -296,7 +410,7 @@ function QuickLink({ href, icon: Icon, label }: { href: string; icon: LucideIcon
   return (
     <Link
       href={href}
-      className="flex items-center gap-2.5 rounded-lg border border-[color:var(--ds-border)] px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-colors hover:[border-color:var(--brand-primary)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-2)]"
+      className="flex items-center gap-2.5 rounded-lg border border-[color:var(--ds-border)] px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-colors hover:[border-color:var(--brand-primary)] hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)]"
     >
       <Icon size={15} className="shrink-0" />
       {label}

@@ -19,6 +19,13 @@ export const POST = createHandler(
   {
     action: "brain.write",
     rateTier: "standard",
+    audit: (_ctx, _body) => ({
+      action: "time_tracking.heartbeat" as const,
+      entityType: "time_activity",
+      details: {
+        heartbeat: true,
+      },
+    }),
   },
   heartbeatHandler
 );

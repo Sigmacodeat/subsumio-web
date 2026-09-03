@@ -48,6 +48,14 @@ export const POST = createHandler(
   {
     action: "agent.control",
     rateTier: "heavy",
+    audit: (ctx, _body, _query, req) => {
+      const url = req ? new URL(req.url) : null;
+      return {
+        action: "agent.control" as const,
+        entityType: "agent_job",
+        details: { user: ctx.user.email, path: url?.pathname },
+      };
+    },
   },
   async (ctx, _body, _query, req) => {
     const { slug } = await (req as unknown as { params: Promise<{ slug: string[] }> }).params;

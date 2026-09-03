@@ -50,7 +50,16 @@ export type CreditTxType = "purchase" | "consumption" | "refund" | "grant" | "ex
 export interface CreditBalance {
   ownerId: string;
   ownerType: OwnerType;
+  /** Available credits = included_credit + purchased_credit - used_credit. */
   balance: number;
+  /** Monthly included credits from SaaS plan (€60 Solo / €200 Kanzlei/seat). */
+  includedCredit: number;
+  /** Credits used this billing period. */
+  usedCredit: number;
+  /** Permanent purchased credits (from credit packs, carry over). */
+  purchasedCredit: number;
+  /** Overage this period (used - included, if positive). */
+  overage: number;
   autoReloadEnabled: boolean;
   autoReloadThreshold: number;
   autoReloadPackId: string | null;
@@ -82,18 +91,10 @@ export interface CaseUsageRow {
 // ── DB Schema ───────────────────────────────────────────────────────────
 
 const ensureCreditSchema = createSchemaInit(`
-  CREATE TABLE IF NOT EXISTS subsumio_credit_balance (
-    owner_id   text PRIMARY KEY,
-    owner_type text NOT NULL,
-    balance    numeric(12,2) NOT NULL DEFAULT 0,
-    auto_reload_enabled boolean NOT NULL DEFAULT false,
-    auto_reload_threshold integer NOT NULL DEFAULT 10,
-    auto_reload_pack_id text,
-    updated_at timestamptz NOT NULL DEFAULT now()
-  );
-  -- Migrate integer → numeric for token-based fractional credits (idempotent)
-  ALTER TABLE subsumio_credit_balance ALTER COLUMN balance TYPE numeric(12,2) USING balance::numeric(12,2);
-
+  -- subsumio_credit_transactions: kept for historical audit trail.
+  -- The balance table (subsumio_credit_balance) was consolidated into
+  -- saas_credit_balance in migration v136. Transactions are still written
+  -- here for every add/deduct operation.
   CREATE TABLE IF NOT EXISTS subsumio_credit_transactions (
     id          bigserial PRIMARY KEY,
     owner_id    text NOT NULL,
@@ -198,43 +199,94 @@ export async function getBalance(ownerId: string, ownerType: OwnerType): Promise
   if (pool) {
     try {
       await ensureCreditSchema();
-      const { rows } = await pool.query<CreditBalance>(
-        `SELECT owner_id as "ownerId", owner_type as "ownerType", balance,
-                auto_reload_enabled as "autoReloadEnabled",
-                auto_reload_threshold as "autoReloadThreshold",
-                auto_reload_pack_id as "autoReloadPackId",
-                updated_at as "updatedAt"
-         FROM subsumio_credit_balance WHERE owner_id = $1`,
-        [ownerId]
+      // Read from consolidated saas_credit_balance (v136+).
+      // ownerId = org_id (V1: user is own org, slug = user-{first8}).
+      // The current-period row has period_end > now().
+      const { rows } = await pool.query(
+        `SELECT
+            org_id as "ownerId",
+            $2 as "ownerType",
+            (included_credit + purchased_credit - used_credit) as balance,
+            included_credit as "includedCredit",
+            used_credit as "usedCredit",
+            purchased_credit as "purchasedCredit",
+            overage_eur as "overage",
+            auto_reload_enabled as "autoReloadEnabled",
+            auto_reload_threshold as "autoReloadThreshold",
+            auto_reload_pack_id as "autoReloadPackId",
+            updated_at as "updatedAt"
+         FROM saas_credit_balance
+         WHERE org_id = $1 AND period_end > now()
+         ORDER BY period_start DESC LIMIT 1`,
+        [ownerId, ownerType]
       );
-      if (rows[0]) return rows[0];
-      // Create default balance row
-      const default_ = {
+      if (rows[0]) return rows[0] as CreditBalance;
+      // Lazy backfill: if ownerType='user' and no row found, the ownerId might
+      // be a user-id string while saas_credit_balance.org_id is a UUID. Resolve
+      // the UUID via saas_orgs.slug = 'user-{first8}' and retry. This self-heals
+      // existing users who subscribed before the checkout.session.completed
+      // orgId fix — without it, they'd get balance=0 and all operations fail.
+      if (ownerType === "user") {
+        try {
+          const orgRows = await pool.query<{ id: string }>(
+            `SELECT id FROM saas_orgs WHERE slug = $1`,
+            [`user-${ownerId.slice(0, 8)}`]
+          );
+          if (orgRows.rows[0]?.id) {
+            const { rows: orgBalanceRows } = await pool.query(
+              `SELECT
+                  org_id as "ownerId",
+                  $2 as "ownerType",
+                  (included_credit + purchased_credit - used_credit) as balance,
+                  included_credit as "includedCredit",
+                  used_credit as "usedCredit",
+                  purchased_credit as "purchasedCredit",
+                  overage_eur as "overage",
+                  auto_reload_enabled as "autoReloadEnabled",
+                  auto_reload_threshold as "autoReloadThreshold",
+                  auto_reload_pack_id as "autoReloadPackId",
+                  updated_at as "updatedAt"
+               FROM saas_credit_balance
+               WHERE org_id = $1 AND period_end > now()
+               ORDER BY period_start DESC LIMIT 1`,
+              [orgRows.rows[0].id, ownerType]
+            );
+            if (orgBalanceRows[0]) return orgBalanceRows[0] as CreditBalance;
+          }
+        } catch {
+          // saas_orgs not available — fall through to defaults
+        }
+      }
+      // No current-period row: return defaults (user has no active subscription
+      // or saas_orgs not yet created — createSaasOrgForUser will fix this on
+      // next checkout).
+      return {
         ownerId,
         ownerType,
         balance: 0,
+        includedCredit: 0,
+        usedCredit: 0,
+        purchasedCredit: 0,
+        overage: 0,
         autoReloadEnabled: false,
         autoReloadThreshold: 10,
         autoReloadPackId: null,
         updatedAt: new Date().toISOString(),
       };
-      await pool.query(
-        `INSERT INTO subsumio_credit_balance (owner_id, owner_type, balance, auto_reload_enabled, auto_reload_threshold, auto_reload_pack_id)
-         VALUES ($1, $2, 0, false, 10, NULL)
-         ON CONFLICT (owner_id) DO NOTHING`,
-        [ownerId, ownerType]
-      );
-      return default_;
     } catch (err) {
       log.error("getBalance error", { error: err instanceof Error ? err.message : String(err) });
     }
   }
   const key = memKey(ownerId, ownerType);
   return (
-    memBalances.get(key) ?? {
+    (memBalances.get(key) as CreditBalance | undefined) ?? {
       ownerId,
       ownerType,
       balance: 0,
+      includedCredit: 0,
+      usedCredit: 0,
+      purchasedCredit: 0,
+      overage: 0,
       autoReloadEnabled: false,
       autoReloadThreshold: 10,
       autoReloadPackId: null,
@@ -258,29 +310,62 @@ export async function addCredits(
 ): Promise<CreditBalance> {
   const txType = opts?.type ?? "purchase";
   const pool = getSharedPgPool();
+  // Idempotency: use stripe_session_id as dedup key for purchases.
+  // If isDuplicateEvent fails (DB down) and Stripe retries the webhook,
+  // this prevents double-crediting. The unique index on idempotency_key
+  // (subsumio_credit_tx_idempotency_idx) catches the duplicate INSERT.
+  const idempotencyKey = opts?.stripeSessionId
+    ? `credit-purchase-${opts.stripeSessionId}`
+    : undefined;
 
   if (pool) {
     try {
       await ensureCreditSchema();
-      // Atomic: upsert balance + insert transaction in a transaction
+      // Check idempotency: if this purchase was already processed, return early
+      if (idempotencyKey) {
+        const existing = await pool.query<{ balance_after: number }>(
+          `SELECT balance_after FROM subsumio_credit_transactions
+           WHERE idempotency_key = $1 AND type = 'purchase'`,
+          [idempotencyKey]
+        );
+        if (existing.rows[0]) {
+          return getBalance(ownerId, ownerType);
+        }
+      }
+      // Atomic: upsert saas_credit_balance + insert transaction in a transaction.
+      // purchased_credit is the permanent wallet (credit packs, grants, refunds).
+      // We upsert the current-period row; if none exists, create one with
+      // included_credit=0 (will be set by createSaasOrgForUser on checkout).
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+        // Ensure a current-period row exists
+        const periodStart = new Date();
+        periodStart.setDate(1);
+        periodStart.setHours(0, 0, 0, 0);
+        const periodEnd = new Date(periodStart);
+        periodEnd.setMonth(periodEnd.getMonth() + 1);
         await client.query(
-          `INSERT INTO subsumio_credit_balance (owner_id, owner_type, balance)
-           VALUES ($1, $2, $3)
-           ON CONFLICT (owner_id)
-           DO UPDATE SET balance = subsumio_credit_balance.balance + $3, updated_at = now()`,
-          [ownerId, ownerType, amount]
+          `INSERT INTO saas_credit_balance
+             (org_id, period_start, period_end, included_credit, used_credit,
+              overage_eur, purchased_credit)
+           VALUES ($1, $2, $3, 0, 0, 0, $4)
+           ON CONFLICT (org_id, period_start)
+           DO UPDATE SET purchased_credit = saas_credit_balance.purchased_credit + $4,
+                         updated_at = now()`,
+          [ownerId, periodStart, periodEnd, amount]
         );
-        const { rows } = await client.query<{ balance: number }>(
-          "SELECT balance FROM subsumio_credit_balance WHERE owner_id = $1 FOR UPDATE",
+        const { rows } = await client.query(
+          `SELECT (included_credit + purchased_credit - used_credit) as balance
+           FROM saas_credit_balance
+           WHERE org_id = $1 AND period_end > now()
+           ORDER BY period_start DESC LIMIT 1 FOR UPDATE`,
           [ownerId]
         );
         const newBalance = rows[0]?.balance ?? amount;
         await client.query(
-          `INSERT INTO subsumio_credit_transactions (owner_id, owner_type, type, amount, balance_after, stripe_session_id, stripe_payment_intent, description)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          `INSERT INTO subsumio_credit_transactions (owner_id, owner_type, type, amount, balance_after, stripe_session_id, stripe_payment_intent, description, idempotency_key)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
           [
             ownerId,
             ownerType,
@@ -290,12 +375,46 @@ export async function addCredits(
             opts?.stripeSessionId,
             opts?.stripePaymentIntent,
             opts?.description,
+            idempotencyKey,
           ]
         );
+        // Create a credit_grant row for expiry tracking (1 year default).
+        // Without this, expireCredits would never find any grants to expire
+        // → purchased credits would never expire (silent revenue leak).
+        // Only for purchases (type='purchase') — grants/refunds have their own
+        // grant creation via addCreditGrant. Idempotent via stripe_session_id
+        // uniqueness check before INSERT.
+        if (txType === "purchase" && opts?.stripeSessionId) {
+          const grantExists = await client.query<{ id: string }>(
+            `SELECT id FROM subsumio_credit_grants WHERE stripe_session_id = $1`,
+            [opts.stripeSessionId]
+          );
+          if (grantExists.rows.length === 0) {
+            const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+            await client.query(
+              `INSERT INTO subsumio_credit_grants
+                 (owner_id, owner_type, grant_type, amount, remaining, burn_priority, expires_at, stripe_session_id, description)
+               VALUES ($1, $2, 'purchase', $3, $3, 2, $4, $5, $6)`,
+              [
+                ownerId,
+                ownerType,
+                amount,
+                expiresAt,
+                opts.stripeSessionId,
+                opts?.description ?? "Credit pack purchase",
+              ]
+            );
+          }
+        }
         await client.query("COMMIT");
         return getBalance(ownerId, ownerType);
       } catch (err) {
         await client.query("ROLLBACK");
+        // Race condition: another concurrent retry with the same idempotency_key
+        // inserted first → unique index violation → return current balance.
+        if (idempotencyKey && err instanceof Error && err.message.includes("unique")) {
+          return getBalance(ownerId, ownerType);
+        }
         throw err;
       } finally {
         client.release();
@@ -314,6 +433,10 @@ export async function addCredits(
     autoReloadEnabled: false,
     autoReloadThreshold: 10,
     autoReloadPackId: null,
+    includedCredit: 0,
+    usedCredit: 0,
+    purchasedCredit: 0,
+    overage: 0,
     updatedAt: new Date().toISOString(),
   };
   const newBalance = current.balance + amount;
@@ -391,16 +514,22 @@ export async function deductCredits(
             return { ok: true, balance: existing.rows[0].balance_after, required: amount };
           }
         }
-        // Atomic deduction — succeeds if balance >= amount (normal) OR
-        // if allow_negative AND balance - amount >= -maxNegative (grace period)
+        // Atomic deduction from saas_credit_balance.
+        // available = included_credit + purchased_credit - used_credit
+        // We increment used_credit (which tracks consumption from the pool).
+        // Succeeds if available >= amount (normal) OR if allow_negative AND
+        // available - amount >= -maxNegative (grace period).
         const { rows } = await client.query<{ balance: number }>(
-          `UPDATE subsumio_credit_balance
-           SET balance = balance - $2, updated_at = now()
-           WHERE owner_id = $1 AND (
-             balance >= $2
-             ${allowNegative ? `OR (balance - $2 >= -$3 AND $3 > 0)` : ""}
-           )
-           RETURNING balance`,
+          `UPDATE saas_credit_balance
+           SET used_credit = used_credit + $2,
+               overage_eur = GREATEST(0, (used_credit + $2) - included_credit),
+               updated_at = now()
+           WHERE org_id = $1 AND period_end > now()
+             AND (
+               (included_credit + purchased_credit - used_credit) >= $2
+               ${allowNegative ? `OR ((included_credit + purchased_credit - used_credit) - $2 >= -$3 AND $3 > 0)` : ""}
+             )
+           RETURNING (included_credit + purchased_credit - used_credit) as balance`,
           allowNegative ? [ownerId, amount, maxNegative] : [ownerId, amount]
         );
         if (rows.length === 0) {
@@ -620,12 +749,30 @@ export async function setAutoReload(
   if (pool) {
     try {
       await ensureCreditSchema();
+      // Upsert auto-reload settings on the current-period saas_credit_balance row.
+      // If no row exists, create one with zero credits (will be populated on checkout).
+      const periodStart = new Date();
+      periodStart.setDate(1);
+      periodStart.setHours(0, 0, 0, 0);
+      const periodEnd = new Date(periodStart);
+      periodEnd.setMonth(periodEnd.getMonth() + 1);
       await pool.query(
-        `INSERT INTO subsumio_credit_balance (owner_id, owner_type, balance, auto_reload_enabled, auto_reload_threshold, auto_reload_pack_id)
-         VALUES ($1, $2, 0, $3, $4, $5)
-         ON CONFLICT (owner_id)
-         DO UPDATE SET auto_reload_enabled = $3, auto_reload_threshold = $4, auto_reload_pack_id = $5, updated_at = now()`,
-        [ownerId, ownerType, settings.enabled, settings.threshold ?? 10, settings.packId ?? null]
+        `INSERT INTO saas_credit_balance
+           (org_id, period_start, period_end, included_credit, used_credit,
+            overage_eur, purchased_credit, auto_reload_enabled,
+            auto_reload_threshold, auto_reload_pack_id)
+         VALUES ($1, $2, $3, 0, 0, 0, 0, $4, $5, $6)
+         ON CONFLICT (org_id, period_start)
+         DO UPDATE SET auto_reload_enabled = $4, auto_reload_threshold = $5,
+                       auto_reload_pack_id = $6, updated_at = now()`,
+        [
+          ownerId,
+          periodStart,
+          periodEnd,
+          settings.enabled,
+          settings.threshold ?? 10,
+          settings.packId ?? null,
+        ]
       );
     } catch (err) {
       log.error("setAutoReload error", { error: err instanceof Error ? err.message : String(err) });
@@ -640,6 +787,10 @@ export async function setAutoReload(
     autoReloadEnabled: false,
     autoReloadThreshold: 10,
     autoReloadPackId: null,
+    includedCredit: 0,
+    usedCredit: 0,
+    purchasedCredit: 0,
+    overage: 0,
     updatedAt: new Date().toISOString(),
   };
   memBalances.set(key, {
@@ -779,12 +930,15 @@ export async function reserveCredits(
           };
         }
 
-        // Atomic deduction — only succeeds if balance >= estimatedCredits
+        // Atomic deduction from saas_credit_balance — only succeeds if available >= estimatedCredits
         const { rows } = await client.query<{ balance: number }>(
-          `UPDATE subsumio_credit_balance
-           SET balance = balance - $2, updated_at = now()
-           WHERE owner_id = $1 AND balance >= $2
-           RETURNING balance`,
+          `UPDATE saas_credit_balance
+           SET used_credit = used_credit + $2,
+               overage_eur = GREATEST(0, (used_credit + $2) - included_credit),
+               updated_at = now()
+           WHERE org_id = $1 AND period_end > now()
+             AND (included_credit + purchased_credit - used_credit) >= $2
+           RETURNING (included_credit + purchased_credit - used_credit) as balance`,
           [ownerId, rounded]
         );
         if (rows.length === 0) {
@@ -951,12 +1105,15 @@ export async function deductTokenCredits(
           };
         }
 
-        // Atomic deduction
+        // Atomic deduction from saas_credit_balance
         const { rows } = await client.query<{ balance: number }>(
-          `UPDATE subsumio_credit_balance
-           SET balance = balance - $2, updated_at = now()
-           WHERE owner_id = $1 AND balance >= $2
-           RETURNING balance`,
+          `UPDATE saas_credit_balance
+           SET used_credit = used_credit + $2,
+               overage_eur = GREATEST(0, (used_credit + $2) - included_credit),
+               updated_at = now()
+           WHERE org_id = $1 AND period_end > now()
+             AND (included_credit + purchased_credit - used_credit) >= $2
+           RETURNING (included_credit + purchased_credit - used_credit) as balance`,
           [ownerId, credits]
         );
         if (rows.length === 0) {
@@ -1065,12 +1222,20 @@ async function addCreditsRefund(
           const { balance } = await getBalance(ownerId, ownerType);
           return { refunded: 0, balanceAfter: balance };
         }
+        // Refund: reduce used_credit (gives credits back to the pool)
         await client.query(
-          `UPDATE subsumio_credit_balance SET balance = balance + $2, updated_at = now() WHERE owner_id = $1`,
+          `UPDATE saas_credit_balance
+           SET used_credit = GREATEST(0, used_credit - $2),
+               overage_eur = GREATEST(0, GREATEST(0, used_credit - $2) - included_credit),
+               updated_at = now()
+           WHERE org_id = $1 AND period_end > now()`,
           [ownerId, amount]
         );
         const { rows } = await client.query<{ balance: number }>(
-          "SELECT balance FROM subsumio_credit_balance WHERE owner_id = $1 FOR UPDATE",
+          `SELECT (included_credit + purchased_credit - used_credit) as balance
+           FROM saas_credit_balance
+           WHERE org_id = $1 AND period_end > now()
+           ORDER BY period_start DESC LIMIT 1 FOR UPDATE`,
           [ownerId]
         );
         const newBalance = rows[0]?.balance ?? amount;
@@ -1483,33 +1648,73 @@ export async function expireCredits(): Promise<ExpiryResult> {
 
     let expiredCredits = 0;
     for (const grant of rows) {
-      // Deduct from balance
-      await pool.query(
-        `UPDATE subsumio_credit_balance
-         SET balance = balance - $3, updated_at = NOW()
-         WHERE owner_id = $1 AND owner_type = $2`,
-        [grant.owner_id, grant.owner_type, grant.remaining]
-      );
+      // Resolve org_id UUID: subsumio_credit_grants.owner_id is text (user-id
+      // or UUID), but saas_credit_balance.org_id is UUID. If owner_type='user',
+      // look up the UUID via saas_orgs.slug. Without this, the UPDATE/SELECT
+      // would match 0 rows → credits silently not expired, but grant.remaining
+      // set to 0 → data corruption.
+      let orgIdForBalance: string = grant.owner_id;
+      if (grant.owner_type === "user") {
+        try {
+          const orgRows = await pool.query<{ id: string }>(
+            `SELECT id FROM saas_orgs WHERE slug = $1`,
+            [`user-${grant.owner_id.slice(0, 8)}`]
+          );
+          if (orgRows.rows[0]?.id) {
+            orgIdForBalance = orgRows.rows[0].id;
+          }
+        } catch {
+          // saas_orgs not available — skip this grant
+          continue;
+        }
+      }
 
-      // Record expiry transaction
-      await pool.query(
-        `INSERT INTO subsumio_credit_transactions (owner_id, owner_type, type, amount, balance_after, description, idempotency_key)
-         VALUES ($1, $2, 'expiry', $3,
-           (SELECT balance FROM subsumio_credit_balance WHERE owner_id = $1 AND owner_type = $2),
-           $4, $5)`,
-        [
-          grant.owner_id,
-          grant.owner_type,
-          -grant.remaining,
-          `Credit-Ablauf: ${grant.description ?? "Gekaufte Credits"}`,
-          `expiry-grant-${grant.id}`,
-        ]
+      // Cap the deduction at the actual purchased_credit balance.
+      // The grant's `remaining` field is NOT decremented during consumption
+      // (deductCredits increments used_credit instead), so `remaining` may
+      // be higher than the actual unspent purchased credit. We deduct
+      // min(grant.remaining, current purchased_credit) to prevent
+      // over-deducting (which would make purchased_credit negative).
+      const balanceRow = await pool.query<{ purchased_credit: number }>(
+        `SELECT COALESCE(purchased_credit, 0) as purchased_credit
+         FROM saas_credit_balance
+         WHERE org_id = $1 AND period_end > now()
+         ORDER BY period_start DESC LIMIT 1`,
+        [orgIdForBalance]
       );
+      const actualPurchased = Number(balanceRow.rows[0]?.purchased_credit ?? 0);
+      const deductAmount = Math.min(grant.remaining, actualPurchased);
+
+      if (deductAmount > 0) {
+        // Deduct from saas_credit_balance (reduce purchased_credit)
+        await pool.query(
+          `UPDATE saas_credit_balance
+           SET purchased_credit = GREATEST(0, purchased_credit - $3), updated_at = NOW()
+           WHERE org_id = $1 AND period_end > now()`,
+          [orgIdForBalance, grant.owner_type, deductAmount]
+        );
+
+        // Record expiry transaction
+        await pool.query(
+          `INSERT INTO subsumio_credit_transactions (owner_id, owner_type, type, amount, balance_after, description, idempotency_key)
+           VALUES ($1, $2, 'expiry', $3,
+             (SELECT (included_credit + purchased_credit - used_credit) FROM saas_credit_balance
+              WHERE org_id = $1 AND period_end > now() ORDER BY period_start DESC LIMIT 1),
+             $4, $5)`,
+          [
+            orgIdForBalance,
+            grant.owner_type,
+            -deductAmount,
+            `Credit-Ablauf: ${grant.description ?? "Gekaufte Credits"}`,
+            `expiry-grant-${grant.id}`,
+          ]
+        );
+
+        expiredCredits += deductAmount;
+      }
 
       // Mark grant as fully consumed
       await pool.query(`UPDATE subsumio_credit_grants SET remaining = 0 WHERE id = $1`, [grant.id]);
-
-      expiredCredits += Number(grant.remaining);
     }
 
     if (rows.length > 0) {
@@ -1713,7 +1918,7 @@ export async function detectSpendAnomaly(
 
 // ── Spend Caps per User ─────────────────────────────────────────────────────
 // OpenAI: Admins können Credit-Limits pro User/Gruppe setzen.
-// Wir: credit_limit in subsumio_credit_balance + Admin-UI.
+// Wir: credit_limit in saas_credit_balance + Admin-UI.
 
 export interface SpendCap {
   ownerId: string;
@@ -1738,18 +1943,11 @@ export async function setSpendCap(
 
   try {
     await ensureCreditSchema();
-    // Add credit_limit column if not exists (idempotent)
+    // credit_limit columns added by migration v136 to saas_credit_balance
     await pool.query(
-      `ALTER TABLE subsumio_credit_balance ADD COLUMN IF NOT EXISTS credit_limit numeric(12,2)`
-    );
-    await pool.query(
-      `ALTER TABLE subsumio_credit_balance ADD COLUMN IF NOT EXISTS credit_limit_period text DEFAULT 'monthly'`
-    );
-
-    await pool.query(
-      `UPDATE subsumio_credit_balance
+      `UPDATE saas_credit_balance
        SET credit_limit = $3, credit_limit_period = $4, updated_at = NOW()
-       WHERE owner_id = $1 AND owner_type = $2`,
+       WHERE org_id = $1 AND period_end > now()`,
       [ownerId, ownerType, creditLimit, period]
     );
   } catch (err) {
@@ -1775,9 +1973,10 @@ export async function checkSpendCap(
     // Get credit_limit + period
     const { rows } = await pool.query<{ credit_limit: number | null; credit_limit_period: string }>(
       `SELECT credit_limit, credit_limit_period
-       FROM subsumio_credit_balance
-       WHERE owner_id = $1 AND owner_type = $2`,
-      [ownerId, ownerType]
+       FROM saas_credit_balance
+       WHERE org_id = $1 AND period_end > now()
+       ORDER BY period_start DESC LIMIT 1`,
+      [ownerId]
     );
 
     const limit = rows[0]?.credit_limit;
@@ -1838,21 +2037,16 @@ export async function getNegativeBalanceConfig(
 
   try {
     await ensureCreditSchema();
-    await pool.query(
-      `ALTER TABLE subsumio_credit_balance ADD COLUMN IF NOT EXISTS allow_negative_balance boolean DEFAULT false`
-    );
-    await pool.query(
-      `ALTER TABLE subsumio_credit_balance ADD COLUMN IF NOT EXISTS max_negative_balance numeric(12,2) DEFAULT 0`
-    );
-
+    // Columns added by migration v136 to saas_credit_balance
     const { rows } = await pool.query<{
       allow_negative_balance: boolean;
       max_negative_balance: number;
     }>(
       `SELECT allow_negative_balance, max_negative_balance
-       FROM subsumio_credit_balance
-       WHERE owner_id = $1 AND owner_type = $2`,
-      [ownerId, ownerType]
+       FROM saas_credit_balance
+       WHERE org_id = $1 AND period_end > now()
+       ORDER BY period_start DESC LIMIT 1`,
+      [ownerId]
     );
 
     return {
@@ -1876,17 +2070,11 @@ export async function setNegativeBalanceConfig(
 
   try {
     await ensureCreditSchema();
+    // Columns added by migration v136 to saas_credit_balance
     await pool.query(
-      `ALTER TABLE subsumio_credit_balance ADD COLUMN IF NOT EXISTS allow_negative_balance boolean DEFAULT false`
-    );
-    await pool.query(
-      `ALTER TABLE subsumio_credit_balance ADD COLUMN IF NOT EXISTS max_negative_balance numeric(12,2) DEFAULT 0`
-    );
-
-    await pool.query(
-      `UPDATE subsumio_credit_balance
+      `UPDATE saas_credit_balance
        SET allow_negative_balance = $3, max_negative_balance = $4, updated_at = NOW()
-       WHERE owner_id = $1 AND owner_type = $2`,
+       WHERE org_id = $1 AND period_end > now()`,
       [ownerId, ownerType, allowNegative, maxNegative]
     );
   } catch (err) {

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowRight, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
+import { TaxumioMark } from "@/components/brand/taxumio-logo";
 import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { VERTICALS, type VerticalSlug } from "@/content/verticals";
 import { profileForIndustry } from "@/lib/industry-pack";
@@ -323,7 +324,11 @@ export default function VerticalPage({
         className="relative overflow-hidden px-4 py-24 text-center sm:px-6 lg:px-8"
       >
         <div className="mx-auto max-w-3xl">
-          <SubsumioMark size={56} className="mx-auto mb-6" />
+          {isSubsumio ? (
+            <SubsumioMark size={56} className="mx-auto mb-6" />
+          ) : (
+            <TaxumioMark size={56} className="mx-auto mb-6" />
+          )}
           <h2 className="mb-4 text-3xl font-bold tracking-tight [color:var(--mk-text)] md:text-4xl">
             {t.ctaTitle}
           </h2>
@@ -335,6 +340,34 @@ export default function VerticalPage({
               {t.ctaButton} <ArrowRight size={18} />
             </Button>
           </Link>
+          {/* Cross-product link: Taxumio ↔ Subsumio Legal */}
+          <p className="mt-8 text-sm [color:var(--mk-text-subtle)]">
+            {isSubsumio ? (
+              <>
+                <span className="opacity-70">
+                  {lang === "en" ? "For tax advisors:" : "Für Steuerberater:"}
+                </span>{" "}
+                <Link
+                  href={p(lang, "/taxumio")}
+                  className="brand-text inline-flex items-center gap-1 font-medium transition-all hover:gap-1.5"
+                >
+                  Taxumio <ArrowRight size={13} />
+                </Link>
+              </>
+            ) : (
+              <>
+                <span className="opacity-70">
+                  {lang === "en" ? "For law firms:" : "Für Rechtsanwälte:"}
+                </span>{" "}
+                <Link
+                  href={p(lang, "/")}
+                  className="brand-text inline-flex items-center gap-1 font-medium transition-all hover:gap-1.5"
+                >
+                  Subsumio <ArrowRight size={13} />
+                </Link>
+              </>
+            )}
+          </p>
         </div>
       </Section>
     </div>

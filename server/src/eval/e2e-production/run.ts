@@ -17,6 +17,7 @@
  */
 
 import { readFileSync, writeFileSync, existsSync, appendFileSync } from "fs";
+import { AT_LAW_SOURCES_ALL, AT_PRIMARY_STATUTE_SOURCE } from "../../core/legal/jurisdiction.ts";
 
 interface E2ECase {
   case_id: string;
@@ -88,10 +89,22 @@ function parseArgs(argv: string[]): ParsedArgs {
   const args = argv.slice(2);
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === "--jurisdiction" && i + 1 < args.length) { out.jurisdiction = args[++i]; continue; }
-    if (a === "--output" && i + 1 < args.length) { out.outputPath = args[++i]; continue; }
-    if (a === "--append") { out.append = true; continue; }
-    if (a === "--limit" && i + 1 < args.length) { out.limit = parseInt(args[++i], 10); continue; }
+    if (a === "--jurisdiction" && i + 1 < args.length) {
+      out.jurisdiction = args[++i];
+      continue;
+    }
+    if (a === "--output" && i + 1 < args.length) {
+      out.outputPath = args[++i];
+      continue;
+    }
+    if (a === "--append") {
+      out.append = true;
+      continue;
+    }
+    if (a === "--limit" && i + 1 < args.length) {
+      out.limit = parseInt(args[++i], 10);
+      continue;
+    }
     if (a === "--help" || a === "-h") {
       process.stderr.write(
         `Usage: bun run src/eval/e2e-production/run.ts <fixture.jsonl> [options]\n` +
@@ -102,7 +115,10 @@ function parseArgs(argv: string[]): ParsedArgs {
       );
       process.exit(0);
     }
-    if (!a.startsWith("--") && !out.fixturePath) { out.fixturePath = a; continue; }
+    if (!a.startsWith("--") && !out.fixturePath) {
+      out.fixturePath = a;
+      continue;
+    }
   }
   if (!out.fixturePath) {
     process.stderr.write("Error: fixture path required\n");
@@ -122,16 +138,37 @@ function loadFixture(path: string): E2ECase[] {
 function extractClaims(answer: string): string[] {
   const sentences = answer.split(/[.!?]\s+/).filter((s) => s.trim().length > 10);
   return sentences.filter((s) =>
-    /(?:§|Art\.|Abs\.|BGB|ABGB|StGB|ZPO|HGB|UGB|GmbHG|InsO|IO|UWG|BauGB|DSG|VwGO|AO|BAO|ArbVG|EheG|AVG|GewO|Anspruch|Recht|Pflicht|Vertrag|Schadensersatz|Schadenersatz|Gewährleistung|Verjährung|nichtig|wirksam|zulässig|strafbar|schuldig)/i.test(s)
+    /(?:§|Art\.|Abs\.|BGB|ABGB|StGB|ZPO|HGB|UGB|GmbHG|InsO|IO|UWG|BauGB|DSG|VwGO|AO|BAO|ArbVG|EheG|AVG|GewO|Anspruch|Recht|Pflicht|Vertrag|Schadensersatz|Schadenersatz|Gewährleistung|Verjährung|nichtig|wirksam|zulässig|strafbar|schuldig)/i.test(
+      s
+    )
   );
 }
 
 function isClaimGrounded(claim: string, context: string): boolean {
-  const claimTerms = claim
-    .toLowerCase()
-    .match(/[\p{L}]{4,}/gu)
-    ?.filter((t) => !["der", "die", "das", "ein", "eine", "ist", "wird", "wurde", "hat", "haben", "nach", "gemäß", "aufgrund", "hinsichtlich", "bezüglich"].includes(t))
-    ?? [];
+  const claimTerms =
+    claim
+      .toLowerCase()
+      .match(/[\p{L}]{4,}/gu)
+      ?.filter(
+        (t) =>
+          ![
+            "der",
+            "die",
+            "das",
+            "ein",
+            "eine",
+            "ist",
+            "wird",
+            "wurde",
+            "hat",
+            "haben",
+            "nach",
+            "gemäß",
+            "aufgrund",
+            "hinsichtlich",
+            "bezüglich",
+          ].includes(t)
+      ) ?? [];
   if (claimTerms.length === 0) return true;
   const contextLower = context.toLowerCase();
   const matchedTerms = claimTerms.filter((t) => contextLower.includes(t));
@@ -143,13 +180,16 @@ async function main() {
   let cases = loadFixture(opts.fixturePath);
   if (opts.limit) cases = cases.slice(0, opts.limit);
 
-  process.stderr.write(`[e2e-production] loaded ${cases.length} cases (jurisdiction=${opts.jurisdiction})\n`);
+  process.stderr.write(
+    `[e2e-production] loaded ${cases.length} cases (jurisdiction=${opts.jurisdiction})\n`
+  );
   process.env.GBRAIN_QUERY_EMBED_TIMEOUT_MS = "30000";
 
   const { loadConfig, toEngineConfig } = await import("../../core/config.ts");
   const { createEngine } = await import("../../core/engine-factory.ts");
   const { buildGatewayConfig } = await import("../../core/ai/build-gateway-config.ts");
-  const { configureGateway, reconfigureGatewayWithEngine, chat } = await import("../../core/ai/gateway.ts");
+  const { configureGateway, reconfigureGatewayWithEngine, chat } =
+    await import("../../core/ai/gateway.ts");
   const { analyzeAndRetrieve } = await import("../../core/legal/case-analyzer.ts");
 
   const cfg = loadConfig();
@@ -159,12 +199,12 @@ async function main() {
   process.stderr.write(`[e2e-production] connecting to engine...\n`);
   const engine = await createEngine(toEngineConfig(cfg));
   await engine.connect(toEngineConfig(cfg));
-  try { await reconfigureGatewayWithEngine(engine); } catch {}
+  try {
+    await reconfigureGatewayWithEngine(engine);
+  } catch {}
 
-  const sourceIds = opts.jurisdiction === "at"
-    ? ["law-at", "law-at-judikatur", "law-eu"]
-    : ["law-de", "law-eu"];
-  const sourceId = opts.jurisdiction === "at" ? "law-at" : "law-de";
+  const sourceIds = opts.jurisdiction === "at" ? AT_LAW_SOURCES_ALL : ["law-de", "law-eu"];
+  const sourceId = opts.jurisdiction === "at" ? AT_PRIMARY_STATUTE_SOURCE : "law-de";
   const lawPrefix = opts.jurisdiction === "at" ? `legal/statutes/at/` : `legal/statutes/de/`;
 
   const results: E2EResult[] = [];
@@ -174,16 +214,12 @@ async function main() {
     caseIdx++;
     try {
       // Phase 1+2: Analyze case facts → retrieve statutes
-      const { analysis, statutes } = await analyzeAndRetrieve(
-        `${c.facts} ${c.question}`,
-        engine,
-        {
-          jurisdiction: opts.jurisdiction,
-          sourceId,
-          sourceIds,
-          limit: 20,
-        },
-      );
+      const { analysis, statutes } = await analyzeAndRetrieve(`${c.facts} ${c.question}`, engine, {
+        jurisdiction: opts.jurisdiction,
+        sourceId,
+        sourceIds,
+        limit: 20,
+      });
 
       const retrievedSlugs = statutes.map((r) => r.slug);
       const expectedLawPrefix = `${lawPrefix}${c.expected_law}/`;
@@ -247,10 +283,10 @@ ${context}`;
           keywordMisses.push(kw);
         }
       }
-      const keywordMatchRate = c.expected_keywords.length > 0
-        ? keywordHits.length / c.expected_keywords.length
-        : 1;
-      const mentionsExpectedLaw = answerLower.includes(c.expected_law.toLowerCase()) ||
+      const keywordMatchRate =
+        c.expected_keywords.length > 0 ? keywordHits.length / c.expected_keywords.length : 1;
+      const mentionsExpectedLaw =
+        answerLower.includes(c.expected_law.toLowerCase()) ||
         retrievedSlugs.some((s) => s.startsWith(expectedLawPrefix));
 
       // Overall pass
@@ -280,7 +316,7 @@ ${context}`;
 
       const status = pass ? "✓ PASS" : "✗ FAIL";
       process.stderr.write(
-        `[e2e-production] ${caseIdx}/${cases.length} (${Math.round(caseIdx / cases.length * 100)}%) ${status} ${c.case_id} (issues=${analysis.issues.length}, halluc=${(hallucinationRate * 100).toFixed(0)}%, kw=${(keywordMatchRate * 100).toFixed(0)}%, law=${lawHit ? "Y" : "N"})\n`
+        `[e2e-production] ${caseIdx}/${cases.length} (${Math.round((caseIdx / cases.length) * 100)}%) ${status} ${c.case_id} (issues=${analysis.issues.length}, halluc=${(hallucinationRate * 100).toFixed(0)}%, kw=${(keywordMatchRate * 100).toFixed(0)}%, law=${lawHit ? "Y" : "N"})\n`
       );
     } catch (err: any) {
       results.push({
@@ -329,16 +365,18 @@ ${context}`;
     cases: results,
   };
 
-  process.stderr.write(`\n[e2e-production] RESULTS (${n} cases, jurisdiction=${opts.jurisdiction})\n`);
+  process.stderr.write(
+    `\n[e2e-production] RESULTS (${n} cases, jurisdiction=${opts.jurisdiction})\n`
+  );
   process.stderr.write(
     `  Analysis Success Rate:  ${(report.aggregate.analysis_success_rate * 100).toFixed(1)}%\n` +
-    `  Retrieval Hit Rate:     ${(report.aggregate.retrieval_hit_rate * 100).toFixed(1)}%\n` +
-    `  Avg Hallucination Rate: ${(report.aggregate.avg_hallucination_rate * 100).toFixed(1)}%\n` +
-    `  Avg Keyword Match:      ${(report.aggregate.avg_keyword_match_rate * 100).toFixed(1)}%\n` +
-    `  Grounded Answers:       ${report.aggregate.grounded_answers}/${n}\n` +
-    `  Avg Issues/Case:        ${report.aggregate.avg_issues_per_case.toFixed(1)}\n` +
-    `  Avg Deadlines/Case:     ${report.aggregate.avg_deadlines_per_case.toFixed(1)}\n` +
-    `  Pass Rate:              ${(report.aggregate.pass_rate * 100).toFixed(1)}%\n`
+      `  Retrieval Hit Rate:     ${(report.aggregate.retrieval_hit_rate * 100).toFixed(1)}%\n` +
+      `  Avg Hallucination Rate: ${(report.aggregate.avg_hallucination_rate * 100).toFixed(1)}%\n` +
+      `  Avg Keyword Match:      ${(report.aggregate.avg_keyword_match_rate * 100).toFixed(1)}%\n` +
+      `  Grounded Answers:       ${report.aggregate.grounded_answers}/${n}\n` +
+      `  Avg Issues/Case:        ${report.aggregate.avg_issues_per_case.toFixed(1)}\n` +
+      `  Avg Deadlines/Case:     ${report.aggregate.avg_deadlines_per_case.toFixed(1)}\n` +
+      `  Pass Rate:              ${(report.aggregate.pass_rate * 100).toFixed(1)}%\n`
   );
 
   if (opts.outputPath) {

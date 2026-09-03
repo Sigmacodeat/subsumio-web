@@ -28,6 +28,11 @@ export const POST = createHandler(
     action: "brain.read",
     rateTier: "standard",
     body: calculateSchema,
+    audit: (_ctx, body) => ({
+      action: "legal.rvg" as const,
+      entityType: "fachrechner",
+      details: { rechner: body.rechner },
+    }),
   },
   async (_ctx, body) => {
     const input = body.input as Record<string, unknown>;

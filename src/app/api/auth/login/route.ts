@@ -12,7 +12,10 @@ import { z } from "zod";
 
 // Extended schema with trimmed email for internal validation
 const loginSchemaInternal = loginSchema.extend({
-  email: z.string().transform((val) => val.trim().toLowerCase()),
+  email: z
+    .string()
+    .max(320)
+    .transform((val) => val.trim().toLowerCase()),
 });
 
 export const POST = createPublicHandler(

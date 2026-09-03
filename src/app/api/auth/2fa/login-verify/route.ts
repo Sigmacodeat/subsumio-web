@@ -12,8 +12,8 @@ import { z } from "zod";
 export const dynamic = "force-dynamic";
 
 const loginVerifySchema = z.object({
-  challengeToken: z.string(),
-  token: z.string(),
+  challengeToken: z.string().max(500),
+  token: z.string().max(500),
 });
 
 /**

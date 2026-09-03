@@ -19,7 +19,10 @@ export const BILLABLE_PLANS: Record<"pro" | "team", BillablePlan> = {
   pro: {
     id: "pro",
     name: "Solo",
-    monthlyEur: 179,
+    // €249/Monat — aligned with saas-pricing.ts (solo plan, 12× markup)
+    // Updated from €179 → €249 based on competitive analysis 2026-08-29:
+    // 13 unique features, 32-layer pipeline, above Irys ($299) and Legora ($300)
+    monthlyEur: 249,
     stripePriceEnv: "STRIPE_PRICE_SOLO",
     pages: 50_000,
     seats: 1,
@@ -27,7 +30,10 @@ export const BILLABLE_PLANS: Record<"pro" | "team", BillablePlan> = {
   team: {
     id: "team",
     name: "Kanzlei",
-    monthlyEur: 999,
+    // €1.499/Monat für 5 Nutzer → €299/seat — aligned with saas-pricing.ts (kanzlei plan, 18× markup)
+    // Updated from €999 → €1.499 based on competitive analysis 2026-08-29:
+    // Full pipeline (32 layers + ensemble critic), 13 unique features, DACH-first
+    monthlyEur: 1499,
     stripePriceEnv: "STRIPE_PRICE_KANZLEI",
     pages: 200_000,
     seats: 5,
@@ -62,7 +68,7 @@ export const BILLING_PLANS_DISPLAY: BillingPlanDisplay[] = [
   {
     id: "pro",
     name: "Solo",
-    price: "179 €/Monat",
+    price: "249 €/Monat",
     features: [
       "Voll verwaltet — keine API-Keys nötig",
       "1 Nutzer",
@@ -78,7 +84,7 @@ export const BILLING_PLANS_DISPLAY: BillingPlanDisplay[] = [
   {
     id: "team",
     name: "Kanzlei",
-    price: "999 €/Monat · 5 Nutzer inklusive",
+    price: "1.499 €/Monat · 5 Nutzer inklusive",
     features: [
       "Alles aus Solo für 5 Nutzer",
       "Geteiltes Kanzleiwissen",
@@ -108,4 +114,46 @@ export function planForPriceId(priceId: string | null | undefined): "pro" | "tea
     if (stripePriceId(plan) === priceId) return plan;
   }
   return null;
+}
+
+// ── Plan Mapping: Stripe (old) ↔ SaaS (new) ────────────────────────────
+// The Stripe checkout flow uses legacy plan IDs "pro"/"team" (kept for
+// backward compat with existing Stripe subscriptions). The SaaS billing
+// system (saas-pricing.ts, billing.ts) uses "solo"/"kanzlei"/"enterprise".
+// This mapping bridges the two worlds.
+
+/** Map Stripe plan ID → SaaS PlanTier. */
+export function toSaasPlan(
+  stripePlan: "pro" | "team" | "enterprise" | "free"
+): "solo" | "kanzlei" | "enterprise" | null {
+  switch (stripePlan) {
+    case "pro":
+      return "solo";
+    case "team":
+      return "kanzlei";
+    case "enterprise":
+      return "enterprise";
+    default:
+      return null; // "free" and unknown → no SaaS plan
+  }
+}
+
+/** Map SaaS PlanTier → Stripe plan ID. */
+export function fromSaasPlan(
+  saasPlan: "solo" | "kanzlei" | "enterprise"
+): "pro" | "team" | "enterprise" {
+  switch (saasPlan) {
+    case "solo":
+      return "pro";
+    case "kanzlei":
+      return "team";
+    case "enterprise":
+      return "enterprise";
+  }
+}
+
+/** Get the SaaS plan for a user, resolving via Stripe plan → SaaS mapping.
+ *  Returns null for free/unknown users (no SaaS billing). */
+export function saasPlanForUser(plan: string): "solo" | "kanzlei" | "enterprise" | null {
+  return toSaasPlan(plan as "pro" | "team" | "enterprise" | "free");
 }

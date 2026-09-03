@@ -8,6 +8,11 @@ export const POST = createHandler(
   {
     action: "brain.write",
     rateTier: "heavy",
+    audit: (_ctx, _body) => ({
+      action: "admin.dr" as const,
+      entityType: "brain",
+      details: {},
+    }),
   },
   async (ctx) => {
     const response = await fetch(`${ENGINE_URL}/api/admin/dream`, {

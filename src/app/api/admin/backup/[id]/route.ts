@@ -54,6 +54,14 @@ export const POST = createHandler(
     action: "admin.*",
     rateTier: "heavy",
     body: restoreSchema,
+    audit: (ctx, body) => ({
+      action: "backup.restore" as const,
+      entityType: "backup",
+      details: {
+        pageTypes: body.pageTypes ?? null,
+        user: ctx.user.email,
+      },
+    }),
   },
   async (ctx, body, _query, req) => {
     const { id } = await (req as unknown as { params: Promise<{ id: string }> }).params;
@@ -142,6 +150,11 @@ export const DELETE = createHandler(
   {
     action: "admin.*",
     rateTier: "standard",
+    audit: (ctx, _body, _query, _req) => ({
+      action: "backup.delete" as const,
+      entityType: "backup",
+      details: { user: ctx.user.email },
+    }),
   },
   async (ctx, _body, _query, req) => {
     const { id } = await (req as unknown as { params: Promise<{ id: string }> }).params;

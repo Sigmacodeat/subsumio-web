@@ -154,7 +154,7 @@ export class AdvokatImportConnector extends BaseConnector {
     if (isDocumentFilePath(relativePath)) {
       const extracted = await extractDocumentText(data, ext, { filename: basename(relativePath) });
       warnings.push(...extracted.warnings);
-      return stripFrontmatter(synthesizeDocumentMarkdown(relativePath, extracted));
+      return stripFrontmatter(await synthesizeDocumentMarkdown(relativePath, extracted));
     }
     if (isImageFilePath(relativePath)) {
       if (!this._ctx?.engine) {

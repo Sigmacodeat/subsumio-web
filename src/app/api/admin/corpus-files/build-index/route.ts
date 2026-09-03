@@ -26,6 +26,11 @@ export const POST = createHandler(
     action: "admin.*",
     body: bodySchema,
     skipCsrf: false,
+    audit: (ctx, body) => ({
+      action: "corpus_files.build_index" as const,
+      entityType: "corpus_index",
+      details: { corpus: body.corpus ?? "all", user: ctx.user.email },
+    }),
   },
   async (ctx, body) => {
     const NORMALIZED_ROOT = join(process.cwd(), "law-corpus", "_normalized");

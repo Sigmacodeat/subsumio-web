@@ -21,6 +21,18 @@ export const POST = createHandler(
     action: "brain.write",
     rateTier: "standard",
     body: replySchema,
+    audit: (_ctx, body) => ({
+      action: "email.reply" as const,
+      entityType: "email_message",
+      details: {
+        has_subject: Boolean(body.subject),
+        has_text: Boolean(body.text),
+        has_html: Boolean(body.html),
+        recipient_count_to: Array.isArray(body.to) ? body.to.length : body.to ? 1 : 0,
+        recipient_count_cc: Array.isArray(body.cc) ? body.cc.length : body.cc ? 1 : 0,
+        recipient_count_bcc: Array.isArray(body.bcc) ? body.bcc.length : body.bcc ? 1 : 0,
+      },
+    }),
   },
   async (ctx, body, _query, req) => {
     const { id } = await (req as unknown as { params: Promise<{ id: string }> }).params;

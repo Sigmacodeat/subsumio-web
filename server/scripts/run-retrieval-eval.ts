@@ -30,6 +30,7 @@ const { values } = parseArgs({
     "search-limit": { type: "string", default: "200" },
     "cache-file": { type: "string", default: "/tmp/retrieval-eval-reranker-cache.jsonl" },
     "no-cache": { type: "boolean", default: false },
+    "reranker-model": { type: "string", default: "deepseek/deepseek-chat" },
     repeat: { type: "string", default: "1" },
     help: { type: "boolean", default: false },
   },
@@ -56,6 +57,7 @@ Options:
   --inner-limit N      Override inner candidate limit (default: auto from jurisdiction)
   --cache-file PATH    Reranker response cache (default: /tmp/retrieval-eval-reranker-cache.jsonl)
   --no-cache           Disable reranker response cache (for noise-band measurement)
+  --reranker-model M   OpenRouter model for deepseek reranker (default: deepseek/deepseek-chat)
   --repeat N           Run N times with cache disabled, output mean ± SD (default: 1)
   --output PATH        Write JSON results to PATH
   --help               This help
@@ -200,7 +202,7 @@ async function main() {
   if (RERANKER_MODE === "deepseek") {
     const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
     if (!OPENROUTER_KEY) throw new Error("OPENROUTER_API_KEY required for --reranker deepseek");
-    const DEEPSEEK_MODEL = "deepseek/deepseek-chat";
+    const DEEPSEEK_MODEL = String(values["reranker-model"]) || "deepseek/deepseek-chat";
 
     // ── Reranker response cache (3a) ───────────────────────────────
     // Key = sha256(model + prompt_mode + snippet_len + query + doc_hashes)

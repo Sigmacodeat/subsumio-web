@@ -6,7 +6,7 @@
  * creates a Stripe Checkout Session (mode=payment) via the Stripe API.
  * After successful payment, the webhook adds credits to the balance.
  *
- * Security: requires CRON_SECRET header matching env var.
+ * Security: Vercel Cron sends Authorization: Bearer <CRON_SECRET>.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -15,6 +15,7 @@ import { env } from "@/lib/env";
 import { getCreditPack, type OwnerType } from "@/lib/billing/credits";
 import { isBillingConfigured } from "@/lib/billing/plans";
 import { getStore, getSharedPgPool } from "@/lib/auth/store";
+import { validateCronAuth } from "@/lib/cron-auth";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -28,11 +29,9 @@ interface AutoReloadCandidate {
 }
 
 export const GET = createPublicHandler({ maxDuration: 60 }, async (req: NextRequest) => {
-  const cronSecret = req.headers.get("x-cron-secret");
-  const expected = env("CRON_SECRET");
-  if (!expected || cronSecret !== expected) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+  // Cron auth: timing-safe Bearer check + rate limiting (shared with /api/cron/*)
+  const authError = await validateCronAuth(req);
+  if (authError) return authError;
 
   if (!isBillingConfigured()) {
     return NextResponse.json({ error: "billing_not_configured" }, { status: 503 });
@@ -50,12 +49,25 @@ export const GET = createPublicHandler({ maxDuration: 60 }, async (req: NextRequ
 
   if (pool) {
     try {
+      // Read from consolidated saas_credit_balance (v136+).
+      // available = included_credit + purchased_credit - used_credit
+      // Dedup (v137+): only trigger if auto_reload_last_triggered_at is NULL
+      // or older than 24h — prevents duplicate Checkout Sessions when the
+      // user hasn't paid the previous one yet (cron runs every 2h).
       const { rows } = await pool.query(
-        `SELECT owner_id, owner_type, balance, auto_reload_threshold, auto_reload_pack_id
-         FROM subsumio_credit_balance
+        `SELECT org_id as owner_id,
+                $2::text as owner_type,
+                (included_credit + purchased_credit - used_credit) as balance,
+                auto_reload_threshold,
+                auto_reload_pack_id
+         FROM saas_credit_balance
          WHERE auto_reload_enabled = true
-           AND balance <= auto_reload_threshold
-           AND auto_reload_pack_id IS NOT NULL`
+           AND period_end > now()
+           AND (included_credit + purchased_credit - used_credit) <= auto_reload_threshold
+           AND auto_reload_pack_id IS NOT NULL
+           AND (auto_reload_last_triggered_at IS NULL
+                OR auto_reload_last_triggered_at < NOW() - INTERVAL '24 hours')
+         ORDER BY period_start DESC`
       );
       candidates = rows.map(
         (r: {
@@ -167,6 +179,20 @@ export const GET = createPublicHandler({ maxDuration: 60 }, async (req: NextRequ
 
       const data = (await resp.json().catch(() => ({}))) as { url?: string };
       console.log(`[auto-reload] Created checkout session for ${candidate.ownerId}: ${data.url}`);
+
+      // Dedup: record trigger timestamp so the next cron run (within 24h)
+      // doesn't create another Checkout Session for the same user.
+      if (pool) {
+        try {
+          await pool.query(
+            `UPDATE saas_credit_balance SET auto_reload_last_triggered_at = NOW()
+             WHERE org_id = $1 AND period_end > now()`,
+            [candidate.ownerId]
+          );
+        } catch {
+          // best-effort — don't fail the cron for this
+        }
+      }
       triggered++;
     } catch (err) {
       errors.push(

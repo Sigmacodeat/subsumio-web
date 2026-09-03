@@ -4,6 +4,8 @@ import { createHandler, apiError } from "@/lib/api-handler";
 
 const checkoutSchema = z.object({
   plan: z.enum(["pro", "team"]),
+  /** Number of seats for team plan (default: 5). Ignored for pro (always 1). */
+  seats: z.number().int().min(5).max(50).optional(),
 });
 
 export const POST = createHandler(
@@ -36,14 +38,19 @@ export const POST = createHandler(
     }
 
     const origin = req.nextUrl.origin;
+    // Seat quantity: team plan supports 5-50 seats (€299/seat, min 5).
+    // Pro plan is always 1 seat. Stripe Price for team is per-seat (€299),
+    // so quantity = seats. Stripe Price for pro is flat (€249), quantity = 1.
+    const quantity = body.plan === "team" ? String(body.seats ?? 5) : "1";
     const params = new URLSearchParams({
       mode: "subscription",
       "line_items[0][price]": priceId,
-      "line_items[0][quantity]": "1",
+      "line_items[0][quantity]": quantity,
       client_reference_id: ctx.user.id,
       customer_email: ctx.user.email,
       "metadata[plan]": body.plan,
       "metadata[user_id]": ctx.user.id,
+      ...(body.seats ? { "metadata[seats]": String(body.seats) } : {}),
       success_url: `${origin}/dashboard/billing?status=success`,
       cancel_url: `${origin}/dashboard/billing?status=cancelled`,
       ...(ctx.user.referredBy ? { "metadata[referred_by]": ctx.user.referredBy } : {}),

@@ -1,6 +1,7 @@
 "use client";
 
 import { lazy, Suspense, useState, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Loader2,
   AlertTriangle,
@@ -219,9 +220,37 @@ function ProzessOekonomieSection({ caseSlug, lang }: { caseSlug: string; lang: s
 export function StrategyTab() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
+  const router = useRouter();
   const [initialQuery, setInitialQuery] = useState<string | undefined>(undefined);
   const [queryNonce, setQueryNonce] = useState(0);
+  const [investigationLoading, setInvestigationLoading] = useState(false);
   const { grounding, groundAnswer, reset } = useGroundedAnswer();
+
+  const startInvestigation = useCallback(
+    async (caseSlug: string) => {
+      setInvestigationLoading(true);
+      try {
+        const result = await api.legal.caseInvestigation({
+          case_slug: caseSlug,
+          pruefauftrag:
+            lang === "en"
+              ? "Identify contradictions between party claims and documentary evidence"
+              : "Widersprüche zwischen Parteiaussagen und Dokumenten identifizieren",
+          jurisdiction: "at",
+        });
+        router.push(
+          `/dashboard/cases/${encodeURIComponent(caseSlug)}/investigation/${encodeURIComponent(result.run_id)}`
+        );
+      } catch (err) {
+        ctx.setSaveError(
+          err instanceof Error ? err.message : "Sachverhaltsprüfung konnte nicht gestartet werden"
+        );
+      } finally {
+        setInvestigationLoading(false);
+      }
+    },
+    [lang, router, ctx]
+  );
 
   const handleQuickAction = useCallback(
     (action: { key: string; queryDe: string; queryEn: string }) => {
@@ -520,9 +549,7 @@ export function StrategyTab() {
                       {f.severity.toUpperCase()}
                     </Badge>
                     {f.axis && (
-                      <span className="text-xs text-[color:var(--ds-text-muted)]">
-                        {f.axis}
-                      </span>
+                      <span className="text-xs text-[color:var(--ds-text-muted)]">{f.axis}</span>
                     )}
                   </div>
                   <div className="space-y-1.5 text-sm">
@@ -683,16 +710,23 @@ export function StrategyTab() {
             </div>
             {QUICK_ACTIONS.map((action) => {
               const Icon = action.icon;
+              const isInvestigation = action.key === "contradictions";
               return (
                 <Button
                   key={action.key}
-                  variant="ghost"
+                  variant={isInvestigation ? "primary" : "ghost"}
                   size="sm"
-                  disabled={isArchived}
-                  onClick={() => handleQuickAction(action)}
-                  className="gap-1.5 text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                  disabled={isArchived || (isInvestigation && investigationLoading)}
+                  onClick={() =>
+                    isInvestigation ? startInvestigation(caseData.slug) : handleQuickAction(action)
+                  }
+                  className="gap-1.5 text-xs"
                 >
-                  <Icon size={12} />
+                  {isInvestigation && investigationLoading ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <Icon size={12} />
+                  )}
                   {lang === "en" ? action.labelEn : action.labelDe}
                 </Button>
               );

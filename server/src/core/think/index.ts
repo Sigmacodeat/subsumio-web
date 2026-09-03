@@ -42,14 +42,8 @@ import {
   buildCrossVerifyRegenerationPrompt,
   type CrossVerifyResult,
 } from "./cross-verify.ts";
-import {
-  computeDocumentConfidence,
-  type DocumentConfidence,
-} from "../confidence-scoring.ts";
-import {
-  buildProvenance,
-  type ProvenanceResult,
-} from "../provenance.ts";
+import { computeDocumentConfidence, type DocumentConfidence } from "../confidence-scoring.ts";
+import { buildProvenance, type ProvenanceResult } from "../provenance.ts";
 import {
   computeGraphStats,
   type LegalKnowledgeGraph,
@@ -292,10 +286,20 @@ function computeMaxTokens(question: string, legalMode?: boolean, taxMode?: boole
   // Reuse the complexity classifier from intent.ts
   // Inline check to avoid async import overhead on the hot path
   const complexSignals = [
-    /subsum/i, /pruef/i, /prüf/i, /anwend/i,
-    /defini/i, /ausleg/i, /interpret/i,
-    /Tatbestand/i, /Grundrecht/i, /Verfass/i,
-    /Rechtsmittel/i, /Berufung/i, /Revision/i, /Beschwerde/i,
+    /subsum/i,
+    /pruef/i,
+    /prüf/i,
+    /anwend/i,
+    /defini/i,
+    /ausleg/i,
+    /interpret/i,
+    /Tatbestand/i,
+    /Grundrecht/i,
+    /Verfass/i,
+    /Rechtsmittel/i,
+    /Berufung/i,
+    /Revision/i,
+    /Beschwerde/i,
   ];
   const isComplex = complexSignals.some((rx) => rx.test(question));
   if (isComplex) return 6000;
@@ -399,7 +403,12 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
     const complexity = classifyLegalComplexity(opts.question);
     modelTier = complexityToTier(complexity);
     if (modelTier === "reasoning") {
-      modelFallback = "deepseek"; // cheaper fallback for non-complex questions
+      // v0.43.1: Legal reasoning requires Sonnet-class, not DeepSeek.
+      // DeepSeek lacks the multi-step reasoning for subsumption and
+      // cross-document analysis (BenGER 2026, TruPath Labs 2026).
+      // The reasoning tier default is now Sonnet (model-config.ts);
+      // this fallback aligns with it.
+      modelFallback = "sonnet";
     }
     warnings.push(`INTENT_MODEL_ROUTING: complexity=${complexity} tier=${modelTier}`);
   }
@@ -420,13 +429,16 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
   const adversarialScan = scanForInjection(opts.question);
   if (adversarialScan.flags.length > 0) {
     for (const flag of adversarialScan.flags) {
-      warnings.push(`INJECTION_DETECTED: ${flag.category} (${flag.severity}) — ${flag.match.slice(0, 80)}`);
+      warnings.push(
+        `INJECTION_DETECTED: ${flag.category} (${flag.severity}) — ${flag.match.slice(0, 80)}`
+      );
     }
     if (adversarialScan.blocked) {
       warnings.push("INJECTION_BLOCKED: Query blocked due to high-risk injection patterns");
       return {
         question: opts.question,
-        answer: "Ihre Anfrage wurde aufgrund verdächtiger Muster blockiert. Bitte formulieren Sie Ihre juristische Frage ohne Injektionsversuche neu.",
+        answer:
+          "Ihre Anfrage wurde aufgrund verdächtiger Muster blockiert. Bitte formulieren Sie Ihre juristische Frage ohne Injektionsversuche neu.",
         citations: [],
         gaps: ["Query blocked by adversarial defense"],
         pagesGathered: 0,
@@ -508,13 +520,19 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
           caseSlug?.startsWith(`${prefix}/`)
       );
     const evidencePageIds = [
-      ...new Set([
-        ...gather.pages.map((p) => p.page_id),
-        ...gather.takes.map((t) => t.page_id),
-      ].filter((id): id is number => Number.isFinite(id))),
+      ...new Set(
+        [...gather.pages.map((p) => p.page_id), ...gather.takes.map((t) => t.page_id)].filter(
+          (id): id is number => Number.isFinite(id)
+        )
+      ),
     ];
     const evidenceRows = evidencePageIds.length
-      ? await engine.executeRaw<{ id: number; source_id: string; slug: string; case_slug?: string }>(
+      ? await engine.executeRaw<{
+          id: number;
+          source_id: string;
+          slug: string;
+          case_slug?: string;
+        }>(
           `SELECT id, source_id, slug, frontmatter->>'case_slug' AS case_slug
              FROM pages
             WHERE id = ANY($1::bigint[]) AND deleted_at IS NULL`,
@@ -533,7 +551,10 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
       pages: gather.pages.filter((p) => pageAllowed(p.page_id, p.slug, p.case_slug)),
       takes: gather.takes.filter((t) => pageAllowed(t.page_id, t.page_slug)),
       graphSlugs: gather.graphSlugs.filter(
-        (slug) => slug.startsWith("legal/statutes/") || slug.startsWith("legal/judikatur/") || matchesScope(slug)
+        (slug) =>
+          slug.startsWith("legal/statutes/") ||
+          slug.startsWith("legal/judikatur/") ||
+          matchesScope(slug)
       ),
     };
   }
@@ -713,29 +734,47 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
   // have slugs starting with 'law/de/' + tax law slug (estg, ustg, kstg, etc.),
   // 'law/ch/' + tax law slug (dbg, mwstg, sthg, zg), or 'law/eu/' + tax law slug.
   const TAX_SLUG_PREFIXES = [
-    "law/de/estg", "law/de/ustg", "law/de/kstg", "law/de/gewstg", "law/de/erbstg",
-    "law/de/bewg", "law/de/grestg", "law/de/lstdv", "law/de/stbvv", "law/de/stberg",
-    "law/de/solzg", "law/de/astg", "law/de/estdv", "law/de/ustdv", "law/de/ao",
-    "law/ch/dbg", "law/ch/mwstg", "law/ch/sthg", "law/ch/zg",
-    "law/eu/mwst-systemrichtlinie", "law/eu/dac6", "law/eu/uzk",
+    "law/de/estg",
+    "law/de/ustg",
+    "law/de/kstg",
+    "law/de/gewstg",
+    "law/de/erbstg",
+    "law/de/bewg",
+    "law/de/grestg",
+    "law/de/lstdv",
+    "law/de/stbvv",
+    "law/de/stberg",
+    "law/de/solzg",
+    "law/de/astg",
+    "law/de/estdv",
+    "law/de/ustdv",
+    "law/de/ao",
+    "law/ch/dbg",
+    "law/ch/mwstg",
+    "law/ch/sthg",
+    "law/ch/zg",
+    "law/eu/mwst-systemrichtlinie",
+    "law/eu/dac6",
+    "law/eu/uzk",
   ];
   const autoTaxMode = gather.pages.some((p) => {
     const pageSlug = String((p as unknown as { slug?: string }).slug ?? "");
     return TAX_SLUG_PREFIXES.some((prefix) => pageSlug.startsWith(prefix));
   });
   const taxMode = opts.taxMode || autoTaxMode;
-  const systemPrompt = buildThinkSystemPrompt({
-    intent,
-    ...(opts.anchor !== undefined ? { anchor: opts.anchor } : {}),
-    ...(opts.since !== undefined ? { since: opts.since } : {}),
-    ...(opts.until !== undefined ? { until: opts.until } : {}),
-    willSave: opts.save,
-    withCalibration: !!calibrationBlockOpts,
-    ...(legalMode ? { legalMode: true } : {}),
-    ...(legalMode && opts.jurisdiction ? { jurisdiction: opts.jurisdiction } : {}),
-    ...(taxMode ? { taxMode: true } : {}),
-    ...(taxMode && opts.jurisdiction ? { jurisdiction: opts.jurisdiction } : {}),
-  }) + (adversarialScan.flags.length > 0 ? ANTI_INJECTION_PROMPT : "");
+  const systemPrompt =
+    buildThinkSystemPrompt({
+      intent,
+      ...(opts.anchor !== undefined ? { anchor: opts.anchor } : {}),
+      ...(opts.since !== undefined ? { since: opts.since } : {}),
+      ...(opts.until !== undefined ? { until: opts.until } : {}),
+      willSave: opts.save,
+      withCalibration: !!calibrationBlockOpts,
+      ...(legalMode ? { legalMode: true } : {}),
+      ...(legalMode && opts.jurisdiction ? { jurisdiction: opts.jurisdiction } : {}),
+      ...(taxMode ? { taxMode: true } : {}),
+      ...(taxMode && opts.jurisdiction ? { jurisdiction: opts.jurisdiction } : {}),
+    }) + (adversarialScan.flags.length > 0 ? ANTI_INJECTION_PROMPT : "");
   const userMessage = buildThinkUserMessage({
     question: opts.question,
     pagesBlock,
@@ -818,9 +857,7 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
       let accumulated = "";
       try {
         const modelStr = normalizeModelId(modelUsed);
-        const streamMessages: ChatMessage[] = [
-          { role: "user", content: streamUserMessage },
-        ];
+        const streamMessages: ChatMessage[] = [{ role: "user", content: streamUserMessage }];
         for await (const chunk of gatewayChatStream({
           model: modelStr,
           system: streamSystemPrompt,
@@ -864,7 +901,9 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
           const r = parsed as Partial<ThinkResponse>;
           response = {
             answer: typeof r.answer === "string" ? r.answer : "",
-            citations: Array.isArray(r.citations) ? (r.citations as ThinkResponse["citations"]) : [],
+            citations: Array.isArray(r.citations)
+              ? (r.citations as ThinkResponse["citations"])
+              : [],
             gaps: Array.isArray(r.gaps)
               ? (r.gaps as string[]).filter((g) => typeof g === "string")
               : [],
@@ -1005,10 +1044,7 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
             );
 
             // Regenerate with cross-verify feedback
-            const stricterSystem = buildCrossVerifyRegenerationPrompt(
-              systemPrompt,
-              verifyResult
-            );
+            const stricterSystem = buildCrossVerifyRegenerationPrompt(systemPrompt, verifyResult);
             try {
               const regenResult = await client.create({
                 model: modelUsed,
@@ -1080,7 +1116,9 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
       // Build click-through links from claims to source passages.
       provenanceResult = buildProvenance(response.answer, confContext);
       if (provenanceResult.links.length > 0) {
-        warnings.push(`PROVENANCE: ${provenanceResult.links.length} links, ${provenanceResult.unsupported_claims.length} unsupported`);
+        warnings.push(
+          `PROVENANCE: ${provenanceResult.links.length} links, ${provenanceResult.unsupported_claims.length} unsupported`
+        );
       }
 
       // ── Hierarchical Legal Knowledge Graph (Gap 4) ──
@@ -1117,9 +1155,10 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
       // Stage 3 (paraphrase judge) runs on every legal answer.
       // Stage 4 (ensemble strict) runs only for high-stakes outputs.
       if (response.citations && response.citations.length > 0) {
-        const ensembleMode: EnsembleMode = opts.searchMode === "conservative" ? "strict" : "standard";
+        const ensembleMode: EnsembleMode =
+          opts.searchMode === "conservative" ? "strict" : "standard";
         // Extract §-citation strings from the answer text for ensemble verification
-        const citationStrings = (response.answer.match(/§\s*\d+[a-z]?\s+[A-Z][A-Za-z]{1,10}/g) ?? []);
+        const citationStrings = response.answer.match(/§\s*\d+[a-z]?\s+[A-Z][A-Za-z]{1,10}/g) ?? [];
         if (citationStrings.length > 0) {
           try {
             ensembleVerification = await runEnsembleVerification({
@@ -1132,17 +1171,19 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
                 citation: f.citation,
                 severity: f.severity,
               })),
-              stage2Result: lastCrossVerifyResult ? {
-                clean: lastCrossVerifyResult.clean,
-                flags: lastCrossVerifyResult.flags.map((f) => ({
-                  type: f.type,
-                  detail: f.detail,
-                  citation: f.citation,
-                  severity: f.severity,
-                })),
-                verified_citations: lastCrossVerifyResult.verified_citations,
-                flagged_citations: lastCrossVerifyResult.flagged_citations,
-              } : undefined,
+              stage2Result: lastCrossVerifyResult
+                ? {
+                    clean: lastCrossVerifyResult.clean,
+                    flags: lastCrossVerifyResult.flags.map((f) => ({
+                      type: f.type,
+                      detail: f.detail,
+                      citation: f.citation,
+                      severity: f.severity,
+                    })),
+                    verified_citations: lastCrossVerifyResult.verified_citations,
+                    flagged_citations: lastCrossVerifyResult.flagged_citations,
+                  }
+                : undefined,
               ensembleMode,
             });
 
@@ -1150,10 +1191,14 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
               warnings.push(`ENSEMBLE_VERIFY: clean (${ensembleVerification.method})`);
             } else {
               const flagged = ensembleVerification.citations.filter((c) => !c.verified).length;
-              warnings.push(`ENSEMBLE_VERIFY: ${flagged} citations flagged (${ensembleVerification.method})`);
+              warnings.push(
+                `ENSEMBLE_VERIFY: ${flagged} citations flagged (${ensembleVerification.method})`
+              );
             }
           } catch (ensErr) {
-            warnings.push(`ENSEMBLE_VERIFY_SKIPPED: ${ensErr instanceof Error ? ensErr.message : "unknown"}`);
+            warnings.push(
+              `ENSEMBLE_VERIFY_SKIPPED: ${ensErr instanceof Error ? ensErr.message : "unknown"}`
+            );
           }
         }
       }
@@ -1233,7 +1278,9 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
     answer: response.answer,
     citations: grounded.valid,
     warnings,
-    guardrail_passed: lastGuardrailResult ? !lastGuardrailResult.flags.some((f: { severity: string }) => f.severity === "high") : undefined,
+    guardrail_passed: lastGuardrailResult
+      ? !lastGuardrailResult.flags.some((f: { severity: string }) => f.severity === "high")
+      : undefined,
     guardrail_flags: lastGuardrailResult?.flags,
     cross_verify_clean: lastCrossVerifyResult?.clean,
     cross_verify_flags: lastCrossVerifyResult?.flags,

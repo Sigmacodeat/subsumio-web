@@ -16,7 +16,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "NODE_OPTIONS=--max-old-space-size=8192 next build",
+    "build": "NODE_OPTIONS=--max-old-space-size=16384 next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
@@ -29,6 +29,8 @@
     "test:e2e": "playwright test",
     "test:e2e:smoke": "playwright test tests/e2e-playwright/smoke.spec.ts",
     "test:e2e:ui": "playwright test --ui",
+    "test:load": "npx tsx scripts/load-test.ts --duration=10 --concurrency=5",
+    "test:load:heavy": "npx tsx scripts/load-test.ts --duration=30 --concurrency=20 --p95=1000",
     "test:workflow": "bun run tests/e2e-workflow-simulation.ts",
     "akte:e2e": "bun run scripts/run-akte-e2e.ts",
     "smoke:live": "bash tests/live-smoke.sh",

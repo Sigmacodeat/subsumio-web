@@ -29,6 +29,7 @@ import { PasswordRequiredError, InvalidDocumentPasswordError } from "../../extra
 import {
   runExtractionAndImport,
   patchPageFrontmatter,
+  persistEnginePostUploadTasks,
   UnsupportedUploadError,
 } from "../../../commands/web-api.ts";
 
@@ -102,6 +103,26 @@ export function makeExtractDocumentHandler({ engine }: { engine: BrainEngine }) 
           extraction_status: "ready",
           extraction_completed_at: new Date().toISOString(),
         });
+      }
+
+      // Persist post-upload tasks (analyze, reconcile_case, contradiction) on
+      // the ENGINE side. This ensures consistency between sync and async upload
+      // paths — previously only the sync direct-upload path persisted these
+      // tasks, while async uploads relied on the web app's confirm proxy which
+      // could drop them on SSE disconnect. (BUG #C fix)
+      try {
+        await persistEnginePostUploadTasks(engine, sourceId, {
+          doc_slug: slug,
+          case_slug: d.case_slug,
+          brain_id: sourceId,
+          doc_title: d.title,
+          uploaded_at: new Date().toISOString(),
+        });
+      } catch (postUploadErr) {
+        console.error(
+          `[extract-document] post-upload task persist failed for ${slug}: ` +
+            (postUploadErr instanceof Error ? postUploadErr.message : String(postUploadErr))
+        );
       }
 
       await job.updateProgress({ phase: "done", slug, part_count: partSlugs.length });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Loader2,
@@ -40,6 +40,51 @@ export function DocumentsTab() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
+  // G27 fix: debounce search + AbortController to prevent out-of-order
+  // responses and cancel in-flight requests on new input.
+  const searchAbortRef = useRef<AbortController | null>(null);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    // Debounce: wait 250ms after last keystroke before searching.
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    if (!ctx.linkSearchQuery.trim() || ctx.linkSearchQuery.trim().length <= 2) {
+      setDebouncedSearch("");
+      return;
+    }
+    searchTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(ctx.linkSearchQuery);
+    }, 250);
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, [ctx.linkSearchQuery]);
+
+  const { setLinkSearchResults, setLinkSearching } = ctx;
+  useEffect(() => {
+    if (!debouncedSearch) {
+      setLinkSearchResults([]);
+      return;
+    }
+    // Abort any previous in-flight search to prevent out-of-order responses.
+    if (searchAbortRef.current) searchAbortRef.current.abort();
+    const ac = new AbortController();
+    searchAbortRef.current = ac;
+    setLinkSearching(true);
+    api.brain
+      .search(debouncedSearch, 10)
+      .then((results) => {
+        if (!ac.signal.aborted) {
+          setLinkSearchResults(results);
+          setLinkSearching(false);
+        }
+      })
+      .catch(() => {
+        if (!ac.signal.aborted) setLinkSearching(false);
+      });
+    return () => ac.abort();
+  }, [debouncedSearch, setLinkSearchResults, setLinkSearching]);
 
   useEffect(() => {
     if (searchParams.get("action") !== "upload") return;
@@ -392,18 +437,7 @@ export function DocumentsTab() {
               value={ctx.linkSearchQuery}
               onChange={(e) => {
                 ctx.setLinkSearchQuery(e.target.value);
-                if (e.target.value.trim().length > 2) {
-                  ctx.setLinkSearching(true);
-                  api.brain
-                    .search(e.target.value, 10)
-                    .then((results) => {
-                      ctx.setLinkSearchResults(results);
-                      ctx.setLinkSearching(false);
-                    })
-                    .catch(() => ctx.setLinkSearching(false));
-                } else {
-                  ctx.setLinkSearchResults([]);
-                }
+                // G27 fix: search is now debounced + abort-controlled via useEffect above.
               }}
               placeholder={t("casesdetail.search_placeholder")}
               className="mb-3 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"

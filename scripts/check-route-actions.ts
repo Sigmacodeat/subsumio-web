@@ -55,6 +55,9 @@ function checkRouteFile(filePath: string): void {
   // Skip cron routes — they use CRON_SECRET verification, not createHandler
   if (filePath.includes("/api/cron/")) return;
 
+  // Skip billing cron routes — they use CRON_SECRET via validateCronAuth
+  if (filePath.includes("/api/billing/") && content.includes("validateCronAuth")) return;
+
   // Skip SCIM routes — they use createScimHandler with Bearer token auth
   if (filePath.includes("/api/scim/")) return;
 

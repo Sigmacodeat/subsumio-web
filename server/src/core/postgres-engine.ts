@@ -1825,8 +1825,10 @@ export class PostgresEngine implements BrainEngine {
 
     // Search-only timeout. SET LOCAL inside sql.begin() scopes the GUC
     // to the transaction so it can never leak onto a pooled connection.
+    // Override via GBRAIN_SEARCH_TIMEOUT for large corpora (e.g. 712K AT pages).
+    const searchTimeout = process.env.GBRAIN_SEARCH_TIMEOUT ?? "8s";
     const rows = await sql.begin(async (sql) => {
-      await sql.unsafe("SET LOCAL statement_timeout = '8s'", []);
+      await sql.unsafe(`SET LOCAL statement_timeout = '${searchTimeout}'`, []);
       return await sql.unsafe(rawQuery, params as Parameters<typeof sql.unsafe>[1]);
     });
     return rows.map(rowToSearchResult);
@@ -2121,8 +2123,9 @@ export class PostgresEngine implements BrainEngine {
       OFFSET ${offsetParam}
     `;
 
+    const searchTimeout2 = process.env.GBRAIN_SEARCH_TIMEOUT ?? "8s";
     const rows = await sql.begin(async (sql) => {
-      await sql.unsafe("SET LOCAL statement_timeout = '8s'", []);
+      await sql.unsafe(`SET LOCAL statement_timeout = '${searchTimeout2}'`, []);
       return await sql.unsafe(rawQuery, params as Parameters<typeof sql.unsafe>[1]);
     });
     return rows.map(rowToSearchResult);
@@ -2330,7 +2333,7 @@ export class PostgresEngine implements BrainEngine {
     const efSearch = hasSourceFilter ? 1000 : 200;
 
     const rows = await sql.begin(async (sql) => {
-      await sql.unsafe("SET LOCAL statement_timeout = '15s'", []);
+      await sql.unsafe("SET LOCAL statement_timeout = '30s'", []);
       await sql.unsafe(`SET LOCAL hnsw.ef_search = ${efSearch}`, []);
       await sql.unsafe("SET LOCAL hnsw.iterative_scan = 'relaxed_order'", []);
       await sql.unsafe("SET LOCAL hnsw.max_scan_tuples = 50000", []);
@@ -2341,6 +2344,18 @@ export class PostgresEngine implements BrainEngine {
       // the source_id filter, so we use 120 for filtered, 60 for unfiltered.
       const ivfflatProbes = hasSourceFilter ? 120 : 60;
       await sql.unsafe(`SET LOCAL ivfflat.probes = ${ivfflatProbes}`, []);
+      // v0.46: Force the planner to use the IVFFlat index when a source_id
+      // filter is present. Without this, the planner chooses idx_chunks_source_id
+      // (B-tree) which scans all 204K chunks for a single source and computes
+      // distances for each — 23 seconds instead of 0.5 seconds. The partial
+      // IVFFlat indexes (idx_chunks_embedding_<source>) are only used when
+      // enable_indexscan is off because the planner's cost model for ANN
+      // scans is "close to a guess" (Multigrid analysis, pgvector docs).
+      // This is safe because SET LOCAL scopes to the transaction.
+      if (hasSourceFilter) {
+        await sql.unsafe("SET LOCAL enable_indexscan = off", []);
+        await sql.unsafe("SET LOCAL enable_bitmapscan = off", []);
+      }
       return await sql.unsafe(rawQuery, params as Parameters<typeof sql.unsafe>[1]);
     });
     return rows.map(rowToSearchResult);

@@ -11,7 +11,6 @@ import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import {
   getWorkProduct,
   updateWorkProductContent,
-  transitionWorkProductStatus,
   attachReceiptToWorkProduct,
   attachClaimEvidenceToWorkProduct,
 } from "@/lib/work-product-store";

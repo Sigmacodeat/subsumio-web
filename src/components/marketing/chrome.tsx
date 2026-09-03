@@ -70,7 +70,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { EASE, ClipReveal, Reveal, GlowCard, AnimatedCounter } from "./motion-system";
 import { SubsumioLogo, SubsumioMark } from "@/components/brand/subsumio-logo";
-import { type SiteBrand } from "@/lib/brand";
+import { type SiteBrand, brandForHost } from "@/lib/brand";
 import {
   NAV,
   FOOTER,
@@ -90,6 +90,11 @@ function setLangPref(lang: Lang) {
 }
 
 export function useSiteBrand(): SiteBrand {
+  // Detect brand from host on the client. Falls back to subsumio for
+  // unknown hosts (localhost, preview, etc.).
+  if (typeof window !== "undefined") {
+    return brandForHost(window.location.host);
+  }
   return "subsumio";
 }
 

@@ -15,6 +15,10 @@ export const GET = createHandler(
   {
     action: "brain.read",
     rateTier: "standard",
+    audit: (_ctx, _body, _query, _req) => ({
+      action: "email.message_detail" as const,
+      entityType: "email_message",
+    }),
   },
   async (ctx, _body, _query, req) => {
     const { id } = await (req as unknown as { params: Promise<{ id: string }> }).params;
@@ -36,6 +40,14 @@ export const PATCH = createHandler(
     action: "brain.write",
     rateTier: "standard",
     body: patchSchema,
+    audit: (_ctx, body) => ({
+      action: "email.message_update" as const,
+      entityType: "email_message",
+      details: {
+        folder: body.folder,
+        is_read: body.isRead,
+      },
+    }),
   },
   async (ctx, body, _query, req) => {
     const { id } = await (req as unknown as { params: Promise<{ id: string }> }).params;

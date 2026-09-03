@@ -8,29 +8,29 @@ import {
 
 describe("crypto-auto-detect", () => {
   describe("extractWalletsFromText", () => {
-    it("finds BTC address in text", () => {
+    it("finds BTC address in text", async () => {
       const text = "Send funds to bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4";
-      const wallets = extractWalletsFromText(text);
+      const wallets = await extractWalletsFromText(text);
       expect(wallets.length).toBeGreaterThan(0);
       expect(wallets[0].blockchain).toBe("BTC");
       expect(wallets[0].checksumValid).toBe(true);
     });
 
-    it("finds ETH address in text", () => {
+    it("finds ETH address in text", async () => {
       const text = "My ETH address is 0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed";
-      const wallets = extractWalletsFromText(text);
+      const wallets = await extractWalletsFromText(text);
       expect(wallets.length).toBeGreaterThan(0);
       expect(wallets[0].blockchain).toBe("ETH");
     });
 
-    it("returns empty for text without wallets", () => {
-      const wallets = extractWalletsFromText("Hello world, no crypto here.");
+    it("returns empty for text without wallets", async () => {
+      const wallets = await extractWalletsFromText("Hello world, no crypto here.");
       expect(wallets).toEqual([]);
     });
 
-    it("validates checksums", () => {
+    it("validates checksums", async () => {
       const text = "Invalid BTC: bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t5";
-      const wallets = extractWalletsFromText(text);
+      const wallets = await extractWalletsFromText(text);
       expect(wallets.length).toBeGreaterThan(0);
       expect(wallets[0].checksumValid).toBe(false);
     });

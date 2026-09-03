@@ -21,15 +21,20 @@ cd "$ROOT"
 # Using grep -P for Perl-compatible regex (lookahead-free pattern is enough here).
 PATTERN='\$\{JSON\.stringify\([^)]*\)\}::jsonb'
 
-if grep -rEn "$PATTERN" src/ 2>/dev/null; then
+# Check both Next.js src/ and engine server/src/ — both can hold JSONB writes.
+SCAN_DIRS=()
+[ -d src/ ] && SCAN_DIRS+=(src/)
+[ -d server/src/ ] && SCAN_DIRS+=(server/src/)
+
+if [ ${#SCAN_DIRS[@]} -gt 0 ] && grep -rEn "$PATTERN" "${SCAN_DIRS[@]}" 2>/dev/null; then
   echo
-  echo "ERROR: Found JSON.stringify(...)::jsonb pattern in src/."
+  echo "ERROR: Found JSON.stringify(...)::jsonb pattern in ${SCAN_DIRS[*]}."
   echo "       postgres.js v3 stringifies again, producing JSONB string literals."
   echo "       Use sql.json(x) instead. See feedback_postgres_jsonb_double_encode.md."
   exit 1
 fi
 
-echo "OK: no JSON.stringify(x)::jsonb interpolation pattern in src/"
+echo "OK: no JSON.stringify(x)::jsonb interpolation pattern in ${SCAN_DIRS[*]:-no src dirs}"
 
 # v0.13.1 #219: guard against max_stalled DEFAULT 1 regressing in any schema
 # source file. DEFAULT 1 dead-lettered any SIGKILL'd job on first stall, making

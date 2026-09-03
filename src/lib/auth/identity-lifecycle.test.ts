@@ -17,7 +17,7 @@
  *  10. SCIM PATCH operation updates active status
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { createHash } from "crypto";
 
 // ── Mock Store ───────────────────────────────────────────────────────

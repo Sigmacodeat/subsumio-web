@@ -1,4 +1,4 @@
-import { describe, test, expect, vi, beforeEach } from "vitest";
+import { describe, test, expect, vi } from "vitest";
 
 // Mock the api module
 vi.mock("@/lib/api", () => ({
@@ -16,7 +16,7 @@ vi.mock("@/lib/api", () => ({
 }));
 
 import { api } from "@/lib/api";
-import { inferMemoriesFromMessage, type CopilotMemoryEntry } from "@/lib/copilot-memory";
+import { inferMemoriesFromMessage } from "@/lib/copilot-memory";
 
 describe("copilot-memory — regex fallback inference", () => {
   test("detects preference patterns", () => {

@@ -105,9 +105,22 @@ export async function lookupSplitParagraph(
   // Deriving the slug from the label ("GmbHG", "StGB") missed every "(AT)" code
   // and dropped it into the raw-text fallback. Use the file basename so all
   // codes resolve to their pre-split norm text.
-  const fileBase = canonicalKey
-    ? CORPUS_META[canonicalKey].file.replace(/^.*\//, "").replace(/\.md$/, "")
-    : normalizeStatuteCode(code).replace(/_/g, "-");
+  // For at-normen/ entries (directory-per-law), the file basename is an article
+  // file (e.g. art-10-nor12160106.md), but split files are named after the
+  // directory (e.g. abgb-par-N.md). Use the canonicalKey (slugKey) as the base
+  // for at-normen entries.
+  let fileBase: string;
+  if (canonicalKey) {
+    const meta = CORPUS_META[canonicalKey];
+    if (meta.file.startsWith("at-normen/")) {
+      // Directory-per-law: use the canonicalKey (directory name) as the split base
+      fileBase = canonicalKey.replace(/_at$/, "-at").replace(/_/g, "-");
+    } else {
+      fileBase = meta.file.replace(/^.*\//, "").replace(/\.md$/, "");
+    }
+  } else {
+    fileBase = normalizeStatuteCode(code).replace(/_/g, "-");
+  }
 
   const jur = canonicalKey ? CORPUS_META[canonicalKey].jurisdiction : "de";
   const paraClean = paragraph.replace(/^\u00a7\s*/, "").trim();

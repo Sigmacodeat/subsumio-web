@@ -204,14 +204,24 @@ describe("Source Router v2", () => {
       expect(ids).toEqual(["law-de"]);
     });
 
-    it("maps statute to law source for AT", () => {
+    it("maps statute to granular AT law sources (v0.46: law-at has 0 pages)", () => {
       const ids = sourceTypeToIds("statute", "AT");
-      expect(ids).toEqual(["law-at"]);
+      // v0.46: AT statutes are in granular sources, not the empty "law-at"
+      expect(ids).toContain("law-at-normen");
+      expect(ids).toContain("law-at-landesrecht");
+      expect(ids).toContain("law-at");
+      // Should NOT include judikatur sources
+      expect(ids).not.toContain("law-at-judikatur");
     });
 
-    it("maps judgement to law-at-judikatur for AT", () => {
+    it("maps judgement to granular AT judikatur sources (v0.46)", () => {
       const ids = sourceTypeToIds("judgement", "AT");
-      expect(ids).toEqual(["law-at-judikatur"]);
+      // v0.46: AT judikatur is split across multiple court sources
+      expect(ids).toContain("law-at-judikatur");
+      expect(ids).toContain("law-at-judikatur-ogh");
+      expect(ids).toContain("law-at-judikatur-vwgh");
+      // Should NOT include statute sources
+      expect(ids).not.toContain("law-at-normen");
     });
 
     it("maps judgement to law-de for DE", () => {

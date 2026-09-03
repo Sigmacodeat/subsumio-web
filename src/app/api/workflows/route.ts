@@ -72,6 +72,15 @@ export const POST = createHandler(
     action: "admin.*",
     rateTier: "standard",
     body: startSchema,
+    audit: (ctx, body) => ({
+      action: "workflow.start" as const,
+      entityType: "workflow",
+      details: {
+        template_id: body.template_id,
+        case_slug: body.case_slug,
+        started_by: ctx.user?.email ?? "system",
+      },
+    }),
   },
   async (ctx, body, _query, _req) => {
     try {
@@ -152,6 +161,15 @@ export const PATCH = createHandler(
     action: "admin.*",
     rateTier: "standard",
     body: patchSchema,
+    audit: (_ctx, body) => ({
+      action: "workflow.advance" as const,
+      entityType: "workflow",
+      entityId: body.slug,
+      details: {
+        step_id: body.step_id,
+        new_status: body.new_status,
+      },
+    }),
   },
   async (ctx, body, _query, _req) => {
     try {

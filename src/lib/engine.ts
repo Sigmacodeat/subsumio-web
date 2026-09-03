@@ -13,6 +13,8 @@ import { checkQuota, incQuota, quotaExceeded, type QuotaType } from "@/lib/plans
 import {
   checkCredits,
   deductCredits,
+  checkAndSendBudgetAlert,
+  getBalance,
   insufficientCreditsResponse,
   CREDIT_COSTS,
   type CreditOperation,
@@ -382,6 +384,14 @@ export async function recordCreditConsumption(
   const ownerId = ctx.user.orgId ?? ctx.user.id;
   try {
     await deductCredits(ownerId, ownerType, cost, { operation, caseSlug });
+    // Budget Alert prüfen (50%/75%/90% wie OpenAI) — non-blocking.
+    // Fire-and-forget: don't fail the operation if the alert fails.
+    const { balance } = await getBalance(ownerId, ownerType);
+    if (ctx.user.email) {
+      checkAndSendBudgetAlert(ownerId, ownerType, ctx.user.email, balance).catch(() => {
+        // best-effort, ignore errors
+      });
+    }
   } catch (err) {
     console.error(
       `[credits] consumption record failed: ${err instanceof Error ? err.message : String(err)}`

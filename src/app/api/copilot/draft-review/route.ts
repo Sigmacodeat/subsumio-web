@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import {
   reviewDraft,
@@ -8,6 +9,17 @@ import {
   type ReviewIssueStatus,
   type DraftReviewResult,
 } from "@/lib/draft-review";
+
+const draftReviewPostSchema = z.object({
+  action: z.enum(["review", "persist", "update_issue"]).optional(),
+  content: z.string().max(50000).optional(),
+  title: z.string().max(500).optional(),
+  type: z.string().max(100).optional(),
+  draftSlug: z.string().max(200).optional(),
+  reviewResult: z.record(z.unknown()).optional(),
+  issueId: z.string().max(200).optional(),
+  status: z.enum(["open", "resolved", "dismissed"]).optional(),
+});
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -38,9 +50,30 @@ export const POST = createHandler(
   {
     action: "brain.write",
     rateTier: "search",
+    body: draftReviewPostSchema,
+    audit: (_ctx, body) => {
+      const b = body as {
+        action?: string;
+        content?: string;
+        title?: string;
+        type?: string;
+        draftSlug?: string;
+      };
+      return {
+        action: "copilot.draft_review" as const,
+        entityType: "draft",
+        details: {
+          subAction: b.action,
+          title: b.title,
+          type: b.type,
+          draftSlug: b.draftSlug,
+          contentLength: b.content?.length ?? 0,
+        },
+      };
+    },
   },
   async (ctx, body) => {
-    const { action, content, title, type, draftSlug } = (body ?? {}) as {
+    const { action, content, title, type, draftSlug } = body as {
       action?: string;
       content?: string;
       title?: string;
@@ -74,13 +107,29 @@ export const POST = createHandler(
   }
 );
 
+const draftReviewPatchSchema = z.object({
+  reviewId: z.string().max(200).optional(),
+  issueId: z.string().max(200).optional(),
+  status: z.enum(["open", "resolved", "dismissed"]).optional(),
+});
+
 export const PATCH = createHandler(
   {
     action: "brain.write",
     rateTier: "standard",
+    body: draftReviewPatchSchema,
+    audit: (_ctx, body) => {
+      const b = body as { reviewId?: string; issueId?: string; status?: string };
+      return {
+        action: "copilot.draft_issue_update" as const,
+        entityType: "draft_issue",
+        entityId: b.issueId,
+        details: { reviewId: b.reviewId, issueId: b.issueId, status: b.status },
+      };
+    },
   },
   async (ctx, body) => {
-    const { reviewId, issueId, status } = (body ?? {}) as {
+    const { reviewId, issueId, status } = body as {
       reviewId?: string;
       issueId?: string;
       status?: ReviewIssueStatus;

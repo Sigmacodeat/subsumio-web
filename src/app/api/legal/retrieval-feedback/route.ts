@@ -32,6 +32,19 @@ export const POST = createHandler(
     action: "legal.retrieval_feedback",
     rateTier: "standard",
     body: submitSchema,
+    audit: (_ctx, body) => ({
+      action: "legal.retrieval_feedback" as const,
+      entityType: "retrieval_feedback",
+      details: {
+        result_slug: body.result_slug,
+        feedback_type: body.feedback_type,
+        severity: body.severity,
+        search_mode: body.search_mode,
+        rank_position: body.rank_position,
+        result_score: body.result_score,
+        has_comment: Boolean(body.comment),
+      },
+    }),
   },
   async (ctx, body) => {
     const user = ctx.user;

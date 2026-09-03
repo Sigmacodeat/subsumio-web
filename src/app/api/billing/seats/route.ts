@@ -17,7 +17,7 @@ import { z } from "zod";
 const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY ?? "";
 
 const seatChangeSchema = z.object({
-  quantity: z.number().int().min(1, "minimum_one_seat"),
+  quantity: z.number().int().min(5, "minimum_five_seats").max(50, "maximum_fifty_seats"),
 });
 
 // ── Stripe helpers ────────────────────────────────────────────────────
@@ -64,7 +64,14 @@ async function stripePost<T>(path: string, body: Record<string, unknown>): Promi
 // ── GET: Seat Usage ───────────────────────────────────────────────────
 
 export const GET = createHandler(
-  { action: "billing.read", rateTier: "standard" },
+  {
+    action: "billing.read",
+    rateTier: "standard",
+    audit: (_ctx, _body, _query, _req) => ({
+      action: "billing.seats_list" as const,
+      entityType: "subscription",
+    }),
+  },
   async (ctx, _body, _query, _req: NextRequest) => {
     if (!STRIPE_SECRET) return apiError("stripe_not_configured", "Stripe secret key not set", 501);
 
@@ -135,7 +142,18 @@ export const GET = createHandler(
 // ── POST: Change Seat Count ───────────────────────────────────────────
 
 export const POST = createHandler(
-  { action: "billing.write", rateTier: "standard", body: seatChangeSchema },
+  {
+    action: "billing.write",
+    rateTier: "standard",
+    body: seatChangeSchema,
+    audit: (_ctx, body) => ({
+      action: "billing.seats_change" as const,
+      entityType: "subscription",
+      details: {
+        quantity: body.quantity,
+      },
+    }),
+  },
   async (ctx, body, _query, _req) => {
     if (!STRIPE_SECRET) return apiError("stripe_not_configured", "Stripe secret key not set", 501);
 
@@ -190,6 +208,11 @@ export const POST = createHandler(
       items: [{ id: subItem.id, quantity }],
       proration_behavior: "create_prorations",
     });
+
+    // SaaS Billing Sync: update saas_orgs.seats + saas_subscriptions.seats
+    // so resetMonthlyPeriod and generateInvoice use the correct seat count.
+    const { updateSaasSeats } = await import("@/lib/billing/saas-billing-sync");
+    await updateSaasSeats(ctx.user.id, quantity);
 
     return Response.json({
       ok: true,

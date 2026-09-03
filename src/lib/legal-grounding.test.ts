@@ -287,7 +287,7 @@ describe("findCodeKey", () => {
 
   it("tokenizes punctuation and case-insensitive labels", () => {
     const ataKey =
-      "st_a_t_a_abkommen_zollabkommen_uber_das_carnet_a_t_a_fur_die_vorubergehende_einfuhr_von_waren";
+      "a_t_a_abkommen_zollabkommen_uber_das_carnet_a_t_a_fur_die_vorubergehende_einfuhr_von_waren";
     expect(findCodeKey("A. T. A.")).toBe(ataKey);
     expect(findCodeKey("A-T-A Abkommen")).toBe(ataKey);
     expect(findCodeKey("A. T. A. Abkommen")).toBe(ataKey);
@@ -344,7 +344,9 @@ describe("groundCitations — unverifiable citations", () => {
     // split lookup fails, raw corpus has only Art. 1 and Art. 2 — no Art. 5
     vi.mocked(fs.readFile)
       .mockRejectedValueOnce(new Error("ENOENT"))
-      .mockResolvedValueOnce("---\ntype: staatsvertrag\n---\nArt. 1 Vertragszweck.\nArt. 2 Begriffsbestimmungen.");
+      .mockResolvedValueOnce(
+        "---\ntype: staatsvertrag\n---\nArt. 1 Vertragszweck.\nArt. 2 Begriffsbestimmungen."
+      );
     const result = await groundCitations([
       { code: "Alpenkonvention", paragraph: "Art 5", context: "Staatsvertrag" },
     ]);
@@ -359,7 +361,9 @@ describe("groundCitations — unverifiable citations", () => {
   it("marks regional law citations as unverifiable with reason when paragraph not found", async () => {
     vi.mocked(fs.readFile)
       .mockRejectedValueOnce(new Error("ENOENT"))
-      .mockResolvedValueOnce("---\ntype: landesgesetz\n---\n§ 1. Geltungsbereich.\n§ 2. Begriffsbestimmungen.");
+      .mockResolvedValueOnce(
+        "---\ntype: landesgesetz\n---\n§ 1. Geltungsbereich.\n§ 2. Begriffsbestimmungen."
+      );
     const result = await groundCitations([
       { code: "Bodenseefischereigesetz", paragraph: "§ 12", context: "Landesrecht" },
     ]);
@@ -424,18 +428,14 @@ describe("groundCitations — fake vs real paragraphs (new AT statutes)", () => 
 
   it("fake paragraph in SPG → verified:false", async () => {
     vi.mocked(fs.readFile).mockRejectedValue(new Error("ENOENT"));
-    const result = await groundCitations([
-      { code: "SPG", paragraph: "99999", context: "fake" },
-    ]);
+    const result = await groundCitations([{ code: "SPG", paragraph: "99999", context: "fake" }]);
     expect(result).toHaveLength(1);
     expect(result[0].verified).toBe(false);
   });
 
   it("fake paragraph in ChemG → verified:false", async () => {
     vi.mocked(fs.readFile).mockRejectedValue(new Error("ENOENT"));
-    const result = await groundCitations([
-      { code: "ChemG", paragraph: "88888", context: "fake" },
-    ]);
+    const result = await groundCitations([{ code: "ChemG", paragraph: "88888", context: "fake" }]);
     expect(result).toHaveLength(1);
     expect(result[0].verified).toBe(false);
   });
@@ -496,11 +496,13 @@ describe("CORPUS_META — CI guard", () => {
   });
 
   it("every entry has valid jurisdiction, label, and file", () => {
-    for (const [key, meta] of Object.entries(CORPUS_META)) {
+    for (const [, meta] of Object.entries(CORPUS_META)) {
       expect(meta.jurisdiction).toMatch(/^(at|de|ch|eu)$/);
       expect(meta.label).toBeTruthy();
       expect(meta.label.length).toBeGreaterThan(0);
-      expect(meta.file).toMatch(/^(at|de|ch|eu|at-staatsvertraege|at-landesrecht)\//);
+      expect(meta.file).toMatch(
+        /^(at|de|ch|ch-it|ch-fr|eu|at-staatsvertraege|at-landesrecht|at-normen)\//
+      );
       expect(meta.file).toMatch(/\.md$/);
     }
   });

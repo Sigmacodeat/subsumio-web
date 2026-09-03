@@ -20,8 +20,8 @@ const auditQuerySchema = z.object({
 });
 
 const auditPostSchema = z.object({
-  action: z.string(),
-  entity_type: z.string(),
+  action: z.string().max(100),
+  entity_type: z.string().max(100),
   entity_id: z.string().optional(),
   details: z.record(z.unknown()).optional(),
 });

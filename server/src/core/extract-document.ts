@@ -542,40 +542,77 @@ async function tryOcrFallback(
     width: 2000,
   });
 
-  const images: Array<{ pageNo: number; image: { buffer?: Buffer; base64?: string } }> = [];
+  // G19 fix: parallelize rasterization and OCR with bounded concurrency
+  // and per-page timeout. Pre-fix, both loops were sequential — a 50-page
+  // sparse PDF meant 50 serial rasterize calls + 50 serial OCR calls.
+  const OCR_CONCURRENCY = 4;
+  const OCR_PAGE_TIMEOUT_MS = 30_000; // 30s per page
+
+  // 3. Rasterize pages in parallel (bounded).
+  const images: Array<{ pageNo: number; image: { buffer?: Buffer; base64?: string } } | null> = [];
   try {
-    for (const pageNo of pagesToConvert) {
-      images.push({ pageNo, image: await convert(pageNo) });
+    for (let i = 0; i < pagesToConvert.length; i += OCR_CONCURRENCY) {
+      const batch = pagesToConvert.slice(i, i + OCR_CONCURRENCY);
+      const results = await Promise.all(
+        batch.map(async (pageNo) => {
+          try {
+            return { pageNo, image: await convert(pageNo) };
+          } catch {
+            return null;
+          }
+        })
+      );
+      images.push(...results);
     }
   } catch {
     warnings.push("pdf_ocr_failed: PDF rasterization failed");
     return { pageTexts, warnings };
   }
 
-  // 4. OCR each page image.
+  // 4. OCR each page image in parallel (bounded) with per-page timeout.
   if (capped) {
     warnings.push(
       `pdf_ocr_partial: only ${pagesToConvert.length} of ${uniqueRequested.length} sparse pages processed`
     );
   }
-  for (let i = 0; i < images.length; i++) {
-    const { pageNo, image: img } = images[i];
-    const imgBuf: Buffer | undefined =
-      img.buffer ?? (img.base64 ? Buffer.from(img.base64, "base64") : undefined);
-    if (!imgBuf) {
-      warnings.push(`pdf_ocr_failed: page ${pageNo} produced no image`);
-      continue;
-    }
-
-    try {
-      const pageText = await generateOcrText(imgBuf, "image/png");
-      if (pageText.trim()) {
-        pageTexts.set(pageNo, pageText.trim());
+  const validImages = images.filter(
+    (img): img is { pageNo: number; image: { buffer?: Buffer; base64?: string } } => img !== null
+  );
+  for (let i = 0; i < validImages.length; i += OCR_CONCURRENCY) {
+    const batch = validImages.slice(i, i + OCR_CONCURRENCY);
+    const results = await Promise.all(
+      batch.map(async ({ pageNo, image: img }) => {
+        const imgBuf: Buffer | undefined =
+          img.buffer ?? (img.base64 ? Buffer.from(img.base64, "base64") : undefined);
+        if (!imgBuf) {
+          return { pageNo, text: null, error: "no image" };
+        }
+        try {
+          // Per-page timeout to prevent hanging on problematic pages.
+          const text = await Promise.race([
+            generateOcrText(imgBuf, "image/png"),
+            new Promise<string>((_, reject) =>
+              setTimeout(() => reject(new Error("ocr_timeout")), OCR_PAGE_TIMEOUT_MS)
+            ),
+          ]);
+          return { pageNo, text, error: null as string | null };
+        } catch (err) {
+          const msg =
+            err instanceof Error && err.message === "ocr_timeout" ? "ocr timeout" : "ocr failed";
+          return { pageNo, text: null, error: msg };
+        }
+      })
+    );
+    for (const { pageNo, text, error } of results) {
+      if (error === "no image") {
+        warnings.push(`pdf_ocr_failed: page ${pageNo} produced no image`);
+      } else if (error) {
+        warnings.push(`pdf_ocr_failed: page ${pageNo} (${error})`);
+      } else if (text && text.trim()) {
+        pageTexts.set(pageNo, text.trim());
       } else {
         warnings.push(`pdf_ocr_failed: page ${pageNo} returned no text`);
       }
-    } catch {
-      warnings.push(`pdf_ocr_failed: page ${pageNo}`);
     }
   }
 
@@ -969,18 +1006,34 @@ const MAX_PST_BYTES = 500 * 1024 * 1024;
 const MAX_PST_MESSAGES = 5_000;
 const MAX_PST_OUTPUT_BYTES = 500 * 1024 * 1024;
 const MAX_PST_TEXT_CHARS = 25_000_000;
+// G20 fix: cap directory traversal to prevent unbounded recursion / FD
+// exhaustion from malicious or malformed PST extractions.
+const MAX_PST_FILES = 50_000;
+const MAX_PST_DEPTH = 32;
 
 async function listFilesRecursive(root: string): Promise<string[]> {
   const { readdir } = await import("node:fs/promises");
   const { join } = await import("node:path");
   const files: string[] = [];
-  const pending = [root];
+  // Track depth alongside each directory to enforce MAX_PST_DEPTH.
+  const pending: Array<{ dir: string; depth: number }> = [{ dir: root, depth: 0 }];
   while (pending.length > 0) {
-    const dir = pending.pop()!;
+    const { dir, depth } = pending.pop()!;
+    if (depth > MAX_PST_DEPTH) {
+      console.warn(`[listFilesRecursive] max depth ${MAX_PST_DEPTH} exceeded at ${dir}`);
+      continue;
+    }
     for (const entry of await readdir(dir, { withFileTypes: true })) {
       const full = join(dir, entry.name);
-      if (entry.isDirectory()) pending.push(full);
-      else if (entry.isFile()) files.push(full);
+      if (entry.isDirectory()) {
+        pending.push({ dir: full, depth: depth + 1 });
+      } else if (entry.isFile()) {
+        files.push(full);
+        if (files.length > MAX_PST_FILES) {
+          console.warn(`[listFilesRecursive] max files ${MAX_PST_FILES} exceeded, truncating`);
+          return files.sort();
+        }
+      }
     }
   }
   return files.sort();
@@ -1366,12 +1419,40 @@ function formatTimestamp(seconds: number): string {
  * No `slug:` is ever emitted — importFromFile's anti-spoof check requires
  * the slug to stay path-derived.
  */
-export function synthesizeDocumentMarkdown(
+export async function synthesizeDocumentMarkdown(
   relativePath: string,
   extracted: ExtractedDocument
-): string {
+): Promise<string> {
   const fm: Record<string, string | number> = { ...extracted.frontmatter };
   if (!fm.extraction_method) fm.extraction_method = "native_parser";
+
+  // v0.46: Classify extracted text at upload time so the correct legal chunker
+  // is selected during import. Without this, all uploads get type:"document"
+  // and fall through to the generic recursive chunker (300-word arbitrary
+  // splits) — court decisions lose their Rechtssatz/Leitsatz/Entscheidungstext
+  // structure, contracts lose their clause boundaries. The doc-classifier is
+  // deterministic (keyword heuristics, $0 LLM cost) and runs in <1ms.
+  //
+  // We only override type if the uploader didn't set an explicit type (e.g.
+  // "law" for statute uploads, "court_decision" for known judgments). The
+  // heuristic classification is stamped as doc_type regardless, so the
+  // pipeline's Layer 0 doc-classifier can see it and skip re-classification.
+  if (extracted.text.trim().length > 50 && !fm.type) {
+    try {
+      const { classifyLegalDocument } = await import("./legal/doc-classifier.ts");
+      const classification = classifyLegalDocument(extracted.text);
+      if (classification.confidence > 0) {
+        fm.doc_type = classification.type;
+        // Map court-judgment/court-order to court_decision so the structure-
+        // aware legal-decision chunker is used (Rechtssatz/Leitsatz/etc.).
+        if (classification.type === "court_judgment" || classification.type === "court_order") {
+          fm.type = "court_decision";
+        }
+      }
+    } catch {
+      // Classification is best-effort — never fail an upload because of it.
+    }
+  }
   const sparseWithoutOcr =
     extracted.warnings.some((warning) => warning.startsWith("pdf_text_layer_sparse")) &&
     fm.extraction_method !== "ocr_vision";
@@ -1384,6 +1465,17 @@ export function synthesizeDocumentMarkdown(
       ? "partial"
       : "ready";
   fm.extraction_char_count = extracted.text.length;
+  // OCR backfill signal: stamp ocr_status so a backfill sweeper can find
+  // documents where OCR was needed but failed/unavailable. Without this,
+  // scanned PDFs that couldn't be OCR'd are silently stuck with no text.
+  const ocrUnavailable = extracted.warnings.some((w) => w.startsWith("pdf_ocr_unavailable"));
+  const ocrFailed = extracted.warnings.some((w) => w.startsWith("pdf_ocr_failed"));
+  if (ocrUnavailable || ocrFailed) {
+    fm.ocr_status = "needs_backfill";
+    fm.ocr_backfill_reason = ocrUnavailable ? "rasterizer_missing" : "ocr_failed";
+  } else if (fm.extraction_method === "ocr_vision") {
+    fm.ocr_status = "completed";
+  }
   if (extracted.warnings.length > 0) {
     fm.extraction_warning_count = extracted.warnings.length;
     fm.extraction_warnings = extracted.warnings.join(" | ").slice(0, 4000);

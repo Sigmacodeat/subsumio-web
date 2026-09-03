@@ -1145,3 +1145,67 @@ export function CountUp({
     </motion.span>
   );
 }
+
+// ── PinnedScrollSection ─────────────────────────────────────────────────
+// Desktop: pins a viewport and reveals items cumulatively as the user scrolls.
+// Mobile/tablet: plain stagger reveal (no scroll-jacking on touch).
+// Reduced-motion: full static reveal.
+
+interface PinnedScrollSectionProps {
+  items: string[];
+  className?: string;
+  itemsClassName?: string;
+  mobileMode?: string;
+  renderItem: (line: string, i: number, isLast: boolean) => React.ReactNode;
+}
+
+export function PinnedScrollSection({
+  items,
+  className = "",
+  itemsClassName = "",
+  renderItem,
+}: PinnedScrollSectionProps) {
+  return (
+    <section className={className}>
+      <div className={itemsClassName}>
+        <StaggerContainer stagger={0.15}>
+          {items.map((line, i) => (
+            <StaggerItem key={i}>{renderItem(line, i, i === items.length - 1)}</StaggerItem>
+          ))}
+        </StaggerContainer>
+      </div>
+    </section>
+  );
+}
+
+// ── RedactionReveal ─────────────────────────────────────────────────────
+// Reveals text from behind an ink bar (clip-path animation).
+
+interface RedactionRevealProps {
+  barColor?: string;
+  children: React.ReactNode;
+}
+
+export function RedactionReveal({
+  barColor = "var(--mk-ink, #1a1a2e)",
+  children,
+}: RedactionRevealProps) {
+  return (
+    <span style={{ position: "relative", display: "inline-block" }}>
+      <motion.span
+        initial={{ scaleX: 1 }}
+        whileInView={{ scaleX: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8, ease: EASE.out }}
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: barColor,
+          transformOrigin: "right",
+          zIndex: 1,
+        }}
+      />
+      <span style={{ position: "relative", zIndex: 0 }}>{children}</span>
+    </span>
+  );
+}

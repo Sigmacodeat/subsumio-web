@@ -54,9 +54,9 @@ const letterheadSchema = z.object({
   vat_id: z.string().max(100).optional(),
   bank_details: z
     .object({
-      iban: z.string(),
-      bic: z.string(),
-      bank_name: z.string(),
+      iban: z.string().max(34),
+      bic: z.string().max(11),
+      bank_name: z.string().max(200),
     })
     .optional(),
 });
@@ -71,6 +71,14 @@ export const POST = createHandler(
     action: "brain.read",
     rateTier: "standard",
     body: bodySchema,
+    audit: (_ctx, body) => ({
+      action: "drafting.generate" as const,
+      entityType: "letterhead_rubrum",
+      details: {
+        hasLetterhead: Boolean(body.letterhead),
+        hasRubrum: Boolean(body.rubrum),
+      },
+    }),
   },
   async (_ctx, body) => {
     const parts: string[] = [];

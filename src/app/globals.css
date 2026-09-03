@@ -480,6 +480,8 @@
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-display: var(--font-grotesk), var(--font-inter), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), "Fira Code", monospace;
+  /* Editorial display serif — marketing site only (hero/thesis headlines). */
+  --font-editorial: var(--font-fraunces), Georgia, serif;
 
   /* OpenType features for UI and display fonts */
   --font-feature-ui: "tnum" on, "lnum" on, "cv11" on;
@@ -721,6 +723,11 @@
   --ds-text-muted: var(--neutral-600);
   --ds-text-subtle: var(--neutral-600);
   --ds-surface-2: var(--neutral-100);
+
+  /* Editorial palette — additive, marketing-only. */
+  --mk-parchment: hsl(38, 26%, 95%);
+  --mk-ink: hsl(230, 35%, 12%);
+  --mk-accent-brass: hsl(36, 58%, 32%);
 }
 [data-tone="slate"] {
   --mk-bg: hsl(230, 30%, 12%);
@@ -1018,15 +1025,9 @@
   --accent-premium: var(--brand-300);
   --accent-premium-soft: color-mix(in srgb, var(--accent-premium) 12%, transparent);
   --accent-premium-border: color-mix(in srgb, var(--accent-premium) 24%, transparent);
-  --card-shadow:
-    0 1px 0 hsla(0, 0%, 100%, 0.03) inset,
-    0 12px 34px rgba(0, 0, 0, 0.22);
-  --card-shadow-hover:
-    0 1px 0 hsla(0, 0%, 100%, 0.04) inset,
-    0 18px 48px rgba(0, 0, 0, 0.28);
-  --card-shadow-elevated:
-    0 1px 0 hsla(0, 0%, 100%, 0.05) inset,
-    0 24px 72px rgba(0, 0, 0, 0.38);
+  --card-shadow: 0 1px 0 hsla(0, 0%, 100%, 0.03) inset, 0 12px 34px rgba(0, 0, 0, 0.22);
+  --card-shadow-hover: 0 1px 0 hsla(0, 0%, 100%, 0.04) inset, 0 18px 48px rgba(0, 0, 0, 0.28);
+  --card-shadow-elevated: 0 1px 0 hsla(0, 0%, 100%, 0.05) inset, 0 24px 72px rgba(0, 0, 0, 0.38);
   --sidebar-shadow:
     1px 0 0 var(--ds-border), 14px 0 48px rgba(0, 0, 0, 0.25), 1px 0 0 hsla(0, 0%, 100%, 0.03) inset;
 
@@ -2348,6 +2349,19 @@ body {
   color: var(--brand-text);
 }
 
+/* Editorial serif — marketing headlines only. */
+.font-editorial {
+  font-family: var(--font-editorial);
+  font-optical-sizing: auto;
+  letter-spacing: var(--ds-tracking-normal, normal);
+  font-weight: 500;
+}
+
+/* Brass accent — static emphasis for headline/stat words. */
+.accent-brass {
+  color: var(--mk-accent-brass);
+}
+
 /* Gradient text — premium blue-violet */
 .gradient-text {
   background: linear-gradient(
@@ -3040,5 +3054,29 @@ pre {
   /* Legal page body text: ensure readable serif/sans for print */
   .max-w-2xl {
     max-width: 100% !important;
+  }
+}
+
+/* Route transition — CSS-only replacement for framer-motion in template.tsx
+   (audit 2026-08-23). Slide-up + fade, respects prefers-reduced-motion. */
+@keyframes route-transition-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.route-transition {
+  animation: route-transition-in 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-transition {
+    animation: none;
   }
 }

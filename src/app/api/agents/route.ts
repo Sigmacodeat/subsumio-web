@@ -48,6 +48,11 @@ export const POST = createHandler(
     action: "agent.write",
     rateTier: "heavy",
     body: agentsPostSchema,
+    audit: (ctx, body) => ({
+      action: "agent.supervisor_run" as const,
+      entityType: "agent_job",
+      details: { user: ctx.user.email, prompt_length: body.prompt.length },
+    }),
   },
   async (ctx, body, _query, _req) => {
     try {

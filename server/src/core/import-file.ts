@@ -152,7 +152,10 @@ function fmText(fm: Record<string, unknown>, ...keys: string[]): string {
  * ("10Bkd2/93, 22Os4/15a") und steht nie innerhalb einer einzelnen.
  */
 function citationCaseNumber(caseNumber: string): string {
-  const parts = caseNumber.split(/[;,]/).map((s) => s.trim()).filter(Boolean);
+  const parts = caseNumber
+    .split(/[;,]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
   if (parts.length <= 1) return caseNumber.trim();
   return `${parts[0]} u.a.`;
 }
@@ -1233,7 +1236,9 @@ export async function importFromContent(
     //
     // Bulk import fast-path: skip code-ref extraction for legal corpus
     // (judikatur, statutes) — these never cite source code paths.
-    const codeRefs = opts.skipCodeRefs ? [] : extractCodeRefs(parsed.compiled_truth + "\n" + (parsed.timeline || ""));
+    const codeRefs = opts.skipCodeRefs
+      ? []
+      : extractCodeRefs(parsed.compiled_truth + "\n" + (parsed.timeline || ""));
     // For doc↔impl edges, both endpoints are within the same source as the
     // markdown page being imported. Cross-source edges (markdown in one
     // source, code in another) currently fail with "page not found" — a
@@ -1288,17 +1293,20 @@ export async function importFromContent(
   //
   // Bulk import fast-path: skip alias projection for legal corpus content
   // that never carries frontmatter aliases.
-  if (!opts.skipAliases) try {
-    const aliasNorms = normalizeAliasList((parsed.frontmatter as Record<string, unknown>).aliases);
-    await engine.setPageAliases(slug, sourceId ?? "default", aliasNorms);
-  } catch (e) {
-    if (!isUndefinedTableError(e)) {
-      warnOncePerProcess(
-        "setPageAliases:failed",
-        `[import] page_aliases projection failed (non-fatal): ${e instanceof Error ? e.message : String(e)}`
+  if (!opts.skipAliases)
+    try {
+      const aliasNorms = normalizeAliasList(
+        (parsed.frontmatter as Record<string, unknown>).aliases
       );
+      await engine.setPageAliases(slug, sourceId ?? "default", aliasNorms);
+    } catch (e) {
+      if (!isUndefinedTableError(e)) {
+        warnOncePerProcess(
+          "setPageAliases:failed",
+          `[import] page_aliases projection failed (non-fatal): ${e instanceof Error ? e.message : String(e)}`
+        );
+      }
     }
-  }
 
   return {
     slug,
@@ -1395,7 +1403,7 @@ export async function importFromFile(
         error: extracted.warnings[0] ?? "Document contained no extractable text",
       };
     }
-    content = synthesizeDocumentMarkdown(relativePath, extracted);
+    content = await synthesizeDocumentMarkdown(relativePath, extracted);
   } else {
     content = readFileSync(filePath, "utf-8");
   }

@@ -22,6 +22,7 @@
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
 import { join, dirname } from "path";
+import { AT_LAW_SOURCES_ALL } from "../core/legal/jurisdiction.ts";
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -119,14 +120,14 @@ export interface RetrievalQuestionResult {
 }
 
 export type ErrorClass =
-  | "query_weakness"      // Natural language question doesn't match statute text
+  | "query_weakness" // Natural language question doesn't match statute text
   | "cross_law_contamination" // Wrong law retrieved due to similar terms
-  | "close_miss"          // Right law, wrong paragraph (adjacent)
-  | "slug_normalization"  // Slug format mismatch
-  | "embedding_failure"   // Embedding API error
-  | "empty_results"       // No results returned at all
-  | "timeout"             // Search timed out
-  | "unknown";            // Unclassified
+  | "close_miss" // Right law, wrong paragraph (adjacent)
+  | "slug_normalization" // Slug format mismatch
+  | "embedding_failure" // Embedding API error
+  | "empty_results" // No results returned at all
+  | "timeout" // Search timed out
+  | "unknown"; // Unclassified
 
 export interface EndToEndQuestionResult {
   question_id: string;
@@ -268,7 +269,7 @@ export function captureRunParams(opts: {
     embedding_model: opts.embeddingModel ?? "openrouter:openai/text-embedding-3-small",
     embedding_dimensions: opts.embeddingDimensions ?? 1536,
     top_k: opts.topK ?? 8,
-    source_ids: opts.sourceIds ?? ["law-at", "law-at-judikatur"],
+    source_ids: opts.sourceIds ?? AT_LAW_SOURCES_ALL,
     reranker_model: opts.rerankerModel,
     synthesis_model: opts.synthesisModel,
     judge_model: opts.judgeModel,
@@ -284,7 +285,8 @@ export function captureRunParams(opts: {
 
 function computeCorpusVersion(): string {
   try {
-    const here = import.meta.dirname ?? (typeof __dirname !== "undefined" ? __dirname : process.cwd());
+    const here =
+      import.meta.dirname ?? (typeof __dirname !== "undefined" ? __dirname : process.cwd());
     const corpusDir = join(here, "../../../law-corpus/at");
     if (!existsSync(corpusDir)) return "no-corpus";
     // Hash file list + sizes as a quick corpus version
@@ -377,9 +379,7 @@ function extractParaFromSlug(slug: string): string {
 
 // ─── Aggregate Computation ───────────────────────────────────────────────
 
-export function computeRetrievalAggregate(
-  results: RetrievalQuestionResult[]
-): EvalAggregate {
+export function computeRetrievalAggregate(results: RetrievalQuestionResult[]): EvalAggregate {
   const n = results.length;
   if (n === 0) return {};
 
@@ -431,9 +431,7 @@ export function computeRetrievalAggregate(
   };
 }
 
-export function computeE2EAggregate(
-  results: EndToEndQuestionResult[]
-): EvalAggregate {
+export function computeE2EAggregate(results: EndToEndQuestionResult[]): EvalAggregate {
   const n = results.length;
   if (n === 0) return {};
 
@@ -460,12 +458,14 @@ export function computeE2EAggregate(
     citation_precision: results.reduce((s, r) => s + r.citation_precision, 0) / n,
     hallucination_rate: results.filter((r) => r.hallucination_detected).length / n,
     guardrail_pass_rate: results.filter((r) => r.guardrail_passed).length / n,
-    judge_correct_rate: judgedResults.length > 0
-      ? judgedResults.filter((r) => r.judge_correct).length / judgedResults.length
-      : undefined,
-    avg_judge_score: judgedResults.length > 0
-      ? judgedResults.reduce((s, r) => s + (r.judge_score ?? 0), 0) / judgedResults.length
-      : undefined,
+    judge_correct_rate:
+      judgedResults.length > 0
+        ? judgedResults.filter((r) => r.judge_correct).length / judgedResults.length
+        : undefined,
+    avg_judge_score:
+      judgedResults.length > 0
+        ? judgedResults.reduce((s, r) => s + (r.judge_score ?? 0), 0) / judgedResults.length
+        : undefined,
     per_area: perArea,
   };
 }
@@ -546,21 +546,24 @@ export function getLatestBaseline(evalType: EvalType): Baseline | null {
 // ─── Baseline Comparison ─────────────────────────────────────────────────
 
 const REGRESSION_THRESHOLDS: Record<string, { metric: keyof EvalAggregate; maxDelta: number }> = {
-  hit_at_5: { metric: "hit_at_5", maxDelta: -0.02 },      // ≤ 2pp drop
-  hit_at_1: { metric: "hit_at_1", maxDelta: -0.05 },      // ≤ 5pp drop
-  mrr: { metric: "mrr", maxDelta: -0.03 },                // ≤ 0.03 MRR drop
+  hit_at_5: { metric: "hit_at_5", maxDelta: -0.02 }, // ≤ 2pp drop
+  hit_at_1: { metric: "hit_at_1", maxDelta: -0.05 }, // ≤ 5pp drop
+  mrr: { metric: "mrr", maxDelta: -0.03 }, // ≤ 0.03 MRR drop
   norm_recall: { metric: "norm_recall", maxDelta: -0.02 }, // ≤ 2pp drop
   citation_precision: { metric: "citation_precision", maxDelta: -0.005 }, // ≤ 0.5pp drop
-  hallucination_rate: { metric: "hallucination_rate", maxDelta: 0.02 },    // ≤ 2pp increase
+  hallucination_rate: { metric: "hallucination_rate", maxDelta: 0.02 }, // ≤ 2pp increase
   guardrail_pass_rate: { metric: "guardrail_pass_rate", maxDelta: -0.02 }, // ≤ 2pp drop
-  judge_correct_rate: { metric: "judge_correct_rate", maxDelta: -0.05 },   // ≤ 5pp drop
+  judge_correct_rate: { metric: "judge_correct_rate", maxDelta: -0.05 }, // ≤ 5pp drop
 };
 
 export function compareWithBaseline(
   current: EvalAggregate,
   baseline: EvalAggregate
 ): BaselineComparison {
-  const deltas: Record<string, { current: number; baseline: number; delta: number; regressed: boolean }> = {};
+  const deltas: Record<
+    string,
+    { current: number; baseline: number; delta: number; regressed: boolean }
+  > = {};
   const regressions: string[] = [];
   const improvements: string[] = [];
 
@@ -608,14 +611,14 @@ export interface ReleaseGateResult {
 }
 
 export const RELEASE_THRESHOLDS: Record<string, number> = {
-  hit_at_5: 0.90,           // ≥ 90%
-  hit_at_1: 0.70,           // ≥ 70%
-  mrr: 0.65,                // ≥ 0.65
-  norm_recall: 0.90,        // ≥ 90%
+  hit_at_5: 0.9, // ≥ 90%
+  hit_at_1: 0.7, // ≥ 70%
+  mrr: 0.65, // ≥ 0.65
+  norm_recall: 0.9, // ≥ 90%
   citation_precision: 0.995, // ≥ 99.5%
-  hallucination_rate: 0.10,  // ≤ 10%
-  guardrail_pass_rate: 0.90, // ≥ 90%
-  judge_correct_rate: 0.80,  // ≥ 80%
+  hallucination_rate: 0.1, // ≤ 10%
+  guardrail_pass_rate: 0.9, // ≥ 90%
+  judge_correct_rate: 0.8, // ≥ 80%
 };
 
 export function evalGate(
@@ -633,11 +636,15 @@ export function evalGate(
     // For hallucination_rate, lower is better
     if (name === "hallucination_rate") {
       if (value > threshold) {
-        blockedBy.push(`${name}: ${(value * 100).toFixed(1)}% > threshold ${(threshold * 100).toFixed(1)}%`);
+        blockedBy.push(
+          `${name}: ${(value * 100).toFixed(1)}% > threshold ${(threshold * 100).toFixed(1)}%`
+        );
       }
     } else {
       if (value < threshold) {
-        blockedBy.push(`${name}: ${(value * 100).toFixed(1)}% < threshold ${(threshold * 100).toFixed(1)}%`);
+        blockedBy.push(
+          `${name}: ${(value * 100).toFixed(1)}% < threshold ${(threshold * 100).toFixed(1)}%`
+        );
       }
     }
   }
@@ -707,7 +714,10 @@ export interface FixtureMetadata {
 
 export function loadFixture(path: string): { questions: unknown[]; metadata: FixtureMetadata } {
   const raw = readFileSync(path, "utf-8");
-  const lines = raw.trim().split("\n").filter((l) => l.trim() && !l.startsWith("#"));
+  const lines = raw
+    .trim()
+    .split("\n")
+    .filter((l) => l.trim() && !l.startsWith("#"));
 
   // First line might be metadata
   let metadata: FixtureMetadata = { version: "1.0.0", type: "retrieval" };
@@ -740,7 +750,9 @@ export function formatRetrievalReport(result: EvalRunResult): string {
   lines.push(`  Date:        ${m.started_at}`);
   lines.push(`  Duration:    ${(m.duration_ms / 1000).toFixed(1)}s`);
   lines.push(`  Questions:   ${m.total_questions}`);
-  lines.push(`  Git:         ${m.params.git_commit.slice(0, 8)} (${m.params.git_branch}${m.params.git_dirty ? ", dirty" : ""})`);
+  lines.push(
+    `  Git:         ${m.params.git_commit.slice(0, 8)} (${m.params.git_branch}${m.params.git_dirty ? ", dirty" : ""})`
+  );
   lines.push(`  Corpus:      ${m.params.corpus_version}`);
   lines.push(`  Embedding:   ${m.params.embedding_model} (${m.params.embedding_dimensions}d)`);
   lines.push(`  Top-K:       ${m.params.top_k}`);
@@ -762,7 +774,7 @@ export function formatRetrievalReport(result: EvalRunResult): string {
     lines.push("  ───────────────────────────────────────────");
     lines.push(`  Hit@1:   ${(h1 * 100).toFixed(1)}%`);
     lines.push(`  Hit@3:   ${(h3! * 100).toFixed(1)}%`);
-    lines.push(`  Hit@5:   ${(h5! * 100).toFixed(1)}%  ${h5! >= 0.90 ? "✅" : "❌"}`);
+    lines.push(`  Hit@5:   ${(h5! * 100).toFixed(1)}%  ${h5! >= 0.9 ? "✅" : "❌"}`);
     lines.push(`  Hit@8:   ${(h8! * 100).toFixed(1)}%`);
     lines.push(`  Hit@10:  ${(h10! * 100).toFixed(1)}%`);
     lines.push(`  MRR:     ${mrr!.toFixed(3)}`);
@@ -775,10 +787,10 @@ export function formatRetrievalReport(result: EvalRunResult): string {
     for (const [area, metrics] of Object.entries(a.per_area)) {
       lines.push(
         `  ${area.padEnd(12)} (n=${String(metrics.n).padStart(2)}): ` +
-        `H@1=${((metrics.hit_at_1 ?? 0) * 100).toFixed(0)}% ` +
-        `H@5=${((metrics.hit_at_5 ?? 0) * 100).toFixed(0)}% ` +
-        `H@8=${((metrics.hit_at_8 ?? 0) * 100).toFixed(0)}% ` +
-        `MRR=${(metrics.mrr ?? 0).toFixed(3)}`
+          `H@1=${((metrics.hit_at_1 ?? 0) * 100).toFixed(0)}% ` +
+          `H@5=${((metrics.hit_at_5 ?? 0) * 100).toFixed(0)}% ` +
+          `H@8=${((metrics.hit_at_8 ?? 0) * 100).toFixed(0)}% ` +
+          `MRR=${(metrics.mrr ?? 0).toFixed(3)}`
       );
     }
     lines.push("");

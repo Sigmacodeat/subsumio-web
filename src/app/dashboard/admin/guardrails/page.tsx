@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Shield,
   ShieldCheck,
   ShieldAlert,
   RefreshCw,
@@ -114,8 +113,12 @@ function MetricCard({
         <div className="text-2xl font-bold text-[var(--ds-text)]">{value}</div>
         {trend && (
           <div className="mt-1 flex items-center gap-1 text-xs">
-            {trend === "up" && <TrendingUp className="h-3 w-3 text-[color:var(--ds-success-text)]" />}
-            {trend === "down" && <TrendingDown className="h-3 w-3 text-[color:var(--ds-danger-text)]" />}
+            {trend === "up" && (
+              <TrendingUp className="h-3 w-3 text-[color:var(--ds-success-text)]" />
+            )}
+            {trend === "down" && (
+              <TrendingDown className="h-3 w-3 text-[color:var(--ds-danger-text)]" />
+            )}
             {trend === "neutral" && <Activity className="h-3 w-3 text-[var(--ds-text-muted)]" />}
           </div>
         )}
@@ -269,21 +272,33 @@ export default function GuardrailDashboardPage() {
               label="Tier-0 Pass-Rate"
               value={formatPercent(stats.tier_0_pass_rate)}
               icon={ShieldCheck}
-              color={stats.tier_0_pass_rate > 0.9 ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-warning-text)]"}
+              color={
+                stats.tier_0_pass_rate > 0.9
+                  ? "text-[color:var(--ds-success-text)]"
+                  : "text-[color:var(--ds-warning-text)]"
+              }
               trend={stats.tier_0_pass_rate > 0.9 ? "up" : "down"}
             />
             <MetricCard
               label="Tier-1 Pass-Rate"
               value={formatPercent(stats.tier_1_pass_rate)}
               icon={Brain}
-              color={stats.tier_1_pass_rate > 0.85 ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-warning-text)]"}
+              color={
+                stats.tier_1_pass_rate > 0.85
+                  ? "text-[color:var(--ds-success-text)]"
+                  : "text-[color:var(--ds-warning-text)]"
+              }
               trend={stats.tier_1_pass_rate > 0.85 ? "up" : "down"}
             />
             <MetricCard
               label="Clean-Rate (beide)"
               value={formatPercent(stats.tier_1_clean_rate)}
               icon={Scale}
-              color={stats.tier_1_clean_rate > 0.8 ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-danger-text)]"}
+              color={
+                stats.tier_1_clean_rate > 0.8
+                  ? "text-[color:var(--ds-success-text)]"
+                  : "text-[color:var(--ds-danger-text)]"
+              }
               trend={stats.tier_1_clean_rate > 0.8 ? "up" : "down"}
             />
           </div>
@@ -294,13 +309,21 @@ export default function GuardrailDashboardPage() {
               label="Tier-0 Regeneration"
               value={formatPercent(stats.tier_0_regeneration_rate)}
               icon={Zap}
-              color={stats.tier_0_regeneration_rate < 0.1 ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-warning-text)]"}
+              color={
+                stats.tier_0_regeneration_rate < 0.1
+                  ? "text-[color:var(--ds-success-text)]"
+                  : "text-[color:var(--ds-warning-text)]"
+              }
             />
             <MetricCard
               label="Tier-1 Regeneration"
               value={formatPercent(stats.tier_1_regeneration_rate)}
               icon={Zap}
-              color={stats.tier_1_regeneration_rate < 0.05 ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-warning-text)]"}
+              color={
+                stats.tier_1_regeneration_rate < 0.05
+                  ? "text-[color:var(--ds-success-text)]"
+                  : "text-[color:var(--ds-warning-text)]"
+              }
             />
             <Card className="border-[var(--ds-border)] bg-[var(--ds-surface-1)]">
               <CardContent className="p-4">
@@ -339,10 +362,12 @@ export default function GuardrailDashboardPage() {
                 <div className="flex-1" />
                 <div className="flex items-center gap-3 text-xs text-[var(--ds-text-muted)]">
                   <span className="flex items-center gap-1">
-                    <span className="h-2 w-2 rounded bg-[color:var(--ds-success-solid)]/60" /> Bestanden
+                    <span className="h-2 w-2 rounded bg-[color:var(--ds-success-solid)]/60" />{" "}
+                    Bestanden
                   </span>
                   <span className="flex items-center gap-1">
-                    <span className="h-2 w-2 rounded bg-[color:var(--ds-danger-solid)]/60" /> Markiert
+                    <span className="h-2 w-2 rounded bg-[color:var(--ds-danger-solid)]/60" />{" "}
+                    Markiert
                   </span>
                 </div>
               </div>
@@ -445,7 +470,11 @@ export default function GuardrailDashboardPage() {
                       <div className="flex flex-1 items-center gap-2">
                         <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--ds-border)]">
                           <div
-                            className={ls.pass_rate > 0.9 ? "bg-[color:var(--ds-success-solid)]/60" : "bg-[color:var(--ds-warning-solid)]/60"}
+                            className={
+                              ls.pass_rate > 0.9
+                                ? "bg-[color:var(--ds-success-solid)]/60"
+                                : "bg-[color:var(--ds-warning-solid)]/60"
+                            }
                             style={{ width: `${ls.pass_rate * 100}%`, height: "100%" }}
                           />
                         </div>
@@ -621,13 +650,16 @@ export default function GuardrailDashboardPage() {
                       <span className="h-2 w-2 rounded bg-[color:var(--ds-success-solid)]/60" /> OK
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="h-2 w-2 rounded bg-[color:var(--ds-warning-solid)]/60" /> Vorfrist
+                      <span className="h-2 w-2 rounded bg-[color:var(--ds-warning-solid)]/60" />{" "}
+                      Vorfrist
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="h-2 w-2 rounded bg-[color:var(--ds-danger-solid)]/70" /> Kritisch
+                      <span className="h-2 w-2 rounded bg-[color:var(--ds-danger-solid)]/70" />{" "}
+                      Kritisch
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="h-2 w-2 rounded bg-[color:var(--ds-danger-solid)]/80" /> Überfällig
+                      <span className="h-2 w-2 rounded bg-[color:var(--ds-danger-solid)]/80" />{" "}
+                      Überfällig
                     </span>
                   </div>
                 </div>

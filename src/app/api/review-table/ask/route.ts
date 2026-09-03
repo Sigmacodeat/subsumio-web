@@ -66,6 +66,17 @@ export const POST = createHandler(
     action: "brain.read",
     rateTier: "heavy",
     body: postSchema,
+    audit: (_ctx, body) => ({
+      action: "review_table.ask" as const,
+      entityType: "review_table",
+      details: {
+        case_slug: body.case_slug,
+        table_title: body.table_title,
+        column_count: body.columns.length,
+        row_count: body.rows.length,
+        query_length: body.query.length,
+      },
+    }),
   },
   async (ctx, body) => {
     const tableText = formatTableForPrompt(body.columns, body.rows);

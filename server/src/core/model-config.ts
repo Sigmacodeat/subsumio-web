@@ -102,7 +102,15 @@ export const DEFAULT_ALIASES: Record<string, string> = {
  */
 export const TIER_DEFAULTS: Record<ModelTier, string> = {
   utility: "openrouter:deepseek/deepseek-chat",
-  reasoning: "openrouter:deepseek/deepseek-chat",
+  // v0.43.1: Reasoning tier upgraded from DeepSeek to Sonnet 4.6.
+  // DeepSeek-chat is a utility-tier model (classification, extraction) — it
+  // lacks the multi-step reasoning needed for legal subsumption, cross-document
+  // contradiction detection, and synthesis. facts/extract.ts already documented
+  // "Defaults to Sonnet" but the tier default was DeepSeek, so the comment was
+  // silently wrong. Research (BenGER 2026, LegalGraphRAG ACL 2026, TruPath Labs
+  // 2026) confirms Sonnet-class is required for legal reasoning tasks.
+  // Users who prefer DeepSeek: `gbrain config set models.tier.reasoning openrouter:deepseek/deepseek-chat`
+  reasoning: "anthropic:claude-sonnet-4-6",
   deep: "openrouter:xai/grok-4.3",
   subagent: "anthropic:claude-haiku-4-5",
 };

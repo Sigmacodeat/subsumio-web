@@ -18,6 +18,12 @@ export const POST = createHandler(
     action: "brain.read",
     rateTier: "standard",
     body: feedbackSchema,
+    audit: (_ctx, body) => ({
+      action: "rciid.quality_feedback" as const,
+      entityType: "case",
+      entityId: body.rciidCaseId,
+      details: {},
+    }),
   },
   async (_ctx, body) => {
     if (!isConfigured()) {

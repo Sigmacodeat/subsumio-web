@@ -22,7 +22,7 @@
  */
 
 import { env } from "@/lib/env";
-import { berechneFristAuto, type FristAutoErgebnis, FRISTEN_REGISTRY } from "@/lib/legal/frist-engine";
+import { berechneFristAuto, FRISTEN_REGISTRY } from "@/lib/legal/frist-engine";
 import type { DetectedDeadline } from "@/lib/ai-deadline-detect";
 
 const DEFAULT_MODEL = "deepseek/deepseek-chat";
@@ -104,7 +104,8 @@ export async function extractDeadlinesWithLLM(
   if (!apiKey) return [];
 
   const model = env("DEADLINE_LLM_MODEL") || DEFAULT_MODEL;
-  const truncated = text.length > 10_000 ? text.slice(0, 10_000) + "\n\n[... text truncated]" : text;
+  const truncated =
+    text.length > 10_000 ? text.slice(0, 10_000) + "\n\n[... text truncated]" : text;
 
   try {
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -213,8 +214,7 @@ export async function hybridDeadlineDetection(
   opts?: { ferialsache?: boolean; vorfristTage?: number }
 ): Promise<DetectedDeadline[]> {
   const highConfidenceCount = regexDetected.filter((d) => d.confidence === "high").length;
-  const shouldCallLLM =
-    highConfidenceCount === 0 || (text.length > 500 && highConfidenceCount < 3);
+  const shouldCallLLM = highConfidenceCount === 0 || (text.length > 500 && highConfidenceCount < 3);
 
   if (!shouldCallLLM || !isLLMDeadlineExtractionAvailable()) {
     return regexDetected;

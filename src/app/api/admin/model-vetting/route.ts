@@ -1,4 +1,9 @@
+import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
+
+const adminBodySchema = z
+  .record(z.unknown())
+  .refine((v) => JSON.stringify(v).length < 50000, "Body too large (max 50KB)");
 import {
   createVettingReport,
   getVettingReport,
@@ -27,6 +32,7 @@ export const GET = createHandler(
   {
     action: "connector.read",
     rateTier: "standard",
+    admin: true,
   },
   async (ctx, _body, query) => {
     if (ctx.user.role !== "admin") {
@@ -75,10 +81,15 @@ export const POST = createHandler(
   {
     action: "connector.write",
     rateTier: "standard",
+    admin: true,
+    body: adminBodySchema,
     audit: (ctx, body) => ({
       action: "admin.model_vetting" as const,
       entityType: "model",
-      details: { action: ((body as unknown as Record<string, unknown>)?.action), user: ctx.user.email },
+      details: {
+        action: (body as unknown as Record<string, unknown>)?.action,
+        user: ctx.user.email,
+      },
     }),
   },
   async (ctx, body) => {

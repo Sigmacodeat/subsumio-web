@@ -1109,7 +1109,7 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
       const source_id = (sourceId as string) || "default";
       await sql`
         INSERT INTO pages (slug, source_id, type, title, frontmatter, compiled_truth, created_at, updated_at)
-        VALUES (${slug}, ${source_id}, ${"legal-entity"}, ${title}, ${JSON.stringify(frontmatter)}::jsonb, '', NOW(), NOW())
+        VALUES (${slug}, ${source_id}, ${"legal-entity"}, ${title}, ${sql.json(frontmatter)}, '', NOW(), NOW())
       `;
       res.status(201).json({ slug, title, type: "legal-entity" });
     } catch (err) {
@@ -1153,7 +1153,7 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
       const source_id = (sourceId as string) || "default";
       await sql`
         INSERT INTO pages (slug, source_id, type, title, frontmatter, compiled_truth, created_at, updated_at)
-        VALUES (${slug}, ${source_id}, ${"legal-case"}, ${title}, ${JSON.stringify(frontmatter)}::jsonb, ${facts || ""}, NOW(), NOW())
+        VALUES (${slug}, ${source_id}, ${"legal-case"}, ${title}, ${sql.json(frontmatter)}, ${facts || ""}, NOW(), NOW())
       `;
       res.status(201).json({ slug, title, type: "legal-case" });
     } catch (err) {
@@ -1184,7 +1184,7 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
       await sql`
         UPDATE pages
         SET title = COALESCE(${title ?? null}, title),
-            frontmatter = ${JSON.stringify(newFm)}::jsonb,
+            frontmatter = ${sql.json(newFm)},
             updated_at = NOW()
         WHERE slug = ${slug} AND type = 'legal-entity'
       `;
@@ -1220,7 +1220,7 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
       await sql`
         UPDATE pages
         SET title = COALESCE(${title ?? null}, title),
-            frontmatter = ${JSON.stringify(newFm)}::jsonb,
+            frontmatter = ${sql.json(newFm)},
             compiled_truth = COALESCE(${facts ?? null}, compiled_truth),
             updated_at = NOW()
         WHERE slug = ${slug} AND type = 'legal-case'

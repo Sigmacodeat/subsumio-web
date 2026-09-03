@@ -49,6 +49,8 @@ export const POST = createHandler(
     // Forward the client's Accept header so the engine knows if SSE is wanted
     const clientAccept = req.headers.get("accept") ?? "";
     const wantsSse = clientAccept.includes("text/event-stream");
+    const bodyRec = (body ?? {}) as Record<string, unknown>;
+    const caseSlug = typeof bodyRec.case_slug === "string" ? bodyRec.case_slug : "";
 
     const upstream = await fetch(`${ENGINE_URL}/api/upload/confirm`, {
       method: "POST",
@@ -102,14 +104,10 @@ export const POST = createHandler(
                 const result = JSON.parse(data) as { slug?: string; title?: string };
                 void recordQuota(ctx, "uploads");
                 if (result.slug) {
-                  const caseSlugRaw =
-                    typeof (body as unknown as Record<string, unknown>)?.case_slug === "string"
-                      ? ((body as unknown as Record<string, unknown>).case_slug as string)
-                      : "";
                   await stampAnalysisPending(ctx.headers, result.slug);
                   await enqueueAllPostUploadTasks({
                     doc_slug: result.slug,
-                    case_slug: caseSlugRaw || undefined,
+                    case_slug: caseSlug || undefined,
                     brain_id: ctx.brainId,
                     doc_title: result.title,
                     uploaded_at: new Date().toISOString(),
@@ -154,14 +152,10 @@ export const POST = createHandler(
         };
 
         if (result.slug) {
-          const caseSlugRaw =
-            typeof (body as unknown as Record<string, unknown>)?.case_slug === "string"
-              ? ((body as unknown as Record<string, unknown>).case_slug as string)
-              : "";
           await stampAnalysisPending(ctx.headers, result.slug);
           await enqueueAllPostUploadTasks({
             doc_slug: result.slug,
-            case_slug: caseSlugRaw || undefined,
+            case_slug: caseSlug || undefined,
             brain_id: ctx.brainId,
             doc_title: result.title,
             uploaded_at: new Date().toISOString(),

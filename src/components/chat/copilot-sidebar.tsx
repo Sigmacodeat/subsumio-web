@@ -13,6 +13,7 @@ import {
   Mail,
   ShieldAlert,
   Inbox,
+  Scale,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { csrfFetch } from "@/lib/csrf";
@@ -205,18 +206,19 @@ function MatterContextCard({ info, lang }: { info: MatterContextInfo; lang: Lang
             </span>
           </div>
         </div>
-        {info.nextDeadlineDate && (() => {
-          const date = new Date(info.nextDeadlineDate);
-          if (Number.isNaN(date.getTime())) return null;
-          return (
-            <div className="shrink-0 rounded-md bg-[color:var(--ds-warning-bg)] px-2 py-1 text-xs font-medium text-[color:var(--ds-warning-text)]">
-              {date.toLocaleDateString(isEn ? "en-GB" : "de-DE", {
-                day: "2-digit",
-                month: "short",
-              })}
-            </div>
-          );
-        })()}
+        {info.nextDeadlineDate &&
+          (() => {
+            const date = new Date(info.nextDeadlineDate);
+            if (Number.isNaN(date.getTime())) return null;
+            return (
+              <div className="shrink-0 rounded-md bg-[color:var(--ds-warning-bg)] px-2 py-1 text-xs font-medium text-[color:var(--ds-warning-text)]">
+                {date.toLocaleDateString(isEn ? "en-GB" : "de-DE", {
+                  day: "2-digit",
+                  month: "short",
+                })}
+              </div>
+            );
+          })()}
       </div>
     </div>
   );
@@ -234,7 +236,8 @@ interface ProactiveAlert {
   label: string;
   query: string;
   severity: "urgent" | "warning" | "info";
-  icon: "deadline" | "mail" | "approval" | "conflict" | "intake" | "document";
+  icon: "deadline" | "mail" | "approval" | "conflict" | "intake" | "document" | "investigation";
+  href?: string;
 }
 
 const ALERT_ICONS: Record<ProactiveAlert["icon"], typeof Clock> = {
@@ -244,9 +247,16 @@ const ALERT_ICONS: Record<ProactiveAlert["icon"], typeof Clock> = {
   conflict: ShieldAlert,
   intake: Inbox,
   document: FileText,
+  investigation: Scale,
 };
 
-export function ProactiveAlerts({ alerts, onQuery, onDismiss, t, className }: ProactiveAlertsProps) {
+export function ProactiveAlerts({
+  alerts,
+  onQuery,
+  onDismiss,
+  t,
+  className,
+}: ProactiveAlertsProps) {
   if (alerts.length === 0) return null;
   return (
     <div className={cn("shrink-0 border-b border-[color:var(--ds-border)] px-3 py-2", className)}>
@@ -254,20 +264,27 @@ export function ProactiveAlerts({ alerts, onQuery, onDismiss, t, className }: Pr
         {alerts.map((alert) => {
           const alertKey = `${alert.label}-${alert.query}`;
           const Icon = ALERT_ICONS[alert.icon];
+          const handleActivate = () => {
+            if (alert.href) {
+              window.location.href = alert.href;
+            } else {
+              onQuery(alert.query);
+            }
+          };
           return (
             <div
               key={alertKey}
               role="button"
               tabIndex={0}
-              onClick={() => onQuery(alert.query)}
+              onClick={handleActivate}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  onQuery(alert.query);
+                  handleActivate();
                 }
               }}
               className={cn(
-                "group/alert flex w-full min-h-11 items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-[background-color,border-color] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-1 focus-visible:ring-[color:var(--ds-ring)] sm:min-h-0 sm:gap-2 sm:px-2.5 sm:py-1.5 sm:text-xs",
+                "group/alert flex min-h-11 w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-[background-color,border-color] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-1 focus-visible:ring-[color:var(--ds-ring)] sm:min-h-0 sm:gap-2 sm:px-2.5 sm:py-1.5 sm:text-xs",
                 alert.severity === "urgent"
                   ? "border-l-2 border-l-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg-hover)]"
                   : alert.severity === "warning"
@@ -282,7 +299,7 @@ export function ProactiveAlerts({ alerts, onQuery, onDismiss, t, className }: Pr
                   e.stopPropagation();
                   onDismiss(alertKey);
                 }}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded opacity-0 transition-opacity hover:bg-[color:var(--ds-hover)] focus-visible:ring-1 focus-visible:ring-[color:var(--ds-ring)] group-hover/alert:opacity-100 max-2xl:opacity-100 sm:h-5 sm:w-5"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-hover/alert:opacity-100 hover:bg-[color:var(--ds-hover)] focus-visible:ring-1 focus-visible:ring-[color:var(--ds-ring)] max-2xl:opacity-100 sm:h-5 sm:w-5"
                 aria-label={t("copilot.dismiss_hint")}
               >
                 <X className="h-4 w-4 sm:h-2.5 sm:w-2.5" />
@@ -463,6 +480,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   // ── G6: Proactive Suggestions — fetch from /api/notifications (unified) ──
   const [proactiveAlerts, setProactiveAlerts] = useState<ProactiveAlert[]>([]);
   const alertsCacheRef = useRef<{ data: typeof proactiveAlerts; ts: number } | null>(null);
+  const invCacheRef = useRef<{ slug: string; suggest: boolean; ts: number } | null>(null);
   const ALERTS_TTL_MS = 60_000;
 
   useEffect(() => {
@@ -596,6 +614,60 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         alertsCacheRef.current = { data: [], ts: Date.now() };
       }
     })();
+
+    // ── Case Investigation Suggestion ────────────────────────────────
+    // Fetches /api/matter-context/[caseSlug]/investigation-suggest and
+    // injects a ProactiveAlert when shouldSuggestInvestigation returns true.
+    // Cached per caseSlug with 60s TTL to avoid refetch on every navigation.
+    const currentCaseSlug = caseSlugFromDashboardPath(pathname);
+    const invCacheKey = currentCaseSlug ?? "__global__";
+    if (
+      currentCaseSlug &&
+      (!invCacheRef.current ||
+        (invCacheRef.current.slug !== invCacheKey &&
+          Date.now() - invCacheRef.current.ts > ALERTS_TTL_MS))
+    ) {
+      (async () => {
+        try {
+          const res = await csrfFetch(
+            `/api/matter-context/${encodeURIComponent(currentCaseSlug)}/investigation-suggest`,
+            { method: "GET" }
+          );
+          if (cancelled || !res.ok) return;
+          const data = await res.json();
+          const suggestion = data.data ?? data;
+          invCacheRef.current = {
+            slug: invCacheKey,
+            suggest: Boolean(suggestion?.suggest),
+            ts: Date.now(),
+          };
+          if (!suggestion?.suggest) return;
+          const isEn = lang === "en";
+          const invAlert: ProactiveAlert = {
+            label: isEn
+              ? `Investigation recommended: ${suggestion.case_title ?? currentCaseSlug}`
+              : `Sachverhaltsprüfung empfohlen: ${suggestion.case_title ?? currentCaseSlug}`,
+            query: isEn
+              ? `Run a case investigation for ${suggestion.case_title ?? currentCaseSlug} and summarize the key contradictions.`
+              : `Führe eine Sachverhaltsprüfung für ${suggestion.case_title ?? currentCaseSlug} durch und fasse die wichtigsten Widersprüche zusammen.`,
+            severity:
+              suggestion.urgency === "high"
+                ? "urgent"
+                : suggestion.urgency === "medium"
+                  ? "warning"
+                  : "info",
+            icon: "investigation",
+          };
+          setProactiveAlerts((prev) => {
+            // Avoid duplicates
+            if (prev.some((a) => a.icon === "investigation")) return prev;
+            return [invAlert, ...prev].slice(0, 4);
+          });
+        } catch {
+          // Non-blocking
+        }
+      })();
+    }
 
     return () => {
       cancelled = true;

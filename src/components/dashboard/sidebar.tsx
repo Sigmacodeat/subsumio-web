@@ -21,7 +21,6 @@ import {
   Briefcase,
   CalendarClock,
   Clock,
-  Timer,
   Landmark,
   Banknote,
   Plug,
@@ -108,7 +107,7 @@ import {
   FileText,
   ChevronsDownUp,
   BrainCog,
-  Workflow,
+  ClipboardCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
@@ -430,6 +429,20 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: ShieldAlert,
         labelKey: "nav.red_team",
         keywords: "red team adversarial prüfung schwächen gegenargument",
+        audienceTier: "erweitert",
+      },
+      {
+        href: "/dashboard/berufungs-agent",
+        icon: Landmark,
+        labelKey: "nav.berufungs_agent",
+        keywords: "berufung appeal revision aktanalyse berufungsgründe",
+        audienceTier: "erweitert",
+      },
+      {
+        href: "/dashboard/war-room",
+        icon: Radar,
+        labelKey: "nav.war_room",
+        keywords: "war room perspektiven richter gegner mandant perspektivenraum",
         audienceTier: "erweitert",
       },
     ],
@@ -1089,6 +1102,14 @@ const ADMIN_SECTION: NavSection = {
       audienceTier: "system",
     },
     {
+      href: "/dashboard/admin/eval-review",
+      icon: ClipboardCheck,
+      labelKey: "nav.eval_review",
+      keywords: "eval fixture review jurist ground truth retrieval eval correction",
+      tier: "admin",
+      audienceTier: "system",
+    },
+    {
       href: "/dashboard/deep-analysis",
       icon: ScanSearch,
       labelKey: "nav.deep_analysis",
@@ -1418,6 +1439,12 @@ const TAX_NAV_SECTIONS: NavSection[] = [
     descKey: "nav.section.desc.firm_ops",
     colorVar: "--nav-cat-ops",
     items: [
+      {
+        href: "/dashboard/operations",
+        icon: Activity,
+        labelKey: "nav.operations_cockpit",
+        keywords: "operations cockpit kanzlei vorgänge work items",
+      },
       {
         href: "/dashboard/review-queue",
         icon: ListTodo,
@@ -1812,6 +1839,7 @@ const ADMIN_GROUPS: Array<{ titleKey: DashboardKey; hrefs: string[] }> = [
       "/dashboard/admin/feedback-triage",
       "/dashboard/admin/guardrails",
       "/dashboard/admin/rag-optimizer",
+      "/dashboard/admin/eval-review",
       "/dashboard/monitoring",
       "/dashboard/ai-quality",
       "/dashboard/connectors",
@@ -1992,11 +2020,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   const { t } = useLang();
   const { panelTransition: sidebarPanelTransition } = useDashboardMotion();
   const sidebarShellTransition = sidebarPanelTransition;
-  const {
-    width: expandedWidth,
-    isResizing,
-    handleMouseDown,
-  } = useResizable({
+  const { width: expandedWidth, handleMouseDown } = useResizable({
     minWidth: 200,
     maxWidth: 320,
     initialWidth: 240,
@@ -2029,6 +2053,22 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     (item: NavItem) => !item.tier || itemTierRank(item.tier) <= userPlanRank || isAdmin,
     [userPlanRank, isAdmin, itemTierRank]
   );
+  // Role-based audience filtering: assistants don't see "erweitert" items,
+  // non-admins never see "system" items. Admins see everything.
+  const isAudienceVisible = useCallback(
+    (item: NavItem) => {
+      if (isAdmin) return true;
+      if (!item.audienceTier) return true;
+      if (item.audienceTier === "system") return false;
+      if (role === "assistant" && item.audienceTier === "erweitert") return false;
+      return true;
+    },
+    [isAdmin, role]
+  );
+  const isItemVisible = useCallback(
+    (item: NavItem) => isTierVisible(item) && isAudienceVisible(item),
+    [isTierVisible, isAudienceVisible]
+  );
   const adminSection = useMemo(
     () =>
       isAdmin
@@ -2036,23 +2076,23 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
         : {
             ...fullAdminSection,
             items: fullAdminSection.items.filter(
-              (item) => bottomItems.some((b) => b.href === item.href) && isTierVisible(item)
+              (item) => bottomItems.some((b) => b.href === item.href) && isItemVisible(item)
             ),
           },
-    [isAdmin, fullAdminSection, bottomItems, isTierVisible]
+    [isAdmin, fullAdminSection, bottomItems, isItemVisible]
   );
   const allNavItems = useMemo(
     () =>
       isAdmin
-        ? fullAllNavItems.filter(isTierVisible)
+        ? fullAllNavItems.filter(isItemVisible)
         : fullAllNavItems.filter(
             (item) =>
-              isTierVisible(item) &&
+              isItemVisible(item) &&
               (adminSection.items.some((a) => a.href === item.href) ||
                 navSections.some((s) => s.items.some((sItem) => sItem.href === item.href)) ||
                 primaryItems.some((p) => p.href === item.href))
           ),
-    [isAdmin, fullAllNavItems, adminSection, navSections, primaryItems, isTierVisible]
+    [isAdmin, fullAllNavItems, adminSection, navSections, primaryItems, isItemVisible]
   );
   const preferredSectionByHref = useMemo(
     () =>
@@ -2079,7 +2119,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           items: section.items.filter(
             (item) =>
               !item.comingSoon &&
-              isTierVisible(item) &&
+              isItemVisible(item) &&
               (!coreMode || !item.audienceTier || item.audienceTier === "quick-start")
           ),
         }))
@@ -2097,7 +2137,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           return (
             sectionKey === section.titleKey &&
             !item.comingSoon &&
-            isTierVisible(item) &&
+            isItemVisible(item) &&
             !primaryItems.some((primary) => primary.href === item.href) &&
             (t(item.labelKey).toLowerCase().includes(q) ||
               (item.keywords ?? "").toLowerCase().includes(q))
@@ -2113,7 +2153,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     allNavItems,
     preferredSectionByHref,
     primaryItems,
-    isTierVisible,
+    isItemVisible,
     coreMode,
   ]);
 
@@ -2121,17 +2161,17 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     const q = searchQuery.toLowerCase().trim();
     return primaryItems.filter(
       (item) =>
-        isTierVisible(item) &&
+        isItemVisible(item) &&
         (!q ||
           t(item.labelKey).toLowerCase().includes(q) ||
           (item.keywords ?? "").toLowerCase().includes(q))
     );
-  }, [primaryItems, isTierVisible, searchQuery, t]);
+  }, [primaryItems, isItemVisible, searchQuery, t]);
 
   const filteredBottomItems = useMemo(() => {
-    if (!searchQuery.trim()) return bottomItems.filter(isTierVisible);
+    if (!searchQuery.trim()) return bottomItems.filter(isItemVisible);
     return [];
-  }, [searchQuery, bottomItems, isTierVisible]);
+  }, [searchQuery, bottomItems, isItemVisible]);
 
   const hasResults =
     filteredPrimaryItems.length > 0 ||
@@ -2241,8 +2281,8 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     () =>
       recentHrefs
         .map((href) => allNavItems.find((item) => item.href === href))
-        .filter((item): item is NavItem => item != null && isTierVisible(item)),
-    [recentHrefs, allNavItems, isTierVisible]
+        .filter((item): item is NavItem => item != null && isItemVisible(item)),
+    [recentHrefs, allNavItems, isItemVisible]
   );
 
   const toggleSection = (titleKey: DashboardKey, event: React.MouseEvent<HTMLButtonElement>) => {
@@ -2499,7 +2539,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     title={tooltip}
                     className={cn(
                       "group relative flex items-center gap-3 rounded-lg text-[13px] font-semibold transition-[background-color,color] duration-[120ms] ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--ds-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface-2)] focus-visible:outline-none",
-                      collapsed ? "h-9 justify-center px-0" : "h-9 px-3",
+                      collapsed ? "h-11 justify-center px-0" : "h-11 px-3",
                       active
                         ? "brand-soft brand-text border-l-[3px] border-[color:var(--brand-primary)]"
                         : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
@@ -2579,7 +2619,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                           trackRecent(item);
                           setMobileOpen(false);
                         }}
-                        className="flex h-8 items-center gap-3 rounded-md px-3 text-[13px] font-medium text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                        className="flex min-h-11 items-center gap-3 rounded-md px-3 text-[13px] font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
                       >
                         <Icon size={15} aria-hidden />
                         <span className="truncate">{t(item.labelKey)}</span>

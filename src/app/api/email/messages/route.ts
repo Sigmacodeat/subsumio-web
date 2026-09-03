@@ -37,6 +37,17 @@ export const GET = createHandler(
     action: "brain.read",
     rateTier: "standard",
     query: messagesQuerySchema,
+    audit: (_ctx, _body, query) => ({
+      action: "email.messages_list" as const,
+      entityType: "email_message",
+      details: {
+        limit: query.limit,
+        direction: query.direction,
+        folder: query.folder,
+        unread_only: query.unreadOnly,
+        has_search: Boolean(query.search),
+      },
+    }),
   },
   async (ctx, _body, query, _req) => {
     try {
@@ -67,6 +78,19 @@ export const POST = createHandler(
     action: "brain.write",
     rateTier: "standard",
     body: messagePostSchema,
+    audit: (_ctx, body) => ({
+      action: "email.message_send" as const,
+      entityType: "email_message",
+      details: {
+        has_subject: Boolean(body.subject),
+        has_text: Boolean(body.text),
+        has_html: Boolean(body.html),
+        recipient_count_to: Array.isArray(body.to) ? body.to.length : body.to ? 1 : 0,
+        recipient_count_cc: Array.isArray(body.cc) ? body.cc.length : body.cc ? 1 : 0,
+        recipient_count_bcc: Array.isArray(body.bcc) ? body.bcc.length : body.bcc ? 1 : 0,
+        has_reply_to: Boolean(body.replyToMessageId),
+      },
+    }),
   },
   async (ctx, body, _query, _req) => {
     try {

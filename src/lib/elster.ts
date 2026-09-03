@@ -148,7 +148,7 @@ export function buildElsterXml(data: ElsterFormData): string {
     <DatenArt>${data.formType}</DatenArt>
     <Vorgang>send-Auth</Vorgang>
     <HerstellerID>74931</HerstellerID>
-    <ProduktName>Subsumio Tax</ProduktName>
+    <ProduktName>Taxumio</ProduktName>
   </TransferHeader>
   <DatenLieferant>
     <BeraterId>9999999</BeraterId>

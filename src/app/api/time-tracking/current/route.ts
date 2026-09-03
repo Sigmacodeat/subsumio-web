@@ -22,7 +22,7 @@ const startActivitySchema = z.object({
     "review",
     "other",
   ]),
-  description: z.string(),
+  description: z.string().max(5000),
   case_slug: z.string().optional(),
 });
 
@@ -84,6 +84,15 @@ export const POST = createHandler(
     action: "brain.write",
     rateTier: "standard",
     body: startActivitySchema,
+    audit: (_ctx, body) => ({
+      action: "time_tracking.start" as const,
+      entityType: "time_activity",
+      details: {
+        activity_type: body.activity_type,
+        has_case_slug: Boolean(body.case_slug),
+        description_length: body.description.length,
+      },
+    }),
   },
   startActivityHandler
 );

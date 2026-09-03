@@ -11,7 +11,6 @@ import {
   Clock,
   EyeOff,
   Loader2,
-  ShieldCheck,
   Sparkles,
   X,
   Zap,
@@ -209,7 +208,7 @@ export function AiDeadlineSuggestions() {
     },
   });
 
-  const suggestions = suggestionsQuery.data ?? [];
+  const suggestions = useMemo(() => suggestionsQuery.data ?? [], [suggestionsQuery.data]);
   const loading = suggestionsQuery.isLoading;
   const error = suggestionsQuery.isError;
 

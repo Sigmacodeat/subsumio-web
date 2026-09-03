@@ -27,6 +27,21 @@ export const POST = createHandler(
     action: "brain.write",
     rateTier: "heavy",
     body: postSchema,
+    audit: (_ctx, body) => ({
+      action: "legal.batch_edit" as const,
+      entityType: "page",
+      details: {
+        type: body.type,
+        slug_count: body.slugs.length,
+        slugs: body.slugs,
+        dry_run: body.dry_run ?? false,
+        has_find: Boolean(body.find),
+        has_replace: Boolean(body.replace),
+        has_tag: Boolean(body.tag),
+        has_frontmatter: Boolean(body.frontmatter),
+        has_new_type: Boolean(body.new_type),
+      },
+    }),
   },
   async (ctx, body) => {
     const result = await executeBatch(body as unknown as BatchOperation, ctx.headers);

@@ -32,6 +32,7 @@ export type CopilotToolName =
   | "obligation_extract"
   | "tabular_review"
   | "deep_analysis"
+  | "case_investigation"
   | "send_email"
   | "client_lookup"
   | "deadline_mark_done";
@@ -43,6 +44,7 @@ export interface ToolConditionContext {
     whatsapp?: boolean;
     deepAnalysis?: boolean;
     precedentSearch?: boolean;
+    caseInvestigation?: boolean;
   };
 }
 
@@ -139,6 +141,13 @@ export const TOOL_CONDITIONS: Record<CopilotToolName, ToolCondition> = {
     roles: ["admin", "lawyer"],
     featureFlag: "deepAnalysis",
     description: "Run a deep narrative analysis across Vault documents",
+  },
+  case_investigation: {
+    roles: ["admin", "lawyer"],
+    requiresCaseContext: true,
+    featureFlag: "caseInvestigation",
+    description:
+      "Sachverhaltsprüfung: Widersprüche, Beweislücken, neutrale Fragen (§ 226/272/274 ZPO)",
   },
   send_email: {
     roles: ["admin", "lawyer", "assistant"],

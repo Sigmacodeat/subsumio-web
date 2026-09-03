@@ -5,3 +5,9 @@ export { useMediaQuery } from "./use-media-query";
 export { useIsMobile, MOBILE_BREAKPOINT } from "./use-is-mobile";
 export { useOptimisticMutation } from "./use-optimistic-mutation";
 export type { OptimisticTarget } from "./use-optimistic-mutation";
+export { usePipelineStatus } from "./use-pipeline-status";
+export type {
+  PipelineStatus,
+  PipelineStatusResult,
+  UsePipelineStatusOptions,
+} from "./use-pipeline-status";
