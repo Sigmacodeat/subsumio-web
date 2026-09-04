@@ -6,6 +6,8 @@ import { useLang } from "@/lib/use-lang";
 import { useRundown, useTriggerRundown } from "@/lib/queries/agents";
 import { renderMarkdown } from "@/lib/markdown";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { AI_BADGE_LABEL } from "@/lib/ai-act";
 
 function isToday(date?: string): boolean {
   if (!date) return false;
@@ -110,15 +112,29 @@ export function RundownWidget() {
       </div>
 
       {latest?.result && hasToday ? (
-        <div
-          className="prose prose-sm max-w-none text-[color:var(--ds-text-muted)] [&_h3]:mt-2 [&_h3]:mb-1 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-[color:var(--ds-text)] [&_li]:text-xs [&_li]:leading-relaxed [&_p]:text-xs [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-4"
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(latest.result) }}
-        />
+        <>
+          <div
+            className="prose prose-sm max-w-none text-[color:var(--ds-text-muted)] [&_h3]:mt-2 [&_h3]:mb-1 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-[color:var(--ds-text)] [&_li]:text-xs [&_li]:leading-relaxed [&_p]:text-xs [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-4"
+            dangerouslySetInnerHTML={{ __html: renderMarkdown(latest.result) }}
+          />
+          <div className="mt-2">
+            <Badge variant="default" className="text-[10px] text-[color:var(--ds-text-muted)]">
+              {AI_BADGE_LABEL}
+            </Badge>
+          </div>
+        </>
       ) : latest?.result ? (
-        <div
-          className="prose prose-sm max-w-none text-[color:var(--ds-text-muted)] [&_h3]:mt-2 [&_h3]:mb-1 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-[color:var(--ds-text)] [&_li]:text-xs [&_li]:leading-relaxed [&_p]:text-xs [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-4"
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(latest.result) }}
-        />
+        <>
+          <div
+            className="prose prose-sm max-w-none text-[color:var(--ds-text-muted)] [&_h3]:mt-2 [&_h3]:mb-1 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-[color:var(--ds-text)] [&_li]:text-xs [&_li]:leading-relaxed [&_p]:text-xs [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-4"
+            dangerouslySetInnerHTML={{ __html: renderMarkdown(latest.result) }}
+          />
+          <div className="mt-2">
+            <Badge variant="default" className="text-[10px] text-[color:var(--ds-text-muted)]">
+              {AI_BADGE_LABEL}
+            </Badge>
+          </div>
+        </>
       ) : (
         <p className="text-xs text-[color:var(--ds-text-subtle)]">{t("reports.rundown_none")}</p>
       )}
