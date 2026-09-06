@@ -177,8 +177,8 @@ export const GET = createPublicHandler({ maxDuration: 60 }, async (req: NextRequ
         continue;
       }
 
-      const data = (await resp.json().catch(() => ({}))) as { url?: string };
-      console.log(`[auto-reload] Created checkout session for ${candidate.ownerId}: ${data.url}`);
+      const _data = (await resp.json().catch(() => ({}))) as { url?: string };
+      // Checkout session created — URL is sent to the user via the billing flow.
 
       // Dedup: record trigger timestamp so the next cron run (within 24h)
       // doesn't create another Checkout Session for the same user.

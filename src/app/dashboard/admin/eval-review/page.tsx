@@ -30,6 +30,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { ClipboardCheck, AlertTriangle } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
 import {
   STATUS_LABELS,
   STATUS_BADGE_VARIANT,
@@ -69,6 +70,7 @@ export default function EvalReviewPage() {
   const [proposedSlug, setProposedSlug] = useState("");
   const [reasoning, setReasoning] = useState("");
   const queryClient = useQueryClient();
+  const { addToast } = useToast();
 
   const questionsQuery = useQuery<{ questions: FixtureQuestion[]; total: number; flagged: number }>(
     {
@@ -114,6 +116,14 @@ export default function EvalReviewPage() {
       setProposedSlug("");
       setReasoning("");
     },
+    onError: (error: Error) => {
+      addToast({
+        type: "error",
+        title: "Vorschlag fehlgeschlagen",
+        description: error.message,
+        duration: 5000,
+      });
+    },
   });
 
   const decideMutation = useMutation({
@@ -133,6 +143,14 @@ export default function EvalReviewPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["eval-fixture-questions", fixtureFile] });
+    },
+    onError: (error: Error) => {
+      addToast({
+        type: "error",
+        title: "Entscheidung fehlgeschlagen",
+        description: error.message,
+        duration: 5000,
+      });
     },
   });
 

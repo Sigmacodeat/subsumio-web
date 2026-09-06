@@ -35,6 +35,7 @@ import {
 } from "@/lib/queries/agents";
 import type { TFunc } from "@/content/dashboard";
 import { AgentBuilder } from "@/components/dashboard/agent-builder";
+import { useToast } from "@/components/ui/toast";
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -310,8 +311,26 @@ function JobDetail({
   onRefresh: () => void;
 }) {
   const { t, lang } = useLang();
+  const { addToast } = useToast();
   const children = allJobs.filter((j: AgentJob) => j.parentId === job.id);
   const [acting, setActing] = useState<string | null>(null);
+
+  const runAction = async (action: string, fn: () => Promise<unknown>) => {
+    setActing(action);
+    try {
+      await fn();
+      onRefresh();
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: `${action} fehlgeschlagen`,
+        description: err instanceof Error ? err.message : "Unbekannter Fehler",
+        duration: 5000,
+      });
+    } finally {
+      setActing(null);
+    }
+  };
 
   const inboxEnabled =
     job.status === "active" || job.status === "waiting" || job.status === "paused";
@@ -364,12 +383,7 @@ function JobDetail({
           <Button
             size="sm"
             variant="secondary"
-            onClick={async () => {
-              setActing("pause");
-              await pauseMutation.mutateAsync(job.id);
-              setActing(null);
-              onRefresh();
-            }}
+            onClick={() => runAction("pause", () => pauseMutation.mutateAsync(job.id))}
             disabled={acting !== null}
           >
             {acting === "pause" ? (
@@ -384,12 +398,7 @@ function JobDetail({
           <Button
             size="sm"
             variant="success"
-            onClick={async () => {
-              setActing("resume");
-              await resumeMutation.mutateAsync(job.id);
-              setActing(null);
-              onRefresh();
-            }}
+            onClick={() => runAction("resume", () => resumeMutation.mutateAsync(job.id))}
             disabled={acting !== null}
           >
             {acting === "resume" ? (
@@ -404,12 +413,7 @@ function JobDetail({
           <Button
             size="sm"
             variant="danger"
-            onClick={async () => {
-              setActing("cancel");
-              await cancelMutation.mutateAsync(job.id);
-              setActing(null);
-              onRefresh();
-            }}
+            onClick={() => runAction("cancel", () => cancelMutation.mutateAsync(job.id))}
             disabled={acting !== null}
           >
             {acting === "cancel" ? (
@@ -424,12 +428,7 @@ function JobDetail({
           <Button
             size="sm"
             variant="outline"
-            onClick={async () => {
-              setActing("replay");
-              await replayMutation.mutateAsync(job.id);
-              setActing(null);
-              onRefresh();
-            }}
+            onClick={() => runAction("replay", () => replayMutation.mutateAsync(job.id))}
             disabled={acting !== null}
           >
             {acting === "replay" ? (
@@ -692,6 +691,7 @@ function JobDetail({
 
 export default function AgentsPage() {
   const { t } = useLang();
+  const { addToast } = useToast();
   const [tab, setTab] = useState<"jobs" | "builder">("jobs");
   const agentsQuery = useAgents();
   const submitMutation = useSubmitSupervisor();
@@ -717,15 +717,24 @@ export default function AgentsPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!submitPrompt.trim()) return;
-    const jobId = await submitMutation.mutateAsync({ prompt: submitPrompt.trim() });
-    if (jobId) {
-      setSubmitPrompt("");
-      setSelectedJob(jobId);
+    try {
+      const jobId = await submitMutation.mutateAsync({ prompt: submitPrompt.trim() });
+      if (jobId) {
+        setSubmitPrompt("");
+        setSelectedJob(jobId);
+      }
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: "Agent-Start fehlgeschlagen",
+        description: err instanceof Error ? err.message : "Unbekannter Fehler",
+        duration: 5000,
+      });
     }
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8 flex h-[calc(100vh-3.5rem)] flex-col">
+    <div className="mx-auto flex h-[calc(100vh-3.5rem)] max-w-[1200px] flex-col space-y-6 p-4 md:p-6 lg:p-8">
       {/* Tab Bar */}
       <div className="flex items-center gap-1 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-2">
         <button

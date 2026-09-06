@@ -488,7 +488,7 @@ export const api = {
       await consumeSSEStream(res.body, (data, parsed) => {
         if (data === "[DONE]") return;
         if (!parsed) {
-          console.debug("[api.think] malformed SSE data:", data.slice(0, 100));
+          // Malformed SSE data — skip silently to avoid console noise in production.
           return;
         }
         if (typeof parsed.chunk === "string") {
