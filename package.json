@@ -135,7 +135,7 @@
     "@vitejs/plugin-react": "^4.4.0",
     "colorjs.io": "^0.6.1",
     "eslint": "^9",
-    "eslint-config-next": "^15.5.19",
+    "eslint-config-next": "^16.2.10",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^26.0.0",
     "lint-staged": "^16.4.0",
