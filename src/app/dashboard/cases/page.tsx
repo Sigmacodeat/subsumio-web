@@ -632,7 +632,7 @@ export default function CasesPage() {
                 e.stopPropagation();
                 restoreCase(c.slug);
               }}
-              className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-success-bg)] hover:text-[color:var(--ds-success-text)]"
+              className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-success-bg)] hover:text-[color:var(--ds-success-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9]"
               title={t("cases.btn_restore")}
               aria-label={`${t("cases.btn_restore")} ${c.title}`}
             >
@@ -644,7 +644,7 @@ export default function CasesPage() {
                 e.stopPropagation();
                 deleteCase(c.slug);
               }}
-              className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
+              className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9]"
               title={t("cases.delete")}
               aria-label={`${t("cases.delete")} ${c.title}`}
             >
@@ -681,7 +681,10 @@ export default function CasesPage() {
           { label: t("cases.health_review"), value: reviewNeededCases.length },
           { label: t("cases.health_missing_parties"), value: casesMissingParties.length },
         ].map((item) => (
-          <div key={item.label} className="bg-[color:var(--ds-surface)] px-4 py-3">
+          <div
+            key={item.label}
+            className="bg-[color:var(--ds-surface)] px-4 py-3 transition-[background-color] duration-150 hover:bg-[color:var(--ds-surface-2)]"
+          >
             <div className="text-xs text-[color:var(--ds-text-muted)]">{item.label}</div>
             <div className="mt-1 text-2xl leading-none font-semibold text-[color:var(--ds-text)] tabular-nums">
               {item.value}
