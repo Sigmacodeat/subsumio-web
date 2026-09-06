@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/nextjs";
 import { SignaturePad } from "./signature-pad";
 
 const meta: Meta<typeof SignaturePad> = {

@@ -1,4 +1,4 @@
-import type { Preview } from "@storybook/react";
+import type { Preview } from "@storybook/nextjs";
 import "../src/app/globals.css";
 
 const preview: Preview = {
@@ -11,11 +11,16 @@ const preview: Preview = {
       },
     },
     backgrounds: {
-      default: "dark",
-      values: [
-        { name: "dark", value: "#06060f" },
-        { name: "light", value: "#f0f1f5" },
-      ],
+      options: {
+        dark: { name: "dark", value: "#06060f" },
+        light: { name: "light", value: "#f0f1f5" },
+      },
+    },
+  },
+
+  initialGlobals: {
+    backgrounds: {
+      value: "dark",
     },
   },
 };

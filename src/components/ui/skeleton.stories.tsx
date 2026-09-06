@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/nextjs";
 import { Skeleton } from "./skeleton";
 
 const meta: Meta<typeof Skeleton> = {
@@ -25,7 +25,7 @@ export const Badge: Story = {
 
 export const Card: Story = {
   render: () => (
-    <div className="w-[320px] space-y-3 p-4 border rounded">
+    <div className="w-[320px] space-y-3 rounded border p-4">
       <div className="flex items-center gap-3">
         <Skeleton className="h-10 w-10 rounded-full" />
         <div className="flex-1 space-y-2">
@@ -43,7 +43,7 @@ export const TableRow: Story = {
   render: () => (
     <div className="w-[400px] space-y-2">
       {[0, 1, 2].map((i) => (
-        <div key={i} className="flex items-center gap-3 p-2 border rounded">
+        <div key={i} className="flex items-center gap-3 rounded border p-2">
           <Skeleton className="h-3 flex-1" />
           <Skeleton className="h-5 w-12" />
         </div>

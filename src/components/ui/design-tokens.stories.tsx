@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/nextjs";
 
 /**
  * Design-Token Kontrast-Story — rendert alle --ds-text-* Tokens auf
@@ -61,7 +61,11 @@ function contrastRatio(fg: string, bg: string): number {
     const m = computed.match(/#([0-9a-f]{6})/i);
     if (m) {
       const hex = m[1];
-      return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)];
+      return [
+        parseInt(hex.slice(0, 2), 16),
+        parseInt(hex.slice(2, 4), 16),
+        parseInt(hex.slice(4, 6), 16),
+      ];
     }
     const rgba = computed.match(/rgba?\(([^)]+)\)/);
     if (rgba) {
@@ -176,7 +180,9 @@ function ContrastMatrix() {
         <div key={surface.name}>
           <h3 className="mb-2 text-sm font-semibold text-[color:var(--ds-text)]">
             Auf {surface.label}{" "}
-            <code className="font-mono text-xs text-[color:var(--ds-text-muted)]">{surface.name}</code>
+            <code className="font-mono text-xs text-[color:var(--ds-text-muted)]">
+              {surface.name}
+            </code>
           </h3>
           <div className="space-y-2">
             {TEXT_TOKENS.map((token) => (
@@ -208,11 +214,19 @@ export const DarkTheme: Story = {
 export const SideBySide: Story = {
   render: () => (
     <div className="grid gap-6 lg:grid-cols-2">
-      <div data-app="dashboard" data-theme="light" className="rounded-xl bg-[color:var(--ds-bg)] p-4">
+      <div
+        data-app="dashboard"
+        data-theme="light"
+        className="rounded-xl bg-[color:var(--ds-bg)] p-4"
+      >
         <h2 className="mb-3 text-base font-bold text-[color:var(--ds-text)]">Light Theme</h2>
         <ContrastMatrix />
       </div>
-      <div data-app="dashboard" data-theme="dark" className="rounded-xl bg-[color:var(--ds-bg)] p-4">
+      <div
+        data-app="dashboard"
+        data-theme="dark"
+        className="rounded-xl bg-[color:var(--ds-bg)] p-4"
+      >
         <h2 className="mb-3 text-base font-bold text-[color:var(--ds-text)]">Dark Theme</h2>
         <ContrastMatrix />
       </div>

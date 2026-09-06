@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/nextjs";
 import { ChatMessageBubble } from "./chat-message";
-import { fn } from "@storybook/test";
+import { fn } from "storybook/test";
 import type { ChatMessage } from "./chat-types";
 
 const baseMessage: ChatMessage = {

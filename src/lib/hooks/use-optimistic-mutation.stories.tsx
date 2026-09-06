@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/nextjs";
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
 import React from "react";
 import { useOptimisticMutation } from "./use-optimistic-mutation";
@@ -30,7 +30,7 @@ function OptimisticDemo({ failMode }: { failMode: "never" | "always" }) {
     () =>
       new QueryClient({
         defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
-      }),
+      })
   );
 
   // Seed: 3 Todos
@@ -81,7 +81,7 @@ function OptimisticDemoInner({ failMode }: { failMode: "never" | "always" }) {
   const todos = data?.items ?? [];
 
   return (
-    <div className="space-y-4 p-6 max-w-md">
+    <div className="max-w-md space-y-4 p-6">
       <div className="flex items-center gap-2">
         <h3 className="text-sm font-medium">Optimistic Toggle Demo</h3>
         <Badge variant={failMode === "always" ? "danger" : "success"}>
@@ -95,7 +95,7 @@ function OptimisticDemoInner({ failMode }: { failMode: "never" | "always" }) {
           return (
             <div
               key={todo.id}
-              className={`flex items-center gap-3 p-3 rounded-lg border transition-opacity motion-reduce:transition-none ${
+              className={`flex items-center gap-3 rounded-lg border p-3 transition-opacity motion-reduce:transition-none ${
                 isPending ? "opacity-50" : ""
               }`}
               aria-busy={isPending}
@@ -106,7 +106,9 @@ function OptimisticDemoInner({ failMode }: { failMode: "never" | "always" }) {
                 onChange={() => toggleMutation.mutate({ id: todo.id })}
                 disabled={isPending}
               />
-              <span className={`flex-1 text-sm ${todo.done ? "line-through text-[color:var(--ds-text-muted)]" : ""}`}>
+              <span
+                className={`flex-1 text-sm ${todo.done ? "text-[color:var(--ds-text-muted)] line-through" : ""}`}
+              >
                 {todo.text}
               </span>
               {isPending && <Badge variant="warning">pending</Badge>}
@@ -116,11 +118,21 @@ function OptimisticDemoInner({ failMode }: { failMode: "never" | "always" }) {
         })}
       </div>
 
-      <div className="text-xs text-[color:var(--ds-text-muted)] space-y-1">
-        <div>Mutation status: <code>{toggleMutation.status}</code></div>
-        {toggleMutation.isPending && <div className="text-yellow-600">Optimistic Write aktiv — UI zeigt schon den neuen State.</div>}
-        {toggleMutation.isError && <div className="text-red-600">Fehler — Cache wurde zum Snapshot zurückgerollt.</div>}
-        {toggleMutation.isSuccess && <div className="text-green-600">Erfolg — Server hat bestätigt.</div>}
+      <div className="space-y-1 text-xs text-[color:var(--ds-text-muted)]">
+        <div>
+          Mutation status: <code>{toggleMutation.status}</code>
+        </div>
+        {toggleMutation.isPending && (
+          <div className="text-yellow-600">
+            Optimistic Write aktiv — UI zeigt schon den neuen State.
+          </div>
+        )}
+        {toggleMutation.isError && (
+          <div className="text-red-600">Fehler — Cache wurde zum Snapshot zurückgerollt.</div>
+        )}
+        {toggleMutation.isSuccess && (
+          <div className="text-green-600">Erfolg — Server hat bestätigt.</div>
+        )}
       </div>
 
       <Button
@@ -160,7 +172,8 @@ export const Success: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Klicke eine Checkbox — der Toggle passiert sofort (optimistic). Nach 800ms bestätigt der Server.",
+        story:
+          "Klicke eine Checkbox — der Toggle passiert sofort (optimistic). Nach 800ms bestätigt der Server.",
       },
     },
   },
@@ -171,7 +184,8 @@ export const FailureRollback: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Klicke eine Checkbox — der Toggle passiert sofort, aber nach 800ms schlägt der Server fehl und der Cache wird zum Snapshot zurückgerollt.",
+        story:
+          "Klicke eine Checkbox — der Toggle passiert sofort, aber nach 800ms schlägt der Server fehl und der Cache wird zum Snapshot zurückgerollt.",
       },
     },
   },
