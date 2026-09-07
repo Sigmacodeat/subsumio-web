@@ -39,7 +39,7 @@ export function DashboardError({ error, reset, moduleKey }: DashboardErrorProps)
         </p>
         <button
           onClick={reset}
-          className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--brand-primary)] px-5 py-2.5 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary-hover)] active:scale-[0.97] motion-reduce:transition-none"
+          className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--brand-primary)] px-5 py-2.5 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
         >
           <RotateCcw size={14} /> {retry}
         </button>

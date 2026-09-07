@@ -312,7 +312,7 @@ export default function MemoryManagementPage() {
             key={type}
             onClick={() => setFilterType(type)}
             className={cn(
-              "rounded-full px-3 py-1 text-xs font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
+              "rounded-full px-3 py-1 text-xs font-medium transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
               filterType === type
                 ? "bg-[color:var(--brand-primary)] text-white"
                 : "bg-[color:var(--ds-hover)] text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"

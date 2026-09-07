@@ -320,7 +320,7 @@ export function IntakeAcceptanceWizard({
                       onClick={() => setStep(s.id)}
                       disabled={i > stepIndex && !canProceed}
                       className={cn(
-                        "flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
+                        "flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                         active
                           ? "brand-text bg-[color:var(--brand-glow)]"
                           : done

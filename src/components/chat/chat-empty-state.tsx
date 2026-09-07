@@ -69,7 +69,7 @@ export function ChatEmptyState({
             <button
               key={i}
               onClick={() => onExampleClick(q)}
-              className="group flex w-full max-w-sm items-center gap-3 rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-2.5 text-left transition-[border-color,background-color] duration-200 hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] active:scale-[0.98] motion-reduce:transition-none"
+              className="group flex w-full max-w-sm items-center gap-3 rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-2.5 text-left transition-[border-color,background-color] duration-200 hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none"
             >
               <Icon
                 size={15}

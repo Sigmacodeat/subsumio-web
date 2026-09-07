@@ -194,7 +194,7 @@ export default function RetentionPage() {
                         }
                       }}
                       disabled={deleting === c.slug}
-                      className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2.5 py-1 text-xs text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+                      className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2.5 py-1 text-xs text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                     >
                       {deleting === c.slug ? (
                         <Loader2 size={12} className="animate-spin" />

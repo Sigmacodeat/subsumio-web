@@ -156,7 +156,7 @@ export function LegalHoldWidget() {
                   </Link>
                   <button
                     onClick={() => releaseHold(hold.caseSlug)}
-                    className="flex shrink-0 items-center gap-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+                    className="flex shrink-0 items-center gap-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                     title={isEn ? "Release hold" : "Hold aufheben"}
                   >
                     <Unlock size={10} />

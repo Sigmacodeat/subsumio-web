@@ -109,7 +109,7 @@ export function RetrievalFeedbackButtons({
             disabled={submitting}
             title={opt.label}
             className={cn(
-              "rounded p-1 text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none",
+              "rounded p-1 text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none",
               opt.hoverClass
             )}
           >

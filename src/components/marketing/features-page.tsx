@@ -643,7 +643,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                   isActive
                     ? "brand-text"
                     : "[color:var(--mk-text-muted)] hover:[color:var(--mk-text)]"
-                } active:scale-[0.97]`}
+                } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97]`}
               >
                 {isActive && (
                   <motion.span
@@ -793,7 +793,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                     if (typeof window !== "undefined")
                       window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
-                  className="group rounded-2xl text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] active:scale-[0.97] motion-reduce:transition-none"
+                  className="group rounded-2xl text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                 >
                   <GlowCard className="hover:brand-border h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:[background:var(--mk-hover)] motion-reduce:transition-none">
                     <div className="brand-soft brand-border mb-4 flex h-11 w-11 items-center justify-center rounded-xl border transition-transform group-hover:scale-110">

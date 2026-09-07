@@ -540,7 +540,7 @@ function TabButton({
         active
           ? "border-[color:var(--brand-primary)] text-[color:var(--brand-primary)]"
           : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
-      } active:scale-[0.97]`}
+      } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97]`}
     >
       {icon}
       {children}

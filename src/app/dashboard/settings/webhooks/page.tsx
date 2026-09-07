@@ -160,7 +160,7 @@ export default function WebhooksPage() {
                       form.events.includes(evt)
                         ? "border-violet-500/20 bg-violet-600/15 text-violet-300"
                         : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-3)]"
-                    } active:scale-[0.97]`}
+                    } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97]`}
                   >
                     {evt}
                   </button>

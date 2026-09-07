@@ -48,7 +48,7 @@ export default function AudienceTabs({ lang }: { lang: Lang }) {
                   isActive
                     ? "brand-border brand-soft brand-text"
                     : "[border-color:var(--mk-border)] [color:var(--mk-text-muted)] hover:[border-color:var(--mk-border-strong)] hover:[color:var(--mk-text)]"
-                } active:scale-[0.97]`}
+                } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97]`}
               >
                 <Icon size={14} />
                 {label.label}

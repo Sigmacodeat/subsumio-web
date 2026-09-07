@@ -291,7 +291,7 @@ export default function GraphPage() {
                   <button
                     onClick={() => setZoom((z) => Math.min(z + 0.2, 3))}
                     aria-label="Vergrößern"
-                    className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+                    className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                   >
                     <ZoomIn size={14} />
                   </button>
@@ -301,14 +301,14 @@ export default function GraphPage() {
                   <button
                     onClick={() => setZoom((z) => Math.max(z - 0.2, 0.3))}
                     aria-label="Verkleinern"
-                    className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+                    className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                   >
                     <ZoomOut size={14} />
                   </button>
                   <button
                     onClick={() => setZoom(1)}
                     aria-label="Zoom zurücksetzen"
-                    className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+                    className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                   >
                     <Maximize2 size={14} />
                   </button>
@@ -316,7 +316,7 @@ export default function GraphPage() {
                 <button
                   onClick={loadGraph}
                   aria-label="Graph neu laden"
-                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-2 text-[color:var(--ds-text-muted)] backdrop-blur transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-2 text-[color:var(--ds-text-muted)] backdrop-blur transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                 >
                   <RefreshCw size={14} />
                 </button>

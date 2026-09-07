@@ -276,7 +276,7 @@ function RundownPanel({ t, onView }: { t: TFunc; onView: (job: AgentJob) => void
               {latest.result && (
                 <button
                   onClick={() => onView(latest)}
-                  className="flex h-6 w-6 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+                  className="flex h-6 w-6 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                   title={t("reports.btn_view")}
                 >
                   <Eye size={12} />
@@ -371,7 +371,7 @@ function ReportRow({
         {job.result && (
           <button
             onClick={() => onView(job)}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
             title={t("reports.btn_view")}
           >
             <Eye size={12} />
@@ -383,7 +383,7 @@ function ReportRow({
           <button
             onClick={() => onReplay(job.id)}
             disabled={replaying}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
             title={t("reports.btn_replay")}
           >
             {replaying ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
@@ -428,7 +428,7 @@ function JobDetailModal({ job, t, onClose }: { job: AgentJob; t: TFunc; onClose:
           </div>
           <button
             onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
           >
             <X size={16} />
           </button>
@@ -634,7 +634,7 @@ export default function ReportsPage() {
               key={tabItem.id}
               onClick={() => setTab(tabItem.id)}
               className={cn(
-                "flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-[border-color,color] duration-150 active:scale-[0.97] motion-reduce:transition-none",
+                "flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-[border-color,color] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                 tab === tabItem.id
                   ? "brand-text border-[color:var(--brand-primary)]"
                   : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"

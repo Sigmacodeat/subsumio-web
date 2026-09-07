@@ -173,7 +173,7 @@ export function ChatInput({
               <span className="max-w-[12ch] truncate">{att.name}</span>
               <button
                 onClick={() => removeAttachment(att.slug)}
-                className="flex h-8 w-8 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-red-500 motion-reduce:transition-none sm:h-5 sm:w-5"
+                className="flex h-8 w-8 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-red-500 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none sm:h-5 sm:w-5"
                 aria-label={t("chat.input.remove_attachment")}
               >
                 <X className="h-4 w-4 sm:h-3 sm:w-3" />
@@ -190,7 +190,7 @@ export function ChatInput({
           <span className="min-w-0 flex-1 truncate">{uploadError}</span>
           <button
             onClick={() => setUploadError(null)}
-            className="shrink-0 text-red-400 transition-[background-color,border-color,color] hover:text-red-600 motion-reduce:transition-none dark:text-red-500 dark:hover:text-red-300"
+            className="shrink-0 text-red-400 transition-[background-color,border-color,color] hover:text-red-600 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none dark:text-red-500 dark:hover:text-red-300"
             aria-label={t("chat.dismiss_error")}
           >
             <X size={11} />
@@ -248,7 +248,7 @@ export function ChatInput({
               <button
                 onClick={() => setShowTemplates((v) => !v)}
                 disabled={isStreaming || disabled}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50 motion-reduce:transition-none sm:h-7 sm:w-7"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-95 disabled:opacity-50 motion-reduce:transition-none sm:h-7 sm:w-7"
                 aria-label={t("chat.input.templates")}
                 title={t("chat.input.templates")}
               >
@@ -275,7 +275,7 @@ export function ChatInput({
                             setShowTemplates(false);
                             autoFocus();
                           }}
-                          className="flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
+                          className="flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                         >
                           <span className="text-xs font-medium text-[color:var(--ds-text)]">
                             {tpl.label}
@@ -297,7 +297,7 @@ export function ChatInput({
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isStreaming || uploading || disabled}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50 motion-reduce:transition-none sm:h-7 sm:w-7"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-95 disabled:opacity-50 motion-reduce:transition-none sm:h-7 sm:w-7"
                   aria-label={t("chat.input.upload_file")}
                   title={t("chat.input.upload_file")}
                 >
@@ -346,7 +346,7 @@ export function ChatInput({
             {isStreaming ? (
               <button
                 onClick={() => onStop?.()}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-500 transition-[background-color,transform] duration-200 hover:bg-red-500/20 active:scale-95 motion-reduce:transition-none sm:h-7 sm:w-7"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-500 transition-[background-color,transform] duration-200 hover:bg-red-500/20 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-95 motion-reduce:transition-none sm:h-7 sm:w-7"
                 aria-label={t("chat.input.stop_generation")}
                 title={t("chat.input.stop_esc")}
               >
@@ -357,7 +357,7 @@ export function ChatInput({
                 onClick={handleSubmit}
                 disabled={!canSend}
                 className={cn(
-                  "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[color:var(--brand-primary)] text-white transition-[background-color,transform,opacity] duration-200 hover:bg-[color:var(--brand-primary-hover)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 motion-reduce:transition-none sm:h-7 sm:w-7",
+                  "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[color:var(--brand-primary)] text-white transition-[background-color,transform,opacity] duration-200 hover:bg-[color:var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 motion-reduce:transition-none sm:h-7 sm:w-7",
                   overLimit && "bg-red-500"
                 )}
                 aria-label={t("chat.send")}

@@ -271,7 +271,7 @@ export function HearingFollowupWorkflow() {
                             type="button"
                             onClick={() => toggleTask(followup, task.id)}
                             className={cn(
-                              "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
+                              "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                               task.done
                                 ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-white"
                                 : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)]"

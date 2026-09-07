@@ -706,7 +706,7 @@ function SuggestedFollowUps({
           <button
             key={i}
             onClick={() => onSelect(s.query)}
-            className="rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color] duration-200 hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+            className="rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color] duration-200 hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
           >
             {s.label}
           </button>
@@ -2147,7 +2147,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
             !subsumptionMode
               ? "bg-[var(--brand-primary)] text-white"
               : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-surface-2)]"
-          }`}
+          } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none`}
         >
           Copilot
         </button>
@@ -2157,7 +2157,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
             subsumptionMode
               ? "bg-[var(--brand-primary)] text-white"
               : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-surface-2)]"
-          }`}
+          } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none`}
         >
           ⚖️ Subsumtion
         </button>
@@ -2265,7 +2265,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           {showScrollBtn && (
             <button
               onClick={scrollToBottom}
-              className="absolute bottom-24 left-1/2 z-20 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg transition-[opacity,transform] duration-200 hover:bg-[color:var(--ds-hover)] active:scale-95 motion-reduce:transition-none"
+              className="absolute bottom-24 left-1/2 z-20 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg transition-[opacity,transform] duration-200 hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-95 motion-reduce:transition-none"
               aria-label={t("chat.scroll_bottom")}
             >
               <ArrowDown size={16} className="text-[color:var(--ds-text-muted)]" />
@@ -2282,7 +2282,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
               <span className="min-w-0 flex-1 truncate">{error}</span>
               <button
                 onClick={() => setDismissedError(true)}
-                className="shrink-0 text-red-400 transition-[background-color,border-color,color] hover:text-red-600 motion-reduce:transition-none dark:text-red-500 dark:hover:text-red-300"
+                className="shrink-0 text-red-400 transition-[background-color,border-color,color] hover:text-red-600 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none dark:text-red-500 dark:hover:text-red-300"
                 aria-label={t("chat.dismiss_error")}
               >
                 <X size={14} />

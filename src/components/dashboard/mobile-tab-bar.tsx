@@ -221,7 +221,7 @@ export function MobileTabBar({
             </h3>
             <button
               onClick={() => setMoreOpen(false)}
-              className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
               aria-label={t("topbar.close")}
             >
               <X size={18} />
@@ -585,7 +585,7 @@ export function MobileTabBar({
           setCreateOnly(true);
           setMoreOpen(true);
         }}
-        className="brand-bg fixed right-4 bottom-20 z-40 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-[transform,box-shadow] duration-200 ease-[var(--ds-ease-smooth)] hover:scale-105 active:scale-95 motion-reduce:transition-none md:hidden"
+        className="brand-bg fixed right-4 bottom-20 z-40 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-[transform,box-shadow] duration-200 ease-[var(--ds-ease-smooth)] hover:scale-105 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-95 motion-reduce:transition-none md:hidden"
         aria-label={t("topbar.quick_create")}
         aria-expanded={moreOpen && createOnly}
       >

@@ -159,7 +159,7 @@ export default function PricingPage({ lang }: { lang: Lang }) {
                     role="tab"
                     aria-selected={audience === id}
                     onClick={() => setAudience(id)}
-                    className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition-[background-color,border-color,color] motion-reduce:transition-none ${audience === id ? "brand-bg text-white" : "[color:var(--mk-text-muted)] hover:[background:var(--mk-hover)]"} active:scale-[0.97]`}
+                    className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition-[background-color,border-color,color] motion-reduce:transition-none ${audience === id ? "brand-bg text-white" : "[color:var(--mk-text-muted)] hover:[background:var(--mk-hover)]"} focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97]`}
                   >
                     {id === "private"
                       ? en

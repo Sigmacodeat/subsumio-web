@@ -157,7 +157,7 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
         {(hasCitations || hasGaps || hasGroundedCitations) && (
           <button
             onClick={() => setExpanded((e) => !e)}
-            className="ml-auto inline-flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+            className="ml-auto inline-flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
             aria-expanded={expanded}
             aria-label={expanded ? "Details ausblenden" : "Details einblenden"}
           >

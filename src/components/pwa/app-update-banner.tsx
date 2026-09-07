@@ -87,7 +87,7 @@ export default function AppUpdateBanner() {
       </button>
       <button
         onClick={() => setDismissed(true)}
-        className="shrink-0 text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+        className="shrink-0 text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
         aria-label="Später"
       >
         <svg

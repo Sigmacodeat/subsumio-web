@@ -159,7 +159,7 @@ export function CertificationStamp({
         {expandable && hasDetails && (
           <button
             onClick={() => setExpanded((e) => !e)}
-            className="ml-auto inline-flex items-center gap-1 text-[11px] text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+            className="ml-auto inline-flex items-center gap-1 text-[11px] text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
             aria-expanded={expanded}
           >
             {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}

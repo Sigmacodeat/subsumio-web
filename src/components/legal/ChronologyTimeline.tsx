@@ -137,7 +137,7 @@ export function ChronologyTimeline({ chronology }: ChronologyTimelineProps) {
         <div className="flex items-center gap-2">
           <button
             onClick={handleExportMarkdown}
-            className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-hover)] active:scale-[0.97] motion-reduce:transition-none"
+            className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
             title="Als Markdown exportieren"
             aria-label="Als Markdown exportieren"
           >
@@ -145,7 +145,7 @@ export function ChronologyTimeline({ chronology }: ChronologyTimelineProps) {
           </button>
           <button
             onClick={handleExportJSON}
-            className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-hover)] active:scale-[0.97] motion-reduce:transition-none"
+            className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
             title="Als JSON exportieren"
             aria-label="Als JSON exportieren"
           >
@@ -153,7 +153,7 @@ export function ChronologyTimeline({ chronology }: ChronologyTimelineProps) {
           </button>
           <button
             onClick={handleExportWord}
-            className="inline-flex items-center gap-1 rounded-md bg-[color:var(--ds-info-solid)] px-2 py-1 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--ds-info-solid)] active:scale-[0.97] motion-reduce:transition-none"
+            className="inline-flex items-center gap-1 rounded-md bg-[color:var(--ds-info-solid)] px-2 py-1 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--ds-info-solid)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
             title="Als Word-Dokument exportieren"
             aria-label="Als Word-Dokument exportieren"
           >

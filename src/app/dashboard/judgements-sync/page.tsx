@@ -168,7 +168,7 @@ export default function JudgementsSyncPage() {
               <button
                 onClick={() => navigator.clipboard.writeText(cmd)}
                 aria-label={t("judgements.copy")}
-                className="text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
+                className="text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
               >
                 {t("judgements.copy")}
               </button>

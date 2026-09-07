@@ -429,7 +429,7 @@ export default function LitigationFlowPage() {
               <button
                 key={m.slug}
                 onClick={() => setSelectedSlug(m.slug)}
-                className="group rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:border-[color:var(--brand-primary)] hover:shadow-md active:scale-[0.97] motion-reduce:transition-none"
+                className="group rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:border-[color:var(--brand-primary)] hover:shadow-md focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
               >
                 <div className="mb-3 flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -720,7 +720,7 @@ export default function LitigationFlowPage() {
                   key={p}
                   onClick={() => handleAdvancePhase(p)}
                   disabled={saving}
-                  className="flex w-full items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:border-[color:var(--brand-primary)] active:scale-[0.97] motion-reduce:transition-none"
+                  className="flex w-full items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:border-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                 >
                   {PHASE_ICONS[p]}
                   <span className="text-sm text-[color:var(--ds-text)]">

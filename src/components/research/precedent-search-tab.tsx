@@ -240,7 +240,7 @@ export default function PrecedentSearchPage() {
                   key={j}
                   onClick={() => setJurisdiction(j)}
                   className={cn(
-                    "rounded-md px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
+                    "rounded-md px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                     jurisdiction === j
                       ? "brand-soft brand-text brand-border border"
                       : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"

@@ -183,7 +183,7 @@ export function CopilotNotifications() {
         <button
           onClick={refresh}
           disabled={refreshing}
-          className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+          className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
           title={isEn ? "Refresh" : "Aktualisieren"}
           aria-label={isEn ? "Refresh" : "Aktualisieren"}
         >
