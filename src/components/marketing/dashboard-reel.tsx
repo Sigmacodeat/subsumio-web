@@ -74,7 +74,7 @@ const _deBranches: ViewContent = {
       title: "Bauer ./. Hofer GmbH",
       client: "Bauer M.",
       status: "Verhandlung",
-      statusColor: "amber",
+      statusColor: "warning",
     },
     {
       id: "AZ-2026-038",
@@ -122,7 +122,7 @@ const _deBranches: ViewContent = {
     day: "12",
     weekday: "Freitag",
     entries: [
-      { time: "09:00", title: "Verhandlung Bauer", matter: "AZ-2026-041", tone: "amber" },
+      { time: "09:00", title: "Verhandlung Bauer", matter: "AZ-2026-041", tone: "warning" },
       { time: "11:30", title: "Mandantengespräch Schwarz", matter: "AZ-2026-038", tone: "blue" },
       { time: "14:00", title: "Frist Klageerwiderung", matter: "AZ-2026-041", tone: "danger" },
       { time: "16:00", title: "Aktennotiz Müller", matter: "AZ-2026-035", tone: "violet" },
@@ -156,7 +156,7 @@ const _deBranches: ViewContent = {
         submittedBy: "Dr. Weber",
         submittedAt: "vor 12 Min",
         status: "Wartet auf Freigabe",
-        statusColor: "amber",
+        statusColor: "warning",
       },
       {
         title: "Rechnung AZ-2026-038 Schwarz",
@@ -204,7 +204,7 @@ const BRANCHES: Record<string, Branch> = {
             title: "Bauer ./. Hofer GmbH",
             client: "Bauer M.",
             status: "Hearing",
-            statusColor: "amber",
+            statusColor: "warning",
           },
           {
             id: "AZ-2026-038",
@@ -257,7 +257,7 @@ const BRANCHES: Record<string, Branch> = {
           day: "12",
           weekday: "Friday",
           entries: [
-            { time: "09:00", title: "Hearing — Bauer", matter: "AZ-2026-041", tone: "amber" },
+            { time: "09:00", title: "Hearing — Bauer", matter: "AZ-2026-041", tone: "warning" },
             { time: "11:30", title: "Client call — Schwarz", matter: "AZ-2026-038", tone: "blue" },
             { time: "14:00", title: "Filing deadline", matter: "AZ-2026-041", tone: "danger" },
             { time: "16:00", title: "Case note — Müller", matter: "AZ-2026-035", tone: "violet" },
@@ -300,7 +300,7 @@ const BRANCHES: Record<string, Branch> = {
               submittedBy: "Dr. Weber",
               submittedAt: "12 min ago",
               status: "Awaiting approval",
-              statusColor: "amber",
+              statusColor: "warning",
             },
             {
               title: "Invoice AZ-2026-038 Schwarz",
@@ -332,9 +332,9 @@ const BRANCHES: Record<string, Branch> = {
 };
 
 const STATUS_COLORS: Record<string, { text: string; bg: string }> = {
-  amber: {
-    text: "var(--signal-amber)",
-    bg: "color-mix(in srgb, var(--signal-amber) 12%, transparent)",
+  warning: {
+    text: "var(--ds-warning-text)",
+    bg: "var(--ds-warning-bg)",
   },
   blue: { text: "var(--brand-text)", bg: "color-mix(in srgb, var(--brand-text) 12%, transparent)" },
   danger: {
