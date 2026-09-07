@@ -74,9 +74,12 @@ function RecommendationSplit({ split }: { split: Record<string, number> }) {
   const entries = Object.entries(split);
   const total = entries.reduce((sum, [, c]) => sum + c, 0);
   const colors: Record<string, string> = {
-    publish: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
-    revise: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
-    reject: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+    publish:
+      "bg-emerald-100 text-[color:var(--ds-success-text)] dark:bg-emerald-900/30 dark:text-[color:var(--ds-success-text)]",
+    revise:
+      "bg-amber-100 text-[color:var(--ds-warning-text)] dark:bg-amber-900/30 dark:text-[color:var(--ds-warning-text)]",
+    reject:
+      "bg-red-100 text-[color:var(--ds-danger-text)] dark:bg-red-900/30 dark:text-[color:var(--ds-danger-text)]",
   };
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -122,7 +125,7 @@ export function DissensusDashboard() {
       {/* Error */}
       {error && error instanceof ApiGetError && (
         <Card className="border-red-200 p-4 dark:border-red-900">
-          <p className="text-sm text-red-600 dark:text-red-400">
+          <p className="text-sm text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">
             Fehler beim Laden: {error.message}
           </p>
         </Card>

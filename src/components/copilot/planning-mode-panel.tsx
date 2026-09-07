@@ -52,10 +52,10 @@ const STEP_ICONS: Record<
   { icon: typeof Circle; color: string; spin?: boolean }
 > = {
   pending: { icon: Circle, color: "text-[color:var(--ds-text-subtle)]" },
-  in_progress: { icon: Loader2, color: "text-blue-600", spin: true },
-  completed: { icon: Check, color: "text-emerald-600" },
+  in_progress: { icon: Loader2, color: "text-[color:var(--ds-info-text)]", spin: true },
+  completed: { icon: Check, color: "text-[color:var(--ds-success-text)]" },
   skipped: { icon: SkipForward, color: "text-[color:var(--ds-text-subtle)]" },
-  blocked: { icon: AlertCircle, color: "text-red-600" },
+  blocked: { icon: AlertCircle, color: "text-[color:var(--ds-danger-text)]" },
 };
 
 const _STATUS_LABELS_DE = {
@@ -243,7 +243,7 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
       </div>
 
       {error && (
-        <div className="rounded border border-red-500/20 bg-red-500/5 px-2 py-1 text-[10px] text-red-600">
+        <div className="rounded border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-1 text-[10px] text-[color:var(--ds-danger-text)]">
           {error}
         </div>
       )}
@@ -418,7 +418,7 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
                         <div className="mt-1 flex items-center gap-1">
                           <button
                             onClick={() => handleStepUpdate(step.id, "completed")}
-                            className="flex items-center gap-1 rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-1 text-[10px] font-medium text-emerald-600 hover:bg-emerald-500/20"
+                            className="flex items-center gap-1 rounded border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-1.5 py-1 text-[10px] font-medium text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
                           >
                             <Check size={11} />
                             {isEn ? "Done" : "Fertig"}
@@ -426,7 +426,7 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
                           {step.status !== "in_progress" && (
                             <button
                               onClick={() => handleStepUpdate(step.id, "in_progress")}
-                              className="flex items-center gap-1 rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-1 text-[10px] font-medium text-blue-600 hover:bg-blue-500/20"
+                              className="flex items-center gap-1 rounded border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-1.5 py-1 text-[10px] font-medium text-[color:var(--ds-info-text)] hover:bg-[color:var(--ds-info-bg)]"
                             >
                               {isEn ? "Start" : "Starten"}
                             </button>
@@ -466,7 +466,7 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
             {activePlan.status !== "completed" && (
               <button
                 onClick={handleAbandon}
-                className="text-[10px] text-[color:var(--ds-text-subtle)] hover:text-red-600"
+                className="text-[10px] text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-danger-text)]"
               >
                 {isEn ? "Abandon" : "Verwerfen"}
               </button>

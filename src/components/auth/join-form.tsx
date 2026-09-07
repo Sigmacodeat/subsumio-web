@@ -115,8 +115,12 @@ export default function JoinForm({
 
           {doneName ? (
             <div className="space-y-4">
-              <div className="flex items-start gap-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-                <CheckCircle size={16} className="mt-0.5 shrink-0 text-emerald-400" aria-hidden />
+              <div className="flex items-start gap-2.5 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4">
+                <CheckCircle
+                  size={16}
+                  className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]"
+                  aria-hidden
+                />
                 <p className="text-sm [color:var(--mk-text-muted)]">{t.done(doneName)}</p>
               </div>
               <Link

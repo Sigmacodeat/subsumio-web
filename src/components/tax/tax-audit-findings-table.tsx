@@ -93,7 +93,7 @@ export function TaxAuditFindingsTable({
           {findings.length > 0 && (
             <>
               <span className="text-[color:var(--ds-text-subtle)]">·</span>
-              <span className="text-emerald-600">
+              <span className="text-[color:var(--ds-success-text)]">
                 {acceptedCount} {t("tax.findings.accepted")}
               </span>
               <span className="text-[color:var(--ds-text-subtle)]">·</span>
@@ -148,7 +148,7 @@ export function TaxAuditFindingsTable({
                       className={cn(
                         "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                         f.accepted
-                          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
+                          ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                           : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-subtle)]",
                         !readOnly && "cursor-pointer hover:border-[color:var(--ds-border-strong)]"
                       )}

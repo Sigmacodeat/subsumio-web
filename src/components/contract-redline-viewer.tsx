@@ -120,23 +120,23 @@ function parseRedlineResponse(text: string): RedlineClause[] {
 const RISK_CONFIG = {
   high: {
     label: "Hohes Risiko",
-    color: "text-red-600",
-    bg: "bg-red-500/10",
-    border: "border-red-500/20",
+    color: "text-[color:var(--ds-danger-text)]",
+    bg: "bg-[color:var(--ds-danger-bg)]",
+    border: "border-[color:var(--ds-danger-border)]",
     icon: XCircle,
   },
   medium: {
     label: "Mittleres Risiko",
-    color: "text-amber-600",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/20",
+    color: "text-[color:var(--ds-warning-text)]",
+    bg: "bg-[color:var(--ds-warning-bg)]",
+    border: "border-[color:var(--ds-warning-border)]",
     icon: AlertTriangle,
   },
   low: {
     label: "Niedriges Risiko",
-    color: "text-emerald-600",
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/20",
+    color: "text-[color:var(--ds-success-text)]",
+    bg: "bg-[color:var(--ds-success-bg)]",
+    border: "border-[color:var(--ds-success-border)]",
     icon: CheckCircle2,
   },
 };
@@ -319,7 +319,11 @@ export function ContractRedlineViewer({
           {clauses.length > 0 && (
             <>
               <Button variant="ghost" size="sm" onClick={copyRedline} className="gap-1.5 text-xs">
-                {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                {copied ? (
+                  <Check size={14} className="text-[color:var(--ds-success-text)]" />
+                ) : (
+                  <Copy size={14} />
+                )}
                 Kopieren
               </Button>
               <Button
@@ -398,7 +402,7 @@ export function ContractRedlineViewer({
           {highRiskCount > 0 && (
             <Badge
               variant="default"
-              className="border border-red-500/20 bg-red-500/10 text-xs text-red-600"
+              className="border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]"
             >
               {highRiskCount} hoch
             </Badge>
@@ -406,7 +410,7 @@ export function ContractRedlineViewer({
           {mediumRiskCount > 0 && (
             <Badge
               variant="default"
-              className="border border-amber-500/20 bg-amber-500/10 text-xs text-amber-600"
+              className="border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
             >
               {mediumRiskCount} mittel
             </Badge>
@@ -414,7 +418,7 @@ export function ContractRedlineViewer({
           {lowRiskCount > 0 && (
             <Badge
               variant="default"
-              className="border border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600"
+              className="border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
             >
               {lowRiskCount} niedrig
             </Badge>
@@ -427,13 +431,13 @@ export function ContractRedlineViewer({
           )}
           <button
             onClick={acceptAll}
-            className="rounded-lg px-2 py-1 text-xs font-medium text-emerald-600 transition-[background-color,border-color,color] hover:bg-emerald-500/10 hover:text-emerald-700 active:scale-[0.97] motion-reduce:transition-none"
+            className="rounded-lg px-2 py-1 text-xs font-medium text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] hover:text-[color:var(--ds-success-text)] active:scale-[0.97] motion-reduce:transition-none"
           >
             Alle akzeptieren
           </button>
           <button
             onClick={rejectAll}
-            className="rounded-lg px-2 py-1 text-xs font-medium text-red-600 transition-[background-color,border-color,color] hover:bg-red-500/10 hover:text-red-700 active:scale-[0.97] motion-reduce:transition-none"
+            className="rounded-lg px-2 py-1 text-xs font-medium text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] active:scale-[0.97] motion-reduce:transition-none"
           >
             Alle ablehnen
           </button>
@@ -443,7 +447,7 @@ export function ContractRedlineViewer({
       {/* Content */}
       <div className="flex-1 overflow-auto p-6">
         {error && (
-          <div className="mx-auto flex max-w-2xl items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-600">
+          <div className="mx-auto flex max-w-2xl items-center gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4 text-sm text-[color:var(--ds-danger-text)]">
             <AlertTriangle size={16} className="shrink-0" />
             {error}
           </div>
@@ -539,10 +543,14 @@ export function ContractRedlineViewer({
                       {clause.clauseTitle || `Klausel ${idx + 1}`}
                     </span>
                     {stats.additions > 0 && (
-                      <span className="font-mono text-xs text-emerald-600">+{stats.additions}</span>
+                      <span className="font-mono text-xs text-[color:var(--ds-success-text)]">
+                        +{stats.additions}
+                      </span>
                     )}
                     {stats.removals > 0 && (
-                      <span className="font-mono text-xs text-red-600">-{stats.removals}</span>
+                      <span className="font-mono text-xs text-[color:var(--ds-danger-text)]">
+                        -{stats.removals}
+                      </span>
                     )}
                     <Badge
                       variant="default"
@@ -553,7 +561,7 @@ export function ContractRedlineViewer({
                     {clause.accepted === true && (
                       <Badge
                         variant="default"
-                        className="border border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600"
+                        className="border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
                       >
                         <CheckIcon size={10} className="mr-0.5" /> Akzeptiert
                       </Badge>
@@ -561,7 +569,7 @@ export function ContractRedlineViewer({
                     {clause.accepted === false && (
                       <Badge
                         variant="default"
-                        className="border border-red-500/20 bg-red-500/10 text-xs text-red-600"
+                        className="border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]"
                       >
                         <XIcon size={10} className="mr-0.5" /> Abgelehnt
                       </Badge>
@@ -612,8 +620,8 @@ export function ContractRedlineViewer({
                           className={cn(
                             "flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
                             clause.accepted === true
-                              ? "border border-emerald-500/30 bg-emerald-500/15 text-emerald-700"
-                              : "border border-transparent text-emerald-600 hover:bg-emerald-500/10"
+                              ? "border border-[color:var(--ds-success-border)] bg-emerald-500/15 text-[color:var(--ds-success-text)]"
+                              : "border border-transparent text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
                           )}
                         >
                           <CheckIcon size={12} /> Akzeptieren
@@ -623,8 +631,8 @@ export function ContractRedlineViewer({
                           className={cn(
                             "flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
                             clause.accepted === false
-                              ? "border border-red-500/30 bg-red-500/15 text-red-700"
-                              : "border border-transparent text-red-600 hover:bg-red-500/10"
+                              ? "border border-[color:var(--ds-danger-border)] bg-red-500/15 text-[color:var(--ds-danger-text)]"
+                              : "border border-transparent text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)]"
                           )}
                         >
                           <XIcon size={12} /> Ablehnen
@@ -673,14 +681,20 @@ function DiffRenderer({ tokens, side }: { tokens: DiffToken[]; side: "original" 
         }
         if (token.type === "removed" && side === "original") {
           return (
-            <span key={i} className="rounded bg-red-500/15 px-0.5 text-red-700 line-through">
+            <span
+              key={i}
+              className="rounded bg-red-500/15 px-0.5 text-[color:var(--ds-danger-text)] line-through"
+            >
               {token.text}
             </span>
           );
         }
         if (token.type === "added" && side === "revised") {
           return (
-            <span key={i} className="rounded bg-emerald-500/15 px-0.5 text-emerald-700">
+            <span
+              key={i}
+              className="rounded bg-emerald-500/15 px-0.5 text-[color:var(--ds-success-text)]"
+            >
               {token.text}
             </span>
           );

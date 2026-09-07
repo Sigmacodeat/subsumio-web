@@ -15,8 +15,10 @@ type RoleFilter = "all" | "admin" | "lawyer" | "tax_advisor" | "assistant" | "cl
 type IndustryFilter = "all" | "legal" | "tax" | "other" | "none";
 
 function industryBadgeClass(industry: string | null | undefined): string {
-  if (industry === "legal") return "border-blue-500/25 bg-blue-500/10 text-blue-400";
-  if (industry === "tax") return "border-emerald-500/25 bg-emerald-500/10 text-emerald-400";
+  if (industry === "legal")
+    return "border-blue-500/25 bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]";
+  if (industry === "tax")
+    return "border-emerald-500/25 bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]";
   if (industry === "other") return "border-violet-500/25 bg-violet-500/10 text-violet-400";
   return "border-[color:var(--ds-border)] text-[color:var(--ds-text-subtle)] bg-[color:var(--ds-surface-2)]";
 }
@@ -152,7 +154,7 @@ export function UserTable({ users }: UserTableProps) {
                         <UserX size={12} /> Inaktiv
                       </span>
                     ) : (
-                      <span className="text-xs text-emerald-400">Aktiv</span>
+                      <span className="text-xs text-[color:var(--ds-success-text)]">Aktiv</span>
                     )}
                   </td>
                   <td className="px-5 py-3">

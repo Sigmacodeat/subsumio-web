@@ -75,20 +75,27 @@ export function OcrErrorBanner({
     <div
       className={cn(
         "flex items-start gap-3 rounded-xl border px-4 py-3",
-        isErrorState ? "border-red-500/20 bg-red-500/5" : "border-amber-500/20 bg-amber-500/5",
+        isErrorState
+          ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
+          : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]",
         className
       )}
     >
       <div className="shrink-0">
         {isErrorState ? (
-          <AlertTriangle size={18} className="text-red-600" />
+          <AlertTriangle size={18} className="text-[color:var(--ds-danger-text)]" />
         ) : (
-          <FileWarning size={18} className="text-amber-600" />
+          <FileWarning size={18} className="text-[color:var(--ds-warning-text)]" />
         )}
       </div>
       <div className="min-w-0 flex-1">
         <div
-          className={cn("text-sm font-medium", isErrorState ? "text-red-700" : "text-amber-700")}
+          className={cn(
+            "text-sm font-medium",
+            isErrorState
+              ? "text-[color:var(--ds-danger-text)]"
+              : "text-[color:var(--ds-warning-text)]"
+          )}
         >
           {isErrorState
             ? t("ocr.error_title" as DashboardKey)
@@ -106,7 +113,7 @@ export function OcrErrorBanner({
           <button
             onClick={handleRetry}
             disabled={retrying}
-            className="mt-2 flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/5 px-2.5 py-1 text-xs font-medium text-red-600 transition-[background-color,border-color,color] hover:bg-red-500/10 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+            className="mt-2 flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2.5 py-1 text-xs font-medium text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
           >
             {retrying ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
             {t("ocr.retry" as DashboardKey)}

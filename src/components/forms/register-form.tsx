@@ -38,14 +38,30 @@ export function RegisterForm() {
     <form onSubmit={handleSubmit((data) => registerMutation.mutate(data))} className="space-y-4">
       <div className="space-y-1.5">
         <Label htmlFor="name">Name</Label>
-        <Input id="name" autoComplete="name" {...register("name")} placeholder="RA Max Mustermann" />
-        {errors.name && <p className="text-xs text-red-400">{errors.name.message}</p>}
+        <Input
+          id="name"
+          autoComplete="name"
+          {...register("name")}
+          placeholder="RA Max Mustermann"
+        />
+        {errors.name && (
+          <p className="text-xs text-[color:var(--ds-danger-text)]">{errors.name.message}</p>
+        )}
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="email">E-Mail</Label>
-        <Input id="email" type="email" autoComplete="email" inputMode="email" {...register("email")} placeholder="name@kanzlei.de" />
-        {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
+        <Input
+          id="email"
+          type="email"
+          autoComplete="email"
+          inputMode="email"
+          {...register("email")}
+          placeholder="name@kanzlei.de"
+        />
+        {errors.email && (
+          <p className="text-xs text-[color:var(--ds-danger-text)]">{errors.email.message}</p>
+        )}
       </div>
 
       <div className="space-y-1.5">
@@ -57,7 +73,9 @@ export function RegisterForm() {
           {...register("password")}
           placeholder="Mindestens 8 Zeichen"
         />
-        {errors.password && <p className="text-xs text-red-400">{errors.password.message}</p>}
+        {errors.password && (
+          <p className="text-xs text-[color:var(--ds-danger-text)]">{errors.password.message}</p>
+        )}
       </div>
 
       <div className="space-y-1.5">
@@ -73,7 +91,7 @@ export function RegisterForm() {
       </div>
 
       {registerMutation.isError && (
-        <p className="text-sm text-red-400">
+        <p className="text-sm text-[color:var(--ds-danger-text)]">
           {registerMutation.error instanceof Error
             ? registerMutation.error.message
             : "Registrierung fehlgeschlagen"}

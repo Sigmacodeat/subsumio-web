@@ -126,7 +126,7 @@ export function ElsterSubmissionWizard({ onSubmitted }: ElsterSubmissionWizardPr
               className={cn(
                 "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
                 i < stepIndex
-                  ? "bg-emerald-500/10 text-emerald-600"
+                  ? "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                   : i === stepIndex
                     ? "brand-bg text-white"
                     : "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-subtle)]"
@@ -306,9 +306,9 @@ export function ElsterSubmissionWizard({ onSubmitted }: ElsterSubmissionWizardPr
             ) : null;
           })()}
 
-          <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
-            <AlertTriangle size={14} className="text-amber-600" />
-            <p className="text-xs text-amber-700">{t("elster.info_text")}</p>
+          <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2">
+            <AlertTriangle size={14} className="text-[color:var(--ds-warning-text)]" />
+            <p className="text-xs text-[color:var(--ds-warning-text)]">{t("elster.info_text")}</p>
           </div>
 
           <div className="flex justify-between">
@@ -350,19 +350,21 @@ export function ElsterSubmissionWizard({ onSubmitted }: ElsterSubmissionWizardPr
               className={cn(
                 "rounded-lg border p-4 text-center",
                 submitResult.ok
-                  ? "border-emerald-500/20 bg-emerald-500/5"
+                  ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]"
                   : "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
               )}
             >
               {submitResult.ok ? (
-                <Check size={28} className="mx-auto text-emerald-600" />
+                <Check size={28} className="mx-auto text-[color:var(--ds-success-text)]" />
               ) : (
                 <AlertTriangle size={28} className="mx-auto text-[color:var(--ds-danger-text)]" />
               )}
               <p
                 className={cn(
                   "mt-2 text-sm font-medium",
-                  submitResult.ok ? "text-emerald-700" : "text-[color:var(--ds-danger-text)]"
+                  submitResult.ok
+                    ? "text-[color:var(--ds-success-text)]"
+                    : "text-[color:var(--ds-danger-text)]"
                 )}
               >
                 {submitResult.message}

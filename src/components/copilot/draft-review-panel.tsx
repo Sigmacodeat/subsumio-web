@@ -57,25 +57,25 @@ interface DraftReviewPanelProps {
 const SEVERITY_STYLES = {
   critical: {
     icon: AlertCircle,
-    color: "text-red-600",
-    bg: "bg-red-500/10",
-    border: "border-red-500/20",
+    color: "text-[color:var(--ds-danger-text)]",
+    bg: "bg-[color:var(--ds-danger-bg)]",
+    border: "border-[color:var(--ds-danger-border)]",
     labelDe: "Kritisch",
     labelEn: "Critical",
   },
   warning: {
     icon: AlertTriangle,
-    color: "text-amber-600",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/20",
+    color: "text-[color:var(--ds-warning-text)]",
+    bg: "bg-[color:var(--ds-warning-bg)]",
+    border: "border-[color:var(--ds-warning-border)]",
     labelDe: "Warnung",
     labelEn: "Warning",
   },
   info: {
     icon: Lightbulb,
-    color: "text-blue-600",
-    bg: "bg-blue-500/10",
-    border: "border-blue-500/20",
+    color: "text-[color:var(--ds-info-text)]",
+    bg: "bg-[color:var(--ds-info-bg)]",
+    border: "border-[color:var(--ds-info-border)]",
     labelDe: "Info",
     labelEn: "Info",
   },
@@ -108,12 +108,27 @@ const CATEGORY_LABELS_DE = {
 };
 
 const RISK_STYLES = {
-  low: { color: "text-emerald-600", bg: "bg-emerald-500/10", labelDe: "Niedrig", labelEn: "Low" },
-  medium: { color: "text-amber-600", bg: "bg-amber-500/10", labelDe: "Mittel", labelEn: "Medium" },
-  high: { color: "text-red-600", bg: "bg-red-500/10", labelDe: "Hoch", labelEn: "High" },
+  low: {
+    color: "text-[color:var(--ds-success-text)]",
+    bg: "bg-[color:var(--ds-success-bg)]",
+    labelDe: "Niedrig",
+    labelEn: "Low",
+  },
+  medium: {
+    color: "text-[color:var(--ds-warning-text)]",
+    bg: "bg-[color:var(--ds-warning-bg)]",
+    labelDe: "Mittel",
+    labelEn: "Medium",
+  },
+  high: {
+    color: "text-[color:var(--ds-danger-text)]",
+    bg: "bg-[color:var(--ds-danger-bg)]",
+    labelDe: "Hoch",
+    labelEn: "High",
+  },
   critical: {
-    color: "text-red-700",
-    bg: "bg-red-500/20",
+    color: "text-[color:var(--ds-danger-text)]",
+    bg: "bg-[color:var(--ds-danger-bg)]",
     labelDe: "Kritisch",
     labelEn: "Critical",
   },
@@ -230,10 +245,10 @@ export function DraftReviewPanel({
 
   if (error || !review) {
     return (
-      <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+      <div className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3">
         <div className="flex items-center gap-2">
-          <AlertTriangle size={14} className="text-red-600" />
-          <span className="text-xs text-red-600">
+          <AlertTriangle size={14} className="text-[color:var(--ds-danger-text)]" />
+          <span className="text-xs text-[color:var(--ds-danger-text)]">
             {isEn ? "Review failed" : "Review fehlgeschlagen"}: {error}
           </span>
           <button
@@ -286,9 +301,9 @@ export function DraftReviewPanel({
 
       {/* Issues */}
       {review.issues.length === 0 ? (
-        <div className="flex items-center gap-2 rounded-md border border-emerald-500/20 bg-emerald-500/5 px-2.5 py-2">
-          <CheckCircle2 size={14} className="text-emerald-600" />
-          <span className="text-xs text-emerald-600">
+        <div className="flex items-center gap-2 rounded-md border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2.5 py-2">
+          <CheckCircle2 size={14} className="text-[color:var(--ds-success-text)]" />
+          <span className="text-xs text-[color:var(--ds-success-text)]">
             {isEn
               ? "No issues found — draft looks good!"
               : "Keine Probleme gefunden — Entwurf sieht gut aus!"}
@@ -396,14 +411,14 @@ export function DraftReviewPanel({
                       <div className="flex items-center gap-1 pt-1">
                         <button
                           onClick={() => updateIssue(issue.id, "accepted")}
-                          className="flex items-center gap-1 rounded border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-[10px] font-medium text-emerald-600 hover:bg-emerald-500/20"
+                          className="flex items-center gap-1 rounded border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-[10px] font-medium text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
                         >
                           <Check size={11} />
                           {isEn ? "Accept" : "Akzeptieren"}
                         </button>
                         <button
                           onClick={() => updateIssue(issue.id, "rejected")}
-                          className="flex items-center gap-1 rounded border border-red-500/20 bg-red-500/10 px-2 py-1 text-[10px] font-medium text-red-600 hover:bg-red-500/20"
+                          className="flex items-center gap-1 rounded border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-1 text-[10px] font-medium text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)]"
                         >
                           <XCircle size={11} />
                           {isEn ? "Reject" : "Ablehnen"}

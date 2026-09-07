@@ -42,7 +42,9 @@ export function ChatStreamingIndicator({ className }: ChatStreamingIndicatorProp
         size={11}
         className={cn(
           "shrink-0",
-          phase >= PHASES.length ? "text-emerald-500" : "brand-text animate-pulse"
+          phase >= PHASES.length
+            ? "text-[color:var(--ds-success-text)]"
+            : "brand-text animate-pulse"
         )}
       />
       <span className="font-medium">{label}</span>

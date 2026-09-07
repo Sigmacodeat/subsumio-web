@@ -847,9 +847,9 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
 
           {/* Index-Status Warnung */}
           {(indexMissing || indexStale) && searchMode === "list" && (
-            <div className="flex items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm">
+            <div className="flex items-center gap-2 rounded-md border border-amber-500/40 bg-[color:var(--ds-warning-bg)] p-3 text-sm">
               <AlertTriangle
-                className="h-4 w-4 text-amber-600 dark:text-amber-400"
+                className="h-4 w-4 text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]"
                 aria-hidden="true"
               />
               <span className="flex-1">
@@ -1348,13 +1348,15 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
             )}
 
             {/* Warnung */}
-            <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm">
+            <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-[color:var(--ds-warning-bg)] p-3 text-sm">
               <AlertTriangle
-                className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400"
+                className="mt-0.5 h-4 w-4 shrink-0 text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]"
                 aria-hidden="true"
               />
               <div>
-                <strong className="text-amber-700 dark:text-amber-400">Riskant.</strong>{" "}
+                <strong className="text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]">
+                  Riskant.
+                </strong>{" "}
                 {selectedPaths.size} Dateien werden geändert. Jede Änderung wird in der
                 Version-History gesichert und kann pro Datei rückgängig gemacht werden. Der Import
                 in die Datenbank steht aus.

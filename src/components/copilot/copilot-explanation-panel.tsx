@@ -42,25 +42,25 @@ interface CopilotExplanationPanelProps {
 const CONFIDENCE_STYLES = {
   high: {
     icon: CheckCircle2,
-    color: "text-emerald-600",
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/20",
+    color: "text-[color:var(--ds-success-text)]",
+    bg: "bg-[color:var(--ds-success-bg)]",
+    border: "border-[color:var(--ds-success-border)]",
     labelDe: "Hoch",
     labelEn: "High",
   },
   medium: {
     icon: AlertTriangle,
-    color: "text-amber-600",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/20",
+    color: "text-[color:var(--ds-warning-text)]",
+    bg: "bg-[color:var(--ds-warning-bg)]",
+    border: "border-[color:var(--ds-warning-border)]",
     labelDe: "Mittel",
     labelEn: "Medium",
   },
   low: {
     icon: AlertTriangle,
-    color: "text-red-600",
-    bg: "bg-red-500/10",
-    border: "border-red-500/20",
+    color: "text-[color:var(--ds-danger-text)]",
+    bg: "bg-[color:var(--ds-danger-bg)]",
+    border: "border-[color:var(--ds-danger-border)]",
     labelDe: "Niedrig",
     labelEn: "Low",
   },
@@ -131,10 +131,10 @@ export function CopilotExplanationPanel({ query, answer, onClose }: CopilotExpla
 
   if (error || !data) {
     return (
-      <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+      <div className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3">
         <div className="flex items-center gap-2">
-          <AlertTriangle size={14} className="text-red-600" />
-          <span className="text-xs text-red-600">
+          <AlertTriangle size={14} className="text-[color:var(--ds-danger-text)]" />
+          <span className="text-xs text-[color:var(--ds-danger-text)]">
             {isEn ? "Explanation unavailable" : "Erklärung nicht verfügbar"}
           </span>
           <button

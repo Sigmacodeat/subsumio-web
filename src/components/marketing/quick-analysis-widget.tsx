@@ -300,8 +300,8 @@ export function QuickAnalysisWidget({
                     result.verdict === "aussichtsreich"
                       ? "bg-green-100 text-green-600"
                       : result.verdict === "bedingt"
-                        ? "bg-amber-100 text-amber-600"
-                        : "bg-red-100 text-red-600"
+                        ? "bg-amber-100 text-[color:var(--ds-warning-text)]"
+                        : "bg-red-100 text-[color:var(--ds-danger-text)]"
                   }`}
                 >
                   {result.verdict === "aussichtsreich" ? (
@@ -415,8 +415,8 @@ export function QuickAnalysisWidget({
               className="space-y-4"
             >
               <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
-                <AlertCircle className="size-5 shrink-0 text-red-500" />
-                <p className="text-sm text-red-700">{errorMsg}</p>
+                <AlertCircle className="size-5 shrink-0 text-[color:var(--ds-danger-text)]" />
+                <p className="text-sm text-[color:var(--ds-danger-text)]">{errorMsg}</p>
               </div>
               <Button
                 size="md"

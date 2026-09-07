@@ -139,13 +139,16 @@ export default function RecoveryForm({ mode, lang }: { mode: "forgot" | "reset";
 
           {done ? (
             <div className="space-y-4">
-              <div className="flex items-start gap-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-                <CheckCircle size={16} className="mt-0.5 shrink-0 text-emerald-400" />
+              <div className="flex items-start gap-2.5 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4">
+                <CheckCircle
+                  size={16}
+                  className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]"
+                />
                 <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{m.done}</p>
               </div>
               {devResetUrl && (
-                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
-                  <p className="mb-2 text-xs text-amber-300">
+                <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
+                  <p className="mb-2 text-xs text-[color:var(--ds-warning-text)]">
                     {
                       ((COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de).forgot
                         .devNote

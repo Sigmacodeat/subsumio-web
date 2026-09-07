@@ -11,27 +11,32 @@ const STATE_CONFIG: Record<
   VERIFIED: {
     label: "Verifiziert",
     icon: ShieldCheck,
-    className: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800",
+    className:
+      "bg-emerald-50 text-[color:var(--ds-success-text)] border-emerald-200 dark:bg-emerald-950 dark:text-[color:var(--ds-success-text)] dark:border-emerald-800",
   },
   VERIFIED_WITH_WARNINGS: {
     label: "Verifiziert (mit Warnungen)",
     icon: ShieldAlert,
-    className: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800",
+    className:
+      "bg-amber-50 text-[color:var(--ds-warning-text)] border-amber-200 dark:bg-amber-950 dark:text-[color:var(--ds-warning-text)] dark:border-amber-800",
   },
   NEEDS_HUMAN_REVIEW: {
     label: "Menschliche Prüfung erforderlich",
     icon: ShieldAlert,
-    className: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300 dark:border-orange-800",
+    className:
+      "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300 dark:border-orange-800",
   },
   BLOCKED: {
     label: "Blockiert",
     icon: ShieldX,
-    className: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800",
+    className:
+      "bg-red-50 text-[color:var(--ds-danger-text)] border-red-200 dark:bg-red-950 dark:text-[color:var(--ds-danger-text)] dark:border-red-800",
   },
   VERIFIER_ERROR: {
     label: "Verifizierungsfehler",
     icon: ShieldOff,
-    className: "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700",
+    className:
+      "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700",
   },
 };
 
@@ -55,7 +60,9 @@ export function ReceiptBadge({
   className = "",
 }: ReceiptBadgeProps) {
   const [receipt, setReceipt] = useState<WorkProductReceipt | null | undefined>(initialReceipt);
-  const [loading, setLoading] = useState(!initialReceipt && !!productType && !!productRef && !!brainId);
+  const [loading, setLoading] = useState(
+    !initialReceipt && !!productType && !!productRef && !!brainId
+  );
 
   useEffect(() => {
     if (initialReceipt) {
@@ -92,7 +99,7 @@ export function ReceiptBadge({
   if (loading) {
     return (
       <span
-        className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium text-[color:var(--ds-text-muted)] border-[color:var(--ds-border)] ${className}`}
+        className={`inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-text-muted)] ${className}`}
       >
         <Loader2 className="h-3 w-3 animate-spin" />
         Prüfe Status…
@@ -110,14 +117,12 @@ export function ReceiptBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium ${invalidated ? "opacity-50 line-through" : ""} ${config.className} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium ${invalidated ? "line-through opacity-50" : ""} ${config.className} ${className}`}
       title={`Receipt v${receipt.version}${invalidated ? " (invalidiert)" : ""} — ${receipt.receipt_id.slice(0, 8)}`}
     >
       <Icon className="h-3 w-3" />
       {config.label}
-      {showVersion && (
-        <span className="opacity-60">v{receipt.version}</span>
-      )}
+      {showVersion && <span className="opacity-60">v{receipt.version}</span>}
     </span>
   );
 }

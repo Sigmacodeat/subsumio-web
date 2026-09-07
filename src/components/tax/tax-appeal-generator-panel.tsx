@@ -54,8 +54,10 @@ interface AppealResult {
 }
 
 const PROSPECT_COLORS: Record<string, string> = {
-  stark: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20",
-  mittel: "text-amber-600 bg-amber-500/10 border-amber-500/20",
+  stark:
+    "text-[color:var(--ds-success-text)] bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)]",
+  mittel:
+    "text-[color:var(--ds-warning-text)] bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)]",
   schwach: "text-orange-600 bg-orange-500/10 border-orange-500/20",
   keine:
     "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)]",
@@ -178,7 +180,7 @@ export function TaxAppealGeneratorPanel({ assessmentSlug }: AppealPanelProps) {
               isOverdue
                 ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
                 : isUrgent
-                  ? "border-amber-500/30 bg-amber-500/5"
+                  ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]"
             )}
           >
@@ -188,7 +190,7 @@ export function TaxAppealGeneratorPanel({ assessmentSlug }: AppealPanelProps) {
                 isOverdue
                   ? "text-[color:var(--ds-danger-text)]"
                   : isUrgent
-                    ? "text-amber-600"
+                    ? "text-[color:var(--ds-warning-text)]"
                     : "text-[color:var(--ds-text-muted)]"
               )}
             />
@@ -215,7 +217,7 @@ export function TaxAppealGeneratorPanel({ assessmentSlug }: AppealPanelProps) {
                   isOverdue
                     ? "text-[color:var(--ds-danger-text)]"
                     : isUrgent
-                      ? "text-amber-600"
+                      ? "text-[color:var(--ds-warning-text)]"
                       : "text-[color:var(--ds-text)]"
                 )}
               >

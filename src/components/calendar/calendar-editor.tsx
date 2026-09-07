@@ -347,7 +347,7 @@ function CalendarEditDialog({
               variant="ghost"
               onClick={handleDelete}
               disabled={deleting}
-              className="gap-2 text-red-600 hover:bg-red-500/10"
+              className="gap-2 text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)]"
             >
               {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
               {t("calendar.delete" as DashboardKey)}
@@ -636,7 +636,7 @@ export function CalendarInUiEditor() {
               <div
                 className={cn(
                   "mb-1 text-xs font-medium",
-                  isToday ? "text-blue-600" : "text-[color:var(--ds-text-muted)]"
+                  isToday ? "text-[color:var(--ds-info-text)]" : "text-[color:var(--ds-text-muted)]"
                 )}
               >
                 {cell.day}
@@ -652,10 +652,10 @@ export function CalendarInUiEditor() {
                     className={cn(
                       "block w-full truncate rounded px-1.5 py-0.5 text-left text-xs transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
                       appt.type === "hearing"
-                        ? "bg-blue-500/10 text-blue-700 hover:bg-blue-500/20"
+                        ? "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] hover:bg-[color:var(--ds-info-bg)]"
                         : appt.type === "consultation"
                           ? "bg-violet-500/10 text-violet-700 hover:bg-violet-500/20"
-                          : "bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20"
+                          : "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
                     )}
                   >
                     {appt.time && `${appt.time} `}

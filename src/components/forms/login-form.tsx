@@ -57,12 +57,12 @@ export function LoginForm() {
         </div>
 
         {verify2FA.isError && (
-          <p className="text-sm text-red-400">
+          <p className="text-sm text-[color:var(--ds-danger-text)]">
             {verify2FA.error instanceof Error ? verify2FA.error.message : "Ungültiger Code"}
           </p>
         )}
         {verify2FA.data?.error && !verify2FA.isError && (
-          <p className="text-sm text-red-400">
+          <p className="text-sm text-[color:var(--ds-danger-text)]">
             {verify2FA.data.error === "rate_limited"
               ? "Zu viele Versuche. Bitte später erneut versuchen."
               : verify2FA.data.error === "invalid_token"
@@ -113,23 +113,40 @@ export function LoginForm() {
     >
       <div className="space-y-1.5">
         <Label htmlFor="email">E-Mail</Label>
-        <Input id="email" type="email" autoComplete="email" inputMode="email" {...register("email")} placeholder="name@kanzlei.de" />
-        {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
+        <Input
+          id="email"
+          type="email"
+          autoComplete="email"
+          inputMode="email"
+          {...register("email")}
+          placeholder="name@kanzlei.de"
+        />
+        {errors.email && (
+          <p className="text-xs text-[color:var(--ds-danger-text)]">{errors.email.message}</p>
+        )}
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="password">Passwort</Label>
-        <Input id="password" type="password" autoComplete="current-password" {...register("password")} placeholder="••••••••" />
-        {errors.password && <p className="text-xs text-red-400">{errors.password.message}</p>}
+        <Input
+          id="password"
+          type="password"
+          autoComplete="current-password"
+          {...register("password")}
+          placeholder="••••••••"
+        />
+        {errors.password && (
+          <p className="text-xs text-[color:var(--ds-danger-text)]">{errors.password.message}</p>
+        )}
       </div>
 
       {login.isError && (
-        <p className="text-sm text-red-400">
+        <p className="text-sm text-[color:var(--ds-danger-text)]">
           {login.error instanceof Error ? login.error.message : "Anmeldung fehlgeschlagen"}
         </p>
       )}
       {login.data?.error && login.data.error !== "2fa_required" && !login.isError && (
-        <p className="text-sm text-red-400">
+        <p className="text-sm text-[color:var(--ds-danger-text)]">
           {login.data.error === "invalid_credentials"
             ? "E-Mail oder Passwort falsch."
             : login.data.error === "sso_required"

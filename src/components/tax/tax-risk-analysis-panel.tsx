@@ -33,8 +33,9 @@ interface RiskResult {
 
 const SEVERITY_COLORS: Record<string, string> = {
   high: "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)]",
-  medium: "text-amber-600 bg-amber-500/10 border-amber-500/20",
-  low: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20",
+  medium:
+    "text-[color:var(--ds-warning-text)] bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)]",
+  low: "text-[color:var(--ds-success-text)] bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)]",
 };
 
 export function TaxRiskAnalysisPanel({ clientSlug, returnSlug }: TaxRiskAnalysisPanelProps) {
@@ -75,8 +76,8 @@ export function TaxRiskAnalysisPanel({ clientSlug, returnSlug }: TaxRiskAnalysis
     result?.overall_risk_level === "high"
       ? "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)]"
       : result?.overall_risk_level === "medium"
-        ? "text-amber-600 bg-amber-500/10 border-amber-500/20"
-        : "text-emerald-600 bg-emerald-500/10 border-emerald-500/20";
+        ? "text-[color:var(--ds-warning-text)] bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)]"
+        : "text-[color:var(--ds-success-text)] bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)]";
 
   const levelLabel = result ? t(`tax.risk.level_${result.overall_risk_level}` as never) : "";
 
@@ -84,8 +85,8 @@ export function TaxRiskAnalysisPanel({ clientSlug, returnSlug }: TaxRiskAnalysis
     <Card className="p-5">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10">
-            <ShieldAlert size={16} className="text-amber-600" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]">
+            <ShieldAlert size={16} className="text-[color:var(--ds-warning-text)]" />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">

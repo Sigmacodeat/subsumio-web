@@ -55,7 +55,7 @@ export function TaxDeadlineTimeline({ deadlines, onSelect, className }: TaxDeadl
         const colorClass = d.isOverdue
           ? "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)]"
           : d.isUrgent
-            ? "text-amber-600 bg-amber-500/10 border-amber-500/20"
+            ? "text-[color:var(--ds-warning-text)] bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)]"
             : "text-[color:var(--ds-text-muted)] bg-[color:var(--ds-surface-2)] border-[color:var(--ds-border)]";
 
         const dateLabel = new Date(d.dueDate).toLocaleDateString(locale, {
@@ -106,7 +106,7 @@ export function TaxDeadlineTimeline({ deadlines, onSelect, className }: TaxDeadl
                   d.isOverdue
                     ? "text-[color:var(--ds-danger-text)]"
                     : d.isUrgent
-                      ? "text-amber-600"
+                      ? "text-[color:var(--ds-warning-text)]"
                       : "text-[color:var(--ds-text)]"
                 )}
               >

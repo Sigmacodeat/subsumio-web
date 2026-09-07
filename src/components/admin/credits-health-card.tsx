@@ -39,23 +39,23 @@ const STATUS_CONFIG: Record<
   ok: {
     icon: CheckCircle2,
     label: "OK",
-    color: "text-emerald-600 dark:text-emerald-400",
-    bgColor: "bg-emerald-500/10",
-    borderColor: "border-emerald-500/20",
+    color: "text-[color:var(--ds-success-text)] dark:text-[color:var(--ds-success-text)]",
+    bgColor: "bg-[color:var(--ds-success-bg)]",
+    borderColor: "border-[color:var(--ds-success-border)]",
   },
   depleted: {
     icon: AlertCircle,
     label: "Leer",
-    color: "text-red-600 dark:text-red-400",
-    bgColor: "bg-red-500/10",
-    borderColor: "border-red-500/20",
+    color: "text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]",
+    bgColor: "bg-[color:var(--ds-danger-bg)]",
+    borderColor: "border-[color:var(--ds-danger-border)]",
   },
   error: {
     icon: XCircle,
     label: "Fehler",
-    color: "text-amber-600 dark:text-amber-400",
-    bgColor: "bg-amber-500/10",
-    borderColor: "border-amber-500/20",
+    color: "text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]",
+    bgColor: "bg-[color:var(--ds-warning-bg)]",
+    borderColor: "border-[color:var(--ds-warning-border)]",
   },
   not_configured: {
     icon: HelpCircle,
@@ -100,7 +100,7 @@ export function CreditsHealthCard() {
     <Card
       className={cn(
         "p-5 transition-[background-color,border-color,color] motion-reduce:transition-none",
-        hasIssue && "border-red-500/30 bg-red-500/5"
+        hasIssue && "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
       )}
     >
       <div className="mb-4 flex items-center justify-between">
@@ -131,7 +131,7 @@ export function CreditsHealthCard() {
           Provider werden geprüft…
         </div>
       ) : isError ? (
-        <div className="flex items-center gap-2 py-6 text-sm text-red-600 dark:text-red-400">
+        <div className="flex items-center gap-2 py-6 text-sm text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">
           <XCircle size={14} />
           Health-Check fehlgeschlagen. Endpoint nicht erreichbar.
         </div>
@@ -188,8 +188,8 @@ export function CreditsHealthCard() {
       )}
 
       {hasIssue && (
-        <div className="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3">
-          <p className="text-xs leading-relaxed text-red-700 dark:text-red-300">
+        <div className="mt-4 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3">
+          <p className="text-xs leading-relaxed text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">
             <strong>Aktion erforderlich:</strong> Mindestens ein Provider hat keine Credits mehr.
             Pipeline-Runs werden fehlschlagen bis Credits aufgeladen sind. Klicke
             &ldquo;Aufladen&rdquo; beim betroffenen Provider.

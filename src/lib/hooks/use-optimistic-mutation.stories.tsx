@@ -128,7 +128,9 @@ function OptimisticDemoInner({ failMode }: { failMode: "never" | "always" }) {
           </div>
         )}
         {toggleMutation.isError && (
-          <div className="text-red-600">Fehler — Cache wurde zum Snapshot zurückgerollt.</div>
+          <div className="text-[color:var(--ds-danger-text)]">
+            Fehler — Cache wurde zum Snapshot zurückgerollt.
+          </div>
         )}
         {toggleMutation.isSuccess && (
           <div className="text-green-600">Erfolg — Server hat bestätigt.</div>

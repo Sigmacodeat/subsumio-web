@@ -67,17 +67,17 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
         <div
           className={`flex items-center gap-3 rounded-xl border p-4 ${
             notice.type === "success"
-              ? "border-emerald-500/30 bg-emerald-500/10"
+              ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]"
               : "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
           }`}
         >
           {notice.type === "success" ? (
-            <CheckCircle2 size={16} className="text-emerald-600" />
+            <CheckCircle2 size={16} className="text-[color:var(--ds-success-text)]" />
           ) : (
             <AlertTriangle size={16} className="text-[color:var(--ds-danger-text)]" />
           )}
           <p
-            className={`text-sm ${notice.type === "success" ? "text-emerald-700" : "text-[color:var(--ds-danger-text)]"}`}
+            className={`text-sm ${notice.type === "success" ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-danger-text)]"}`}
           >
             {notice.msg}
           </p>

@@ -48,8 +48,9 @@ interface StrategyResult {
 
 const PROB_COLORS: Record<string, string> = {
   high: "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)]",
-  medium: "text-amber-600 bg-amber-500/10 border-amber-500/20",
-  low: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20",
+  medium:
+    "text-[color:var(--ds-warning-text)] bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)]",
+  low: "text-[color:var(--ds-success-text)] bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)]",
 };
 
 export function TaxStrategyPanel({ returnSlug }: TaxStrategyPanelProps) {

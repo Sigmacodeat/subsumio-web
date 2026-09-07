@@ -373,7 +373,9 @@ function NavBadge({ label }: { label: string }) {
   return (
     <span
       className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] leading-none font-bold ${
-        isAi ? "brand-bg text-white" : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+        isAi
+          ? "brand-bg text-white"
+          : "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] dark:text-[color:var(--ds-success-text)]"
       }`}
     >
       {isAi && <Sparkles size={8} className="shrink-0" />}

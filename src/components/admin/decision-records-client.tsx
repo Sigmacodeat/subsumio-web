@@ -68,9 +68,10 @@ interface DecisionRecord {
 }
 
 const TIER_COLORS: Record<string, string> = {
-  utility: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+  utility:
+    "bg-blue-100 text-[color:var(--ds-info-text)] dark:bg-blue-900/30 dark:text-[color:var(--ds-info-text)]",
   reasoning: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
-  deep: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+  deep: "bg-amber-100 text-[color:var(--ds-warning-text)] dark:bg-amber-900/30 dark:text-[color:var(--ds-warning-text)]",
   subagent: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
 };
 
@@ -319,7 +320,7 @@ export function DecisionRecordsClient() {
       {/* Error */}
       {error && error instanceof ApiGetError && (
         <Card className="border-red-200 p-4 dark:border-red-900">
-          <p className="text-sm text-red-600 dark:text-red-400">
+          <p className="text-sm text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">
             {t("decision_records.error_loading")} {error.message}
           </p>
         </Card>

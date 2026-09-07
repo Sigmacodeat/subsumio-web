@@ -37,9 +37,11 @@ const TYPE_LABELS_EN: Record<string, string> = {
 
 const TYPE_COLORS: Record<string, string> = {
   preference: "bg-purple-500/10 text-purple-600 border-purple-500/20",
-  fact: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  topic: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
-  instruction: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  fact: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
+  topic:
+    "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
+  instruction:
+    "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
   case_note: "bg-cyan-500/10 text-cyan-600 border-cyan-500/20",
 };
 
@@ -280,7 +282,7 @@ export function CopilotMemoryPanel() {
                         />
                         <button
                           onClick={() => saveEdit(m.id)}
-                          className="shrink-0 rounded p-0.5 text-emerald-600 hover:bg-emerald-500/10"
+                          className="shrink-0 rounded p-0.5 text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
                         >
                           <Save size={10} />
                         </button>
@@ -322,7 +324,7 @@ export function CopilotMemoryPanel() {
                     </button>
                     <button
                       onClick={() => deleteMemory(m.id)}
-                      className="rounded p-0.5 text-[color:var(--ds-text-subtle)] hover:bg-red-500/10 hover:text-red-600"
+                      className="rounded p-0.5 text-[color:var(--ds-text-subtle)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
                       title={isEn ? "Delete" : "Löschen"}
                     >
                       <Trash2 size={10} />

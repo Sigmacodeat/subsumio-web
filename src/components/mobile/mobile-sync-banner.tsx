@@ -39,14 +39,14 @@ export function MobileSyncBanner() {
   // Error state
   if (lastError && !dismissed) {
     return (
-      <div className="fixed inset-x-0 top-0 z-50 flex items-center gap-2 border-b border-red-500/30 bg-red-500/10 px-4 py-2 backdrop-blur-sm">
-        <AlertTriangle size={16} className="shrink-0 text-red-600" />
-        <span className="flex-1 truncate text-xs text-red-700">
+      <div className="fixed inset-x-0 top-0 z-50 flex items-center gap-2 border-b border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-2 backdrop-blur-sm">
+        <AlertTriangle size={16} className="shrink-0 text-[color:var(--ds-danger-text)]" />
+        <span className="flex-1 truncate text-xs text-[color:var(--ds-danger-text)]">
           {t("mobile.sync_error" as DashboardKey)}: {lastError}
         </span>
         <button
           onClick={() => setDismissed(true)}
-          className="shrink-0 text-red-600 transition-opacity hover:opacity-70"
+          className="shrink-0 text-[color:var(--ds-danger-text)] transition-opacity hover:opacity-70"
         >
           <X size={14} />
         </button>
@@ -57,9 +57,9 @@ export function MobileSyncBanner() {
   // Synced confirmation
   if (justSynced && pendingCount === 0) {
     return (
-      <div className="fixed inset-x-0 top-0 z-50 flex items-center gap-2 border-b border-emerald-500/30 bg-emerald-500/10 px-4 py-2 backdrop-blur-sm">
-        <CheckCircle2 size={16} className="shrink-0 text-emerald-600" />
-        <span className="flex-1 text-xs text-emerald-700">
+      <div className="fixed inset-x-0 top-0 z-50 flex items-center gap-2 border-b border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-4 py-2 backdrop-blur-sm">
+        <CheckCircle2 size={16} className="shrink-0 text-[color:var(--ds-success-text)]" />
+        <span className="flex-1 text-xs text-[color:var(--ds-success-text)]">
           {t("mobile.sync_complete" as DashboardKey)}
         </span>
       </div>
@@ -69,9 +69,9 @@ export function MobileSyncBanner() {
   // Offline with pending changes
   if (!isOnline && pendingCount > 0) {
     return (
-      <div className="fixed inset-x-0 top-0 z-50 flex items-center gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 backdrop-blur-sm">
-        <CloudOff size={16} className="shrink-0 text-amber-600" />
-        <span className="flex-1 text-xs text-amber-700">
+      <div className="fixed inset-x-0 top-0 z-50 flex items-center gap-2 border-b border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-2 backdrop-blur-sm">
+        <CloudOff size={16} className="shrink-0 text-[color:var(--ds-warning-text)]" />
+        <span className="flex-1 text-xs text-[color:var(--ds-warning-text)]">
           {pendingCount} {t("mobile.changes_offline" as DashboardKey)}
         </span>
       </div>
@@ -81,9 +81,9 @@ export function MobileSyncBanner() {
   // Online with pending changes
   if (isOnline && pendingCount > 0) {
     return (
-      <div className="fixed inset-x-0 top-0 z-50 flex items-center gap-2 border-b border-blue-500/30 bg-blue-500/10 px-4 py-2 backdrop-blur-sm">
-        <Cloud size={16} className="shrink-0 text-blue-600" />
-        <span className="flex-1 text-xs text-blue-700">
+      <div className="fixed inset-x-0 top-0 z-50 flex items-center gap-2 border-b border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-4 py-2 backdrop-blur-sm">
+        <Cloud size={16} className="shrink-0 text-[color:var(--ds-info-text)]" />
+        <span className="flex-1 text-xs text-[color:var(--ds-info-text)]">
           {syncing
             ? t("mobile.syncing" as DashboardKey)
             : `${pendingCount} ${t("mobile.changes_pending" as DashboardKey)}`}
@@ -91,13 +91,15 @@ export function MobileSyncBanner() {
         {!syncing && (
           <button
             onClick={handleSync}
-            className="flex shrink-0 items-center gap-1 text-xs font-medium text-blue-600 transition-opacity hover:opacity-70"
+            className="flex shrink-0 items-center gap-1 text-xs font-medium text-[color:var(--ds-info-text)] transition-opacity hover:opacity-70"
           >
             <RefreshCw size={12} />
             {t("mobile.sync_now" as DashboardKey)}
           </button>
         )}
-        {syncing && <RefreshCw size={12} className="shrink-0 animate-spin text-blue-600" />}
+        {syncing && (
+          <RefreshCw size={12} className="shrink-0 animate-spin text-[color:var(--ds-info-text)]" />
+        )}
       </div>
     );
   }

@@ -107,25 +107,25 @@ function confidenceBadgeProps(level: "high" | "medium" | "low") {
       return {
         icon: ShieldCheck,
         label: "Hoch",
-        color: "text-emerald-600",
-        bgColor: "bg-emerald-500/10",
-        borderColor: "border-emerald-500/20",
+        color: "text-[color:var(--ds-success-text)]",
+        bgColor: "bg-[color:var(--ds-success-bg)]",
+        borderColor: "border-[color:var(--ds-success-border)]",
       };
     case "medium":
       return {
         icon: ShieldAlert,
         label: "Mittel",
-        color: "text-amber-600",
-        bgColor: "bg-amber-500/10",
-        borderColor: "border-amber-500/20",
+        color: "text-[color:var(--ds-warning-text)]",
+        bgColor: "bg-[color:var(--ds-warning-bg)]",
+        borderColor: "border-[color:var(--ds-warning-border)]",
       };
     case "low":
       return {
         icon: ShieldQuestion,
         label: "Niedrig",
-        color: "text-red-600",
-        bgColor: "bg-red-500/10",
-        borderColor: "border-red-500/20",
+        color: "text-[color:var(--ds-danger-text)]",
+        bgColor: "bg-[color:var(--ds-danger-bg)]",
+        borderColor: "border-[color:var(--ds-danger-border)]",
       };
   }
 }
@@ -188,7 +188,9 @@ function ClaimProvenanceDisplay({
           </span>
           <span className="text-xs text-[var(--ds-text-muted)]">· {claims.length} Aussagen</span>
           {unsupported.length > 0 && (
-            <span className="text-xs text-amber-600">· {unsupported.length} ohne Beleg</span>
+            <span className="text-xs text-[color:var(--ds-warning-text)]">
+              · {unsupported.length} ohne Beleg
+            </span>
           )}
         </div>
       )}
@@ -227,7 +229,9 @@ function ClaimProvenanceDisplay({
                           {isExpanded ? " ausblenden" : " anzeigen"}
                         </span>
                       ) : (
-                        <span className="text-[10px] text-amber-600">· kein Beleg</span>
+                        <span className="text-[10px] text-[color:var(--ds-warning-text)]">
+                          · kein Beleg
+                        </span>
                       )}
                     </div>
                   </div>
@@ -275,10 +279,10 @@ function ClaimProvenanceDisplay({
 
       {/* Unsupported claims warning */}
       {unsupported.length > 0 && !showAll && claims.length <= 5 && (
-        <div className="mt-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-2.5 py-1.5">
+        <div className="mt-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2.5 py-1.5">
           <div className="flex items-center gap-1.5">
-            <ShieldAlert className="h-3.5 w-3.5 text-amber-600" />
-            <span className="text-xs font-medium text-amber-600">
+            <ShieldAlert className="h-3.5 w-3.5 text-[color:var(--ds-warning-text)]" />
+            <span className="text-xs font-medium text-[color:var(--ds-warning-text)]">
               {unsupported.length} Aussage{unsupported.length > 1 ? "n" : ""} ohne Quellenbeleg
             </span>
           </div>
@@ -817,7 +821,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
                   </button>
                   <button
                     onClick={() => handleDeleteSession(s.id)}
-                    className="ml-2 text-[var(--ds-text-muted)] hover:text-red-500"
+                    className="ml-2 text-[var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                     title="Löschen"
                   >
                     <Trash2 className="h-3.5 w-3.5" />

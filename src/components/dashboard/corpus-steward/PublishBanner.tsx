@@ -100,7 +100,7 @@ export function PublishBanner() {
       role="status"
       aria-live="polite"
       aria-label={`${daten.offen} ausstehende Corpus-Änderungen`}
-      className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-4"
+      className="rounded-lg border border-amber-500/40 bg-[color:var(--ds-warning-bg)] p-4"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm">

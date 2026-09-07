@@ -81,9 +81,17 @@ interface MessageInput {
 }
 
 const URGENCY_STYLES: Record<string, { color: string; icon: typeof AlertCircle }> = {
-  critical: { color: "text-red-600 bg-red-500/10 border-red-500/20", icon: AlertCircle },
+  critical: {
+    color:
+      "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)]",
+    icon: AlertCircle,
+  },
   high: { color: "text-orange-600 bg-orange-500/10 border-orange-500/20", icon: AlertTriangle },
-  medium: { color: "text-amber-600 bg-amber-500/10 border-amber-500/20", icon: AlertTriangle },
+  medium: {
+    color:
+      "text-[color:var(--ds-warning-text)] bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)]",
+    icon: AlertTriangle,
+  },
   low: { color: "text-slate-600 bg-slate-500/10 border-slate-500/20", icon: CheckCircle2 },
 };
 
@@ -97,10 +105,12 @@ const SOURCE_LABELS: Record<string, string> = {
 };
 
 const RISK_STYLES: Record<string, string> = {
-  critical: "text-red-600 bg-red-500/10 border-red-500/20",
+  critical:
+    "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)]",
   high: "text-orange-600 bg-orange-500/10 border-orange-500/20",
-  medium: "text-amber-600 bg-amber-500/10 border-amber-500/20",
-  low: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20",
+  medium:
+    "text-[color:var(--ds-warning-text)] bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)]",
+  low: "text-[color:var(--ds-success-text)] bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)]",
 };
 
 export function TaxTriagePanel() {
@@ -292,7 +302,7 @@ export function TaxTriagePanel() {
       </Button>
 
       {error && (
-        <div className="flex items-center gap-2 text-sm text-red-600">
+        <div className="flex items-center gap-2 text-sm text-[color:var(--ds-danger-text)]">
           <AlertTriangle className="h-4 w-4" />
           {error}
         </div>
@@ -301,8 +311,10 @@ export function TaxTriagePanel() {
       {/* Summary */}
       {summary && (
         <div className="grid grid-cols-4 gap-2">
-          <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-2 text-center">
-            <div className="text-lg font-bold text-red-600">{summary.critical}</div>
+          <div className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-2 text-center">
+            <div className="text-lg font-bold text-[color:var(--ds-danger-text)]">
+              {summary.critical}
+            </div>
             <div className="text-xs text-[color:var(--ds-text-muted)]">
               {t("tax.triage.critical")}
             </div>
@@ -311,8 +323,10 @@ export function TaxTriagePanel() {
             <div className="text-lg font-bold text-orange-600">{summary.high}</div>
             <div className="text-xs text-[color:var(--ds-text-muted)]">{t("tax.triage.high")}</div>
           </div>
-          <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-2 text-center">
-            <div className="text-lg font-bold text-amber-600">{summary.medium}</div>
+          <div className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-2 text-center">
+            <div className="text-lg font-bold text-[color:var(--ds-warning-text)]">
+              {summary.medium}
+            </div>
             <div className="text-xs text-[color:var(--ds-text-muted)]">
               {t("tax.triage.medium")}
             </div>
@@ -365,7 +379,10 @@ export function TaxTriagePanel() {
                           {r.card.actionType}
                         </Badge>
                         {r.ai_classified && (
-                          <Badge variant="default" className="text-xs text-blue-600">
+                          <Badge
+                            variant="default"
+                            className="text-xs text-[color:var(--ds-info-text)]"
+                          >
                             {t("tax.triage.ai_enriched")}
                           </Badge>
                         )}

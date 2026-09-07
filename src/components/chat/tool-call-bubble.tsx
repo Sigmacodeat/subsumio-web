@@ -147,7 +147,10 @@ export function ToolCallBubble({
         className="overflow-hidden rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30"
       >
         <div className="flex items-center gap-2 border-b border-amber-200/50 px-3 py-2 dark:border-amber-900/50">
-          <Icon size={14} className="text-amber-600 dark:text-amber-400" />
+          <Icon
+            size={14}
+            className="text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]"
+          />
           <span className="flex-1 truncate text-xs font-medium text-amber-900 dark:text-amber-200">
             {t(toolCall.label as never)} — {t("chat.tool.confirm_required")}
           </span>
@@ -157,7 +160,7 @@ export function ToolCallBubble({
             <dl className="space-y-1">
               {paramEntries.map(([key, value]) => (
                 <div key={key} className="flex items-start gap-2 text-xs">
-                  <dt className="shrink-0 font-medium text-amber-700 dark:text-amber-300">
+                  <dt className="shrink-0 font-medium text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]">
                     {formatParamKey(key, t)}:
                   </dt>
                   <dd className="min-w-0 flex-1 truncate text-amber-900 dark:text-amber-100">
@@ -178,7 +181,7 @@ export function ToolCallBubble({
           </button>
           <button
             onClick={() => onCancel?.(toolCall.id)}
-            className="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-amber-700 transition-[background-color,border-color,color] hover:bg-amber-100 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none dark:text-amber-300 dark:hover:bg-amber-900/30"
+            className="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color] hover:bg-amber-100 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none dark:text-[color:var(--ds-warning-text)] dark:hover:bg-amber-900/30"
           >
             <X size={12} />
             {t("chat.tool.cancel")}
@@ -213,8 +216,8 @@ export function ToolCallBubble({
         aria-label={`${toolCall.label}: ${statusLabel}`}
         className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 dark:border-red-900 dark:bg-red-950/30"
       >
-        <AlertCircle size={14} className="shrink-0 text-red-500" />
-        <span className="flex-1 text-xs text-red-700 dark:text-red-400">
+        <AlertCircle size={14} className="shrink-0 text-[color:var(--ds-danger-text)]" />
+        <span className="flex-1 text-xs text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">
           {toolCall.result?.display?.title ?? t(toolCall.label as never)} {t("chat.tool.failed")}
         </span>
         {onRetry && (
@@ -274,7 +277,7 @@ function ToolResultCard({
     <div className="overflow-hidden rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
       {/* Header */}
       <div className="flex items-center gap-2 border-b border-[color:var(--ds-border)] px-3 py-2">
-        <CheckCircle2 size={14} className="text-emerald-500" />
+        <CheckCircle2 size={14} className="text-[color:var(--ds-success-text)]" />
         <span className="flex-1 truncate text-xs font-medium text-[color:var(--ds-text)]">
           {display.title}
         </span>
@@ -347,13 +350,13 @@ const STATUS_STYLES: Record<
 > = {
   pending: {
     bg: "bg-blue-50 dark:bg-blue-950/30",
-    text: "text-blue-700 dark:text-blue-300",
+    text: "text-[color:var(--ds-info-text)] dark:text-[color:var(--ds-info-text)]",
     border: "border-blue-200 dark:border-blue-900",
     icon: Clock,
   },
   warning: {
     bg: "bg-amber-50 dark:bg-amber-950/30",
-    text: "text-amber-700 dark:text-amber-300",
+    text: "text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]",
     border: "border-amber-200 dark:border-amber-900",
     icon: AlertTriangle,
   },
@@ -365,13 +368,13 @@ const STATUS_STYLES: Record<
   },
   overdue: {
     bg: "bg-red-50 dark:bg-red-950/30",
-    text: "text-red-700 dark:text-red-400",
+    text: "text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]",
     border: "border-red-200 dark:border-red-900",
     icon: AlertCircle,
   },
   done: {
     bg: "bg-emerald-50 dark:bg-emerald-950/30",
-    text: "text-emerald-700 dark:text-emerald-300",
+    text: "text-[color:var(--ds-success-text)] dark:text-[color:var(--ds-success-text)]",
     border: "border-emerald-200 dark:border-emerald-900",
     icon: CheckCircle2,
   },
@@ -389,13 +392,13 @@ const EVENT_TYPE_STYLES: Record<
 > = {
   hearing: {
     bg: "bg-red-50 dark:bg-red-950/30",
-    text: "text-red-700 dark:text-red-300",
+    text: "text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]",
     border: "border-red-200 dark:border-red-900",
     icon: Gavel,
   },
   appointment: {
     bg: "bg-blue-50 dark:bg-blue-950/30",
-    text: "text-blue-700 dark:text-blue-300",
+    text: "text-[color:var(--ds-info-text)] dark:text-[color:var(--ds-info-text)]",
     border: "border-blue-200 dark:border-blue-900",
     icon: CalendarDays,
   },
@@ -422,7 +425,7 @@ const EVENT_TYPE_STYLES: Record<
 const PRIORITY_STYLES: Record<string, { bg: string; text: string; border: string }> = {
   critical: {
     bg: "bg-red-50 dark:bg-red-950/30",
-    text: "text-red-700 dark:text-red-300",
+    text: "text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]",
     border: "border-red-200 dark:border-red-900",
   },
   high: {
@@ -432,7 +435,7 @@ const PRIORITY_STYLES: Record<string, { bg: string; text: string; border: string
   },
   medium: {
     bg: "bg-amber-50 dark:bg-amber-950/30",
-    text: "text-amber-700 dark:text-amber-300",
+    text: "text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]",
     border: "border-amber-200 dark:border-amber-900",
   },
   low: {
@@ -613,7 +616,7 @@ function TaskCard({
     >
       <div className="flex items-start gap-2">
         {item.done ? (
-          <CheckSquare size={14} className="mt-0.5 shrink-0 text-emerald-500" />
+          <CheckSquare size={14} className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]" />
         ) : (
           <Square size={14} className="mt-0.5 shrink-0 text-[color:var(--ds-text-muted)]" />
         )}
@@ -647,7 +650,7 @@ function TaskCard({
                 className={cn(
                   "inline-flex items-center gap-1 text-[11px]",
                   item.daysUntil !== undefined && item.daysUntil < 0
-                    ? "text-red-600 dark:text-red-400"
+                    ? "text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]"
                     : "text-[color:var(--ds-text-muted)]"
                 )}
               >
@@ -716,7 +719,7 @@ function DeadlineCard({
               {item.label}
             </button>
             {item.isNotfrist && (
-              <span className="shrink-0 rounded bg-red-100 px-1 py-0.5 text-[9px] font-bold text-red-700 dark:bg-red-950/40 dark:text-red-300">
+              <span className="shrink-0 rounded bg-red-100 px-1 py-0.5 text-[9px] font-bold text-[color:var(--ds-danger-text)] dark:bg-red-950/40 dark:text-[color:var(--ds-danger-text)]">
                 {t("chat.deadline.notfrist" as never)}
               </span>
             )}
@@ -741,7 +744,7 @@ function DeadlineCard({
             </span>
             <StatusBadge status={status} daysUntil={item.daysUntil} t={t} />
             {item.needsSecondCheck && (
-              <span className="inline-flex items-center gap-0.5 rounded bg-amber-100 px-1 py-0.5 text-[9px] font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+              <span className="inline-flex items-center gap-0.5 rounded bg-amber-100 px-1 py-0.5 text-[9px] font-medium text-[color:var(--ds-warning-text)] dark:bg-amber-950/40 dark:text-[color:var(--ds-warning-text)]">
                 <ShieldAlert size={8} />
                 {t("chat.deadline.second_check" as never)}
               </span>

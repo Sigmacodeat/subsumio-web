@@ -181,11 +181,11 @@ function MetricCard({
 }) {
   const colorClass =
     status === "ok"
-      ? "text-emerald-600"
+      ? "text-[color:var(--ds-success-text)]"
       : status === "warn"
-        ? "text-amber-600"
+        ? "text-[color:var(--ds-warning-text)]"
         : status === "fail"
-          ? "text-red-600"
+          ? "text-[color:var(--ds-danger-text)]"
           : "text-[color:var(--ds-text)]";
   return (
     <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 shadow-sm">
@@ -288,7 +288,7 @@ function OverviewTab({ report, onRefresh }: { report: QualityReport; onRefresh: 
       {/* Guardrail Stats */}
       <section>
         <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-[color:var(--ds-text)]">
-          <ShieldCheck className="h-5 w-5 text-blue-600" />
+          <ShieldCheck className="h-5 w-5 text-[color:var(--ds-info-text)]" />
           Guardrail-Statistiken
         </h2>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
@@ -349,7 +349,7 @@ function OverviewTab({ report, onRefresh }: { report: QualityReport; onRefresh: 
       {/* Calibration ECE */}
       <section>
         <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-[color:var(--ds-text)]">
-          <Target className="h-5 w-5 text-amber-600" />
+          <Target className="h-5 w-5 text-[color:var(--ds-warning-text)]" />
           ECE-Kalibrierung
         </h2>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -375,11 +375,17 @@ function OverviewTab({ report, onRefresh }: { report: QualityReport; onRefresh: 
                   Noch keine Calibration-Samples. Sammle Attorney-Feedback über das Formular unten.
                 </span>
               ) : c && c.ece <= 0.05 ? (
-                <Badge className="bg-emerald-100 text-emerald-700">Exzellent kalibriert</Badge>
+                <Badge className="bg-emerald-100 text-[color:var(--ds-success-text)]">
+                  Exzellent kalibriert
+                </Badge>
               ) : c && c.ece <= 0.15 ? (
-                <Badge className="bg-amber-100 text-amber-700">Moderate Kalibrierung</Badge>
+                <Badge className="bg-amber-100 text-[color:var(--ds-warning-text)]">
+                  Moderate Kalibrierung
+                </Badge>
               ) : (
-                <Badge className="bg-red-100 text-red-700">Schlechte Kalibrierung</Badge>
+                <Badge className="bg-red-100 text-[color:var(--ds-danger-text)]">
+                  Schlechte Kalibrierung
+                </Badge>
               )}
             </div>
           </div>
@@ -389,7 +395,7 @@ function OverviewTab({ report, onRefresh }: { report: QualityReport; onRefresh: 
       {/* Calibration Feedback Form */}
       <section>
         <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-[color:var(--ds-text)]">
-          <Target className="h-5 w-5 text-amber-600" />
+          <Target className="h-5 w-5 text-[color:var(--ds-warning-text)]" />
           Attorney-Feedback (ECE-Kalibrierung)
         </h2>
         <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 shadow-sm">
@@ -455,8 +461,8 @@ function OverviewTab({ report, onRefresh }: { report: QualityReport; onRefresh: 
               className={cn(
                 "mt-3 rounded-md p-2 text-sm",
                 feedbackMsg.includes("Fehler")
-                  ? "bg-red-50 text-red-700"
-                  : "bg-emerald-50 text-emerald-700"
+                  ? "bg-red-50 text-[color:var(--ds-danger-text)]"
+                  : "bg-emerald-50 text-[color:var(--ds-success-text)]"
               )}
             >
               {feedbackMsg}
@@ -589,7 +595,7 @@ function TracesTab() {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-[color:var(--ds-danger-text)]">
         <AlertTriangle className="mr-2 inline h-4 w-4" />
         {error}
       </div>
@@ -671,18 +677,18 @@ function TracesTab() {
                 </td>
                 <td className="px-3 py-2">
                   {t.guardrail_passed === true ? (
-                    <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                    <ShieldCheck className="h-4 w-4 text-[color:var(--ds-success-text)]" />
                   ) : t.guardrail_passed === false ? (
-                    <ShieldAlert className="h-4 w-4 text-red-600" />
+                    <ShieldAlert className="h-4 w-4 text-[color:var(--ds-danger-text)]" />
                   ) : (
                     <span className="text-[color:var(--ds-text-subtle)]">—</span>
                   )}
                 </td>
                 <td className="px-3 py-2">
                   {t.cross_verify_clean === true ? (
-                    <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                    <ShieldCheck className="h-4 w-4 text-[color:var(--ds-success-text)]" />
                   ) : t.cross_verify_clean === false ? (
-                    <ShieldAlert className="h-4 w-4 text-red-600" />
+                    <ShieldAlert className="h-4 w-4 text-[color:var(--ds-danger-text)]" />
                   ) : (
                     <span className="text-[color:var(--ds-text-subtle)]">—</span>
                   )}
@@ -692,7 +698,9 @@ function TracesTab() {
                 </td>
                 <td className="px-3 py-2 text-xs">
                   {t.regeneration_count > 0 ? (
-                    <Badge className="bg-amber-100 text-amber-700">{t.regeneration_count}×</Badge>
+                    <Badge className="bg-amber-100 text-[color:var(--ds-warning-text)]">
+                      {t.regeneration_count}×
+                    </Badge>
                   ) : (
                     <span className="text-[color:var(--ds-text-subtle)]">0</span>
                   )}
@@ -786,9 +794,13 @@ function TracesTab() {
                     <div className="text-xs text-[color:var(--ds-text-muted)]">Guardrail</div>
                     <div className="mt-1">
                       {selectedTrace.guardrail_passed === true ? (
-                        <Badge className="bg-emerald-100 text-emerald-700">Passed</Badge>
+                        <Badge className="bg-emerald-100 text-[color:var(--ds-success-text)]">
+                          Passed
+                        </Badge>
                       ) : selectedTrace.guardrail_passed === false ? (
-                        <Badge className="bg-red-100 text-red-700">Failed</Badge>
+                        <Badge className="bg-red-100 text-[color:var(--ds-danger-text)]">
+                          Failed
+                        </Badge>
                       ) : (
                         <span className="text-[color:var(--ds-text-subtle)]">—</span>
                       )}
@@ -798,9 +810,13 @@ function TracesTab() {
                     <div className="text-xs text-[color:var(--ds-text-muted)]">Cross-Verify</div>
                     <div className="mt-1">
                       {selectedTrace.cross_verify_clean === true ? (
-                        <Badge className="bg-emerald-100 text-emerald-700">Clean</Badge>
+                        <Badge className="bg-emerald-100 text-[color:var(--ds-success-text)]">
+                          Clean
+                        </Badge>
                       ) : selectedTrace.cross_verify_clean === false ? (
-                        <Badge className="bg-red-100 text-red-700">Flagged</Badge>
+                        <Badge className="bg-red-100 text-[color:var(--ds-danger-text)]">
+                          Flagged
+                        </Badge>
                       ) : (
                         <span className="text-[color:var(--ds-text-subtle)]">—</span>
                       )}
@@ -948,7 +964,7 @@ function TrendTab({ days }: { days: number }) {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-[color:var(--ds-danger-text)]">
         <AlertTriangle className="mr-2 inline h-4 w-4" />
         {error}
       </div>
@@ -1059,7 +1075,7 @@ function TrendTab({ days }: { days: number }) {
       {/* Confidence Trend */}
       <section>
         <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-[color:var(--ds-text)]">
-          <Gauge className="h-5 w-5 text-amber-600" />
+          <Gauge className="h-5 w-5 text-[color:var(--ds-warning-text)]" />
           Confidence & Trace-Volume
         </h2>
         <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 shadow-sm">
@@ -1126,7 +1142,7 @@ function TrendTab({ days }: { days: number }) {
       {/* Calibration ECE Trend */}
       <section>
         <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-[color:var(--ds-text)]">
-          <Target className="h-5 w-5 text-emerald-600" />
+          <Target className="h-5 w-5 text-[color:var(--ds-success-text)]" />
           ECE-Kalibrierung Trend
         </h2>
         <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 shadow-sm">
@@ -1313,7 +1329,7 @@ export default function AiQualityPage() {
             </div>
           )}
           {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-[color:var(--ds-danger-text)]">
               <AlertTriangle className="mr-2 inline h-4 w-4" />
               {error}
             </div>

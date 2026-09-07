@@ -66,12 +66,12 @@ export default function DatevDirectPage() {
       />
       <div className="rounded-xl border border-amber-500 bg-amber-50 p-4 text-sm dark:bg-amber-950/30">
         <div className="flex items-start gap-2">
-          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+          <AlertTriangle className="h-4 w-4 shrink-0 text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]" />
           <div>
-            <p className="font-medium text-amber-800 dark:text-amber-300">
+            <p className="font-medium text-amber-800 dark:text-[color:var(--ds-warning-text)]">
               {tr("workspace.datev.notice_title")}
             </p>
-            <p className="mt-1 text-xs text-amber-700 dark:text-amber-400/80">
+            <p className="mt-1 text-xs text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]/80">
               {tr("workspace.datev.notice_body")}{" "}
               <Link href="/dashboard/datev-export" className="underline">
                 {tr("workspace.datev.notice_link")}

@@ -173,7 +173,7 @@ export function ChatInput({
               <span className="max-w-[12ch] truncate">{att.name}</span>
               <button
                 onClick={() => removeAttachment(att.slug)}
-                className="flex h-8 w-8 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-red-500 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none sm:h-5 sm:w-5"
+                className="flex h-8 w-8 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none sm:h-5 sm:w-5"
                 aria-label={t("chat.input.remove_attachment")}
               >
                 <X className="h-4 w-4 sm:h-3 sm:w-3" />
@@ -185,12 +185,12 @@ export function ChatInput({
 
       {/* Upload error */}
       {uploadError && (
-        <div className="flex items-center gap-2 px-4 pt-2 text-xs text-red-600 dark:text-red-400">
+        <div className="flex items-center gap-2 px-4 pt-2 text-xs text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">
           <X size={12} className="shrink-0" />
           <span className="min-w-0 flex-1 truncate">{uploadError}</span>
           <button
             onClick={() => setUploadError(null)}
-            className="shrink-0 text-red-400 transition-[background-color,border-color,color] hover:text-red-600 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none dark:text-red-500 dark:hover:text-red-300"
+            className="shrink-0 text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none dark:text-[color:var(--ds-danger-text)] dark:hover:text-[color:var(--ds-danger-text)]"
             aria-label={t("chat.dismiss_error")}
           >
             <X size={11} />
@@ -234,7 +234,9 @@ export function ChatInput({
             <span
               className={cn(
                 "absolute top-2 right-3 text-xs font-medium",
-                overLimit ? "text-red-500" : "text-amber-500"
+                overLimit
+                  ? "text-[color:var(--ds-danger-text)]"
+                  : "text-[color:var(--ds-warning-text)]"
               )}
             >
               {charCount.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} / 50.000
@@ -346,7 +348,7 @@ export function ChatInput({
             {isStreaming ? (
               <button
                 onClick={() => onStop?.()}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-500 transition-[background-color,transform] duration-200 hover:bg-red-500/20 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-95 motion-reduce:transition-none sm:h-7 sm:w-7"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] transition-[background-color,transform] duration-200 hover:bg-[color:var(--ds-danger-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-95 motion-reduce:transition-none sm:h-7 sm:w-7"
                 aria-label={t("chat.input.stop_generation")}
                 title={t("chat.input.stop_esc")}
               >

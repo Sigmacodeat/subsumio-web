@@ -30,7 +30,7 @@ export const Default: Story = {
         <DropdownMenuItem>Bearbeiten</DropdownMenuItem>
         <DropdownMenuItem>Duplizieren</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-red-500">Löschen</DropdownMenuItem>
+        <DropdownMenuItem className="text-[color:var(--ds-danger-text)]">Löschen</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   ),

@@ -328,7 +328,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                                     e.stopPropagation();
                                     props.onDeleteSession?.(s.id);
                                   }}
-                                  className="text-[color:var(--ds-text-subtle)] opacity-0 transition-[opacity,color] duration-200 group-hover:opacity-100 hover:text-red-500 motion-reduce:transition-none"
+                                  className="text-[color:var(--ds-text-subtle)] opacity-0 transition-[opacity,color] duration-200 group-hover:opacity-100 hover:text-[color:var(--ds-danger-text)] motion-reduce:transition-none"
                                   aria-label={t("chat.confirm_delete_session")}
                                 >
                                   <Trash2 size={11} />
@@ -459,7 +459,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                         props.onClear();
                         setShowActions(false);
                       }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-red-600 transition-[background-color,border-color,color] hover:bg-red-500/10 motion-reduce:transition-none dark:text-red-400"
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] motion-reduce:transition-none dark:text-[color:var(--ds-danger-text)]"
                     >
                       <Trash2 size={13} />
                       {t("chat.clear")}

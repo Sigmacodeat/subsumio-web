@@ -21,17 +21,20 @@ const FLAG_CONFIG: Record<
   verified: {
     label: "Verifiziert",
     icon: CheckCircle2,
-    className: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+    className:
+      "border-emerald-500/40 bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] dark:text-[color:var(--ds-success-text)]",
   },
   needs_review: {
     label: "Prüfung offen",
     icon: AlertTriangle,
-    className: "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+    className:
+      "border-amber-500/40 bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]",
   },
   defective: {
     label: "Defekt",
     icon: XCircle,
-    className: "border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-400",
+    className:
+      "border-red-500/40 bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]",
   },
   unreviewed: {
     label: "Ungeprüft",

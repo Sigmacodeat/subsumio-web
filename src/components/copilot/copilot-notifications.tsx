@@ -50,21 +50,21 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
 const SEVERITY_STYLES: Record<string, { border: string; bg: string; icon: string; label: string }> =
   {
     urgent: {
-      border: "border-red-500/30",
-      bg: "bg-red-500/5",
-      icon: "text-red-600",
+      border: "border-[color:var(--ds-danger-border)]",
+      bg: "bg-[color:var(--ds-danger-bg)]",
+      icon: "text-[color:var(--ds-danger-text)]",
       label: "Urgent",
     },
     warning: {
-      border: "border-amber-500/30",
-      bg: "bg-amber-500/5",
-      icon: "text-amber-600",
+      border: "border-[color:var(--ds-warning-border)]",
+      bg: "bg-[color:var(--ds-warning-bg)]",
+      icon: "text-[color:var(--ds-warning-text)]",
       label: "Warning",
     },
     info: {
-      border: "border-blue-500/20",
-      bg: "bg-blue-500/5",
-      icon: "text-blue-600",
+      border: "border-[color:var(--ds-info-border)]",
+      bg: "bg-[color:var(--ds-info-bg)]",
+      icon: "text-[color:var(--ds-info-text)]",
       label: "Info",
     },
   };
@@ -167,13 +167,13 @@ export function CopilotNotifications() {
           {(urgentCount > 0 || warningCount > 0) && (
             <span className="text-[10px] text-[color:var(--ds-text-muted)]">
               {urgentCount > 0 && (
-                <span className="font-bold text-red-600">
+                <span className="font-bold text-[color:var(--ds-danger-text)]">
                   {urgentCount} {isEn ? "urgent" : "dringend"}
                 </span>
               )}
               {urgentCount > 0 && warningCount > 0 && " · "}
               {warningCount > 0 && (
-                <span className="text-amber-600">
+                <span className="text-[color:var(--ds-warning-text)]">
                   {warningCount} {isEn ? "warnings" : "Warnungen"}
                 </span>
               )}
@@ -194,7 +194,7 @@ export function CopilotNotifications() {
       {/* Notifications */}
       {activeNotifications.length === 0 ? (
         <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-3">
-          <Sparkles size={14} className="text-emerald-500" />
+          <Sparkles size={14} className="text-[color:var(--ds-success-text)]" />
           <span className="text-xs text-[color:var(--ds-text-muted)]">
             {isEn
               ? "All clear. No proactive alerts at this time."

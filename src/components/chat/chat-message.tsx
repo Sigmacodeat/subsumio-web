@@ -155,7 +155,7 @@ function ChatMessageBubbleInner({
           )}
         >
           {message.error ? (
-            <div className="flex items-start gap-2 text-red-600 dark:text-red-400">
+            <div className="flex items-start gap-2 text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">
               <AlertTriangle size={14} className="mt-0.5 shrink-0" />
               <span>{message.error}</span>
             </div>

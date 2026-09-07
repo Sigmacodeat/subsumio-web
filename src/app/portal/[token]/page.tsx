@@ -65,21 +65,29 @@ interface PortalDocumentRequest {
 const STATUS_CONFIG: Record<string, { labelKey: DashboardKey; color: string }> = {
   open: {
     labelKey: "portal.status.open",
-    color: "text-blue-400 bg-blue-500/10 border-blue-500/20",
+    color:
+      "text-[color:var(--ds-info-text)] bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)]",
   },
   pending: {
     labelKey: "portal.status.pending",
-    color: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+    color:
+      "text-[color:var(--ds-warning-text)] bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)]",
   },
   settled: {
     labelKey: "portal.status.settled",
-    color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+    color:
+      "text-[color:var(--ds-success-text)] bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)]",
   },
   won: {
     labelKey: "portal.status.won",
-    color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+    color:
+      "text-[color:var(--ds-success-text)] bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)]",
   },
-  lost: { labelKey: "portal.status.lost", color: "text-red-400 bg-red-500/10 border-red-500/20" },
+  lost: {
+    labelKey: "portal.status.lost",
+    color:
+      "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)]",
+  },
   appealed: {
     labelKey: "portal.status.appealed",
     color: "text-orange-400 bg-orange-500/10 border-orange-500/20",
@@ -91,11 +99,11 @@ const STATUS_CONFIG: Record<string, { labelKey: DashboardKey; color: string }> =
 };
 
 const DEADLINE_STATUS: Record<string, string> = {
-  pending: "text-blue-400",
-  warning: "text-amber-400",
+  pending: "text-[color:var(--ds-info-text)]",
+  warning: "text-[color:var(--ds-warning-text)]",
   critical: "text-orange-400",
-  overdue: "text-red-400",
-  done: "text-emerald-400",
+  overdue: "text-[color:var(--ds-danger-text)]",
+  done: "text-[color:var(--ds-success-text)]",
 };
 
 interface SignableDoc {
@@ -464,8 +472,8 @@ export default function PortalPage() {
         className="flex min-h-screen items-center justify-center p-6 [background:var(--mk-bg)]"
       >
         <div className="w-full max-w-md space-y-4 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10">
-            <AlertTriangle size={28} className="text-red-400" />
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]">
+            <AlertTriangle size={28} className="text-[color:var(--ds-danger-text)]" />
           </div>
           <h1 className="text-xl font-bold [color:var(--mk-text)]">{t("portal.access_denied")}</h1>
           <p className="text-sm [color:var(--mk-text-muted)]">{error}</p>
@@ -636,7 +644,8 @@ export default function PortalPage() {
                   {caseData.deadlines.map((dl, i) => {
                     const due = dl.due_date || dl.date || "";
                     const status = dl.status || "pending";
-                    const statusClass = DEADLINE_STATUS[status] || "text-blue-400";
+                    const statusClass =
+                      DEADLINE_STATUS[status] || "text-[color:var(--ds-info-text)]";
                     return (
                       <div key={i} className="flex items-center gap-3 text-sm">
                         <CalendarClock size={14} className={statusClass} />
@@ -677,7 +686,11 @@ export default function PortalPage() {
                         >
                           <FileText
                             size={14}
-                            className={done ? "text-emerald-400" : "text-amber-400"}
+                            className={
+                              done
+                                ? "text-[color:var(--ds-success-text)]"
+                                : "text-[color:var(--ds-warning-text)]"
+                            }
                           />
                           <div className="min-w-0 flex-1">
                             <div className="truncate text-sm [color:var(--mk-text)]">
@@ -763,12 +776,12 @@ export default function PortalPage() {
                 />
               </div>
               {uploadError && (
-                <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                <div className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2 text-xs text-red-200">
                   {uploadError}
                 </div>
               )}
               {uploadMessage && (
-                <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
+                <div className="rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-3 py-2 text-xs text-emerald-200">
                   {uploadMessage}
                 </div>
               )}

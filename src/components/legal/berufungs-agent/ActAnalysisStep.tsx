@@ -35,8 +35,8 @@ interface ActAnalysisStepProps {
 const RISK_COLORS = {
   high: "bg-[color:var(--ds-danger-bg)]/10 text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]/30 dark:text-[color:var(--ds-danger-text)]",
   medium:
-    "bg-[color:var(--ds-warning-bg)]/10 text-amber-700 border-[color:var(--ds-warning-border)]/30 dark:text-[color:var(--ds-warning-text)]",
-  low: "bg-emerald-500/10 text-emerald-700 border-[color:var(--ds-success-border)]/30 dark:text-[color:var(--ds-success-text)]",
+    "bg-[color:var(--ds-warning-bg)]/10 text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]/30 dark:text-[color:var(--ds-warning-text)]",
+  low: "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]/30 dark:text-[color:var(--ds-success-text)]",
 } as const;
 
 const RISK_LABELS = { high: "Hoch", medium: "Mittel", low: "Niedrig" } as const;

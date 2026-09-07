@@ -571,7 +571,7 @@ export function CorpusFileViewer({ path, onClose }: Props) {
                     <h3 className="mb-2 text-sm font-semibold text-[color:var(--ds-text-muted)]">
                       Inhalt
                       {bodyTruncated && (
-                        <span className="ml-2 text-xs font-normal text-amber-600 dark:text-amber-400">
+                        <span className="ml-2 text-xs font-normal text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]">
                           (in UI gekürzt)
                         </span>
                       )}
@@ -832,11 +832,11 @@ export function CorpusFileViewer({ path, onClose }: Props) {
                           Diff: v{diffVersions.v1} → {diffVersions.v2 ?? "aktuell"}
                         </h3>
                         <div className="flex items-center gap-3 text-xs">
-                          <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                          <span className="flex items-center gap-1 text-[color:var(--ds-success-text)] dark:text-[color:var(--ds-success-text)]">
                             <Plus className="h-3 w-3" aria-hidden="true" />
                             {diffQuery.data.stats.added}
                           </span>
-                          <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
+                          <span className="flex items-center gap-1 text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">
                             <Minus className="h-3 w-3" aria-hidden="true" />
                             {diffQuery.data.stats.removed}
                           </span>
@@ -858,9 +858,9 @@ export function CorpusFileViewer({ path, onClose }: Props) {
                             className={cn(
                               "flex gap-2 px-3 py-0.5",
                               line.type === "added" &&
-                                "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+                                "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] dark:text-[color:var(--ds-success-text)]",
                               line.type === "removed" &&
-                                "bg-red-500/10 text-red-700 dark:text-red-400",
+                                "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]",
                               line.type === "unchanged" && "text-[color:var(--ds-text-muted)]"
                             )}
                           >

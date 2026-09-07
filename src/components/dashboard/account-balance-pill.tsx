@@ -65,7 +65,7 @@ export function AccountBalancePill() {
         title="Guthaben nicht verfügbar"
         aria-label="Guthaben nicht verfügbar"
       >
-        <AlertTriangle size={14} className="text-amber-500" />
+        <AlertTriangle size={14} className="text-[color:var(--ds-warning-text)]" />
         <span>—</span>
       </div>
     );

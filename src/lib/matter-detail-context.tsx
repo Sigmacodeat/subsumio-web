@@ -1417,13 +1417,22 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
   }) {
     const as = doc.analysis_status;
     if (as === "failed")
-      return { key: "analysis_failed", color: "bg-red-500/10 border-red-500/20 text-red-600" };
+      return {
+        key: "analysis_failed",
+        color:
+          "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
+      };
     if (as === "retrying")
-      return { key: "analysis_retrying", color: "bg-blue-500/10 border-blue-500/20 text-blue-600" };
+      return {
+        key: "analysis_retrying",
+        color:
+          "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
+      };
     if (as === "permanently_failed")
       return {
         key: "analysis_permanently_failed",
-        color: "bg-red-500/10 border-red-500/20 text-red-600",
+        color:
+          "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
       };
     const es = doc.extraction_status;
     if (es === "failed" || es === "error") {
@@ -1431,41 +1440,73 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
       if (code === "password_required" || code === "invalid_document_password")
         return {
           key: "extraction_password",
-          color: "bg-amber-500/10 border-amber-500/20 text-amber-600",
+          color:
+            "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
         };
       if (code === "unsupported_format")
         return {
           key: "extraction_unsupported",
-          color: "bg-red-500/10 border-red-500/20 text-red-600",
+          color:
+            "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
         };
-      return { key: "extraction_failed", color: "bg-red-500/10 border-red-500/20 text-red-600" };
+      return {
+        key: "extraction_failed",
+        color:
+          "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
+      };
     }
     if (es === "confirmed" || (es === "text_layer" && !doc.extraction_unverified))
       return {
         key: "confirmed",
-        color: "bg-emerald-500/10 border-emerald-500/20 text-emerald-600",
+        color:
+          "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
       };
     if (es === "analyzed" || (es === "text_layer" && doc.extraction_unverified))
-      return { key: "review_open", color: "bg-amber-500/10 border-amber-500/20 text-amber-600" };
+      return {
+        key: "review_open",
+        color:
+          "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
+      };
     if (es === "ocr_complete")
-      return { key: "analyzed", color: "bg-blue-500/10 border-blue-500/20 text-blue-600" };
+      return {
+        key: "analyzed",
+        color:
+          "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
+      };
     if (es === "ocr_processing")
-      return { key: "ocr_processing", color: "bg-blue-500/10 border-blue-500/20 text-blue-600" };
+      return {
+        key: "ocr_processing",
+        color:
+          "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
+      };
     if (es === "ocr_needed" || es === "ocr_failed")
-      return { key: "ocr_needed", color: "bg-red-500/10 border-red-500/20 text-red-600" };
+      return {
+        key: "ocr_needed",
+        color:
+          "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
+      };
     if (es === "processing")
       return { key: "uploaded", color: "bg-gray-500/10 border-gray-500/20 text-gray-600" };
     if (es === "uploaded")
       return { key: "uploaded", color: "bg-gray-500/10 border-gray-500/20 text-gray-600" };
     const ocr = doc.ocr_status;
     if (ocr === "ocr_complete")
-      return { key: "analyzed", color: "bg-blue-500/10 border-blue-500/20 text-blue-600" };
+      return {
+        key: "analyzed",
+        color:
+          "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
+      };
     if (ocr === "ocr_needed" || ocr === "unknown")
-      return { key: "ocr_needed", color: "bg-red-500/10 border-red-500/20 text-red-600" };
+      return {
+        key: "ocr_needed",
+        color:
+          "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
+      };
     if (ocr === "text_layer")
       return {
         key: "text_layer",
-        color: "bg-emerald-500/10 border-emerald-500/20 text-emerald-600",
+        color:
+          "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
       };
     return { key: "uploaded", color: "bg-gray-500/10 border-gray-500/20 text-gray-600" };
   }

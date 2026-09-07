@@ -357,10 +357,14 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
             {error && (
               <div
                 role="alert"
-                className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3"
+                className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3"
               >
-                <AlertCircle size={14} className="mt-0.5 shrink-0 text-red-400" aria-hidden />
-                <p className="text-xs text-red-300">{error}</p>
+                <AlertCircle
+                  size={14}
+                  className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]"
+                  aria-hidden
+                />
+                <p className="text-xs text-[color:var(--ds-danger-text)]">{error}</p>
               </div>
             )}
 
@@ -406,7 +410,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
                   disabled={ssoLoading}
                   className="flex items-center justify-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-3 py-2.5 text-sm [color:var(--mk-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)] hover:[background:var(--mk-surface)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                 >
-                  <Building2 size={16} className="text-blue-400" />
+                  <Building2 size={16} className="text-[color:var(--ds-info-text)]" />
                   Microsoft
                 </button>
                 <button

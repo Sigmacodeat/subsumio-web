@@ -175,7 +175,7 @@ export function SendLinkDialog({
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:bg-[color:var(--ds-hover)]"
               }`}
             >
-              <Mail size={18} className="shrink-0 text-blue-600" />
+              <Mail size={18} className="shrink-0 text-[color:var(--ds-info-text)]" />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium">{t("sendlink.email")}</div>
                 <div className="text-xs text-[color:var(--ds-text-muted)]">
