@@ -18,14 +18,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Database,
-  Zap,
-  Ruler,
-  Layers,
-  RefreshCw,
-  TrendingUp,
-} from "lucide-react";
+import { Database, Zap, Ruler, Layers, RefreshCw, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -87,7 +80,13 @@ const LENGTH_COLORS: Record<string, string> = {
 
 // ── Component ────────────────────────────────────────────────────────────
 
-export function ChunkQuality({ liveEmbedding = false, onSelectSource }: { liveEmbedding?: boolean; onSelectSource?: (sourceId: string) => void }) {
+export function ChunkQuality({
+  liveEmbedding = false,
+  onSelectSource,
+}: {
+  liveEmbedding?: boolean;
+  onSelectSource?: (sourceId: string) => void;
+}) {
   const qualityQuery = useQuery<{ data: QualityData }>({
     queryKey: ["chunk-quality"],
     queryFn: () =>
@@ -169,7 +168,7 @@ export function ChunkQuality({ liveEmbedding = false, onSelectSource }: { liveEm
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {isLive && (
-            <Badge className="bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] animate-pulse">
+            <Badge className="animate-pulse bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]">
               <TrendingUp className="mr-1 h-3 w-3" />
               Live
             </Badge>
@@ -178,11 +177,7 @@ export function ChunkQuality({ liveEmbedding = false, onSelectSource }: { liveEm
             Aktualisiert: {new Date(data.generatedAt).toLocaleTimeString("de-AT")}
           </span>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => qualityQuery.refetch()}
-        >
+        <Button variant="outline" size="sm" onClick={() => qualityQuery.refetch()}>
           <RefreshCw className={`mr-2 h-4 w-4 ${qualityQuery.isFetching ? "animate-spin" : ""}`} />
           Aktualisieren
         </Button>
@@ -206,7 +201,7 @@ export function ChunkQuality({ liveEmbedding = false, onSelectSource }: { liveEm
               <p className="text-2xl font-bold tabular-nums">{fmt(data.embeddedChunks)}</p>
               <div className="mt-1 flex items-center gap-2">
                 <Progress value={data.embeddingCoveragePct} className="h-2 w-20" />
-                <span className="text-xs tabular-nums text-[color:var(--ds-text-subtle)]">
+                <span className="text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
                   {pct(data.embeddingCoveragePct)}
                 </span>
               </div>
@@ -287,7 +282,10 @@ export function ChunkQuality({ liveEmbedding = false, onSelectSource }: { liveEm
           <CardContent className="pt-4">
             <h3 className="mb-4 text-sm font-medium">Längen-Verteilung (Zeichen)</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={data.lengthHistogram} margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+              <BarChart
+                data={data.lengthHistogram}
+                margin={{ top: 10, right: 10, bottom: 10, left: 10 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--ds-border)" />
                 <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="var(--ds-text-subtle)" />
                 <YAxis tick={{ fontSize: 11 }} stroke="var(--ds-text-subtle)" />
@@ -302,7 +300,10 @@ export function ChunkQuality({ liveEmbedding = false, onSelectSource }: { liveEm
                 />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                   {data.lengthHistogram.map((entry: LengthBucket) => (
-                    <Cell key={entry.bucket} fill={LENGTH_COLORS[entry.bucket] ?? "var(--ds-text-subtle)"} />
+                    <Cell
+                      key={entry.bucket}
+                      fill={LENGTH_COLORS[entry.bucket] ?? "var(--ds-text-subtle)"}
+                    />
                   ))}
                 </Bar>
               </BarChart>
@@ -319,12 +320,24 @@ export function ChunkQuality({ liveEmbedding = false, onSelectSource }: { liveEm
             <table className="w-full text-sm text-[color:var(--ds-text)]">
               <thead>
                 <tr className="border-b text-left text-xs text-[color:var(--ds-text-subtle)]">
-                  <th scope="col" className="pb-2 pr-3 font-medium">Source</th>
-                  <th scope="col" className="pb-2 pr-3 text-right font-medium">Pages</th>
-                  <th scope="col" className="pb-2 pr-3 text-right font-medium">Chunks</th>
-                  <th scope="col" className="pb-2 pr-3 text-right font-medium">Embedded</th>
-                  <th scope="col" className="pb-2 pr-3 font-medium">Coverage</th>
-                  <th scope="col" className="pb-2 pr-3 text-right font-medium">Ø Länge</th>
+                  <th scope="col" className="pr-3 pb-2 font-medium">
+                    Source
+                  </th>
+                  <th scope="col" className="pr-3 pb-2 text-right font-medium">
+                    Pages
+                  </th>
+                  <th scope="col" className="pr-3 pb-2 text-right font-medium">
+                    Chunks
+                  </th>
+                  <th scope="col" className="pr-3 pb-2 text-right font-medium">
+                    Embedded
+                  </th>
+                  <th scope="col" className="pr-3 pb-2 font-medium">
+                    Coverage
+                  </th>
+                  <th scope="col" className="pr-3 pb-2 text-right font-medium">
+                    Ø Länge
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -340,10 +353,14 @@ export function ChunkQuality({ liveEmbedding = false, onSelectSource }: { liveEm
                     }}
                     role={onSelectSource ? "button" : undefined}
                     tabIndex={onSelectSource ? 0 : undefined}
-                    aria-label={onSelectSource ? `${r.source} im Chunk-Inspector öffnen` : undefined}
-                    className={onSelectSource
-                      ? "border-b transition-colors hover:bg-[color:var(--ds-surface-hover)] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)]"
-                      : "border-b transition-colors hover:bg-[color:var(--ds-surface-hover)]"}
+                    aria-label={
+                      onSelectSource ? `${r.source} im Chunk-Inspector öffnen` : undefined
+                    }
+                    className={
+                      onSelectSource
+                        ? "cursor-pointer border-b transition-[background-color] duration-150 hover:bg-[color:var(--ds-surface-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
+                        : "border-b transition-[background-color] duration-150 hover:bg-[color:var(--ds-surface-hover)] motion-reduce:transition-none"
+                    }
                   >
                     <td className="py-2 pr-3 font-mono text-xs">{r.source}</td>
                     <td className="py-2 pr-3 text-right tabular-nums">{fmt(r.pages)}</td>
@@ -351,16 +368,13 @@ export function ChunkQuality({ liveEmbedding = false, onSelectSource }: { liveEm
                     <td className="py-2 pr-3 text-right tabular-nums">{fmt(r.embedded)}</td>
                     <td className="py-2 pr-3">
                       <div className="flex items-center gap-2">
-                        <Progress
-                          value={r.coveragePct}
-                          className="h-2 w-20"
-                        />
-                        <span className="text-xs tabular-nums text-[color:var(--ds-text-subtle)]">
+                        <Progress value={r.coveragePct} className="h-2 w-20" />
+                        <span className="text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
                           {pct(r.coveragePct)}
                         </span>
                       </div>
                     </td>
-                    <td className="py-2 pr-3 text-right tabular-nums text-xs">
+                    <td className="py-2 pr-3 text-right text-xs tabular-nums">
                       {fmt(r.avgLength)}
                     </td>
                   </tr>

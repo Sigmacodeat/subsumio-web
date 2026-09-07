@@ -1409,7 +1409,7 @@ function RisDeltaSection({
                     return (
                       <tr
                         key={row.applikation}
-                        className="border-b transition-colors last:border-0 hover:bg-[color:var(--ds-surface-hover)]"
+                        className="border-b transition-[background-color] duration-150 last:border-0 hover:bg-[color:var(--ds-surface-hover)] motion-reduce:transition-none"
                       >
                         <td className="px-4 py-3">
                           <div className="font-medium">{row.label}</div>

@@ -1029,7 +1029,7 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
                         <tr
                           key={entry.path}
                           className={cn(
-                            "group cursor-pointer transition-colors hover:bg-[color:var(--ds-surface-2)]/50",
+                            "group cursor-pointer transition-[background-color] duration-150 hover:bg-[color:var(--ds-surface-2)]/50 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none focus-visible:ring-inset motion-reduce:transition-none",
                             isSelected && "bg-[color:var(--ds-accent)]/5"
                           )}
                           onClick={() => onSelectFile(entry.path)}
@@ -1405,7 +1405,7 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
                 <button
                   onClick={() => setExportFormat("json")}
                   className={cn(
-                    "rounded-md border p-3 text-left transition-colors",
+                    "rounded-md border p-3 text-left transition-[background-color,border-color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
                     exportFormat === "json"
                       ? "border-[color:var(--ds-accent)] bg-[color:var(--ds-accent)]/10"
                       : "border-[color:var(--ds-border)] hover:bg-[color:var(--ds-surface-2)]"
@@ -1420,7 +1420,7 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
                 <button
                   onClick={() => setExportFormat("csv")}
                   className={cn(
-                    "rounded-md border p-3 text-left transition-colors",
+                    "rounded-md border p-3 text-left transition-[background-color,border-color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
                     exportFormat === "csv"
                       ? "border-[color:var(--ds-accent)] bg-[color:var(--ds-accent)]/10"
                       : "border-[color:var(--ds-border)] hover:bg-[color:var(--ds-surface-2)]"
