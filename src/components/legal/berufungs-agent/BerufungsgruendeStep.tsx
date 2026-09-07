@@ -96,7 +96,7 @@ function SortableGrund({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "rounded-lg border p-4 transition-all",
+        "rounded-lg border p-4 transition-[background-color,border-color,color,box-shadow,transform,opacity]",
         grund.selected
           ? "border-[color:var(--brand-primary)]/40 bg-[color:var(--brand-primary)]/5"
           : "border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] opacity-60"
@@ -119,7 +119,7 @@ function SortableGrund({
           onClick={() => onToggle(grund.id)}
           aria-label={grund.selected ? "Abwählen" : "Auswählen"}
           className={cn(
-            "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-all",
+            "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-[background-color,border-color,color,box-shadow,transform,opacity]",
             "focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none",
             grund.selected
               ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-[color:var(--brand-primary-foreground)]"

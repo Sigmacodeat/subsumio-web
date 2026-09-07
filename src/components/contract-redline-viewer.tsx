@@ -362,7 +362,7 @@ export function ContractRedlineViewer({
               key={p}
               onClick={() => setPerspective(p)}
               className={cn(
-                "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
+                "rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity]",
                 perspective === p
                   ? "brand-soft brand-border brand-text"
                   : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -502,7 +502,7 @@ export function ContractRedlineViewer({
                     clauseRefs.current[idx] = el;
                   }}
                   className={cn(
-                    "overflow-hidden rounded-xl border bg-[color:var(--ds-surface)] transition-all",
+                    "overflow-hidden rounded-xl border bg-[color:var(--ds-surface)] transition-[background-color,border-color,color,box-shadow,transform,opacity]",
                     riskCfg.border,
                     isActive && "ring-2 ring-[color:var(--brand-primary)]/40 ring-offset-0",
                     clause.accepted === true && "ring-1 ring-emerald-500/30",

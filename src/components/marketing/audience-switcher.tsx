@@ -31,7 +31,7 @@ export function AudienceSwitcher({
             key={id}
             href={p(lang, item.href)}
             aria-current={selected ? "page" : undefined}
-            className={`group rounded-2xl border p-5 transition-all hover:-translate-y-0.5 hover:shadow-lg ${
+            className={`group rounded-2xl border p-5 transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:-translate-y-0.5 hover:shadow-lg ${
               selected
                 ? "brand-border brand-soft shadow-sm"
                 : "[border-color:var(--mk-border)] [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]"

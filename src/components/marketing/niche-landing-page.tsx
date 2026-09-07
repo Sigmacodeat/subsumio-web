@@ -21,7 +21,8 @@ import type { NichePageContent } from "@/content/niche-pages";
 
 export function NicheLandingPage({ content }: { content: NichePageContent }) {
   const ctaLabel = "Kostenlosen Fallcheck starten";
-  const nicheKeyword = `${content.h1a.replace(/[—–-]$/, "").trim()} ${content.h1b.replace(/[—–-]$/, "").trim()}`.trim();
+  const nicheKeyword =
+    `${content.h1a.replace(/[—–-]$/, "").trim()} ${content.h1b.replace(/[—–-]$/, "").trim()}`.trim();
 
   return (
     <div data-tone="light" className="min-h-screen overflow-x-clip" lang="de">
@@ -66,9 +67,7 @@ export function NicheLandingPage({ content }: { content: NichePageContent }) {
       <Section tone="light" className="py-16 md:py-20" aria-label="Einleitung">
         <div className="mx-auto max-w-4xl px-6">
           <Reveal>
-            <p className="text-lg leading-relaxed [color:var(--mk-text-muted)]">
-              {content.intro}
-            </p>
+            <p className="text-lg leading-relaxed [color:var(--mk-text-muted)]">{content.intro}</p>
           </Reveal>
         </div>
       </Section>
@@ -95,7 +94,11 @@ export function NicheLandingPage({ content }: { content: NichePageContent }) {
       </Section>
 
       {/* 3. Solution — 3-step process */}
-      <Section tone="slate" className="py-20 md:py-28" aria-label="So funktioniert die AI-Fallanalyse">
+      <Section
+        tone="slate"
+        className="py-20 md:py-28"
+        aria-label="So funktioniert die AI-Fallanalyse"
+      >
         <div className="mx-auto max-w-7xl px-6">
           <SectionHeading
             badge="Die Lösung"
@@ -113,7 +116,9 @@ export function NicheLandingPage({ content }: { content: NichePageContent }) {
                     <div className="h-px flex-1 [background:var(--mk-border)]" />
                   </div>
                   <h3 className={`mb-3 ${H3_CLASS}`}>{step.title}</h3>
-                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{step.desc}</p>
+                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                    {step.desc}
+                  </p>
                 </div>
               </Reveal>
             ))}
@@ -137,13 +142,19 @@ export function NicheLandingPage({ content }: { content: NichePageContent }) {
                     <div className="flex items-center gap-3 sm:flex-col sm:items-start">
                       <IconTile icon={Gavel} size={20} />
                       <div>
-                        <p className="text-sm font-semibold [color:var(--mk-text)]">{ruling.court}</p>
+                        <p className="text-sm font-semibold [color:var(--mk-text)]">
+                          {ruling.court}
+                        </p>
                         <p className="text-xs [color:var(--mk-text-subtle)]">{ruling.date}</p>
                       </div>
                     </div>
                     <div className="flex-1">
-                      <p className="mb-1 font-mono text-sm font-semibold brand-text">{ruling.ref}</p>
-                      <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{ruling.summary}</p>
+                      <p className="brand-text mb-1 font-mono text-sm font-semibold">
+                        {ruling.ref}
+                      </p>
+                      <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                        {ruling.summary}
+                      </p>
                     </div>
                   </div>
                 </GlowCard>
@@ -170,14 +181,20 @@ export function NicheLandingPage({ content }: { content: NichePageContent }) {
               <div className="space-y-4">
                 <div>
                   <p className="mb-1 text-sm font-semibold [color:var(--mk-text)]">Sachverhalt</p>
-                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{content.caseExample.facts}</p>
+                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                    {content.caseExample.facts}
+                  </p>
                 </div>
                 <div>
                   <p className="mb-1 text-sm font-semibold [color:var(--mk-text)]">Ergebnis</p>
-                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{content.caseExample.outcome}</p>
+                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                    {content.caseExample.outcome}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2 border-t [border-color:var(--mk-border)] pt-4">
-                  <span className="text-sm [color:var(--mk-text-subtle)]">Streitwert / Ergebnis:</span>
+                  <span className="text-sm [color:var(--mk-text-subtle)]">
+                    Streitwert / Ergebnis:
+                  </span>
                   <span className="brand-text text-lg font-bold">{content.caseExample.value}</span>
                 </div>
               </div>
@@ -201,16 +218,17 @@ export function NicheLandingPage({ content }: { content: NichePageContent }) {
 
             {/* Right: Pricing Tiers */}
             <Reveal delay={0.12}>
-              <div id="preise" className="space-y-4 scroll-mt-20">
+              <div id="preise" className="scroll-mt-20 space-y-4">
                 <div className="mb-2">
-                  <p className="mb-1 text-sm font-semibold uppercase tracking-wider brand-text">
+                  <p className="brand-text mb-1 text-sm font-semibold tracking-wider uppercase">
                     Transparente Preise
                   </p>
                   <h2 className="text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl">
                     Vom kostenlosen Check zum Anwalt-Paket
                   </h2>
                   <p className="mt-2 text-sm leading-relaxed [color:var(--mk-text-muted)]">
-                    Keine versteckten Kosten. Keine Vorkosten. Sie zahlen nur, wenn Sie mehr möchten.
+                    Keine versteckten Kosten. Keine Vorkosten. Sie zahlen nur, wenn Sie mehr
+                    möchten.
                   </p>
                 </div>
                 <div className="space-y-3">
@@ -224,20 +242,27 @@ export function NicheLandingPage({ content }: { content: NichePageContent }) {
                       }`}
                     >
                       {tier.highlighted && (
-                        <span className="absolute -top-2.5 right-4 rounded-full brand-bg px-2.5 py-0.5 text-[10px] font-bold text-white">
+                        <span className="brand-bg absolute -top-2.5 right-4 rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white">
                           BELIEBTEST
                         </span>
                       )}
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <div className="mb-1 flex items-baseline gap-2">
-                            <h3 className="text-base font-bold [color:var(--mk-text)]">{tier.name}</h3>
-                            <span className="text-lg font-bold brand-text">{tier.price}</span>
+                            <h3 className="text-base font-bold [color:var(--mk-text)]">
+                              {tier.name}
+                            </h3>
+                            <span className="brand-text text-lg font-bold">{tier.price}</span>
                           </div>
-                          <p className="mb-3 text-xs [color:var(--mk-text-subtle)]">{tier.priceNote}</p>
+                          <p className="mb-3 text-xs [color:var(--mk-text-subtle)]">
+                            {tier.priceNote}
+                          </p>
                           <ul className="space-y-1.5">
                             {tier.features.map((f, i) => (
-                              <li key={i} className="flex items-start gap-2 text-xs [color:var(--mk-text-muted)]">
+                              <li
+                                key={i}
+                                className="flex items-start gap-2 text-xs [color:var(--mk-text-muted)]"
+                              >
                                 <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-green-500" />
                                 {f}
                               </li>
@@ -283,7 +308,7 @@ export function NicheLandingPage({ content }: { content: NichePageContent }) {
         <div className="mx-auto max-w-7xl px-6">
           <Reveal>
             <div className="text-center">
-              <p className="mb-6 text-sm font-semibold uppercase tracking-wider [color:var(--mk-text-subtle)]">
+              <p className="mb-6 text-sm font-semibold tracking-wider [color:var(--mk-text-subtle)] uppercase">
                 Sicherheit & Vertrauen
               </p>
               <TrustStrip
@@ -311,15 +336,17 @@ export function NicheLandingPage({ content }: { content: NichePageContent }) {
                 <Reveal key={niche.slug} delay={i * 0.08}>
                   <a
                     href={`/nischen/${niche.slug}`}
-                    className="group flex h-full items-center justify-between rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl"
+                    className="group flex h-full items-center justify-between rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl"
                   >
                     <div className="flex-1">
                       <h3 className={`mb-1 ${H3_CLASS}`}>{niche.title}</h3>
-                      <p className="text-xs [color:var(--mk-text-subtle)]">Kostenloser AI-Check →</p>
+                      <p className="text-xs [color:var(--mk-text-subtle)]">
+                        Kostenloser AI-Check →
+                      </p>
                     </div>
                     <ArrowRight
                       size={20}
-                      className="ml-4 shrink-0 text-[color:var(--mk-text-subtle)] transition-transform group-hover:translate-x-1 group-hover:brand-text"
+                      className="group-hover:brand-text ml-4 shrink-0 text-[color:var(--mk-text-subtle)] transition-transform group-hover:translate-x-1"
                     />
                   </a>
                 </Reveal>

@@ -166,7 +166,7 @@ export default function ProductWorkflowShowcase({
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true, amount: 0.4 }}
                 transition={{ duration: 0.35, delay: i * 0.08 }}
-                className={`relative flex items-center gap-3 overflow-hidden rounded-xl border px-4 py-3 transition-all duration-500 ${
+                className={`relative flex items-center gap-3 overflow-hidden rounded-xl border px-4 py-3 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-500 ${
                   currentStep === i
                     ? "brand-border brand-soft [border-color:var(--brand-primary)]"
                     : "[border-color:var(--mk-border)] [background:var(--mk-surface-2)]"
@@ -189,7 +189,7 @@ export default function ProductWorkflowShowcase({
                   0{i + 1}
                 </span>
                 <span
-                  className={`text-sm transition-all duration-300 ${
+                  className={`text-sm transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ${
                     currentStep === i
                       ? "font-bold [color:var(--brand-text)]"
                       : "font-semibold [color:var(--mk-text)]"
@@ -273,7 +273,7 @@ export default function ProductWorkflowShowcase({
                             opacity: sourceOpacity(i),
                             transform: `scale(${sourceScale(i)})`,
                           }}
-                          className={`rounded-xl border ${source.tone} p-4 transition-all duration-500 ${
+                          className={`rounded-xl border ${source.tone} p-4 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-500 ${
                             isActive ? "shadow-md" : ""
                           }`}
                         >

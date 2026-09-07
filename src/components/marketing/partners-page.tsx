@@ -56,7 +56,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
                 <GlowCard
                   glowColor={tier.highlight ? "var(--brand-tertiary)" : "var(--brand-primary)"}
                   intensity={tier.highlight ? 0.22 : 0.12}
-                  className={`relative flex h-full flex-col rounded-2xl border p-6 transition-all duration-200 ${
+                  className={`relative flex h-full flex-col rounded-2xl border p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 ${
                     tier.highlight
                       ? "border-[color:var(--brand-tertiary)]/40 bg-gradient-to-b from-[color:var(--brand-tertiary)]/10 to-[var(--mk-surface)] shadow-xl shadow-[color:var(--brand-tertiary)]/10"
                       : "[border-color:var(--mk-border)] [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]"
@@ -153,7 +153,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
         <StaggerContainer className="grid gap-6 md:grid-cols-3" stagger={0.12}>
           {t.how.map((item) => (
             <StaggerItem key={item.step}>
-              <GlowCard className="h-full rounded-xl border [border-color:var(--mk-border)] p-6 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-lg">
+              <GlowCard className="h-full rounded-xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-lg">
                 <span className="mb-4 block font-mono text-sm [color:var(--mk-text-subtle)]">
                   {item.step}
                 </span>

@@ -27,17 +27,17 @@ const CATEGORY_LABELS: Record<string, string> = {
   "krypto-betrug": "Krypto & Forensik",
   "krypto-forensik": "Krypto & Forensik",
   "krypto-casino": "Krypto & Forensik",
-  "asylrecht": "Asyl & Migration",
+  asylrecht: "Asyl & Migration",
   "dublin-verfahren": "Asyl & Migration",
   "abschiebung-verhindern": "Asyl & Migration",
-  "amtshaftung": "Amtshaftung & Behörden",
+  amtshaftung: "Amtshaftung & Behörden",
   "amtshaftung-krypto": "Amtshaftung & Behörden",
   "rwr-karte": "Einwanderung",
-  "strafverteidigung": "Strafrecht",
-  "kreditwiderruf": "Bankrecht",
-  "datenschutzverletzung": "Datenschutz & DSGVO",
-  "lootboxen": "Gaming & Lootboxen",
-  "investmentbetrug": "Investmentbetrug",
+  strafverteidigung: "Strafrecht",
+  kreditwiderruf: "Bankrecht",
+  datenschutzverletzung: "Datenschutz & DSGVO",
+  lootboxen: "Gaming & Lootboxen",
+  investmentbetrug: "Investmentbetrug",
   "pig-butchering": "Krypto & Forensik",
   "corona-impfschaden": "Impfschaden",
   "impfschaden-entschaedigung": "Impfschaden",
@@ -78,7 +78,7 @@ export default function NischenIndexPage() {
               {categories.map((category, ci) => (
                 <Reveal key={category} delay={ci * 0.05}>
                   <div>
-                    <h3 className="mb-6 text-lg font-bold uppercase tracking-wider [color:var(--mk-text-subtle)]">
+                    <h3 className="mb-6 text-lg font-bold tracking-wider [color:var(--mk-text-subtle)] uppercase">
                       {category}
                     </h3>
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -88,7 +88,7 @@ export default function NischenIndexPage() {
                           <Link
                             key={page.slug}
                             href={`/nischen/${page.slug}`}
-                            className="group rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl"
+                            className="group rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl"
                           >
                             <div className="mb-3 flex items-center justify-between">
                               <span className="brand-soft brand-text brand-border inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold">
@@ -96,13 +96,13 @@ export default function NischenIndexPage() {
                               </span>
                               <ArrowRight
                                 size={16}
-                                className="text-[color:var(--mk-text-subtle)] transition-transform group-hover:translate-x-1 group-hover:brand-text"
+                                className="group-hover:brand-text text-[color:var(--mk-text-subtle)] transition-transform group-hover:translate-x-1"
                               />
                             </div>
                             <h4 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">
                               {page.h1a} {page.h1b}
                             </h4>
-                            <p className="text-sm leading-relaxed [color:var(--mk-text-muted)] line-clamp-3">
+                            <p className="line-clamp-3 text-sm leading-relaxed [color:var(--mk-text-muted)]">
                               {page.heroSub}
                             </p>
                           </Link>

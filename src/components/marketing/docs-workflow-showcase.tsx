@@ -187,7 +187,7 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
                       : { duration: 0.2 }
                   }
                   whileHover={{ y: -2 }}
-                  className={`w-full rounded-xl border p-4 text-left transition-all duration-200 ${
+                  className={`w-full rounded-xl border p-4 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 ${
                     active
                       ? "brand-border shadow-md [background:var(--mk-surface)]"
                       : "[border-color:var(--mk-border)] [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)]"
@@ -271,7 +271,7 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
                 key={wf.id}
                 onClick={() => handleWorkflowClick(i)}
                 aria-label={wf.label}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
+                className={`h-1.5 rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ${
                   i === activeWorkflow
                     ? "brand-bg w-8"
                     : "w-1.5 [background:var(--mk-border)] hover:[background:var(--mk-border-strong)]"

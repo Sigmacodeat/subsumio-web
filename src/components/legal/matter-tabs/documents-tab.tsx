@@ -274,7 +274,7 @@ export function DocumentsTab() {
             aria-label="Gesamtfortschritt Upload"
           >
             <div
-              className="brand-bg h-full rounded-full transition-all"
+              className="brand-bg h-full rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity]"
               style={{ width: `${ctx.uploadOverallProgress}%` }}
             />
           </div>
@@ -336,7 +336,7 @@ export function DocumentsTab() {
                 >
                   <div
                     className={cn(
-                      "h-full rounded-full transition-all",
+                      "h-full rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity]",
                       item.status === "error" ? "bg-[color:var(--ds-danger-solid)]" : "brand-bg"
                     )}
                     style={{ width: `${item.progress}%` }}

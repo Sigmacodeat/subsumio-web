@@ -91,7 +91,7 @@ export function BrainAvatar({
         <Brain
           size={icon}
           className={cn(
-            "text-[color:var(--brand-primary)] transition-all duration-500",
+            "text-[color:var(--brand-primary)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-500",
             thinking && "animate-[brain-breathe_2.4s_ease-in-out_infinite]"
           )}
           strokeWidth={1.75}

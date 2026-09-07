@@ -126,7 +126,7 @@ function MarqueeRow({
             <div
               key={`${item.label}-${i}`}
               aria-hidden={isDuplicate || undefined}
-              className="group flex shrink-0 items-center gap-2.5 rounded-full border [border-color:var(--mk-border)] bg-[color:var(--mk-bg)] px-4 py-2 opacity-60 transition-all duration-300 hover:border-[color:var(--brand-text)] hover:opacity-100 hover:shadow-lg hover:shadow-[color:var(--brand-text)]/10"
+              className="group flex shrink-0 items-center gap-2.5 rounded-full border [border-color:var(--mk-border)] bg-[color:var(--mk-bg)] px-4 py-2 opacity-60 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 hover:border-[color:var(--brand-text)] hover:opacity-100 hover:shadow-lg hover:shadow-[color:var(--brand-text)]/10"
             >
               <Icon
                 size={20}

@@ -362,7 +362,7 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
             {/* Progress bar */}
             <div className="mt-1 h-1 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
               <div
-                className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+                className="h-full rounded-full bg-emerald-500 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>

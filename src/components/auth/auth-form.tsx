@@ -376,7 +376,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
               type="button"
               onClick={handleBiometricLogin}
               disabled={biometricLoading}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border [border-color:var(--mk-border)] py-2.5 text-sm [color:var(--mk-text)] transition-all [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)] hover:[background:var(--mk-surface)] disabled:opacity-50"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border [border-color:var(--mk-border)] py-2.5 text-sm [color:var(--mk-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)] hover:[background:var(--mk-surface)] disabled:opacity-50"
             >
               <Fingerprint size={16} className="text-[var(--brand-primary)]" />
               {biometricLoading
@@ -404,7 +404,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
                   type="button"
                   onClick={() => startSso("MicrosoftOAuth")}
                   disabled={ssoLoading}
-                  className="flex items-center justify-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-3 py-2.5 text-sm [color:var(--mk-text)] transition-all [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)] hover:[background:var(--mk-surface)] disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-3 py-2.5 text-sm [color:var(--mk-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)] hover:[background:var(--mk-surface)] disabled:opacity-50"
                 >
                   <Building2 size={16} className="text-blue-400" />
                   Microsoft
@@ -413,7 +413,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
                   type="button"
                   onClick={() => startSso("GoogleOAuth")}
                   disabled={ssoLoading}
-                  className="flex items-center justify-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-3 py-2.5 text-sm [color:var(--mk-text)] transition-all [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)] hover:[background:var(--mk-surface)] disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-3 py-2.5 text-sm [color:var(--mk-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)] hover:[background:var(--mk-surface)] disabled:opacity-50"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="shrink-0">
                     <path

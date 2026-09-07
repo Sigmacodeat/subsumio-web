@@ -146,7 +146,7 @@ export default function HeroQACard({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`${src.label} — ${isVerified ? ui.verifiedLabel : ui.citePendingLabel}`}
-                className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-sm transition-all duration-300 ${
+                className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-sm transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ${
                   isVerified
                     ? "brand-text brand-soft hover:brand-soft-strong hover:-translate-y-0.5 hover:shadow-sm"
                     : "[color:var(--mk-text-subtle)] opacity-60 [background:var(--mk-surface-2)]"

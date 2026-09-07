@@ -543,7 +543,7 @@ export default function ConversationShowreel({
               </div>
 
               {/* Input — elevated with gradient focus ring */}
-              <div className="relative rounded-xl border border-[var(--mk-border)] bg-[var(--mk-bg)] transition-all focus-within:border-[var(--brand-border)] focus-within:shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand-primary)_12%,transparent)]">
+              <div className="relative rounded-xl border border-[var(--mk-border)] bg-[var(--mk-bg)] transition-[background-color,border-color,color,box-shadow,transform,opacity] focus-within:border-[var(--brand-border)] focus-within:shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand-primary)_12%,transparent)]">
                 <div className="flex items-end gap-2 px-3 py-2.5">
                   <textarea
                     value={input}
@@ -563,7 +563,7 @@ export default function ConversationShowreel({
                     onClick={ask}
                     disabled={loading || !input.trim()}
                     aria-label={askLabel}
-                    className="brand-bg relative inline-flex shrink-0 items-center gap-1.5 overflow-hidden rounded-lg px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:shadow-md disabled:opacity-40 disabled:shadow-none"
+                    className="brand-bg relative inline-flex shrink-0 items-center gap-1.5 overflow-hidden rounded-lg px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:shadow-md disabled:opacity-40 disabled:shadow-none"
                   >
                     {/* gradient sheen on hover */}
                     <span

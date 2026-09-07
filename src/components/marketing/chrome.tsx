@@ -355,7 +355,7 @@ const NAV_LINK_ACTIVE =
 
 /** Shared link class helper — used by both desktop and mobile nav. */
 function navLinkCls(isActive: boolean): string {
-  return `text-sm px-3 py-2 rounded-lg transition-all duration-200 ${NAV_LINK_BORDER} ${NAV_LINK_FOCUS} ${
+  return `text-sm px-3 py-2 rounded-lg transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 ${NAV_LINK_BORDER} ${NAV_LINK_FOCUS} ${
     isActive ? NAV_LINK_ACTIVE : NAV_LINK_INACTIVE
   }`;
 }
@@ -771,7 +771,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                       onMouseLeave={handleSectionLeave}
                     >
                       <button
-                        className={`relative flex items-center gap-1 rounded-lg px-3 py-2 text-sm transition-all duration-200 ${NAV_LINK_BORDER} ${NAV_LINK_FOCUS} ${
+                        className={`relative flex items-center gap-1 rounded-lg px-3 py-2 text-sm transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 ${NAV_LINK_BORDER} ${NAV_LINK_FOCUS} ${
                           sectionActive || isOpen
                             ? "font-medium [color:var(--brand-text)]"
                             : NAV_LINK_INACTIVE
@@ -858,7 +858,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                           href={p(lang, item.href)}
                                           onClick={() => setOpenSection(null)}
                                           role="menuitem"
-                                          className={`group flex items-start gap-3 rounded-xl px-3 py-2.5 transition-all duration-150 ${NAV_LINK_FOCUS} ${
+                                          className={`group flex items-start gap-3 rounded-xl px-3 py-2.5 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-150 ${NAV_LINK_FOCUS} ${
                                             active
                                               ? "[background:color-mix(in_srgb,var(--brand-primary)_8%,var(--mk-hover))]"
                                               : "hover:[background:var(--mk-hover)]"
@@ -1040,19 +1040,19 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                 >
                   <span className="relative flex h-5 w-5 items-center justify-center">
                     <span
-                      className={`absolute h-0.5 w-5 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                      className={`absolute h-0.5 w-5 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                         mobileOpen ? "top-1/2 -translate-y-1/2 rotate-45" : "top-[3px]"
                       }`}
                     />
                     <span
-                      className={`absolute h-0.5 w-5 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                      className={`absolute h-0.5 w-5 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                         mobileOpen
                           ? "top-1/2 -translate-y-1/2 opacity-0"
                           : "top-1/2 -translate-y-1/2"
                       }`}
                     />
                     <span
-                      className={`absolute h-0.5 w-5 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                      className={`absolute h-0.5 w-5 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                         mobileOpen ? "top-1/2 -translate-y-1/2 -rotate-45" : "bottom-[3px]"
                       }`}
                     />
@@ -1102,7 +1102,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                   <BrandLogo />
                 </Link>
                 <button
-                  className="group flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-2 [color:var(--mk-text)] transition-all duration-200 hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:outline-none active:scale-90"
+                  className="group flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-2 [color:var(--mk-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:outline-none active:scale-90"
                   onClick={() => {
                     setMobileOpen(false);
                     if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
@@ -1110,8 +1110,8 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                   aria-label={UI_STRINGS[lang].ariaCloseMenu}
                 >
                   <span className="relative flex h-5 w-5 items-center justify-center">
-                    <span className="absolute top-1/2 h-0.5 w-5 -translate-y-1/2 rotate-45 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
-                    <span className="absolute top-1/2 h-0.5 w-5 -translate-y-1/2 -rotate-45 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
+                    <span className="absolute top-1/2 h-0.5 w-5 -translate-y-1/2 rotate-45 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
+                    <span className="absolute top-1/2 h-0.5 w-5 -translate-y-1/2 -rotate-45 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
                   </span>
                 </button>
               </div>
@@ -1684,7 +1684,7 @@ export function ContentCard({
 }) {
   return (
     <GlowCard
-      className={`h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl ${className}`}
+      className={`h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl ${className}`}
     >
       <IconTile icon={icon} size={iconSize} />
       <h3 className={`mb-2 ${H3_CLASS}`}>{title}</h3>
@@ -2143,7 +2143,7 @@ export function PricingCard({
 }) {
   return (
     <div
-      className={`relative flex h-full flex-col rounded-2xl border p-6 transition-all duration-300 ${
+      className={`relative flex h-full flex-col rounded-2xl border p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ${
         highlighted
           ? "border-[color:var(--brand-text)] shadow-lg [background:var(--mk-surface-2)] lg:scale-105"
           : "[border-color:var(--mk-border)] [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-md"

@@ -430,7 +430,7 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
                         ? { duration: 1.8, repeat: Infinity, ease: "easeInOut" }
                         : { duration: 0.2 }
                     }
-                    className={`w-full rounded-lg border p-3 text-left transition-all ${
+                    className={`w-full rounded-lg border p-3 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] ${
                       active
                         ? "brand-border ring-2 ring-[color-mix(in_srgb,var(--brand-primary)_22%,transparent)] [background:var(--mk-surface)]"
                         : "[border-color:var(--mk-border)] [background:var(--mk-surface-2)]"
@@ -793,9 +793,9 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                     if (typeof window !== "undefined")
                       window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
-                  className="group rounded-2xl text-left transition-all"
+                  className="group rounded-2xl text-left transition-[background-color,border-color,color,box-shadow,transform,opacity]"
                 >
-                  <GlowCard className="hover:brand-border h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:[background:var(--mk-hover)]">
+                  <GlowCard className="hover:brand-border h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:[background:var(--mk-hover)]">
                     <div className="brand-soft brand-border mb-4 flex h-11 w-11 items-center justify-center rounded-xl border transition-transform group-hover:scale-110">
                       {Icon && <Icon size={20} className="brand-text" />}
                     </div>
