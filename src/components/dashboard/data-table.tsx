@@ -496,10 +496,10 @@ export function DataTable<T>({
                         }
                         tabIndex={onRowClick ? 0 : undefined}
                         className={cn(
-                          "group border-b border-[color:var(--ds-border)] transition-colors duration-120 last:border-0",
+                          "group border-b border-[color:var(--ds-border)] transition-[background-color,border-color] duration-150 ease-out last:border-0",
                           onRowClick &&
                             !selectable &&
-                            "cursor-pointer hover:bg-[color:var(--ds-hover)]",
+                            "cursor-pointer hover:bg-[color:var(--ds-hover)] active:bg-[color:var(--ds-surface-2)]",
                           isSelected ? "brand-soft/30" : "border-l-2 border-l-transparent",
                           onRowClick &&
                             !isSelected &&
@@ -559,10 +559,10 @@ export function DataTable<T>({
                       }
                       tabIndex={onRowClick ? 0 : undefined}
                       className={cn(
-                        "group border-b border-[color:var(--ds-border)] transition-colors duration-120 last:border-0",
+                        "group border-b border-[color:var(--ds-border)] transition-[background-color,border-color] duration-150 ease-out last:border-0",
                         onRowClick &&
                           !selectable &&
-                          "cursor-pointer hover:bg-[color:var(--ds-hover)]",
+                          "cursor-pointer hover:bg-[color:var(--ds-hover)] active:bg-[color:var(--ds-surface-2)]",
                         isSelected ? "brand-soft/30" : "border-l-2 border-l-transparent",
                         onRowClick &&
                           !isSelected &&
