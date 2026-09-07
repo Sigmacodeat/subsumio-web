@@ -447,7 +447,7 @@ function ResearchPageInner() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none ${
                   isActive
                     ? "brand-solid text-white"
                     : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -483,7 +483,7 @@ function ResearchPageInner() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none ${
                   isActive
                     ? "brand-solid text-white"
                     : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -519,7 +519,7 @@ function ResearchPageInner() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none ${
                   isActive
                     ? "brand-solid text-white"
                     : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -555,7 +555,7 @@ function ResearchPageInner() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none ${
                   isActive
                     ? "brand-solid text-white"
                     : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -591,7 +591,7 @@ function ResearchPageInner() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none ${
                   isActive
                     ? "brand-solid text-white"
                     : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -628,7 +628,7 @@ function ResearchPageInner() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none ${
                 isActive
                   ? "brand-solid text-white"
                   : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -709,7 +709,7 @@ function ResearchPageInner() {
       <div className="flex gap-1 border-b border-[color:var(--ds-border)]">
         <button
           onClick={() => setSubTab("new")}
-          className={`border-b-2 px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+          className={`border-b-2 px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none ${
             subTab === "new"
               ? "brand-border brand-text"
               : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -721,7 +721,7 @@ function ResearchPageInner() {
         </button>
         <button
           onClick={() => setSubTab("saved")}
-          className={`border-b-2 px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+          className={`border-b-2 px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none ${
             subTab === "saved"
               ? "brand-border brand-text"
               : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -887,7 +887,7 @@ function ResearchPageInner() {
                 <button
                   key={j}
                   onClick={() => setSavedJurisdiction(j)}
-                  className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                  className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-[background-color,border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none ${
                     savedJurisdiction === j
                       ? "brand-soft brand-border brand-text"
                       : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
@@ -988,7 +988,7 @@ function ResearchPageInner() {
                         <div className="flex shrink-0 items-center gap-1">
                           <button
                             onClick={() => setExpandedSlug(isExpanded ? null : page.slug)}
-                            className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                            className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                             title={isExpanded ? "Zuklappen" : "Aufklappen"}
                             aria-label={isExpanded ? "Zuklappen" : "Aufklappen"}
                           >
@@ -996,7 +996,7 @@ function ResearchPageInner() {
                           </button>
                           <button
                             onClick={() => deleteResearch(page.slug)}
-                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] opacity-0 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:opacity-100 hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
+                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] opacity-0 transition-[background-color,color,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:opacity-100 hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[color:var(--ds-danger-border)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                             title={t("research.btn_delete")}
                             aria-label={t("research.btn_delete")}
                           >
