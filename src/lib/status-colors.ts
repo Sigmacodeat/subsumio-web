@@ -31,7 +31,7 @@ export const STATUS_TEXT: Record<StatusColor, string> = {
   emerald: "text-[color:var(--ds-success-text)]",
   violet: "brand-text",
   orange: "text-[color:var(--ds-attention-text)]",
-  gray: "text-gray-400",
+  gray: "text-[color:var(--ds-neutral-text)]",
 };
 
 export const STATUS_BG: Record<StatusColor, string> = {
@@ -42,7 +42,7 @@ export const STATUS_BG: Record<StatusColor, string> = {
   emerald: "bg-[color:var(--ds-success-bg)]",
   violet: "brand-soft",
   orange: "bg-[color:var(--ds-attention-bg)]",
-  gray: "bg-gray-500/10",
+  gray: "bg-[color:var(--ds-neutral-bg)]",
 };
 
 export const STATUS_BORDER: Record<StatusColor, string> = {
@@ -53,7 +53,7 @@ export const STATUS_BORDER: Record<StatusColor, string> = {
   emerald: "border-[color:var(--ds-success-border)]",
   violet: "brand-border",
   orange: "border-[color:var(--ds-attention-border)]",
-  gray: "border-gray-500/20",
+  gray: "border-[color:var(--ds-neutral-border)]",
 };
 
 /** Kombinierte Badge-Klassen (bg + text + border) für einen Status. */

@@ -80,7 +80,7 @@ const STATUS_CONFIG: Record<
 };
 
 const PRIORITY_COLORS: Record<string, string> = {
-  low: "bg-gray-500/10 text-gray-600 border-gray-500/20",
+  low: "bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)] border-[color:var(--ds-neutral-border)]",
   medium:
     "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
   high: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",

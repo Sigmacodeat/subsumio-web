@@ -951,6 +951,9 @@
   --ds-category-violet-text: hsl(260, 60%, 38%);
   --ds-category-violet-bg: hsla(260, 60%, 38%, 0.1);
   --ds-category-violet-border: hsla(260, 60%, 38%, 0.22);
+  --ds-neutral-text: var(--neutral-600);
+  --ds-neutral-bg: color-mix(in srgb, var(--neutral-500) 10%, var(--ds-surface));
+  --ds-neutral-border: color-mix(in srgb, var(--neutral-500) 24%, var(--ds-surface));
 
   /* Chart categorical tokens — colorblind-aware sequence */
   --ds-chart-zivil: var(--brand-primary);
@@ -1067,6 +1070,9 @@
   --ds-category-violet-text: hsl(260, 45%, 74%);
   --ds-category-violet-bg: hsla(260, 40%, 55%, 0.11);
   --ds-category-violet-border: hsla(260, 40%, 55%, 0.22);
+  --ds-neutral-text: hsl(220, 8%, 65%);
+  --ds-neutral-bg: hsla(220, 8%, 50%, 0.12);
+  --ds-neutral-border: hsla(220, 8%, 50%, 0.22);
 
   /* Chart categorical tokens */
   --ds-chart-zivil: var(--brand-primary);
