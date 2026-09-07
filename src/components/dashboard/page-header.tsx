@@ -43,7 +43,12 @@ export function PageHeader({
   const normalizedBreadcrumbs = breadcrumbs?.map(normalizeBreadcrumb);
 
   return (
-    <div className={cn("mb-8", className)}>
+    <div
+      className={cn(
+        "animate-in fade-in slide-in-from-bottom-1 mb-8 duration-300 ease-out motion-reduce:animate-none",
+        className
+      )}
+    >
       {normalizedBreadcrumbs && normalizedBreadcrumbs.length > 0 && (
         <Breadcrumb className="mb-3 text-xs">
           {normalizedBreadcrumbs.map((item, i) => (
@@ -54,7 +59,7 @@ export function PageHeader({
                   <BreadcrumbLink asChild>
                     <Link
                       href={item.href}
-                      className="transition-colors hover:text-[color:var(--ds-text)]"
+                      className="rounded-sm transition-colors hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
                     >
                       {item.label}
                     </Link>
