@@ -1051,7 +1051,7 @@ function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
         <div className="flex gap-1">
           <button
             onClick={() => setViewMode("flat")}
-            className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+            className={`rounded-md px-2 py-1 text-xs font-medium transition-[background-color,color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none ${
               viewMode === "flat"
                 ? "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
                 : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -1061,7 +1061,7 @@ function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
           </button>
           <button
             onClick={() => setViewMode("threads")}
-            className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+            className={`rounded-md px-2 py-1 text-xs font-medium transition-[background-color,color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none ${
               viewMode === "threads"
                 ? "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
                 : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -1122,7 +1122,7 @@ function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
               <button
                 key={thread.senderHash}
                 onClick={() => setSelectedThread(thread.senderHash)}
-                className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${
+                className={`w-full rounded-lg border px-3 py-2 text-left transition-[background-color,border-color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none ${
                   selectedThread === thread.senderHash
                     ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]"
                     : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:bg-[color:var(--ds-surface-hover)]"
