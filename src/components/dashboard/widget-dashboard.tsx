@@ -362,7 +362,7 @@ export function QueueRow({
         onClick={pin.onToggle}
         aria-label={pin.pinned ? pin.unpinLabel : pin.pinLabel}
         title={pin.pinned ? pin.unpinLabel : pin.pinLabel}
-        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)] ${
+        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)] ${
           pin.pinned ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
         }`}
       >
@@ -493,7 +493,7 @@ export function PinnedMatters({ cases }: { cases: DashboardPageLike[] }) {
           return (
             <div
               key={slug}
-              className="group flex items-center gap-1 rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] pr-1 pl-1 transition-colors hover:border-[color:var(--ds-border-strong)]"
+              className="group flex items-center gap-1 rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] pr-1 pl-1 transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)]"
             >
               <Link
                 href={`/dashboard/cases/${slug}`}
@@ -508,7 +508,7 @@ export function PinnedMatters({ cases }: { cases: DashboardPageLike[] }) {
                 onClick={() => togglePin(slug)}
                 aria-label={pinnedNow ? t("cockpit.unpin") : t("cockpit.pin")}
                 title={pinnedNow ? t("cockpit.unpin") : t("cockpit.pin")}
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
               >
                 {pinnedNow ? (
                   <Pin size={12} className="fill-current text-[var(--brand-primary)]" />
@@ -602,7 +602,7 @@ export function QuickActions() {
             <button
               key={action.label}
               onClick={() => window.dispatchEvent(new CustomEvent(action.event!))}
-              className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-[13px] font-medium text-[color:var(--ds-text-muted)] transition-colors hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+              className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-[13px] font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
             >
               <Icon size={13} className="shrink-0" />
               <span className="min-w-0 truncate">{action.label}</span>
@@ -613,7 +613,7 @@ export function QuickActions() {
           <Link
             key={action.href}
             href={action.href}
-            className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-[13px] font-medium text-[color:var(--ds-text-muted)] transition-colors hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-[13px] font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
           >
             <Icon size={13} className="shrink-0" />
             <span className="min-w-0 truncate">{action.label}</span>
@@ -725,7 +725,7 @@ export function HeutePanel({
             <Link
               key={item.href}
               href={item.href}
-              className="inline-flex items-center gap-1.5 text-[13px] transition-colors hover:underline"
+              className="inline-flex items-center gap-1.5 text-[13px] transition-[background-color,border-color,color] hover:underline"
             >
               <span
                 className={`h-1.5 w-1.5 rounded-full ${
@@ -757,7 +757,7 @@ export function HeutePanel({
             {" · "}
             <Link
               href={pageHref(lead.page, "/dashboard/deadlines")}
-              className="text-[color:var(--ds-text)] transition-colors hover:underline"
+              className="text-[color:var(--ds-text)] transition-[background-color,border-color,color] hover:underline"
             >
               {text(lead.page.title, t("dashboard.unnamed_deadline"))}
             </Link>
@@ -980,7 +980,7 @@ export function ActivityFeedWidget({ data }: { data: CockpitData }) {
               <Link
                 key={entry.id}
                 href={entry.href}
-                className="group relative flex items-start gap-3 rounded-md px-1 py-0.5 transition-colors hover:bg-[color:var(--ds-hover)]"
+                className="group relative flex items-start gap-3 rounded-md px-1 py-0.5 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)]"
               >
                 <div
                   className="relative z-10 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border-2 border-[color:var(--ds-surface)]"
@@ -1023,7 +1023,7 @@ export function SecondaryStats({
         <Link
           key={item.label}
           href={item.href}
-          className="inline-flex items-center gap-1 transition-colors hover:underline"
+          className="inline-flex items-center gap-1 transition-[background-color,border-color,color] hover:underline"
         >
           <span className="font-semibold text-[color:var(--ds-text)] tabular-nums">
             {loading ? "—" : item.value}
@@ -1130,7 +1130,7 @@ export function WidgetDashboard() {
             {data.unassignedDocs.length > 0 && (
               <Link
                 href="/dashboard/vault"
-                className="flex items-center justify-between rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2.5 transition-colors hover:opacity-80"
+                className="flex items-center justify-between rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2.5 transition-[background-color,border-color,color] hover:opacity-80"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <FileText size={15} className="shrink-0 text-[color:var(--ds-warning-text)]" />
@@ -1151,7 +1151,7 @@ export function WidgetDashboard() {
             {data.reviewGaps.length > 0 && (
               <Link
                 href="/dashboard/review-queue"
-                className="flex items-center justify-between rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2.5 transition-colors hover:opacity-80"
+                className="flex items-center justify-between rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2.5 transition-[background-color,border-color,color] hover:opacity-80"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <AlertTriangle

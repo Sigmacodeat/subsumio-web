@@ -817,8 +817,8 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
               onClick={() => setKindFilter(tab.key)}
               className={
                 isActive
-                  ? "inline-flex items-center gap-1.5 rounded-md bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-sm font-medium text-[color:var(--ds-text)] transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
-                  : "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+                  ? "inline-flex items-center gap-1.5 rounded-md bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-sm font-medium text-[color:var(--ds-text)] transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+                  : "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
               }
             >
               {tab.label}
@@ -845,7 +845,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
         <select
           value={priorityFilter}
           onChange={(e) => setPriorityFilter(e.target.value as PriorityFilter)}
-          className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text)] transition-colors hover:border-[color:var(--ds-border-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+          className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text)] transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
           aria-label={lang === "en" ? "Priority filter" : "Prioritäts-Filter"}
         >
           {priorityOptions.map((opt) => (
@@ -860,8 +860,8 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
           aria-pressed={dueFilter === "today"}
           className={
             dueFilter === "today"
-              ? "inline-flex items-center gap-1.5 rounded-md border border-[color:var(--brand-primary)] bg-[color:var(--brand-glow)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--brand-primary)] transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
-              : "inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:border-[color:var(--ds-border-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+              ? "inline-flex items-center gap-1.5 rounded-md border border-[color:var(--brand-primary)] bg-[color:var(--brand-glow)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+              : "inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
           }
         >
           <CalendarClock size={12} />
@@ -878,8 +878,8 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
           aria-pressed={focusMode === "top3"}
           className={
             focusMode === "top3"
-              ? "inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--ds-warning-text)] transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
-              : "inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:border-[color:var(--ds-border-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+              ? "inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+              : "inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
           }
           title={
             lang === "en"
@@ -896,8 +896,8 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
           aria-pressed={showFailedOnly}
           className={
             showFailedOnly
-              ? "inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--ds-danger-text)] transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
-              : "inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:border-[color:var(--ds-border-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+              ? "inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+              : "inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
           }
         >
           <AlertTriangle size={12} />
@@ -909,7 +909,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
           <select
             value={sortMode}
             onChange={(e) => setSortMode(e.target.value as SortMode)}
-            className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text)] transition-colors hover:border-[color:var(--ds-border-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+            className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text)] transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
             aria-label={lang === "en" ? "Sort by" : "Sortieren nach"}
           >
             <option value="priority">{lang === "en" ? "Priority" : "Priorität"}</option>
@@ -924,7 +924,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
           <button
             type="button"
             onClick={clearFilters}
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
           >
             <X size={12} />
             {lang === "en" ? "Clear filters" : "Filter zurücksetzen"}
@@ -962,7 +962,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
           <button
             type="button"
             onClick={clearSelection}
-            className="ml-auto text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+            className="ml-auto text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
           >
             {lang === "en" ? "Clear selection" : "Auswahl aufheben"}
           </button>
@@ -1066,7 +1066,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                         transform: `translateY(${virtualRow.start}px)`,
                       }}
                     >
-                      <div className="group flex min-h-14 items-center gap-3 px-4 py-3 transition-colors hover:bg-[color:var(--ds-surface-hover)]">
+                      <div className="group flex min-h-14 items-center gap-3 px-4 py-3 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-hover)]">
                         {isApproval && (
                           <Checkbox
                             checked={isSelected}
@@ -1216,7 +1216,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                     className={isActive ? "bg-[color:var(--brand-primary)]/5" : undefined}
                   >
                     <div
-                      className={`group flex min-h-14 items-center gap-3 px-4 py-3 transition-colors hover:bg-[color:var(--ds-surface-hover)] ${isSelected ? "bg-[color:var(--brand-primary)]/5" : ""}`}
+                      className={`group flex min-h-14 items-center gap-3 px-4 py-3 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-hover)] ${isSelected ? "bg-[color:var(--brand-primary)]/5" : ""}`}
                     >
                       {isApproval && (
                         <Checkbox
@@ -1360,7 +1360,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
               <button
                 type="button"
                 onClick={() => setFocusMode("off")}
-                className="rounded-md px-2 py-1 text-xs font-medium text-[color:var(--brand-primary)] transition-colors hover:text-[color:var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+                className="rounded-md px-2 py-1 text-xs font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color,color] hover:text-[color:var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
               >
                 {lang === "en"
                   ? `Show all ${preFocusCount} items`

@@ -404,7 +404,7 @@ export default function CommunicationsPage() {
               key={tab.key}
               onClick={() => setView(tab.key)}
               className={cn(
-                "flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color]",
                 isActive
                   ? "brand-bg text-white"
                   : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -445,7 +445,7 @@ export default function CommunicationsPage() {
                   key={tab.key}
                   onClick={() => setChannel(isActive ? "all" : tab.key)}
                   className={cn(
-                    "flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm transition-colors",
+                    "flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm transition-[background-color,border-color,color]",
                     isActive
                       ? "border-[color:var(--brand-primary)] font-medium text-[color:var(--ds-text)]"
                       : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -488,7 +488,7 @@ export default function CommunicationsPage() {
               {search && (
                 <button
                   onClick={() => setSearch("")}
-                  className="absolute top-1/2 right-2.5 -translate-y-1/2 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+                  className="absolute top-1/2 right-2.5 -translate-y-1/2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
                   aria-label="Clear search"
                 >
                   <X size={15} />
@@ -656,7 +656,7 @@ export default function CommunicationsPage() {
                               })
                             }
                             disabled={triageActionMutation.isPending}
-                            className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-colors hover:bg-[color:var(--ds-success-bg)] disabled:opacity-50"
+                            className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] disabled:opacity-50"
                           >
                             <CheckCircle2 size={12} />
                             {tr("triage_accept", lang)}
@@ -669,7 +669,7 @@ export default function CommunicationsPage() {
                               })
                             }
                             disabled={triageActionMutation.isPending}
-                            className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-1 text-xs text-[color:var(--ds-danger-text)] transition-colors hover:bg-[color:var(--ds-danger-bg)] disabled:opacity-50"
+                            className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-1 text-xs text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] disabled:opacity-50"
                           >
                             <Ban size={12} />
                             {tr("triage_reject", lang)}
@@ -685,7 +685,7 @@ export default function CommunicationsPage() {
                                 })
                               }
                               disabled={triageActionMutation.isPending}
-                              className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] px-2 py-1 text-xs text-[color:var(--ds-attention-text)] transition-colors hover:bg-[color:var(--ds-attention-bg)] disabled:opacity-50"
+                              className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] px-2 py-1 text-xs text-[color:var(--ds-attention-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-attention-bg)] disabled:opacity-50"
                             >
                               <Clock size={12} />
                               {tr("triage_deadline", lang)}
@@ -699,7 +699,7 @@ export default function CommunicationsPage() {
                               })
                             }
                             disabled={triageActionMutation.isPending}
-                            className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] disabled:opacity-50"
+                            className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] disabled:opacity-50"
                           >
                             <X size={12} />
                             {tr("triage_dismiss", lang)}
@@ -707,7 +707,7 @@ export default function CommunicationsPage() {
                           {!msg.caseSlug && (
                             <button
                               onClick={() => setAssignTarget(msg)}
-                              className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-2 py-1 text-xs text-[color:var(--ds-info-text)] transition-colors hover:bg-[color:var(--ds-info-bg)] disabled:opacity-50"
+                              className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-2 py-1 text-xs text-[color:var(--ds-info-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-info-bg)] disabled:opacity-50"
                             >
                               <ArrowUpRight size={12} />
                               {tr("triage_assign", lang)}
@@ -725,7 +725,7 @@ export default function CommunicationsPage() {
                         })
                       }
                       disabled={markReadMutation.isPending}
-                      className="shrink-0 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
+                      className="shrink-0 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
                       title={msg.read ? tr("mark_unread", lang) : tr("mark_read", lang)}
                       aria-label={msg.read ? tr("mark_unread", lang) : tr("mark_read", lang)}
                     >
@@ -770,9 +770,7 @@ export default function CommunicationsPage() {
               onClick={() => assignTarget && void assignToCase(assignTarget, assignCase)}
               disabled={assignBusy || !assignCase}
             >
-              {assignBusy ? (
-                <Loader2 size={14} className="mr-2 animate-spin" />
-              ) : null}
+              {assignBusy ? <Loader2 size={14} className="mr-2 animate-spin" /> : null}
               {lang === "en" ? "Assign" : "Zuweisen"}
             </Button>
           </DialogFooter>
