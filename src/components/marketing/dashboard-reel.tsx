@@ -495,7 +495,7 @@ export default function DashboardReel({
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium [color:var(--mk-text-subtle)]">Brain</span>
               <div className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full [background:var(--signal-green)]" />
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full [background:var(--ds-success-text)]" />
                 <span className="text-sm font-medium [color:var(--mk-text-muted)]">
                   {UI_STRINGS[lang].activeLabel}
                 </span>
@@ -835,14 +835,14 @@ export default function DashboardReel({
                           border: "var(--ds-danger-border)",
                         },
                         medium: {
-                          text: "var(--signal-amber)",
-                          bg: "color-mix(in srgb, var(--signal-amber) 10%, transparent)",
-                          border: "color-mix(in srgb, var(--signal-amber) 22%, transparent)",
+                          text: "var(--ds-warning-text)",
+                          bg: "color-mix(in srgb, var(--ds-warning-text) 10%, transparent)",
+                          border: "color-mix(in srgb, var(--ds-warning-text) 22%, transparent)",
                         },
                         low: {
-                          text: "var(--signal-green)",
-                          bg: "color-mix(in srgb, var(--signal-green) 10%, transparent)",
-                          border: "color-mix(in srgb, var(--signal-green) 22%, transparent)",
+                          text: "var(--ds-success-text)",
+                          bg: "color-mix(in srgb, var(--ds-success-text) 10%, transparent)",
+                          border: "color-mix(in srgb, var(--ds-success-text) 22%, transparent)",
                         },
                       };
                       const c = colors[r.severity];
@@ -889,9 +889,9 @@ export default function DashboardReel({
                               : FileCheck;
                         const color =
                           c.status === "ok"
-                            ? "var(--signal-green)"
+                            ? "var(--ds-success-text)"
                             : c.status === "flag"
-                              ? "var(--signal-amber)"
+                              ? "var(--ds-warning-text)"
                               : "var(--ds-danger-text)";
                         const Icon = icon;
                         return (
@@ -926,7 +926,7 @@ export default function DashboardReel({
                         {lang === "en" ? "Approvals" : "Freigaben"}
                       </h3>
                     </div>
-                    <span className="text-sm font-medium [color:var(--signal-amber)]">
+                    <span className="text-sm font-medium [color:var(--ds-warning-text)]">
                       {v.approval.items.length} {lang === "en" ? "pending" : "offen"}
                     </span>
                   </div>

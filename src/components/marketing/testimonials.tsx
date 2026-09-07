@@ -24,7 +24,7 @@ export function TestimonialsSection({ lang }: { lang?: Lang } = {}) {
               <Star
                 key={i}
                 size={20}
-                className="fill-[color:var(--signal-amber)] text-[color:var(--signal-amber)]"
+                className="fill-[color:var(--ds-warning-text)] text-[color:var(--ds-warning-text)]"
               />
             ))}
           </div>
@@ -46,7 +46,7 @@ export function TestimonialsSection({ lang }: { lang?: Lang } = {}) {
                   <Star
                     key={j}
                     size={14}
-                    className="fill-[color:var(--signal-amber)] text-[color:var(--signal-amber)]"
+                    className="fill-[color:var(--ds-warning-text)] text-[color:var(--ds-warning-text)]"
                   />
                 ))}
               </div>

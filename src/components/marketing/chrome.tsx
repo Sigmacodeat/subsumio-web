@@ -2069,7 +2069,7 @@ export function ComparisonTable({
                   >
                     {typeof val === "boolean" ? (
                       val ? (
-                        <Check size={16} className="mx-auto [color:var(--signal-green)]" />
+                        <Check size={16} className="mx-auto [color:var(--ds-success-text)]" />
                       ) : (
                         <X size={16} className="mx-auto [color:var(--mk-text-subtle)]" />
                       )
@@ -2103,7 +2103,7 @@ export function ComparisonTable({
                   <dd className="text-sm">
                     {typeof row.values[colIdx] === "boolean" ? (
                       row.values[colIdx] ? (
-                        <Check size={14} className="[color:var(--signal-green)]" />
+                        <Check size={14} className="[color:var(--ds-success-text)]" />
                       ) : (
                         <X size={14} className="[color:var(--mk-text-subtle)]" />
                       )
@@ -2165,7 +2165,7 @@ export function PricingCard({
       <ul className="mb-6 flex-1 space-y-2.5">
         {features.map((f) => (
           <li key={f} className="flex items-start gap-2 text-sm [color:var(--mk-text-muted)]">
-            <Check size={15} className="mt-0.5 shrink-0 [color:var(--signal-green)]" />
+            <Check size={15} className="mt-0.5 shrink-0 [color:var(--ds-success-text)]" />
             <span>{f}</span>
           </li>
         ))}

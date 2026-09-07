@@ -108,14 +108,14 @@ const SIGNAL: Record<string, { text: string; bg: string; ring: string }> = {
     ring: "color-mix(in srgb, var(--brand-text) 20%, transparent)",
   },
   green: {
-    text: "var(--signal-green)",
-    bg: "color-mix(in srgb, var(--signal-green) 10%, transparent)",
-    ring: "color-mix(in srgb, var(--signal-green) 20%, transparent)",
+    text: "var(--ds-success-text)",
+    bg: "color-mix(in srgb, var(--ds-success-text) 10%, transparent)",
+    ring: "color-mix(in srgb, var(--ds-success-text) 20%, transparent)",
   },
   amber: {
-    text: "var(--signal-amber)",
-    bg: "color-mix(in srgb, var(--signal-amber) 10%, transparent)",
-    ring: "color-mix(in srgb, var(--signal-amber) 20%, transparent)",
+    text: "var(--ds-warning-text)",
+    bg: "color-mix(in srgb, var(--ds-warning-text) 10%, transparent)",
+    ring: "color-mix(in srgb, var(--ds-warning-text) 20%, transparent)",
   },
 };
 
@@ -199,7 +199,7 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
                 key={badge.label}
                 className="inline-flex items-center gap-2 rounded-full border [border-color:var(--mk-border)] px-4 py-2 text-sm font-semibold [color:var(--mk-text-muted)] [background:var(--mk-surface)]"
               >
-                <BadgeIcon size={14} style={{ color: "var(--signal-green)" }} />
+                <BadgeIcon size={14} style={{ color: "var(--ds-success-text)" }} />
                 {badge.label}
               </span>
             );

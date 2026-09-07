@@ -161,9 +161,9 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       <Section tone="light" className="px-4 py-12 sm:px-6 lg:px-8">
         <Reveal
           variant="up"
-          className="mx-auto max-w-4xl rounded-2xl border [border-color:var(--signal-green-border)] p-7 [background:var(--signal-green-bg)]"
+          className="mx-auto max-w-4xl rounded-2xl border [border-color:var(--ds-success-border)] p-7 [background:var(--ds-success-bg)]"
         >
-          <h2 className="mb-2 text-lg font-bold [color:var(--signal-green)]">
+          <h2 className="mb-2 text-lg font-bold [color:var(--ds-success-text)]">
             {t.enterpriseTitle}
           </h2>
           <p className="mb-4 text-sm leading-relaxed [color:var(--mk-text-muted)]">
@@ -172,7 +172,7 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
           <StaggerContainer className="space-y-3" stagger={0.06}>
             {t.enterpriseItems.map((item, i) => (
               <StaggerItem key={i} className="flex gap-2.5 text-sm leading-relaxed">
-                <Check size={14} className="mt-1 shrink-0 [color:var(--signal-green)]" />
+                <Check size={14} className="mt-1 shrink-0 [color:var(--ds-success-text)]" />
                 <span>
                   <span className="font-semibold [color:var(--mk-text)]">{item.title}</span>
                   <span className="block [color:var(--mk-text-muted)]">{item.desc}</span>

@@ -526,7 +526,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                       <span className="inline-flex items-start gap-1.5 text-sm text-[color:var(--mk-text-muted)]">
                         <Check
                           size={14}
-                          className="mt-0.5 shrink-0 text-[color:var(--signal-green)]"
+                          className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]"
                           aria-hidden
                         />
                         {row.subsumio}
@@ -581,7 +581,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                         <span className="inline-flex items-start gap-2">
                           <Check
                             size={16}
-                            className="mt-0.5 shrink-0 text-[color:var(--signal-green)]"
+                            className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]"
                             aria-hidden
                           />
                           {row.subsumio}
@@ -662,15 +662,15 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             </div>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm [color:var(--mk-text-subtle)]">
               <span className="inline-flex items-center gap-1.5">
-                <span className="h-1 w-1 rounded-full bg-[color:var(--signal-green)]" />
+                <span className="h-1 w-1 rounded-full bg-[color:var(--ds-success-text)]" />
                 {ui.noCreditCard}
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <span className="h-1 w-1 rounded-full bg-[color:var(--signal-green)]" />
+                <span className="h-1 w-1 rounded-full bg-[color:var(--ds-success-text)]" />
                 {ui.gdprReady}
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <span className="h-1 w-1 rounded-full bg-[color:var(--signal-green)]" />
+                <span className="h-1 w-1 rounded-full bg-[color:var(--ds-success-text)]" />
                 {ui.professionalSecrecy}
               </span>
             </div>

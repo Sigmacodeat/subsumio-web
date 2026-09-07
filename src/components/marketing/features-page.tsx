@@ -344,10 +344,10 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
 
   const toneClass: Record<string, string> = {
     amber:
-      "[border-color:color-mix(in_srgb,var(--signal-amber)_22%,transparent)] [background:color-mix(in_srgb,var(--signal-amber)_10%,transparent)] [color:var(--signal-amber)]",
+      "[border-color:color-mix(in_srgb,var(--ds-warning-text)_22%,transparent)] [background:color-mix(in_srgb,var(--ds-warning-text)_10%,transparent)] [color:var(--ds-warning-text)]",
     blue: "[border-color:color-mix(in_srgb,var(--brand-text)_22%,transparent)] [background:color-mix(in_srgb,var(--brand-text)_10%,transparent)] [color:var(--brand-text)]",
     green:
-      "[border-color:color-mix(in_srgb,var(--signal-green)_22%,transparent)] [background:color-mix(in_srgb,var(--signal-green)_10%,transparent)] [color:var(--signal-green)]",
+      "[border-color:color-mix(in_srgb,var(--ds-success-text)_22%,transparent)] [background:color-mix(in_srgb,var(--ds-success-text)_10%,transparent)] [color:var(--ds-success-text)]",
   };
   const cursorTargets = [
     {
@@ -728,7 +728,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                           line.startsWith("$") || line.startsWith(">")
                             ? "[color:var(--mk-text)]"
                             : line.includes("⚠")
-                              ? "[color:var(--signal-amber)]"
+                              ? "[color:var(--ds-warning-text)]"
                               : line.startsWith("→") || line.match(/^\d\d:\d\d/)
                                 ? "brand-text"
                                 : "[color:var(--mk-text-muted)]"

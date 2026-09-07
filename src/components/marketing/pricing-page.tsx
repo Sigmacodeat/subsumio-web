@@ -212,11 +212,11 @@ export default function PricingPage({ lang }: { lang: Lang }) {
                 <StaggerItem key={pack.id}>
                   <GlowCard className="flex h-full flex-col rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] motion-reduce:transition-none">
                     <div className="mb-3 flex items-center justify-between">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl border [border-color:var(--signal-green-border)] [background:var(--signal-green-bg)]">
-                        <Coins size={18} className="[color:var(--signal-green)]" />
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl border [border-color:var(--ds-success-border)] [background:var(--ds-success-bg)]">
+                        <Coins size={18} className="[color:var(--ds-success-text)]" />
                       </div>
                       {pack.savingsPct > 0 && (
-                        <span className="rounded-full bg-[color:var(--signal-green-bg)] px-2 py-0.5 text-xs font-semibold [color:var(--signal-green)]">
+                        <span className="rounded-full bg-[color:var(--ds-success-bg)] px-2 py-0.5 text-xs font-semibold [color:var(--ds-success-text)]">
                           -{pack.savingsPct}%
                         </span>
                       )}
@@ -339,8 +339,8 @@ export default function PricingPage({ lang }: { lang: Lang }) {
                 className="rounded-2xl transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 hover:-translate-y-1 hover:shadow-lg motion-reduce:transition-none"
               >
                 <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color] [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)] motion-reduce:transition-none">
-                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border [border-color:var(--signal-green-border)] transition-transform duration-300 [background:var(--signal-green-bg)] hover:scale-110">
-                    <Check size={18} className="[color:var(--signal-green)]" />
+                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border [border-color:var(--ds-success-border)] transition-transform duration-300 [background:var(--ds-success-bg)] hover:scale-110">
+                    <Check size={18} className="[color:var(--ds-success-text)]" />
                   </div>
                   <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">
                     {prop.title}

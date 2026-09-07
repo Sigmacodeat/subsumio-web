@@ -162,7 +162,7 @@ function PhoneMockup({ lang }: { lang: Lang }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.9, duration: 0.4 }}
-              className="mt-2 text-sm [color:var(--signal-amber)]"
+              className="mt-2 text-sm [color:var(--ds-warning-text)]"
             >
               {UI_STRINGS[lang].gapWarning}
             </motion.p>

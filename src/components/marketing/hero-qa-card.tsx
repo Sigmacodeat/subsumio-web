@@ -105,7 +105,7 @@ export default function HeroQACard({
             <span
               aria-hidden
               className={`font-serif text-base leading-none transition-[background-color,border-color,color] duration-500 motion-reduce:transition-none ${
-                allVerified ? "text-[var(--signal-green)]" : "brand-text"
+                allVerified ? "text-[var(--ds-success-text)]" : "brand-text"
               }`}
             >
               §
@@ -160,7 +160,7 @@ export default function HeroQACard({
                     transition={reduce ? { duration: 0 } : { duration: 0.3, ease: EASE.out }}
                     className="flex items-center"
                   >
-                    <Check size={11} className="text-[var(--signal-green)]" />
+                    <Check size={11} className="text-[var(--ds-success-text)]" />
                   </motion.span>
                 ) : (
                   <FileText size={10} />
@@ -178,7 +178,7 @@ export default function HeroQACard({
           transition={reduce ? { duration: 0 } : { duration: 0.35, ease: EASE.out }}
           className="flex items-center gap-1.5 border-t [border-color:var(--mk-border)] px-5 py-2.5"
         >
-          <Check size={14} className="text-[var(--signal-green)]" />
+          <Check size={14} className="text-[var(--ds-success-text)]" />
           <span className="text-sm font-medium [color:var(--mk-text-muted)]">
             {confidenceLabel}
           </span>

@@ -126,7 +126,7 @@ function VerificationBadge({
         animate={reduce ? undefined : { scale: [1, 1.15, 1] }}
         transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
       >
-        <CheckCircle2 size={13} className="text-[var(--signal-green)]" />
+        <CheckCircle2 size={13} className="text-[var(--ds-success-text)]" />
       </motion.span>
       <span className="text-sm font-medium [color:var(--mk-text-subtle)]">{label}</span>
     </motion.div>
@@ -468,7 +468,7 @@ export default function ConversationShowreel({
           <motion.span
             animate={reduce ? undefined : { opacity: [0.4, 1, 0.4] }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            className="h-1.5 w-1.5 rounded-full bg-[var(--signal-green)]"
+            className="h-1.5 w-1.5 rounded-full bg-[var(--ds-success-text)]"
           />
           <span>{liveLabel}</span>
         </div>
@@ -626,7 +626,9 @@ export default function ConversationShowreel({
                         delay={0.2}
                       />
                     </div>
-                    {note && <p className="mt-1.5 text-sm [color:var(--signal-amber)]">{note}</p>}
+                    {note && (
+                      <p className="mt-1.5 text-sm [color:var(--ds-warning-text)]">{note}</p>
+                    )}
                   </div>
                 </motion.div>
               )}
