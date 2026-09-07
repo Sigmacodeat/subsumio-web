@@ -247,10 +247,8 @@
 
   /* Deliberate, accessible signal accents (text-on-light shades).
      Tuned for the cool-gray backgrounds above. */
-  --signal-blue: var(--brand-700);
   --signal-green: var(--signal-success-700);
   --signal-amber: var(--signal-warning-700);
-  --signal-orange: var(--signal-attention-700);
 
   /* Categorical palette for the knowledge-graph view (one color per
      entity type). Single source of truth so a theme/rebrand pass doesn't
@@ -744,8 +742,6 @@
   --brand-text: var(--brand-300);
   --signal-amber: var(--signal-warning-500);
   --signal-green: var(--signal-success-500);
-  --signal-blue: var(--brand-300);
-  --signal-orange: var(--signal-attention-500);
   --brand-tertiary: var(--brand-300);
   color-scheme: dark;
 }
@@ -765,8 +761,6 @@
   --brand-text: var(--brand-300);
   --signal-amber: var(--signal-warning-500);
   --signal-green: var(--signal-success-500);
-  --signal-blue: var(--brand-300);
-  --signal-orange: var(--signal-attention-500);
   --brand-tertiary: var(--brand-300);
   color-scheme: dark;
 }
