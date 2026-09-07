@@ -150,7 +150,7 @@ export default function KanzleiSettingsPage() {
 
         <div className="flex items-center gap-3 pt-2">
           <Button
-            className="gap-2 bg-slate-600 text-sm text-white hover:bg-slate-500"
+            className="gap-2 bg-[color:var(--brand-primary)] text-sm text-white hover:bg-[color:var(--brand-primary)]/90"
             onClick={() => void handleSave()}
             disabled={saving}
             loading={saving}
@@ -198,7 +198,7 @@ export default function KanzleiSettingsPage() {
         </label>
         <div className="flex items-center gap-3 pt-2">
           <Button
-            className="gap-2 bg-slate-600 text-sm text-white hover:bg-slate-500"
+            className="gap-2 bg-[color:var(--brand-primary)] text-sm text-white hover:bg-[color:var(--brand-primary)]/90"
             onClick={() => void handleSave()}
             disabled={saving}
             loading={saving}
@@ -240,7 +240,7 @@ export default function KanzleiSettingsPage() {
                 update("rechtsraumCountry", e.target.value);
                 update("rechtsraumState", "");
               }}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-slate-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             >
               <option value="">— Bitte wählen —</option>
               <option value="DE">Deutschland</option>
@@ -258,7 +258,7 @@ export default function KanzleiSettingsPage() {
               id="rechtsraum-state"
               value={settings.rechtsraumState ?? ""}
               onChange={(e) => update("rechtsraumState", e.target.value)}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-slate-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             >
               <option value="">— Bitte wählen —</option>
               {settings.rechtsraumCountry === "AT" && (
@@ -325,7 +325,7 @@ export default function KanzleiSettingsPage() {
         </div>
         <div className="flex items-center gap-3 pt-2">
           <Button
-            className="gap-2 bg-slate-600 text-sm text-white hover:bg-slate-500"
+            className="gap-2 bg-[color:var(--brand-primary)] text-sm text-white hover:bg-[color:var(--brand-primary)]/90"
             onClick={() => void handleSave()}
             disabled={saving}
             loading={saving}
@@ -365,7 +365,7 @@ function Field({
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-slate-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+        className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
       />
     </div>
   );

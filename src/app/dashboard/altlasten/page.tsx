@@ -414,10 +414,14 @@ export default function AltlastenPage() {
         </div>
         <div className="rounded-lg border border-gray-500/20 bg-gray-500/5 p-4">
           <div className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-gray-500" />
-            <span className="text-sm font-medium text-gray-600">Ohne Pipeline</span>
+            <Clock className="h-5 w-5 text-[color:var(--ds-text-muted)]" />
+            <span className="text-sm font-medium text-[color:var(--ds-text-muted)]">
+              Ohne Pipeline
+            </span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-gray-600">{pipelineNotRan}</p>
+          <p className="mt-2 text-2xl font-bold text-[color:var(--ds-text-muted)]">
+            {pipelineNotRan}
+          </p>
         </div>
       </div>
 
@@ -542,7 +546,7 @@ export default function AltlastenPage() {
                       ) : row.pipelineStatus === "failed" ? (
                         <XCircle className="h-4 w-4 text-[color:var(--ds-danger-text)]" />
                       ) : (
-                        <Clock className="h-4 w-4 text-gray-400" />
+                        <Clock className="h-4 w-4 text-[color:var(--ds-text-subtle)]" />
                       )}
                       <span className="text-xs">{row.pipelineStatus}</span>
                       {row.pipelineScore !== null && (
