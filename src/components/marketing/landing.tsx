@@ -445,7 +445,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   <StaggerItem key={f.title}>
                     <Link
                       href={p(lang, "/features")}
-                      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl motion-reduce:transition-none"
+                      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                     >
                       <div
                         className={`mb-5 flex h-12 w-12 items-center justify-center rounded-xl border ${accentTile(f.color, "light")}`}
@@ -680,7 +680,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="text-[color:var(--mk-text-subtle)] underline decoration-[color:var(--mk-border)] underline-offset-4 transition-[background-color,border-color,color] hover:text-[color:var(--mk-text)] hover:decoration-[color:var(--brand-text)] motion-reduce:transition-none"
+                    className="text-[color:var(--mk-text-subtle)] underline decoration-[color:var(--mk-border)] underline-offset-4 transition-[background-color,border-color,color] hover:text-[color:var(--mk-text)] hover:decoration-[color:var(--brand-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                   >
                     {link.label}
                   </Link>

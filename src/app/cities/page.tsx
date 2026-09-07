@@ -52,7 +52,7 @@ export default function CitiesPage() {
             <Link
               key={city.slug}
               href={`/cities/${city.slug}`}
-              className="group rounded-2xl border border-[color:var(--mk-border)] bg-[color:var(--mk-surface)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:-translate-y-1 hover:shadow-lg motion-reduce:transition-none"
+              className="group rounded-2xl border border-[color:var(--mk-border)] bg-[color:var(--mk-surface)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:-translate-y-1 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
             >
               <h2 className="mb-2 text-xl font-bold [color:var(--mk-text)] group-hover:text-[color:var(--brand-text)]">
                 {city.city}

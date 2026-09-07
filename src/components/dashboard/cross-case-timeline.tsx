@@ -191,7 +191,7 @@ export function CrossCaseTimeline({ data }: { data: CockpitData }) {
               <Link
                 key={entry.id}
                 href={entry.href}
-                className="group relative flex items-start gap-3 rounded-md px-1 py-0.5 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
+                className="group relative flex items-start gap-3 rounded-md px-1 py-0.5 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
               >
                 <div
                   className="relative z-10 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border-2 border-[color:var(--ds-surface)]"

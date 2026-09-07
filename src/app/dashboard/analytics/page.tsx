@@ -120,7 +120,7 @@ export default function AnalyticsHubPage() {
             <Link
               key={card.href}
               href={card.href}
-              className={`group flex items-start gap-4 rounded-xl border ${card.border} bg-[color:var(--ds-surface)] p-5 transition-[border-color,background-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-lg motion-reduce:transition-none`}
+              className={`group flex items-start gap-4 rounded-xl border ${card.border} bg-[color:var(--ds-surface)] p-5 transition-[border-color,background-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none`}
             >
               <div
                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${card.bg}`}

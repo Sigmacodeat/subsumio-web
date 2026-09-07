@@ -172,7 +172,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
                 <Link
                   key={slug}
                   href={p(lang, `/solutions/${slug}`)}
-                  className="inline-flex items-center gap-2 rounded-full border [border-color:var(--mk-border)] px-4 py-2 text-sm font-medium [color:var(--mk-text-muted)] transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:[border-color:var(--mk-border-strong)] hover:[color:var(--mk-text)] motion-reduce:transition-none"
+                  className="inline-flex items-center gap-2 rounded-full border [border-color:var(--mk-border)] px-4 py-2 text-sm font-medium [color:var(--mk-text-muted)] transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:[border-color:var(--mk-border-strong)] hover:[color:var(--mk-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                 >
                   <Icon size={14} />
                   {link.label}

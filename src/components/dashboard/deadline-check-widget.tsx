@@ -166,7 +166,7 @@ export function DeadlineCheckWidget() {
                 key={`${r.caseSlug}-${i}`}
                 href={`/dashboard/cases/${encoded}`}
                 className={cn(
-                  "group flex items-start gap-2 rounded-md border px-2 py-1.5 transition-[background-color,border-color,color] hover:opacity-80 motion-reduce:transition-none",
+                  "group flex items-start gap-2 rounded-md border px-2 py-1.5 transition-[background-color,border-color,color] hover:opacity-80 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
                   borderClasses
                 )}
               >

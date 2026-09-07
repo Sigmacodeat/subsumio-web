@@ -150,7 +150,7 @@ export default function HeroQACard({
                   isVerified
                     ? "brand-text brand-soft hover:brand-soft-strong hover:-translate-y-0.5 hover:shadow-sm"
                     : "[color:var(--mk-text-subtle)] opacity-60 [background:var(--mk-surface-2)]"
-                }`}
+                } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none`}
               >
                 {/* The icon swap IS the story: unchecked document → verified hit. */}
                 {isVerified ? (

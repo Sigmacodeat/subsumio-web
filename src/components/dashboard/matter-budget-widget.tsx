@@ -236,7 +236,7 @@ export function MatterBudgetWidget() {
             <Link
               key={budget.agreement.id}
               href={`/dashboard/fee-agreements`}
-              className="group block rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-2 py-2 transition-[background-color,border-color,color] hover:opacity-80 motion-reduce:transition-none"
+              className="group block rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-2 py-2 transition-[background-color,border-color,color] hover:opacity-80 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
             >
               <div className="mb-1 flex items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-1.5">

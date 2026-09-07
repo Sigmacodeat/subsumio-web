@@ -88,7 +88,7 @@ export default function NischenIndexPage() {
                           <Link
                             key={page.slug}
                             href={`/nischen/${page.slug}`}
-                            className="group rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl motion-reduce:transition-none"
+                            className="group rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                           >
                             <div className="mb-3 flex items-center justify-between">
                               <span className="brand-soft brand-text brand-border inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold">

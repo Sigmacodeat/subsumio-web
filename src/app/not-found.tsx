@@ -26,13 +26,13 @@ export default function NotFound() {
         <div className="flex items-center justify-center gap-3">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 rounded-lg bg-[var(--brand-primary)] px-6 py-3 text-sm font-medium text-white shadow-lg ring-1 shadow-blue-950/40 ring-[var(--brand-primary)]/30 transition-[background-color,border-color,color] hover:bg-[var(--brand-primary-hover)] motion-reduce:transition-none"
+            className="inline-flex items-center gap-2 rounded-lg bg-[var(--brand-primary)] px-6 py-3 text-sm font-medium text-white shadow-lg ring-1 shadow-blue-950/40 ring-[var(--brand-primary)]/30 transition-[background-color,border-color,color] hover:bg-[var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
           >
             <SubsumioMark size={15} tile={false} /> Home
           </Link>
           <Link
             href="/features"
-            className="inline-flex items-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-6 py-3 text-sm [color:var(--mk-text-muted)] transition-[background-color,border-color,color] hover:[border-color:var(--mk-border-strong)] hover:[color:var(--mk-text)] motion-reduce:transition-none"
+            className="inline-flex items-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-6 py-3 text-sm [color:var(--mk-text-muted)] transition-[background-color,border-color,color] hover:[border-color:var(--mk-border-strong)] hover:[color:var(--mk-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
           >
             <ArrowLeft size={14} /> Features
           </Link>

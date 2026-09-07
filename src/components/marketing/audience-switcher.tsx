@@ -35,7 +35,7 @@ export function AudienceSwitcher({
               selected
                 ? "brand-border brand-soft shadow-sm"
                 : "[border-color:var(--mk-border)] [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]"
-            }`}
+            } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none`}
           >
             <div className="flex items-start gap-4">
               <div className="brand-soft brand-border flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border">
