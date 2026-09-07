@@ -190,7 +190,7 @@ export default function BrainPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8 flex h-full min-w-0 overflow-hidden">
+    <div className="mx-auto flex h-full max-w-[1200px] min-w-0 space-y-6 overflow-hidden p-4 md:p-6 lg:p-8">
       <div className="w-52 shrink-0 space-y-1 overflow-y-auto border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <p className="mb-3 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
           {t("brain.type")}
@@ -202,7 +202,7 @@ export default function BrainPage() {
               key={f.key}
               onClick={() => setFilter(f.key)}
               className={cn(
-                "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-[background-color,border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
                 filter === f.key
                   ? "brand-soft brand-text brand-border border"
                   : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -227,7 +227,7 @@ export default function BrainPage() {
               key={s.key}
               onClick={() => setSort(s.key)}
               className={cn(
-                "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-[background-color,border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
                 sort === s.key
                   ? "brand-soft brand-text brand-border border"
                   : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
