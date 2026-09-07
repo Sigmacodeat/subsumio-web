@@ -9,7 +9,7 @@ function Card({ className, glass, glow, ...props }: CardProps) {
   return (
     <div
       className={cn(
-        "card-shadow hover:card-shadow-hover rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-all duration-200 hover:border-[color:var(--ds-border-strong)]",
+        "card-shadow hover:card-shadow-hover rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-[border-color,box-shadow] duration-200 hover:border-[color:var(--ds-border-strong)] motion-reduce:transition-none",
         glass && "bg-[color:var(--ds-surface)]/95",
         glow && "shadow-lg shadow-[color:var(--brand-glow)]",
         className

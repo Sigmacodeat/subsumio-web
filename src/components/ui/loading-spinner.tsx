@@ -20,7 +20,7 @@ export function LoadingSpinner({
       aria-live="polite"
       className={cn("inline-flex items-center gap-2", className)}
     >
-      <Loader2 size={size} className="animate-spin" aria-hidden="true" />
+      <Loader2 size={size} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
       <span className="sr-only">{label}</span>
     </span>
   );
@@ -40,7 +40,7 @@ export function LoadingOverlay({ label = "Wird geladen…", className }: Loading
       className={cn("flex items-center justify-center p-8", className)}
     >
       <Loader2
-        className="animate-spin text-[color:var(--ds-text-muted)]"
+        className="animate-spin text-[color:var(--ds-text-muted)] motion-reduce:animate-none"
         size={24}
         aria-hidden="true"
       />
