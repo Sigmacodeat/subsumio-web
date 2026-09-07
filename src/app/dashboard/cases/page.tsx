@@ -632,7 +632,7 @@ export default function CasesPage() {
                 e.stopPropagation();
                 restoreCase(c.slug);
               }}
-              className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-success-bg)] hover:text-[color:var(--ds-success-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9]"
+              className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-success-bg)] hover:text-[color:var(--ds-success-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
               title={t("cases.btn_restore")}
               aria-label={`${t("cases.btn_restore")} ${c.title}`}
             >
@@ -644,7 +644,7 @@ export default function CasesPage() {
                 e.stopPropagation();
                 deleteCase(c.slug);
               }}
-              className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9]"
+              className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
               title={t("cases.delete")}
               aria-label={`${t("cases.delete")} ${c.title}`}
             >
@@ -683,7 +683,7 @@ export default function CasesPage() {
         ].map((item) => (
           <div
             key={item.label}
-            className="bg-[color:var(--ds-surface)] px-4 py-3 transition-[background-color] duration-150 hover:bg-[color:var(--ds-surface-2)]"
+            className="bg-[color:var(--ds-surface)] px-4 py-3 transition-[background-color] duration-150 hover:bg-[color:var(--ds-surface-2)] motion-reduce:transition-none"
           >
             <div className="text-xs text-[color:var(--ds-text-muted)]">{item.label}</div>
             <div className="mt-1 text-2xl leading-none font-semibold text-[color:var(--ds-text)] tabular-nums">
@@ -713,7 +713,7 @@ export default function CasesPage() {
         })}
         <Link
           href="/dashboard/altlasten"
-          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[color:var(--ds-border)] px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] duration-200 hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[color:var(--ds-border)] px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] duration-200 hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
         >
           <Archive size={13} />
           {t("nav.altlasten")}
