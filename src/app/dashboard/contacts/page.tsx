@@ -533,7 +533,7 @@ export default function ContactsPage() {
             {query && (
               <button
                 onClick={() => setQuery("")}
-                className="absolute top-1/2 right-2.5 -translate-y-1/2 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+                className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-md p-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-150 hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                 aria-label="Suche löschen"
               >
                 <X size={15} />
@@ -642,7 +642,7 @@ export default function ContactsPage() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
-                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-150 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-150 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
                             aria-label={t("contacts.aria_menu")}
                           >
                             <MoreVertical size={15} />
