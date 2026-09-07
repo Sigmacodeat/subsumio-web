@@ -144,7 +144,7 @@ export function MatterSwitcher() {
         aria-expanded={open}
         aria-haspopup="listbox"
         className={cn(
-          "flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-[13px] font-medium transition-colors",
+          "flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-[13px] font-medium transition-[background-color,border-color,color]",
           open
             ? "brand-soft brand-text brand-border"
             : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -280,7 +280,7 @@ export function MatterSwitcher() {
                 setOpen(false);
                 setSearchQuery("");
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
             >
               <ArrowRight size={13} className="shrink-0" />
               {t("matterswitcher.all")}
@@ -317,7 +317,7 @@ function MatterSwitcherItem({
   return (
     <div
       className={cn(
-        "group flex items-center gap-2 rounded-lg px-2.5 py-2 transition-colors",
+        "group flex items-center gap-2 rounded-lg px-2.5 py-2 transition-[background-color,border-color,color]",
         isActive
           ? "brand-soft brand-text"
           : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -339,7 +339,7 @@ function MatterSwitcherItem({
           onTogglePin(slug);
         }}
         className={cn(
-          "flex h-6 w-6 shrink-0 items-center justify-center rounded transition-colors",
+          "flex h-6 w-6 shrink-0 items-center justify-center rounded transition-[background-color,border-color,color]",
           isPinned
             ? "brand-text"
             : "text-[color:var(--ds-text-subtle)] opacity-0 group-hover:opacity-100 hover:text-[color:var(--ds-text)]"

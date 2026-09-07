@@ -407,7 +407,7 @@ export default function TaxAssessmentsPage() {
                     onClick={() =>
                       router.push(`/dashboard/tax-assessments/${encodeSlugPath(a.slug)}`)
                     }
-                    className="cursor-pointer border-b border-[color:var(--ds-border)]/50 transition-colors last:border-0 hover:bg-[color:var(--ds-hover)]"
+                    className="cursor-pointer border-b border-[color:var(--ds-border)]/50 transition-[background-color,border-color,color] last:border-0 hover:bg-[color:var(--ds-hover)]"
                   >
                     <td className="px-5 py-3 font-medium text-[color:var(--ds-text)]">
                       {a.clientName}
@@ -520,7 +520,8 @@ export default function TaxAssessmentsPage() {
                   {t("tax.assessments.label_year")}
                 </label>
                 <Input
-                  type="number" inputMode="numeric"
+                  type="number"
+                  inputMode="numeric"
                   value={createForm.year}
                   onChange={(e) => setCreateForm((p) => ({ ...p, year: Number(e.target.value) }))}
                   min={2000}
@@ -570,7 +571,8 @@ export default function TaxAssessmentsPage() {
                   {t("tax.assessments.label_amount")}
                 </label>
                 <Input
-                  type="number" inputMode="decimal"
+                  type="number"
+                  inputMode="decimal"
                   min={0}
                   step={0.01}
                   value={createForm.amount}

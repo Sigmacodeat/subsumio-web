@@ -205,7 +205,7 @@ export default function OpponentsPage() {
           {query && (
             <button
               onClick={() => setQuery("")}
-              className="absolute top-1/2 right-2.5 -translate-y-1/2 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+              className="absolute top-1/2 right-2.5 -translate-y-1/2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
               aria-label={t("opponents.search_clear")}
             >
               <X size={15} />
@@ -235,7 +235,7 @@ export default function OpponentsPage() {
             <div className="space-y-4">
               <button
                 onClick={() => setSelectedOpponent(null)}
-                className="text-sm text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+                className="text-sm text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
               >
                 {t("opponents.back")}
               </button>
@@ -324,7 +324,7 @@ export default function OpponentsPage() {
                       <Link
                         key={c.slug}
                         href={`/dashboard/cases/${encodeSlugPath(c.slug)}`}
-                        className="group flex items-center justify-between rounded-lg px-3 py-2 transition-colors hover:bg-[color:var(--ds-hover)]"
+                        className="group flex items-center justify-between rounded-lg px-3 py-2 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)]"
                       >
                         <span className="text-sm text-[color:var(--ds-text)]">{c.title}</span>
                         <div className="flex items-center gap-2">

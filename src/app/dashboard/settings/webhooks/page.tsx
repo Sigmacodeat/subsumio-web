@@ -156,7 +156,7 @@ export default function WebhooksPage() {
                   <button
                     key={evt}
                     onClick={() => toggleEvent(evt)}
-                    className={`rounded-lg border px-3 py-1.5 text-xs transition-colors ${
+                    className={`rounded-lg border px-3 py-1.5 text-xs transition-[background-color,border-color,color] ${
                       form.events.includes(evt)
                         ? "border-violet-500/20 bg-violet-600/15 text-violet-300"
                         : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-3)]"

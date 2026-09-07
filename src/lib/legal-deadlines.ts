@@ -573,41 +573,30 @@ export const DEADLINE_RULES: DeadlineRule[] = [
     noRoll: true,
     description: "3 Jahre ab Kenntnis von Schaden und Schädiger",
   },
-  // ── Österreichische Fristen (§ 5 JN, AT ZPO, AVG, BAO) ────────────────
+  // ── Österreichische Fristen (AT ZPO, BAO) ─────────────────────────────
+  // Die beiden `at-jn-*`-Keys bleiben aus Gründen der Datenkompatibilität
+  // erhalten. Rechtsgrundlage und sichtbarer Text sind jedoch die ZPO; § 5 JN
+  // regelt keine Rechtsmittelfrist.
   {
     key: "at-jn-berufung",
-    label: "Berufung (AT § 5 JN)",
-    law: "§ 5 Abs. 1 JN (AT)",
+    label: "Berufung (AT)",
+    law: "§ 464 Abs. 1 ZPO (AT)",
     days: 28,
-    description: "4 Wochen ab Zustellung des Ersturteils (Jurisdiktionsnorm)",
+    description: "4 Wochen ab Zustellung der schriftlichen Urteilsausfertigung",
   },
   {
     key: "at-jn-revision",
-    label: "Revision (AT § 5 JN)",
-    law: "§ 5 Abs. 1 JN iVm § 502 ZPO (AT)",
+    label: "Revision (AT)",
+    law: "§ 505 Abs. 2 ZPO (AT)",
     days: 28,
-    description: "4 Wochen ab Zustellung des Berufungsurteils (außerordentliches Rechtsmittel)",
-  },
-  {
-    key: "at-avg-einwendung",
-    label: "Einwendung (AT AVG)",
-    law: "§ 43 Abs. 2 AVG (AT)",
-    days: 14,
-    description: "2 Wochen ab Zustellung des Bescheids (Verwaltungsverfahrensgesetz)",
+    description: "4 Wochen ab Zustellung des Berufungsurteils",
   },
   {
     key: "at-bao-beschwerde",
     label: "Beschwerde (AT BAO)",
-    law: "§ 245 BAO (AT)",
-    days: 28,
-    description: "4 Wochen ab Zustellung des Bescheids (Bundesabgabenordnung)",
-  },
-  {
-    key: "at-eke-einspruch",
-    label: "Einspruch Exekutionsbeschluss (AT)",
-    law: "§ 39 EO (AT)",
-    days: 14,
-    description: "2 Wochen ab Zustellung des Exekutionsbeschlusses (Exekutionsordnung)",
+    law: "§ 245 Abs. 1 BAO (AT)",
+    months: 1,
+    description: "1 Monat ab Bekanntgabe des Bescheids (Bundesabgabenordnung)",
   },
   // ── Schweizer Fristen (CH ZPO / OR / ZGB) ──────────────────────────────
   {

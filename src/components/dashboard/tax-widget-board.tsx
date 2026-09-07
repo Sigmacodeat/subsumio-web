@@ -300,7 +300,7 @@ function StatCard({
 }) {
   return (
     <Link href={href}>
-      <Card className="flex items-center gap-3 p-4 transition-colors hover:bg-[color:var(--ds-hover)]">
+      <Card className="flex items-center gap-3 p-4 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)]">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[color:var(--brand-primary)]/10">
           <Icon size={18} className="text-[color:var(--brand-primary)]" />
         </div>

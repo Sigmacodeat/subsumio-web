@@ -135,7 +135,7 @@ function MaskedInput({
         value={value || ""}
         placeholder={placeholder}
         onChange={(e) => onChange?.(e.target.value)}
-        className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 pr-20 font-mono text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+        className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 pr-20 font-mono text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
       />
       <div className="absolute right-2 flex items-center gap-1">
         <button
@@ -474,7 +474,7 @@ function SettingsPageInner() {
           {/* Back to hub link */}
           <Link
             href="/dashboard/settings"
-            className="inline-flex items-center gap-1.5 text-sm text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+            className="inline-flex items-center gap-1.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
           >
             <ArrowLeft size={14} />
             {t("settings.hub_back")}
@@ -716,7 +716,7 @@ function SettingsPageInner() {
                     <button
                       onClick={() => setDreamEnabled(!dreamEnabled)}
                       className={cn(
-                        "relative h-6 w-10 rounded-full transition-colors",
+                        "relative h-6 w-10 rounded-full transition-[background-color,border-color,color]",
                         dreamEnabled
                           ? "bg-[color:var(--ds-warning-solid)]"
                           : "bg-[color:var(--ds-border)]"
@@ -893,7 +893,7 @@ function SettingsPageInner() {
                         key={prof}
                         onClick={() => kanzleiForm.setValue("eInvoiceProfile", prof)}
                         className={cn(
-                          "rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
+                          "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color]",
                           kanzleiForm.watch("eInvoiceProfile") === prof
                             ? "brand-soft brand-text brand-border"
                             : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"

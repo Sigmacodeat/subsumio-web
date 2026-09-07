@@ -276,7 +276,7 @@ function RundownPanel({ t, onView }: { t: TFunc; onView: (job: AgentJob) => void
               {latest.result && (
                 <button
                   onClick={() => onView(latest)}
-                  className="flex h-6 w-6 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                  className="flex h-6 w-6 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                   title={t("reports.btn_view")}
                 >
                   <Eye size={12} />
@@ -371,7 +371,7 @@ function ReportRow({
         {job.result && (
           <button
             onClick={() => onView(job)}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
             title={t("reports.btn_view")}
           >
             <Eye size={12} />
@@ -383,7 +383,7 @@ function ReportRow({
           <button
             onClick={() => onReplay(job.id)}
             disabled={replaying}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
             title={t("reports.btn_replay")}
           >
             {replaying ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
@@ -428,7 +428,7 @@ function JobDetailModal({ job, t, onClose }: { job: AgentJob; t: TFunc; onClose:
           </div>
           <button
             onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
           >
             <X size={16} />
           </button>

@@ -7,7 +7,7 @@
  *
  * Expected values are computed independently using the same statutory rules:
  *   - 4 Wochen = 28 Tage, rolled forward to next workday if Sa/So
- *   - 2 Wochen = 14 Tage, rolled forward to next workday if Sa/So
+ *   - 1 Monat = Kalendermonat, nicht pauschal 28 oder 30 Tage
  *
  * If the frist-engine produces a different result (e.g. due to verhandlungsfreie
  * Zeit or Zustellfiktionen), the engine is authoritative and the web-lib is
@@ -31,11 +31,22 @@ function expectedAtDeadline(startDate: string, days: number): string {
   return d.toISOString().split("T")[0]!;
 }
 
+function expectedAtMonthDeadline(startDate: string): string {
+  const d = new Date(`${startDate}T12:00:00Z`);
+  const originalDay = d.getUTCDate();
+  d.setUTCDate(1);
+  d.setUTCMonth(d.getUTCMonth() + 1);
+  const lastDay = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0, 12)).getUTCDate();
+  d.setUTCDate(Math.min(originalDay, lastDay));
+  const dow = d.getUTCDay();
+  if (dow === 6) d.setUTCDate(d.getUTCDate() + 2);
+  else if (dow === 0) d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().split("T")[0]!;
+}
+
 const AT_RULES = [
   { key: "at-jn-berufung", days: 28, desc: "Berufung 4 Wochen (AT)" },
   { key: "at-jn-revision", days: 28, desc: "Revision 4 Wochen (AT)" },
-  { key: "at-avg-einwendung", days: 14, desc: "Einwendung 2 Wochen (AT AVG)" },
-  { key: "at-bao-beschwerde", days: 28, desc: "Beschwerde 4 Wochen (AT BAO)" },
 ];
 
 const TEST_DATES = [
@@ -67,6 +78,23 @@ describe("C4: Drift-Guard — Web-Lib AT rules produce expected dates", () => {
       }
     });
   }
+});
+
+describe("C4: Drift-Guard — BAO uses a calendar month", () => {
+  const rule = DEADLINE_RULES.find((candidate) => candidate.key === "at-bao-beschwerde")!;
+
+  for (const testDate of [...TEST_DATES, "2024-01-31"]) {
+    it(`${testDate} → +1 Kalendermonat`, () => {
+      const { dueDate } = computeDueDate(rule, testDate, undefined, "AT");
+      expect(dueDate).toBe(expectedAtMonthDeadline(testDate));
+    });
+  }
+});
+
+describe("C4: Drift-Guard — unsupported generic AT rules stay unavailable", () => {
+  it.each(["at-avg-einwendung", "at-eke-einspruch"])("does not expose %s", (key) => {
+    expect(DEADLINE_RULES.some((rule) => rule.key === key)).toBe(false);
+  });
 });
 
 describe("C4: Drift-Guard — nextWorkday rolls Sa/So correctly", () => {

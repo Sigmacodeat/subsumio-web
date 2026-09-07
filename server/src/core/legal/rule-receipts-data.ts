@@ -15,11 +15,7 @@
  *   CH: fedlex.data.admin.ch (OR, ZPO, ZGB)
  */
 
-import {
-  registerRuleReceipt,
-  createRuleReceipt,
-  type LegalRuleReceipt,
-} from "./rule-receipt.ts";
+import { registerRuleReceipt, createRuleReceipt, type LegalRuleReceipt } from "./rule-receipt.ts";
 
 // ── Helper ────────────────────────────────────────────────────────────
 
@@ -38,7 +34,8 @@ reg({
   payload: { days: 14 },
   valid_from: "2024-01-01",
   source_url: "https://www.gesetze-im-internet.de/zpo/__276.html",
-  source_text: "§ 276 Abs. 1 S. 1 ZPO: Die Verteidigungsanzeige ist binnen zwei Wochen nach Zustellung der Klageschrift einzureichen.",
+  source_text:
+    "§ 276 Abs. 1 S. 1 ZPO: Die Verteidigungsanzeige ist binnen zwei Wochen nach Zustellung der Klageschrift einzureichen.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -52,7 +49,8 @@ reg({
   payload: { days: 28 },
   valid_from: "2024-01-01",
   source_url: "https://www.gesetze-im-internet.de/zpo/__276.html",
-  source_text: "§ 276 Abs. 1 S. 2 ZPO: Die Klageerwiderung ist innerhalb einer Frist von mindestens zwei weiteren Wochen einzureichen.",
+  source_text:
+    "§ 276 Abs. 1 S. 2 ZPO: Die Klageerwiderung ist innerhalb einer Frist von mindestens zwei weiteren Wochen einzureichen.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -66,7 +64,8 @@ reg({
   payload: { days: 14 },
   valid_from: "2024-01-01",
   source_url: "https://www.gesetze-im-internet.de/zpo/__339.html",
-  source_text: "§ 339 Abs. 1 ZPO: Der Einspruch gegen ein Versäumnisurteil ist binnen einer Notfrist von zwei Wochen einzulegen.",
+  source_text:
+    "§ 339 Abs. 1 ZPO: Der Einspruch gegen ein Versäumnisurteil ist binnen einer Notfrist von zwei Wochen einzulegen.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -80,7 +79,8 @@ reg({
   payload: { months: 1 },
   valid_from: "2024-01-01",
   source_url: "https://www.gesetze-im-internet.de/zpo/__517.html",
-  source_text: "§ 517 ZPO: Die Berufung ist innerhalb einer Notfrist von einem Monat bei dem Gericht des ersten Rechtszuges einzulegen.",
+  source_text:
+    "§ 517 ZPO: Die Berufung ist innerhalb einer Notfrist von einem Monat bei dem Gericht des ersten Rechtszuges einzulegen.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -94,7 +94,8 @@ reg({
   payload: { months: 2 },
   valid_from: "2024-01-01",
   source_url: "https://www.gesetze-im-internet.de/zpo/__520.html",
-  source_text: "§ 520 Abs. 2 ZPO: Die Berufungsbegründung ist innerhalb einer Frist von zwei Monaten nach Zustellung des Urteils einzureichen.",
+  source_text:
+    "§ 520 Abs. 2 ZPO: Die Berufungsbegründung ist innerhalb einer Frist von zwei Monaten nach Zustellung des Urteils einzureichen.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -108,7 +109,8 @@ reg({
   payload: { months: 1 },
   valid_from: "2024-01-01",
   source_url: "https://www.gesetze-im-internet.de/zpo/__548.html",
-  source_text: "§ 548 ZPO: Die Revision ist binnen einer Notfrist von einem Monat bei dem Gericht, dessen Urteil angefochten wird, einzulegen.",
+  source_text:
+    "§ 548 ZPO: Die Revision ist binnen einer Notfrist von einem Monat bei dem Gericht, dessen Urteil angefochten wird, einzulegen.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -122,7 +124,8 @@ reg({
   payload: { days: 14 },
   valid_from: "2024-01-01",
   source_url: "https://www.gesetze-im-internet.de/zpo/__569.html",
-  source_text: "§ 569 Abs. 1 ZPO: Die sofortige Beschwerde ist binnen einer Notfrist von zwei Wochen einzulegen.",
+  source_text:
+    "§ 569 Abs. 1 ZPO: Die sofortige Beschwerde ist binnen einer Notfrist von zwei Wochen einzulegen.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -136,7 +139,8 @@ reg({
   payload: { days: 7 },
   valid_from: "2024-01-01",
   source_url: "https://www.gesetze-im-internet.de/stpo/__341.html",
-  source_text: "§ 341 Abs. 1 StPO: Die Revision ist binnen einer Woche nach Verkündung des Urteils anzumelden.",
+  source_text:
+    "§ 341 Abs. 1 StPO: Die Revision ist binnen einer Woche nach Verkündung des Urteils anzumelden.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -150,7 +154,8 @@ reg({
   payload: { months: 1 },
   valid_from: "2024-01-01",
   source_url: "https://www.gesetze-im-internet.de/zpo/__929.html",
-  source_text: "§ 929 Abs. 2 ZPO: Die Vollziehung einer einstweiligen Verfügung ist innerhalb eines Monats zu bewirken.",
+  source_text:
+    "§ 929 Abs. 2 ZPO: Die Vollziehung einer einstweiligen Verfügung ist innerhalb eines Monats zu bewirken.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -164,7 +169,8 @@ reg({
   payload: { days: 14 },
   valid_from: "2024-01-01",
   source_url: "https://www.gesetze-im-internet.de/zpo/__233.html",
-  source_text: "§ 233 ZPO: Wiedereinsetzung in den vorigen Stand ist innerhalb zwei Wochen nach Wegfall des Hindernisses zu beantragen.",
+  source_text:
+    "§ 233 ZPO: Wiedereinsetzung in den vorigen Stand ist innerhalb zwei Wochen nach Wegfall des Hindernisses zu beantragen.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -178,7 +184,8 @@ reg({
   payload: { months: 1 },
   valid_from: "2024-01-01",
   source_url: "https://www.gesetze-im-internet.de/vwgo/__60.html",
-  source_text: "§ 60 VwGO: Die Anfechtungsklage ist innerhalb eines Monats nach Zustellung des Widerspruchsbescheids zu erheben.",
+  source_text:
+    "§ 60 VwGO: Die Anfechtungsklage ist innerhalb eines Monats nach Zustellung des Widerspruchsbescheids zu erheben.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -192,7 +199,8 @@ reg({
   payload: { months: 1 },
   valid_from: "2024-01-01",
   source_url: "https://www.gesetze-im-internet.de/vwvfg/__70.html",
-  source_text: "§ 70 VwVfG: Der Widerspruch ist innerhalb eines Monats nach Zustellung des Verwaltungsakts einzulegen.",
+  source_text:
+    "§ 70 VwVfG: Der Widerspruch ist innerhalb eines Monats nach Zustellung des Verwaltungsakts einzulegen.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -206,7 +214,8 @@ reg({
   payload: { days: 7 },
   valid_from: "2024-01-01",
   source_url: "https://www.gesetze-im-internet.de/stpo/__295.html",
-  source_text: "§ 295 StPO: Die sofortige Beschwerde ist binnen einer Woche nach Zustellung der Entscheidung einzulegen.",
+  source_text:
+    "§ 295 StPO: Die sofortige Beschwerde ist binnen einer Woche nach Zustellung der Entscheidung einzulegen.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -221,8 +230,10 @@ reg({
   jurisdiction: "AT",
   payload: { days: 28 },
   valid_from: "2014-01-01",
-  source_url: "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=20007838",
-  source_text: "§ 7 Abs. 4 VwGVG: Die Beschwerde ist binnen vier Wochen ab Zustellung des Bescheids zu erheben.",
+  source_url:
+    "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=20007838",
+  source_text:
+    "§ 7 Abs. 4 VwGVG: Die Beschwerde ist binnen vier Wochen ab Zustellung des Bescheids zu erheben.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -235,8 +246,10 @@ reg({
   jurisdiction: "AT",
   payload: { years: 3 },
   valid_from: "2013-08-01",
-  source_url: "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10001622",
-  source_text: "§ 1489 ABGB: Schadenersatzansprüche verjähren in drei Jahren ab Kenntnis von Schaden und Schädiger.",
+  source_url:
+    "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10001622",
+  source_text:
+    "§ 1489 ABGB: Schadenersatzansprüche verjähren in drei Jahren ab Kenntnis von Schaden und Schädiger.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -244,71 +257,48 @@ reg({
 reg({
   rule_key: "at-jn-berufung",
   rule_type: "deadline",
-  label: "Berufung (AT § 5 JN)",
-  law_citation: "§ 5 Abs. 1 JN (AT)",
+  label: "Berufung (AT)",
+  law_citation: "§ 464 Abs. 1 ZPO (AT)",
   jurisdiction: "AT",
   payload: { days: 28 },
-  valid_from: "2014-01-01",
-  source_url: "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10000360",
-  source_text: "§ 5 Abs. 1 JN: Die Berufung ist binnen vier Wochen ab Zustellung des Ersturteils einzubringen.",
-  reviewer_id: "legal-review-001",
-  reviewed_at: "2026-07-13T10:00:00Z",
+  valid_from: "2022-05-01",
+  source_url:
+    "https://ris.bka.gv.at/NormDokument.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10001699&Paragraf=464",
+  source_text:
+    "§ 464 Abs. 1 ZPO: Die Berufungsfrist beträgt vier Wochen und beginnt mit der Zustellung der schriftlichen Urteilsausfertigung.",
+  reviewer_id: "automated-ris-verification-pending-legal-signoff",
+  reviewed_at: "2026-09-07T00:00:00Z",
 });
 
 reg({
   rule_key: "at-jn-revision",
   rule_type: "deadline",
-  label: "Revision (AT § 5 JN)",
-  law_citation: "§ 5 Abs. 1 JN iVm § 502 ZPO (AT)",
+  label: "Revision (AT)",
+  law_citation: "§ 505 Abs. 2 ZPO (AT)",
   jurisdiction: "AT",
   payload: { days: 28 },
-  valid_from: "2014-01-01",
-  source_url: "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10000360",
-  source_text: "§ 5 Abs. 1 JN iVm § 502 ZPO: Die Revision ist binnen vier Wochen ab Zustellung des Berufungsurteils einzubringen.",
-  reviewer_id: "legal-review-001",
-  reviewed_at: "2026-07-13T10:00:00Z",
-});
-
-reg({
-  rule_key: "at-avg-einwendung",
-  rule_type: "deadline",
-  label: "Einwendung (AT AVG)",
-  law_citation: "§ 43 Abs. 2 AVG (AT)",
-  jurisdiction: "AT",
-  payload: { days: 14 },
-  valid_from: "2014-01-01",
-  source_url: "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10007838",
-  source_text: "§ 43 Abs. 2 AVG: Eine Einwendung ist binnen zwei Wochen ab Zustellung des Bescheids zu erheben.",
-  reviewer_id: "legal-review-001",
-  reviewed_at: "2026-07-13T10:00:00Z",
+  valid_from: "2022-05-01",
+  source_url:
+    "https://ris.bka.gv.at/NormDokument.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10001699&Paragraf=505",
+  source_text:
+    "§ 505 Abs. 2 ZPO: Die Frist für die Revision beträgt vier Wochen und beginnt mit der Zustellung des Berufungsurteils.",
+  reviewer_id: "automated-ris-verification-pending-legal-signoff",
+  reviewed_at: "2026-09-07T00:00:00Z",
 });
 
 reg({
   rule_key: "at-bao-beschwerde",
   rule_type: "deadline",
   label: "Beschwerde (AT BAO)",
-  law_citation: "§ 245 BAO (AT)",
+  law_citation: "§ 245 Abs. 1 BAO (AT)",
   jurisdiction: "AT",
-  payload: { days: 28 },
+  payload: { months: 1 },
   valid_from: "2014-01-01",
-  source_url: "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10005900",
-  source_text: "§ 245 BAO: Die Beschwerde ist binnen vier Wochen ab Zustellung des Bescheids einzubringen.",
-  reviewer_id: "legal-review-001",
-  reviewed_at: "2026-07-13T10:00:00Z",
-});
-
-reg({
-  rule_key: "at-eke-einspruch",
-  rule_type: "deadline",
-  label: "Einspruch Exekutionsbeschluss (AT)",
-  law_citation: "§ 39 EO (AT)",
-  jurisdiction: "AT",
-  payload: { days: 14 },
-  valid_from: "2014-01-01",
-  source_url: "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10000484",
-  source_text: "§ 39 EO: Der Einspruch gegen einen Exekutionsbeschluss ist binnen zwei Wochen ab Zustellung einzubringen.",
-  reviewer_id: "legal-review-001",
-  reviewed_at: "2026-07-13T10:00:00Z",
+  source_url:
+    "https://www.ris.bka.gv.at/NormDokument.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10003940&Paragraf=245",
+  source_text: "§ 245 Abs. 1 BAO: Die Beschwerdefrist beträgt einen Monat.",
+  reviewer_id: "automated-ris-verification-pending-legal-signoff",
+  reviewed_at: "2026-09-07T00:00:00Z",
 });
 
 // ── CH Deadline Rules ─────────────────────────────────────────────────
@@ -322,7 +312,8 @@ reg({
   payload: { days: 30 },
   valid_from: "2011-01-01",
   source_url: "https://www.fedlex.data.admin.ch/filestore/v3/eli/cc/2010/1/index.html",
-  source_text: "Art. 311 ZPO: Die Berufung ist innert 30 Tagen nach Zustellung des Urteils einzulegen.",
+  source_text:
+    "Art. 311 ZPO: Die Berufung ist innert 30 Tagen nach Zustellung des Urteils einzulegen.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -336,7 +327,8 @@ reg({
   payload: { days: 30 },
   valid_from: "2011-01-01",
   source_url: "https://www.fedlex.data.admin.ch/filestore/v3/eli/cc/2010/1/index.html",
-  source_text: "Art. 378 ZPO: Die Appellation ist innert 30 Tagen nach Zustellung des Entscheids einzulegen.",
+  source_text:
+    "Art. 378 ZPO: Die Appellation ist innert 30 Tagen nach Zustellung des Entscheids einzulegen.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -364,7 +356,8 @@ reg({
   payload: { years: 1 },
   valid_from: "2011-01-01",
   source_url: "https://www.fedlex.data.admin.ch/filestore/v3/eli/cc/27/234/index.html",
-  source_text: "Art. 602 ZGB: Die Erbteilungsklage verjährt in einem Jahr ab Kenntnis der Erbschaft.",
+  source_text:
+    "Art. 602 ZGB: Die Erbteilungsklage verjährt in einem Jahr ab Kenntnis der Erbschaft.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -378,7 +371,8 @@ reg({
   payload: { days: 30 },
   valid_from: "2011-01-01",
   source_url: "https://www.fedlex.data.admin.ch/filestore/v3/eli/cc/2010/1/index.html",
-  source_text: "Art. 319 ZPO: Die Beschwerde ist innert 30 Tagen nach Zustellung des Entscheids einzulegen.",
+  source_text:
+    "Art. 319 ZPO: Die Beschwerde ist innert 30 Tagen nach Zustellung des Entscheids einzulegen.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -392,7 +386,8 @@ reg({
   payload: { days: 30 },
   valid_from: "2011-01-01",
   source_url: "https://www.fedlex.data.admin.ch/filestore/v3/eli/cc/2010/1/index.html",
-  source_text: "Art. 328 ZPO: Die Revision ist innert 30 Tagen ab Entdeckung des Revisionsgrunds einzureichen.",
+  source_text:
+    "Art. 328 ZPO: Die Revision ist innert 30 Tagen ab Entdeckung des Revisionsgrunds einzureichen.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -406,14 +401,17 @@ reg({
   payload: { days: 10 },
   valid_from: "2011-01-01",
   source_url: "https://www.fedlex.data.admin.ch/filestore/v3/eli/cc/2010/1/index.html",
-  source_text: "Kantonale Einspruchsfrist gegen Verfügungen/Vorentscheide (10 Tage Standard; kantonal abweichend, z.B. ZH 20 Tage, BE 10 Tage).",
+  source_text:
+    "Kantonale Einspruchsfrist gegen Verfügungen/Vorentscheide (10 Tage Standard; kantonal abweichend, z.B. ZH 20 Tage, BE 10 Tage).",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
-  exceptions: [{
-    description: "Kantonale Abweichungen bei Einspruchsfristen",
-    condition: "Je nach Kanton unterschiedlich (ZH 20 Tage, BE 10 Tage, etc.)",
-    source: "Kantonale Prozessordnungen",
-  }],
+  exceptions: [
+    {
+      description: "Kantonale Abweichungen bei Einspruchsfristen",
+      condition: "Je nach Kanton unterschiedlich (ZH 20 Tage, BE 10 Tage, etc.)",
+      source: "Kantonale Prozessordnungen",
+    },
+  ],
 });
 
 reg({
@@ -425,7 +423,8 @@ reg({
   payload: { days: 30 },
   valid_from: "1968-01-01",
   source_url: "https://www.fedlex.data.admin.ch/filestore/v3/eli/cc/1968/40/index.html",
-  source_text: "Art. 46 VwVG: Die Beschwerde ist innert 30 Tagen ab Zustellung des Verfügungsentscheids einzureichen.",
+  source_text:
+    "Art. 46 VwVG: Die Beschwerde ist innert 30 Tagen ab Zustellung des Verfügungsentscheids einzureichen.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -455,7 +454,8 @@ reg({
   payload: { years: 2 },
   valid_from: "2002-01-01",
   source_url: "https://www.gesetze-im-internet.de/bgb/__438.html",
-  source_text: "§ 438 BGB: Die Verjährung erfolgt in zwei Jahren ab Ablieferung, bei Bauwerken in fünf Jahren.",
+  source_text:
+    "§ 438 BGB: Die Verjährung erfolgt in zwei Jahren ab Ablieferung, bei Bauwerken in fünf Jahren.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -469,7 +469,8 @@ reg({
   payload: { years: 2 },
   valid_from: "2002-01-01",
   source_url: "https://www.gesetze-im-internet.de/bgb/__634a.html",
-  source_text: "§ 634a BGB: Die Verjährung erfolgt bei einem Werkvertrag in zwei Jahren, bei Bauwerken in fünf Jahren.",
+  source_text:
+    "§ 634a BGB: Die Verjährung erfolgt bei einem Werkvertrag in zwei Jahren, bei Bauwerken in fünf Jahren.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -482,8 +483,10 @@ reg({
   jurisdiction: "AT",
   payload: { years: 3 },
   valid_from: "2013-08-01",
-  source_url: "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10001622",
-  source_text: "§ 1489 ABGB: Schadenersatzansprüche verjähren in drei Jahren ab Kenntnis von Schaden und Schädiger.",
+  source_url:
+    "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10001622",
+  source_text:
+    "§ 1489 ABGB: Schadenersatzansprüche verjähren in drei Jahren ab Kenntnis von Schaden und Schädiger.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -497,7 +500,8 @@ reg({
   payload: { years: 3 },
   valid_from: "2011-01-01",
   source_url: "https://www.fedlex.data.admin.ch/filestore/v3/eli/cc/27/317_321_323/index.html",
-  source_text: "Art. 60 OR: Der Anspruch auf Schadenersatz verjährt in drei Jahren ab Kenntnis, höchstens aber in zehn Jahren.",
+  source_text:
+    "Art. 60 OR: Der Anspruch auf Schadenersatz verjährt in drei Jahren ab Kenntnis, höchstens aber in zehn Jahren.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -540,7 +544,8 @@ reg({
   },
   valid_from: "2025-06-01",
   source_url: "https://www.gesetze-im-internet.de/rvg/__13.html",
-  source_text: "§ 13 RVG KostBRÄG 2025: Stufenformel mit Grundgebühr 51,50 € und gestaffelten Schritten.",
+  source_text:
+    "§ 13 RVG KostBRÄG 2025: Stufenformel mit Grundgebühr 51,50 € und gestaffelten Schritten.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
   gazette_reference: "BGBl. I S. 2025-06-01",
@@ -601,15 +606,20 @@ reg({
     mwst: 0.2,
   },
   valid_from: "2024-01-01",
-  source_url: "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10005420",
-  source_text: "RATG TP3A Anlage 1: Tarifpost 3A — Näherungswerte für die Anwaltsgebührenberechnung.",
+  source_url:
+    "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10005420",
+  source_text:
+    "RATG TP3A Anlage 1: Tarifpost 3A — Näherungswerte für die Anwaltsgebührenberechnung.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
-  exceptions: [{
-    description: "Näherungswerte, nicht rechtsverbindlich",
-    condition: "Immer — das österreichische Tarifrecht ist komplexer (Bemessungsgrundlage, Einheitssatz, ERV-Zuschläge)",
-    source: "UI-Kennzeichnung im Cost Calculator",
-  }],
+  exceptions: [
+    {
+      description: "Näherungswerte, nicht rechtsverbindlich",
+      condition:
+        "Immer — das österreichische Tarifrecht ist komplexer (Bemessungsgrundlage, Einheitssatz, ERV-Zuschläge)",
+      source: "UI-Kennzeichnung im Cost Calculator",
+    },
+  ],
 });
 
 // ── AT Fristen-Registry (from src/lib/legal/frist-engine.ts) ──────────
@@ -623,7 +633,8 @@ reg({
   jurisdiction: "AT",
   payload: { months: 4 },
   valid_from: "2014-01-01",
-  source_url: "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10002344",
+  source_url:
+    "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10002344",
   source_text: "§ 230 Abs 1 ZPO: Die Klagebeantwortungsfrist beträgt vier Wochen.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
@@ -637,7 +648,8 @@ reg({
   jurisdiction: "AT",
   payload: { months: 4 },
   valid_from: "2014-01-01",
-  source_url: "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10002344",
+  source_url:
+    "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10002344",
   source_text: "§ 464 Abs 1 ZPO: Die Berufungsfrist beträgt vier Wochen.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
@@ -651,8 +663,10 @@ reg({
   jurisdiction: "AT",
   payload: { years: 3 },
   valid_from: "1949-01-01",
-  source_url: "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10000227",
-  source_text: "§ 6 Abs. 1 AHG: Ersatzansprüche nach § 1 Abs. 1 verjähren in drei Jahren nach Ablauf des Tages, an dem der Schaden dem Geschädigten bekanntgeworden ist.",
+  source_url:
+    "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10000227",
+  source_text:
+    "§ 6 Abs. 1 AHG: Ersatzansprüche nach § 1 Abs. 1 verjähren in drei Jahren nach Ablauf des Tages, an dem der Schaden dem Geschädigten bekanntgeworden ist.",
   reviewer_id: "legal-review-001",
   reviewed_at: "2026-07-13T10:00:00Z",
 });
@@ -679,9 +693,7 @@ export const registeredRuleKeys: string[] = [
   "abgb-verjaehrung",
   "at-jn-berufung",
   "at-jn-revision",
-  "at-avg-einwendung",
   "at-bao-beschwerde",
-  "at-eke-einspruch",
   // CH deadlines
   "ch-zpo-berufung",
   "ch-zpo-appellation",

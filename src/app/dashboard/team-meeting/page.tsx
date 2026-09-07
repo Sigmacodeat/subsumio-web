@@ -246,7 +246,7 @@ export default function TeamMeetingPage() {
                       <button
                         type="button"
                         onClick={() => toggleItem(meeting, item.id)}
-                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-[background-color,border-color,color] ${
                           item.status === "done"
                             ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-white"
                             : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)]"

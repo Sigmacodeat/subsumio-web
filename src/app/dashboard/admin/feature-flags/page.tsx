@@ -150,7 +150,7 @@ export default function FeatureFlagsPage() {
         <Card>
           <CardContent className="flex flex-col items-center gap-3 pt-12 pb-12">
             <Flag size={32} className="text-[color:var(--ds-text-muted)]" />
-            <p className="text-[color:var(--ds-text-muted)] text-sm">{t("admin.flags.empty")}</p>
+            <p className="text-sm text-[color:var(--ds-text-muted)]">{t("admin.flags.empty")}</p>
             <Button onClick={() => setShowCreate(true)} size="sm" variant="outline">
               <Plus size={14} /> {t("admin.flags.create_first")}
             </Button>
@@ -177,13 +177,17 @@ export default function FeatureFlagsPage() {
                           <ToggleLeft size={22} className="text-[color:var(--ds-text-muted)]" />
                         )}
                       </button>
-                      <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">{flag.name}</h3>
-                      <code className="bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)] rounded px-1.5 py-0.5 text-xs">
+                      <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                        {flag.name}
+                      </h3>
+                      <code className="rounded bg-[color:var(--ds-surface-2)] px-1.5 py-0.5 text-xs text-[color:var(--ds-text-muted)]">
                         {flag.key}
                       </code>
                     </div>
                     {flag.description && (
-                      <p className="text-xs text-[color:var(--ds-text-muted)]">{flag.description}</p>
+                      <p className="text-xs text-[color:var(--ds-text-muted)]">
+                        {flag.description}
+                      </p>
                     )}
                     <div className="flex flex-wrap items-center gap-2 pt-1.5">
                       <Badge variant={flag.enabled ? "success" : "default"} className="text-xs">
@@ -205,7 +209,7 @@ export default function FeatureFlagsPage() {
                         </Badge>
                       )}
                     </div>
-                    <p className="text-[color:var(--ds-text-muted)] pt-1 text-xs">
+                    <p className="pt-1 text-xs text-[color:var(--ds-text-muted)]">
                       {t("admin.flags.updated_by")} {flag.updatedBy} {t("admin.flags.on")}{" "}
                       {formatDate(flag.updatedAt)}
                     </p>
@@ -323,14 +327,16 @@ function CreateFlagDialog({
 
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t("admin.flags.create_title")}</DialogTitle>
           <DialogDescription>{t("admin.flags.create_desc")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div>
-            <label className="text-[color:var(--ds-text-muted)] mb-1.5 block text-xs font-medium">Key</label>
+            <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+              Key
+            </label>
             <input
               type="text"
               value={key}
@@ -340,7 +346,9 @@ function CreateFlagDialog({
             />
           </div>
           <div>
-            <label className="text-[color:var(--ds-text-muted)] mb-1.5 block text-xs font-medium">Name</label>
+            <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+              Name
+            </label>
             <input
               type="text"
               value={name}
@@ -350,7 +358,7 @@ function CreateFlagDialog({
             />
           </div>
           <div>
-            <label className="text-[color:var(--ds-text-muted)] mb-1.5 block text-xs font-medium">
+            <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
               {t("admin.flags.desc_label")}
             </label>
             <textarea
@@ -372,7 +380,7 @@ function CreateFlagDialog({
             </button>
           </div>
           <div>
-            <label className="text-[color:var(--ds-text-muted)] mb-1.5 block text-xs font-medium">
+            <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
               {t("admin.flags.rollout")}: {rolloutPercentage}%
             </label>
             <input
@@ -385,7 +393,7 @@ function CreateFlagDialog({
             />
           </div>
           <div>
-            <label className="text-[color:var(--ds-text-muted)] mb-1.5 block text-xs font-medium">
+            <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
               {t("admin.flags.plans_label")}
             </label>
             <div className="flex flex-wrap gap-2">
@@ -393,7 +401,7 @@ function CreateFlagDialog({
                 <button
                   key={plan}
                   onClick={() => togglePlan(plan)}
-                  className={`rounded-lg border px-3 py-1 text-xs transition-colors ${
+                  className={`rounded-lg border px-3 py-1 text-xs transition-[background-color,border-color,color] ${
                     allowedPlans.includes(plan)
                       ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : "text-[color:var(--ds-text-muted)]"
@@ -405,7 +413,7 @@ function CreateFlagDialog({
             </div>
           </div>
           <div>
-            <label className="text-[color:var(--ds-text-muted)] mb-1.5 block text-xs font-medium">
+            <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
               {t("admin.flags.roles_label")}
             </label>
             <div className="flex flex-wrap gap-2">
@@ -413,7 +421,7 @@ function CreateFlagDialog({
                 <button
                   key={role}
                   onClick={() => toggleRole(role)}
-                  className={`rounded-lg border px-3 py-1 text-xs transition-colors ${
+                  className={`rounded-lg border px-3 py-1 text-xs transition-[background-color,border-color,color] ${
                     allowedRoles.includes(role)
                       ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : "text-[color:var(--ds-text-muted)]"
@@ -482,7 +490,7 @@ function EditFlagDialog({
 
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {t("admin.flags.edit_title")}: {flag.key}
@@ -491,7 +499,9 @@ function EditFlagDialog({
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div>
-            <label className="text-[color:var(--ds-text-muted)] mb-1.5 block text-xs font-medium">Name</label>
+            <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+              Name
+            </label>
             <input
               type="text"
               value={name}
@@ -500,7 +510,7 @@ function EditFlagDialog({
             />
           </div>
           <div>
-            <label className="text-[color:var(--ds-text-muted)] mb-1.5 block text-xs font-medium">
+            <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
               Beschreibung
             </label>
             <textarea
@@ -523,7 +533,7 @@ function EditFlagDialog({
             </button>
           </div>
           <div>
-            <label className="text-[color:var(--ds-text-muted)] mb-1.5 block text-xs font-medium">
+            <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
               {t("admin.flags.rollout")}: {rolloutPercentage}%
             </label>
             <input
@@ -536,7 +546,7 @@ function EditFlagDialog({
             />
           </div>
           <div>
-            <label className="text-[color:var(--ds-text-muted)] mb-1.5 block text-xs font-medium">
+            <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
               {t("admin.flags.plans_label")}
             </label>
             <div className="flex flex-wrap gap-2">
@@ -544,7 +554,7 @@ function EditFlagDialog({
                 <button
                   key={plan}
                   onClick={() => togglePlan(plan)}
-                  className={`rounded-lg border px-3 py-1 text-xs transition-colors ${
+                  className={`rounded-lg border px-3 py-1 text-xs transition-[background-color,border-color,color] ${
                     allowedPlans.includes(plan)
                       ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : "text-[color:var(--ds-text-muted)]"
@@ -556,7 +566,7 @@ function EditFlagDialog({
             </div>
           </div>
           <div>
-            <label className="text-[color:var(--ds-text-muted)] mb-1.5 block text-xs font-medium">
+            <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
               {t("admin.flags.roles_label")}
             </label>
             <div className="flex flex-wrap gap-2">
@@ -564,7 +574,7 @@ function EditFlagDialog({
                 <button
                   key={role}
                   onClick={() => toggleRole(role)}
-                  className={`rounded-lg border px-3 py-1 text-xs transition-colors ${
+                  className={`rounded-lg border px-3 py-1 text-xs transition-[background-color,border-color,color] ${
                     allowedRoles.includes(role)
                       ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : "text-[color:var(--ds-text-muted)]"

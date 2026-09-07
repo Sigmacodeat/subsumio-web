@@ -141,7 +141,7 @@ export function InsightsWidget() {
             const styles = SEVERITY_STYLES[insight.severity];
             const content = (
               <div
-                className={`group relative flex items-start gap-3 rounded-lg border ${styles.border} ${styles.bg} px-3 py-2.5 transition-colors hover:bg-[color:var(--ds-hover)]`}
+                className={`group relative flex items-start gap-3 rounded-lg border ${styles.border} ${styles.bg} px-3 py-2.5 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)]`}
               >
                 <div className="shrink-0 pt-0.5">
                   <Icon size={14} className={styles.text} />

@@ -319,7 +319,7 @@ function SubmissionRow({
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") onClick?.();
       }}
-      className="flex cursor-pointer items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 transition-colors hover:bg-[color:var(--ds-surface-2)]"
+      className="flex cursor-pointer items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)]"
     >
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
         {icon}

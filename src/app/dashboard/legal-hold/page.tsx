@@ -187,7 +187,7 @@ export default function LegalHoldPage() {
           <button
             onClick={() => setFilter("on_hold")}
             className={cn(
-              "rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+              "rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color]",
               filter === "on_hold"
                 ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
                 : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -198,7 +198,7 @@ export default function LegalHoldPage() {
           <button
             onClick={() => setFilter("all")}
             className={cn(
-              "rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+              "rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color]",
               filter === "all"
                 ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]"
                 : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"

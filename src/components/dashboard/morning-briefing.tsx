@@ -159,7 +159,7 @@ export function MorningBriefing() {
         <button
           type="button"
           onClick={() => fetchBriefing(true)}
-          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
           title={lang === "en" ? "Retry" : "Aktualisieren"}
         >
           <RefreshCw size={11} />
@@ -254,7 +254,7 @@ export function MorningBriefing() {
             <button
               type="button"
               onClick={() => fetchBriefing(true)}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
               title={lang === "en" ? "Refresh" : "Aktualisieren"}
               aria-label={lang === "en" ? "Refresh briefing" : "Briefing aktualisieren"}
             >

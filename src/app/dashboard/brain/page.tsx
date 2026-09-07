@@ -401,7 +401,7 @@ export default function BrainPage() {
                     )}
                     <ChevronRight
                       size={16}
-                      className="group-hover:brand-text shrink-0 text-[color:var(--ds-text-subtle)] transition-colors"
+                      className="group-hover:brand-text shrink-0 text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color]"
                     />
                   </a>
                 );

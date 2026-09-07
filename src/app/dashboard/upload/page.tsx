@@ -780,7 +780,7 @@ function UploadPageInner() {
       </div>
 
       {/* GoBD-Belegstempel (opt-in) */}
-      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-colors hover:border-[color:var(--ds-border-strong)]">
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)]">
         <input
           type="checkbox"
           checked={gobdReceipt}
@@ -1007,7 +1007,7 @@ function UploadPageInner() {
             {files.map((f) => (
               <div
                 key={f.id}
-                className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-colors hover:border-[color:var(--ds-border-strong)]"
+                className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)]"
               >
                 <FileIcon name={f.file.name} />
                 <div className="min-w-0 flex-1">

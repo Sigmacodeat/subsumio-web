@@ -174,7 +174,7 @@ export function KanzleiOperationsPanel() {
         <div className="flex items-center gap-3">
           <Link
             href="/dashboard/operations"
-            className="text-xs font-medium text-[color:var(--brand-primary)] transition-colors hover:text-[color:var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+            className="text-xs font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color,color] hover:text-[color:var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
           >
             {lang === "en" ? "View all" : "Alle anzeigen"}
           </Link>
@@ -224,7 +224,7 @@ export function KanzleiOperationsPanel() {
                 <li key={item.id}>
                   <Link
                     href={itemHref(item.kind, item.caseSlug)}
-                    className="group flex min-h-11 items-center gap-3 py-2 text-sm transition-colors hover:text-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+                    className="group flex min-h-11 items-center gap-3 py-2 text-sm transition-[background-color,border-color,color] hover:text-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
                   >
                     <span className="min-w-0 flex-1 truncate text-[color:var(--ds-text)]">
                       {item.title}

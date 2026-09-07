@@ -674,7 +674,7 @@ export default function ContactsPage() {
                         <Mail size={12} className="shrink-0" />
                         <a
                           href={`mailto:${contact.email}`}
-                          className="transition-colors hover:text-[color:var(--ds-text)]"
+                          className="transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
                         >
                           {contact.email}
                         </a>
@@ -685,7 +685,7 @@ export default function ContactsPage() {
                         <Phone size={12} className="shrink-0" />
                         <a
                           href={`tel:${contact.phone.replace(/\s/g, "")}`}
-                          className="transition-colors hover:text-[color:var(--ds-text)]"
+                          className="transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
                         >
                           {contact.phone}
                         </a>
@@ -872,7 +872,7 @@ function HubLink({
   return (
     <Link
       href={href}
-      className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+      className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
     >
       <Icon size={15} className="shrink-0" />
       <span className="truncate">{label}</span>

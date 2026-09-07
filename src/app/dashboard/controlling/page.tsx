@@ -223,7 +223,7 @@ export default function ControllingPage() {
                   return (
                     <tr
                       key={s.name}
-                      className="border-b border-[color:var(--ds-border)]/50 transition-colors hover:bg-[color:var(--ds-surface)]"
+                      className="border-b border-[color:var(--ds-border)]/50 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface)]"
                     >
                       <td className="px-4 py-3 text-[color:var(--ds-text)]">{s.name}</td>
                       <td className="hidden px-4 py-3 text-right text-[color:var(--ds-text-muted)] md:table-cell">

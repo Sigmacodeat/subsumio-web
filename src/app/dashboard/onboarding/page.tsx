@@ -277,7 +277,7 @@ export default function OnboardingPage() {
                 <button
                   onClick={skipOnboarding}
                   disabled={completing}
-                  className="text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+                  className="text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
                 >
                   {t("onboarding.skip")}
                 </button>

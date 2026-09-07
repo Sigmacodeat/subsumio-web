@@ -367,10 +367,10 @@ export default function MailboxClient({
                   setSearch("");
                   setMobileDetailOpen(false);
                 }}
-                className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
+                className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-[background-color,border-color,color] ${
                   isActive
-                    ? "font-medium text-[color:var(--ds-text)] bg-[color:var(--ds-surface-2)]"
-                    : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-2)]"
+                    ? "bg-[color:var(--ds-surface-2)] font-medium text-[color:var(--ds-text)]"
+                    : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)]"
                 }`}
               >
                 <span className="flex items-center gap-2">
@@ -389,7 +389,7 @@ export default function MailboxClient({
         <div className="border-t border-[color:var(--ds-border)] p-2">
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-2)]"
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)]"
           >
             <Settings size={15} /> Einstellungen
           </button>
@@ -413,7 +413,7 @@ export default function MailboxClient({
               }}
               className={`flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1.5 text-xs ${
                 isActive
-                  ? "text-[color:var(--ds-text)] bg-[color:var(--ds-surface-2)]"
+                  ? "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                   : "text-[color:var(--ds-text-muted)]"
               }`}
             >
@@ -446,7 +446,7 @@ export default function MailboxClient({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Suchen…"
-              className="w-full rounded-lg border border-[color:var(--ds-border)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] bg-[color:var(--ds-surface-2)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             />
             {search && (
               <button
@@ -478,7 +478,11 @@ export default function MailboxClient({
         </div>
 
         {/* Error */}
-        {error && <div className="px-4 py-2 text-xs text-[color:var(--ds-danger-text)]">Fehler: {error}</div>}
+        {error && (
+          <div className="px-4 py-2 text-xs text-[color:var(--ds-danger-text)]">
+            Fehler: {error}
+          </div>
+        )}
 
         {/* Message list */}
         {messages.length === 0 ? (
@@ -507,7 +511,7 @@ export default function MailboxClient({
                 <li key={m.id}>
                   <button
                     onClick={() => handleSelect(m.id)}
-                    className={`flex w-full gap-3 px-4 py-3 text-left transition-colors ${
+                    className={`flex w-full gap-3 px-4 py-3 text-left transition-[background-color,border-color,color] ${
                       isSelected
                         ? "bg-[color:var(--ds-surface-2)]"
                         : "hover:bg-[color:color-mix(in_srgb,var(--ds-surface-2)_50%,transparent)]"
@@ -574,7 +578,9 @@ export default function MailboxClient({
           <div className="flex flex-1 items-center justify-center px-5 py-24 text-center">
             <div>
               <Mail size={32} className="mx-auto mb-3 [color:var(--ds-border-strong)]" />
-              <p className="text-sm text-[color:var(--ds-text-subtle)]">Wähle links eine E-Mail aus.</p>
+              <p className="text-sm text-[color:var(--ds-text-subtle)]">
+                Wähle links eine E-Mail aus.
+              </p>
             </div>
           </div>
         )}
@@ -606,7 +612,7 @@ export default function MailboxClient({
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg border border-[color:var(--ds-border-hover)] px-4 py-2.5 text-sm text-[color:var(--ds-text)] shadow-lg bg-[color:var(--ds-surface)]">
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg border border-[color:var(--ds-border-hover)] bg-[color:var(--ds-surface)] px-4 py-2.5 text-sm text-[color:var(--ds-text)] shadow-lg">
           {toast}
         </div>
       )}
@@ -692,7 +698,7 @@ function SettingsPanel({
         role="dialog"
         aria-modal="true"
         aria-labelledby="mailbox-settings-title"
-        className="w-full max-w-lg space-y-4 rounded-xl border border-[color:var(--ds-border)] p-5 bg-[color:var(--ds-surface)]"
+        className="w-full max-w-lg space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5"
       >
         <div className="flex items-center justify-between">
           <h2
@@ -713,15 +719,21 @@ function SettingsPanel({
 
         <div className="space-y-3">
           <div>
-            <h3 className="mb-1 text-xs font-semibold text-[color:var(--ds-text)]">Empfangsadresse</h3>
+            <h3 className="mb-1 text-xs font-semibold text-[color:var(--ds-text)]">
+              Empfangsadresse
+            </h3>
             <p className="mb-2 text-xs text-[color:var(--ds-text-muted)]">
               Diese Adresse bei Resend (und anderen Diensten) als Konto-E-Mail verwenden.
             </p>
             <button
               onClick={onCopy}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border-hover)] px-3 py-2 font-mono text-sm text-[color:var(--ds-category-violet-text)] bg-[color:var(--ds-surface-2)] hover:border-[color:var(--brand-primary)] hover:text-[color:var(--ds-category-violet-text)]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border-hover)] bg-[color:var(--ds-surface-2)] px-3 py-2 font-mono text-sm text-[color:var(--ds-category-violet-text)] hover:border-[color:var(--brand-primary)] hover:text-[color:var(--ds-category-violet-text)]"
             >
-              {copied ? <Check size={14} className="text-[color:var(--ds-success-text)]" /> : <Copy size={14} />}
+              {copied ? (
+                <Check size={14} className="text-[color:var(--ds-success-text)]" />
+              ) : (
+                <Copy size={14} />
+              )}
               {receivingAddress}
             </button>
           </div>
@@ -773,7 +785,9 @@ function StatusPill({ ok, okText, badText }: { ok: boolean; okText: string; badT
           : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
       }`}
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${ok ? "bg-[color:var(--ds-success-text)]" : "bg-[color:var(--ds-warning-text)]"}`} />
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${ok ? "bg-[color:var(--ds-success-text)]" : "bg-[color:var(--ds-warning-text)]"}`}
+      />
       <span>{ok ? okText : badText}</span>
     </div>
   );
@@ -842,7 +856,7 @@ function MessageDetail({
       <div className="flex items-center gap-1 border-b border-[color:var(--ds-border)] px-3 py-2">
         <button
           onClick={onBack}
-          className="mr-1 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-2)] md:hidden"
+          className="mr-1 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)] md:hidden"
           aria-label="Zurück"
         >
           <ChevronLeft size={18} />
@@ -888,7 +902,7 @@ function MessageDetail({
               onClick={() => setViewMode("html")}
               className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs ${
                 viewMode === "html"
-                  ? "text-[color:var(--ds-text)] bg-[color:var(--ds-surface-2)]"
+                  ? "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                   : "text-[color:var(--ds-text-muted)]"
               }`}
             >
@@ -898,7 +912,7 @@ function MessageDetail({
               onClick={() => setViewMode("text")}
               className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs ${
                 viewMode === "text"
-                  ? "text-[color:var(--ds-text)] bg-[color:var(--ds-surface-2)]"
+                  ? "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                   : "text-[color:var(--ds-text-muted)]"
               }`}
             >
@@ -925,7 +939,10 @@ function MessageDetail({
                 {message.fromName ? `${message.fromName}` : message.fromEmail}
               </span>
               {message.fromName && (
-                <span className="text-[color:var(--ds-text-subtle)]"> &lt;{message.fromEmail}&gt;</span>
+                <span className="text-[color:var(--ds-text-subtle)]">
+                  {" "}
+                  &lt;{message.fromEmail}&gt;
+                </span>
               )}
             </p>
             <p>
@@ -939,7 +956,9 @@ function MessageDetail({
               </p>
             )}
             <p className="flex items-center gap-2">
-              <span className="text-[color:var(--ds-text-subtle)]">{fmt(message.createdAt, lang)}</span>
+              <span className="text-[color:var(--ds-text-subtle)]">
+                {fmt(message.createdAt, lang)}
+              </span>
               {message.direction === "outbound" && (
                 <span
                   className={`rounded px-1.5 py-0.5 text-xs ${
@@ -964,7 +983,7 @@ function MessageDetail({
               {showHeaders ? "Details ausblenden" : "Details anzeigen"}
             </button>
             {showHeaders && (
-              <div className="mt-1 space-y-0.5 rounded-lg border border-[color:var(--ds-border)] p-2 font-mono text-xs text-[color:var(--ds-text-subtle)] bg-[color:var(--ds-surface-2)]">
+              <div className="mt-1 space-y-0.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-2 font-mono text-xs text-[color:var(--ds-text-subtle)]">
                 <p>ID: {message.id}</p>
                 <p>Direction: {message.direction}</p>
                 <p>Status: {message.status}</p>
@@ -1030,7 +1049,7 @@ function ToolbarButton({
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-2)]"
+      className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)]"
       title={label}
       aria-label={label}
     >
@@ -1082,14 +1101,14 @@ function ReplyForm({
   };
 
   return (
-    <div className="space-y-3 border-t border-[color:var(--ds-border)] px-5 py-4 bg-[color:var(--ds-surface-2)]">
+    <div className="space-y-3 border-t border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-5 py-4">
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={5}
         placeholder="Antwort schreiben…"
         autoFocus
-        className="w-full rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text)] bg-[color:var(--ds-surface-2)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+        className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
       />
       {err && <p className="text-xs text-[color:var(--ds-danger-text)]">{err}</p>}
       <div className="flex items-center justify-end gap-2">
@@ -1204,7 +1223,7 @@ function ComposeModal({ onClose, onSent }: { onClose: () => void; onSent: () => 
         role="dialog"
         aria-modal="true"
         aria-labelledby="mailbox-compose-title"
-        className="w-full max-w-lg space-y-3 rounded-xl border border-[color:var(--ds-border)] p-5 bg-[color:var(--ds-surface)]"
+        className="w-full max-w-lg space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5"
       >
         <div className="flex items-center justify-between">
           <h2
@@ -1226,20 +1245,20 @@ function ComposeModal({ onClose, onSent }: { onClose: () => void; onSent: () => 
           value={to}
           onChange={(e) => setTo(e.target.value)}
           placeholder="An (mehrere mit Komma)"
-          className="w-full rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text)] bg-[color:var(--ds-surface-2)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
         />
         <input
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           placeholder="Betreff"
-          className="w-full rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text)] bg-[color:var(--ds-surface-2)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
         />
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={7}
           placeholder="Nachricht…"
-          className="w-full rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text)] bg-[color:var(--ds-surface-2)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
         />
         {err && <p className="text-xs text-[color:var(--ds-danger-text)]">{err}</p>}
         <div className="flex items-center justify-end gap-2">
@@ -1275,11 +1294,23 @@ function TrackingBadge({
 }) {
   const config: Record<string, { icon: typeof Eye; color: string; label: string }> = {
     sent: { icon: Send, color: "text-[color:var(--ds-text-subtle)]", label: "Gesendet" },
-    delivered: { icon: CheckCircle2, color: "text-[color:var(--ds-success-text)]", label: "Zugestellt" },
+    delivered: {
+      icon: CheckCircle2,
+      color: "text-[color:var(--ds-success-text)]",
+      label: "Zugestellt",
+    },
     opened: { icon: Eye, color: "text-[color:var(--ds-info-text)]", label: "Geöffnet" },
-    clicked: { icon: MousePointerClick, color: "text-[color:var(--ds-category-violet-text)]", label: "Geklickt" },
+    clicked: {
+      icon: MousePointerClick,
+      color: "text-[color:var(--ds-category-violet-text)]",
+      label: "Geklickt",
+    },
     bounced: { icon: XCircle, color: "text-[color:var(--ds-danger-text)]", label: "Bounce" },
-    complained: { icon: AlertTriangle, color: "text-[color:var(--ds-warning-text)]", label: "Spam" },
+    complained: {
+      icon: AlertTriangle,
+      color: "text-[color:var(--ds-warning-text)]",
+      label: "Spam",
+    },
   };
   const cfg = config[status] ?? config.sent;
   const Icon = cfg.icon;
@@ -1289,7 +1320,10 @@ function TrackingBadge({
       {cfg.label}
       {openCount && openCount > 0 ? ` (${openCount}x)` : ""}
       {forwarded && (
-        <span className="inline-flex items-center gap-0.5 text-[color:var(--ds-warning-text)]" title="Weitergeleitet">
+        <span
+          className="inline-flex items-center gap-0.5 text-[color:var(--ds-warning-text)]"
+          title="Weitergeleitet"
+        >
           <Forward size={10} />
         </span>
       )}
@@ -1339,7 +1373,7 @@ function TrackingTimeline({
   if (status === "bounced" || status === "complained") steps.length = 0;
 
   return (
-    <div className="border-t border-[color:var(--ds-border)] px-5 py-4 bg-[color:var(--ds-surface-2)]">
+    <div className="border-t border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-5 py-4">
       <div className="mb-3 flex items-center gap-2">
         <h3 className="text-xs font-semibold text-[color:var(--ds-text)]">Tracking</h3>
         {status === "bounced" && (

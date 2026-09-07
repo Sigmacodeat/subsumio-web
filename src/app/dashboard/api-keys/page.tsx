@@ -150,7 +150,7 @@ export default function ApiKeysPage() {
               keys.map((k) => (
                 <tr
                   key={k.id}
-                  className="border-b border-[color:var(--ds-border)]/50 transition-colors hover:bg-[color:var(--ds-surface)]"
+                  className="border-b border-[color:var(--ds-border)]/50 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface)]"
                 >
                   <td className="px-4 py-3 text-[color:var(--ds-text)]">{k.name}</td>
                   <td className="hidden px-4 py-3 font-mono text-[color:var(--ds-text-muted)] md:table-cell">

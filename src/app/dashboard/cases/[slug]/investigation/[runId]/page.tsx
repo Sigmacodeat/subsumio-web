@@ -1007,7 +1007,7 @@ function QuoteBlock({
       )}
       <Link
         href={`/dashboard/brain/${encodeURIComponent(fact?.source ?? claimId)}`}
-        className="mt-3 inline-flex items-center gap-1 text-xs text-[color:var(--brand-primary)] transition-colors hover:text-[color:var(--brand-primary-hover)]"
+        className="mt-3 inline-flex items-center gap-1 text-xs text-[color:var(--brand-primary)] transition-[background-color,border-color,color] hover:text-[color:var(--brand-primary-hover)]"
       >
         <ExternalLink className="h-3 w-3" />
         Im Dokument anzeigen

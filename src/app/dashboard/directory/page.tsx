@@ -116,7 +116,7 @@ export default function DirectoryPage() {
                 <Link
                   key={entry.href}
                   href={entry.href}
-                  className="group flex items-center justify-between gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-colors hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                  className="group flex items-center justify-between gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
                 >
                   <span className="truncate">{t(entry.labelKey as DashboardKey)}</span>
                   <ArrowRight

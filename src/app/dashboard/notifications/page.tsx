@@ -285,7 +285,7 @@ export default function NotificationCenterPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t("notifications.unread")}</CardTitle>
-            <Bell className="text-[color:var(--ds-text-muted)] h-4 w-4" />
+            <Bell className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{unreadCount}</div>
@@ -294,7 +294,7 @@ export default function NotificationCenterPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t("notifications.total")}</CardTitle>
-            <Bell className="text-[color:var(--ds-text-muted)] h-4 w-4" />
+            <Bell className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{data?.length ?? 0}</div>
@@ -303,7 +303,7 @@ export default function NotificationCenterPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t("notifications.filtered")}</CardTitle>
-            <Search className="text-[color:var(--ds-text-muted)] h-4 w-4" />
+            <Search className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{filtered.length}</div>
@@ -360,7 +360,7 @@ export default function NotificationCenterPage() {
           <Card>
             <CardContent className="p-0">
               {isLoading ? (
-                <div className="text-[color:var(--ds-text-muted)] p-8 text-center">
+                <div className="p-8 text-center text-[color:var(--ds-text-muted)]">
                   {t("notifications.loading")}
                 </div>
               ) : filtered.length > 0 ? (
@@ -372,7 +372,7 @@ export default function NotificationCenterPage() {
                     return (
                       <div
                         key={n.id}
-                        className={`flex items-start gap-3 p-4 transition-colors hover:bg-[color:var(--ds-hover)] ${!n.readAt ? "bg-[color:var(--ds-surface-2)]" : ""}`}
+                        className={`flex items-start gap-3 p-4 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] ${!n.readAt ? "bg-[color:var(--ds-surface-2)]" : ""}`}
                       >
                         <div className={`mt-0.5 shrink-0 ${typeMeta.color}`}>
                           <Icon className="h-5 w-5" />

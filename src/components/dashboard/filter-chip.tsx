@@ -42,7 +42,7 @@ export function FilterChip({
               onRemove();
             }
           }}
-          className="-mr-0.5 ml-0.5 cursor-pointer rounded p-0.5 transition-colors hover:text-[color:var(--ds-danger-text)]"
+          className="-mr-0.5 ml-0.5 cursor-pointer rounded p-0.5 transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)]"
           role="button"
           tabIndex={0}
           aria-label={`Filter ${label} entfernen`}

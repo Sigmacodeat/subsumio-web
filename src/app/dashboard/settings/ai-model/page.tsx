@@ -70,7 +70,7 @@ export default function AIModelSettingsPage() {
           </p>
           <button
             onClick={() => query.refetch()}
-            className="mt-3 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+            className="mt-3 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
           >
             Erneut versuchen
           </button>
@@ -197,7 +197,7 @@ export default function AIModelSettingsPage() {
                 <div className="flex items-start gap-3">
                   <div
                     className={cn(
-                      "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors",
+                      "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-[background-color,border-color,color]",
                       isActive
                         ? "brand-bg"
                         : "border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] group-hover:border-[color:var(--ds-border-strong)]"

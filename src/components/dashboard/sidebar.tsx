@@ -2463,7 +2463,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute top-1/2 right-2 -translate-y-1/2 text-[color:var(--ds-text-subtle)] transition-colors hover:text-[color:var(--ds-text)]"
+                  className="absolute top-1/2 right-2 -translate-y-1/2 text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
                   aria-label={t("sidebar.clear_filter")}
                 >
                   <X size={12} />
@@ -2619,7 +2619,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                           trackRecent(item);
                           setMobileOpen(false);
                         }}
-                        className="flex min-h-11 items-center gap-3 rounded-md px-3 text-[13px] font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+                        className="flex min-h-11 items-center gap-3 rounded-md px-3 text-[13px] font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
                       >
                         <Icon size={15} aria-hidden />
                         <span className="truncate">{t(item.labelKey)}</span>
@@ -2730,7 +2730,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       <button
                         type="button"
                         onClick={(event) => toggleSection(section.titleKey, event)}
-                        className="group flex h-9 w-full items-center gap-2 rounded-lg px-3 text-left text-[13px] font-semibold text-[color:var(--ds-text)] transition-colors hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+                        className="group flex h-9 w-full items-center gap-2 rounded-lg px-3 text-left text-[13px] font-semibold text-[color:var(--ds-text)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
                         aria-expanded={isOpen}
                         aria-controls={panelId}
                       >
@@ -2911,7 +2911,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               {!collapsed && (
                 <Settings
                   size={15}
-                  className="shrink-0 text-[color:var(--ds-text-subtle)] transition-colors group-hover:text-[color:var(--ds-text)]"
+                  className="shrink-0 text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] group-hover:text-[color:var(--ds-text)]"
                   aria-hidden
                 />
               )}
@@ -2970,7 +2970,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             aria-valuemax={320}
             onMouseDown={handleMouseDown}
             onTouchStart={handleMouseDown}
-            className="absolute inset-y-0 right-0 z-50 w-1 cursor-col-resize bg-transparent transition-colors hover:bg-[color:var(--brand-primary)] focus:bg-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+            className="absolute inset-y-0 right-0 z-50 w-1 cursor-col-resize bg-transparent transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary)] focus:bg-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
         )}
       </div>

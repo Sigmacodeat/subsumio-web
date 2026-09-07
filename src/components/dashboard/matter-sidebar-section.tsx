@@ -111,7 +111,7 @@ export function MatterSidebarSection({ collapsed, onNavigate }: MatterSidebarSec
                 onClick={onNavigate}
                 title={lang === "en" ? item.labelEn : item.labelDe}
                 className={cn(
-                  "group flex h-9 w-full items-center justify-center rounded-lg transition-colors",
+                  "group flex h-9 w-full items-center justify-center rounded-lg transition-[background-color,border-color,color]",
                   isActive
                     ? "brand-soft brand-text"
                     : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -129,7 +129,7 @@ export function MatterSidebarSection({ collapsed, onNavigate }: MatterSidebarSec
               aria-current={isActive ? "page" : undefined}
               onClick={onNavigate}
               className={cn(
-                "group flex h-9 items-center gap-3 rounded-lg px-3 text-[13px] font-medium transition-colors",
+                "group flex h-9 items-center gap-3 rounded-lg px-3 text-[13px] font-medium transition-[background-color,border-color,color]",
                 isActive
                   ? "brand-soft brand-text"
                   : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"

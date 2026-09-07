@@ -260,7 +260,7 @@ export default function CalendarExportPage() {
               </code>
               <button
                 onClick={copySubscriptionUrl}
-                className="flex shrink-0 items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-3 py-1.5 text-xs font-medium text-[color:var(--ds-success-text)] transition-colors hover:bg-[color:var(--ds-success-bg)]"
+                className="flex shrink-0 items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-3 py-1.5 text-xs font-medium text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)]"
               >
                 {copied ? <Check size={12} /> : <Copy size={12} />}
                 {copied ? "Kopiert!" : "Kopieren"}

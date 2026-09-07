@@ -404,7 +404,7 @@ export function Topbar({
                   key={b.slug}
                   onClick={() => selectBrainIdx(i)}
                   onMouseEnter={() => setBrainActiveIdx(i)}
-                  className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${i === brainActiveIdx ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
+                  className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-[background-color,border-color,color] ${i === brainActiveIdx ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
                   role="option"
                   aria-selected={b.slug === activeBrain?.slug}
                 >
@@ -595,7 +595,7 @@ export function Topbar({
                       aria-selected={notificationFilter === filter}
                       onClick={() => setNotificationFilter(filter)}
                       className={cn(
-                        "flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
+                        "flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-[background-color,border-color,color]",
                         notificationFilter === filter
                           ? "brand-soft brand-text"
                           : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
@@ -636,7 +636,7 @@ export function Topbar({
                                 router.push(notifHref);
                                 setNotifOpen(false);
                               }}
-                              className="min-w-0 flex-1 cursor-pointer rounded-md text-left transition-colors hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                              className="min-w-0 flex-1 cursor-pointer rounded-md text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
                             >
                               <div className="text-xs leading-snug font-medium text-[color:var(--ds-text)]">
                                 {n.title}

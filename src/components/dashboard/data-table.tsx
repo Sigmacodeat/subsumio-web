@@ -408,7 +408,7 @@ export function DataTable<T>({
                                 ?.headers.find((h) => h.id === col.key);
                               header?.column.toggleSorting();
                             }}
-                            className="inline-flex cursor-pointer items-center gap-1 text-left uppercase transition-colors select-none [font:inherit] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+                            className="inline-flex cursor-pointer items-center gap-1 text-left uppercase transition-[background-color,border-color,color] select-none [font:inherit] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
                           >
                             {col.header}
                             <span className="shrink-0">

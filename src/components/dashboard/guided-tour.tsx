@@ -803,7 +803,7 @@ function TourOverlay({
               </div>
               <button
                 onClick={onClose}
-                className="rounded-md p-1 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                className="rounded-md p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                 aria-label={t("tour.close")}
               >
                 <X size={16} />
@@ -872,7 +872,7 @@ function TourOverlay({
         {/* Skip link */}
         <button
           onClick={onClose}
-          className="mt-3 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+          className="mt-3 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
         >
           {t("tour.skip")}
         </button>

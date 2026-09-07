@@ -398,7 +398,7 @@ export default function TaxAuditPage() {
                   <tr
                     key={a.slug}
                     onClick={() => router.push(`/dashboard/tax-audit/${encodeSlugPath(a.slug)}`)}
-                    className="cursor-pointer border-b border-[color:var(--ds-border)]/50 transition-colors last:border-0 hover:bg-[color:var(--ds-hover)]"
+                    className="cursor-pointer border-b border-[color:var(--ds-border)]/50 transition-[background-color,border-color,color] last:border-0 hover:bg-[color:var(--ds-hover)]"
                   >
                     <td className="px-5 py-3 font-medium text-[color:var(--ds-text)]">
                       {a.clientName}
@@ -508,7 +508,8 @@ export default function TaxAuditPage() {
                   {t("tax.audit.label_year")}
                 </label>
                 <Input
-                  type="number" inputMode="numeric"
+                  type="number"
+                  inputMode="numeric"
                   value={createForm.year}
                   onChange={(e) => setCreateForm((p) => ({ ...p, year: Number(e.target.value) }))}
                   min={2000}

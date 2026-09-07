@@ -415,7 +415,7 @@ export default function WorkflowsPage() {
                   key={f.key}
                   onClick={() => setFilter(f.key)}
                   className={cn(
-                    "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                    "rounded-lg px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color]",
                     filter === f.key
                       ? "brand-soft brand-text brand-border border"
                       : "border border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -496,7 +496,7 @@ function WorkflowCard({
       {/* Header row */}
       <button
         onClick={onToggle}
-        className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-[color:var(--ds-surface-2)]/50"
+        className="flex w-full items-center gap-3 p-4 text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)]/50"
         aria-expanded={expanded}
       >
         {expanded ? (
@@ -583,7 +583,7 @@ function WorkflowCard({
           {pendingApprovals.length > 0 && (
             <a
               href="/dashboard/approvals"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-warning-border)] bg-amber-500/[0.04] px-3 py-1.5 text-xs text-[color:var(--ds-warning-text)] transition-colors hover:bg-amber-500/[0.08] dark:text-[color:var(--ds-warning-text)]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-warning-border)] bg-amber-500/[0.04] px-3 py-1.5 text-xs text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color] hover:bg-amber-500/[0.08] dark:text-[color:var(--ds-warning-text)]"
             >
               <Clock size={13} />
               {pendingApprovals.length} Freigabe{pendingApprovals.length > 1 ? "n" : ""} offen — zu

@@ -283,7 +283,7 @@ export function SilentFailureWidget() {
               key={`${entry.caseSlug}-${i}`}
               href={entry.href}
               className={cn(
-                "group flex items-start gap-2 rounded-md border px-2 py-1.5 transition-colors hover:opacity-80",
+                "group flex items-start gap-2 rounded-md border px-2 py-1.5 transition-[background-color,border-color,color] hover:opacity-80",
                 config.borderClasses
               )}
             >

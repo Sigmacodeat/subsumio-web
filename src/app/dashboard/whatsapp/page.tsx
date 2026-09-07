@@ -903,7 +903,7 @@ function WorkflowLink({
   return (
     <Link
       href={href}
-      className="group rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-colors hover:bg-[color:var(--ds-surface-hover)]"
+      className="group rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-hover)]"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-2">

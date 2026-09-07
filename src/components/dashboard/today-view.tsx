@@ -149,7 +149,7 @@ export function TodayView() {
                       <Link
                         href={itemHref(item, meta.ctaHref)}
                         className={cn(
-                          "group/item block rounded-lg p-2.5 text-sm transition-colors",
+                          "group/item block rounded-lg p-2.5 text-sm transition-[background-color,border-color,color]",
                           isOverdue
                             ? "border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)]"
                             : "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
@@ -186,7 +186,7 @@ export function TodayView() {
                 {meta && (
                   <Link
                     href={meta.ctaHref}
-                    className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--brand-primary)]"
+                    className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--brand-primary)]"
                   >
                     {lang === "en" ? meta.ctaLabelEn : meta.ctaLabelDe}
                     <ArrowRight size={11} />

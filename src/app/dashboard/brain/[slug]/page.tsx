@@ -165,7 +165,7 @@ export default function BrainDetailPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8 flex h-full min-w-0 overflow-hidden">
+    <div className="mx-auto flex h-full max-w-[1200px] min-w-0 space-y-6 overflow-hidden p-4 md:p-6 lg:p-8">
       {/* Main */}
       <div className="min-w-0 flex-1 overflow-y-auto">
         {/* Breadcrumb + Actions */}
@@ -173,7 +173,7 @@ export default function BrainDetailPage() {
           <div className="flex items-center gap-2">
             <Link
               href="/dashboard/brain"
-              className="text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text-muted)]"
+              className="text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text-muted)]"
             >
               <ArrowLeft size={16} />
             </Link>
@@ -324,12 +324,12 @@ export default function BrainDetailPage() {
                         </span>
                         <span className="text-xs text-[color:var(--ds-text-muted)]">→</span>
                       </div>
-                      <span className="group-hover:brand-text flex-1 text-sm text-[color:var(--ds-text)] transition-colors">
+                      <span className="group-hover:brand-text flex-1 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color]">
                         {link.target}
                       </span>
                       <ExternalLink
                         size={12}
-                        className="group-hover:brand-text text-[color:var(--ds-text-muted)] transition-colors"
+                        className="group-hover:brand-text text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color]"
                       />
                     </Link>
                   ))}
@@ -356,11 +356,11 @@ export default function BrainDetailPage() {
                     <Link
                       key={rel.slug}
                       href={`/dashboard/brain/${encodeURIComponent(rel.slug)}`}
-                      className="group flex items-center gap-2.5 rounded-lg p-2.5 transition-colors hover:bg-[color:var(--ds-hover)]"
+                      className="group flex items-center gap-2.5 rounded-lg p-2.5 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)]"
                     >
                       <RelIcon
                         size={14}
-                        className="group-hover:brand-text shrink-0 text-[color:var(--ds-text-muted)] transition-colors"
+                        className="group-hover:brand-text shrink-0 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color]"
                       />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-xs font-medium text-[color:var(--ds-text)]">
@@ -444,7 +444,7 @@ export default function BrainDetailPage() {
       <div className="mt-6">
         <button
           onClick={() => setChatOpen((v) => !v)}
-          className="flex w-full items-center justify-between rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm font-medium text-[color:var(--ds-text)] transition-colors hover:bg-[color:var(--ds-hover)]"
+          className="flex w-full items-center justify-between rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm font-medium text-[color:var(--ds-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)]"
         >
           <span className="flex items-center gap-2">
             <MessageCircle size={16} className="brand-text" />

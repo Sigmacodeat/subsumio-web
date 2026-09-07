@@ -127,7 +127,7 @@ export function AclSettings() {
             <Card
               key={group.id}
               className={cn(
-                "cursor-pointer border p-4 transition-colors",
+                "cursor-pointer border p-4 transition-[background-color,border-color,color]",
                 selectedGroupId === group.id
                   ? "border-[color:var(--brand-primary)] bg-[color:var(--ds-surface-2)]"
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-hover)]"

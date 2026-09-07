@@ -429,7 +429,7 @@ export default function CaseSearchPage() {
                           key={value}
                           onClick={() => toggleFilter(facet.key, value)}
                           className={cn(
-                            "flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-xs transition-colors",
+                            "flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-xs transition-[background-color,border-color,color]",
                             isSelected
                               ? "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]"
                               : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
@@ -489,7 +489,7 @@ export default function CaseSearchPage() {
                   <button
                     key={`${facetKey}-${value}`}
                     onClick={() => toggleFilter(facetKey as keyof FacetFilters, value)}
-                    className="flex items-center gap-1 rounded-full border border-[color:var(--brand-primary)]/30 bg-[color:var(--brand-primary)]/5 px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)] transition-colors hover:bg-[color:var(--brand-primary)]/10"
+                    className="flex items-center gap-1 rounded-full border border-[color:var(--brand-primary)]/30 bg-[color:var(--brand-primary)]/5 px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary)]/10"
                   >
                     {fmtValue(facetKey, value)}
                     <X size={10} />
@@ -562,7 +562,7 @@ export default function CaseSearchPage() {
                   <Link
                     key={item.slug}
                     href={`/dashboard/cases/${encodeSlugPath(item.slug)}`}
-                    className="group flex items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 transition-colors hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)]"
+                    className="group flex items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)]"
                   >
                     {/* Status icon */}
                     <div

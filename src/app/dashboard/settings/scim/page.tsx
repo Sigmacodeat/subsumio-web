@@ -103,7 +103,7 @@ function CopyableField({
         <button
           onClick={copy}
           disabled={!value}
-          className="shrink-0 p-2 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)] disabled:opacity-30"
+          className="shrink-0 p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] disabled:opacity-30"
         >
           {copied ? (
             <Check size={14} className="text-[color:var(--ds-success-text)]" />
@@ -227,7 +227,7 @@ export default function ScimSettingsPage() {
   // RBAC: Only admin can access this page
   if (userRole !== "admin") {
     return (
-      <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8 md:p-6 lg:p-8">
+      <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
         <PageHeader title={t("scim.title")} description={t("scim.description")} />
         <Card>
           <div className="p-10 text-center">

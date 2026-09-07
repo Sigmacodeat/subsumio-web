@@ -336,7 +336,7 @@ export default function AuditLogPage() {
               setPage(0);
             }}
             placeholder={t("audit.search_placeholder")}
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-3 pl-10 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-3 pl-10 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
           {search && (
             <button
@@ -357,7 +357,7 @@ export default function AuditLogPage() {
             {activeFilterCount > 0 && (
               <button
                 onClick={resetFilters}
-                className="text-xs text-[color:var(--ds-text-subtle)] transition-colors hover:text-[color:var(--ds-text)]"
+                className="text-xs text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
               >
                 {t("audit.reset")}
               </button>
@@ -528,7 +528,7 @@ export default function AuditLogPage() {
                       <tr
                         key={e.id}
                         onClick={() => setSelectedEntry(e)}
-                        className="cursor-pointer border-b border-[color:var(--ds-border)] transition-colors last:border-0 hover:bg-[color:var(--ds-hover)]"
+                        className="cursor-pointer border-b border-[color:var(--ds-border)] transition-[background-color,border-color,color] last:border-0 hover:bg-[color:var(--ds-hover)]"
                       >
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="text-xs font-medium text-[color:var(--ds-text)]">
@@ -656,7 +656,7 @@ export default function AuditLogPage() {
                 ref={drawerCloseRef}
                 onClick={() => setSelectedEntry(null)}
                 aria-label={t("common.close")}
-                className="text-[color:var(--ds-text-subtle)] transition-colors hover:text-[color:var(--ds-text)]"
+                className="text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
               >
                 <X size={18} />
               </button>

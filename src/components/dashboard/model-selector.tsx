@@ -141,7 +141,7 @@ export function ModelSelector({
             <button
               onClick={() => handleSelect("auto")}
               className={cn(
-                "flex w-full items-start gap-2.5 border-b border-[color:var(--ds-border)] text-left transition-colors hover:bg-[color:var(--ds-hover)]",
+                "flex w-full items-start gap-2.5 border-b border-[color:var(--ds-border)] text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)]",
                 isCompact ? "px-3 py-2" : "px-4 py-3",
                 activeModelId === "auto" && "brand-soft"
               )}
@@ -178,7 +178,7 @@ export function ModelSelector({
                   key={model.id}
                   onClick={() => handleSelect(model.id)}
                   className={cn(
-                    "flex w-full items-start gap-2.5 border-b border-[color:var(--ds-border)] text-left transition-colors last:border-0 hover:bg-[color:var(--ds-hover)]",
+                    "flex w-full items-start gap-2.5 border-b border-[color:var(--ds-border)] text-left transition-[background-color,border-color,color] last:border-0 hover:bg-[color:var(--ds-hover)]",
                     isCompact ? "px-3 py-2" : "px-4 py-3",
                     isActive && "brand-soft"
                   )}
