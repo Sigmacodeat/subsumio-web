@@ -407,7 +407,7 @@ function NormsPageInner() {
                   <button
                     key={n.slug}
                     onClick={() => setSelectedNorm(n)}
-                    className="group flex w-full items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-left transition-colors hover:border-[color:var(--ds-border)] hover:bg-[color:var(--ds-hover)]"
+                    className="group flex w-full items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-left transition-[background-color,border-color,color] hover:border-[color:var(--ds-border)] hover:bg-[color:var(--ds-hover)]"
                   >
                     <span
                       className={`h-2 w-2 shrink-0 rounded-full ${

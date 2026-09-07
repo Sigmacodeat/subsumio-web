@@ -282,7 +282,7 @@ export function ActivityTab() {
                   <Link
                     key={i}
                     href={`/dashboard/research?tab=normen&citation=${encodeURIComponent(c)}`}
-                    className="brand-soft brand-text brand-border hover:brand-soft rounded-lg border px-2.5 py-1 text-xs transition-colors"
+                    className="brand-soft brand-text brand-border hover:brand-soft rounded-lg border px-2.5 py-1 text-xs transition-[background-color,border-color,color]"
                   >
                     {c}
                   </Link>

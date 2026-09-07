@@ -268,7 +268,7 @@ export function EvidenceTab() {
                 {(doc.slug || doc.url) && (
                   <Link
                     href={`/dashboard/brain/${encodeURIComponent(doc.slug || doc.url || "")}`}
-                    className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors"
+                    className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color]"
                   >
                     {t("cases.detail_doc_open")}
                   </Link>
@@ -525,7 +525,7 @@ export function EvidenceTab() {
                       setTypeFilter("");
                       setSearchQuery("");
                     }}
-                    className="text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+                    className="text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
                   >
                     {lang === "en" ? "Clear" : "Zurücksetzen"}
                   </button>
@@ -571,7 +571,7 @@ export function EvidenceTab() {
                             ctx.setShowEvidenceForm(true);
                             ctx.evidenceForm.reset(ev as EvidenceFormData);
                           }}
-                          className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors"
+                          className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color]"
                         >
                           {t("cases.detail_ev_edit_btn")}
                         </button>
@@ -582,7 +582,7 @@ export function EvidenceTab() {
                             ctx.setEvidenceList(updated);
                             ctx.saveCaseUpdate({ evidence: updated });
                           }}
-                          className="px-2 py-1 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-danger-text)]"
+                          className="px-2 py-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)]"
                         >
                           <Trash2 size={14} />
                         </button>

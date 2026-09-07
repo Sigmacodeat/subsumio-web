@@ -363,7 +363,7 @@ export function AiDeadlineSuggestions() {
               <div
                 key={s.slug}
                 className={cn(
-                  "flex items-start gap-3 rounded-lg border p-3 transition-colors",
+                  "flex items-start gap-3 rounded-lg border p-3 transition-[background-color,border-color,color]",
                   isSelected
                     ? "border-[color:var(--brand-primary)]/40 bg-[color:var(--brand-primary)]/5"
                     : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] hover:bg-[color:var(--ds-hover)]"
@@ -373,7 +373,7 @@ export function AiDeadlineSuggestions() {
                 <button
                   onClick={() => toggleSelection(s.slug)}
                   className={cn(
-                    "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
+                    "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-[background-color,border-color,color]",
                     isSelected
                       ? "brand-bg border-[color:var(--brand-primary)] text-white"
                       : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)]"
@@ -485,7 +485,7 @@ export function AiDeadlineSuggestions() {
                       void singleMutation.mutateAsync({ slug: s.slug, action: "approve" })
                     }
                     disabled={busy}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] transition-colors hover:bg-[color:var(--ds-success-bg)] disabled:opacity-50"
+                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] disabled:opacity-50"
                     title={tr("approve", lang)}
                   >
                     {busy ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
@@ -495,7 +495,7 @@ export function AiDeadlineSuggestions() {
                       void singleMutation.mutateAsync({ slug: s.slug, action: "reject" })
                     }
                     disabled={busy}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] transition-colors hover:bg-[color:var(--ds-danger-bg)] disabled:opacity-50"
+                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] disabled:opacity-50"
                     title={tr("reject", lang)}
                   >
                     {busy ? <Loader2 size={13} className="animate-spin" /> : <X size={13} />}

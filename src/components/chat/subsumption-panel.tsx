@@ -733,7 +733,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
             <>
               <button
                 onClick={handleSaveSession}
-                className="inline-flex items-center gap-1 text-xs text-[var(--ds-text-muted)] transition-colors hover:text-[var(--ds-text)]"
+                className="inline-flex items-center gap-1 text-xs text-[var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[var(--ds-text)]"
                 title="Sitzung speichern"
               >
                 {savedFlash ? (
@@ -748,7 +748,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
               </button>
               <button
                 onClick={() => setShowSessions((v) => !v)}
-                className="inline-flex items-center gap-1 text-xs text-[var(--ds-text-muted)] transition-colors hover:text-[var(--ds-text)]"
+                className="inline-flex items-center gap-1 text-xs text-[var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[var(--ds-text)]"
                 title="Gespeicherte Sitzungen"
               >
                 <FolderOpen className="h-3 w-3" /> Laden
@@ -760,7 +760,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
               </button>
               <button
                 onClick={handleReset}
-                className="text-xs text-[var(--ds-text-muted)] transition-colors hover:text-[var(--ds-text)]"
+                className="text-xs text-[var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[var(--ds-text)]"
               >
                 Zurücksetzen
               </button>
@@ -769,7 +769,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
           {onClose && (
             <button
               onClick={onClose}
-              className="text-[var(--ds-text-muted)] transition-colors hover:text-[var(--ds-text)]"
+              className="text-[var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[var(--ds-text)]"
               aria-label="Schließen"
             >
               <svg
@@ -953,7 +953,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
                   <div className="mt-2 flex items-center gap-1">
                     <button
                       onClick={() => handleCopy(msg.content, i)}
-                      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-surface-1)] hover:text-[var(--ds-text)]"
+                      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-[var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[var(--ds-surface-1)] hover:text-[var(--ds-text)]"
                       title="In Zwischenablage kopieren"
                     >
                       {copiedIdx === i ? (
@@ -968,7 +968,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
                     </button>
                     <button
                       onClick={() => handleExport(msg.content, i)}
-                      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-surface-1)] hover:text-[var(--ds-text)]"
+                      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-[var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[var(--ds-surface-1)] hover:text-[var(--ds-text)]"
                       title="Als Markdown exportieren"
                     >
                       <Download className="h-3 w-3" /> Export
@@ -1057,7 +1057,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
                     type="button"
                     onClick={() => setFollowUp(suggestion)}
                     disabled={isStreaming}
-                    className="rounded-full border border-[var(--ds-border)] px-2.5 py-1 text-xs text-[var(--ds-text-muted)] transition-colors hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] disabled:opacity-40"
+                    className="rounded-full border border-[var(--ds-border)] px-2.5 py-1 text-xs text-[var(--ds-text-muted)] transition-[background-color,border-color,color] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] disabled:opacity-40"
                   >
                     {suggestion}
                   </button>

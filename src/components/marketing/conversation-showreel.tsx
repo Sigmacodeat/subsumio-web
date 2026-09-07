@@ -645,7 +645,7 @@ export default function ConversationShowreel({
         >
           <button
             onClick={handleReplay}
-            className="group inline-flex items-center gap-2 text-sm font-medium [color:var(--mk-text-muted)] transition-colors hover:[color:var(--brand-text)]"
+            className="group inline-flex items-center gap-2 text-sm font-medium [color:var(--mk-text-muted)] transition-[background-color,border-color,color] hover:[color:var(--brand-text)]"
           >
             <RotateCcw size={13} className="transition-transform group-hover:rotate-[-60deg]" />
             {replayLabel}

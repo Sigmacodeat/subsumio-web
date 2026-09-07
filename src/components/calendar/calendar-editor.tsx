@@ -226,7 +226,7 @@ function CalendarEditDialog({
           <button
             onClick={() => onOpenChange(false)}
             aria-label={t("common.close" as DashboardKey)}
-            className="text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+            className="text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
           >
             <X size={18} />
           </button>
@@ -650,7 +650,7 @@ export function CalendarInUiEditor() {
                       openEdit(appt);
                     }}
                     className={cn(
-                      "block w-full truncate rounded px-1.5 py-0.5 text-left text-xs transition-colors",
+                      "block w-full truncate rounded px-1.5 py-0.5 text-left text-xs transition-[background-color,border-color,color]",
                       appt.type === "hearing"
                         ? "bg-blue-500/10 text-blue-700 hover:bg-blue-500/20"
                         : appt.type === "consultation"
@@ -676,7 +676,7 @@ export function CalendarInUiEditor() {
               <div
                 key={idx}
                 className={cn(
-                  "min-h-[80px] rounded-lg border p-1 transition-colors",
+                  "min-h-[80px] rounded-lg border p-1 transition-[background-color,border-color,color]",
                   "border-transparent bg-transparent"
                 )}
               >
@@ -699,7 +699,7 @@ export function CalendarInUiEditor() {
                 }
               }}
               className={cn(
-                "min-h-[80px] rounded-lg border p-1 transition-colors",
+                "min-h-[80px] rounded-lg border p-1 transition-[background-color,border-color,color]",
                 "cursor-pointer border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:bg-[color:var(--ds-surface-2)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none",
                 isToday && "border-blue-500/40 ring-1 ring-blue-500/20"
               )}
@@ -730,7 +730,7 @@ export function CalendarInUiEditor() {
                 <button
                   key={appt.slug}
                   onClick={() => openEdit(appt)}
-                  className="flex w-full items-center gap-3 rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-left transition-colors hover:bg-[color:var(--ds-surface-2)]"
+                  className="flex w-full items-center gap-3 rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)]"
                 >
                   <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
                     <span className="text-xs font-bold text-[color:var(--ds-text)]">

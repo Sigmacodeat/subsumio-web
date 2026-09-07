@@ -172,7 +172,8 @@ export function TaxReturnQuickCreateDialog({
                 </Label>
                 <Input
                   id="tax-return-year"
-                  type="number" inputMode="numeric"
+                  type="number"
+                  inputMode="numeric"
                   min={2000}
                   max={new Date().getFullYear() + 1}
                   value={year}
@@ -184,7 +185,7 @@ export function TaxReturnQuickCreateDialog({
             <button
               type="button"
               onClick={() => setShowAdvanced((v) => !v)}
-              className="flex items-center gap-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+              className="flex items-center gap-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
             >
               <ChevronDown
                 size={13}

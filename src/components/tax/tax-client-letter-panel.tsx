@@ -127,7 +127,7 @@ export function TaxClientLetterPanel({ clientSlug }: ClientLetterProps) {
                 key={o.value}
                 onClick={() => setOccasion(o.value)}
                 className={cn(
-                  "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                  "rounded-lg px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color]",
                   occasion === o.value
                     ? "brand-soft brand-text brand-border border"
                     : "border border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"

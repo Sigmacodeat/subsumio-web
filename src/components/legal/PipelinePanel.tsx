@@ -851,7 +851,7 @@ export function PipelinePanel({
                   <button
                     onClick={() => setExpandedLayer(expandedLayer === layer.num ? null : layer.num)}
                     className={cn(
-                      "flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left transition-colors",
+                      "flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left transition-[background-color,border-color,color]",
                       expandedLayer === layer.num
                         ? "border-[color:var(--brand-primary)] bg-[color:var(--ds-hover)]"
                         : "border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] hover:bg-[color:var(--ds-hover)]"
@@ -1615,7 +1615,7 @@ export function PipelinePanel({
           </p>
           <button
             onClick={() => refetch()}
-            className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[color:var(--brand-primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[color:var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:outline-none"
+            className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[color:var(--brand-primary)] px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:outline-none"
           >
             <RefreshCw size={14} />
             Erneut versuchen

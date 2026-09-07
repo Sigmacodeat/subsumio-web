@@ -166,7 +166,7 @@ export function CaseInsightsPanel({ caseSlug, className }: CaseInsightsPanelProp
                 <div
                   key={insight.id}
                   className={cn(
-                    "group relative flex items-start gap-3 rounded-lg border px-3 py-2.5 transition-colors hover:bg-[color:var(--ds-hover)]",
+                    "group relative flex items-start gap-3 rounded-lg border px-3 py-2.5 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)]",
                     styles.border,
                     styles.bg
                   )}

@@ -84,8 +84,10 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
         </div>
       )}
 
-      <div className="rounded-xl border border-[color:var(--ds-border)] p-6 bg-[color:var(--ds-surface)]">
-        <h2 className="mb-4 text-sm font-semibold text-[color:var(--ds-text)]">Benutzer bearbeiten</h2>
+      <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6">
+        <h2 className="mb-4 text-sm font-semibold text-[color:var(--ds-text)]">
+          Benutzer bearbeiten
+        </h2>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
@@ -96,7 +98,7 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
               type="text"
               value={user.name}
               disabled
-              className="w-full rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text-muted)] bg-[color:var(--ds-surface-2)]"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text-muted)]"
             />
           </div>
           <div>
@@ -107,7 +109,7 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
               type="text"
               value={user.email}
               disabled
-              className="w-full rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text-muted)] bg-[color:var(--ds-surface-2)]"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text-muted)]"
             />
           </div>
           <div>
@@ -117,7 +119,7 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
             <select
               value={plan}
               onChange={(e) => setPlan(e.target.value as typeof plan)}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text)] bg-[color:var(--ds-surface-2)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             >
               <option value="free">Free</option>
               <option value="pro">Pro</option>
@@ -132,7 +134,7 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as typeof role)}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text)] bg-[color:var(--ds-surface-2)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             >
               <option value="admin">Admin</option>
               <option value="lawyer">Lawyer</option>
@@ -147,7 +149,7 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
             <select
               value={industry}
               onChange={(e) => setIndustry(e.target.value)}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text)] bg-[color:var(--ds-surface-2)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             >
               <option value="">— Keine —</option>
               <option value="legal">Legal</option>
@@ -161,7 +163,7 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
           <button
             onClick={save}
             disabled={saving}
-            className="brand-bg inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-50"
+            className="brand-bg inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:opacity-90 disabled:opacity-50"
           >
             <Save size={14} /> Speichern
           </button>
@@ -169,7 +171,7 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
             <button
               onClick={deactivate}
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-lg border border-rose-500/30 px-4 py-2 text-sm font-medium text-rose-400 transition-colors hover:bg-rose-500/10 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-rose-500/30 px-4 py-2 text-sm font-medium text-rose-400 transition-[background-color,border-color,color] hover:bg-rose-500/10 disabled:opacity-50"
             >
               <UserX size={14} /> Deaktivieren
             </button>

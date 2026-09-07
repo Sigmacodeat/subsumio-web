@@ -162,7 +162,7 @@ function BrainVisualization({ t }: { t: SuperbrainCopyDe }) {
                     scale: isActive ? 1.05 : 1,
                   }}
                   transition={{ duration: 0.3 }}
-                  className={`relative flex flex-col items-center gap-1.5 overflow-hidden rounded-lg border p-2.5 text-center transition-colors ${
+                  className={`relative flex flex-col items-center gap-1.5 overflow-hidden rounded-lg border p-2.5 text-center transition-[background-color,border-color,color] ${
                     isActive
                       ? "brand-border brand-soft"
                       : "[border-color:var(--mk-border)] [background:var(--mk-surface)]"
@@ -284,7 +284,7 @@ function OthersSection({ t }: { t: SuperbrainCopyDe }) {
                     scale: isActive ? 1.05 : 1,
                   }}
                   transition={{ duration: 0.4 }}
-                  className={`flex w-48 flex-col items-center gap-3 rounded-2xl border p-6 text-center transition-colors ${
+                  className={`flex w-48 flex-col items-center gap-3 rounded-2xl border p-6 text-center transition-[background-color,border-color,color] ${
                     isActive
                       ? "border-rose-400/40 bg-rose-500/5"
                       : "[border-color:var(--mk-border)] [background:var(--mk-surface)]"
@@ -398,7 +398,7 @@ function OursSection({ t }: { t: SuperbrainCopyDe }) {
                 className="relative"
               >
                 <GlowCard
-                  className={`h-full rounded-2xl border p-6 transition-colors ${
+                  className={`h-full rounded-2xl border p-6 transition-[background-color,border-color,color] ${
                     isActive
                       ? "brand-border brand-soft"
                       : "[border-color:var(--mk-border)] [background:var(--mk-surface)]"
@@ -603,7 +603,7 @@ function DreamCycleSection({ t }: { t: SuperbrainCopyDe }) {
                   className="relative"
                 >
                   <GlowCard
-                    className={`h-full rounded-xl border p-6 transition-colors ${
+                    className={`h-full rounded-xl border p-6 transition-[background-color,border-color,color] ${
                       isActive
                         ? "brand-border brand-soft"
                         : "[border-color:var(--mk-border)] [background:var(--mk-surface)]"

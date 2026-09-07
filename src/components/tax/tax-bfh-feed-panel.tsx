@@ -165,7 +165,7 @@ export function TaxBfhFeedPanel() {
                 >
                   <button
                     onClick={() => setExpandedIdx(expandedIdx === i ? null : i)}
-                    className="flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-[color:var(--ds-surface-2)]/50"
+                    className="flex w-full items-center gap-3 p-3 text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)]/50"
                     aria-expanded={expandedIdx === i}
                   >
                     <ChevronDown

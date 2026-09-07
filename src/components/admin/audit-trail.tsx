@@ -174,7 +174,7 @@ export default function AuditTrail() {
         </div>
         <button
           onClick={loadEntries}
-          className="brand-bg brand-bg rounded-lg px-3 py-2 text-sm text-white transition-colors"
+          className="brand-bg brand-bg rounded-lg px-3 py-2 text-sm text-white transition-[background-color,border-color,color]"
         >
           Laden
         </button>

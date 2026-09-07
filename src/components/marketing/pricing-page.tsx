@@ -159,7 +159,7 @@ export default function PricingPage({ lang }: { lang: Lang }) {
                     role="tab"
                     aria-selected={audience === id}
                     onClick={() => setAudience(id)}
-                    className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${audience === id ? "brand-bg text-white" : "[color:var(--mk-text-muted)] hover:[background:var(--mk-hover)]"}`}
+                    className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition-[background-color,border-color,color] ${audience === id ? "brand-bg text-white" : "[color:var(--mk-text-muted)] hover:[background:var(--mk-hover)]"}`}
                   >
                     {id === "private"
                       ? en
@@ -338,7 +338,7 @@ export default function PricingPage({ lang }: { lang: Lang }) {
                 key={prop.title}
                 className="rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
               >
-                <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-colors [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]">
+                <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color] [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]">
                   <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border [border-color:var(--signal-green-border)] transition-transform duration-300 [background:var(--signal-green-bg)] hover:scale-110">
                     <Check size={18} className="[color:var(--signal-green)]" />
                   </div>

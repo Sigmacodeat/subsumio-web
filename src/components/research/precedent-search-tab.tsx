@@ -240,7 +240,7 @@ export default function PrecedentSearchPage() {
                   key={j}
                   onClick={() => setJurisdiction(j)}
                   className={cn(
-                    "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                    "rounded-md px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color]",
                     jurisdiction === j
                       ? "brand-soft brand-text brand-border border"
                       : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
@@ -324,7 +324,7 @@ export default function PrecedentSearchPage() {
               {result.results.map((r) => (
                 <div
                   key={r.id}
-                  className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-colors hover:border-[color:var(--ds-border-strong)]"
+                  className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)]"
                 >
                   <div className="mb-2 flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">

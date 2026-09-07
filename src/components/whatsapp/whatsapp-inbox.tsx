@@ -244,7 +244,7 @@ export function WhatsAppInbox() {
         <div className="flex items-center gap-3 border-b border-[color:var(--ds-border)] px-4 py-3">
           <button
             onClick={() => setSelectedHash(null)}
-            className="text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+            className="text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
           >
             <ArrowLeft size={18} />
           </button>
@@ -366,7 +366,7 @@ export function WhatsAppInbox() {
             <button
               key={conv.senderHash}
               onClick={() => setSelectedHash(conv.senderHash)}
-              className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[color:var(--ds-surface-2)]"
+              className="flex w-full items-center gap-3 px-4 py-3 text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)]"
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--ds-surface-2)] text-sm font-medium text-[color:var(--ds-text)]">
                 {conv.senderName.slice(0, 2).toUpperCase()}

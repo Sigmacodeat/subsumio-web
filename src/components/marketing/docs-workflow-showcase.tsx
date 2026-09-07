@@ -195,7 +195,7 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
                 >
                   <div className="flex items-center gap-3">
                     <span
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors ${
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-[background-color,border-color,color] ${
                         active
                           ? "brand-soft brand-border brand-text"
                           : "[border-color:var(--mk-border)] [color:var(--mk-text-muted)]"
@@ -212,7 +212,7 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
                       </span>
                     </div>
                     <span
-                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-mono text-sm font-bold transition-colors ${
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-mono text-sm font-bold transition-[background-color,border-color,color] ${
                         active
                           ? "brand-text brand-soft"
                           : "[color:var(--mk-text-muted)] [background:var(--mk-surface-2)]"

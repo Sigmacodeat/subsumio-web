@@ -140,7 +140,7 @@ function StickyCategoryNav({
               <button
                 onClick={() => onSearch("")}
                 aria-label="Clear search"
-                className="absolute right-2 flex h-5 w-5 items-center justify-center rounded-full text-[var(--mk-text-subtle)] transition-colors hover:bg-[var(--mk-surface-2)] hover:text-[var(--mk-text)]"
+                className="absolute right-2 flex h-5 w-5 items-center justify-center rounded-full text-[var(--mk-text-subtle)] transition-[background-color,border-color,color] hover:bg-[var(--mk-surface-2)] hover:text-[var(--mk-text)]"
               >
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                   <path
@@ -309,7 +309,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
               </p>
               <button
                 onClick={() => setSearch("")}
-                className="rounded-full border [border-color:var(--mk-border)] px-4 py-1.5 text-sm font-medium [color:var(--mk-text)] transition-colors hover:bg-[var(--mk-surface-2)]"
+                className="rounded-full border [border-color:var(--mk-border)] px-4 py-1.5 text-sm font-medium [color:var(--mk-text)] transition-[background-color,border-color,color] hover:bg-[var(--mk-surface-2)]"
               >
                 {t.docsClearSearch ?? "Clear search"}
               </button>

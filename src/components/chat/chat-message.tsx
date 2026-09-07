@@ -220,7 +220,7 @@ function ChatMessageBubbleInner({
                 <button
                   key={idx}
                   onClick={() => onFollowUp(suggestion)}
-                  className="rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1 text-[11px] text-[color:var(--ds-text-muted)] transition-colors hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--brand-primary)]"
+                  className="rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1 text-[11px] text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--brand-primary)]"
                 >
                   {suggestion}
                 </button>

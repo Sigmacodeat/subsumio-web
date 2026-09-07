@@ -164,7 +164,7 @@ export function DocumentsTab() {
           if (files.length > 0 && caseData) ctx.handleMultiUpload(files);
         }}
         className={cn(
-          "rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-center transition-colors focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1",
+          "rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-center transition-[background-color,border-color,color] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1",
           caseData?.status === "archived" && "pointer-events-none opacity-50"
         )}
         tabIndex={caseData?.status === "archived" ? -1 : 0}
@@ -206,7 +206,7 @@ export function DocumentsTab() {
               e.target.value = "";
             }}
           />
-          <span className="brand-bg brand-bg inline-flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white transition-colors">
+          <span className="brand-bg brand-bg inline-flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white transition-[background-color,border-color,color]">
             <Plus size={14} /> {t("cases.detail_doc_upload")}
           </span>
         </label>
@@ -237,7 +237,7 @@ export function DocumentsTab() {
               void ctx.pickFolderForCase();
             }}
             disabled={ctx.scanningFolder || !isOnline() || caseData?.status === "archived"}
-            className="mt-3 ml-2 inline-flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm font-medium text-[color:var(--ds-text)] transition-colors hover:border-[color:var(--ds-border-strong)] disabled:opacity-50"
+            className="mt-3 ml-2 inline-flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm font-medium text-[color:var(--ds-text)] transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)] disabled:opacity-50"
           >
             <FolderOpen size={14} />
             {ctx.scanningFolder ? "Ordner wird eingelesen…" : "Ganzen Ordner einlesen"}
@@ -484,7 +484,7 @@ export function DocumentsTab() {
                           );
                         }
                       }}
-                      className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors ${alreadyLinked ? "cursor-not-allowed border-[color:var(--ds-border)] opacity-50" : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5"}`}
+                      className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-[background-color,border-color,color] ${alreadyLinked ? "cursor-not-allowed border-[color:var(--ds-border)] opacity-50" : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5"}`}
                     >
                       <FileText size={14} className="shrink-0 text-[color:var(--ds-text-muted)]" />
                       <div className="min-w-0 flex-1">
@@ -619,7 +619,7 @@ export function DocumentsTab() {
                 {(doc.slug || doc.url) && (
                   <Link
                     href={`/dashboard/brain/${encodeURIComponent(doc.slug || doc.url || "")}`}
-                    className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors"
+                    className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color]"
                   >
                     {t("cases.detail_doc_open")}
                   </Link>
@@ -627,7 +627,7 @@ export function DocumentsTab() {
                 {(doc.slug || doc.url) && (
                   <a
                     href={`/api/files/${(doc.slug || doc.url || "").split("/").map(encodeURIComponent).join("/")}`}
-                    className="hover:brand-text px-2 py-1 text-[color:var(--ds-text-muted)] transition-colors"
+                    className="hover:brand-text px-2 py-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color]"
                     title="Originaldatei herunterladen"
                     aria-label="Originaldatei herunterladen"
                   >
@@ -659,7 +659,7 @@ export function DocumentsTab() {
                     }
                     await ctx.refreshCaseData();
                   }}
-                  className="text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-danger-text)]"
+                  className="text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)]"
                 >
                   <Trash2 size={14} />
                 </button>

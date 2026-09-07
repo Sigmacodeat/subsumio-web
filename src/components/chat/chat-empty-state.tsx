@@ -73,9 +73,9 @@ export function ChatEmptyState({
             >
               <Icon
                 size={15}
-                className="shrink-0 text-[color:var(--ds-text-subtle)] transition-colors group-hover:text-[color:var(--brand-primary)]"
+                className="shrink-0 text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] group-hover:text-[color:var(--brand-primary)]"
               />
-              <span className="flex-1 truncate text-[13px] leading-snug text-[color:var(--ds-text-muted)] transition-colors group-hover:text-[color:var(--ds-text)]">
+              <span className="flex-1 truncate text-[13px] leading-snug text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] group-hover:text-[color:var(--ds-text)]">
                 {q}
               </span>
               <ArrowUpRight

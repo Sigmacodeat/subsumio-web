@@ -307,7 +307,7 @@ export function DraftReviewPanel({
               <div
                 key={issue.id}
                 className={cn(
-                  "rounded-md border p-2 transition-colors",
+                  "rounded-md border p-2 transition-[background-color,border-color,color]",
                   isResolved
                     ? "border-[color:var(--ds-border)] opacity-60"
                     : "border-[color:var(--ds-border)]"

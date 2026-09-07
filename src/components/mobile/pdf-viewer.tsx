@@ -87,7 +87,7 @@ export function PdfViewer({ url, filename, open, onOpenChange }: PdfViewerProps)
             <button
               onClick={() => setPageNum((p) => Math.max(1, p - 1))}
               disabled={pageNum <= 1}
-              className="rounded p-1 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-surface-2)] disabled:opacity-30"
+              className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)] disabled:opacity-30"
             >
               <ChevronLeft size={18} />
             </button>
@@ -97,7 +97,7 @@ export function PdfViewer({ url, filename, open, onOpenChange }: PdfViewerProps)
             <button
               onClick={() => setPageNum((p) => Math.min(numPages, p + 1))}
               disabled={pageNum >= numPages}
-              className="rounded p-1 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-surface-2)] disabled:opacity-30"
+              className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)] disabled:opacity-30"
             >
               <ChevronRight size={18} />
             </button>
@@ -108,7 +108,7 @@ export function PdfViewer({ url, filename, open, onOpenChange }: PdfViewerProps)
         <div className="flex items-center gap-1">
           <button
             onClick={() => setScale((s) => Math.max(0.5, s - 0.25))}
-            className="rounded p-1 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-surface-2)]"
+            className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)]"
             title={t("mobile.zoom_out" as DashboardKey)}
           >
             <ZoomOut size={16} />
@@ -118,7 +118,7 @@ export function PdfViewer({ url, filename, open, onOpenChange }: PdfViewerProps)
           </span>
           <button
             onClick={() => setScale((s) => Math.min(3.0, s + 0.25))}
-            className="rounded p-1 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-surface-2)]"
+            className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)]"
             title={t("mobile.zoom_in" as DashboardKey)}
           >
             <ZoomIn size={16} />
@@ -128,7 +128,7 @@ export function PdfViewer({ url, filename, open, onOpenChange }: PdfViewerProps)
         <a
           href={url}
           download={filename}
-          className="rounded p-1 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-surface-2)]"
+          className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)]"
           title={t("mobile.download" as DashboardKey)}
         >
           <Download size={16} />
@@ -136,7 +136,7 @@ export function PdfViewer({ url, filename, open, onOpenChange }: PdfViewerProps)
 
         <button
           onClick={() => onOpenChange(false)}
-          className="rounded p-1 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-surface-2)]"
+          className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)]"
           title={t("mobile.close" as DashboardKey)}
         >
           <X size={18} />
@@ -160,7 +160,7 @@ export function PdfViewer({ url, filename, open, onOpenChange }: PdfViewerProps)
             <a
               href={url}
               download={filename}
-              className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] px-4 py-2 text-sm text-[color:var(--ds-text)] transition-colors hover:bg-[color:var(--ds-surface-2)]"
+              className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] px-4 py-2 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)]"
             >
               <Download size={16} />
               {t("mobile.download_fallback" as DashboardKey)}
@@ -186,7 +186,7 @@ export function PdfViewer({ url, filename, open, onOpenChange }: PdfViewerProps)
               <a
                 href={url}
                 download={filename}
-                className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] px-4 py-2 text-sm text-[color:var(--ds-text)] transition-colors hover:bg-[color:var(--ds-surface-2)]"
+                className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] px-4 py-2 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)]"
               >
                 <Download size={16} />
                 {t("mobile.download_fallback" as DashboardKey)}

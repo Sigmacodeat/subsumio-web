@@ -64,7 +64,7 @@ export function DeadlinesTasksTab() {
           <button
             onClick={() => setShowDeadlineForm(true)}
             disabled={caseData?.status === "archived"}
-            className="flex w-full items-center gap-2 rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm font-medium text-[color:var(--ds-text-muted)] transition-colors hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
+            className="flex w-full items-center gap-2 rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
           >
             <Plus size={16} className="shrink-0" />
             {t("cases.detail_dl_add")}
@@ -596,7 +596,7 @@ export function DeadlinesTasksTab() {
                           ctx.setDeadlinesList(updated);
                           ctx.saveCaseUpdate({ deadlines: updated });
                         }}
-                        className="px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-success-text)]"
+                        className="px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-success-text)]"
                       >
                         {dl.review_status === "approved"
                           ? t("cases.detail_dl_review_open")
@@ -608,7 +608,7 @@ export function DeadlinesTasksTab() {
                           ctx.setEditingDeadlineIndex(i);
                           ctx.deadlineForm.reset(dl as DeadlineFormData);
                         }}
-                        className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors"
+                        className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color]"
                       >
                         {t("cases.detail_dl_edit_btn")}
                       </button>
@@ -619,7 +619,7 @@ export function DeadlinesTasksTab() {
                           ctx.setDeadlinesList(updated);
                           ctx.saveCaseUpdate({ deadlines: updated });
                         }}
-                        className="px-2 py-1 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-danger-text)]"
+                        className="px-2 py-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)]"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -771,7 +771,7 @@ export function DeadlinesTasksTab() {
               placeholder={t("cases.new_task")}
               aria-label={t("cases.new_task")}
               disabled={caseData?.status === "archived"}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 disabled:opacity-50"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 disabled:opacity-50"
             />
           </div>
           <Button
@@ -852,7 +852,7 @@ export function DeadlinesTasksTab() {
                     ctx.setTasks(updated);
                     ctx.saveCaseUpdate({ tasks: updated });
                   }}
-                  className="text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-danger-text)]"
+                  className="text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)]"
                 >
                   <Trash2 size={14} />
                 </button>

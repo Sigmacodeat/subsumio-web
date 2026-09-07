@@ -268,7 +268,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                           <div
                             key={s.id}
                             className={cn(
-                              "group flex items-center gap-2 rounded-lg px-3 py-2 transition-colors hover:bg-[color:var(--ds-hover)]",
+                              "group flex items-center gap-2 rounded-lg px-3 py-2 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)]",
                               s.id === props.activeSessionId && "brand-soft"
                             )}
                           >
@@ -393,7 +393,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                     }
                   }}
                   className={cn(
-                    "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                    "rounded-md px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color]",
                     agentMode === mode.value
                       ? "bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] shadow-sm"
                       : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -435,7 +435,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                           props.onShare?.();
                           setShowActions(false);
                         }}
-                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[color:var(--ds-text)] transition-colors hover:bg-[color:var(--ds-hover)]"
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[color:var(--ds-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)]"
                       >
                         <Share2 size={13} />
                         {t("chat.share")}
@@ -447,7 +447,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                           props.onExport();
                           setShowActions(false);
                         }}
-                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[color:var(--ds-text)] transition-colors hover:bg-[color:var(--ds-hover)]"
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[color:var(--ds-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)]"
                       >
                         <Download size={13} />
                         {t("chat.export")}
@@ -459,7 +459,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                         props.onClear();
                         setShowActions(false);
                       }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-red-600 transition-colors hover:bg-red-500/10 dark:text-red-400"
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-red-600 transition-[background-color,border-color,color] hover:bg-red-500/10 dark:text-red-400"
                     >
                       <Trash2 size={13} />
                       {t("chat.clear")}

@@ -2143,7 +2143,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       <div className="flex items-center gap-1 border-b border-[var(--ds-border)] bg-[var(--ds-surface-1)] px-3 py-1.5">
         <button
           onClick={() => setSubsumptionMode(false)}
-          className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
+          className={`rounded-lg px-3 py-1 text-xs font-medium transition-[background-color,border-color,color] ${
             !subsumptionMode
               ? "bg-[var(--brand-primary)] text-white"
               : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-surface-2)]"
@@ -2153,7 +2153,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         </button>
         <button
           onClick={() => setSubsumptionMode(true)}
-          className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
+          className={`rounded-lg px-3 py-1 text-xs font-medium transition-[background-color,border-color,color] ${
             subsumptionMode
               ? "bg-[var(--brand-primary)] text-white"
               : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-surface-2)]"
@@ -2282,7 +2282,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
               <span className="min-w-0 flex-1 truncate">{error}</span>
               <button
                 onClick={() => setDismissedError(true)}
-                className="shrink-0 text-red-400 transition-colors hover:text-red-600 dark:text-red-500 dark:hover:text-red-300"
+                className="shrink-0 text-red-400 transition-[background-color,border-color,color] hover:text-red-600 dark:text-red-500 dark:hover:text-red-300"
                 aria-label={t("chat.dismiss_error")}
               >
                 <X size={14} />

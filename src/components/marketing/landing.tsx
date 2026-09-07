@@ -157,7 +157,13 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 className="mb-5 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-bold tracking-tight text-balance [color:var(--mk-text)]"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                <SplitTextReveal as="span" delay={0.12} stagger={0.035} useAnimate className="block">
+                <SplitTextReveal
+                  as="span"
+                  delay={0.12}
+                  stagger={0.035}
+                  useAnimate
+                  className="block"
+                >
                   {`${t.h1a}\n${t.h1b}`}
                 </SplitTextReveal>
               </h1>
@@ -221,7 +227,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               >
                 <a
                   href="#features"
-                  className="inline-flex items-center gap-1.5 text-sm font-medium [color:var(--mk-text-muted)] transition-colors hover:text-[var(--brand-text)]"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium [color:var(--mk-text-muted)] transition-[background-color,border-color,color] hover:text-[var(--brand-text)]"
                 >
                   <Play size={14} />
                   {ui.seeFeatures}
@@ -305,7 +311,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 return (
                   <span
                     key={item.label}
-                    className="inline-flex items-center gap-1.5 text-sm font-medium [color:var(--mk-text-muted)] transition-colors hover:[color:var(--mk-text)]"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium [color:var(--mk-text-muted)] transition-[background-color,border-color,color] hover:[color:var(--mk-text)]"
                   >
                     <Icon size={14} className="text-[var(--brand-secondary)]" />
                     {item.label}
@@ -674,7 +680,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="text-[color:var(--mk-text-subtle)] underline decoration-[color:var(--mk-border)] underline-offset-4 transition-colors hover:text-[color:var(--mk-text)] hover:decoration-[color:var(--brand-text)]"
+                    className="text-[color:var(--mk-text-subtle)] underline decoration-[color:var(--mk-border)] underline-offset-4 transition-[background-color,border-color,color] hover:text-[color:var(--mk-text)] hover:decoration-[color:var(--brand-text)]"
                   >
                     {link.label}
                   </Link>

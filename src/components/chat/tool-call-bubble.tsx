@@ -171,14 +171,14 @@ export function ToolCallBubble({
         <div className="flex items-center gap-2 border-t border-amber-200/50 px-3 py-2 dark:border-amber-900/50">
           <button
             onClick={() => onConfirm?.(toolCall.id)}
-            className="flex items-center gap-1 rounded-md bg-amber-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-amber-700 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
+            className="flex items-center gap-1 rounded-md bg-amber-600 px-2.5 py-1 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-amber-700 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
           >
             <Check size={12} />
             {t("chat.tool.confirm")}
           </button>
           <button
             onClick={() => onCancel?.(toolCall.id)}
-            className="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none dark:text-amber-300 dark:hover:bg-amber-900/30"
+            className="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-amber-700 transition-[background-color,border-color,color] hover:bg-amber-100 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none dark:text-amber-300 dark:hover:bg-amber-900/30"
           >
             <X size={12} />
             {t("chat.tool.cancel")}
@@ -220,7 +220,7 @@ export function ToolCallBubble({
         {onRetry && (
           <button
             onClick={() => onRetry(toolCall.id)}
-            className="flex items-center gap-1 rounded-md bg-red-600 px-2 py-0.5 text-xs font-medium text-white transition-colors hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+            className="flex items-center gap-1 rounded-md bg-red-600 px-2 py-0.5 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
           >
             <RotateCw size={11} />
             {t("chat.tool.retry")}
@@ -304,7 +304,7 @@ function ToolResultCard({
                 onClick={() => onNavigate(item.href)}
                 disabled={!item.href}
                 className={cn(
-                  "flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors",
+                  "flex w-full items-center gap-2 px-3 py-1.5 text-left transition-[background-color,border-color,color]",
                   item.href && "hover:bg-[color:var(--ds-hover)]"
                 )}
               >
@@ -329,7 +329,7 @@ function ToolResultCard({
       {display.kind === "navigation" && display.href && !hasItems && (
         <button
           onClick={() => onNavigate(display.href)}
-          className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium text-[color:var(--brand-primary)] transition-colors hover:bg-[color:var(--ds-hover)]"
+          className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)]"
         >
           {display.message ?? t("chat.tool.open_navigation")}
           <ArrowRight size={12} />
@@ -566,7 +566,7 @@ function CalendarCard({
         {item.href && (
           <button
             onClick={() => onNavigate(item.href)}
-            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)] transition-colors hover:bg-[color:var(--ds-hover)]"
+            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)]"
           >
             <ExternalLink size={10} />
           </button>
@@ -754,7 +754,7 @@ function DeadlineCard({
             <button
               onClick={() => onMarkDone(item.deadlineSlug!)}
               disabled={marking}
-              className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-[10px] font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
+              className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-[10px] font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
               title={t("chat.deadline.mark_done" as never)}
             >
               {marking ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
@@ -764,7 +764,7 @@ function DeadlineCard({
           {item.href && (
             <button
               onClick={() => onNavigate(item.href)}
-              className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)] transition-colors hover:bg-[color:var(--ds-hover)]"
+              className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)]"
             >
               <ExternalLink size={10} />
               {t("chat.deadline.open_case" as never)}

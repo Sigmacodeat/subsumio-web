@@ -442,7 +442,7 @@ export function CaseQuickCreateDialog({
                     type="button"
                     onClick={() => applyTemplate(tpl.id)}
                     className={cn(
-                      "flex flex-col items-center gap-1.5 rounded-lg border px-3 py-2.5 text-center transition-colors",
+                      "flex flex-col items-center gap-1.5 rounded-lg border px-3 py-2.5 text-center transition-[background-color,border-color,color]",
                       active
                         ? "border-[color:var(--brand-primary)]/50 bg-[color:var(--brand-glow)]"
                         : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:bg-[color:var(--ds-hover)]"
@@ -579,7 +579,7 @@ export function CaseQuickCreateDialog({
             <button
               type="button"
               onClick={() => setShowAdvanced((v) => !v)}
-              className="flex items-center gap-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+              className="flex items-center gap-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
             >
               <SlidersHorizontal size={13} />
               {showAdvanced

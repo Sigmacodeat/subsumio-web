@@ -135,7 +135,7 @@ export function SaasUsageClient() {
           <button
             key={d}
             onClick={() => setDays(d)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color] ${
               days === d
                 ? "bg-[color:var(--brand-primary)] text-white"
                 : "border border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)]"

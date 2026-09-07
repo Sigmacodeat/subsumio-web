@@ -45,13 +45,13 @@ export default function Error({
         <div className="flex items-center justify-center gap-3">
           <button
             onClick={reset}
-            className="inline-flex items-center gap-2 rounded-lg bg-[var(--brand-primary)] px-6 py-3 text-sm font-medium text-white shadow-lg ring-1 shadow-blue-950/40 ring-[var(--brand-primary)]/30 transition-colors hover:bg-[var(--brand-primary-hover)]"
+            className="inline-flex items-center gap-2 rounded-lg bg-[var(--brand-primary)] px-6 py-3 text-sm font-medium text-white shadow-lg ring-1 shadow-blue-950/40 ring-[var(--brand-primary)]/30 transition-[background-color,border-color,color] hover:bg-[var(--brand-primary-hover)]"
           >
             <SubsumioMark size={15} tile={false} /> Try again
           </button>
           <Link
             href="/"
-            className="inline-flex items-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-6 py-3 text-sm [color:var(--mk-text-muted)] transition-colors hover:[border-color:var(--mk-border-strong)] hover:[color:var(--mk-text)]"
+            className="inline-flex items-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-6 py-3 text-sm [color:var(--mk-text-muted)] transition-[background-color,border-color,color] hover:[border-color:var(--mk-border-strong)] hover:[color:var(--mk-text)]"
           >
             <ArrowLeft size={14} /> Home
           </Link>

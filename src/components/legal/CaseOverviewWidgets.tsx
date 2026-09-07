@@ -83,7 +83,7 @@ function WidgetCard({
       tabIndex={0}
       className={cn(
         cardClass,
-        "cursor-pointer transition-colors hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+        "cursor-pointer transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
       )}
     >
       {body}

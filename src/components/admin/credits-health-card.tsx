@@ -97,7 +97,12 @@ export function CreditsHealthCard() {
   const checkedAgo = dataUpdatedAt ? Math.round((Date.now() - dataUpdatedAt) / 1000) : null;
 
   return (
-    <Card className={cn("p-5 transition-colors", hasIssue && "border-red-500/30 bg-red-500/5")}>
+    <Card
+      className={cn(
+        "p-5 transition-[background-color,border-color,color]",
+        hasIssue && "border-red-500/30 bg-red-500/5"
+      )}
+    >
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Provider-Credits</h2>

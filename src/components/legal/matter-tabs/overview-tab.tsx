@@ -161,7 +161,7 @@ export function OverviewTab() {
           <button
             onClick={() => setMoreActionsOpen((v) => !v)}
             className={cn(
-              "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors md:text-sm",
+              "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-[background-color,border-color,color] md:text-sm",
               moreActionsOpen
                 ? "bg-[color:var(--ds-hover)] text-[color:var(--ds-text)]"
                 : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -179,7 +179,7 @@ export function OverviewTab() {
                   ctx.setQuery(t("cases.detail_qb_chances"));
                   setMoreActionsOpen(false);
                 }}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:text-sm"
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:text-sm"
               >
                 <Scale size={14} className="shrink-0" />
                 {t("cases.detail_btn_assess")}
@@ -191,7 +191,7 @@ export function OverviewTab() {
                   ctx.setShowDocuSignDialog(true);
                   setMoreActionsOpen(false);
                 }}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:text-sm"
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:text-sm"
               >
                 <PenTool size={14} className="shrink-0" />
                 {t("docusign.send_title")}
@@ -207,7 +207,7 @@ export function OverviewTab() {
                     setMoreActionsOpen(false);
                   }}
                   className={cn(
-                    "flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium transition-colors md:text-sm",
+                    "flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color] md:text-sm",
                     caseData.portalEnabled
                       ? "text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
                       : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -253,7 +253,7 @@ export function OverviewTab() {
                       setMoreActionsOpen(false);
                     }}
                     disabled={ctx.generatingPortal}
-                    className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:text-sm"
+                    className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:text-sm"
                   >
                     {ctx.generatingPortal ? (
                       <Loader2 size={14} className="shrink-0 animate-spin" />
@@ -1067,7 +1067,7 @@ export function OverviewTab() {
                 <Link
                   key={slug}
                   href={`/dashboard/cases/${slug.split("/").map(encodeURIComponent).join("/")}`}
-                  className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-2 text-sm transition-colors hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-active)]"
+                  className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-2 text-sm transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-active)]"
                 >
                   <Briefcase size={14} className="text-[color:var(--ds-text-muted)]" />
                   <span className="font-mono text-xs text-[color:var(--ds-text)]">{slug}</span>

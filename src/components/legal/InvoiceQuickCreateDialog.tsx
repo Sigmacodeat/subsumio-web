@@ -633,7 +633,8 @@ export function InvoiceQuickCreateDialog({
                 </Label>
                 <Input
                   id="quick-advance"
-                  type="number" inputMode="decimal"
+                  type="number"
+                  inputMode="decimal"
                   step="0.01"
                   value={advancePayment}
                   onChange={(e) => setAdvancePayment(e.target.value)}
@@ -679,7 +680,7 @@ export function InvoiceQuickCreateDialog({
             <button
               type="button"
               onClick={() => setShowRvg((v) => !v)}
-              className="flex items-center gap-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+              className="flex items-center gap-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
             >
               <Calculator size={13} />
               {showRvg
@@ -695,7 +696,8 @@ export function InvoiceQuickCreateDialog({
                   </Label>
                   <Input
                     id="quick-rvg-sw"
-                    type="number" inputMode="numeric"
+                    type="number"
+                    inputMode="numeric"
                     value={streitwert}
                     onChange={(e) => {
                       setStreitwert(e.target.value);

@@ -180,7 +180,7 @@ export default function ProductWorkflowShowcase({
                   />
                 )}
                 <span
-                  className={`flex h-7 w-7 items-center justify-center rounded-lg border font-mono text-sm transition-colors duration-300 ${
+                  className={`flex h-7 w-7 items-center justify-center rounded-lg border font-mono text-sm transition-[background-color,border-color,color] duration-300 ${
                     currentStep === i
                       ? "brand-bg brand-border border-transparent text-white"
                       : "brand-soft brand-border brand-text"

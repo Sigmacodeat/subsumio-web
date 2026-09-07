@@ -241,10 +241,9 @@ export default function PortalPage() {
 
   async function loadSignableDocs(): Promise<SignableDoc[]> {
     try {
-      const res = await fetch(
-        `/api/portal/signable-docs?token=${encodeURIComponent(token)}`,
-        { signal: AbortSignal.timeout(15_000) }
-      );
+      const res = await fetch(`/api/portal/signable-docs?token=${encodeURIComponent(token)}`, {
+        signal: AbortSignal.timeout(15_000),
+      });
       if (!res.ok) return [];
       const data = await res.json();
       const docs = data.docs || [];
@@ -496,7 +495,7 @@ export default function PortalPage() {
           </div>
           <button
             onClick={() => setLang(lang === "en" ? "de" : "en")}
-            className="ml-auto rounded-lg border [border-color:var(--mk-border)] px-2.5 py-1 text-xs font-medium [color:var(--mk-text-muted)] transition-colors hover:bg-[color:var(--mk-surface-2)]"
+            className="ml-auto rounded-lg border [border-color:var(--mk-border)] px-2.5 py-1 text-xs font-medium [color:var(--mk-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--mk-surface-2)]"
           >
             {t("portal.lang_toggle")}
           </button>
@@ -508,7 +507,7 @@ export default function PortalPage() {
         <div className="flex gap-1 rounded-xl border [border-color:var(--mk-border)] p-1 [background:var(--mk-surface)]">
           <button
             onClick={() => setActiveTab("info")}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] ${
               activeTab === "info"
                 ? "bg-violet-600/15 text-violet-300"
                 : "[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)]"
@@ -519,7 +518,7 @@ export default function PortalPage() {
           </button>
           <button
             onClick={() => setActiveTab("chat")}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] ${
               activeTab === "chat"
                 ? "bg-violet-600/15 text-violet-300"
                 : "[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)]"
@@ -531,7 +530,7 @@ export default function PortalPage() {
           {signableDocs.length > 0 && (
             <button
               onClick={() => setActiveTab("sign")}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] ${
                 activeTab === "sign"
                   ? "bg-violet-600/15 text-violet-300"
                   : "[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)]"
@@ -548,7 +547,7 @@ export default function PortalPage() {
           )}
           <button
             onClick={() => setActiveTab("files")}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] ${
               activeTab === "files"
                 ? "bg-violet-600/15 text-violet-300"
                 : "[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)]"
@@ -693,7 +692,7 @@ export default function PortalPage() {
                             </div>
                           </div>
                           {!done && (
-                            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-violet-500">
+                            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-violet-500">
                               <input
                                 type="file"
                                 accept={UPLOAD_ACCEPT_ATTRIBUTE}
@@ -724,7 +723,7 @@ export default function PortalPage() {
             <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-sm font-semibold">{t("portal.documents_title")}</h3>
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-violet-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-violet-500 disabled:opacity-50">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-violet-600 px-3 py-2 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-violet-500 disabled:opacity-50">
                   <input
                     type="file"
                     accept={UPLOAD_ACCEPT_ATTRIBUTE}
@@ -849,7 +848,7 @@ export default function PortalPage() {
                 <button
                   onClick={() => void sendMessage(caseData.slug)}
                   disabled={sendingMessage || !newMessage.trim()}
-                  className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-500 disabled:opacity-50"
+                  className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-violet-500 disabled:opacity-50"
                 >
                   {sendingMessage ? "…" : t("portal.send")}
                 </button>
@@ -914,7 +913,7 @@ export default function PortalPage() {
               <button
                 onClick={() => void sendChatMessage()}
                 disabled={chatLoading || !chatInput.trim()}
-                className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-500 disabled:opacity-50"
+                className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-violet-500 disabled:opacity-50"
               >
                 {chatLoading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
               </button>
@@ -923,7 +922,7 @@ export default function PortalPage() {
               <button
                 onClick={() => void escalateToLawyer()}
                 disabled={escalating}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-xs font-medium [color:var(--mk-text-muted)] transition-colors hover:bg-[color:var(--mk-surface-2)] disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-xs font-medium [color:var(--mk-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--mk-surface-2)] disabled:opacity-50"
               >
                 {escalating ? (
                   <Loader2 size={12} className="animate-spin" />
@@ -954,56 +953,56 @@ export default function PortalPage() {
               </div>
             ) : (
               <>
-            <h3 className="text-sm font-semibold">{t("portal.sign_title")}</h3>
-            <p className="text-xs [color:var(--mk-text-muted)]">
-              {t("portal.sign_desc")}
-            </p>
-            {signNotice && (
-              <div className="flex items-center gap-2 rounded-xl border border-[color:var(--mk-border)] bg-[color:var(--mk-surface-2)] px-4 py-3 text-sm [color:var(--mk-text-muted)]">
-                <CheckCircle2 size={16} className="shrink-0 text-green-500" />
-                {signNotice}
-              </div>
-            )}
-            {signableDocs.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed [border-color:var(--mk-border)] py-12 text-center">
-                <PenTool size={28} className="mb-3 [color:var(--mk-text-muted)]" />
-                <p className="text-sm font-medium">{t("portal.sign_empty")}</p>
-                <p className="mt-1 text-xs [color:var(--mk-text-muted)]">
-                  {t("portal.sign_empty_hint")}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {signableDocs.map((doc) => (
-                  <div
-                    key={doc.slug}
-                    className="flex items-center gap-3 rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] px-4 py-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <FileText size={16} className="shrink-0 [color:var(--mk-text-muted)]" />
-                        <span className="truncate text-sm font-medium">{doc.title}</span>
-                      </div>
-                      <div className="mt-0.5 text-xs [color:var(--mk-text-muted)]">
-                        {doc.recipient_name ? `${doc.recipient_name}` : ""}
-                        {doc.expires_at ? ` · ${t("portal.sign_valid_until")} ${doc.expires_at.split("T")[0]}` : ""}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setSignDoc(doc)}
-                      className="flex shrink-0 items-center gap-1.5 rounded-lg bg-violet-600/15 px-3 py-2 text-sm font-medium text-violet-300 transition-colors hover:bg-violet-600/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 active:scale-[0.98]"
-                    >
-                      <PenTool size={14} />
-                      {t("portal.sign_btn")}
-                    </button>
+                <h3 className="text-sm font-semibold">{t("portal.sign_title")}</h3>
+                <p className="text-xs [color:var(--mk-text-muted)]">{t("portal.sign_desc")}</p>
+                {signNotice && (
+                  <div className="flex items-center gap-2 rounded-xl border border-[color:var(--mk-border)] bg-[color:var(--mk-surface-2)] px-4 py-3 text-sm [color:var(--mk-text-muted)]">
+                    <CheckCircle2 size={16} className="shrink-0 text-green-500" />
+                    {signNotice}
                   </div>
-                ))}
-              </div>
+                )}
+                {signableDocs.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center rounded-xl border border-dashed [border-color:var(--mk-border)] py-12 text-center">
+                    <PenTool size={28} className="mb-3 [color:var(--mk-text-muted)]" />
+                    <p className="text-sm font-medium">{t("portal.sign_empty")}</p>
+                    <p className="mt-1 text-xs [color:var(--mk-text-muted)]">
+                      {t("portal.sign_empty_hint")}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {signableDocs.map((doc) => (
+                      <div
+                        key={doc.slug}
+                        className="flex items-center gap-3 rounded-xl border [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <FileText size={16} className="shrink-0 [color:var(--mk-text-muted)]" />
+                            <span className="truncate text-sm font-medium">{doc.title}</span>
+                          </div>
+                          <div className="mt-0.5 text-xs [color:var(--mk-text-muted)]">
+                            {doc.recipient_name ? `${doc.recipient_name}` : ""}
+                            {doc.expires_at
+                              ? ` · ${t("portal.sign_valid_until")} ${doc.expires_at.split("T")[0]}`
+                              : ""}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setSignDoc(doc)}
+                          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-violet-600/15 px-3 py-2 text-sm font-medium text-violet-300 transition-[background-color,border-color,color] hover:bg-violet-600/25 focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:outline-none active:scale-[0.98]"
+                        >
+                          <PenTool size={14} />
+                          {t("portal.sign_btn")}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
-          </>
-            )}
-        </div>
-      )}
+          </div>
+        )}
 
         {/* Footer */}
         <div className="pt-6 pb-8 text-center text-xs [color:var(--mk-text-subtle)]">
@@ -1021,15 +1020,11 @@ export default function PortalPage() {
 
           {/* Upload button */}
           <label
-            className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed [border-color:var(--mk-border)] px-4 py-3 text-sm font-medium transition-colors hover:bg-[color:var(--mk-surface-2)] ${
+            className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed [border-color:var(--mk-border)] px-4 py-3 text-sm font-medium transition-[background-color,border-color,color] hover:bg-[color:var(--mk-surface-2)] ${
               uploadingFile ? "opacity-50" : ""
             }`}
           >
-            {uploadingFile ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <Upload size={16} />
-            )}
+            {uploadingFile ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
             {uploadingFile ? t("portal.files_uploading") : t("portal.files_upload")}
             <input
               type="file"
@@ -1076,7 +1071,7 @@ export default function PortalPage() {
               {caseData?.documents.map((doc, i) => (
                 <div
                   key={doc.slug || i}
-                  className="flex items-center gap-3 rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] px-4 py-3"
+                  className="flex items-center gap-3 rounded-xl border [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]"
                 >
                   <FileText size={16} className="shrink-0 [color:var(--mk-text-muted)]" />
                   <div className="min-w-0 flex-1">

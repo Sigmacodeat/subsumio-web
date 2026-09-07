@@ -146,7 +146,7 @@ export function TaxAuditFindingsTable({
                       onClick={() => toggleAccepted(f.id)}
                       disabled={readOnly}
                       className={cn(
-                        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium transition-colors",
+                        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium transition-[background-color,border-color,color]",
                         f.accepted
                           ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
                           : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-subtle)]",
@@ -168,7 +168,7 @@ export function TaxAuditFindingsTable({
                       <button
                         type="button"
                         onClick={() => removeFinding(f.id)}
-                        className="text-[color:var(--ds-text-subtle)] transition-colors hover:text-rose-600"
+                        className="text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:text-rose-600"
                         aria-label="Remove"
                       >
                         <Trash2 size={14} />
@@ -215,7 +215,8 @@ export function TaxAuditFindingsTable({
               </Label>
               <Input
                 id="finding-amount"
-                type="number" inputMode="numeric"
+                type="number"
+                inputMode="numeric"
                 min={0}
                 step={0.01}
                 value={newAmount}

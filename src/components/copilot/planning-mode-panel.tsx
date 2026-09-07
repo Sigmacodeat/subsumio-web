@@ -256,7 +256,7 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
               key={p.id}
               onClick={() => setActivePlan(p)}
               className={cn(
-                "rounded border px-2 py-1 text-[11px] transition-colors",
+                "rounded border px-2 py-1 text-[11px] transition-[background-color,border-color,color]",
                 activePlan?.id === p.id
                   ? "brand-border brand-soft brand-text"
                   : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"

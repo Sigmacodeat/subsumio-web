@@ -124,7 +124,7 @@ export function ElsterSubmissionWizard({ onSubmitted }: ElsterSubmissionWizardPr
           <div key={s} className="flex items-center gap-2">
             <div
               className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-colors",
+                "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-[background-color,border-color,color]",
                 i < stepIndex
                   ? "bg-emerald-500/10 text-emerald-600"
                   : i === stepIndex
@@ -213,7 +213,8 @@ export function ElsterSubmissionWizard({ onSubmitted }: ElsterSubmissionWizardPr
               </Label>
               <Input
                 id="wiz-year"
-                type="number" inputMode="numeric"
+                type="number"
+                inputMode="numeric"
                 value={year}
                 onChange={(e) => setYear(Number(e.target.value))}
                 className="mt-1.5"
@@ -225,7 +226,8 @@ export function ElsterSubmissionWizard({ onSubmitted }: ElsterSubmissionWizardPr
               </Label>
               <Input
                 id="wiz-tax"
-                type="number" inputMode="decimal"
+                type="number"
+                inputMode="decimal"
                 step="0.01"
                 value={taxAmount}
                 onChange={(e) => setTaxAmount(e.target.value)}
@@ -238,7 +240,8 @@ export function ElsterSubmissionWizard({ onSubmitted }: ElsterSubmissionWizardPr
               </Label>
               <Input
                 id="wiz-refund"
-                type="number" inputMode="decimal"
+                type="number"
+                inputMode="decimal"
                 step="0.01"
                 value={refundAmount}
                 onChange={(e) => setRefundAmount(e.target.value)}

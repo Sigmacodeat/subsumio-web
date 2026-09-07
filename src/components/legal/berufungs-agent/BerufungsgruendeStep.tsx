@@ -106,7 +106,7 @@ function SortableGrund({
         {/* Drag handle — keyboard accessible via dnd-kit KeyboardSensor */}
         <button
           type="button"
-          className="mt-0.5 flex h-6 w-4 shrink-0 cursor-grab items-center justify-center text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:cursor-grabbing"
+          className="mt-0.5 flex h-6 w-4 shrink-0 cursor-grab items-center justify-center text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:cursor-grabbing"
           aria-label="Grund verschieben"
           {...attributes}
           {...listeners}

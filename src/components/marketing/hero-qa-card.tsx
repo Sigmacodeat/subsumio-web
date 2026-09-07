@@ -60,7 +60,10 @@ export default function HeroQACard({
       return;
     }
     const timers = sources.map((_, i) =>
-      setTimeout(() => setVerifiedCount((n) => Math.max(n, i + 1)), CITE_START_MS + i * CITE_STEP_MS)
+      setTimeout(
+        () => setVerifiedCount((n) => Math.max(n, i + 1)),
+        CITE_START_MS + i * CITE_STEP_MS
+      )
     );
     return () => timers.forEach(clearTimeout);
   }, [sources, reduce]);
@@ -101,16 +104,14 @@ export default function HeroQACard({
           <div className="ml-auto flex items-center gap-1.5 text-sm font-medium">
             <span
               aria-hidden
-              className={`font-serif text-base leading-none transition-colors duration-500 ${
+              className={`font-serif text-base leading-none transition-[background-color,border-color,color] duration-500 ${
                 allVerified ? "text-[var(--signal-green)]" : "brand-text"
               }`}
             >
               §
             </span>
             <span className="[color:var(--mk-text-subtle)] tabular-nums">
-              {allVerified
-                ? `${sources.length} ${ui.verifiedLabel}`
-                : `${ui.verifyingLabel}…`}
+              {allVerified ? `${sources.length} ${ui.verifiedLabel}` : `${ui.verifyingLabel}…`}
             </span>
           </div>
         </div>
@@ -148,7 +149,7 @@ export default function HeroQACard({
                 className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-sm transition-all duration-300 ${
                   isVerified
                     ? "brand-text brand-soft hover:brand-soft-strong hover:-translate-y-0.5 hover:shadow-sm"
-                    : "[color:var(--mk-text-subtle)] [background:var(--mk-surface-2)] opacity-60"
+                    : "[color:var(--mk-text-subtle)] opacity-60 [background:var(--mk-surface-2)]"
                 }`}
               >
                 {/* The icon swap IS the story: unchecked document → verified hit. */}
