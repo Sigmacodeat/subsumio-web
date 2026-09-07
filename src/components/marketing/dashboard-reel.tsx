@@ -338,8 +338,8 @@ const STATUS_COLORS: Record<string, { text: string; bg: string }> = {
   },
   blue: { text: "var(--brand-text)", bg: "color-mix(in srgb, var(--brand-text) 12%, transparent)" },
   rose: {
-    text: "var(--signal-rose)",
-    bg: "color-mix(in srgb, var(--signal-rose) 12%, transparent)",
+    text: "var(--ds-danger-text)",
+    bg: "var(--ds-danger-bg)",
   },
   violet: {
     text: "var(--brand-tertiary)",
@@ -659,7 +659,7 @@ export default function DashboardReel({
                     <h3 className="text-sm font-semibold [color:var(--mk-text)]">
                       {UI_STRINGS[lang].deadlinesLabel}
                     </h3>
-                    <span className="text-sm font-medium [color:var(--signal-rose)]">
+                    <span className="text-sm font-medium [color:var(--ds-danger-text)]">
                       {v.deadlines.filter((d) => d.urgent).length} {UI_STRINGS[lang].urgentLabel}
                     </span>
                   </div>
@@ -671,19 +671,19 @@ export default function DashboardReel({
                       transition={{ delay: i * 0.08 }}
                       className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 ${
                         d.urgent
-                          ? "[border-color:color-mix(in_srgb,var(--signal-rose)_22%,transparent)] [background:color-mix(in_srgb,var(--signal-rose)_6%,transparent)]"
+                          ? "[border-color:var(--ds-danger-border)] [background:var(--ds-danger-bg)]"
                           : "[border-color:var(--mk-border)] [background:var(--mk-surface)]"
                       }`}
                     >
                       <div
                         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
                           d.urgent
-                            ? "[background:color-mix(in_srgb,var(--signal-rose)_10%,transparent)]"
+                            ? "[background:var(--ds-danger-bg)]"
                             : "[background:var(--mk-surface-2)]"
                         }`}
                       >
                         {d.urgent ? (
-                          <AlertTriangle size={14} style={{ color: "var(--signal-rose)" }} />
+                          <AlertTriangle size={14} style={{ color: "var(--ds-danger-text)" }} />
                         ) : (
                           <CheckCircle2 size={14} className="[color:var(--mk-text-subtle)]" />
                         )}
@@ -697,7 +697,7 @@ export default function DashboardReel({
                         </p>
                       </div>
                       <span
-                        className={`font-mono text-sm font-medium ${d.urgent ? "[color:var(--signal-rose)]" : "[color:var(--mk-text-muted)]"}`}
+                        className={`font-mono text-sm font-medium ${d.urgent ? "[color:var(--ds-danger-text)]" : "[color:var(--mk-text-muted)]"}`}
                       >
                         {d.date}
                       </span>
@@ -830,9 +830,9 @@ export default function DashboardReel({
                     {v.review.riskAreas.map((r, i) => {
                       const colors = {
                         high: {
-                          text: "var(--signal-rose)",
-                          bg: "color-mix(in srgb, var(--signal-rose) 10%, transparent)",
-                          border: "color-mix(in srgb, var(--signal-rose) 22%, transparent)",
+                          text: "var(--ds-danger-text)",
+                          bg: "var(--ds-danger-bg)",
+                          border: "var(--ds-danger-border)",
                         },
                         medium: {
                           text: "var(--signal-amber)",
@@ -892,7 +892,7 @@ export default function DashboardReel({
                             ? "var(--signal-green)"
                             : c.status === "flag"
                               ? "var(--signal-amber)"
-                              : "var(--signal-rose)";
+                              : "var(--ds-danger-text)";
                         const Icon = icon;
                         return (
                           <span

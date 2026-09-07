@@ -369,13 +369,13 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   return (
                     <StaggerItem key={p.label}>
                       <div className="group relative h-full overflow-hidden rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl motion-reduce:transition-none">
-                        {/* Top accent — signal-rose into brand-primary */}
+                        {/* Top accent — category-rose into brand-primary */}
                         <div
                           aria-hidden
                           className="absolute inset-x-0 top-0 h-1"
                           style={{
                             background:
-                              "linear-gradient(90deg, var(--signal-rose), var(--brand-primary) 70%)",
+                              "linear-gradient(90deg, var(--ds-category-rose-text), var(--brand-primary) 70%)",
                           }}
                         />
                         <div

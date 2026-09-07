@@ -85,11 +85,11 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
             {content.pains.map((pain) => (
               <StaggerItem key={pain.title}>
                 <GlowCard
-                  glowColor="var(--signal-rose)"
+                  glowColor="var(--ds-category-rose-text)"
                   intensity={0.1}
                   className="h-full rounded-2xl border border-[color:var(--ds-category-rose-border)] bg-[color:var(--ds-category-rose-bg)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 hover:-translate-y-1 hover:shadow-lg motion-reduce:transition-none dark:border-[color:var(--ds-category-rose-border)] dark:bg-[color:var(--ds-category-rose-bg)]"
                 >
-                  <AlertCircle size={20} className="mb-3 [color:var(--signal-rose)]" />
+                  <AlertCircle size={20} className="mb-3 [color:var(--ds-category-rose-text)]" />
                   <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">
                     {pain.title}
                   </h3>
