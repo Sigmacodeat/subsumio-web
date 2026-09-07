@@ -250,7 +250,6 @@
   --signal-blue: var(--brand-700);
   --signal-green: var(--signal-success-700);
   --signal-amber: var(--signal-warning-700);
-  --signal-rose: var(--signal-danger-700);
   --signal-orange: var(--signal-attention-700);
 
   /* Categorical palette for the knowledge-graph view (one color per
@@ -744,7 +743,6 @@
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
   --brand-text: var(--brand-300);
   --signal-amber: var(--signal-warning-500);
-  --signal-rose: var(--signal-danger-400);
   --signal-green: var(--signal-success-500);
   --signal-blue: var(--brand-300);
   --signal-orange: var(--signal-attention-500);
@@ -766,7 +764,6 @@
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 1px 0 hsla(0, 0%, 100%, 0.04) inset;
   --brand-text: var(--brand-300);
   --signal-amber: var(--signal-warning-500);
-  --signal-rose: var(--signal-danger-400);
   --signal-green: var(--signal-success-500);
   --signal-blue: var(--brand-300);
   --signal-orange: var(--signal-attention-500);
@@ -805,12 +802,9 @@
   --card-shadow-hover: 0 1px 0 hsla(0, 0%, 100%, 0.035) inset, 0 18px 48px rgba(0, 0, 0, 0.24);
   --card-shadow-elevated: 0 1px 0 hsla(0, 0%, 100%, 0.04) inset, 0 24px 72px rgba(0, 0, 0, 0.34);
   --signal-amber: var(--signal-warning-500);
-  --signal-rose: hsl(0, 60%, 65%);
   --signal-green: var(--signal-success-500);
   --signal-amber-bg: hsla(40, 70%, 45%, 0.1);
   --signal-amber-border: hsla(40, 70%, 45%, 0.2);
-  --signal-rose-bg: hsla(0, 60%, 65%, 0.1);
-  --signal-rose-border: hsla(0, 60%, 65%, 0.22);
   --signal-green-bg: hsla(150, 55%, 42%, 0.1);
   --signal-green-border: hsla(150, 55%, 42%, 0.2);
   color-scheme: dark;
