@@ -451,7 +451,7 @@ export default function VaultPage() {
       <div className="grid gap-3 sm:grid-cols-2">
         <Link
           href="/dashboard/upload?mode=case"
-          className="group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-all hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+          className="group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[border-color,background-color,transform] duration-150 hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none"
         >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[color:var(--brand-primary)]/10">
             <Briefcase size={18} className="brand-text" />
@@ -470,7 +470,7 @@ export default function VaultPage() {
         </Link>
         <Link
           href="/dashboard/upload?mode=knowledge"
-          className="group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-all hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+          className="group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[border-color,background-color,transform] duration-150 hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none"
         >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-success-bg)]">
             <BookOpen size={18} className="text-[color:var(--ds-success-text)]" />
@@ -942,10 +942,16 @@ export default function VaultPage() {
           <span>
             {selectedSlugs.size} {t("vault.selected_count")}
           </span>
-          <button onClick={selectAll} className="brand-text hover:underline">
+          <button
+            onClick={selectAll}
+            className="brand-text rounded-sm text-sm transition-[color,transform] duration-150 hover:underline focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
+          >
             {t("vault.select_all")}
           </button>
-          <button onClick={deselectAll} className="brand-text hover:underline">
+          <button
+            onClick={deselectAll}
+            className="brand-text rounded-sm text-sm transition-[color,transform] duration-150 hover:underline focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
+          >
             {t("vault.deselect_all")}
           </button>
         </div>
@@ -1124,7 +1130,7 @@ export default function VaultPage() {
                   </div>
                   <button
                     onClick={() => deleteDoc(doc.slug)}
-                    className="rounded-lg p-1 text-[color:var(--ds-text-muted)] opacity-60 transition-opacity duration-200 group-hover:opacity-100 hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--ds-danger-border)] focus-visible:outline-none"
+                    className="rounded-lg p-1 text-[color:var(--ds-text-muted)] opacity-60 transition-[opacity,background-color,color,transform] duration-200 group-hover:opacity-100 hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--ds-danger-border)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                     title={t("vault.delete")}
                     aria-label={t("vault.delete")}
                   >
@@ -1133,7 +1139,7 @@ export default function VaultPage() {
                 </div>
                 <Link
                   href={`/dashboard/brain/${encodeURIComponent(doc.slug)}`}
-                  className="block truncate text-sm font-medium text-[color:var(--ds-text)] transition-colors hover:text-[color:var(--brand-primary)] focus-visible:text-[color:var(--brand-primary)] focus-visible:outline-none"
+                  className="block truncate rounded-sm text-sm font-medium text-[color:var(--ds-text)] transition-[color,transform] duration-150 hover:text-[color:var(--brand-primary)] focus-visible:text-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none"
                   title={doc.title}
                 >
                   {doc.title}
