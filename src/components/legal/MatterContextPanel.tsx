@@ -90,7 +90,7 @@ export function MatterContextPanel({
       {/* Header */}
       <button
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] active:scale-[0.97] motion-reduce:transition-none"
       >
         <div className="flex items-center gap-2.5">
           {open ? (

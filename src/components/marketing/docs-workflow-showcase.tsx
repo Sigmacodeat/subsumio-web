@@ -275,7 +275,7 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
                   i === activeWorkflow
                     ? "brand-bg w-8"
                     : "w-1.5 [background:var(--mk-border)] hover:[background:var(--mk-border-strong)]"
-                }`}
+                } active:scale-[0.97]`}
               />
             ))}
           </div>

@@ -170,7 +170,7 @@ export function CopilotMemoryPanel() {
         </div>
         <button
           onClick={() => setShowAdd((v) => !v)}
-          className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+          className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
           title={isEn ? "Add memory" : "Gedächtnis hinzufügen"}
         >
           <Plus size={10} />

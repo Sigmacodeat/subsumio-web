@@ -87,7 +87,7 @@ export function PdfViewer({ url, filename, open, onOpenChange }: PdfViewerProps)
             <button
               onClick={() => setPageNum((p) => Math.max(1, p - 1))}
               disabled={pageNum <= 1}
-              className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)] disabled:opacity-30 motion-reduce:transition-none"
+              className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)] active:scale-[0.97] disabled:opacity-30 motion-reduce:transition-none"
             >
               <ChevronLeft size={18} />
             </button>
@@ -97,7 +97,7 @@ export function PdfViewer({ url, filename, open, onOpenChange }: PdfViewerProps)
             <button
               onClick={() => setPageNum((p) => Math.min(numPages, p + 1))}
               disabled={pageNum >= numPages}
-              className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)] disabled:opacity-30 motion-reduce:transition-none"
+              className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)] active:scale-[0.97] disabled:opacity-30 motion-reduce:transition-none"
             >
               <ChevronRight size={18} />
             </button>
@@ -108,7 +108,7 @@ export function PdfViewer({ url, filename, open, onOpenChange }: PdfViewerProps)
         <div className="flex items-center gap-1">
           <button
             onClick={() => setScale((s) => Math.max(0.5, s - 0.25))}
-            className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)] motion-reduce:transition-none"
+            className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)] active:scale-[0.97] motion-reduce:transition-none"
             title={t("mobile.zoom_out" as DashboardKey)}
           >
             <ZoomOut size={16} />
@@ -118,7 +118,7 @@ export function PdfViewer({ url, filename, open, onOpenChange }: PdfViewerProps)
           </span>
           <button
             onClick={() => setScale((s) => Math.min(3.0, s + 0.25))}
-            className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)] motion-reduce:transition-none"
+            className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)] active:scale-[0.97] motion-reduce:transition-none"
             title={t("mobile.zoom_in" as DashboardKey)}
           >
             <ZoomIn size={16} />
@@ -136,7 +136,7 @@ export function PdfViewer({ url, filename, open, onOpenChange }: PdfViewerProps)
 
         <button
           onClick={() => onOpenChange(false)}
-          className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)] motion-reduce:transition-none"
+          className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)] active:scale-[0.97] motion-reduce:transition-none"
           title={t("mobile.close" as DashboardKey)}
         >
           <X size={18} />

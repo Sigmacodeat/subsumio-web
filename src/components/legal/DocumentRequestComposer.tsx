@@ -218,7 +218,7 @@ export function DocumentRequestComposer({
               onClick={() => ch.available && setChannel(ch.key)}
               disabled={!ch.available}
               className={cn(
-                "flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
+                "flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
                 !ch.available && "cursor-not-allowed opacity-40",
                 isActive
                   ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]"

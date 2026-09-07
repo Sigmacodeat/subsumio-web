@@ -133,7 +133,7 @@ export default function LiveDemo({
               onClick={ask}
               disabled={loading || !input.trim()}
               aria-label={t.ask}
-              className="brand-bg inline-flex shrink-0 items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-[background-color,border-color,color] disabled:opacity-40 motion-reduce:transition-none"
+              className="brand-bg inline-flex shrink-0 items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-[background-color,border-color,color] active:scale-[0.97] disabled:opacity-40 motion-reduce:transition-none"
             >
               {loading ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}{" "}
               {t.ask}

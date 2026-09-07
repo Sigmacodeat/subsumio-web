@@ -48,7 +48,7 @@ export function AIActConformityBanner({
       {/* Collapsed Header */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--ds-ring)] motion-reduce:transition-none"
+        className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--ds-ring)] active:scale-[0.97] motion-reduce:transition-none"
         aria-expanded={expanded}
       >
         <ShieldCheck size={13} className="shrink-0 text-[color:var(--brand-text)]" />

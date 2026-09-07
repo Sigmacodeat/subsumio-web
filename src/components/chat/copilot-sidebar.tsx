@@ -929,7 +929,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             <div className="flex items-center gap-0.5">
               <button
                 onClick={handleOpenFullscreen}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
                 aria-label={t("copilot.open_fullscreen")}
                 title={t("copilot.open_fullscreen")}
               >
@@ -941,7 +941,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                   setMobileOpen(false);
                   onToggle();
                 }}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
                 aria-label={t("copilot.close_esc")}
               >
                 <X size={16} />
@@ -1094,7 +1094,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                     <button
                       type="button"
                       onClick={handleOpenFullscreen}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                       aria-label={t("copilot.open_fullscreen")}
                       title={t("copilot.open_fullscreen")}
                     >
@@ -1103,7 +1103,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                     <button
                       type="button"
                       onClick={onToggle}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                       aria-label={t("copilot.close_panel")}
                       title={t("copilot.close_panel")}
                     >

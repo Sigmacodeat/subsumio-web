@@ -125,7 +125,7 @@ export function MatterTabBar() {
         <button
           onClick={() => setMoreOpen((v) => !v)}
           className={cn(
-            "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none md:text-sm",
+            "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none md:text-sm",
             isSecondaryActive || moreOpen
               ? "bg-[color:var(--ds-hover)] text-[color:var(--ds-text)]"
               : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"

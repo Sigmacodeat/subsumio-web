@@ -345,7 +345,7 @@ export function ContractRedlineViewer({
           {onClose && (
             <button
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
               aria-label="Schließen"
             >
               <XCircle size={18} />
@@ -362,7 +362,7 @@ export function ContractRedlineViewer({
               key={p}
               onClick={() => setPerspective(p)}
               className={cn(
-                "rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none",
+                "rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] active:scale-[0.97] motion-reduce:transition-none",
                 perspective === p
                   ? "brand-soft brand-border brand-text"
                   : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -427,13 +427,13 @@ export function ContractRedlineViewer({
           )}
           <button
             onClick={acceptAll}
-            className="rounded-lg px-2 py-1 text-xs font-medium text-emerald-600 transition-[background-color,border-color,color] hover:bg-emerald-500/10 hover:text-emerald-700 motion-reduce:transition-none"
+            className="rounded-lg px-2 py-1 text-xs font-medium text-emerald-600 transition-[background-color,border-color,color] hover:bg-emerald-500/10 hover:text-emerald-700 active:scale-[0.97] motion-reduce:transition-none"
           >
             Alle akzeptieren
           </button>
           <button
             onClick={rejectAll}
-            className="rounded-lg px-2 py-1 text-xs font-medium text-red-600 transition-[background-color,border-color,color] hover:bg-red-500/10 hover:text-red-700 motion-reduce:transition-none"
+            className="rounded-lg px-2 py-1 text-xs font-medium text-red-600 transition-[background-color,border-color,color] hover:bg-red-500/10 hover:text-red-700 active:scale-[0.97] motion-reduce:transition-none"
           >
             Alle ablehnen
           </button>
@@ -610,7 +610,7 @@ export function ContractRedlineViewer({
                         <button
                           onClick={() => acceptClause(idx)}
                           className={cn(
-                            "flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
+                            "flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
                             clause.accepted === true
                               ? "border border-emerald-500/30 bg-emerald-500/15 text-emerald-700"
                               : "border border-transparent text-emerald-600 hover:bg-emerald-500/10"
@@ -621,7 +621,7 @@ export function ContractRedlineViewer({
                         <button
                           onClick={() => rejectClause(idx)}
                           className={cn(
-                            "flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
+                            "flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
                             clause.accepted === false
                               ? "border border-red-500/30 bg-red-500/15 text-red-700"
                               : "border border-transparent text-red-600 hover:bg-red-500/10"

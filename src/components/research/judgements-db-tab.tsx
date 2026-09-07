@@ -525,7 +525,7 @@ export default function JudgementsDbPage() {
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={cn(
-            "flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-[background-color,border-color,color] motion-reduce:transition-none",
+            "flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
             showFilters
               ? "bg-[color:var(--brand-primary)] text-[color:var(--ds-text)]"
               : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)]"
@@ -538,7 +538,7 @@ export default function JudgementsDbPage() {
         <button
           onClick={() => setPipelineMode(!pipelineMode)}
           className={cn(
-            "flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-[background-color,border-color,color] motion-reduce:transition-none",
+            "flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
             pipelineMode
               ? "bg-[color:var(--brand-primary)] text-[color:var(--ds-text)]"
               : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)]"
@@ -552,7 +552,7 @@ export default function JudgementsDbPage() {
         <button
           onClick={() => setRerank(!rerank)}
           className={cn(
-            "flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-[background-color,border-color,color] motion-reduce:transition-none",
+            "flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
             rerank
               ? "bg-[color:var(--brand-primary)] text-[color:var(--ds-text)]"
               : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)]"
@@ -748,7 +748,7 @@ function ResultCard({ result, onClick }: { result: SearchResult; onClick: () => 
   return (
     <button
       onClick={onClick}
-      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-[background-color,border-color,color] hover:border-[color:var(--brand-primary)]/50 hover:bg-[color:var(--ds-surface-2)] motion-reduce:transition-none"
+      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-[background-color,border-color,color] hover:border-[color:var(--brand-primary)]/50 hover:bg-[color:var(--ds-surface-2)] active:scale-[0.97] motion-reduce:transition-none"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">

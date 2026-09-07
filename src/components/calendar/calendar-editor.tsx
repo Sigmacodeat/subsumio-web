@@ -226,7 +226,7 @@ function CalendarEditDialog({
           <button
             onClick={() => onOpenChange(false)}
             aria-label={t("common.close" as DashboardKey)}
-            className="text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+            className="text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
           >
             <X size={18} />
           </button>
@@ -650,7 +650,7 @@ export function CalendarInUiEditor() {
                       openEdit(appt);
                     }}
                     className={cn(
-                      "block w-full truncate rounded px-1.5 py-0.5 text-left text-xs transition-[background-color,border-color,color] motion-reduce:transition-none",
+                      "block w-full truncate rounded px-1.5 py-0.5 text-left text-xs transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
                       appt.type === "hearing"
                         ? "bg-blue-500/10 text-blue-700 hover:bg-blue-500/20"
                         : appt.type === "consultation"
@@ -730,7 +730,7 @@ export function CalendarInUiEditor() {
                 <button
                   key={appt.slug}
                   onClick={() => openEdit(appt)}
-                  className="flex w-full items-center gap-3 rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)] motion-reduce:transition-none"
+                  className="flex w-full items-center gap-3 rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)] active:scale-[0.97] motion-reduce:transition-none"
                 >
                   <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
                     <span className="text-xs font-bold text-[color:var(--ds-text)]">

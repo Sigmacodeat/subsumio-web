@@ -525,7 +525,7 @@ export function EvidenceTab() {
                       setTypeFilter("");
                       setSearchQuery("");
                     }}
-                    className="text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+                    className="text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
                   >
                     {lang === "en" ? "Clear" : "Zurücksetzen"}
                   </button>
@@ -571,7 +571,7 @@ export function EvidenceTab() {
                             ctx.setShowEvidenceForm(true);
                             ctx.evidenceForm.reset(ev as EvidenceFormData);
                           }}
-                          className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] motion-reduce:transition-none"
+                          className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none"
                         >
                           {t("cases.detail_ev_edit_btn")}
                         </button>
@@ -582,7 +582,7 @@ export function EvidenceTab() {
                             ctx.setEvidenceList(updated);
                             ctx.saveCaseUpdate({ evidence: updated });
                           }}
-                          className="px-2 py-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] motion-reduce:transition-none"
+                          className="px-2 py-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] active:scale-[0.97] motion-reduce:transition-none"
                         >
                           <Trash2 size={14} />
                         </button>

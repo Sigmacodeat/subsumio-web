@@ -70,7 +70,7 @@ export function TaxDeadlineTimeline({ deadlines, onSelect, className }: TaxDeadl
             type="button"
             onClick={() => onSelect?.(d)}
             className={cn(
-              "flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)] motion-reduce:transition-none",
+              "flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)] active:scale-[0.97] motion-reduce:transition-none",
               colorClass
             )}
           >

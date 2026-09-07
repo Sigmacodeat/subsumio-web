@@ -327,7 +327,7 @@ export function BillingTab() {
             <button
               type="button"
               onClick={() => setShowAdvanced((v) => !v)}
-              className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+              className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
             >
               {showAdvanced ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
               {t("billingtab.advanced")}
@@ -409,7 +409,7 @@ export function BillingTab() {
                     <button
                       disabled={unbillingId === entry.id}
                       onClick={() => handleUnbillTimeEntry(entry.id)}
-                      className="shrink-0 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-warning-text)] motion-reduce:transition-none"
+                      className="shrink-0 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-warning-text)] active:scale-[0.97] motion-reduce:transition-none"
                       title={t("billingtab.unbill")}
                     >
                       {unbillingId === entry.id ? (
@@ -422,7 +422,7 @@ export function BillingTab() {
                   <button
                     disabled={isArchived}
                     onClick={() => handleDeleteTimeEntry(entry.id)}
-                    className="shrink-0 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] motion-reduce:transition-none"
+                    className="shrink-0 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] active:scale-[0.97] motion-reduce:transition-none"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -538,7 +538,7 @@ export function BillingTab() {
                   <button
                     disabled={isArchived}
                     onClick={() => handleDeleteExpense(expense.id)}
-                    className="shrink-0 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] motion-reduce:transition-none"
+                    className="shrink-0 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] active:scale-[0.97] motion-reduce:transition-none"
                   >
                     <Trash2 size={14} />
                   </button>

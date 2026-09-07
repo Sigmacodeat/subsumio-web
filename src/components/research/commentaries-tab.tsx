@@ -195,7 +195,7 @@ export default function CommentariesPage() {
           actions={
             <button
               onClick={() => setShowSynthForm(!showSynthForm)}
-              className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--ds-accent)] px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:opacity-90 motion-reduce:transition-none"
+              className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--ds-accent)] px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:opacity-90 active:scale-[0.97] motion-reduce:transition-none"
             >
               <Sparkles className="h-4 w-4" />
               Synthese triggern

@@ -237,7 +237,7 @@ export function DocumentsTab() {
               void ctx.pickFolderForCase();
             }}
             disabled={ctx.scanningFolder || !isOnline() || caseData?.status === "archived"}
-            className="mt-3 ml-2 inline-flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm font-medium text-[color:var(--ds-text)] transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)] disabled:opacity-50 motion-reduce:transition-none"
+            className="mt-3 ml-2 inline-flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm font-medium text-[color:var(--ds-text)] transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
           >
             <FolderOpen size={14} />
             {ctx.scanningFolder ? "Ordner wird eingelesen…" : "Ganzen Ordner einlesen"}
@@ -484,7 +484,7 @@ export function DocumentsTab() {
                           );
                         }
                       }}
-                      className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-[background-color,border-color,color] motion-reduce:transition-none ${alreadyLinked ? "cursor-not-allowed border-[color:var(--ds-border)] opacity-50" : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5"}`}
+                      className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-[background-color,border-color,color] motion-reduce:transition-none ${alreadyLinked ? "cursor-not-allowed border-[color:var(--ds-border)] opacity-50" : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5"} active:scale-[0.97]`}
                     >
                       <FileText size={14} className="shrink-0 text-[color:var(--ds-text-muted)]" />
                       <div className="min-w-0 flex-1">
@@ -659,7 +659,7 @@ export function DocumentsTab() {
                     }
                     await ctx.refreshCaseData();
                   }}
-                  className="text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] motion-reduce:transition-none"
+                  className="text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] active:scale-[0.97] motion-reduce:transition-none"
                 >
                   <Trash2 size={14} />
                 </button>

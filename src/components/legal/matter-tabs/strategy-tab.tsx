@@ -823,7 +823,7 @@ export function StrategyTab() {
               <button
                 onClick={() => ctx.queryResult && ctx.copyToClipboard(ctx.queryResult)}
                 aria-label="Antwort kopieren"
-                className="text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text-muted)] motion-reduce:transition-none"
+                className="text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text-muted)] active:scale-[0.97] motion-reduce:transition-none"
               >
                 {ctx.copied ? (
                   <Check size={14} className="text-[color:var(--ds-success-text)]" />

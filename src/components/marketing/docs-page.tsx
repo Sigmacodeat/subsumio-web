@@ -140,7 +140,7 @@ function StickyCategoryNav({
               <button
                 onClick={() => onSearch("")}
                 aria-label="Clear search"
-                className="absolute right-2 flex h-5 w-5 items-center justify-center rounded-full text-[var(--mk-text-subtle)] transition-[background-color,border-color,color] hover:bg-[var(--mk-surface-2)] hover:text-[var(--mk-text)] motion-reduce:transition-none"
+                className="absolute right-2 flex h-5 w-5 items-center justify-center rounded-full text-[var(--mk-text-subtle)] transition-[background-color,border-color,color] hover:bg-[var(--mk-surface-2)] hover:text-[var(--mk-text)] active:scale-[0.97] motion-reduce:transition-none"
               >
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                   <path
@@ -309,7 +309,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
               </p>
               <button
                 onClick={() => setSearch("")}
-                className="rounded-full border [border-color:var(--mk-border)] px-4 py-1.5 text-sm font-medium [color:var(--mk-text)] transition-[background-color,border-color,color] hover:bg-[var(--mk-surface-2)] motion-reduce:transition-none"
+                className="rounded-full border [border-color:var(--mk-border)] px-4 py-1.5 text-sm font-medium [color:var(--mk-text)] transition-[background-color,border-color,color] hover:bg-[var(--mk-surface-2)] active:scale-[0.97] motion-reduce:transition-none"
               >
                 {t.docsClearSearch ?? "Clear search"}
               </button>
@@ -390,7 +390,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
         <button
           onClick={scrollToTop}
           aria-label={t.backToTopAria ?? "Back to top"}
-          className="fixed right-6 bottom-6 z-40 flex h-10 w-10 items-center justify-center rounded-full border [border-color:var(--mk-border)] [color:var(--mk-text)] shadow-lg transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-xl motion-reduce:transition-none"
+          className="fixed right-6 bottom-6 z-40 flex h-10 w-10 items-center justify-center rounded-full border [border-color:var(--mk-border)] [color:var(--mk-text)] shadow-lg transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-xl active:scale-[0.97] motion-reduce:transition-none"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path
