@@ -21,22 +21,90 @@ import { join, relative } from "path";
 const SRC_ROOT = join(process.cwd(), "src");
 
 const FORBIDDEN_PATTERNS: { pattern: RegExp; reason: string }[] = [
-  { pattern: /\btext-muted-foreground\b/g, reason: "undefined shadcn class — use text-[color:var(--ds-text-muted)]" },
-  { pattern: /\bbg-muted\b(?![-\w])/g, reason: "undefined shadcn class — use bg-[color:var(--ds-surface-2)]" },
-  { pattern: /\bborder-border\b(?![-\w])/g, reason: "undefined shadcn class — use border-[color:var(--ds-border)]" },
+  {
+    pattern: /\btext-muted-foreground\b/g,
+    reason: "undefined shadcn class — use text-[color:var(--ds-text-muted)]",
+  },
+  {
+    pattern: /\bbg-muted\b(?![-\w])/g,
+    reason: "undefined shadcn class — use bg-[color:var(--ds-surface-2)]",
+  },
+  {
+    pattern: /\bborder-border\b(?![-\w])/g,
+    reason: "undefined shadcn class — use border-[color:var(--ds-border)]",
+  },
   { pattern: /\bbg-background\b/g, reason: "undefined shadcn class — use bg-[color:var(--ds-bg)]" },
-  { pattern: /\btext-foreground\b/g, reason: "undefined shadcn class — use text-[color:var(--ds-text)]" },
-  { pattern: /\bbg-destructive\b/g, reason: "undefined shadcn class — use bg-[color:var(--ds-danger-bg)]" },
-  { pattern: /\btext-destructive\b/g, reason: "undefined shadcn class — use text-[color:var(--ds-danger-text)]" },
-  { pattern: /\bborder-destructive\b/g, reason: "undefined shadcn class — use border-[color:var(--ds-danger-border)]" },
-  { pattern: /\bbg-accent\b(?![-\w])/g, reason: "undefined shadcn class — use bg-[color:var(--ds-surface-hover)]" },
-  { pattern: /\btext-accent\b(?![-\w])/g, reason: "undefined shadcn class — use text-[color:var(--ds-accent)]" },
-  { pattern: /\bbg-popover\b/g, reason: "undefined shadcn class — use bg-[color:var(--ds-surface)]" },
-  { pattern: /\btext-popover\b/g, reason: "undefined shadcn class — use text-[color:var(--ds-text)]" },
-  { pattern: /\bbg-card\b(?![-\w])/g, reason: "undefined shadcn class — use bg-[color:var(--ds-surface)]" },
-  { pattern: /\btext-card\b(?![-\w])/g, reason: "undefined shadcn class — use text-[color:var(--ds-text)]" },
-  { pattern: /\bring-offset-background\b/g, reason: "undefined shadcn class — use ring-offset-[color:var(--ds-surface)]" },
-  { pattern: /ds-text-secondary\b/g, reason: "undefined --ds-text-secondary token — use ds-text-muted" },
+  {
+    pattern: /\btext-foreground\b/g,
+    reason: "undefined shadcn class — use text-[color:var(--ds-text)]",
+  },
+  {
+    pattern: /\bbg-destructive\b/g,
+    reason: "undefined shadcn class — use bg-[color:var(--ds-danger-bg)]",
+  },
+  {
+    pattern: /\btext-destructive\b/g,
+    reason: "undefined shadcn class — use text-[color:var(--ds-danger-text)]",
+  },
+  {
+    pattern: /\bborder-destructive\b/g,
+    reason: "undefined shadcn class — use border-[color:var(--ds-danger-border)]",
+  },
+  {
+    pattern: /\bbg-accent\b(?![-\w])/g,
+    reason: "undefined shadcn class — use bg-[color:var(--ds-surface-hover)]",
+  },
+  {
+    pattern: /\btext-accent\b(?![-\w])/g,
+    reason: "undefined shadcn class — use text-[color:var(--ds-accent)]",
+  },
+  {
+    pattern: /\bbg-popover\b/g,
+    reason: "undefined shadcn class — use bg-[color:var(--ds-surface)]",
+  },
+  {
+    pattern: /\btext-popover\b/g,
+    reason: "undefined shadcn class — use text-[color:var(--ds-text)]",
+  },
+  {
+    pattern: /\bbg-card\b(?![-\w])/g,
+    reason: "undefined shadcn class — use bg-[color:var(--ds-surface)]",
+  },
+  {
+    pattern: /\btext-card\b(?![-\w])/g,
+    reason: "undefined shadcn class — use text-[color:var(--ds-text)]",
+  },
+  {
+    pattern: /\bring-offset-background\b/g,
+    reason: "undefined shadcn class — use ring-offset-[color:var(--ds-surface)]",
+  },
+  {
+    pattern: /ds-text-secondary\b/g,
+    reason: "undefined --ds-text-secondary token — use ds-text-muted",
+  },
+  // Legacy --signal-* aliases — all migrated to --ds-* semantic tokens.
+  // Block reintroduction outside globals.css (which defines the base
+  // --signal-success/warning/danger/attention tokens that --ds-* builds on).
+  {
+    pattern: /var\(--signal-rose\b/g,
+    reason: "legacy alias removed — use var(--ds-danger-text) or var(--ds-category-rose-text)",
+  },
+  {
+    pattern: /var\(--signal-green\b/g,
+    reason: "legacy alias removed — use var(--ds-success-text/bg/border)",
+  },
+  {
+    pattern: /var\(--signal-amber\b/g,
+    reason: "legacy alias removed — use var(--ds-warning-text/bg/border)",
+  },
+  {
+    pattern: /var\(--signal-blue\b/g,
+    reason: "legacy alias removed — use var(--ds-info-text/bg/border)",
+  },
+  {
+    pattern: /var\(--signal-orange\b/g,
+    reason: "legacy alias removed — use var(--ds-warning-text) or categorical token",
+  },
 ];
 
 const SKIP_FILES = [/globals\.css$/, /\.stories\.tsx$/, /\.test\.tsx?$/];

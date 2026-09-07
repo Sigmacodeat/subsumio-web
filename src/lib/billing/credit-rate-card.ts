@@ -286,6 +286,7 @@ export interface TokenUsage {
  * Formel:
  *   credits = (input / 1M × input_rate)
  *           + (cached  / 1M × cached_rate)
+ *           + (cache-create / 1M × cache-create_rate)
  *           + (output  / 1M × output_rate)
  *
  * @returns Credits (float, 1 credit = 1 EUR)
