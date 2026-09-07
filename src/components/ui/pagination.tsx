@@ -20,7 +20,7 @@ export function Pagination({ currentPage, totalPages, onPageChange, className }:
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage <= 1}
         aria-label="Vorherige Seite"
-        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-2)] disabled:pointer-events-none disabled:opacity-50"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] transition-[background-color,transform] duration-150 hover:bg-[color:var(--ds-surface-2)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none"
       >
         <ChevronLeft className="h-4 w-4" />
       </button>
@@ -34,7 +34,7 @@ export function Pagination({ currentPage, totalPages, onPageChange, className }:
             <button
               onClick={() => onPageChange(page as number)}
               className={cn(
-                "inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-2 text-sm font-medium transition-colors",
+                "inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-2 text-sm font-medium transition-[background-color,color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none",
                 page === currentPage
                   ? "border-[color:var(--ds-accent)] bg-[color:var(--ds-accent)]/10 text-[color:var(--ds-accent)]"
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-2)]"
@@ -49,7 +49,7 @@ export function Pagination({ currentPage, totalPages, onPageChange, className }:
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage >= totalPages}
         aria-label="Nächste Seite"
-        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-2)] disabled:pointer-events-none disabled:opacity-50"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] transition-[background-color,transform] duration-150 hover:bg-[color:var(--ds-surface-2)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none"
       >
         <ChevronRight className="h-4 w-4" />
       </button>
