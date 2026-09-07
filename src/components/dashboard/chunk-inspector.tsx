@@ -611,7 +611,7 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
                       <tr
                         key={c.id}
                         onClick={() => setSelectedChunkId(c.id)}
-                        className={`cursor-pointer border-b border-[color:var(--ds-border)] transition-colors duration-150 hover:bg-[color:var(--ds-surface-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none ${selectedIds.has(c.id) ? "bg-[color:var(--brand-primary-bg)]" : ""}`}
+                        className={`cursor-pointer border-b border-[color:var(--ds-border)] transition-[background-color] duration-150 hover:bg-[color:var(--ds-surface-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none ${selectedIds.has(c.id) ? "bg-[color:var(--brand-primary-bg)]" : ""}`}
                         tabIndex={0}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") setSelectedChunkId(c.id);
@@ -692,7 +692,7 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
                 {chunks.map((c) => (
                   <div
                     key={c.id}
-                    className={`rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 transition-colors duration-150 motion-reduce:transition-none ${selectedIds.has(c.id) ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary-bg)]" : ""}`}
+                    className={`rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 transition-[background-color,border-color] duration-150 motion-reduce:transition-none ${selectedIds.has(c.id) ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary-bg)]" : ""}`}
                   >
                     <div className="flex items-start gap-2">
                       <Checkbox
