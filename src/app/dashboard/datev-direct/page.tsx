@@ -64,11 +64,11 @@ export default function DatevDirectPage() {
         description={tr("workspace.datev.description")}
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "DATEV Direct" }]}
       />
-      <div className="rounded-xl border border-amber-500 bg-amber-50 p-4 text-sm dark:bg-amber-950/30">
+      <div className="rounded-xl border border-[color:var(--ds-warning-solid)] bg-[color:var(--ds-warning-bg)] p-4 text-sm">
         <div className="flex items-start gap-2">
-          <AlertTriangle className="h-4 w-4 shrink-0 text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]" />
+          <AlertTriangle className="h-4 w-4 shrink-0 text-[color:var(--ds-warning-text)]" />
           <div>
-            <p className="font-medium text-amber-800 dark:text-[color:var(--ds-warning-text)]">
+            <p className="font-medium text-[color:var(--ds-warning-text)]">
               {tr("workspace.datev.notice_title")}
             </p>
             <p className="mt-1 text-xs text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]/80">

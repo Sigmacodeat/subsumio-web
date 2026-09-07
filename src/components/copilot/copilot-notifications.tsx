@@ -156,7 +156,7 @@ export function CopilotNotifications() {
           <div className="relative">
             <Bell size={14} className="text-[color:var(--ds-text-muted)]" />
             {urgentCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-500 text-[8px] font-bold text-white">
+              <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-[color:var(--ds-danger-solid)] text-[8px] font-bold text-white">
                 {urgentCount}
               </span>
             )}

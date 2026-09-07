@@ -272,7 +272,7 @@ export function WhatsAppInbox() {
               <div
                 className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${
                   msg.direction === "outbound"
-                    ? "bg-blue-600 text-white"
+                    ? "bg-[color:var(--ds-info-solid)] text-white"
                     : "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                 }`}
               >

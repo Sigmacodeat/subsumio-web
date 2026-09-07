@@ -375,15 +375,15 @@ function OverviewTab({ report, onRefresh }: { report: QualityReport; onRefresh: 
                   Noch keine Calibration-Samples. Sammle Attorney-Feedback über das Formular unten.
                 </span>
               ) : c && c.ece <= 0.05 ? (
-                <Badge className="bg-emerald-100 text-[color:var(--ds-success-text)]">
+                <Badge className="bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]">
                   Exzellent kalibriert
                 </Badge>
               ) : c && c.ece <= 0.15 ? (
-                <Badge className="bg-amber-100 text-[color:var(--ds-warning-text)]">
+                <Badge className="bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]">
                   Moderate Kalibrierung
                 </Badge>
               ) : (
-                <Badge className="bg-red-100 text-[color:var(--ds-danger-text)]">
+                <Badge className="bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]">
                   Schlechte Kalibrierung
                 </Badge>
               )}
@@ -461,8 +461,8 @@ function OverviewTab({ report, onRefresh }: { report: QualityReport; onRefresh: 
               className={cn(
                 "mt-3 rounded-md p-2 text-sm",
                 feedbackMsg.includes("Fehler")
-                  ? "bg-red-50 text-[color:var(--ds-danger-text)]"
-                  : "bg-emerald-50 text-[color:var(--ds-success-text)]"
+                  ? "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
+                  : "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
               )}
             >
               {feedbackMsg}
@@ -595,7 +595,7 @@ function TracesTab() {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-[color:var(--ds-danger-text)]">
+      <div className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4 text-sm text-[color:var(--ds-danger-text)]">
         <AlertTriangle className="mr-2 inline h-4 w-4" />
         {error}
       </div>
@@ -698,7 +698,7 @@ function TracesTab() {
                 </td>
                 <td className="px-3 py-2 text-xs">
                   {t.regeneration_count > 0 ? (
-                    <Badge className="bg-amber-100 text-[color:var(--ds-warning-text)]">
+                    <Badge className="bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]">
                       {t.regeneration_count}×
                     </Badge>
                   ) : (
@@ -794,11 +794,11 @@ function TracesTab() {
                     <div className="text-xs text-[color:var(--ds-text-muted)]">Guardrail</div>
                     <div className="mt-1">
                       {selectedTrace.guardrail_passed === true ? (
-                        <Badge className="bg-emerald-100 text-[color:var(--ds-success-text)]">
+                        <Badge className="bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]">
                           Passed
                         </Badge>
                       ) : selectedTrace.guardrail_passed === false ? (
-                        <Badge className="bg-red-100 text-[color:var(--ds-danger-text)]">
+                        <Badge className="bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]">
                           Failed
                         </Badge>
                       ) : (
@@ -810,11 +810,11 @@ function TracesTab() {
                     <div className="text-xs text-[color:var(--ds-text-muted)]">Cross-Verify</div>
                     <div className="mt-1">
                       {selectedTrace.cross_verify_clean === true ? (
-                        <Badge className="bg-emerald-100 text-[color:var(--ds-success-text)]">
+                        <Badge className="bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]">
                           Clean
                         </Badge>
                       ) : selectedTrace.cross_verify_clean === false ? (
-                        <Badge className="bg-red-100 text-[color:var(--ds-danger-text)]">
+                        <Badge className="bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]">
                           Flagged
                         </Badge>
                       ) : (
@@ -964,7 +964,7 @@ function TrendTab({ days }: { days: number }) {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-[color:var(--ds-danger-text)]">
+      <div className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4 text-sm text-[color:var(--ds-danger-text)]">
         <AlertTriangle className="mr-2 inline h-4 w-4" />
         {error}
       </div>
@@ -1329,7 +1329,7 @@ export default function AiQualityPage() {
             </div>
           )}
           {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-[color:var(--ds-danger-text)]">
+            <div className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4 text-sm text-[color:var(--ds-danger-text)]">
               <AlertTriangle className="mr-2 inline h-4 w-4" />
               {error}
             </div>

@@ -263,7 +263,7 @@ export function NicheLandingPage({ content }: { content: NichePageContent }) {
                                 key={i}
                                 className="flex items-start gap-2 text-xs [color:var(--mk-text-muted)]"
                               >
-                                <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-green-500" />
+                                <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-[color:var(--ds-success-text)]" />
                                 {f}
                               </li>
                             ))}

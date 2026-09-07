@@ -144,14 +144,11 @@ export function ToolCallBubble({
         role="status"
         aria-live="polite"
         aria-label={`${toolCall.label}: ${statusLabel}`}
-        className="overflow-hidden rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30"
+        className="overflow-hidden rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
       >
-        <div className="flex items-center gap-2 border-b border-amber-200/50 px-3 py-2 dark:border-amber-900/50">
-          <Icon
-            size={14}
-            className="text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]"
-          />
-          <span className="flex-1 truncate text-xs font-medium text-amber-900 dark:text-amber-200">
+        <div className="flex items-center gap-2 border-b border-[color:var(--ds-warning-border)] px-3 py-2">
+          <Icon size={14} className="text-[color:var(--ds-warning-text)]" />
+          <span className="flex-1 truncate text-xs font-medium text-[color:var(--ds-warning-text)]">
             {t(toolCall.label as never)} — {t("chat.tool.confirm_required")}
           </span>
         </div>
@@ -160,10 +157,10 @@ export function ToolCallBubble({
             <dl className="space-y-1">
               {paramEntries.map(([key, value]) => (
                 <div key={key} className="flex items-start gap-2 text-xs">
-                  <dt className="shrink-0 font-medium text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]">
+                  <dt className="shrink-0 font-medium text-[color:var(--ds-warning-text)]">
                     {formatParamKey(key, t)}:
                   </dt>
-                  <dd className="min-w-0 flex-1 truncate text-amber-900 dark:text-amber-100">
+                  <dd className="min-w-0 flex-1 truncate text-[color:var(--ds-warning-text)]">
                     {typeof value === "object" ? JSON.stringify(value) : String(value)}
                   </dd>
                 </div>
@@ -171,17 +168,17 @@ export function ToolCallBubble({
             </dl>
           </div>
         )}
-        <div className="flex items-center gap-2 border-t border-amber-200/50 px-3 py-2 dark:border-amber-900/50">
+        <div className="flex items-center gap-2 border-t border-[color:var(--ds-warning-border)] px-3 py-2">
           <button
             onClick={() => onConfirm?.(toolCall.id)}
-            className="flex items-center gap-1 rounded-md bg-amber-600 px-2.5 py-1 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-amber-700 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+            className="flex items-center gap-1 rounded-md bg-[color:var(--ds-warning-solid)] px-2.5 py-1 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--ds-warning-solid-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-warning-solid)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
           >
             <Check size={12} />
             {t("chat.tool.confirm")}
           </button>
           <button
             onClick={() => onCancel?.(toolCall.id)}
-            className="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color] hover:bg-amber-100 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none dark:text-[color:var(--ds-warning-text)] dark:hover:bg-amber-900/30"
+            className="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-warning-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-warning-solid)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
           >
             <X size={12} />
             {t("chat.tool.cancel")}
@@ -214,16 +211,16 @@ export function ToolCallBubble({
         role="status"
         aria-live="polite"
         aria-label={`${toolCall.label}: ${statusLabel}`}
-        className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 dark:border-red-900 dark:bg-red-950/30"
+        className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2"
       >
         <AlertCircle size={14} className="shrink-0 text-[color:var(--ds-danger-text)]" />
-        <span className="flex-1 text-xs text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">
+        <span className="flex-1 text-xs text-[color:var(--ds-danger-text)]">
           {toolCall.result?.display?.title ?? t(toolCall.label as never)} {t("chat.tool.failed")}
         </span>
         {onRetry && (
           <button
             onClick={() => onRetry(toolCall.id)}
-            className="flex items-center gap-1 rounded-md bg-red-600 px-2 py-0.5 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+            className="flex items-center gap-1 rounded-md bg-[color:var(--ds-danger-solid)] px-2 py-0.5 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-solid-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-danger-solid)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
           >
             <RotateCw size={11} />
             {t("chat.tool.retry")}
@@ -349,15 +346,15 @@ const STATUS_STYLES: Record<
   { bg: string; text: string; border: string; icon: typeof Clock }
 > = {
   pending: {
-    bg: "bg-blue-50 dark:bg-blue-950/30",
-    text: "text-[color:var(--ds-info-text)] dark:text-[color:var(--ds-info-text)]",
-    border: "border-blue-200 dark:border-blue-900",
+    bg: "bg-[color:var(--ds-info-bg)]",
+    text: "text-[color:var(--ds-info-text)]",
+    border: "border-[color:var(--ds-info-border)]",
     icon: Clock,
   },
   warning: {
-    bg: "bg-amber-50 dark:bg-amber-950/30",
-    text: "text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]",
-    border: "border-amber-200 dark:border-amber-900",
+    bg: "bg-[color:var(--ds-warning-bg)]",
+    text: "text-[color:var(--ds-warning-text)]",
+    border: "border-[color:var(--ds-warning-border)]",
     icon: AlertTriangle,
   },
   critical: {
@@ -367,15 +364,15 @@ const STATUS_STYLES: Record<
     icon: AlertTriangle,
   },
   overdue: {
-    bg: "bg-red-50 dark:bg-red-950/30",
-    text: "text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]",
-    border: "border-red-200 dark:border-red-900",
+    bg: "bg-[color:var(--ds-danger-bg)]",
+    text: "text-[color:var(--ds-danger-text)]",
+    border: "border-[color:var(--ds-danger-border)]",
     icon: AlertCircle,
   },
   done: {
-    bg: "bg-emerald-50 dark:bg-emerald-950/30",
-    text: "text-[color:var(--ds-success-text)] dark:text-[color:var(--ds-success-text)]",
-    border: "border-emerald-200 dark:border-emerald-900",
+    bg: "bg-[color:var(--ds-success-bg)]",
+    text: "text-[color:var(--ds-success-text)]",
+    border: "border-[color:var(--ds-success-border)]",
     icon: CheckCircle2,
   },
   vorfrist: {
@@ -391,15 +388,15 @@ const EVENT_TYPE_STYLES: Record<
   { bg: string; text: string; border: string; icon: typeof Clock }
 > = {
   hearing: {
-    bg: "bg-red-50 dark:bg-red-950/30",
-    text: "text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]",
-    border: "border-red-200 dark:border-red-900",
+    bg: "bg-[color:var(--ds-danger-bg)]",
+    text: "text-[color:var(--ds-danger-text)]",
+    border: "border-[color:var(--ds-danger-border)]",
     icon: Gavel,
   },
   appointment: {
-    bg: "bg-blue-50 dark:bg-blue-950/30",
-    text: "text-[color:var(--ds-info-text)] dark:text-[color:var(--ds-info-text)]",
-    border: "border-blue-200 dark:border-blue-900",
+    bg: "bg-[color:var(--ds-info-bg)]",
+    text: "text-[color:var(--ds-info-text)]",
+    border: "border-[color:var(--ds-info-border)]",
     icon: CalendarDays,
   },
   meeting: {
@@ -424,9 +421,9 @@ const EVENT_TYPE_STYLES: Record<
 
 const PRIORITY_STYLES: Record<string, { bg: string; text: string; border: string }> = {
   critical: {
-    bg: "bg-red-50 dark:bg-red-950/30",
-    text: "text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]",
-    border: "border-red-200 dark:border-red-900",
+    bg: "bg-[color:var(--ds-danger-bg)]",
+    text: "text-[color:var(--ds-danger-text)]",
+    border: "border-[color:var(--ds-danger-border)]",
   },
   high: {
     bg: "bg-orange-50 dark:bg-orange-950/30",
@@ -434,9 +431,9 @@ const PRIORITY_STYLES: Record<string, { bg: string; text: string; border: string
     border: "border-orange-200 dark:border-orange-900",
   },
   medium: {
-    bg: "bg-amber-50 dark:bg-amber-950/30",
-    text: "text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]",
-    border: "border-amber-200 dark:border-amber-900",
+    bg: "bg-[color:var(--ds-warning-bg)]",
+    text: "text-[color:var(--ds-warning-text)]",
+    border: "border-[color:var(--ds-warning-border)]",
   },
   low: {
     bg: "bg-slate-50 dark:bg-slate-950/30",
@@ -650,7 +647,7 @@ function TaskCard({
                 className={cn(
                   "inline-flex items-center gap-1 text-[11px]",
                   item.daysUntil !== undefined && item.daysUntil < 0
-                    ? "text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]"
+                    ? "text-[color:var(--ds-danger-text)]"
                     : "text-[color:var(--ds-text-muted)]"
                 )}
               >
@@ -719,7 +716,7 @@ function DeadlineCard({
               {item.label}
             </button>
             {item.isNotfrist && (
-              <span className="shrink-0 rounded bg-red-100 px-1 py-0.5 text-[9px] font-bold text-[color:var(--ds-danger-text)] dark:bg-red-950/40 dark:text-[color:var(--ds-danger-text)]">
+              <span className="shrink-0 rounded bg-[color:var(--ds-danger-bg)] px-1 py-0.5 text-[9px] font-bold text-[color:var(--ds-danger-text)]">
                 {t("chat.deadline.notfrist" as never)}
               </span>
             )}
@@ -744,7 +741,7 @@ function DeadlineCard({
             </span>
             <StatusBadge status={status} daysUntil={item.daysUntil} t={t} />
             {item.needsSecondCheck && (
-              <span className="inline-flex items-center gap-0.5 rounded bg-amber-100 px-1 py-0.5 text-[9px] font-medium text-[color:var(--ds-warning-text)] dark:bg-amber-950/40 dark:text-[color:var(--ds-warning-text)]">
+              <span className="inline-flex items-center gap-0.5 rounded bg-[color:var(--ds-warning-bg)] px-1 py-0.5 text-[9px] font-medium text-[color:var(--ds-warning-text)]">
                 <ShieldAlert size={8} />
                 {t("chat.deadline.second_check" as never)}
               </span>

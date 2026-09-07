@@ -202,7 +202,7 @@ export function ReviewTable({ data, caseSlug }: ReviewTableProps) {
               onChange={(e) => setAskQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAsk()}
               placeholder="z.B. Welche Schadensposition ist am höchsten?"
-              className="flex-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:ring-2 focus:ring-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+              className="flex-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:ring-2 focus:ring-[color:var(--ds-info-solid)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             />
             <button
               onClick={handleAsk}

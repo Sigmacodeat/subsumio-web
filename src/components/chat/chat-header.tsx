@@ -140,7 +140,11 @@ export function ChatHeader(props: ChatHeaderProps) {
               <span
                 className={cn(
                   "absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full ring-1 ring-[color:var(--ds-surface)]",
-                  brainDegraded ? "bg-amber-500" : brainOnline ? "bg-emerald-500" : "bg-red-500"
+                  brainDegraded
+                    ? "bg-[color:var(--ds-warning-solid)]"
+                    : brainOnline
+                      ? "bg-[color:var(--ds-success-solid)]"
+                      : "bg-[color:var(--ds-danger-solid)]"
                 )}
               />
             )}
@@ -459,7 +463,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                         props.onClear();
                         setShowActions(false);
                       }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] motion-reduce:transition-none dark:text-[color:var(--ds-danger-text)]"
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] motion-reduce:transition-none"
                     >
                       <Trash2 size={13} />
                       {t("chat.clear")}

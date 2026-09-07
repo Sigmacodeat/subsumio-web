@@ -238,7 +238,7 @@ export function ExportStep({
             <Input id="page-slug" value={draftSlug} readOnly className="font-mono text-xs" />
           </div>
           {savedSlug ? (
-            <div className="flex items-center gap-2 text-sm text-[color:var(--ds-success-text)] dark:text-[color:var(--ds-success-text)]">
+            <div className="flex items-center gap-2 text-sm text-[color:var(--ds-success-text)]">
               <CheckCircle2 className="h-4 w-4" />
               Gespeichert unter {savedSlug}
             </div>

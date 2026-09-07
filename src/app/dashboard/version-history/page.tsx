@@ -185,7 +185,7 @@ export default function VersionHistoryPage() {
                     className={cn(
                       "mt-1 h-3 w-3 rounded-full border-2",
                       ACTION_COLORS[entry.action]
-                        ? "border-emerald-500"
+                        ? "border-[color:var(--ds-success-solid)]"
                         : "border-[color:var(--ds-border-strong)]"
                     )}
                   />

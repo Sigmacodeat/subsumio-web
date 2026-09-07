@@ -94,7 +94,7 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
             <Tooltip>
               <TooltipTrigger asChild>
                 <span
-                  className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]"
+                  className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-warning-text)]"
                   aria-label={AI_NOTICE}
                 >
                   <Info size={10} aria-hidden="true" />
@@ -138,7 +138,7 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
         {/* Attorney review warning */}
         {requiresReview && !data.isStreaming && (
           <span
-            className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]"
+            className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-danger-text)]"
             title="Diese AI-Ausgabe erfordert anwaltliche Prüfung, bevor sie verwendet wird."
           >
             <ShieldAlert size={10} aria-hidden="true" />
@@ -169,7 +169,7 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
 
       {/* Unverified citation warning */}
       {data.grounding?.has_unverified && data.grounding.warning && (
-        <div className="mt-2 flex items-start gap-2 rounded-md border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]">
+        <div className="mt-2 flex items-start gap-2 rounded-md border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]">
           <ShieldAlert size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
           <span>{data.grounding.warning}</span>
         </div>
@@ -216,7 +216,7 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
                         </p>
                       )}
                       {!gc.verified && (
-                        <p className="mt-0.5 text-xs text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]">
+                        <p className="mt-0.5 text-xs text-[color:var(--ds-warning-text)]">
                           Nicht im Corpus gefunden — möglicherweise erfunden oder außerhalb des
                           abgedeckten Rechtskreises.
                         </p>
@@ -268,7 +268,7 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
                 {data.gaps!.map((gap, i) => (
                   <li
                     key={i}
-                    className="flex items-start gap-2 text-xs text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]"
+                    className="flex items-start gap-2 text-xs text-[color:var(--ds-warning-text)]"
                   >
                     <span className="shrink-0 text-[color:var(--ds-warning-text)]">⚠</span>
                     {gap}
@@ -309,7 +309,7 @@ export function CitationBadgesInline({
     <div className={cn("inline-flex flex-wrap items-center gap-1.5", className)}>
       {!data.isStreaming && (
         <span
-          className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]"
+          className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-warning-text)]"
           title={AI_NOTICE}
         >
           <Info size={9} />

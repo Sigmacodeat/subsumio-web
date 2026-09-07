@@ -1130,7 +1130,7 @@ function UploadPageInner() {
                         </span>
                       )}
                       {f.extractionWarning && (
-                        <p className="mt-1 text-xs text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]">
+                        <p className="mt-1 text-xs text-[color:var(--ds-warning-text)]">
                           Extraktionshinweis: {f.extractionWarning}
                         </p>
                       )}

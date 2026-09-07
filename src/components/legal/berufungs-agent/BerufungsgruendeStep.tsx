@@ -56,11 +56,11 @@ interface BerufungsgruendeStepProps {
 
 const LABEL_STYLES = {
   stark:
-    "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]/30 dark:text-[color:var(--ds-success-text)]",
+    "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]/30",
   mittel:
-    "bg-[color:var(--ds-warning-bg)]/10 text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]/30 dark:text-[color:var(--ds-warning-text)]",
+    "bg-[color:var(--ds-warning-bg)]/10 text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]/30",
   schwach:
-    "bg-[color:var(--ds-danger-bg)]/10 text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]/30 dark:text-[color:var(--ds-danger-text)]",
+    "bg-[color:var(--ds-danger-bg)]/10 text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]/30",
 } as const;
 
 const LABEL_TEXT = { stark: "Stark", mittel: "Mittel", schwach: "Schwach" } as const;

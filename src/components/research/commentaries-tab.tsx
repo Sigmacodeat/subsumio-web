@@ -315,7 +315,7 @@ export default function CommentariesPage() {
 
         {/* Error */}
         {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-[color:var(--ds-danger-solid)] p-3 text-sm text-[color:var(--ds-danger-text)] dark:border-red-900 dark:bg-red-950 dark:text-[color:var(--ds-danger-text)]">
+          <div className="mb-4 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-solid)] p-3 text-sm text-[color:var(--ds-danger-text)]">
             {error}
           </div>
         )}
@@ -410,7 +410,7 @@ function CommentaryStatuteGroup({
                   Synthetisch
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--ds-info-solid)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-info-text)] dark:bg-blue-950 dark:text-[color:var(--ds-info-text)]">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--ds-info-solid)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-info-text)]">
                   <FileText className="h-3 w-3" />
                   Open Access
                 </span>
@@ -475,7 +475,7 @@ function CommentaryDetail({
                     Synthetisch
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--ds-info-solid)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-info-text)] dark:bg-blue-950 dark:text-[color:var(--ds-info-text)]">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--ds-info-solid)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-info-text)]">
                     <FileText className="h-3 w-3" />
                     Open Access
                   </span>
@@ -495,7 +495,7 @@ function CommentaryDetail({
             </div>
             <button
               onClick={onDelete}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-sm text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-solid)] dark:border-red-900 dark:hover:bg-red-950"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-danger-border)] px-3 py-1.5 text-sm text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-solid)]"
             >
               <Trash2 className="h-4 w-4" />
               Löschen
@@ -641,12 +641,10 @@ function TreatmentBadge({
 }) {
   if (count === 0) return null;
   const colors: Record<string, string> = {
-    green:
-      "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)] dark:bg-green-950 dark:text-[color:var(--ds-success-text)]",
-    red: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)] dark:bg-red-950 dark:text-[color:var(--ds-danger-text)]",
-    amber:
-      "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)] dark:bg-amber-950 dark:text-[color:var(--ds-warning-text)]",
-    blue: "bg-[color:var(--ds-info-solid)] text-[color:var(--ds-info-text)] dark:bg-blue-950 dark:text-[color:var(--ds-info-text)]",
+    green: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]",
+    red: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)]",
+    amber: "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)]",
+    blue: "bg-[color:var(--ds-info-solid)] text-[color:var(--ds-info-text)]",
     gray: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
   };
   return (

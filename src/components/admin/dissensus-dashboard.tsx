@@ -48,7 +48,12 @@ interface DissensusResponse {
 
 function DisagreementBar({ score }: { score: number }) {
   const pct = Math.round(score * 100);
-  const color = pct >= 60 ? "bg-red-500" : pct >= 30 ? "bg-amber-500" : "bg-emerald-500";
+  const color =
+    pct >= 60
+      ? "bg-[color:var(--ds-danger-solid)]"
+      : pct >= 30
+        ? "bg-[color:var(--ds-warning-solid)]"
+        : "bg-[color:var(--ds-success-solid)]";
   return (
     <div className="flex items-center gap-2">
       <div className="h-2 w-24 overflow-hidden rounded-full bg-[color:var(--ds-hover)]">
@@ -74,12 +79,9 @@ function RecommendationSplit({ split }: { split: Record<string, number> }) {
   const entries = Object.entries(split);
   const total = entries.reduce((sum, [, c]) => sum + c, 0);
   const colors: Record<string, string> = {
-    publish:
-      "bg-emerald-100 text-[color:var(--ds-success-text)] dark:bg-emerald-900/30 dark:text-[color:var(--ds-success-text)]",
-    revise:
-      "bg-amber-100 text-[color:var(--ds-warning-text)] dark:bg-amber-900/30 dark:text-[color:var(--ds-warning-text)]",
-    reject:
-      "bg-red-100 text-[color:var(--ds-danger-text)] dark:bg-red-900/30 dark:text-[color:var(--ds-danger-text)]",
+    publish: "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
+    revise: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+    reject: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
   };
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -124,8 +126,8 @@ export function DissensusDashboard() {
 
       {/* Error */}
       {error && error instanceof ApiGetError && (
-        <Card className="border-red-200 p-4 dark:border-red-900">
-          <p className="text-sm text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">
+        <Card className="border-[color:var(--ds-danger-border)] p-4">
+          <p className="text-sm text-[color:var(--ds-danger-text)]">
             Fehler beim Laden: {error.message}
           </p>
         </Card>

@@ -43,7 +43,7 @@ export default function CourtAnalyticsPage() {
         ]}
       />
 
-      <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-[color:var(--ds-warning-solid)] p-3 text-xs text-[color:var(--ds-warning-text)]">
+      <div className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-solid)] p-3 text-xs text-[color:var(--ds-warning-text)]">
         <Info className="mt-0.5 h-4 w-4 shrink-0" />
         <p>{ANALYTICS_DISCLAIMER_DE}</p>
       </div>

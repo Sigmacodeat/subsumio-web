@@ -79,7 +79,7 @@ export default function BulkCasesPage() {
         </table>
       </section>
       {result && (
-        <div className="rounded-xl border border-green-500 p-4 text-sm">
+        <div className="rounded-xl border border-[color:var(--ds-success-solid)] p-4 text-sm">
           {result.created}/{result.total} {tr("workspace.bulk.created")} · {result.errors}{" "}
           {tr("workspace.bulk.errors")}
         </div>

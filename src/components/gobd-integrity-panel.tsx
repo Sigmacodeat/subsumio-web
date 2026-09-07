@@ -150,9 +150,9 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
           <div className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-3 py-2.5">
             <ShieldCheck
               size={15}
-              className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)] dark:text-[color:var(--ds-success-text)]"
+              className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]"
             />
-            <div className="text-xs text-[color:var(--ds-success-text)] dark:text-[color:var(--ds-success-text)]">
+            <div className="text-xs text-[color:var(--ds-success-text)]">
               <strong>Unverändert seit Ausstellung.</strong> Der neu berechnete Hash stimmt mit dem
               gespeicherten überein.
             </div>
@@ -160,22 +160,19 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
         )}
         {state.kind === "mismatch" && (
           <div className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2.5">
-            <ShieldAlert
-              size={15}
-              className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]"
-            />
-            <div className="space-y-1 text-xs text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">
+            <ShieldAlert size={15} className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]" />
+            <div className="space-y-1 text-xs text-[color:var(--ds-danger-text)]">
               <div>
                 <strong>Verändert seit Ausstellung.</strong> Der berechnete Hash weicht ab.
               </div>
-              <div className="font-mono break-all text-[color:var(--ds-danger-text)]/80 dark:text-[color:var(--ds-danger-text)]/80">
+              <div className="font-mono break-all text-[color:var(--ds-danger-text)]/80">
                 Ist: {state.computed}
               </div>
             </div>
           </div>
         )}
         {state.kind === "error" && (
-          <div className="text-xs text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">
+          <div className="text-xs text-[color:var(--ds-danger-text)]">
             Prüfung fehlgeschlagen: {state.message}
           </div>
         )}

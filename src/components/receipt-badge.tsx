@@ -12,13 +12,13 @@ const STATE_CONFIG: Record<
     label: "Verifiziert",
     icon: ShieldCheck,
     className:
-      "bg-emerald-50 text-[color:var(--ds-success-text)] border-emerald-200 dark:bg-emerald-950 dark:text-[color:var(--ds-success-text)] dark:border-emerald-800",
+      "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
   },
   VERIFIED_WITH_WARNINGS: {
     label: "Verifiziert (mit Warnungen)",
     icon: ShieldAlert,
     className:
-      "bg-amber-50 text-[color:var(--ds-warning-text)] border-amber-200 dark:bg-amber-950 dark:text-[color:var(--ds-warning-text)] dark:border-amber-800",
+      "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
   },
   NEEDS_HUMAN_REVIEW: {
     label: "Menschliche Prüfung erforderlich",
@@ -30,7 +30,7 @@ const STATE_CONFIG: Record<
     label: "Blockiert",
     icon: ShieldX,
     className:
-      "bg-red-50 text-[color:var(--ds-danger-text)] border-red-200 dark:bg-red-950 dark:text-[color:var(--ds-danger-text)] dark:border-red-800",
+      "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
   },
   VERIFIER_ERROR: {
     label: "Verifizierungsfehler",

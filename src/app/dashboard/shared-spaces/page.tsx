@@ -27,16 +27,20 @@ import type { SharedSpace, SpaceMember, SpaceResource } from "@/lib/shared-space
 
 const roleBadge: Record<string, string> = {
   owner: "bg-purple-100 text-purple-700 border-purple-200",
-  admin: "bg-[color:var(--ds-info-solid)] text-[color:var(--ds-info-text)] border-blue-200",
-  editor: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)] border-green-200",
+  admin:
+    "bg-[color:var(--ds-info-solid)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
+  editor:
+    "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
   viewer: "bg-gray-100 text-gray-600 border-gray-200",
 };
 
 const statusBadge: Record<string, string> = {
-  active: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)] border-green-200",
+  active:
+    "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
   pending:
     "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)] border-yellow-200",
-  revoked: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)] border-red-200",
+  revoked:
+    "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
 };
 
 const resourceIcon: Record<string, typeof FileText> = {
@@ -149,7 +153,7 @@ export default function SharedSpacesPage() {
       />
 
       {error && (
-        <Card className="border-red-200 bg-[color:var(--ds-danger-solid)] p-4">
+        <Card className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-solid)] p-4">
           <div className="flex items-center gap-2 text-sm text-[color:var(--ds-danger-text)]">
             <AlertCircle className="h-4 w-4 shrink-0" />
             {error}

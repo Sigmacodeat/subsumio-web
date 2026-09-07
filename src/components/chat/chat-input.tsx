@@ -185,12 +185,12 @@ export function ChatInput({
 
       {/* Upload error */}
       {uploadError && (
-        <div className="flex items-center gap-2 px-4 pt-2 text-xs text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">
+        <div className="flex items-center gap-2 px-4 pt-2 text-xs text-[color:var(--ds-danger-text)]">
           <X size={12} className="shrink-0" />
           <span className="min-w-0 flex-1 truncate">{uploadError}</span>
           <button
             onClick={() => setUploadError(null)}
-            className="shrink-0 text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none dark:text-[color:var(--ds-danger-text)] dark:hover:text-[color:var(--ds-danger-text)]"
+            className="shrink-0 text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
             aria-label={t("chat.dismiss_error")}
           >
             <X size={11} />
@@ -206,7 +206,7 @@ export function ChatInput({
           className={cn(
             "relative rounded-2xl border bg-[color:var(--ds-surface)] shadow-[var(--card-shadow)] transition-[border-color,box-shadow] duration-200 motion-reduce:transition-none",
             overLimit
-              ? "border-red-500"
+              ? "border-[color:var(--ds-danger-solid)]"
               : nearLimit
                 ? "border-amber-400/60"
                 : "border-[color:var(--ds-border)] focus-within:border-[color:var(--ds-ring)]"
@@ -360,7 +360,7 @@ export function ChatInput({
                 disabled={!canSend}
                 className={cn(
                   "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[color:var(--brand-primary)] text-white transition-[background-color,transform,opacity] duration-200 hover:bg-[color:var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 motion-reduce:transition-none sm:h-7 sm:w-7",
-                  overLimit && "bg-red-500"
+                  overLimit && "bg-[color:var(--ds-danger-solid)]"
                 )}
                 aria-label={t("chat.send")}
                 title={t("chat.input.send_enter")}

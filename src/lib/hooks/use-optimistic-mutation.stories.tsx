@@ -133,7 +133,7 @@ function OptimisticDemoInner({ failMode }: { failMode: "never" | "always" }) {
           </div>
         )}
         {toggleMutation.isSuccess && (
-          <div className="text-green-600">Erfolg — Server hat bestätigt.</div>
+          <div className="text-[color:var(--ds-success-text)]">Erfolg — Server hat bestätigt.</div>
         )}
       </div>
 

@@ -158,7 +158,7 @@ export function SendLinkDialog({
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:bg-[color:var(--ds-hover)]"
               }`}
             >
-              <MessageCircle size={18} className="shrink-0 text-green-600" />
+              <MessageCircle size={18} className="shrink-0 text-[color:var(--ds-success-text)]" />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium">{t("sendlink.whatsapp")}</div>
                 <div className="text-xs text-[color:var(--ds-text-muted)]">
@@ -277,7 +277,7 @@ export function SendLinkDialog({
             <Button
               onClick={() => send("whatsapp")}
               disabled={sending !== null || phone.trim().length < 6}
-              className="gap-2 bg-green-600 text-white hover:bg-green-500 active:scale-[0.98]"
+              className="gap-2 bg-[color:var(--ds-success-solid)] text-white hover:bg-[color:var(--ds-success-solid)] active:scale-[0.98]"
             >
               {sending === "whatsapp" ? (
                 <Loader2 size={16} className="animate-spin" />
@@ -291,7 +291,7 @@ export function SendLinkDialog({
             <Button
               onClick={() => send("email")}
               disabled={sending !== null || !email.includes("@")}
-              className="gap-2 bg-blue-600 text-white hover:bg-blue-500 active:scale-[0.98]"
+              className="gap-2 bg-[color:var(--ds-info-solid)] text-white hover:bg-[color:var(--ds-info-solid)] active:scale-[0.98]"
             >
               {sending === "email" ? (
                 <Loader2 size={16} className="animate-spin" />

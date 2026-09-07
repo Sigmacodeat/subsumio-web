@@ -742,7 +742,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
               >
                 {savedFlash ? (
                   <>
-                    <Check className="h-3 w-3 text-green-500" /> Gespeichert
+                    <Check className="h-3 w-3 text-[color:var(--ds-success-text)]" /> Gespeichert
                   </>
                 ) : (
                   <>
@@ -962,7 +962,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
                     >
                       {copiedIdx === i ? (
                         <>
-                          <Check className="h-3 w-3 text-green-500" /> Kopiert
+                          <Check className="h-3 w-3 text-[color:var(--ds-success-text)]" /> Kopiert
                         </>
                       ) : (
                         <>

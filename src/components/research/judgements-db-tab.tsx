@@ -145,10 +145,8 @@ const TREATMENT_ICONS: Record<string, typeof CheckCircle2> = {
 };
 
 const TREATMENT_COLORS: Record<string, string> = {
-  good_law:
-    "text-[color:var(--ds-success-text)] bg-[color:var(--ds-success-solid)] dark:bg-emerald-950/30",
-  bad_law:
-    "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-solid)] dark:bg-red-950/30",
+  good_law: "text-[color:var(--ds-success-text)] bg-[color:var(--ds-success-solid)]",
+  bad_law: "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-solid)]",
   at_risk:
     "text-[color:var(--ds-attention-text)] bg-[color:var(--ds-attention-solid)] dark:bg-orange-950/30",
   mixed:
@@ -669,7 +667,7 @@ export default function JudgementsDbPage() {
 
       {/* Error */}
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-[color:var(--ds-danger-solid)] p-3 text-sm text-[color:var(--ds-danger-text)] dark:border-red-900 dark:bg-red-950/30 dark:text-[color:var(--ds-danger-text)]">
+        <div className="mb-4 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-solid)] p-3 text-sm text-[color:var(--ds-danger-text)]">
           {error}
         </div>
       )}
@@ -846,11 +844,11 @@ function PipelinePanel({ result }: { result: PipelineResultData }) {
                 className={cn(
                   "rounded border p-2 text-xs",
                   step.status === "done" &&
-                    "border-emerald-200 bg-[color:var(--ds-success-solid)] dark:border-emerald-900 dark:bg-emerald-950/30",
+                    "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-solid)]",
                   step.status === "error" &&
-                    "border-red-200 bg-[color:var(--ds-danger-solid)] dark:border-red-900 dark:bg-red-950/30",
+                    "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-solid)]",
                   step.status === "running" &&
-                    "border-blue-200 bg-[color:var(--ds-info-solid)] dark:border-blue-900 dark:bg-blue-950/30",
+                    "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-solid)]",
                   step.status === "pending" &&
                     "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]"
                 )}

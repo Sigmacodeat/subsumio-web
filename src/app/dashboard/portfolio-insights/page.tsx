@@ -71,11 +71,12 @@ interface PortfolioInsights {
 }
 
 const riskColors: Record<string, string> = {
-  low: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)] border-green-200",
+  low: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
   medium:
     "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)] border-yellow-200",
   high: "bg-[color:var(--ds-attention-solid)] text-[color:var(--ds-attention-text)] border-orange-200",
-  critical: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)] border-red-200",
+  critical:
+    "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
 };
 
 const severityIcon: Record<string, typeof AlertTriangle> = {

@@ -181,7 +181,7 @@ export default function DeepAnalysisPage() {
       </Card>
 
       {error && (
-        <Card className="border-red-200 bg-[color:var(--ds-danger-solid)] p-4">
+        <Card className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-solid)] p-4">
           <div className="flex items-center gap-2 text-sm text-[color:var(--ds-danger-text)]">
             <AlertCircle className="h-4 w-4 shrink-0" />
             {error}

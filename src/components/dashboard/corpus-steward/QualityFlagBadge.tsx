@@ -22,19 +22,19 @@ const FLAG_CONFIG: Record<
     label: "Verifiziert",
     icon: CheckCircle2,
     className:
-      "border-emerald-500/40 bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] dark:text-[color:var(--ds-success-text)]",
+      "border-emerald-500/40 bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
   },
   needs_review: {
     label: "Prüfung offen",
     icon: AlertTriangle,
     className:
-      "border-amber-500/40 bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]",
+      "border-amber-500/40 bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
   },
   defective: {
     label: "Defekt",
     icon: XCircle,
     className:
-      "border-red-500/40 bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]",
+      "border-red-500/40 bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
   },
   unreviewed: {
     label: "Ungeprüft",

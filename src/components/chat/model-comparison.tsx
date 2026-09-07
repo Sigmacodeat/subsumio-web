@@ -227,9 +227,7 @@ export function ModelComparison() {
                       ))}
                     </div>
                   ) : result.error ? (
-                    <div className="text-sm text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">
-                      {result.error}
-                    </div>
+                    <div className="text-sm text-[color:var(--ds-danger-text)]">{result.error}</div>
                   ) : (
                     <div className="prose-chat text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
                       {result.answer}

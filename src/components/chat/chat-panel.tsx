@@ -2277,12 +2277,12 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
             <div
               role="alert"
               aria-live="assertive"
-              className="flex items-center gap-2 border-t border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-2 text-xs text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]"
+              className="flex items-center gap-2 border-t border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-2 text-xs text-[color:var(--ds-danger-text)]"
             >
               <span className="min-w-0 flex-1 truncate">{error}</span>
               <button
                 onClick={() => setDismissedError(true)}
-                className="shrink-0 text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none dark:text-[color:var(--ds-danger-text)] dark:hover:text-[color:var(--ds-danger-text)]"
+                className="shrink-0 text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                 aria-label={t("chat.dismiss_error")}
               >
                 <X size={14} />

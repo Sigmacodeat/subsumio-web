@@ -232,9 +232,7 @@ export default function WorkflowsPage() {
           role="alert"
         >
           <AlertCircle size={16} className="shrink-0 text-[color:var(--ds-danger-text)]" />
-          <p className="text-sm text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">
-            {error}
-          </p>
+          <p className="text-sm text-[color:var(--ds-danger-text)]">{error}</p>
           <Button
             size="icon"
             variant="ghost"
@@ -583,7 +581,7 @@ function WorkflowCard({
           {pendingApprovals.length > 0 && (
             <a
               href="/dashboard/approvals"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-warning-border)] bg-amber-500/[0.04] px-3 py-1.5 text-xs text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color] hover:bg-amber-500/[0.08] motion-reduce:transition-none dark:text-[color:var(--ds-warning-text)]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-warning-border)] bg-amber-500/[0.04] px-3 py-1.5 text-xs text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color] hover:bg-amber-500/[0.08] motion-reduce:transition-none"
             >
               <Clock size={13} />
               {pendingApprovals.length} Freigabe{pendingApprovals.length > 1 ? "n" : ""} offen — zu
@@ -604,7 +602,7 @@ function WorkflowCard({
                   className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]"
                 />
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">
+                  <p className="text-xs font-medium text-[color:var(--ds-danger-text)]">
                     {s.label}
                   </p>
                   <p className="mt-0.5 text-xs text-[color:var(--ds-danger-text)]/80">{s.error}</p>

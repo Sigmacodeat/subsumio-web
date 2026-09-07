@@ -298,10 +298,10 @@ export function QuickAnalysisWidget({
                 <div
                   className={`flex h-10 w-10 items-center justify-center rounded-full ${
                     result.verdict === "aussichtsreich"
-                      ? "bg-green-100 text-green-600"
+                      ? "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : result.verdict === "bedingt"
-                        ? "bg-amber-100 text-[color:var(--ds-warning-text)]"
-                        : "bg-red-100 text-[color:var(--ds-danger-text)]"
+                        ? "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                        : "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
                   }`}
                 >
                   {result.verdict === "aussichtsreich" ? (
@@ -378,7 +378,7 @@ export function QuickAnalysisWidget({
                             key={i}
                             className="flex items-start gap-1 text-[10px] [color:var(--mk-text-muted)]"
                           >
-                            <CheckCircle2 className="mt-0.5 size-2.5 shrink-0 text-green-500" />
+                            <CheckCircle2 className="mt-0.5 size-2.5 shrink-0 text-[color:var(--ds-success-text)]" />
                             {f}
                           </li>
                         ))}
@@ -414,7 +414,7 @@ export function QuickAnalysisWidget({
               exit={{ opacity: 0 }}
               className="space-y-4"
             >
-              <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+              <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4">
                 <AlertCircle className="size-5 shrink-0 text-[color:var(--ds-danger-text)]" />
                 <p className="text-sm text-[color:var(--ds-danger-text)]">{errorMsg}</p>
               </div>

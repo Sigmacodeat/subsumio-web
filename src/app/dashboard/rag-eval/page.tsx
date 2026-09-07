@@ -188,11 +188,11 @@ export default function RagEvalPage() {
                 className={cn(
                   "border text-xs",
                   gateColor === "emerald" &&
-                    "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] dark:text-[color:var(--ds-success-text)]",
+                    "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
                   gateColor === "amber" &&
-                    "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]",
+                    "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
                   gateColor === "red" &&
-                    "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]"
+                    "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
                 )}
               >
                 {gateResult.status === "pass"
@@ -343,7 +343,7 @@ export default function RagEvalPage() {
                       {isBaseline && (
                         <Badge
                           variant="default"
-                          className="shrink-0 border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)] dark:text-[color:var(--ds-info-text)]"
+                          className="shrink-0 border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
                         >
                           Baseline
                         </Badge>

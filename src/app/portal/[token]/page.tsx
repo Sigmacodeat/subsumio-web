@@ -954,7 +954,7 @@ export default function PortalPage() {
             {signedSuccessfully ? (
               <div className="flex flex-col items-center justify-center rounded-2xl border border-[color:var(--mk-border)] bg-[color:var(--mk-surface)] px-6 py-12 text-center">
                 <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10">
-                  <CheckCircle2 size={32} className="text-green-500" />
+                  <CheckCircle2 size={32} className="text-[color:var(--ds-success-text)]" />
                 </div>
                 <h3 className="text-lg font-semibold">{t("portal.thank_you_title")}</h3>
                 <p className="mt-2 max-w-md text-sm [color:var(--mk-text-muted)]">
@@ -970,7 +970,10 @@ export default function PortalPage() {
                 <p className="text-xs [color:var(--mk-text-muted)]">{t("portal.sign_desc")}</p>
                 {signNotice && (
                   <div className="flex items-center gap-2 rounded-xl border border-[color:var(--mk-border)] bg-[color:var(--mk-surface-2)] px-4 py-3 text-sm [color:var(--mk-text-muted)]">
-                    <CheckCircle2 size={16} className="shrink-0 text-green-500" />
+                    <CheckCircle2
+                      size={16}
+                      className="shrink-0 text-[color:var(--ds-success-text)]"
+                    />
                     {signNotice}
                   </div>
                 )}
