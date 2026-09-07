@@ -284,7 +284,7 @@ export function ProactiveAlerts({
                 }
               }}
               className={cn(
-                "group/alert flex min-h-11 w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-[background-color,border-color] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-1 focus-visible:ring-[color:var(--ds-ring)] sm:min-h-0 sm:gap-2 sm:px-2.5 sm:py-1.5 sm:text-xs",
+                "group/alert flex min-h-11 w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-[background-color,border-color] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-1 focus-visible:ring-[color:var(--ds-ring)] motion-reduce:transition-none sm:min-h-0 sm:gap-2 sm:px-2.5 sm:py-1.5 sm:text-xs",
                 alert.severity === "urgent"
                   ? "border-l-2 border-l-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg-hover)]"
                   : alert.severity === "warning"
@@ -929,7 +929,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             <div className="flex items-center gap-0.5">
               <button
                 onClick={handleOpenFullscreen}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
                 aria-label={t("copilot.open_fullscreen")}
                 title={t("copilot.open_fullscreen")}
               >
@@ -941,7 +941,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                   setMobileOpen(false);
                   onToggle();
                 }}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
                 aria-label={t("copilot.close_esc")}
               >
                 <X size={16} />
@@ -1032,7 +1032,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           >
             <div
               className={cn(
-                "ml-auto h-full w-1.5 transition-[width,background-color] duration-150",
+                "ml-auto h-full w-1.5 transition-[width,background-color] duration-150 motion-reduce:transition-none",
                 isResizing
                   ? "w-2 bg-[var(--brand-primary)]"
                   : "bg-[color:var(--ds-border-strong)] hover:w-2 hover:bg-[var(--brand-primary)]"
@@ -1094,7 +1094,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                     <button
                       type="button"
                       onClick={handleOpenFullscreen}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                       aria-label={t("copilot.open_fullscreen")}
                       title={t("copilot.open_fullscreen")}
                     >
@@ -1103,7 +1103,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                     <button
                       type="button"
                       onClick={onToggle}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                       aria-label={t("copilot.close_panel")}
                       title={t("copilot.close_panel")}
                     >

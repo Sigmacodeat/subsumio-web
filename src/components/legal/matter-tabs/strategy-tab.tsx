@@ -201,7 +201,7 @@ function ProzessOekonomieSection({ caseSlug, lang }: { caseSlug: string; lang: s
                     </div>
                     <Link
                       href={`/dashboard/brain/${encodeURIComponent(slug)}`}
-                      className="inline-flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
+                      className="inline-flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
                     >
                       <ExternalLink size={12} />
                       {lang === "en" ? "Open full analysis" : "Vollständige Analyse öffnen"}
@@ -797,7 +797,7 @@ export function StrategyTab() {
                 placeholder={t("cases.detail_query_ph")}
                 aria-label={t("cases.ask_case")}
                 disabled={caseData?.status === "archived"}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 disabled:opacity-50"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 disabled:opacity-50 motion-reduce:transition-none"
               />
             </div>
             <Button
@@ -823,7 +823,7 @@ export function StrategyTab() {
               <button
                 onClick={() => ctx.queryResult && ctx.copyToClipboard(ctx.queryResult)}
                 aria-label="Antwort kopieren"
-                className="text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text-muted)]"
+                className="text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text-muted)] motion-reduce:transition-none"
               >
                 {ctx.copied ? (
                   <Check size={14} className="text-[color:var(--ds-success-text)]" />

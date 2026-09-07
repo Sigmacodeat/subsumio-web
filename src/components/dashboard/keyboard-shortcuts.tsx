@@ -116,7 +116,7 @@ export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
               </div>
               <button
                 onClick={onClose}
-                className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
                 aria-label={t("cmd.shortcuts.close")}
               >
                 <X size={16} />
@@ -176,7 +176,7 @@ export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
                             })
                           }
                           className={cn(
-                            "relative h-6 w-11 shrink-0 rounded-full transition-[background-color,border-color,color]",
+                            "relative h-6 w-11 shrink-0 rounded-full transition-[background-color,border-color,color] motion-reduce:transition-none",
                             singleKeyEnabled
                               ? "bg-[color:var(--brand-primary)]"
                               : "bg-[color:var(--ds-border)]"

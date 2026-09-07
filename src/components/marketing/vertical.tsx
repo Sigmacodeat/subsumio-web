@@ -155,7 +155,7 @@ export default function VerticalPage({
         <WhatsAppSpotlight lang={lang}>
           <Link
             href={sub("/whatsapp")}
-            className="brand-text mt-8 inline-flex items-center gap-1.5 text-sm font-semibold transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:gap-2.5"
+            className="brand-text mt-8 inline-flex items-center gap-1.5 text-sm font-semibold transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:gap-2.5 motion-reduce:transition-none"
           >
             {UI_STRINGS[lang].whatsappDetail} <ArrowRight size={15} />
           </Link>
@@ -214,7 +214,7 @@ export default function VerticalPage({
                 return (
                   <StaggerItem key={f.title}>
                     <div
-                      className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)]"
+                      className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] motion-reduce:transition-none"
                       style={{ boxShadow: "var(--mk-card-shadow)" }}
                     >
                       <div className="brand-soft brand-border mb-4 flex h-10 w-10 items-center justify-center rounded-lg border">
@@ -250,7 +250,7 @@ export default function VerticalPage({
                 return (
                   <StaggerItem key={f.title}>
                     <div
-                      className="flex h-full gap-6 rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)]"
+                      className="flex h-full gap-6 rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] motion-reduce:transition-none"
                       style={{ boxShadow: "var(--mk-card-shadow)" }}
                     >
                       <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border">
@@ -298,7 +298,7 @@ export default function VerticalPage({
         <div className="pb-16 text-center">
           <Link
             href={p(lang, "/security")}
-            className="brand-text inline-flex items-center gap-1.5 text-sm font-semibold transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:gap-2.5"
+            className="brand-text inline-flex items-center gap-1.5 text-sm font-semibold transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:gap-2.5 motion-reduce:transition-none"
           >
             {UI_STRINGS[lang].securityDetail} <ArrowRight size={15} />
           </Link>
@@ -349,7 +349,7 @@ export default function VerticalPage({
                 </span>{" "}
                 <Link
                   href={p(lang, "/taxumio")}
-                  className="brand-text inline-flex items-center gap-1 font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:gap-1.5"
+                  className="brand-text inline-flex items-center gap-1 font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:gap-1.5 motion-reduce:transition-none"
                 >
                   Taxumio <ArrowRight size={13} />
                 </Link>
@@ -361,7 +361,7 @@ export default function VerticalPage({
                 </span>{" "}
                 <Link
                   href={p(lang, "/")}
-                  className="brand-text inline-flex items-center gap-1 font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:gap-1.5"
+                  className="brand-text inline-flex items-center gap-1 font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:gap-1.5 motion-reduce:transition-none"
                 >
                   Subsumio <ArrowRight size={13} />
                 </Link>

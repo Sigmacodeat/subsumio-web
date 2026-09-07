@@ -336,7 +336,7 @@ export function TaxTriagePanel() {
               <div
                 key={r.card.id}
                 className={cn(
-                  "rounded-lg border p-3 transition-[background-color,border-color,color,box-shadow,transform,opacity]",
+                  "rounded-lg border p-3 transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none",
                   urgencyStyle
                 )}
               >

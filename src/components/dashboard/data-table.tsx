@@ -408,7 +408,7 @@ export function DataTable<T>({
                                 ?.headers.find((h) => h.id === col.key);
                               header?.column.toggleSorting();
                             }}
-                            className="inline-flex cursor-pointer items-center gap-1 text-left uppercase transition-[background-color,border-color,color] select-none [font:inherit] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+                            className="inline-flex cursor-pointer items-center gap-1 text-left uppercase transition-[background-color,border-color,color] select-none [font:inherit] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                           >
                             {col.header}
                             <span className="shrink-0">
@@ -496,7 +496,7 @@ export function DataTable<T>({
                         }
                         tabIndex={onRowClick ? 0 : undefined}
                         className={cn(
-                          "group border-b border-[color:var(--ds-border)] transition-[background-color,border-color] duration-150 ease-out last:border-0",
+                          "group border-b border-[color:var(--ds-border)] transition-[background-color,border-color] duration-150 ease-out last:border-0 motion-reduce:transition-none",
                           onRowClick &&
                             !selectable &&
                             "cursor-pointer hover:bg-[color:var(--ds-hover)] active:bg-[color:var(--ds-surface-2)]",
@@ -559,7 +559,7 @@ export function DataTable<T>({
                       }
                       tabIndex={onRowClick ? 0 : undefined}
                       className={cn(
-                        "group border-b border-[color:var(--ds-border)] transition-[background-color,border-color] duration-150 ease-out last:border-0",
+                        "group border-b border-[color:var(--ds-border)] transition-[background-color,border-color] duration-150 ease-out last:border-0 motion-reduce:transition-none",
                         onRowClick &&
                           !selectable &&
                           "cursor-pointer hover:bg-[color:var(--ds-hover)] active:bg-[color:var(--ds-surface-2)]",
@@ -657,7 +657,7 @@ export function DataTable<T>({
                 </>
               );
               const cardClass = cn(
-                "space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-150 duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                "space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-150 duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
                 isSelected && "brand-border brand-soft/30"
               );
               if (!onRowClick) {

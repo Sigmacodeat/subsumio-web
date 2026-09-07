@@ -37,7 +37,7 @@ export function RecentMattersBar() {
             key={`${m.slug}-${idx}`}
             href={href}
             className={cn(
-              "group inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity]",
+              "group inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none",
               "focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none",
               "active:scale-[0.98]",
               isPinned

@@ -253,7 +253,7 @@ export default function GraphPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8 flex h-full min-w-0 flex-col">
+    <div className="mx-auto flex h-full max-w-[1200px] min-w-0 flex-col space-y-6 p-4 md:p-6 lg:p-8">
       <div className="flex h-full min-w-0 overflow-hidden">
         <div className="relative min-w-0 flex-1 bg-[color:var(--ds-bg)]">
           {loading ? (
@@ -291,7 +291,7 @@ export default function GraphPage() {
                   <button
                     onClick={() => setZoom((z) => Math.min(z + 0.2, 3))}
                     aria-label="Vergrößern"
-                    className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)]"
+                    className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
                   >
                     <ZoomIn size={14} />
                   </button>
@@ -301,14 +301,14 @@ export default function GraphPage() {
                   <button
                     onClick={() => setZoom((z) => Math.max(z - 0.2, 0.3))}
                     aria-label="Verkleinern"
-                    className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)]"
+                    className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
                   >
                     <ZoomOut size={14} />
                   </button>
                   <button
                     onClick={() => setZoom(1)}
                     aria-label="Zoom zurücksetzen"
-                    className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)]"
+                    className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
                   >
                     <Maximize2 size={14} />
                   </button>
@@ -316,7 +316,7 @@ export default function GraphPage() {
                 <button
                   onClick={loadGraph}
                   aria-label="Graph neu laden"
-                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-2 text-[color:var(--ds-text-muted)] backdrop-blur transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-2 text-[color:var(--ds-text-muted)] backdrop-blur transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
                 >
                   <RefreshCw size={14} />
                 </button>

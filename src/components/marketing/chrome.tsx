@@ -355,14 +355,14 @@ const NAV_LINK_ACTIVE =
 
 /** Shared link class helper — used by both desktop and mobile nav. */
 function navLinkCls(isActive: boolean): string {
-  return `text-sm px-3 py-2 rounded-lg transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 ${NAV_LINK_BORDER} ${NAV_LINK_FOCUS} ${
+  return `text-sm px-3 py-2 rounded-lg transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none duration-200 ${NAV_LINK_BORDER} ${NAV_LINK_FOCUS} ${
     isActive ? NAV_LINK_ACTIVE : NAV_LINK_INACTIVE
   }`;
 }
 
 /** Mobile link helper — same active/inactive styles, block + 44px touch target. */
 function mobileLinkCls(isActive: boolean): string {
-  return `block text-sm px-3 py-2.5 rounded-lg transition-[background-color,border-color,color] ${NAV_LINK_BORDER} ${NAV_LINK_FOCUS} min-h-[44px] flex items-center ${
+  return `block text-sm px-3 py-2.5 rounded-lg transition-[background-color,border-color,color] motion-reduce:transition-none ${NAV_LINK_BORDER} ${NAV_LINK_FOCUS} min-h-[44px] flex items-center ${
     isActive ? NAV_LINK_ACTIVE : NAV_LINK_INACTIVE
   }`;
 }
@@ -397,7 +397,7 @@ function FeaturedSidebar({
     <Link
       href={p(lang, content.href)}
       onClick={onClick}
-      className="group relative flex w-[240px] shrink-0 flex-col justify-between border-l [border-color:var(--mk-border)] p-4 transition-[background-color,border-color,color] hover:[background:var(--mk-hover)]"
+      className="group relative flex w-[240px] shrink-0 flex-col justify-between border-l [border-color:var(--mk-border)] p-4 transition-[background-color,border-color,color] hover:[background:var(--mk-hover)] motion-reduce:transition-none"
     >
       {/* Decorative gradient orb */}
       <div className="brand-bg pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full opacity-[0.07] blur-2xl transition-opacity duration-300 group-hover:opacity-[0.12]" />
@@ -470,7 +470,7 @@ function AnnouncementBar({ nav, lang }: { nav: NavContent; lang: Lang }) {
           <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-2 text-center sm:px-6 lg:px-8">
             <Link
               href={p(lang, nav.announcement.href)}
-              className="group flex min-h-[28px] items-center gap-2 text-sm font-medium [color:var(--mk-text)] transition-[background-color,border-color,color] hover:[color:var(--brand-text)]"
+              className="group flex min-h-[28px] items-center gap-2 text-sm font-medium [color:var(--mk-text)] transition-[background-color,border-color,color] hover:[color:var(--brand-text)] motion-reduce:transition-none"
               aria-label={`${nav.announcement.badge ? nav.announcement.badge + ": " : ""}${nav.announcement.text}`}
             >
               {nav.announcement.badge && (
@@ -489,7 +489,7 @@ function AnnouncementBar({ nav, lang }: { nav: NavContent; lang: Lang }) {
             </Link>
             <button
               onClick={handleDismiss}
-              className="absolute top-1/2 right-2 flex min-h-[36px] min-w-[36px] -translate-y-1/2 items-center justify-center rounded-lg p-2 [color:var(--mk-text-subtle)] transition-[background-color,border-color,color] hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:outline-none"
+              className="absolute top-1/2 right-2 flex min-h-[36px] min-w-[36px] -translate-y-1/2 items-center justify-center rounded-lg p-2 [color:var(--mk-text-subtle)] transition-[background-color,border-color,color] hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:outline-none motion-reduce:transition-none"
               aria-label={UI_STRINGS[lang].dismissAnnouncement}
             >
               <X size={14} />
@@ -736,7 +736,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
       >
         <header
           data-tone="light"
-          className={`border-b transition-[background,box-shadow,border-color] duration-300 ${
+          className={`border-b transition-[background,box-shadow,border-color] duration-300 motion-reduce:transition-none ${
             scrolled
               ? "[border-color:var(--mk-border)] shadow-[0_1px_0_rgba(0,0,0,0.06),0_4px_20px_rgba(0,0,0,0.06)] backdrop-blur-xl"
               : "[border-color:transparent]"
@@ -771,7 +771,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                       onMouseLeave={handleSectionLeave}
                     >
                       <button
-                        className={`relative flex items-center gap-1 rounded-lg px-3 py-2 text-sm transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 ${NAV_LINK_BORDER} ${NAV_LINK_FOCUS} ${
+                        className={`relative flex items-center gap-1 rounded-lg px-3 py-2 text-sm transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 motion-reduce:transition-none ${NAV_LINK_BORDER} ${NAV_LINK_FOCUS} ${
                           sectionActive || isOpen
                             ? "font-medium [color:var(--brand-text)]"
                             : NAV_LINK_INACTIVE
@@ -858,14 +858,14 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                           href={p(lang, item.href)}
                                           onClick={() => setOpenSection(null)}
                                           role="menuitem"
-                                          className={`group flex items-start gap-3 rounded-xl px-3 py-2.5 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-150 ${NAV_LINK_FOCUS} ${
+                                          className={`group flex items-start gap-3 rounded-xl px-3 py-2.5 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-150 motion-reduce:transition-none ${NAV_LINK_FOCUS} ${
                                             active
                                               ? "[background:color-mix(in_srgb,var(--brand-primary)_8%,var(--mk-hover))]"
                                               : "hover:[background:var(--mk-hover)]"
                                           } ${item.featured ? "ring-1 ring-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)]" : ""}`}
                                         >
                                           <div
-                                            className={`group-hover:brand-soft group-hover:brand-border flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border [border-color:var(--mk-border)] transition-[background-color,border-color,color] [background:var(--mk-bg)] ${item.featured ? "brand-soft brand-border" : ""}`}
+                                            className={`group-hover:brand-soft group-hover:brand-border flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border [border-color:var(--mk-border)] transition-[background-color,border-color,color] [background:var(--mk-bg)] motion-reduce:transition-none ${item.featured ? "brand-soft brand-border" : ""}`}
                                           >
                                             <Icon
                                               size={16}
@@ -903,7 +903,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                 <Link
                                   href={p(lang, section.ctaBottom.href)}
                                   onClick={() => setOpenSection(null)}
-                                  className="group flex items-center justify-between border-t [border-color:var(--mk-border)] px-4 py-2.5 text-sm font-medium [color:var(--mk-text-muted)] transition-[background-color,border-color,color] hover:[color:var(--brand-text)] hover:[background:var(--mk-hover)]"
+                                  className="group flex items-center justify-between border-t [border-color:var(--mk-border)] px-4 py-2.5 text-sm font-medium [color:var(--mk-text-muted)] transition-[background-color,border-color,color] hover:[color:var(--brand-text)] hover:[background:var(--mk-hover)] motion-reduce:transition-none"
                                 >
                                   {section.ctaBottom.label}
                                   <ChevronRight
@@ -935,7 +935,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                 {/* Language switcher — click-to-open with keyboard support */}
                 <div ref={langRef} className="relative hidden lg:block">
                   <button
-                    className="flex min-h-[36px] items-center gap-1.5 rounded-full px-3 py-1.5 text-sm [color:var(--mk-text-muted)] transition-[background-color,border-color,color] duration-200 [background:var(--mk-surface)] hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:outline-none"
+                    className="flex min-h-[36px] items-center gap-1.5 rounded-full px-3 py-1.5 text-sm [color:var(--mk-text-muted)] transition-[background-color,border-color,color] duration-200 [background:var(--mk-surface)] hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:outline-none motion-reduce:transition-none"
                     aria-label={UI_STRINGS[lang].ariaLanguage}
                     aria-haspopup="true"
                     aria-expanded={langOpen}
@@ -972,7 +972,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                 setLangOpen(false);
                               }}
                               role="menuitem"
-                              className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-[background-color,border-color,color] hover:[background:var(--mk-hover)] ${l === lang ? "brand-text font-medium" : "[color:var(--mk-text-muted)]"}`}
+                              className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-[background-color,border-color,color] hover:[background:var(--mk-hover)] motion-reduce:transition-none ${l === lang ? "brand-text font-medium" : "[color:var(--mk-text-muted)]"}`}
                             >
                               <span className="font-mono text-[10px] opacity-60">
                                 {HREFLANG[l]}
@@ -1028,7 +1028,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                 </Link>
                 <button
                   ref={hamburgerRef}
-                  className="group flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 [color:var(--mk-text)] transition-[background-color,border-color,color] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)] focus-visible:outline-none lg:hidden"
+                  className="group flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 [color:var(--mk-text)] transition-[background-color,border-color,color] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)] focus-visible:outline-none motion-reduce:transition-none lg:hidden"
                   onClick={() => {
                     setMobileOpen(!mobileOpen);
                     if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
@@ -1040,19 +1040,19 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                 >
                   <span className="relative flex h-5 w-5 items-center justify-center">
                     <span
-                      className={`absolute h-0.5 w-5 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                      className={`absolute h-0.5 w-5 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
                         mobileOpen ? "top-1/2 -translate-y-1/2 rotate-45" : "top-[3px]"
                       }`}
                     />
                     <span
-                      className={`absolute h-0.5 w-5 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                      className={`absolute h-0.5 w-5 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
                         mobileOpen
                           ? "top-1/2 -translate-y-1/2 opacity-0"
                           : "top-1/2 -translate-y-1/2"
                       }`}
                     />
                     <span
-                      className={`absolute h-0.5 w-5 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                      className={`absolute h-0.5 w-5 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
                         mobileOpen ? "top-1/2 -translate-y-1/2 -rotate-45" : "bottom-[3px]"
                       }`}
                     />
@@ -1102,7 +1102,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                   <BrandLogo />
                 </Link>
                 <button
-                  className="group flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-2 [color:var(--mk-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:outline-none active:scale-90"
+                  className="group flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-2 [color:var(--mk-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:outline-none active:scale-90 motion-reduce:transition-none"
                   onClick={() => {
                     setMobileOpen(false);
                     if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
@@ -1110,8 +1110,8 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                   aria-label={UI_STRINGS[lang].ariaCloseMenu}
                 >
                   <span className="relative flex h-5 w-5 items-center justify-center">
-                    <span className="absolute top-1/2 h-0.5 w-5 -translate-y-1/2 rotate-45 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
-                    <span className="absolute top-1/2 h-0.5 w-5 -translate-y-1/2 -rotate-45 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
+                    <span className="absolute top-1/2 h-0.5 w-5 -translate-y-1/2 rotate-45 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none" />
+                    <span className="absolute top-1/2 h-0.5 w-5 -translate-y-1/2 -rotate-45 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none" />
                   </span>
                 </button>
               </div>
@@ -1155,7 +1155,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                     <div key={section.label}>
                       <button
                         ref={sIdx === 0 ? firstMobileLinkRef : undefined}
-                        className={`flex min-h-[48px] w-full items-center justify-between rounded-lg px-3 py-3 text-base font-medium transition-[background-color,border-color,color] ${NAV_LINK_FOCUS} ${
+                        className={`flex min-h-[48px] w-full items-center justify-between rounded-lg px-3 py-3 text-base font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${NAV_LINK_FOCUS} ${
                           sectionActive ? "brand-text" : "[color:var(--mk-text)]"
                         } hover:[background:var(--mk-hover)] ${expanded ? "brand-text [background:color-mix(in_srgb,var(--brand-primary)_6%,var(--mk-hover))]" : ""}`}
                         onClick={() => setMobileExpanded(expanded ? null : sIdx)}
@@ -1187,7 +1187,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                 <Link
                                   href={p(lang, section.featuredContent.href)}
                                   onClick={() => setMobileOpen(false)}
-                                  className="group mb-1 flex items-start gap-3 rounded-xl border [border-color:color-mix(in_srgb,var(--brand-primary)_15%,var(--mk-border))] p-3 transition-[background-color,border-color,color] hover:[background:color-mix(in_srgb,var(--brand-primary)_4%,var(--mk-hover))]"
+                                  className="group mb-1 flex items-start gap-3 rounded-xl border [border-color:color-mix(in_srgb,var(--brand-primary)_15%,var(--mk-border))] p-3 transition-[background-color,border-color,color] hover:[background:color-mix(in_srgb,var(--brand-primary)_4%,var(--mk-hover))] motion-reduce:transition-none"
                                 >
                                   <div className="brand-soft brand-border flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border">
                                     {(() => {
@@ -1303,7 +1303,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                     <Link
                       key={l}
                       href={p(l, pathname.replace(/^\/(en|at|ch|it|es|pl|fr|nl)/, ""))}
-                      className={`flex items-center justify-center rounded-lg px-2 py-2 text-sm transition-[background-color,border-color,color] ${
+                      className={`flex items-center justify-center rounded-lg px-2 py-2 text-sm transition-[background-color,border-color,color] motion-reduce:transition-none ${
                         l === lang
                           ? "brand-soft brand-border brand-text border font-medium"
                           : "[color:var(--mk-text-muted)] hover:[background:var(--mk-hover)]"
@@ -1373,7 +1373,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="LinkedIn"
-                className="flex min-h-[24px] min-w-[24px] items-center justify-center rounded [color:var(--mk-text-subtle)] transition-[background-color,border-color,color] hover:[color:var(--brand-text)]"
+                className="flex min-h-[24px] min-w-[24px] items-center justify-center rounded [color:var(--mk-text-subtle)] transition-[background-color,border-color,color] hover:[color:var(--brand-text)] motion-reduce:transition-none"
               >
                 <SocialLinkedIn size={16} />
               </a>
@@ -1382,7 +1382,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="GitHub"
-                className="flex min-h-[24px] min-w-[24px] items-center justify-center rounded [color:var(--mk-text-subtle)] transition-[background-color,border-color,color] hover:[color:var(--brand-text)]"
+                className="flex min-h-[24px] min-w-[24px] items-center justify-center rounded [color:var(--mk-text-subtle)] transition-[background-color,border-color,color] hover:[color:var(--brand-text)] motion-reduce:transition-none"
               >
                 <SocialGitHub size={16} />
               </a>
@@ -1391,7 +1391,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="X (Twitter)"
-                className="flex min-h-[24px] min-w-[24px] items-center justify-center rounded [color:var(--mk-text-subtle)] transition-[background-color,border-color,color] hover:[color:var(--brand-text)]"
+                className="flex min-h-[24px] min-w-[24px] items-center justify-center rounded [color:var(--mk-text-subtle)] transition-[background-color,border-color,color] hover:[color:var(--brand-text)] motion-reduce:transition-none"
               >
                 <SocialX size={16} />
               </a>
@@ -1684,7 +1684,7 @@ export function ContentCard({
 }) {
   return (
     <GlowCard
-      className={`h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl ${className}`}
+      className={`h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl motion-reduce:transition-none ${className}`}
     >
       <IconTile icon={icon} size={iconSize} />
       <h3 className={`mb-2 ${H3_CLASS}`}>{title}</h3>
@@ -2143,7 +2143,7 @@ export function PricingCard({
 }) {
   return (
     <div
-      className={`relative flex h-full flex-col rounded-2xl border p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ${
+      className={`relative flex h-full flex-col rounded-2xl border p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 motion-reduce:transition-none ${
         highlighted
           ? "border-[color:var(--brand-text)] shadow-lg [background:var(--mk-surface-2)] lg:scale-105"
           : "[border-color:var(--mk-border)] [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-md"
@@ -2170,7 +2170,7 @@ export function PricingCard({
       </ul>
       <Link
         href={ctaHref}
-        className={`block w-full rounded-lg px-4 py-2.5 text-center text-sm font-semibold transition-[background-color,border-color,color] ${
+        className={`block w-full rounded-lg px-4 py-2.5 text-center text-sm font-semibold transition-[background-color,border-color,color] motion-reduce:transition-none ${
           highlighted
             ? "bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)]"
             : "border [border-color:var(--mk-border-strong)] [color:var(--mk-text)] hover:[background:var(--mk-hover)]"

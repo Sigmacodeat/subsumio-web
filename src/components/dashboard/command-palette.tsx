@@ -907,7 +907,7 @@ export function CommandPalette({
                                     onClick={() => navigate(cmd)}
                                     onMouseEnter={() => setActiveIndex(idx)}
                                     className={cn(
-                                      "flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-left transition-[background-color,border-color,color]",
+                                      "flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-left transition-[background-color,border-color,color] motion-reduce:transition-none",
                                       isActive
                                         ? "brand-soft brand-text"
                                         : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
@@ -945,7 +945,7 @@ export function CommandPalette({
                             onClick={() => navigate(cmd)}
                             onMouseEnter={() => setActiveIndex(idx)}
                             className={cn(
-                              "mx-0 flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-left transition-[background-color,border-color,color]",
+                              "mx-0 flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-left transition-[background-color,border-color,color] motion-reduce:transition-none",
                               isActive
                                 ? "brand-soft brand-text"
                                 : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
@@ -986,7 +986,7 @@ export function CommandPalette({
                             onClick={() => navigate(cmd)}
                             onMouseEnter={() => setActiveIndex(idx)}
                             className={cn(
-                              "mx-0 flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-left transition-[background-color,border-color,color]",
+                              "mx-0 flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-left transition-[background-color,border-color,color] motion-reduce:transition-none",
                               isActive
                                 ? "brand-soft brand-text"
                                 : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"

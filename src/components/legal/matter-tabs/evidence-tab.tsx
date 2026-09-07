@@ -268,7 +268,7 @@ export function EvidenceTab() {
                 {(doc.slug || doc.url) && (
                   <Link
                     href={`/dashboard/brain/${encodeURIComponent(doc.slug || doc.url || "")}`}
-                    className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color]"
+                    className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] motion-reduce:transition-none"
                   >
                     {t("cases.detail_doc_open")}
                   </Link>
@@ -525,7 +525,7 @@ export function EvidenceTab() {
                       setTypeFilter("");
                       setSearchQuery("");
                     }}
-                    className="text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
+                    className="text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
                   >
                     {lang === "en" ? "Clear" : "Zurücksetzen"}
                   </button>
@@ -571,7 +571,7 @@ export function EvidenceTab() {
                             ctx.setShowEvidenceForm(true);
                             ctx.evidenceForm.reset(ev as EvidenceFormData);
                           }}
-                          className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color]"
+                          className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] motion-reduce:transition-none"
                         >
                           {t("cases.detail_ev_edit_btn")}
                         </button>
@@ -582,7 +582,7 @@ export function EvidenceTab() {
                             ctx.setEvidenceList(updated);
                             ctx.saveCaseUpdate({ evidence: updated });
                           }}
-                          className="px-2 py-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)]"
+                          className="px-2 py-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] motion-reduce:transition-none"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -603,7 +603,7 @@ export function EvidenceTab() {
                         <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
                           <div
                             className={cn(
-                              "h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                              "h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
                               (ev.weight || 0) >= 0.7
                                 ? "bg-[color:var(--ds-success-solid)]"
                                 : (ev.weight || 0) >= 0.4

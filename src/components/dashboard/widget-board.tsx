@@ -117,7 +117,7 @@ function SortableWidget({
         <div className="absolute -top-2.5 left-3 z-10 flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-1.5 py-0.5 shadow-sm">
           <button
             type="button"
-            className="flex h-6 w-6 cursor-grab items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:cursor-grabbing"
+            className="flex h-6 w-6 cursor-grab items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:cursor-grabbing motion-reduce:transition-none"
             aria-label="Drag to reorder"
             {...attributes}
             {...listeners}
@@ -131,7 +131,7 @@ function SortableWidget({
           <button
             type="button"
             onClick={onToggleVisible}
-            className="flex h-6 w-6 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            className="flex h-6 w-6 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
             aria-label={visible ? t("widget.hide") : t("widget.show")}
             title={visible ? t("widget.hide") : t("widget.show")}
           >
@@ -187,7 +187,7 @@ function EditModeToolbar({
           onClick={() => {
             if (window.confirm(t("widget.reset_confirm"))) onReset();
           }}
-          className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+          className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
         >
           <RotateCcw size={12} />
           {t("widget.reset")}
@@ -219,7 +219,7 @@ function EmptyDashboard({ onReset }: { onReset: () => void }) {
       <button
         type="button"
         onClick={onReset}
-        className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+        className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
       >
         <RotateCcw size={12} />
         {t("widget.reset")}
@@ -556,7 +556,7 @@ export function WidgetBoard() {
           <button
             type="button"
             onClick={() => setEditMode(true)}
-            className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
           >
             <Settings2 size={13} />
             {t("widget.customize")}

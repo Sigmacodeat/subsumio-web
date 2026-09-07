@@ -33,7 +33,7 @@ function FeatureCard({
         dimmed ? "opacity-30 transition-opacity duration-300" : "transition-opacity duration-300"
       }
     >
-      <GlowCard className="h-full rounded-2xl p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-lg hover:[background:var(--mk-surface-2)]">
+      <GlowCard className="h-full rounded-2xl p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-lg hover:[background:var(--mk-surface-2)] motion-reduce:transition-none">
         <div className="flex items-start gap-3.5">
           {Icon && (
             <div className="brand-soft mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-transform duration-300 hover:scale-110">
@@ -64,7 +64,7 @@ function QuickStartSection({ d }: { d: ReturnType<typeof getDocs> }) {
         >
           {d.quickstart.steps.map((step) => (
             <StaggerItem key={step.num}>
-              <div className="relative h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-md">
+              <div className="relative h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-md motion-reduce:transition-none">
                 <div className="brand-text mb-3 text-2xl font-bold tabular-nums">{step.num}</div>
                 <h4 className="mb-1.5 text-sm font-semibold [color:var(--mk-text)]">
                   {step.title}
@@ -108,7 +108,7 @@ function StickyCategoryNav({
               <a
                 key={cat.id}
                 href={`#cat-${cat.id}`}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 ${
+                className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 motion-reduce:transition-none ${
                   activeId === cat.id
                     ? "brand-soft brand-text"
                     : "text-[var(--mk-text-muted)] hover:bg-[var(--mk-surface-2)] hover:text-[var(--mk-text)]"
@@ -140,7 +140,7 @@ function StickyCategoryNav({
               <button
                 onClick={() => onSearch("")}
                 aria-label="Clear search"
-                className="absolute right-2 flex h-5 w-5 items-center justify-center rounded-full text-[var(--mk-text-subtle)] transition-[background-color,border-color,color] hover:bg-[var(--mk-surface-2)] hover:text-[var(--mk-text)]"
+                className="absolute right-2 flex h-5 w-5 items-center justify-center rounded-full text-[var(--mk-text-subtle)] transition-[background-color,border-color,color] hover:bg-[var(--mk-surface-2)] hover:text-[var(--mk-text)] motion-reduce:transition-none"
               >
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                   <path
@@ -309,7 +309,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
               </p>
               <button
                 onClick={() => setSearch("")}
-                className="rounded-full border [border-color:var(--mk-border)] px-4 py-1.5 text-sm font-medium [color:var(--mk-text)] transition-[background-color,border-color,color] hover:bg-[var(--mk-surface-2)]"
+                className="rounded-full border [border-color:var(--mk-border)] px-4 py-1.5 text-sm font-medium [color:var(--mk-text)] transition-[background-color,border-color,color] hover:bg-[var(--mk-surface-2)] motion-reduce:transition-none"
               >
                 {t.docsClearSearch ?? "Clear search"}
               </button>
@@ -390,7 +390,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
         <button
           onClick={scrollToTop}
           aria-label={t.backToTopAria ?? "Back to top"}
-          className="fixed right-6 bottom-6 z-40 flex h-10 w-10 items-center justify-center rounded-full border [border-color:var(--mk-border)] [color:var(--mk-text)] shadow-lg transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-xl"
+          className="fixed right-6 bottom-6 z-40 flex h-10 w-10 items-center justify-center rounded-full border [border-color:var(--mk-border)] [color:var(--mk-text)] shadow-lg transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-xl motion-reduce:transition-none"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path

@@ -252,7 +252,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
                 <GlowCard
                   glowColor="var(--brand-primary)"
                   intensity={0.12}
-                  className="flex h-full flex-col rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:border-[var(--brand-primary)]/40 hover:[background:var(--mk-hover)]"
+                  className="flex h-full flex-col rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:border-[var(--brand-primary)]/40 hover:[background:var(--mk-hover)] motion-reduce:transition-none"
                 >
                   <IconTile icon={Icon} size={22} className="mb-5" />
                   <h3 className="mb-1 text-lg font-bold [color:var(--mk-text)]">{platform.name}</h3>

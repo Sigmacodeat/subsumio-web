@@ -53,7 +53,10 @@ function DisagreementBar({ score }: { score: number }) {
     <div className="flex items-center gap-2">
       <div className="h-2 w-24 overflow-hidden rounded-full bg-[color:var(--ds-hover)]">
         <div
-          className={cn("h-full rounded-full transition-[width] duration-500", color)}
+          className={cn(
+            "h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none",
+            color
+          )}
           style={{ width: `${pct}%` }}
           role="progressbar"
           aria-valuenow={pct}
@@ -201,7 +204,7 @@ export function DissensusDashboard() {
                     </span>
                     <div className="h-2 w-32 overflow-hidden rounded-full bg-[color:var(--ds-hover)]">
                       <div
-                        className="h-full rounded-full bg-[color:var(--brand-primary)] transition-[width] duration-500"
+                        className="h-full rounded-full bg-[color:var(--brand-primary)] transition-[width] duration-500 motion-reduce:transition-none"
                         style={{
                           width: `${(cl.count / summary.total_runs) * 100}%`,
                         }}

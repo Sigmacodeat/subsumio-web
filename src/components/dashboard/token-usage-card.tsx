@@ -178,7 +178,7 @@ export function TokenUsageCard() {
                   aria-label={`${modelName} credit usage`}
                 >
                   <div
-                    className="brand-soft h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                    className="brand-soft h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
                     style={{ width: `${pct}%` }}
                   />
                 </div>

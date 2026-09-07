@@ -80,7 +80,7 @@ export default function EmailImportPage() {
           );
           void onDrop(files);
         }}
-        className="cursor-pointer rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-8 text-center transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-info-border)] hover:bg-blue-500/[0.02] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+        className="cursor-pointer rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-8 text-center transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-info-border)] hover:bg-blue-500/[0.02] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
         onClick={() => document.getElementById("email-file-input")?.click()}
         onKeyDown={(e) => {
           if (e.target !== e.currentTarget) return;

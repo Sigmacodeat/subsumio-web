@@ -103,7 +103,7 @@ function CopyableField({
         <button
           onClick={copy}
           disabled={!value}
-          className="shrink-0 p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] disabled:opacity-30"
+          className="shrink-0 p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] disabled:opacity-30 motion-reduce:transition-none"
         >
           {copied ? (
             <Check size={14} className="text-[color:var(--ds-success-text)]" />

@@ -236,7 +236,7 @@ export function MatterBudgetWidget() {
             <Link
               key={budget.agreement.id}
               href={`/dashboard/fee-agreements`}
-              className="group block rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-2 py-2 transition-[background-color,border-color,color] hover:opacity-80"
+              className="group block rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-2 py-2 transition-[background-color,border-color,color] hover:opacity-80 motion-reduce:transition-none"
             >
               <div className="mb-1 flex items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-1.5">
@@ -255,7 +255,7 @@ export function MatterBudgetWidget() {
                 <div className="mb-1 h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--ds-border)]">
                   <div
                     className={cn(
-                      "h-full rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity]",
+                      "h-full rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none",
                       barColor
                     )}
                     style={{ width: `${Math.min(pct, 100)}%` }}

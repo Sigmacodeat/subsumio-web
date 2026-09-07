@@ -256,7 +256,7 @@ function NormsPageInner() {
             <button
               key={j}
               onClick={() => setJurisdiction(j)}
-              className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+              className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
                 jurisdiction === j
                   ? "brand-soft brand-border brand-text"
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
@@ -322,7 +322,7 @@ function NormsPageInner() {
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
               }}
-              className="hover:brand-text hover:brand-border flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
+              className="hover:brand-text hover:brand-border flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
               title={t("norms.copy_title")}
             >
               {copied ? (
@@ -407,7 +407,7 @@ function NormsPageInner() {
                   <button
                     key={n.slug}
                     onClick={() => setSelectedNorm(n)}
-                    className="group flex w-full items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-left transition-[background-color,border-color,color] hover:border-[color:var(--ds-border)] hover:bg-[color:var(--ds-hover)]"
+                    className="group flex w-full items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-left transition-[background-color,border-color,color] hover:border-[color:var(--ds-border)] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
                   >
                     <span
                       className={`h-2 w-2 shrink-0 rounded-full ${

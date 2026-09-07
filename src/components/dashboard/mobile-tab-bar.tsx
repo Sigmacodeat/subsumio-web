@@ -221,7 +221,7 @@ export function MobileTabBar({
             </h3>
             <button
               onClick={() => setMoreOpen(false)}
-              className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
               aria-label={t("topbar.close")}
             >
               <X size={18} />
@@ -585,7 +585,7 @@ export function MobileTabBar({
           setCreateOnly(true);
           setMoreOpen(true);
         }}
-        className="brand-bg fixed right-4 bottom-20 z-40 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-[transform,box-shadow] duration-200 ease-[var(--ds-ease-smooth)] hover:scale-105 active:scale-95 md:hidden"
+        className="brand-bg fixed right-4 bottom-20 z-40 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-[transform,box-shadow] duration-200 ease-[var(--ds-ease-smooth)] hover:scale-105 active:scale-95 motion-reduce:transition-none md:hidden"
         aria-label={t("topbar.quick_create")}
         aria-expanded={moreOpen && createOnly}
       >
@@ -600,7 +600,7 @@ export function MobileTabBar({
         {/* Active indicator bar */}
         <div className="relative h-1">
           <div
-            className="brand-bg absolute top-0 h-1 transition-[width,left] duration-300 ease-[var(--ds-ease-smooth)]"
+            className="brand-bg absolute top-0 h-1 transition-[width,left] duration-300 ease-[var(--ds-ease-smooth)] motion-reduce:transition-none"
             style={{
               width: `${100 / 6}%`,
               left: `${(activeTab >= 0 ? activeTab : 0) * (100 / 6)}%`,
@@ -625,7 +625,7 @@ export function MobileTabBar({
                   }
                 }}
                 className={cn(
-                  "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-[color,transform] duration-200 ease-[var(--ds-ease-smooth)]",
+                  "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-[color,transform] duration-200 ease-[var(--ds-ease-smooth)] motion-reduce:transition-none",
                   active
                     ? "brand-text"
                     : "text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text-muted)]"
@@ -653,7 +653,7 @@ export function MobileTabBar({
             aria-label={t("copilot.copilot")}
             aria-pressed={copilotActive}
             className={cn(
-              "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-[color,transform] duration-200 ease-[var(--ds-ease-smooth)]",
+              "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-[color,transform] duration-200 ease-[var(--ds-ease-smooth)] motion-reduce:transition-none",
               copilotActive
                 ? "text-[color:var(--brand-primary)]"
                 : "text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text-muted)]"
@@ -687,7 +687,7 @@ export function MobileTabBar({
             aria-haspopup="dialog"
             aria-expanded={moreOpen && !createOnly}
             className={cn(
-              "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-[color,transform] duration-200 ease-[var(--ds-ease-smooth)]",
+              "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-[color,transform] duration-200 ease-[var(--ds-ease-smooth)] motion-reduce:transition-none",
               moreOpen && !createOnly
                 ? "brand-text"
                 : "text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text-muted)]"
@@ -718,7 +718,7 @@ function MoreSheetButton({
       onClick={onClick}
       whileTap={{ scale: 0.96 }}
       className={cn(
-        "flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)]",
+        "flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] motion-reduce:transition-none",
         active
           ? "brand-soft brand-text"
           : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -755,7 +755,7 @@ function MoreSheetLink({
   return (
     <Link
       href={href}
-      className="flex flex-col items-center gap-1 rounded-lg px-1 py-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+      className="flex flex-col items-center gap-1 rounded-lg px-1 py-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
     >
       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
         <Icon size={15} />

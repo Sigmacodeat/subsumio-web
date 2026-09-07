@@ -104,7 +104,7 @@ export default function HeroQACard({
           <div className="ml-auto flex items-center gap-1.5 text-sm font-medium">
             <span
               aria-hidden
-              className={`font-serif text-base leading-none transition-[background-color,border-color,color] duration-500 ${
+              className={`font-serif text-base leading-none transition-[background-color,border-color,color] duration-500 motion-reduce:transition-none ${
                 allVerified ? "text-[var(--signal-green)]" : "brand-text"
               }`}
             >
@@ -146,7 +146,7 @@ export default function HeroQACard({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`${src.label} — ${isVerified ? ui.verifiedLabel : ui.citePendingLabel}`}
-                className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-sm transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ${
+                className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-sm transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 motion-reduce:transition-none ${
                   isVerified
                     ? "brand-text brand-soft hover:brand-soft-strong hover:-translate-y-0.5 hover:shadow-sm"
                     : "[color:var(--mk-text-subtle)] opacity-60 [background:var(--mk-surface-2)]"

@@ -160,11 +160,11 @@ function CalmGreeting({ name }: { name: string | null }) {
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t("cockpit.ask_placeholder")}
           aria-label={t("cockpit.ask_placeholder")}
-          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-9 pl-9 text-[13px] text-[color:var(--ds-text)] transition-[border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-9 pl-9 text-[13px] text-[color:var(--ds-text)] transition-[border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 motion-reduce:transition-none"
         />
         <button
           type="submit"
-          className="absolute top-1/2 right-1 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+          className="absolute top-1/2 right-1 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none motion-reduce:transition-none"
           aria-label={t("aria.send")}
         >
           <ArrowRight size={14} />
@@ -306,7 +306,7 @@ function ProactiveActionBanner() {
                 <Link
                   key={action.href}
                   href={action.href}
-                  className={`group inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-[opacity,transform] hover:opacity-90 active:scale-95 ${variantClasses[action.variant]}`}
+                  className={`group inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-[opacity,transform] hover:opacity-90 active:scale-95 motion-reduce:transition-none ${variantClasses[action.variant]}`}
                 >
                   <Icon size={13} />
                   <span>{action.label}</span>
@@ -384,7 +384,7 @@ function DashboardQuickActions() {
             </>
           );
           const classes =
-            "inline-flex min-h-11 items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]";
+            "inline-flex min-h-11 items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] motion-reduce:transition-none hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]";
           return href ? (
             <Link key={label} href={href} className={classes}>
               {content}
@@ -402,7 +402,7 @@ function DashboardQuickActions() {
         })}
         <button
           type="button"
-          className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[color:var(--brand-primary)]/40 bg-[color:var(--brand-glow)] px-3 py-2 text-xs font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color] hover:border-[color:var(--brand-primary)]/70 hover:bg-[color:var(--brand-glow)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[color:var(--brand-primary)]/40 bg-[color:var(--brand-glow)] px-3 py-2 text-xs font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color] hover:border-[color:var(--brand-primary)]/70 hover:bg-[color:var(--brand-glow)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none motion-reduce:transition-none"
           onClick={() => {
             window.dispatchEvent(new CustomEvent("subsumio:copilot:open"));
           }}

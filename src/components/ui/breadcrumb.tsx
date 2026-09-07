@@ -46,7 +46,7 @@ export function BreadcrumbLink({
       <a
         href={href}
         className={cn(
-          "transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]",
+          "transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none",
           className
         )}
       >

@@ -216,7 +216,7 @@ export default function FAOTrackingPage() {
         </div>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-[color:var(--ds-surface-2)]">
           <div
-            className={`h-full transition-[background-color,border-color,color,box-shadow,transform,opacity] ${progress === 100 ? "bg-[color:var(--ds-success-solid)]" : "bg-[color:var(--ds-info-solid)]"}`}
+            className={`h-full transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none ${progress === 100 ? "bg-[color:var(--ds-success-solid)]" : "bg-[color:var(--ds-info-solid)]"}`}
             style={{ width: `${progress}%` }}
           />
         </div>

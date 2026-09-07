@@ -336,7 +336,7 @@ export function NicheLandingPage({ content }: { content: NichePageContent }) {
                 <Reveal key={niche.slug} delay={i * 0.08}>
                   <a
                     href={`/nischen/${niche.slug}`}
-                    className="group flex h-full items-center justify-between rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl"
+                    className="group flex h-full items-center justify-between rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl motion-reduce:transition-none"
                   >
                     <div className="flex-1">
                       <h3 className={`mb-1 ${H3_CLASS}`}>{niche.title}</h3>

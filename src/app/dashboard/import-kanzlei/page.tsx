@@ -384,7 +384,7 @@ export default function ImportKanzleiPage() {
       {/* Upload */}
       <label
         className={cn(
-          "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed py-10 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+          "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed py-10 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
           headers.length
             ? "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
             : "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] hover:border-[color:var(--ds-info-border)] hover:bg-[color:var(--ds-info-bg)]"

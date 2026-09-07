@@ -345,7 +345,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
               {i > 0 && <ArrowRight size={14} className="text-[color:var(--ds-text-muted)]" />}
               <div
                 className={cn(
-                  "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-[background-color,border-color,color]",
+                  "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
                   isActive
                     ? "brand-bg text-white"
                     : isDone
@@ -794,7 +794,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
                 </Button>
                 <Link
                   href={`/dashboard/drafting`}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-info-text)]"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-info-text)] motion-reduce:transition-none"
                 >
                   <Pencil size={12} />
                   {t("strategy.btn_open_drafting")}

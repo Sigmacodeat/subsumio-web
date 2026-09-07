@@ -174,14 +174,14 @@ export default function AuditTrail() {
         </div>
         <button
           onClick={loadEntries}
-          className="brand-bg brand-bg rounded-lg px-3 py-2 text-sm text-white transition-[background-color,border-color,color]"
+          className="brand-bg brand-bg rounded-lg px-3 py-2 text-sm text-white transition-[background-color,border-color,color] motion-reduce:transition-none"
         >
           Laden
         </button>
         <button
           onClick={exportCsv}
           disabled={filtered.length === 0}
-          className="flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] disabled:opacity-50 motion-reduce:transition-none"
         >
           <Download size={14} />
           CSV

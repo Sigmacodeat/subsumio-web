@@ -256,7 +256,7 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
               key={p.id}
               onClick={() => setActivePlan(p)}
               className={cn(
-                "rounded border px-2 py-1 text-[11px] transition-[background-color,border-color,color]",
+                "rounded border px-2 py-1 text-[11px] transition-[background-color,border-color,color] motion-reduce:transition-none",
                 activePlan?.id === p.id
                   ? "brand-border brand-soft brand-text"
                   : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
@@ -362,7 +362,7 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
             {/* Progress bar */}
             <div className="mt-1 h-1 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
               <div
-                className="h-full rounded-full bg-emerald-500 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300"
+                className="h-full rounded-full bg-emerald-500 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 motion-reduce:transition-none"
                 style={{ width: `${progress}%` }}
               />
             </div>

@@ -104,7 +104,7 @@ export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
             <div className="h-2.5 overflow-hidden rounded-full bg-[color:var(--ds-surface-2)]">
               <div
                 className={cn(
-                  "h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                  "h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
                   scoreBg
                 )}
                 style={{ width: `${score}%` }}

@@ -154,7 +154,7 @@ function VitalsBar({
           <Link
             key={item.label}
             href={item.href}
-            className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-xs transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)]"
+            className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-xs transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
           >
             <Icon
               size={12}
@@ -332,7 +332,7 @@ export function MatterHeader() {
       <div className="flex items-start gap-3 px-4 py-3 md:px-6">
         <Link
           href="/dashboard/cases"
-          className="mt-0.5 shrink-0 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+          className="mt-0.5 shrink-0 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
           aria-label={t("matterheader.back_to_cases")}
         >
           <ArrowLeft size={18} />

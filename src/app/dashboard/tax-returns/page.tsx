@@ -331,7 +331,7 @@ export default function TaxReturnsPage() {
                   <tr
                     key={r.slug}
                     onClick={() => router.push(`/dashboard/tax-returns/${encodeSlugPath(r.slug)}`)}
-                    className="cursor-pointer border-b border-[color:var(--ds-border)]/50 transition-[background-color,border-color,color] last:border-0 hover:bg-[color:var(--ds-hover)]"
+                    className="cursor-pointer border-b border-[color:var(--ds-border)]/50 transition-[background-color,border-color,color] last:border-0 hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
                   >
                     <td className="px-5 py-3 font-medium text-[color:var(--ds-text)]">
                       {r.clientName}

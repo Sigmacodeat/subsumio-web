@@ -680,7 +680,7 @@ export function InvoiceQuickCreateDialog({
             <button
               type="button"
               onClick={() => setShowRvg((v) => !v)}
-              className="flex items-center gap-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
+              className="flex items-center gap-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
             >
               <Calculator size={13} />
               {showRvg

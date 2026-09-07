@@ -108,7 +108,7 @@ export function UploadLifecycle({
             {i > 0 && (
               <div
                 aria-hidden
-                className={`h-px w-3 shrink-0 transition-[background-color,border-color,color] ${
+                className={`h-px w-3 shrink-0 transition-[background-color,border-color,color] motion-reduce:transition-none ${
                   combined || i <= stage ? "brand-bg" : "bg-[color:var(--ds-border)]"
                 }`}
               />
@@ -124,7 +124,7 @@ export function UploadLifecycle({
                     ? "Prüfsumme übersprungen (kein Client-Hash verfügbar)"
                     : undefined
                 }
-                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-[background-color,border-color,color] ${
+                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-[background-color,border-color,color] motion-reduce:transition-none ${
                   state === "done"
                     ? "brand-bg border-transparent text-white"
                     : state === "active"
@@ -149,7 +149,7 @@ export function UploadLifecycle({
                 )}
               </span>
               <span
-                className={`hidden text-[0.6875rem] whitespace-nowrap transition-[background-color,border-color,color] sm:inline ${
+                className={`hidden text-[0.6875rem] whitespace-nowrap transition-[background-color,border-color,color] motion-reduce:transition-none sm:inline ${
                   state === "upcoming" || state === "skipped"
                     ? "text-[color:var(--ds-text-muted)]"
                     : "font-medium text-[color:var(--ds-text)]"

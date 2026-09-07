@@ -312,7 +312,7 @@ export default function MemoryManagementPage() {
             key={type}
             onClick={() => setFilterType(type)}
             className={cn(
-              "rounded-full px-3 py-1 text-xs font-medium transition-[background-color,border-color,color]",
+              "rounded-full px-3 py-1 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
               filterType === type
                 ? "bg-[color:var(--brand-primary)] text-white"
                 : "bg-[color:var(--ds-hover)] text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"
@@ -358,7 +358,7 @@ export default function MemoryManagementPage() {
             <Card
               key={memory.id}
               className={cn(
-                "flex items-start gap-3 p-4 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)]",
+                "flex items-start gap-3 p-4 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none",
                 memory.supersededBy && "opacity-50"
               )}
             >

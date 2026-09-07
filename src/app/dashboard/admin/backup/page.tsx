@@ -401,7 +401,7 @@ export default function BackupRestorePage() {
                           <button
                             key={type}
                             onClick={() => togglePageType(type)}
-                            className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color] ${
+                            className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
                               restorePageTypes.includes(type)
                                 ? "border-[color:var(--ds-brand)] bg-[color:var(--ds-brand)] text-white"
                                 : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)]"

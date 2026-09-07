@@ -50,7 +50,7 @@ export function StatsCard({
   return (
     <div
       className={cn(
-        "card-shadow hover:card-shadow-hover rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 transition-[background-color,border-color,color,box-shadow] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)]",
+        "card-shadow hover:card-shadow-hover rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 transition-[background-color,border-color,color,box-shadow] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)] motion-reduce:transition-none",
         className
       )}
       style={style}

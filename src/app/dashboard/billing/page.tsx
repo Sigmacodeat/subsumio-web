@@ -99,7 +99,7 @@ function UsageCard() {
                 aria-label={row.label}
               >
                 <div
-                  className={`h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${warn ? "bg-[color:var(--ds-warning-solid)]" : "brand-soft"}`}
+                  className={`h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${warn ? "bg-[color:var(--ds-warning-solid)]" : "brand-soft"}`}
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -185,7 +185,7 @@ function ModelBreakdownCard() {
                   aria-label={`${modelName} usage`}
                 >
                   <div
-                    className="brand-soft h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                    className="brand-soft h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
                     style={{ width: `${pct}%` }}
                   />
                 </div>

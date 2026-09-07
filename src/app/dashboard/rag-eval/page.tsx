@@ -307,7 +307,7 @@ export default function RagEvalPage() {
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
                 <div
-                  className="h-full rounded-full bg-[color:var(--ds-success-solid)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                  className="h-full rounded-full bg-[color:var(--ds-success-solid)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
                   style={{ width: `${reviewSummary.accuracy_rate * 100}%` }}
                 />
               </div>

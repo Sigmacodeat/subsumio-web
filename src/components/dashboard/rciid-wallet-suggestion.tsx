@@ -144,7 +144,7 @@ export function RciidWalletSuggestion({ caseSlug, onAcceptWallets }: RciidWallet
                     key={i}
                     role="button"
                     tabIndex={0}
-                    className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-[background-color,border-color,color] ${
+                    className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-[background-color,border-color,color] motion-reduce:transition-none ${
                       isSelected
                         ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]"
                         : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:bg-[color:var(--ds-hover)]"

@@ -435,7 +435,7 @@ export default function AltlastenPage() {
               key={key}
               onClick={() => setSortKey(key)}
               className={cn(
-                "rounded-md px-3 py-1 text-sm font-medium transition-[background-color,border-color,color]",
+                "rounded-md px-3 py-1 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
                 sortKey === key
                   ? "bg-[color:var(--brand-primary)] text-white"
                   : "bg-[color:var(--ds-surface-2)] hover:bg-[color:var(--ds-surface-2)]/80"
@@ -453,7 +453,7 @@ export default function AltlastenPage() {
           <button
             onClick={() => setFilterStatus(null)}
             className={cn(
-              "rounded-md px-3 py-1 text-sm font-medium transition-[background-color,border-color,color]",
+              "rounded-md px-3 py-1 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
               !filterStatus
                 ? "bg-[color:var(--brand-primary)] text-white"
                 : "bg-[color:var(--ds-surface-2)] hover:bg-[color:var(--ds-surface-2)]/80"
@@ -466,7 +466,7 @@ export default function AltlastenPage() {
               key={s}
               onClick={() => setFilterStatus(s)}
               className={cn(
-                "rounded-md px-3 py-1 text-sm font-medium transition-[background-color,border-color,color]",
+                "rounded-md px-3 py-1 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
                 filterStatus === s
                   ? "bg-[color:var(--brand-primary)] text-white"
                   : "bg-[color:var(--ds-surface-2)] hover:bg-[color:var(--ds-surface-2)]/80"
@@ -510,7 +510,7 @@ export default function AltlastenPage() {
               <tr
                 key={row.slug}
                 className={cn(
-                  "border-t transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)]/30",
+                  "border-t transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)]/30 motion-reduce:transition-none",
                   selectedSlugs.has(row.slug) && "bg-[color:var(--brand-primary)]/5"
                 )}
               >

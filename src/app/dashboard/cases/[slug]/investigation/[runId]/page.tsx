@@ -451,7 +451,7 @@ export default function InvestigationPage({
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={cn(
-                "inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 active:scale-[0.98]",
+                "inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 active:scale-[0.98] motion-reduce:transition-none",
                 isActive
                   ? "bg-[color:var(--brand-primary)] text-white shadow-sm"
                   : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)]"
@@ -682,7 +682,7 @@ function ContradictionsTab({
                 key={c.id}
                 onClick={() => onSelect(c.id)}
                 className={cn(
-                  "w-full rounded-lg border p-3 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] active:scale-[0.99]",
+                  "w-full rounded-lg border p-3 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] active:scale-[0.99] motion-reduce:transition-none",
                   isSelected
                     ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/[0.06] shadow-sm"
                     : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-surface-2)]"
@@ -1007,7 +1007,7 @@ function QuoteBlock({
       )}
       <Link
         href={`/dashboard/brain/${encodeURIComponent(fact?.source ?? claimId)}`}
-        className="mt-3 inline-flex items-center gap-1 text-xs text-[color:var(--brand-primary)] transition-[background-color,border-color,color] hover:text-[color:var(--brand-primary-hover)]"
+        className="mt-3 inline-flex items-center gap-1 text-xs text-[color:var(--brand-primary)] transition-[background-color,border-color,color] hover:text-[color:var(--brand-primary-hover)] motion-reduce:transition-none"
       >
         <ExternalLink className="h-3 w-3" />
         Im Dokument anzeigen
@@ -1031,7 +1031,7 @@ function FilterChip({
     <button
       onClick={onClick}
       className={cn(
-        "rounded-md px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 active:scale-[0.97]",
+        "rounded-md px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 active:scale-[0.97] motion-reduce:transition-none",
         active
           ? "bg-[color:var(--brand-primary)] text-white"
           : "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"

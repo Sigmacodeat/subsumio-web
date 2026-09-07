@@ -75,7 +75,7 @@ export function UploadEstimateBanner({
       role="status"
       aria-live="polite"
       className={cn(
-        "flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border px-3 py-2 text-xs transition-[background-color,border-color] duration-200",
+        "flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border px-3 py-2 text-xs transition-[background-color,border-color] duration-200 motion-reduce:transition-none",
         insufficient
           ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-soft)]"
           : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"

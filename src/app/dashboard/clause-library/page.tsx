@@ -180,7 +180,7 @@ export default function ClauseLibraryPage() {
               role="button"
               tabIndex={0}
               className={cn(
-                "group cursor-pointer rounded-xl border p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none",
+                "group cursor-pointer rounded-xl border p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
                 selectedClause?.slug === clause.slug
                   ? "brand-border brand-soft"
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"

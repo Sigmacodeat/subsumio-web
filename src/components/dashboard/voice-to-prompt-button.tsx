@@ -155,7 +155,7 @@ export function VoiceToPromptButton({ onTranscript, className, lang }: VoiceToPr
               <button
                 onClick={handleToggle}
                 className={cn(
-                  "flex h-16 w-16 items-center justify-center rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity]",
+                  "flex h-16 w-16 items-center justify-center rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none",
                   voice.isListening
                     ? "animate-pulse bg-[color:var(--ds-danger-solid)] text-white shadow-lg shadow-[color:var(--ds-danger-solid)]/30"
                     : "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"

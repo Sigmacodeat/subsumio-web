@@ -223,7 +223,7 @@ export default function GlobalSearchPage() {
               setHasSearched(false);
             }}
             aria-label="Suche zurücksetzen"
-            className="absolute top-1/2 right-4 -translate-y-1/2 rounded-md p-1 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-150 ease-out hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9]"
+            className="absolute top-1/2 right-4 -translate-y-1/2 rounded-md p-1 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-150 ease-out hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
           >
             <X size={18} />
           </button>
@@ -242,7 +242,7 @@ export default function GlobalSearchPage() {
                 key={s.id}
                 onClick={() => setScope(s.id)}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97]",
+                  "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                   isActive
                     ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
                     : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -315,7 +315,7 @@ export default function GlobalSearchPage() {
               <Link
                 key={result.slug}
                 href={getHref(result)}
-                className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 transition-[background-color,border-color,transform] duration-150 ease-out hover:bg-[color:var(--ds-surface-2)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.995]"
+                className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 transition-[background-color,border-color,transform] duration-150 ease-out hover:bg-[color:var(--ds-surface-2)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.995] motion-reduce:transition-none"
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
                   <Icon size={14} className="text-[color:var(--ds-text-muted)]" />

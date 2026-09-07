@@ -227,7 +227,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               >
                 <a
                   href="#features"
-                  className="inline-flex items-center gap-1.5 text-sm font-medium [color:var(--mk-text-muted)] transition-[background-color,border-color,color] hover:text-[var(--brand-text)]"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium [color:var(--mk-text-muted)] transition-[background-color,border-color,color] hover:text-[var(--brand-text)] motion-reduce:transition-none"
                 >
                   <Play size={14} />
                   {ui.seeFeatures}
@@ -311,7 +311,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 return (
                   <span
                     key={item.label}
-                    className="inline-flex items-center gap-1.5 text-sm font-medium [color:var(--mk-text-muted)] transition-[background-color,border-color,color] hover:[color:var(--mk-text)]"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium [color:var(--mk-text-muted)] transition-[background-color,border-color,color] hover:[color:var(--mk-text)] motion-reduce:transition-none"
                   >
                     <Icon size={14} className="text-[var(--brand-secondary)]" />
                     {item.label}
@@ -368,7 +368,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   const Icon = PAIN_ICONS[i];
                   return (
                     <StaggerItem key={p.label}>
-                      <div className="group relative h-full overflow-hidden rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl">
+                      <div className="group relative h-full overflow-hidden rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl motion-reduce:transition-none">
                         {/* Top accent — signal-rose into brand-primary */}
                         <div
                           aria-hidden
@@ -445,7 +445,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   <StaggerItem key={f.title}>
                     <Link
                       href={p(lang, "/features")}
-                      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl"
+                      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl motion-reduce:transition-none"
                     >
                       <div
                         className={`mb-5 flex h-12 w-12 items-center justify-center rounded-xl border ${accentTile(f.color, "light")}`}
@@ -680,7 +680,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="text-[color:var(--mk-text-subtle)] underline decoration-[color:var(--mk-border)] underline-offset-4 transition-[background-color,border-color,color] hover:text-[color:var(--mk-text)] hover:decoration-[color:var(--brand-text)]"
+                    className="text-[color:var(--mk-text-subtle)] underline decoration-[color:var(--mk-border)] underline-offset-4 transition-[background-color,border-color,color] hover:text-[color:var(--mk-text)] hover:decoration-[color:var(--brand-text)] motion-reduce:transition-none"
                   >
                     {link.label}
                   </Link>

@@ -96,7 +96,7 @@ function SortableGrund({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "rounded-lg border p-4 transition-[background-color,border-color,color,box-shadow,transform,opacity]",
+        "rounded-lg border p-4 transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none",
         grund.selected
           ? "border-[color:var(--brand-primary)]/40 bg-[color:var(--brand-primary)]/5"
           : "border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] opacity-60"
@@ -106,7 +106,7 @@ function SortableGrund({
         {/* Drag handle — keyboard accessible via dnd-kit KeyboardSensor */}
         <button
           type="button"
-          className="mt-0.5 flex h-6 w-4 shrink-0 cursor-grab items-center justify-center text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:cursor-grabbing"
+          className="mt-0.5 flex h-6 w-4 shrink-0 cursor-grab items-center justify-center text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:cursor-grabbing motion-reduce:transition-none"
           aria-label="Grund verschieben"
           {...attributes}
           {...listeners}
@@ -119,7 +119,7 @@ function SortableGrund({
           onClick={() => onToggle(grund.id)}
           aria-label={grund.selected ? "Abwählen" : "Auswählen"}
           className={cn(
-            "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-[background-color,border-color,color,box-shadow,transform,opacity]",
+            "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none",
             "focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none",
             grund.selected
               ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-[color:var(--brand-primary-foreground)]"

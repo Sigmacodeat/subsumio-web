@@ -780,7 +780,7 @@ function UploadPageInner() {
       </div>
 
       {/* GoBD-Belegstempel (opt-in) */}
-      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)]">
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)] motion-reduce:transition-none">
         <input
           type="checkbox"
           checked={gobdReceipt}
@@ -878,7 +878,7 @@ function UploadPageInner() {
       <div
         {...getRootProps()}
         className={cn(
-          "relative cursor-pointer rounded-2xl border border-dashed p-12 text-center transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+          "relative cursor-pointer rounded-2xl border border-dashed p-12 text-center transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
           isDragActive
             ? "brand-border brand-soft ring-1 ring-[color:var(--brand-primary)]/20"
             : "hover:brand-border hover:brand-soft border-[color:var(--ds-border-strong)]",
@@ -890,7 +890,7 @@ function UploadPageInner() {
         <div className="flex flex-col items-center gap-4">
           <div
             className={cn(
-              "flex h-16 w-16 items-center justify-center rounded-2xl transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+              "flex h-16 w-16 items-center justify-center rounded-2xl transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
               isDragActive ? "brand-soft" : "bg-[color:var(--ds-surface-2)]"
             )}
           >
@@ -998,7 +998,7 @@ function UploadPageInner() {
                   aria-label="Gesamtfortschritt Upload"
                 >
                   <div
-                    className="brand-bg h-full rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity]"
+                    className="brand-bg h-full rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none"
                     style={{ width: `${overallProgress}%` }}
                   />
                 </div>
@@ -1007,7 +1007,7 @@ function UploadPageInner() {
             {files.map((f) => (
               <div
                 key={f.id}
-                className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)]"
+                className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)] motion-reduce:transition-none"
               >
                 <FileIcon name={f.file.name} />
                 <div className="min-w-0 flex-1">
@@ -1068,7 +1068,7 @@ function UploadPageInner() {
                         aria-label={`Upload ${f.file.name}`}
                       >
                         <div
-                          className="brand-bg h-full rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity]"
+                          className="brand-bg h-full rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none"
                           style={{ width: `${f.progress}%` }}
                         />
                       </div>

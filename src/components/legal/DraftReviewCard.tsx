@@ -35,12 +35,7 @@ interface DraftReviewCardProps {
   className?: string;
 }
 
-export function DraftReviewCard({
-  draft,
-  onSign,
-  onCopy,
-  className,
-}: DraftReviewCardProps) {
+export function DraftReviewCard({ draft, onSign, onCopy, className }: DraftReviewCardProps) {
   const { t } = useLang();
   const [copied, setCopied] = React.useState(false);
 
@@ -81,7 +76,7 @@ export function DraftReviewCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+        "rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
         className
       )}
     >
@@ -115,7 +110,7 @@ export function DraftReviewCard({
       {draft.draftText && draft.status === "completed" && (
         <div className="mt-3 space-y-2">
           <div className="max-h-48 overflow-y-auto rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3">
-            <pre className="whitespace-pre-wrap text-xs text-[color:var(--ds-text)]">
+            <pre className="text-xs whitespace-pre-wrap text-[color:var(--ds-text)]">
               {draft.draftText.slice(0, 800)}
               {draft.draftText.length > 800 && "…"}
             </pre>

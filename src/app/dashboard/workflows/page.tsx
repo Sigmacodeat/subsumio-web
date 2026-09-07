@@ -374,7 +374,7 @@ export default function WorkflowsPage() {
                 <button
                   key={template.id}
                   onClick={() => setSelectedTemplate(template.id)}
-                  className="hover:brand-border hover:brand-soft/5 space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                  className="hover:brand-border hover:brand-soft/5 space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
                 >
                   <div className="flex items-start gap-2">
                     <span className="shrink-0 text-xl">{template.icon}</span>
@@ -415,7 +415,7 @@ export default function WorkflowsPage() {
                   key={f.key}
                   onClick={() => setFilter(f.key)}
                   className={cn(
-                    "rounded-lg px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color]",
+                    "rounded-lg px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
                     filter === f.key
                       ? "brand-soft brand-text brand-border border"
                       : "border border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -485,7 +485,7 @@ function WorkflowCard({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border bg-[color:var(--ds-surface)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+        "overflow-hidden rounded-xl border bg-[color:var(--ds-surface)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
         fm.status === "failed"
           ? "border-[color:var(--ds-danger-border)]"
           : fm.status === "completed"
@@ -496,7 +496,7 @@ function WorkflowCard({
       {/* Header row */}
       <button
         onClick={onToggle}
-        className="flex w-full items-center gap-3 p-4 text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)]/50"
+        className="flex w-full items-center gap-3 p-4 text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)]/50 motion-reduce:transition-none"
         aria-expanded={expanded}
       >
         {expanded ? (
@@ -533,7 +533,7 @@ function WorkflowCard({
           <div className="h-1.5 w-16 overflow-hidden rounded-full bg-[color:var(--ds-surface-2)]">
             <div
               className={cn(
-                "h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                "h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
                 fm.status === "failed"
                   ? "bg-[color:var(--ds-danger-solid)]"
                   : fm.status === "completed"
@@ -583,7 +583,7 @@ function WorkflowCard({
           {pendingApprovals.length > 0 && (
             <a
               href="/dashboard/approvals"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-warning-border)] bg-amber-500/[0.04] px-3 py-1.5 text-xs text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color] hover:bg-amber-500/[0.08] dark:text-[color:var(--ds-warning-text)]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-warning-border)] bg-amber-500/[0.04] px-3 py-1.5 text-xs text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color] hover:bg-amber-500/[0.08] motion-reduce:transition-none dark:text-[color:var(--ds-warning-text)]"
             >
               <Clock size={13} />
               {pendingApprovals.length} Freigabe{pendingApprovals.length > 1 ? "n" : ""} offen — zu

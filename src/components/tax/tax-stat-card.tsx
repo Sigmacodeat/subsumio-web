@@ -21,7 +21,7 @@ export function TaxStatCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)]",
+        "rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)] motion-reduce:transition-none",
         className
       )}
     >

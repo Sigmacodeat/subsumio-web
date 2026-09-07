@@ -22,7 +22,7 @@ export function FilterChip({
     <button
       onClick={onClick}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-[0.97]",
+        "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
         active
           ? "brand-soft brand-text brand-border"
           : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)]"
@@ -42,7 +42,7 @@ export function FilterChip({
               onRemove();
             }
           }}
-          className="-mr-0.5 ml-0.5 cursor-pointer rounded p-0.5 transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)]"
+          className="-mr-0.5 ml-0.5 cursor-pointer rounded p-0.5 transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] motion-reduce:transition-none"
           role="button"
           tabIndex={0}
           aria-label={`Filter ${label} entfernen`}

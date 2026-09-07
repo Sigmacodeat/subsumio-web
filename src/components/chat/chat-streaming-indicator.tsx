@@ -52,7 +52,7 @@ export function ChatStreamingIndicator({ className }: ChatStreamingIndicatorProp
             <span
               key={i}
               className={cn(
-                "h-1 w-1 rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300",
+                "h-1 w-1 rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 motion-reduce:transition-none",
                 i <= currentPhase
                   ? "brand-text scale-100"
                   : "scale-75 bg-[color:var(--ds-border)] opacity-50"

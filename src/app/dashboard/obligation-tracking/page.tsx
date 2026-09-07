@@ -103,7 +103,7 @@ export default function ObligationTrackingPage() {
           <button
             onClick={() => setMode("slug")}
             className={cn(
-              "rounded-lg px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color]",
+              "rounded-lg px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
               mode === "slug"
                 ? "brand-soft brand-text brand-border border"
                 : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
@@ -114,7 +114,7 @@ export default function ObligationTrackingPage() {
           <button
             onClick={() => setMode("text")}
             className={cn(
-              "rounded-lg px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color]",
+              "rounded-lg px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
               mode === "text"
                 ? "brand-soft brand-text brand-border border"
                 : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
@@ -150,7 +150,7 @@ export default function ObligationTrackingPage() {
                 key={j}
                 onClick={() => setJurisdiction(j)}
                 className={cn(
-                  "rounded-md px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color]",
+                  "rounded-md px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
                   jurisdiction === j
                     ? "brand-soft brand-text brand-border border"
                     : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"

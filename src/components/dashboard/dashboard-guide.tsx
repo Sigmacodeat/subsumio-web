@@ -18,7 +18,12 @@ import {
 import { useLang } from "@/lib/use-lang";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { useTour } from "@/components/dashboard/guided-tour";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -108,7 +113,8 @@ const SETUP_SECTIONS: Array<{
   {
     key: "firm",
     title: "Kanzlei einrichten",
-    description: "Hinterlegen Sie Stammdaten, Bankverbindung und Stundensatz, damit Rechnungen und Korrespondenz korrekt ausgefüllt werden.",
+    description:
+      "Hinterlegen Sie Stammdaten, Bankverbindung und Stundensatz, damit Rechnungen und Korrespondenz korrekt ausgefüllt werden.",
     subtasks: ["Kanzleiname und Anwalt", "Land und Rechtsraum", "Bankdaten / IBAN"],
     href: "/dashboard/settings/kanzlei",
     cta: "Kanzlei bearbeiten",
@@ -116,7 +122,8 @@ const SETUP_SECTIONS: Array<{
   {
     key: "firstCase",
     title: "Ersten Fall anlegen",
-    description: "Legen Sie eine Akte an und verknüpfen Sie Kontakte, damit Subsumio Fristen, Schriftsätze und Abrechnungen daraus ableiten kann.",
+    description:
+      "Legen Sie eine Akte an und verknüpfen Sie Kontakte, damit Subsumio Fristen, Schriftsätze und Abrechnungen daraus ableiten kann.",
     subtasks: ["Akte anlegen", "Mandant zuordnen", "Gegenpartei erfassen"],
     href: "/dashboard/cases",
     cta: "Neue Akte",
@@ -124,7 +131,8 @@ const SETUP_SECTIONS: Array<{
   {
     key: "firstDeadline",
     title: "Fristen aktivieren",
-    description: "Erstellen oder importieren Sie Ihre erste Frist, um Erinnerungen und Kalender-Exports zu testen.",
+    description:
+      "Erstellen oder importieren Sie Ihre erste Frist, um Erinnerungen und Kalender-Exports zu testen.",
     subtasks: ["Erste Frist anlegen", "Kalender-Export aktivieren", "Fristen-Widget prüfen"],
     href: "/dashboard/deadlines",
     cta: "Frist anlegen",
@@ -132,7 +140,8 @@ const SETUP_SECTIONS: Array<{
   {
     key: "teamInvited",
     title: "Team einladen",
-    description: "Laden Sie Kollegen ein, damit Sie gemeinsam an Akten arbeiten und Berechtigungen steuern können.",
+    description:
+      "Laden Sie Kollegen ein, damit Sie gemeinsam an Akten arbeiten und Berechtigungen steuern können.",
     subtasks: ["E-Mail-Adressen eingeben", "Rolle vergeben", "Einladungen versenden"],
     href: "/dashboard/team",
     cta: "Team einladen",
@@ -140,7 +149,8 @@ const SETUP_SECTIONS: Array<{
   {
     key: "firstQuery",
     title: "Erste KI-Abfrage starten",
-    description: "Stellen Sie eine Frage an Ihr Corpus, um Zitationen, Rechtsraum-Scoping und Antwortqualität zu erleben.",
+    description:
+      "Stellen Sie eine Frage an Ihr Corpus, um Zitationen, Rechtsraum-Scoping und Antwortqualität zu erleben.",
     subtasks: ["Frage eingeben", "Antwort mit Quellen prüfen", "Sinnhaftigkeit bewerten"],
     href: "/dashboard/chat",
     cta: "KI-Chat öffnen",
@@ -183,10 +193,7 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
     [progressQuery.data]
   );
 
-  const completedCount = useMemo(
-    () => Object.values(progress).filter(Boolean).length,
-    [progress]
-  );
+  const completedCount = useMemo(() => Object.values(progress).filter(Boolean).length, [progress]);
   const progressValue = Math.round((completedCount / SETUP_SECTIONS.length) * 100);
 
   const routeHelp = ROUTE_HELP.find((item) => pathname.startsWith(item.match));
@@ -259,7 +266,7 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setEditMode((prev) => !prev)}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 motion-reduce:transition-none"
                   aria-label={editMode ? "Bearbeiten beenden" : "Bearbeiten"}
                   aria-pressed={editMode}
                 >
@@ -267,7 +274,7 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
                 </button>
                 <button
                   onClick={onClose}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 motion-reduce:transition-none"
                   aria-label={t("topbar.close")}
                 >
                   <X size={18} />
@@ -306,11 +313,21 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
                           <AccordionTrigger className="gap-3 px-3 py-3 text-[color:var(--ds-text)]">
                             <span className="flex flex-1 items-center gap-2 text-left">
                               {done ? (
-                                <CheckCircle2 size={16} className="shrink-0 text-[color:var(--signal-success-500)]" />
+                                <CheckCircle2
+                                  size={16}
+                                  className="shrink-0 text-[color:var(--signal-success-500)]"
+                                />
                               ) : (
-                                <Circle size={16} className="shrink-0 text-[color:var(--ds-text-subtle)]" />
+                                <Circle
+                                  size={16}
+                                  className="shrink-0 text-[color:var(--ds-text-subtle)]"
+                                />
                               )}
-                              <span className={done ? "text-[color:var(--ds-text-muted)] line-through" : ""}>
+                              <span
+                                className={
+                                  done ? "text-[color:var(--ds-text-muted)] line-through" : ""
+                                }
+                              >
                                 {section.title}
                               </span>
                             </span>
@@ -332,7 +349,11 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
                             </ul>
                             <div className="flex items-center gap-2">
                               <Link href={section.href} onClick={onClose}>
-                                <Button variant="glow" size="sm" disabled={updateProgress.isPending}>
+                                <Button
+                                  variant="glow"
+                                  size="sm"
+                                  disabled={updateProgress.isPending}
+                                >
                                   {section.cta}
                                 </Button>
                               </Link>
@@ -357,10 +378,16 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
 
               {progressValue === 100 && (
                 <section className="rounded-lg border border-[color:var(--signal-success-500)]/30 bg-[color:var(--ds-success-bg)] p-4 text-center">
-                  <CheckCircle2 size={32} className="mx-auto mb-2 text-[color:var(--signal-success-500)]" />
-                  <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Setup abgeschlossen</h2>
+                  <CheckCircle2
+                    size={32}
+                    className="mx-auto mb-2 text-[color:var(--signal-success-500)]"
+                  />
+                  <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                    Setup abgeschlossen
+                  </h2>
                   <p className="text-sm text-[color:var(--ds-text-muted)]">
-                    Alle Schritte sind erledigt. Sie können den Leitfaden über das Hilfe-Symbol erneut öffnen.
+                    Alle Schritte sind erledigt. Sie können den Leitfaden über das Hilfe-Symbol
+                    erneut öffnen.
                   </p>
                 </section>
               )}
@@ -381,7 +408,7 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
                       key={link.href}
                       href={link.href}
                       onClick={onClose}
-                      className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
+                      className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 motion-reduce:transition-none"
                     >
                       {link.label}
                     </Link>
@@ -399,14 +426,14 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
                 <div className="grid gap-2">
                   <Link
                     href="/docs"
-                    className="brand-text text-sm font-medium transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:underline active:scale-95"
+                    className="brand-text text-sm font-medium transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:underline active:scale-95 motion-reduce:transition-none"
                     onClick={onClose}
                   >
                     {t("cmd.action.help.docs")}
                   </Link>
                   <Link
                     href="/dashboard/chat"
-                    className="brand-text text-sm font-medium transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:underline active:scale-95"
+                    className="brand-text text-sm font-medium transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:underline active:scale-95 motion-reduce:transition-none"
                     onClick={onClose}
                   >
                     {t("nav.assistant")}
@@ -421,14 +448,14 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
                   restartTour();
                   onClose();
                 }}
-                className="mb-2 flex w-full items-center justify-center gap-2 rounded-lg border border-[color:var(--brand-primary)]/30 bg-[color:var(--brand-primary)]/5 px-3 py-2.5 text-sm font-medium text-[color:var(--ds-text)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--brand-primary)]/10 active:scale-95"
+                className="mb-2 flex w-full items-center justify-center gap-2 rounded-lg border border-[color:var(--brand-primary)]/30 bg-[color:var(--brand-primary)]/5 px-3 py-2.5 text-sm font-medium text-[color:var(--ds-text)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--brand-primary)]/10 active:scale-95 motion-reduce:transition-none"
               >
                 <Sparkles size={15} className="brand-text" />
                 {t("guide.restart_tour")}
               </button>
               <a
                 href="mailto:support@subsumio.com"
-                className="flex items-center justify-center gap-2 rounded-lg border border-[color:var(--ds-border)] px-3 py-2.5 text-sm font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
+                className="flex items-center justify-center gap-2 rounded-lg border border-[color:var(--ds-border)] px-3 py-2.5 text-sm font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 motion-reduce:transition-none"
               >
                 <LifeBuoy size={15} />
                 {t("guide.contact_support")}

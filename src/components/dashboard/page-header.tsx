@@ -59,7 +59,7 @@ export function PageHeader({
                   <BreadcrumbLink asChild>
                     <Link
                       href={item.href}
-                      className="rounded-sm transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+                      className="rounded-sm transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                     >
                       {item.label}
                     </Link>

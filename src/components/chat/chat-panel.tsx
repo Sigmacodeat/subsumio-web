@@ -706,7 +706,7 @@ function SuggestedFollowUps({
           <button
             key={i}
             onClick={() => onSelect(s.query)}
-            className="rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color] duration-200 hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97]"
+            className="rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color] duration-200 hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
           >
             {s.label}
           </button>
@@ -2143,7 +2143,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       <div className="flex items-center gap-1 border-b border-[var(--ds-border)] bg-[var(--ds-surface-1)] px-3 py-1.5">
         <button
           onClick={() => setSubsumptionMode(false)}
-          className={`rounded-lg px-3 py-1 text-xs font-medium transition-[background-color,border-color,color] ${
+          className={`rounded-lg px-3 py-1 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
             !subsumptionMode
               ? "bg-[var(--brand-primary)] text-white"
               : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-surface-2)]"
@@ -2153,7 +2153,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         </button>
         <button
           onClick={() => setSubsumptionMode(true)}
-          className={`rounded-lg px-3 py-1 text-xs font-medium transition-[background-color,border-color,color] ${
+          className={`rounded-lg px-3 py-1 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
             subsumptionMode
               ? "bg-[var(--brand-primary)] text-white"
               : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-surface-2)]"
@@ -2265,7 +2265,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           {showScrollBtn && (
             <button
               onClick={scrollToBottom}
-              className="absolute bottom-24 left-1/2 z-20 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg transition-[opacity,transform] duration-200 hover:bg-[color:var(--ds-hover)] active:scale-95"
+              className="absolute bottom-24 left-1/2 z-20 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg transition-[opacity,transform] duration-200 hover:bg-[color:var(--ds-hover)] active:scale-95 motion-reduce:transition-none"
               aria-label={t("chat.scroll_bottom")}
             >
               <ArrowDown size={16} className="text-[color:var(--ds-text-muted)]" />
@@ -2282,7 +2282,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
               <span className="min-w-0 flex-1 truncate">{error}</span>
               <button
                 onClick={() => setDismissedError(true)}
-                className="shrink-0 text-red-400 transition-[background-color,border-color,color] hover:text-red-600 dark:text-red-500 dark:hover:text-red-300"
+                className="shrink-0 text-red-400 transition-[background-color,border-color,color] hover:text-red-600 motion-reduce:transition-none dark:text-red-500 dark:hover:text-red-300"
                 aria-label={t("chat.dismiss_error")}
               >
                 <X size={14} />

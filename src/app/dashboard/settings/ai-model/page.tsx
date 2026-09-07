@@ -70,7 +70,7 @@ export default function AIModelSettingsPage() {
           </p>
           <button
             onClick={() => query.refetch()}
-            className="mt-3 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
+            className="mt-3 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
           >
             Erneut versuchen
           </button>
@@ -120,7 +120,7 @@ export default function AIModelSettingsPage() {
           }
         }}
         className={cn(
-          "mb-4 cursor-pointer rounded-2xl border-2 p-5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none",
+          "mb-4 cursor-pointer rounded-2xl border-2 p-5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
           activeId === "auto"
             ? "brand-border brand-soft"
             : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
@@ -186,7 +186,7 @@ export default function AIModelSettingsPage() {
                 }
               }}
               className={cn(
-                "group cursor-pointer rounded-2xl border-2 p-5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none",
+                "group cursor-pointer rounded-2xl border-2 p-5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
                 isActive
                   ? "brand-border brand-soft"
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
@@ -197,7 +197,7 @@ export default function AIModelSettingsPage() {
                 <div className="flex items-start gap-3">
                   <div
                     className={cn(
-                      "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-[background-color,border-color,color]",
+                      "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-[background-color,border-color,color] motion-reduce:transition-none",
                       isActive
                         ? "brand-bg"
                         : "border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] group-hover:border-[color:var(--ds-border-strong)]"

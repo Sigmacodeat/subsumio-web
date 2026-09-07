@@ -167,7 +167,7 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
                 <GlowCard
                   glowColor={sig.text}
                   intensity={0.12}
-                  className="h-full rounded-2xl border [border-color:var(--mk-border)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-lg"
+                  className="h-full rounded-2xl border [border-color:var(--mk-border)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-lg motion-reduce:transition-none"
                   style={{ boxShadow: "var(--mk-card-shadow)" } as React.CSSProperties}
                 >
                   <div className="p-6">

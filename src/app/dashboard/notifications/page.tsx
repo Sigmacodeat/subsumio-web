@@ -372,7 +372,7 @@ export default function NotificationCenterPage() {
                     return (
                       <div
                         key={n.id}
-                        className={`flex items-start gap-3 p-4 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] ${!n.readAt ? "bg-[color:var(--ds-surface-2)]" : ""}`}
+                        className={`flex items-start gap-3 p-4 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none ${!n.readAt ? "bg-[color:var(--ds-surface-2)]" : ""}`}
                       >
                         <div className={`mt-0.5 shrink-0 ${typeMeta.color}`}>
                           <Icon className="h-5 w-5" />

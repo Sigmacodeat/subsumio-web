@@ -124,7 +124,7 @@ export function ElsterSubmissionWizard({ onSubmitted }: ElsterSubmissionWizardPr
           <div key={s} className="flex items-center gap-2">
             <div
               className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-[background-color,border-color,color]",
+                "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
                 i < stepIndex
                   ? "bg-emerald-500/10 text-emerald-600"
                   : i === stepIndex

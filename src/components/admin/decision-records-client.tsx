@@ -120,7 +120,7 @@ function RecordRow({ record }: { record: DecisionRecord }) {
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center gap-3 p-4 text-left transition-[background-color] duration-200 hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+        className="flex w-full items-center gap-3 p-4 text-left transition-[background-color] duration-200 hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
         aria-expanded={expanded}
         aria-label={`Decision record for ${record.specialist}`}
       >

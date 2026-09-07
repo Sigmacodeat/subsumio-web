@@ -87,7 +87,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
                 <GlowCard
                   glowColor="var(--signal-rose)"
                   intensity={0.1}
-                  className="h-full rounded-2xl border border-rose-200/40 bg-rose-50/30 p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-rose-500/10 dark:bg-rose-500/5"
+                  className="h-full rounded-2xl border border-rose-200/40 bg-rose-50/30 p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 hover:-translate-y-1 hover:shadow-lg motion-reduce:transition-none dark:border-rose-500/10 dark:bg-rose-500/5"
                 >
                   <AlertCircle size={20} className="mb-3 [color:var(--signal-rose)]" />
                   <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">
@@ -112,7 +112,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
               const Icon = ICONS[feat.icon] ?? ICONS.Layers;
               return (
                 <StaggerItem key={feat.title}>
-                  <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-lg">
+                  <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-lg motion-reduce:transition-none">
                     <div
                       className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl border transition-transform duration-300 hover:scale-110 ${accentTile("violet", "light")}`}
                     >
@@ -172,7 +172,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
                 <Link
                   key={slug}
                   href={p(lang, `/solutions/${slug}`)}
-                  className="inline-flex items-center gap-2 rounded-full border [border-color:var(--mk-border)] px-4 py-2 text-sm font-medium [color:var(--mk-text-muted)] transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:[border-color:var(--mk-border-strong)] hover:[color:var(--mk-text)]"
+                  className="inline-flex items-center gap-2 rounded-full border [border-color:var(--mk-border)] px-4 py-2 text-sm font-medium [color:var(--mk-text-muted)] transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:[border-color:var(--mk-border-strong)] hover:[color:var(--mk-text)] motion-reduce:transition-none"
                 >
                   <Icon size={14} />
                   {link.label}

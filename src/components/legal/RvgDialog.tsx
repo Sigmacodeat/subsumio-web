@@ -25,7 +25,7 @@ export default function RvgDialog() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-xl border [border-color:var(--mk-border)] px-3 py-2 text-xs [color:var(--mk-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)] hover:[color:var(--mk-text)]"
+        className="flex items-center gap-2 rounded-xl border [border-color:var(--mk-border)] px-3 py-2 text-xs [color:var(--mk-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)] hover:[color:var(--mk-text)] motion-reduce:transition-none"
       >
         <Scale size={14} />
         RVG-Rechner
@@ -72,11 +72,12 @@ export default function RvgDialog() {
 
               <div className="flex gap-2">
                 <input
-                  type="number" inputMode="numeric"
+                  type="number"
+                  inputMode="numeric"
                   value={streitwert}
                   onChange={(e) => setStreitwert(e.target.value)}
                   placeholder="Streitwert in €"
-                  className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-base sm:text-sm [color:var(--mk-text)] [background:var(--mk-bg)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--ds-success-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                  className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-base [color:var(--mk-text)] [background:var(--mk-bg)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--ds-success-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 sm:text-sm"
                   onKeyDown={(e) => e.key === "Enter" && compute()}
                 />
                 <Button

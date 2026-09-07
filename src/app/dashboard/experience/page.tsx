@@ -536,7 +536,7 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 border-b-2 px-4 py-2 text-sm font-medium transition-[background-color,border-color,color] ${
+      className={`flex items-center gap-2 border-b-2 px-4 py-2 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
         active
           ? "border-[color:var(--brand-primary)] text-[color:var(--brand-primary)]"
           : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"

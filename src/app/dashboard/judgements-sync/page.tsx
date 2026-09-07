@@ -168,7 +168,7 @@ export default function JudgementsSyncPage() {
               <button
                 onClick={() => navigator.clipboard.writeText(cmd)}
                 aria-label={t("judgements.copy")}
-                className="text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
+                className="text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
               >
                 {t("judgements.copy")}
               </button>
@@ -249,7 +249,7 @@ export default function JudgementsSyncPage() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`${src.name} API öffnen`}
-              className="hover:brand-text shrink-0 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color]"
+              className="hover:brand-text shrink-0 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] motion-reduce:transition-none"
             >
               <Globe size={14} />
             </a>

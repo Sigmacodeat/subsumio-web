@@ -187,7 +187,7 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
                       : { duration: 0.2 }
                   }
                   whileHover={{ y: -2 }}
-                  className={`w-full rounded-xl border p-4 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 ${
+                  className={`w-full rounded-xl border p-4 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 motion-reduce:transition-none ${
                     active
                       ? "brand-border shadow-md [background:var(--mk-surface)]"
                       : "[border-color:var(--mk-border)] [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)]"
@@ -195,7 +195,7 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
                 >
                   <div className="flex items-center gap-3">
                     <span
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-[background-color,border-color,color] ${
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-[background-color,border-color,color] motion-reduce:transition-none ${
                         active
                           ? "brand-soft brand-border brand-text"
                           : "[border-color:var(--mk-border)] [color:var(--mk-text-muted)]"
@@ -212,7 +212,7 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
                       </span>
                     </div>
                     <span
-                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-mono text-sm font-bold transition-[background-color,border-color,color] ${
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-mono text-sm font-bold transition-[background-color,border-color,color] motion-reduce:transition-none ${
                         active
                           ? "brand-text brand-soft"
                           : "[color:var(--mk-text-muted)] [background:var(--mk-surface-2)]"
@@ -271,7 +271,7 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
                 key={wf.id}
                 onClick={() => handleWorkflowClick(i)}
                 aria-label={wf.label}
-                className={`h-1.5 rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ${
+                className={`h-1.5 rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 motion-reduce:transition-none ${
                   i === activeWorkflow
                     ? "brand-bg w-8"
                     : "w-1.5 [background:var(--mk-border)] hover:[background:var(--mk-border-strong)]"

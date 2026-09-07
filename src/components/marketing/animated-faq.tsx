@@ -35,7 +35,7 @@ export function AnimatedFaqList({
           return (
             <StaggerItem key={item.q}>
               <div
-                className={`overflow-hidden rounded-xl border transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 ${
+                className={`overflow-hidden rounded-xl border transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 motion-reduce:transition-none ${
                   isOpen
                     ? "[border-color:var(--mk-border-strong)]"
                     : "[border-color:var(--mk-border)]"

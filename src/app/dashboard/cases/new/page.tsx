@@ -496,7 +496,7 @@ export default function NewCasePage() {
             <div key={i} className="flex flex-1 items-center gap-2">
               <div
                 className={cn(
-                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-[background-color,border-color,color]",
+                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-[background-color,border-color,color] motion-reduce:transition-none",
                   isDone
                     ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-white"
                     : isActive
@@ -517,7 +517,7 @@ export default function NewCasePage() {
               {i < steps.length - 1 && (
                 <div
                   className={cn(
-                    "h-px flex-1 transition-[background-color,border-color,color]",
+                    "h-px flex-1 transition-[background-color,border-color,color] motion-reduce:transition-none",
                     isDone ? "bg-[color:var(--brand-primary)]" : "bg-[color:var(--ds-border)]"
                   )}
                 />
@@ -1057,7 +1057,7 @@ export default function NewCasePage() {
                 {...register("facts")}
                 rows={6}
                 placeholder={t("cases.new.placeholder_facts")}
-                className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] transition-[background-color,border-color,color] duration-150 placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] transition-[background-color,border-color,color] duration-150 placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 motion-reduce:transition-none"
               />
             </div>
 

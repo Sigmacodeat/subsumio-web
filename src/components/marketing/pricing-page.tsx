@@ -159,7 +159,7 @@ export default function PricingPage({ lang }: { lang: Lang }) {
                     role="tab"
                     aria-selected={audience === id}
                     onClick={() => setAudience(id)}
-                    className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition-[background-color,border-color,color] ${audience === id ? "brand-bg text-white" : "[color:var(--mk-text-muted)] hover:[background:var(--mk-hover)]"}`}
+                    className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition-[background-color,border-color,color] motion-reduce:transition-none ${audience === id ? "brand-bg text-white" : "[color:var(--mk-text-muted)] hover:[background:var(--mk-hover)]"}`}
                   >
                     {id === "private"
                       ? en
@@ -210,7 +210,7 @@ export default function PricingPage({ lang }: { lang: Lang }) {
             >
               {CREDIT_PACKS.map((pack) => (
                 <StaggerItem key={pack.id}>
-                  <GlowCard className="flex h-full flex-col rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)]">
+                  <GlowCard className="flex h-full flex-col rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] motion-reduce:transition-none">
                     <div className="mb-3 flex items-center justify-between">
                       <div className="flex h-10 w-10 items-center justify-center rounded-xl border [border-color:var(--signal-green-border)] [background:var(--signal-green-bg)]">
                         <Coins size={18} className="[color:var(--signal-green)]" />
@@ -296,7 +296,7 @@ export default function PricingPage({ lang }: { lang: Lang }) {
               const Icon = sig.icon;
               return (
                 <StaggerItem key={sig.label}>
-                  <GlowCard className="flex h-full flex-col items-center justify-center rounded-2xl border [border-color:var(--mk-border)] p-5 text-center transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)]">
+                  <GlowCard className="flex h-full flex-col items-center justify-center rounded-2xl border [border-color:var(--mk-border)] p-5 text-center transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] motion-reduce:transition-none">
                     <div className="brand-soft brand-border mb-4 flex h-12 w-12 items-center justify-center rounded-xl border">
                       <Icon size={22} className="brand-text" />
                     </div>
@@ -336,9 +336,9 @@ export default function PricingPage({ lang }: { lang: Lang }) {
             {valueProps.map((prop) => (
               <StaggerItem
                 key={prop.title}
-                className="rounded-2xl transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 hover:-translate-y-1 hover:shadow-lg"
+                className="rounded-2xl transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 hover:-translate-y-1 hover:shadow-lg motion-reduce:transition-none"
               >
-                <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color] [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]">
+                <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color] [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)] motion-reduce:transition-none">
                   <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border [border-color:var(--signal-green-border)] transition-transform duration-300 [background:var(--signal-green-bg)] hover:scale-110">
                     <Check size={18} className="[color:var(--signal-green)]" />
                   </div>

@@ -367,7 +367,7 @@ export default function MailboxClient({
                   setSearch("");
                   setMobileDetailOpen(false);
                 }}
-                className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-[background-color,border-color,color] ${
+                className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-[background-color,border-color,color] motion-reduce:transition-none ${
                   isActive
                     ? "bg-[color:var(--ds-surface-2)] font-medium text-[color:var(--ds-text)]"
                     : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)]"
@@ -511,7 +511,7 @@ export default function MailboxClient({
                 <li key={m.id}>
                   <button
                     onClick={() => handleSelect(m.id)}
-                    className={`flex w-full gap-3 px-4 py-3 text-left transition-[background-color,border-color,color] ${
+                    className={`flex w-full gap-3 px-4 py-3 text-left transition-[background-color,border-color,color] motion-reduce:transition-none ${
                       isSelected
                         ? "bg-[color:var(--ds-surface-2)]"
                         : "hover:bg-[color:color-mix(in_srgb,var(--ds-surface-2)_50%,transparent)]"

@@ -90,7 +90,7 @@ export function MatterContextPanel({
       {/* Header */}
       <button
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)]"
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
       >
         <div className="flex items-center gap-2.5">
           {open ? (
@@ -549,7 +549,7 @@ function CoverageDisplay({ coverage }: { coverage: MatterCoverageStatus }) {
           <div className="h-2 overflow-hidden rounded-full bg-[color:var(--ds-surface-2)]">
             <div
               className={cn(
-                "h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                "h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
                 score >= 80
                   ? "bg-[color:var(--ds-success-solid)]"
                   : score >= 50

@@ -263,7 +263,7 @@ export function SettingsHub({ userRole }: { userRole: string }) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t("settings.hub_search_placeholder")}
-          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 motion-reduce:transition-none"
         />
       </div>
 
@@ -287,12 +287,12 @@ export function SettingsHub({ userRole }: { userRole: string }) {
                   <Link
                     key={tile.labelKey}
                     href={tile.href}
-                    className="group flex items-start gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[border-color,box-shadow,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-hover)] hover:shadow-md focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+                    className="group flex items-start gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[border-color,box-shadow,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-hover)] hover:shadow-md focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none motion-reduce:transition-none"
                   >
-                    <div className="group-hover:brand-soft group-hover:brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] transition-[border-color,background-color] duration-200">
+                    <div className="group-hover:brand-soft group-hover:brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] transition-[border-color,background-color] duration-200 motion-reduce:transition-none">
                       <Icon
                         size={18}
-                        className="group-hover:brand-text text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] duration-200"
+                        className="group-hover:brand-text text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] duration-200 motion-reduce:transition-none"
                       />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -324,12 +324,12 @@ export function SettingsHub({ userRole }: { userRole: string }) {
                 <Link
                   key={item.href + "-" + (item.labelKey || "")}
                   href={item.href}
-                  className="group flex items-start gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[border-color,box-shadow,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-hover)] hover:shadow-md focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+                  className="group flex items-start gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[border-color,box-shadow,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-hover)] hover:shadow-md focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none motion-reduce:transition-none"
                 >
-                  <div className="group-hover:brand-soft group-hover:brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] transition-[border-color,background-color] duration-200">
+                  <div className="group-hover:brand-soft group-hover:brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] transition-[border-color,background-color] duration-200 motion-reduce:transition-none">
                     <Icon
                       size={18}
-                      className="group-hover:brand-text text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] duration-200"
+                      className="group-hover:brand-text text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] duration-200 motion-reduce:transition-none"
                     />
                   </div>
                   <div className="min-w-0 flex-1">

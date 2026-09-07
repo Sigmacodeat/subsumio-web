@@ -478,7 +478,7 @@ export default function DashboardReel({
             return (
               <div
                 key={i}
-                className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-[background-color,border-color,color] ${
+                className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-[background-color,border-color,color] motion-reduce:transition-none ${
                   isActive ? "brand-soft brand-text font-medium" : "[color:var(--mk-text-muted)]"
                 }`}
               >
@@ -539,7 +539,7 @@ export default function DashboardReel({
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.06 }}
-                        className="flex items-center gap-3 rounded-lg border [border-color:var(--mk-border)] px-3 py-2.5 transition-[background-color,border-color,color] [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]"
+                        className="flex items-center gap-3 rounded-lg border [border-color:var(--mk-border)] px-3 py-2.5 transition-[background-color,border-color,color] [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)] motion-reduce:transition-none"
                       >
                         <div
                           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
@@ -737,7 +737,7 @@ export default function DashboardReel({
                       return (
                         <div
                           key={day}
-                          className={`flex h-7 items-center justify-center rounded text-sm transition-[background-color,border-color,color] ${
+                          className={`flex h-7 items-center justify-center rounded text-sm transition-[background-color,border-color,color] motion-reduce:transition-none ${
                             isToday
                               ? "brand-bg font-bold text-white"
                               : hasEntry

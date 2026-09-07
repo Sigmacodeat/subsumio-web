@@ -318,7 +318,7 @@ export default function CompliancePage() {
           aria-controls="tabpanel-compliance"
           onClick={() => setActiveTab("dsgvo")}
           className={cn(
-            "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
             activeTab === "dsgvo"
               ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
               : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -334,7 +334,7 @@ export default function CompliancePage() {
           aria-controls="tabpanel-compliance"
           onClick={() => setActiveTab("gwg")}
           className={cn(
-            "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
             activeTab === "gwg"
               ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
               : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -350,7 +350,7 @@ export default function CompliancePage() {
           aria-controls="tabpanel-compliance"
           onClick={() => setActiveTab("gobd")}
           className={cn(
-            "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
             activeTab === "gobd"
               ? "brand-soft brand-border brand-text"
               : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -421,7 +421,7 @@ export default function CompliancePage() {
                   onClick={() => cycleStatus(check.id)}
                   aria-label={`${check.label} — ${t("aria.status")}: ${STATUS_LABEL[status](t)}. ${t("compliance.aria_change")}`}
                   className={cn(
-                    "flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                    "flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
                     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--brand-primary)]",
                     status === "ok"
                       ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] hover:border-[color:var(--ds-success-border)]"
@@ -484,7 +484,7 @@ function HubLink({
   return (
     <Link
       href={href}
-      className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+      className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none motion-reduce:transition-none"
     >
       <Icon size={15} className="shrink-0" />
       <span className="truncate">{label}</span>

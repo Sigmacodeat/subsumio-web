@@ -93,7 +93,7 @@ export function AccountBalancePill() {
     <a
       href="/dashboard/billing"
       className={cn(
-        "group flex h-9 items-center gap-1.5 rounded-lg px-2.5 transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-[0.98]",
+        "group flex h-9 items-center gap-1.5 rounded-lg px-2.5 transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
         low && "bg-[color:var(--ds-warning-soft)]",
         medium && !low && "hover:bg-[color:var(--ds-hover)]"
       )}

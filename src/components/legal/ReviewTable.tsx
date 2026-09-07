@@ -207,7 +207,7 @@ export function ReviewTable({ data, caseSlug }: ReviewTableProps) {
             <button
               onClick={handleAsk}
               disabled={askLoading || !askQuery.trim()}
-              className="inline-flex items-center gap-1.5 rounded-md bg-[color:var(--ds-info-solid)] px-3 py-1.5 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--ds-info-solid)] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-md bg-[color:var(--ds-info-solid)] px-3 py-1.5 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--ds-info-solid)] disabled:opacity-50 motion-reduce:transition-none"
             >
               {askLoading ? (
                 <Loader2 size={14} className="animate-spin" />

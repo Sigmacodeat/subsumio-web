@@ -430,7 +430,7 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
                         ? { duration: 1.8, repeat: Infinity, ease: "easeInOut" }
                         : { duration: 0.2 }
                     }
-                    className={`w-full rounded-lg border p-3 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] ${
+                    className={`w-full rounded-lg border p-3 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none ${
                       active
                         ? "brand-border ring-2 ring-[color-mix(in_srgb,var(--brand-primary)_22%,transparent)] [background:var(--mk-surface)]"
                         : "[border-color:var(--mk-border)] [background:var(--mk-surface-2)]"
@@ -602,7 +602,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
           {stats.map((s) => (
             <StaggerItem
               key={s.label}
-              className="rounded-2xl border [border-color:var(--mk-border)] p-6 text-center transition-[background-color,border-color,color] [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]"
+              className="rounded-2xl border [border-color:var(--mk-border)] p-6 text-center transition-[background-color,border-color,color] [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)] motion-reduce:transition-none"
             >
               <div className="gradient-text mb-1 text-3xl font-bold md:text-4xl">
                 {s.prefix ?? ""}
@@ -639,7 +639,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => setActive(c.id)}
-                className={`relative flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-[background-color,border-color,color] ${
+                className={`relative flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
                   isActive
                     ? "brand-text"
                     : "[color:var(--mk-text-muted)] hover:[color:var(--mk-text)]"
@@ -689,7 +689,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.06 * i, duration: 0.22 }}
-                    className="hover:brand-border flex gap-3 rounded-xl border [border-color:var(--mk-border)] p-4 transition-[background-color,border-color,color] [background:var(--mk-surface)] hover:[background:var(--mk-hover)]"
+                    className="hover:brand-border flex gap-3 rounded-xl border [border-color:var(--mk-border)] p-4 transition-[background-color,border-color,color] [background:var(--mk-surface)] hover:[background:var(--mk-hover)] motion-reduce:transition-none"
                   >
                     <CheckCircle2 size={16} className="brand-text mt-0.5 shrink-0" />
                     <div>
@@ -793,9 +793,9 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                     if (typeof window !== "undefined")
                       window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
-                  className="group rounded-2xl text-left transition-[background-color,border-color,color,box-shadow,transform,opacity]"
+                  className="group rounded-2xl text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none"
                 >
-                  <GlowCard className="hover:brand-border h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:[background:var(--mk-hover)]">
+                  <GlowCard className="hover:brand-border h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:[background:var(--mk-hover)] motion-reduce:transition-none">
                     <div className="brand-soft brand-border mb-4 flex h-11 w-11 items-center justify-center rounded-xl border transition-transform group-hover:scale-110">
                       {Icon && <Icon size={20} className="brand-text" />}
                     </div>

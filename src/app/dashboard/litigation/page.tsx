@@ -429,7 +429,7 @@ export default function LitigationFlowPage() {
               <button
                 key={m.slug}
                 onClick={() => setSelectedSlug(m.slug)}
-                className="group rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:border-[color:var(--brand-primary)] hover:shadow-md"
+                className="group rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:border-[color:var(--brand-primary)] hover:shadow-md motion-reduce:transition-none"
               >
                 <div className="mb-3 flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -458,7 +458,7 @@ export default function LitigationFlowPage() {
                 </div>
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[color:var(--ds-hover)]">
                   <div
-                    className="h-full rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity]"
+                    className="h-full rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none"
                     style={{ width: `${progress}%`, background: "var(--brand-primary)" }}
                   />
                 </div>
@@ -500,7 +500,7 @@ export default function LitigationFlowPage() {
                   return (
                     <div
                       key={p}
-                      className={`h-2 flex-1 rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] ${
+                      className={`h-2 flex-1 rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none ${
                         isDone
                           ? "bg-[color:var(--brand-primary)]"
                           : isCurrent
@@ -720,7 +720,7 @@ export default function LitigationFlowPage() {
                   key={p}
                   onClick={() => handleAdvancePhase(p)}
                   disabled={saving}
-                  className="flex w-full items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:border-[color:var(--brand-primary)]"
+                  className="flex w-full items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:border-[color:var(--brand-primary)] motion-reduce:transition-none"
                 >
                   {PHASE_ICONS[p]}
                   <span className="text-sm text-[color:var(--ds-text)]">

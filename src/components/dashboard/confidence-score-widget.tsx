@@ -177,7 +177,7 @@ export function ConfidenceScoreWidget() {
             <Link
               key={c.slug}
               href={`/dashboard/cases/${encoded}`}
-              className="group flex items-center gap-2 rounded-md px-1 py-0.5 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)]"
+              className="group flex items-center gap-2 rounded-md px-1 py-0.5 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
             >
               <span className="min-w-0 flex-1 truncate text-[13px] text-[color:var(--ds-text)]">
                 {c.title}

@@ -178,11 +178,11 @@ function Sparkline({
             style={{ width: `${barWidth}%`, minWidth: "4px" }}
           >
             <div
-              className="rounded-t bg-[color:var(--ds-danger-solid)]/60 transition-[background-color,border-color,color,box-shadow,transform,opacity]"
+              className="rounded-t bg-[color:var(--ds-danger-solid)]/60 transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none"
               style={{ height: `${flaggedH}%`, minHeight: h.flagged > 0 ? "2px" : "0" }}
             />
             <div
-              className="rounded-t bg-[color:var(--ds-success-solid)]/60 transition-[background-color,border-color,color,box-shadow,transform,opacity]"
+              className="rounded-t bg-[color:var(--ds-success-solid)]/60 transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none"
               style={{ height: `${passedH}%`, minHeight: h.passed > 0 ? "2px" : "0" }}
             />
             <div className="absolute -top-8 left-1/2 z-10 hidden -translate-x-1/2 rounded bg-[var(--ds-surface-2)] px-2 py-1 text-xs whitespace-nowrap shadow-lg group-hover:block">

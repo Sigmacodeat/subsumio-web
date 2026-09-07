@@ -528,7 +528,7 @@ export default function ContactsPage() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("contacts.search_live_placeholder")}
               aria-label={t("contacts.search_live_placeholder")}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-9 pl-9 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-9 pl-9 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 motion-reduce:transition-none"
             />
             {query && (
               <button
@@ -611,7 +611,7 @@ export default function ContactsPage() {
               return (
                 <div
                   key={contact.slug}
-                  className="group space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[border-color,box-shadow] duration-200 hover:border-[color:var(--ds-border-strong)] hover:shadow-sm"
+                  className="group space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[border-color,box-shadow] duration-200 hover:border-[color:var(--ds-border-strong)] hover:shadow-sm motion-reduce:transition-none"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-start gap-3">
@@ -674,7 +674,7 @@ export default function ContactsPage() {
                         <Mail size={12} className="shrink-0" />
                         <a
                           href={`mailto:${contact.email}`}
-                          className="transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
+                          className="transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
                         >
                           {contact.email}
                         </a>
@@ -685,7 +685,7 @@ export default function ContactsPage() {
                         <Phone size={12} className="shrink-0" />
                         <a
                           href={`tel:${contact.phone.replace(/\s/g, "")}`}
-                          className="transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
+                          className="transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
                         >
                           {contact.phone}
                         </a>
@@ -872,7 +872,7 @@ function HubLink({
   return (
     <Link
       href={href}
-      className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+      className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none motion-reduce:transition-none"
     >
       <Icon size={15} className="shrink-0" />
       <span className="truncate">{label}</span>

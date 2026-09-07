@@ -201,7 +201,7 @@ export default function CalendarPage() {
               <button
                 onClick={() => setView("week")}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-[background-color,color,transform] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95]",
+                  "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-[background-color,color,transform] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none",
                   view === "week"
                     ? "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                     : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -213,7 +213,7 @@ export default function CalendarPage() {
               <button
                 onClick={() => setView("month")}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-[background-color,color,transform] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95]",
+                  "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-[background-color,color,transform] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none",
                   view === "month"
                     ? "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                     : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -273,7 +273,7 @@ export default function CalendarPage() {
                     <Link
                       key={event.id}
                       href={event.href ?? "#"}
-                      className="flex items-center gap-3 rounded-md px-2 py-2 transition-[background-color,transform] duration-150 ease-out hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.995]"
+                      className="flex items-center gap-3 rounded-md px-2 py-2 transition-[background-color,transform] duration-150 ease-out hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.995] motion-reduce:transition-none"
                     >
                       <EventIcon type={event.type} urgency={event.urgency} />
                       <div className="min-w-0 flex-1">

@@ -333,7 +333,7 @@ export default function BrainPage() {
                   <a
                     key={page.slug}
                     href={`/dashboard/brain/${encodeURIComponent(page.slug)}`}
-                    className="group card-shadow flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)]"
+                    className="group card-shadow flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
                   >
                     <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border">
                       <TypeIcon size={17} className="brand-text" />
@@ -401,7 +401,7 @@ export default function BrainPage() {
                     )}
                     <ChevronRight
                       size={16}
-                      className="group-hover:brand-text shrink-0 text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color]"
+                      className="group-hover:brand-text shrink-0 text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] motion-reduce:transition-none"
                     />
                   </a>
                 );

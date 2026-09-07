@@ -192,7 +192,7 @@ export function AdminTokenUsageClient() {
                 onClick={() => setDays(r.days)}
                 aria-pressed={days === r.days}
                 className={cn(
-                  "rounded-md px-3 py-1.5 text-xs font-medium transition-[background-color,color,transform] duration-200 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.98]",
+                  "rounded-md px-3 py-1.5 text-xs font-medium transition-[background-color,color,transform] duration-200 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
                   days === r.days
                     ? "brand-bg text-white"
                     : "border border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -265,7 +265,7 @@ export function AdminTokenUsageClient() {
                   return (
                     <div
                       key={day.date}
-                      className="group brand-soft relative flex-1 rounded-t-sm transition-[height,opacity] duration-200 hover:opacity-80"
+                      className="group brand-soft relative flex-1 rounded-t-sm transition-[height,opacity] duration-200 hover:opacity-80 motion-reduce:transition-none"
                       style={{ height: `${Math.max(heightPct, 2)}%` }}
                       title={`${day.date}: ${formatCredits(day.totalCredits)} € · ${day.totalCalls} Calls`}
                     />
@@ -284,7 +284,7 @@ export function AdminTokenUsageClient() {
             <button
               type="button"
               onClick={() => setTrendSheetOpen(true)}
-              className="flex w-full items-center justify-between gap-3 rounded-[inherit] p-4 text-left transition-[background-color] duration-200 hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+              className="flex w-full items-center justify-between gap-3 rounded-[inherit] p-4 text-left transition-[background-color] duration-200 hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
               aria-label="Verbrauch über Zeit anzeigen"
             >
               <div className="flex items-center gap-2.5">
@@ -334,7 +334,7 @@ export function AdminTokenUsageClient() {
                   return (
                     <div
                       key={day.date}
-                      className="group brand-soft relative flex-1 rounded-t-sm transition-[height,opacity] duration-200 hover:opacity-80"
+                      className="group brand-soft relative flex-1 rounded-t-sm transition-[height,opacity] duration-200 hover:opacity-80 motion-reduce:transition-none"
                       style={{ height: `${Math.max(heightPct, 2)}%` }}
                       title={`${day.date}: ${formatCredits(day.totalCredits)} € · ${day.totalCalls} Calls`}
                     />
@@ -436,7 +436,7 @@ export function AdminTokenUsageClient() {
                         aria-label={`User ${user.ownerId} credit usage`}
                       >
                         <div
-                          className="brand-soft h-full rounded-full transition-[width] duration-300"
+                          className="brand-soft h-full rounded-full transition-[width] duration-300 motion-reduce:transition-none"
                           style={{ width: `${pct}%` }}
                         />
                       </div>
@@ -502,7 +502,7 @@ export function AdminTokenUsageClient() {
                         aria-label={`${modelName} credit usage`}
                       >
                         <div
-                          className="brand-soft h-full rounded-full transition-[width] duration-300"
+                          className="brand-soft h-full rounded-full transition-[width] duration-300 motion-reduce:transition-none"
                           style={{ width: `${pct}%` }}
                         />
                       </div>

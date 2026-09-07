@@ -174,7 +174,7 @@ export function KanzleiOperationsPanel() {
         <div className="flex items-center gap-3">
           <Link
             href="/dashboard/operations"
-            className="text-xs font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color,color] hover:text-[color:var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+            className="text-xs font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color,color] hover:text-[color:var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none motion-reduce:transition-none"
           >
             {lang === "en" ? "View all" : "Alle anzeigen"}
           </Link>
@@ -191,7 +191,7 @@ export function KanzleiOperationsPanel() {
           <Link
             key={href}
             href={href}
-            className="group rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3 transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:-translate-y-0.5 hover:border-[color:var(--ds-border-strong)] hover:shadow-sm focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-[0.98]"
+            className="group rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3 transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:-translate-y-0.5 hover:border-[color:var(--ds-border-strong)] hover:shadow-sm focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none"
           >
             <div className="flex items-center justify-between">
               <Icon size={16} className="text-[color:var(--brand-primary)]" />
@@ -224,7 +224,7 @@ export function KanzleiOperationsPanel() {
                 <li key={item.id}>
                   <Link
                     href={itemHref(item.kind, item.caseSlug)}
-                    className="group flex min-h-11 items-center gap-3 py-2 text-sm transition-[background-color,border-color,color] hover:text-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+                    className="group flex min-h-11 items-center gap-3 py-2 text-sm transition-[background-color,border-color,color] hover:text-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none motion-reduce:transition-none"
                   >
                     <span className="min-w-0 flex-1 truncate text-[color:var(--ds-text)]">
                       {item.title}

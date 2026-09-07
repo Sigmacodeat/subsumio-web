@@ -55,7 +55,7 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
             return (
               <StaggerItem
                 key={pillar.title}
-                className="rounded-2xl transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 hover:-translate-y-1 hover:shadow-xl"
+                className="rounded-2xl transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 hover:-translate-y-1 hover:shadow-xl motion-reduce:transition-none"
               >
                 <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)]">
                   <Icon size={22} className="brand-text mb-4" />
@@ -119,7 +119,7 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
               const Icon = ICONS[b.icon] ?? Shield;
               return (
                 <StaggerItem key={b.label}>
-                  <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-5 text-center transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)]">
+                  <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-5 text-center transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] motion-reduce:transition-none">
                     <div className="brand-soft brand-border mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border">
                       <Icon size={22} className="brand-text" />
                     </div>

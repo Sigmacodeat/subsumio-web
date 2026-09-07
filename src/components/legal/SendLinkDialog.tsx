@@ -1,14 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  MessageCircle,
-  Mail,
-  Link as LinkIcon,
-  Loader2,
-  Check,
-  Phone,
-} from "lucide-react";
+import { MessageCircle, Mail, Link as LinkIcon, Loader2, Check, Phone } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -159,7 +152,7 @@ export function SendLinkDialog({
           <div className="grid grid-cols-1 gap-2">
             <button
               onClick={() => setChannel("whatsapp")}
-              className={`flex min-h-11 items-center gap-3 rounded-xl border px-4 py-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] ${
+              className={`flex min-h-11 items-center gap-3 rounded-xl border px-4 py-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none motion-reduce:transition-none ${
                 channel === "whatsapp"
                   ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/5"
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:bg-[color:var(--ds-hover)]"
@@ -169,16 +162,14 @@ export function SendLinkDialog({
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium">{t("sendlink.whatsapp")}</div>
                 <div className="text-xs text-[color:var(--ds-text-muted)]">
-                  {hasPhone
-                    ? recipientPhone
-                    : t("sendlink.whatsapp_no_phone")}
+                  {hasPhone ? recipientPhone : t("sendlink.whatsapp_no_phone")}
                 </div>
               </div>
             </button>
 
             <button
               onClick={() => setChannel("email")}
-              className={`flex min-h-11 items-center gap-3 rounded-xl border px-4 py-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] ${
+              className={`flex min-h-11 items-center gap-3 rounded-xl border px-4 py-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none motion-reduce:transition-none ${
                 channel === "email"
                   ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/5"
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:bg-[color:var(--ds-hover)]"
@@ -195,7 +186,7 @@ export function SendLinkDialog({
 
             <button
               onClick={() => setChannel("copy")}
-              className={`flex min-h-11 items-center gap-3 rounded-xl border px-4 py-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] ${
+              className={`flex min-h-11 items-center gap-3 rounded-xl border px-4 py-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none motion-reduce:transition-none ${
                 channel === "copy"
                   ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/5"
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:bg-[color:var(--ds-hover)]"

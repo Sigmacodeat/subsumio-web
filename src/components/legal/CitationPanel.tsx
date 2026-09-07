@@ -157,7 +157,7 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
         {(hasCitations || hasGaps || hasGroundedCitations) && (
           <button
             onClick={() => setExpanded((e) => !e)}
-            className="ml-auto inline-flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
+            className="ml-auto inline-flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
             aria-expanded={expanded}
             aria-label={expanded ? "Details ausblenden" : "Details einblenden"}
           >
@@ -242,7 +242,7 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
                   <a
                     key={c.slug}
                     href={`/dashboard/brain/${encodeURIComponent(c.slug)}`}
-                    className="hover:brand-text hover:brand-border inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                    className="hover:brand-text hover:brand-border inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
                     target="_blank"
                     rel="noopener noreferrer"
                     title={c.title}

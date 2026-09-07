@@ -86,7 +86,7 @@ function ToastViewport() {
           <button
             onClick={() => removeToast(toast.id)}
             aria-label="Benachrichtigung schließen"
-            className="rounded-md p-0.5 opacity-60 transition-[background-color,color,opacity,transform] duration-150 hover:bg-black/10 hover:opacity-100 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9]"
+            className="rounded-md p-0.5 opacity-60 transition-[background-color,color,opacity,transform] duration-150 hover:bg-black/10 hover:opacity-100 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
           >
             <X className="h-4 w-4" />
           </button>

@@ -401,7 +401,7 @@ function CreateFlagDialog({
                 <button
                   key={plan}
                   onClick={() => togglePlan(plan)}
-                  className={`rounded-lg border px-3 py-1 text-xs transition-[background-color,border-color,color] ${
+                  className={`rounded-lg border px-3 py-1 text-xs transition-[background-color,border-color,color] motion-reduce:transition-none ${
                     allowedPlans.includes(plan)
                       ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : "text-[color:var(--ds-text-muted)]"
@@ -421,7 +421,7 @@ function CreateFlagDialog({
                 <button
                   key={role}
                   onClick={() => toggleRole(role)}
-                  className={`rounded-lg border px-3 py-1 text-xs transition-[background-color,border-color,color] ${
+                  className={`rounded-lg border px-3 py-1 text-xs transition-[background-color,border-color,color] motion-reduce:transition-none ${
                     allowedRoles.includes(role)
                       ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : "text-[color:var(--ds-text-muted)]"
@@ -554,7 +554,7 @@ function EditFlagDialog({
                 <button
                   key={plan}
                   onClick={() => togglePlan(plan)}
-                  className={`rounded-lg border px-3 py-1 text-xs transition-[background-color,border-color,color] ${
+                  className={`rounded-lg border px-3 py-1 text-xs transition-[background-color,border-color,color] motion-reduce:transition-none ${
                     allowedPlans.includes(plan)
                       ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : "text-[color:var(--ds-text-muted)]"
@@ -574,7 +574,7 @@ function EditFlagDialog({
                 <button
                   key={role}
                   onClick={() => toggleRole(role)}
-                  className={`rounded-lg border px-3 py-1 text-xs transition-[background-color,border-color,color] ${
+                  className={`rounded-lg border px-3 py-1 text-xs transition-[background-color,border-color,color] motion-reduce:transition-none ${
                     allowedRoles.includes(role)
                       ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : "text-[color:var(--ds-text-muted)]"

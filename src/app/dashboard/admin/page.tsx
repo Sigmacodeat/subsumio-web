@@ -410,7 +410,7 @@ function QuickLink({ href, icon: Icon, label }: { href: string; icon: LucideIcon
   return (
     <Link
       href={href}
-      className="flex items-center gap-2.5 rounded-lg border border-[color:var(--ds-border)] px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:[border-color:var(--brand-primary)] hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)]"
+      className="flex items-center gap-2.5 rounded-lg border border-[color:var(--ds-border)] px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:[border-color:var(--brand-primary)] hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
     >
       <Icon size={15} className="shrink-0" />
       {label}

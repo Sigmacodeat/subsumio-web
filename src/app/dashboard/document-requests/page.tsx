@@ -304,7 +304,7 @@ export default function DocumentRequestsPage() {
               key={entry.key}
               onClick={() => setFilter(entry.key)}
               className={cn(
-                "inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-[background-color,border-color,color]",
+                "inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-[background-color,border-color,color] motion-reduce:transition-none",
                 filter === entry.key
                   ? "brand-bg border-transparent text-white"
                   : "border-[color:var(--ds-border)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-hover)]"

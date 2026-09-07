@@ -106,7 +106,7 @@ export function OcrErrorBanner({
           <button
             onClick={handleRetry}
             disabled={retrying}
-            className="mt-2 flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/5 px-2.5 py-1 text-xs font-medium text-red-600 transition-[background-color,border-color,color] hover:bg-red-500/10 disabled:opacity-50"
+            className="mt-2 flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/5 px-2.5 py-1 text-xs font-medium text-red-600 transition-[background-color,border-color,color] hover:bg-red-500/10 disabled:opacity-50 motion-reduce:transition-none"
           >
             {retrying ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
             {t("ocr.retry" as DashboardKey)}
@@ -115,7 +115,7 @@ export function OcrErrorBanner({
       </div>
       <button
         onClick={() => setDismissed(true)}
-        className="shrink-0 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
+        className="shrink-0 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
         aria-label="Dismiss"
       >
         <X size={14} />

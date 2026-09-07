@@ -48,7 +48,7 @@ export function AIActConformityBanner({
       {/* Collapsed Header */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--ds-ring)]"
+        className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--ds-ring)] motion-reduce:transition-none"
         aria-expanded={expanded}
       >
         <ShieldCheck size={13} className="shrink-0 text-[color:var(--brand-text)]" />
@@ -149,4 +149,4 @@ function InfoRow({
 }
 
 const feedbackBtnClasses =
-  "inline-flex cursor-pointer items-center gap-1 rounded border border-[color:var(--ds-control-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-[11px] text-[color:var(--ds-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ds-ring)]";
+  "inline-flex cursor-pointer items-center gap-1 rounded border border-[color:var(--ds-control-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-[11px] text-[color:var(--ds-text)] transition-[background-color,border-color,color] motion-reduce:transition-none hover:bg-[color:var(--ds-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ds-ring)]";

@@ -161,7 +161,7 @@ export function OverviewTab() {
           <button
             onClick={() => setMoreActionsOpen((v) => !v)}
             className={cn(
-              "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-[background-color,border-color,color] md:text-sm",
+              "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none md:text-sm",
               moreActionsOpen
                 ? "bg-[color:var(--ds-hover)] text-[color:var(--ds-text)]"
                 : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -179,7 +179,7 @@ export function OverviewTab() {
                   ctx.setQuery(t("cases.detail_qb_chances"));
                   setMoreActionsOpen(false);
                 }}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:text-sm"
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none md:text-sm"
               >
                 <Scale size={14} className="shrink-0" />
                 {t("cases.detail_btn_assess")}
@@ -191,7 +191,7 @@ export function OverviewTab() {
                   ctx.setShowDocuSignDialog(true);
                   setMoreActionsOpen(false);
                 }}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:text-sm"
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none md:text-sm"
               >
                 <PenTool size={14} className="shrink-0" />
                 {t("docusign.send_title")}
@@ -207,7 +207,7 @@ export function OverviewTab() {
                     setMoreActionsOpen(false);
                   }}
                   className={cn(
-                    "flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color] md:text-sm",
+                    "flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none md:text-sm",
                     caseData.portalEnabled
                       ? "text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
                       : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -253,7 +253,7 @@ export function OverviewTab() {
                       setMoreActionsOpen(false);
                     }}
                     disabled={ctx.generatingPortal}
-                    className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:text-sm"
+                    className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none md:text-sm"
                   >
                     {ctx.generatingPortal ? (
                       <Loader2 size={14} className="shrink-0 animate-spin" />
@@ -319,7 +319,7 @@ export function OverviewTab() {
                     }
                   }}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                    "flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
                     ctx.pendingStatus === target
                       ? "brand-bg border-transparent text-white"
                       : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--brand-primary)] hover:text-[color:var(--ds-text)]"
@@ -961,7 +961,7 @@ export function OverviewTab() {
                         ctx.setExpensesList(updated);
                         ctx.saveCaseUpdate({ expenses: updated });
                       }}
-                      className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
+                      className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] motion-reduce:transition-none"
                       title={t("cases.detail_exp_delete")}
                     >
                       <Trash2 size={13} />
@@ -1067,7 +1067,7 @@ export function OverviewTab() {
                 <Link
                   key={slug}
                   href={`/dashboard/cases/${slug.split("/").map(encodeURIComponent).join("/")}`}
-                  className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-2 text-sm transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-active)]"
+                  className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-2 text-sm transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-active)] motion-reduce:transition-none"
                 >
                   <Briefcase size={14} className="text-[color:var(--ds-text-muted)]" />
                   <span className="font-mono text-xs text-[color:var(--ds-text)]">{slug}</span>

@@ -73,7 +73,7 @@ export default function AnalyzePage() {
         <button
           onClick={() => setMode("slug")}
           className={cn(
-            "rounded-lg px-4 py-2 text-sm font-medium transition-[background-color,border-color,color]",
+            "rounded-lg px-4 py-2 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
             mode === "slug"
               ? "brand-soft brand-text brand-border border"
               : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
@@ -84,7 +84,7 @@ export default function AnalyzePage() {
         <button
           onClick={() => setMode("text")}
           className={cn(
-            "rounded-lg px-4 py-2 text-sm font-medium transition-[background-color,border-color,color]",
+            "rounded-lg px-4 py-2 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
             mode === "text"
               ? "brand-soft brand-text brand-border border"
               : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"

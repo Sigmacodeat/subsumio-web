@@ -277,7 +277,7 @@ export function TabularReviewGrid({
             <td
               key={i}
               className={cn(
-                "max-w-[320px] min-w-[240px] cursor-pointer border-l border-[color:var(--ds-border)]/60 px-4 py-3 align-top transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)]",
+                "max-w-[320px] min-w-[240px] cursor-pointer border-l border-[color:var(--ds-border)]/60 px-4 py-3 align-top transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none",
                 !notFound && cell.citations.length === 0 && "bg-[color:var(--ds-warning-bg)]/40"
               )}
               onClick={() => setSelected({ slug: original.slug, qIndex: i })}

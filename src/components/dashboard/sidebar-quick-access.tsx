@@ -41,7 +41,7 @@ export function SidebarQuickAccess({ collapsed, onNavigate }: SidebarQuickAccess
         aria-current={active ? "page" : undefined}
         onClick={onNavigate}
         className={cn(
-          "group flex h-7 items-center gap-2 rounded-md px-3 text-[12px] transition-[background-color,border-color,color]",
+          "group flex h-7 items-center gap-2 rounded-md px-3 text-[12px] transition-[background-color,border-color,color] motion-reduce:transition-none",
           active
             ? "brand-soft brand-text font-medium"
             : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"

@@ -376,7 +376,7 @@ export default function CryptoForensicsPage() {
             return (
               <div
                 key={c.case_id}
-                className="flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                className="flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
               >
                 <div
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)]"
@@ -420,7 +420,7 @@ export default function CryptoForensicsPage() {
                   {/* Progress bar */}
                   <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--ds-hover)]">
                     <div
-                      className="h-full rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-500"
+                      className="h-full rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-500 motion-reduce:transition-none"
                       style={{ width: `${progress}%`, backgroundColor: color }}
                     />
                   </div>

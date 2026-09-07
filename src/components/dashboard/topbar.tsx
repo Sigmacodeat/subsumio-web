@@ -364,7 +364,7 @@ export function Topbar({
             setBrainOpen((o) => !o);
             setBrainActiveIdx(brains.findIndex((b) => b.slug === activeBrain?.slug));
           }}
-          className="flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-2 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,color,border-color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+          className="flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-2 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,color,border-color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none motion-reduce:transition-none"
           aria-label={t("topbar.brain_selector_aria")}
           aria-expanded={brainOpen}
           aria-haspopup="listbox"
@@ -404,7 +404,7 @@ export function Topbar({
                   key={b.slug}
                   onClick={() => selectBrainIdx(i)}
                   onMouseEnter={() => setBrainActiveIdx(i)}
-                  className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-[background-color,border-color,color] ${i === brainActiveIdx ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
+                  className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-[background-color,border-color,color] motion-reduce:transition-none ${i === brainActiveIdx ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
                   role="option"
                   aria-selected={b.slug === activeBrain?.slug}
                 >
@@ -444,23 +444,23 @@ export function Topbar({
             else onMobileMenuOpen();
             if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
           }}
-          className="group flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--ds-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-90 md:hidden"
+          className="group flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--ds-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-90 motion-reduce:transition-none md:hidden"
           aria-label={mobileOpen ? t("topbar.close_menu") : t("topbar.open_menu")}
           aria-expanded={mobileOpen}
         >
           <span className="relative flex h-4 w-4 items-center justify-center">
             <span
-              className={`absolute h-0.5 w-4 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              className={`absolute h-0.5 w-4 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
                 mobileOpen ? "top-1/2 -translate-y-1/2 rotate-45" : "top-[2px]"
               }`}
             />
             <span
-              className={`absolute h-0.5 w-4 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              className={`absolute h-0.5 w-4 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
                 mobileOpen ? "top-1/2 -translate-y-1/2 opacity-0" : "top-1/2 -translate-y-1/2"
               }`}
             />
             <span
-              className={`absolute h-0.5 w-4 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              className={`absolute h-0.5 w-4 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
                 mobileOpen ? "top-1/2 -translate-y-1/2 -rotate-45" : "bottom-[2px]"
               }`}
             />
@@ -474,7 +474,7 @@ export function Topbar({
           onClick={onCmdOpen}
           aria-label={t("topbar.search_aria")}
           aria-haspopup="dialog"
-          className="group relative hidden min-w-0 flex-1 cursor-pointer rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-1.5 pr-16 pl-9 text-left text-[13px] text-[color:var(--ds-text-subtle)] transition-[border-color,box-shadow] hover:border-[color:var(--ds-border-strong)] focus-visible:border-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none sm:block"
+          className="group relative hidden min-w-0 flex-1 cursor-pointer rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-1.5 pr-16 pl-9 text-left text-[13px] text-[color:var(--ds-text-subtle)] transition-[border-color,box-shadow] hover:border-[color:var(--ds-border-strong)] focus-visible:border-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none motion-reduce:transition-none sm:block"
         >
           <Search
             size={16}
@@ -488,7 +488,7 @@ export function Topbar({
         {/* Mobile search icon — opens command palette */}
         <button
           onClick={onCmdOpen}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--ds-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none md:hidden"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--ds-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none motion-reduce:transition-none md:hidden"
           aria-label={t("topbar.search_aria")}
         >
           <Search size={18} />
@@ -515,7 +515,7 @@ export function Topbar({
             }
             aria-expanded={notifOpen}
             aria-haspopup="menu"
-            className="relative flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--ds-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+            className="relative flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--ds-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none motion-reduce:transition-none"
           >
             <Bell size={16} />
             {unreadCount > 0 && (
@@ -554,7 +554,7 @@ export function Topbar({
                     )}
                     <button
                       onClick={() => setNotifOpen(false)}
-                      className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                      className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
                       aria-label={t("topbar.close")}
                     >
                       <X size={18} />
@@ -595,7 +595,7 @@ export function Topbar({
                       aria-selected={notificationFilter === filter}
                       onClick={() => setNotificationFilter(filter)}
                       className={cn(
-                        "flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-[background-color,border-color,color]",
+                        "flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
                         notificationFilter === filter
                           ? "brand-soft brand-text"
                           : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
@@ -636,7 +636,7 @@ export function Topbar({
                                 router.push(notifHref);
                                 setNotifOpen(false);
                               }}
-                              className="min-w-0 flex-1 cursor-pointer rounded-md text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                              className="min-w-0 flex-1 cursor-pointer rounded-md text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                             >
                               <div className="text-xs leading-snug font-medium text-[color:var(--ds-text)]">
                                 {n.title}
@@ -676,7 +676,7 @@ export function Topbar({
                                   );
                                 } catch {}
                               }}
-                              className="flex h-11 w-11 shrink-0 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                              className="flex h-11 w-11 shrink-0 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                               aria-label={t("topbar.mark_read")}
                             >
                               <Check size={12} />
@@ -744,7 +744,7 @@ export function Topbar({
               title={t("topbar.quick_create")}
               aria-expanded={quickCreateOpen}
               className={cn(
-                "flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-[13px] font-medium transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                "flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-[13px] font-medium transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none motion-reduce:transition-none",
                 quickCreateOpen
                   ? "brand-soft brand-text"
                   : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -855,7 +855,7 @@ export function Topbar({
                                       new CustomEvent(item.event, { detail: item.detail })
                                     );
                                   }}
-                                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
                                   role="menuitem"
                                 >
                                   <Icon size={15} className="shrink-0" />
@@ -919,7 +919,7 @@ export function Topbar({
                               router.push(item.href);
                             }
                           }}
-                          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
                           role="menuitem"
                         >
                           <Icon size={15} className="shrink-0" />
@@ -944,7 +944,7 @@ export function Topbar({
               aria-haspopup="menu"
               aria-expanded={utilitiesOpen}
               className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                "flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none motion-reduce:transition-none",
                 utilitiesOpen && "brand-soft brand-text"
               )}
             >
@@ -1010,7 +1010,7 @@ export function Topbar({
             aria-hidden={copilotOpen}
             tabIndex={copilotOpen ? -1 : 0}
             className={cn(
-              "flex items-center justify-center rounded-lg transition-[background-color,opacity,transform] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+              "flex items-center justify-center rounded-lg transition-[background-color,opacity,transform] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none motion-reduce:transition-none",
               copilotOpen ? "pointer-events-none invisible" : "opacity-80 hover:opacity-100"
             )}
           >

@@ -133,7 +133,7 @@ export function Sheet({
                   type="button"
                   onClick={onClose}
                   aria-label={t("sheet.aria_close")}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.98]"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none"
                 >
                   <X size={16} aria-hidden />
                 </button>

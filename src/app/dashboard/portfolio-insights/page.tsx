@@ -240,7 +240,7 @@ export default function PortfolioInsightsPage() {
                 <span className="w-20 text-sm capitalize">{level}</span>
                 <div className="h-6 flex-1 overflow-hidden rounded-full bg-[color:var(--ds-surface-2)]">
                   <div
-                    className={`h-full ${riskColors[level]} transition-[background-color,border-color,color,box-shadow,transform,opacity]`}
+                    className={`h-full ${riskColors[level]} transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none`}
                     style={{ width: `${pct}%` }}
                   />
                 </div>

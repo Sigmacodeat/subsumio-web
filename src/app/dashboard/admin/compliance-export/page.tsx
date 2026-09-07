@@ -300,7 +300,7 @@ function TraceRow({ trace }: { trace: ReasoningTrace }) {
       role="button"
       tabIndex={0}
       aria-expanded={expanded}
-      className="cursor-pointer rounded-lg border p-3 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+      className="cursor-pointer rounded-lg border p-3 transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
       onClick={() => setExpanded(!expanded)}
       onKeyDown={(e) => {
         if (e.target !== e.currentTarget) return;

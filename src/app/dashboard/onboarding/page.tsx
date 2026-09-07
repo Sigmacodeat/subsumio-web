@@ -257,7 +257,7 @@ export default function OnboardingPage() {
           {STEPS.slice(0, -1).map((s, i) => (
             <div
               key={s}
-              className={`h-1.5 rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+              className={`h-1.5 rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
                 i <= currentIdx ? "bg-white" : "bg-white/20"
               }`}
               style={{ flex: 1 }}
@@ -277,7 +277,7 @@ export default function OnboardingPage() {
                 <button
                   onClick={skipOnboarding}
                   disabled={completing}
-                  className="text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)]"
+                  className="text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
                 >
                   {t("onboarding.skip")}
                 </button>
@@ -324,7 +324,7 @@ export default function OnboardingPage() {
                 <div className="grid gap-3">
                   <button
                     onClick={() => setIndustry("legal")}
-                    className={`flex items-center gap-4 rounded-xl border-2 p-4 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                    className={`flex items-center gap-4 rounded-xl border-2 p-4 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
                       industry === "legal"
                         ? "brand-border bg-[color:var(--brand-primary)]/5"
                         : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)]/30"
@@ -345,7 +345,7 @@ export default function OnboardingPage() {
                   </button>
                   <button
                     onClick={() => setIndustry("tax")}
-                    className={`flex items-center gap-4 rounded-xl border-2 p-4 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                    className={`flex items-center gap-4 rounded-xl border-2 p-4 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
                       industry === "tax"
                         ? "brand-border bg-[color:var(--brand-primary)]/5"
                         : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)]/30"
@@ -366,7 +366,7 @@ export default function OnboardingPage() {
                   </button>
                   <button
                     onClick={() => setIndustry("other")}
-                    className={`flex items-center gap-4 rounded-xl border-2 p-4 text-left opacity-70 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                    className={`flex items-center gap-4 rounded-xl border-2 p-4 text-left opacity-70 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
                       industry === "other"
                         ? "brand-border bg-[color:var(--brand-primary)]/5"
                         : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)]/30"
@@ -775,7 +775,7 @@ export default function OnboardingPage() {
                         fileInputRef.current?.click();
                       }
                     }}
-                    className={`cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none ${
+                    className={`cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none ${
                       dragOver
                         ? "brand-border bg-[color:var(--brand-primary)]/5"
                         : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)]/30"

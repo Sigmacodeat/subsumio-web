@@ -99,7 +99,7 @@ export function CreditsHealthCard() {
   return (
     <Card
       className={cn(
-        "p-5 transition-[background-color,border-color,color]",
+        "p-5 transition-[background-color,border-color,color] motion-reduce:transition-none",
         hasIssue && "border-red-500/30 bg-red-500/5"
       )}
     >

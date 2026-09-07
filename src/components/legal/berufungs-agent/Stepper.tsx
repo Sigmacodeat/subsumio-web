@@ -42,7 +42,7 @@ export function BerufungsAgentStepper({
                     .replace("{{id}}", String(step.id))
                     .replace("{{label}}", step.label)}
                   className={cn(
-                    "group flex items-center gap-3 rounded-lg px-3 py-2 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200",
+                    "group flex items-center gap-3 rounded-lg px-3 py-2 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 motion-reduce:transition-none",
                     "hover:bg-[color:var(--ds-surface-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none",
                     "active:scale-[0.98] motion-reduce:transition-none",
                     isActive && "bg-[color:var(--ds-surface-hover)]"
@@ -50,7 +50,7 @@ export function BerufungsAgentStepper({
                 >
                   <span
                     className={cn(
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200",
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 motion-reduce:transition-none",
                       "motion-reduce:transition-none",
                       isActive &&
                         "scale-110 border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-[color:var(--brand-primary-foreground)]",
