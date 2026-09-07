@@ -47,7 +47,7 @@ interface StrategyResult {
 }
 
 const PROB_COLORS: Record<string, string> = {
-  high: "text-rose-600 bg-rose-500/10 border-rose-500/20",
+  high: "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)]",
   medium: "text-amber-600 bg-amber-500/10 border-amber-500/20",
   low: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20",
 };
@@ -114,7 +114,7 @@ export function TaxStrategyPanel({ returnSlug }: TaxStrategyPanelProps) {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/5 px-3 py-2 text-sm text-rose-600">
+        <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2 text-sm text-[color:var(--ds-danger-text)]">
           <AlertTriangle size={14} />
           {error}
         </div>

@@ -142,10 +142,14 @@ export default function JoinForm({
               {error && (
                 <div
                   role="alert"
-                  className="flex items-start gap-2.5 rounded-xl border border-rose-500/20 bg-rose-500/5 p-3.5"
+                  className="flex items-start gap-2.5 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3.5"
                 >
-                  <AlertCircle size={15} className="mt-0.5 shrink-0 text-rose-400" aria-hidden />
-                  <p className="text-sm text-rose-300">{error}</p>
+                  <AlertCircle
+                    size={15}
+                    className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]"
+                    aria-hidden
+                  />
+                  <p className="text-sm text-[color:var(--ds-danger-text)]">{error}</p>
                 </div>
               )}
 

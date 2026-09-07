@@ -167,7 +167,7 @@ const ACCENT_TILE = {
     blue: "text-blue-700 bg-blue-50 border-blue-200",
     emerald: "text-emerald-700 bg-emerald-50 border-emerald-200",
     amber: "text-amber-700 bg-amber-50 border-amber-200",
-    rose: "text-rose-700 bg-rose-50 border-rose-200",
+    rose: "text-[color:var(--ds-category-rose-text)] bg-[color:var(--ds-category-rose-bg)] border-[color:var(--ds-category-rose-border)]",
     purple: "text-purple-700 bg-purple-50 border-purple-200",
     orange: "text-orange-700 bg-orange-50 border-orange-200",
     gray: "text-gray-700 bg-gray-50 border-gray-200",
@@ -177,7 +177,7 @@ const ACCENT_TILE = {
     blue: "text-blue-400 bg-blue-500/10 border-blue-500/20",
     emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
     amber: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-    rose: "text-rose-400 bg-rose-500/10 border-rose-500/20",
+    rose: "text-[color:var(--ds-category-rose-text)] bg-[color:var(--ds-category-rose-bg)] border-[color:var(--ds-category-rose-border)]",
     purple: "text-purple-400 bg-purple-500/10 border-purple-500/20",
   },
   dark: {
@@ -185,7 +185,7 @@ const ACCENT_TILE = {
     blue: "text-blue-400 bg-blue-500/10 border-blue-500/20",
     emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
     amber: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-    rose: "text-rose-400 bg-rose-500/10 border-rose-500/20",
+    rose: "text-[color:var(--ds-category-rose-text)] bg-[color:var(--ds-category-rose-bg)] border-[color:var(--ds-category-rose-border)]",
     purple: "text-purple-400 bg-purple-500/10 border-purple-500/20",
   },
   dashboard: {
@@ -193,7 +193,7 @@ const ACCENT_TILE = {
     blue: "text-blue-400 bg-blue-500/10 border-blue-500/20",
     emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
     amber: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-    rose: "text-rose-400 bg-rose-500/10 border-rose-500/20",
+    rose: "text-[color:var(--ds-category-rose-text)] bg-[color:var(--ds-category-rose-bg)] border-[color:var(--ds-category-rose-border)]",
     purple: "text-purple-400 bg-purple-500/10 border-purple-500/20",
   },
 } as const;

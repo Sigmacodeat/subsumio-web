@@ -41,9 +41,9 @@ describe("STATUS_TEXT", () => {
     expect(STATUS_TEXT.orange).toBe("text-[color:var(--ds-attention-text)]");
   });
 
-  test("categorical colors keep raw Tailwind text classes", () => {
-    expect(STATUS_TEXT.rose).toBe("text-rose-400");
-    expect(STATUS_TEXT.gray).toBe("text-gray-400");
+  test("categorical colors route through --ds-category-* tokens", () => {
+    expect(STATUS_TEXT.rose).toBe("text-[color:var(--ds-category-rose-text)]");
+    expect(STATUS_TEXT.gray).toBe("text-[color:var(--ds-neutral-text)]");
   });
 });
 
@@ -64,9 +64,9 @@ describe("STATUS_BG", () => {
     expect(STATUS_BG.amber).toBe("bg-[color:var(--ds-warning-bg)]");
   });
 
-  test("categorical colors keep raw Tailwind bg classes with opacity", () => {
-    expect(STATUS_BG.rose).toBe("bg-rose-500/10");
-    expect(STATUS_BG.rose).toBe("bg-rose-500/10");
+  test("categorical colors route through --ds-category-* bg tokens", () => {
+    expect(STATUS_BG.rose).toBe("bg-[color:var(--ds-category-rose-bg)]");
+    expect(STATUS_BG.rose).toBe("bg-[color:var(--ds-category-rose-bg)]");
   });
 });
 
@@ -87,9 +87,9 @@ describe("STATUS_BORDER", () => {
     expect(STATUS_BORDER.emerald).toBe("border-[color:var(--ds-success-border)]");
   });
 
-  test("categorical colors keep raw Tailwind border classes with opacity", () => {
-    expect(STATUS_BORDER.rose).toBe("border-rose-500/20");
-    expect(STATUS_BORDER.rose).toBe("border-rose-500/20");
+  test("categorical colors route through --ds-category-* border tokens", () => {
+    expect(STATUS_BORDER.rose).toBe("border-[color:var(--ds-category-rose-border)]");
+    expect(STATUS_BORDER.rose).toBe("border-[color:var(--ds-category-rose-border)]");
   });
 });
 

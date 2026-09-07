@@ -109,7 +109,7 @@ export function TaxPrecedentSearchPanel({ initialQuery = "" }: TaxPrecedentSearc
       </div>
 
       {error && (
-        <div className="mt-3 flex items-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/5 px-3 py-2 text-sm text-rose-600">
+        <div className="mt-3 flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2 text-sm text-[color:var(--ds-danger-text)]">
           <AlertTriangle size={14} />
           {error}
         </div>

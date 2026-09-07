@@ -68,16 +68,16 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
           className={`flex items-center gap-3 rounded-xl border p-4 ${
             notice.type === "success"
               ? "border-emerald-500/30 bg-emerald-500/10"
-              : "border-rose-500/30 bg-rose-500/10"
+              : "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
           }`}
         >
           {notice.type === "success" ? (
             <CheckCircle2 size={16} className="text-emerald-600" />
           ) : (
-            <AlertTriangle size={16} className="text-rose-600" />
+            <AlertTriangle size={16} className="text-[color:var(--ds-danger-text)]" />
           )}
           <p
-            className={`text-sm ${notice.type === "success" ? "text-emerald-700" : "text-rose-700"}`}
+            className={`text-sm ${notice.type === "success" ? "text-emerald-700" : "text-[color:var(--ds-danger-text)]"}`}
           >
             {notice.msg}
           </p>
@@ -171,7 +171,7 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
             <button
               onClick={deactivate}
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-lg border border-rose-500/30 px-4 py-2 text-sm font-medium text-rose-400 transition-[background-color,border-color,color] hover:bg-rose-500/10 active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
+              className="inline-flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] px-4 py-2 text-sm font-medium text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
             >
               <UserX size={14} /> Deaktivieren
             </button>

@@ -175,10 +175,13 @@ export default function RecoveryForm({ mode, lang }: { mode: "forgot" | "reset";
               {error && (
                 <div
                   role="alert"
-                  className="flex items-start gap-2.5 rounded-xl border border-rose-500/20 bg-rose-500/5 p-3.5"
+                  className="flex items-start gap-2.5 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3.5"
                 >
-                  <AlertCircle size={15} className="mt-0.5 shrink-0 text-rose-400" />
-                  <p className="text-sm text-rose-300">{error}</p>
+                  <AlertCircle
+                    size={15}
+                    className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]"
+                  />
+                  <p className="text-sm text-[color:var(--ds-danger-text)]">{error}</p>
                 </div>
               )}
 
@@ -200,7 +203,7 @@ export default function RecoveryForm({ mode, lang }: { mode: "forgot" | "reset";
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full rounded-xl border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-base sm:text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] focus:border-[var(--brand-primary)]/50 focus:ring-2 focus:ring-[var(--brand-primary)]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                      className="w-full rounded-xl border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-base [color:var(--mk-text)] [background:var(--mk-surface-2)] focus:border-[var(--brand-primary)]/50 focus:ring-2 focus:ring-[var(--brand-primary)]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 sm:text-sm"
                     />
                   </div>
                 </label>

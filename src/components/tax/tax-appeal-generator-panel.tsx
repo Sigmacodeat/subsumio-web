@@ -57,7 +57,8 @@ const PROSPECT_COLORS: Record<string, string> = {
   stark: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20",
   mittel: "text-amber-600 bg-amber-500/10 border-amber-500/20",
   schwach: "text-orange-600 bg-orange-500/10 border-orange-500/20",
-  keine: "text-rose-600 bg-rose-500/10 border-rose-500/20",
+  keine:
+    "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)]",
 };
 
 export function TaxAppealGeneratorPanel({ assessmentSlug }: AppealPanelProps) {
@@ -157,7 +158,7 @@ export function TaxAppealGeneratorPanel({ assessmentSlug }: AppealPanelProps) {
       )}
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/5 px-3 py-2 text-sm text-rose-600">
+        <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2 text-sm text-[color:var(--ds-danger-text)]">
           <AlertTriangle size={14} />
           {error}
         </div>
@@ -175,7 +176,7 @@ export function TaxAppealGeneratorPanel({ assessmentSlug }: AppealPanelProps) {
             className={cn(
               "flex items-center gap-3 rounded-lg border px-4 py-3",
               isOverdue
-                ? "border-rose-500/30 bg-rose-500/5"
+                ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
                 : isUrgent
                   ? "border-amber-500/30 bg-amber-500/5"
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]"
@@ -185,7 +186,7 @@ export function TaxAppealGeneratorPanel({ assessmentSlug }: AppealPanelProps) {
               size={18}
               className={cn(
                 isOverdue
-                  ? "text-rose-600"
+                  ? "text-[color:var(--ds-danger-text)]"
                   : isUrgent
                     ? "text-amber-600"
                     : "text-[color:var(--ds-text-muted)]"
@@ -212,7 +213,7 @@ export function TaxAppealGeneratorPanel({ assessmentSlug }: AppealPanelProps) {
                 className={cn(
                   "text-lg font-bold",
                   isOverdue
-                    ? "text-rose-600"
+                    ? "text-[color:var(--ds-danger-text)]"
                     : isUrgent
                       ? "text-amber-600"
                       : "text-[color:var(--ds-text)]"

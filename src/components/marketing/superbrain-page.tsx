@@ -256,7 +256,7 @@ function OthersSection({ t }: { t: SuperbrainCopyDe }) {
             transition={{ duration: 0.4 }}
             className="mb-4 inline-flex items-center gap-2 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 [background:var(--mk-surface-2)]"
           >
-            <span className="font-mono text-sm tracking-wider text-rose-400 uppercase">
+            <span className="font-mono text-sm tracking-wider text-[color:var(--ds-category-rose-text)] uppercase">
               {copy.de === t ? "Das Problem" : "The Problem"}
             </span>
           </motion.div>
@@ -286,12 +286,12 @@ function OthersSection({ t }: { t: SuperbrainCopyDe }) {
                   transition={{ duration: 0.4 }}
                   className={`flex w-48 flex-col items-center gap-3 rounded-2xl border p-6 text-center transition-[background-color,border-color,color] motion-reduce:transition-none ${
                     isActive
-                      ? "border-rose-400/40 bg-rose-500/5"
+                      ? "border-[color:var(--ds-category-rose-border)] bg-[color:var(--ds-category-rose-bg)]"
                       : "[border-color:var(--mk-border)] [background:var(--mk-surface)]"
                   }`}
                 >
                   <div
-                    className={`flex h-12 w-12 items-center justify-center rounded-xl ${isActive ? "bg-rose-500/10 text-rose-400" : "[color:var(--mk-text-muted)] [background:var(--mk-surface-2)]"}`}
+                    className={`flex h-12 w-12 items-center justify-center rounded-xl ${isActive ? "bg-[color:var(--ds-category-rose-bg)] text-[color:var(--ds-category-rose-text)]" : "[color:var(--mk-text-muted)] [background:var(--mk-surface-2)]"}`}
                   >
                     <Icon size={22} />
                   </div>
@@ -309,7 +309,7 @@ function OthersSection({ t }: { t: SuperbrainCopyDe }) {
                       scale: activeStep === i ? 1.15 : 1,
                     }}
                     transition={{ duration: 0.4, ease: EASE.out }}
-                    className="text-rose-400/70"
+                    className="text-[color:var(--ds-category-rose-text)]/70"
                   >
                     <ArrowRight size={20} className="rotate-90 md:rotate-0" />
                   </motion.div>
@@ -330,7 +330,7 @@ function OthersSection({ t }: { t: SuperbrainCopyDe }) {
               transition={{ duration: 0.35, delay: i * 0.08 }}
               className="flex items-center gap-3 rounded-lg border [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]"
             >
-              <span className="shrink-0 text-rose-400">✕</span>
+              <span className="shrink-0 text-[color:var(--ds-category-rose-text)]">✕</span>
               <span className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{pain}</span>
             </motion.div>
           ))}
@@ -688,7 +688,7 @@ function CompareSection({ t }: { t: SuperbrainCopyDe }) {
                     {copy.de === t ? "Andere Kanzlei-KI" : "Other legal AI"}
                   </p>
                   <div className="flex items-start gap-1.5 text-sm [color:var(--mk-text-muted)]">
-                    <span className="shrink-0 text-rose-400">✕</span>
+                    <span className="shrink-0 text-[color:var(--ds-category-rose-text)]">✕</span>
                     {row.others}
                   </div>
                 </div>
@@ -745,7 +745,7 @@ function CompareSection({ t }: { t: SuperbrainCopyDe }) {
                   <td className="px-5 py-4 font-medium [color:var(--mk-text)]">{row.feature}</td>
                   <td className="px-5 py-4 [color:var(--mk-text-muted)]">
                     <div className="flex items-center gap-2">
-                      <span className="text-rose-400">✕</span>
+                      <span className="text-[color:var(--ds-category-rose-text)]">✕</span>
                       {row.others}
                     </div>
                   </td>

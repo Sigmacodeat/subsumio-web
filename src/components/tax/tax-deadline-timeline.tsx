@@ -53,7 +53,7 @@ export function TaxDeadlineTimeline({ deadlines, onSelect, className }: TaxDeadl
               : CalendarClock;
 
         const colorClass = d.isOverdue
-          ? "text-rose-600 bg-rose-500/10 border-rose-500/20"
+          ? "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)]"
           : d.isUrgent
             ? "text-amber-600 bg-amber-500/10 border-amber-500/20"
             : "text-[color:var(--ds-text-muted)] bg-[color:var(--ds-surface-2)] border-[color:var(--ds-border)]";
@@ -104,7 +104,7 @@ export function TaxDeadlineTimeline({ deadlines, onSelect, className }: TaxDeadl
                 className={cn(
                   "text-sm font-bold",
                   d.isOverdue
-                    ? "text-rose-600"
+                    ? "text-[color:var(--ds-danger-text)]"
                     : d.isUrgent
                       ? "text-amber-600"
                       : "text-[color:var(--ds-text)]"

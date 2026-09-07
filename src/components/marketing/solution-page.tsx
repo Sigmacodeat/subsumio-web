@@ -87,7 +87,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
                 <GlowCard
                   glowColor="var(--signal-rose)"
                   intensity={0.1}
-                  className="h-full rounded-2xl border border-rose-200/40 bg-rose-50/30 p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 hover:-translate-y-1 hover:shadow-lg motion-reduce:transition-none dark:border-rose-500/10 dark:bg-rose-500/5"
+                  className="h-full rounded-2xl border border-[color:var(--ds-category-rose-border)] bg-[color:var(--ds-category-rose-bg)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 hover:-translate-y-1 hover:shadow-lg motion-reduce:transition-none dark:border-[color:var(--ds-category-rose-border)] dark:bg-[color:var(--ds-category-rose-bg)]"
                 >
                   <AlertCircle size={20} className="mb-3 [color:var(--signal-rose)]" />
                   <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">

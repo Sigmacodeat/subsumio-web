@@ -351,18 +351,18 @@ export function ElsterSubmissionWizard({ onSubmitted }: ElsterSubmissionWizardPr
                 "rounded-lg border p-4 text-center",
                 submitResult.ok
                   ? "border-emerald-500/20 bg-emerald-500/5"
-                  : "border-rose-500/20 bg-rose-500/5"
+                  : "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
               )}
             >
               {submitResult.ok ? (
                 <Check size={28} className="mx-auto text-emerald-600" />
               ) : (
-                <AlertTriangle size={28} className="mx-auto text-rose-600" />
+                <AlertTriangle size={28} className="mx-auto text-[color:var(--ds-danger-text)]" />
               )}
               <p
                 className={cn(
                   "mt-2 text-sm font-medium",
-                  submitResult.ok ? "text-emerald-700" : "text-rose-700"
+                  submitResult.ok ? "text-emerald-700" : "text-[color:var(--ds-danger-text)]"
                 )}
               >
                 {submitResult.message}

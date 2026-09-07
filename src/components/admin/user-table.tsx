@@ -59,13 +59,13 @@ export function UserTable({ users }: UserTableProps) {
             placeholder="Suche nach Name oder E-Mail…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-[color:var(--ds-border)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] bg-[color:var(--ds-surface-2)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
         </div>
         <select
           value={planFilter}
           onChange={(e) => setPlanFilter(e.target.value as PlanFilter)}
-          className="rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text)] bg-[color:var(--ds-surface-2)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+          className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
         >
           <option value="all">Alle Pläne</option>
           <option value="free">Free</option>
@@ -76,7 +76,7 @@ export function UserTable({ users }: UserTableProps) {
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
-          className="rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text)] bg-[color:var(--ds-surface-2)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+          className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
         >
           <option value="all">Alle Rollen</option>
           <option value="admin">Admin</option>
@@ -88,7 +88,7 @@ export function UserTable({ users }: UserTableProps) {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "deactivated")}
-          className="rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text)] bg-[color:var(--ds-surface-2)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+          className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
         >
           <option value="all">Alle Status</option>
           <option value="active">Aktiv</option>
@@ -97,7 +97,7 @@ export function UserTable({ users }: UserTableProps) {
         <select
           value={industryFilter}
           onChange={(e) => setIndustryFilter(e.target.value as IndustryFilter)}
-          className="rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text)] bg-[color:var(--ds-surface-2)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+          className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
         >
           <option value="all">Alle Branchen</option>
           <option value="legal">Legal</option>
@@ -125,7 +125,10 @@ export function UserTable({ users }: UserTableProps) {
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-5 py-10 text-center text-[color:var(--ds-text-subtle)]">
+                  <td
+                    colSpan={8}
+                    className="px-5 py-10 text-center text-[color:var(--ds-text-subtle)]"
+                  >
                     Keine Benutzer gefunden.
                   </td>
                 </tr>
@@ -140,10 +143,12 @@ export function UserTable({ users }: UserTableProps) {
                   <td className="px-5 py-3">
                     <PlanBadge plan={u.plan} />
                   </td>
-                  <td className="px-5 py-3 text-[color:var(--ds-text-muted)] capitalize">{u.role}</td>
+                  <td className="px-5 py-3 text-[color:var(--ds-text-muted)] capitalize">
+                    {u.role}
+                  </td>
                   <td className="px-5 py-3">
                     {u.deactivatedAt ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-rose-400">
+                      <span className="inline-flex items-center gap-1 text-xs text-[color:var(--ds-danger-text)]">
                         <UserX size={12} /> Inaktiv
                       </span>
                     ) : (

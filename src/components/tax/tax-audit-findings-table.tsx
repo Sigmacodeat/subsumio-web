@@ -168,7 +168,7 @@ export function TaxAuditFindingsTable({
                       <button
                         type="button"
                         onClick={() => removeFinding(f.id)}
-                        className="text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:text-rose-600 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+                        className="text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
                         aria-label="Remove"
                       >
                         <Trash2 size={14} />

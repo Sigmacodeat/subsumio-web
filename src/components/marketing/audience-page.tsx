@@ -229,7 +229,7 @@ export default function AudiencePage({ lang, audience }: { lang: Lang; audience:
                   key={item}
                   className="flex items-center gap-2 text-sm [color:var(--mk-text-muted)]"
                 >
-                  <X size={15} className="text-rose-500" />
+                  <X size={15} className="text-[color:var(--ds-category-rose-text)]" />
                   {item}
                 </div>
               ))}
