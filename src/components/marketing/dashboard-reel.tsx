@@ -88,7 +88,7 @@ const _deBranches: ViewContent = {
       title: "Müller Arbeitsrecht",
       client: "Müller K.",
       status: "Klage",
-      statusColor: "rose",
+      statusColor: "danger",
     },
     {
       id: "AZ-2026-031",
@@ -124,7 +124,7 @@ const _deBranches: ViewContent = {
     entries: [
       { time: "09:00", title: "Verhandlung Bauer", matter: "AZ-2026-041", tone: "amber" },
       { time: "11:30", title: "Mandantengespräch Schwarz", matter: "AZ-2026-038", tone: "blue" },
-      { time: "14:00", title: "Frist Klageerwiderung", matter: "AZ-2026-041", tone: "rose" },
+      { time: "14:00", title: "Frist Klageerwiderung", matter: "AZ-2026-041", tone: "danger" },
       { time: "16:00", title: "Aktennotiz Müller", matter: "AZ-2026-035", tone: "violet" },
     ],
   },
@@ -218,7 +218,7 @@ const BRANCHES: Record<string, Branch> = {
             title: "Müller Employment",
             client: "Müller K.",
             status: "Filing",
-            statusColor: "rose",
+            statusColor: "danger",
           },
           {
             id: "AZ-2026-031",
@@ -259,7 +259,7 @@ const BRANCHES: Record<string, Branch> = {
           entries: [
             { time: "09:00", title: "Hearing — Bauer", matter: "AZ-2026-041", tone: "amber" },
             { time: "11:30", title: "Client call — Schwarz", matter: "AZ-2026-038", tone: "blue" },
-            { time: "14:00", title: "Filing deadline", matter: "AZ-2026-041", tone: "rose" },
+            { time: "14:00", title: "Filing deadline", matter: "AZ-2026-041", tone: "danger" },
             { time: "16:00", title: "Case note — Müller", matter: "AZ-2026-035", tone: "violet" },
           ],
         },
@@ -337,7 +337,7 @@ const STATUS_COLORS: Record<string, { text: string; bg: string }> = {
     bg: "color-mix(in srgb, var(--signal-amber) 12%, transparent)",
   },
   blue: { text: "var(--brand-text)", bg: "color-mix(in srgb, var(--brand-text) 12%, transparent)" },
-  rose: {
+  danger: {
     text: "var(--ds-danger-text)",
     bg: "var(--ds-danger-bg)",
   },
