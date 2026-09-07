@@ -186,17 +186,19 @@ function MetricCard({
         ? "text-amber-600"
         : status === "fail"
           ? "text-red-600"
-          : "text-slate-700";
+          : "text-[color:var(--ds-text)]";
   return (
-    <div className="rounded-lg border border-slate-200 bg-[color:var(--ds-surface)] p-4 shadow-sm">
+    <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 shadow-sm">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-slate-500">{label}</span>
+        <span className="text-sm font-medium text-[color:var(--ds-text-muted)]">{label}</span>
         <Icon className={cn("h-4 w-4", colorClass)} />
       </div>
       <div className={cn("mt-2 text-2xl font-bold", colorClass)}>
         {value === null ? "—" : value}
         {suffix && value !== null && (
-          <span className="ml-1 text-sm font-normal text-slate-400">{suffix}</span>
+          <span className="ml-1 text-sm font-normal text-[color:var(--ds-text-subtle)]">
+            {suffix}
+          </span>
         )}
       </div>
     </div>
@@ -219,8 +221,8 @@ function OverviewTab({ report, onRefresh }: { report: QualityReport; onRefresh: 
     <div className="space-y-6">
       {/* Hallucination Metrics */}
       <section>
-        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-slate-800">
-          <Brain className="h-5 w-5 text-violet-600" />
+        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-[color:var(--ds-text)]">
+          <Brain className="brand-text h-5 w-5" />
           Halluzinations-Metriken
         </h2>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
@@ -285,7 +287,7 @@ function OverviewTab({ report, onRefresh }: { report: QualityReport; onRefresh: 
 
       {/* Guardrail Stats */}
       <section>
-        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-slate-800">
+        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-[color:var(--ds-text)]">
           <ShieldCheck className="h-5 w-5 text-blue-600" />
           Guardrail-Statistiken
         </h2>
@@ -346,7 +348,7 @@ function OverviewTab({ report, onRefresh }: { report: QualityReport; onRefresh: 
 
       {/* Calibration ECE */}
       <section>
-        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-slate-800">
+        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-[color:var(--ds-text)]">
           <Target className="h-5 w-5 text-amber-600" />
           ECE-Kalibrierung
         </h2>
@@ -363,11 +365,13 @@ function OverviewTab({ report, onRefresh }: { report: QualityReport; onRefresh: 
             icon={Activity}
             status="neutral"
           />
-          <div className="rounded-lg border border-slate-200 bg-[color:var(--ds-surface)] p-4 shadow-sm">
-            <div className="text-sm font-medium text-slate-500">ECE-Interpretation</div>
-            <div className="mt-2 text-sm text-slate-600">
+          <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 shadow-sm">
+            <div className="text-sm font-medium text-[color:var(--ds-text-muted)]">
+              ECE-Interpretation
+            </div>
+            <div className="mt-2 text-sm text-[color:var(--ds-text-muted)]">
               {c && c.sample_count === 0 ? (
-                <span className="text-slate-400">
+                <span className="text-[color:var(--ds-text-subtle)]">
                   Noch keine Calibration-Samples. Sammle Attorney-Feedback über das Formular unten.
                 </span>
               ) : c && c.ece <= 0.05 ? (
@@ -384,28 +388,30 @@ function OverviewTab({ report, onRefresh }: { report: QualityReport; onRefresh: 
 
       {/* Calibration Feedback Form */}
       <section>
-        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-slate-800">
+        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-[color:var(--ds-text)]">
           <Target className="h-5 w-5 text-amber-600" />
           Attorney-Feedback (ECE-Kalibrierung)
         </h2>
-        <div className="rounded-lg border border-slate-200 bg-[color:var(--ds-surface)] p-4 shadow-sm">
-          <p className="mb-4 text-sm text-slate-500">
+        <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 shadow-sm">
+          <p className="mb-4 text-sm text-[color:var(--ds-text-muted)]">
             Bewerte eine KI-Antwort als korrekt oder inkorrekt. Dies speichert ein
             Calibration-Sample für die ECE-Berechnung und verbessert die Confidence-Kalibrierung.
           </p>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Trace-ID</label>
+              <label className="mb-1 block text-sm font-medium text-[color:var(--ds-text-muted)]">
+                Trace-ID
+              </label>
               <input
                 type="text"
                 value={feedbackTraceId}
                 onChange={(e) => setFeedbackTraceId(e.target.value)}
                 placeholder="UUID der Reasoning Trace"
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                className="w-full rounded-md border border-[color:var(--ds-border-strong)] px-3 py-2 text-sm focus:border-[color:var(--ds-border-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">
+              <label className="mb-1 block text-sm font-medium text-[color:var(--ds-text-muted)]">
                 Predicted Confidence (0–1)
               </label>
               <input
@@ -417,12 +423,14 @@ function OverviewTab({ report, onRefresh }: { report: QualityReport; onRefresh: 
                 value={feedbackConfidence}
                 onChange={(e) => setFeedbackConfidence(e.target.value)}
                 placeholder="z.B. 0.75"
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                className="w-full rounded-md border border-[color:var(--ds-border-strong)] px-3 py-2 text-sm focus:border-[color:var(--ds-border-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               />
             </div>
           </div>
           <div className="mt-3">
-            <label className="mb-1 block text-sm font-medium text-slate-600">Bewertung</label>
+            <label className="mb-1 block text-sm font-medium text-[color:var(--ds-text-muted)]">
+              Bewertung
+            </label>
             <div className="flex gap-2">
               <Button
                 variant={feedbackCorrect === true ? "primary" : "outline"}
@@ -502,9 +510,9 @@ function OverviewTab({ report, onRefresh }: { report: QualityReport; onRefresh: 
 
       {/* Empty state */}
       {h === null && (g?.total ?? 0) === 0 && (c?.sample_count ?? 0) === 0 && (
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-6 text-center">
-          <Brain className="mx-auto mb-3 h-8 w-8 text-slate-300" />
-          <p className="text-sm text-slate-500">
+        <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-6 text-center">
+          <Brain className="mx-auto mb-3 h-8 w-8 text-[color:var(--ds-text-subtle)]" />
+          <p className="text-sm text-[color:var(--ds-text-muted)]">
             Noch keine KI-Qualitätsdaten verfügbar. Sobald Anfragen über den Think-Pipeline
             verarbeitet werden, werden hier automatisch Halluzinations-Metriken, Guardrail-Stats und
             Calibration-Daten angezeigt.
@@ -574,7 +582,7 @@ function TracesTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
-        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+        <Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-subtle)]" />
       </div>
     );
   }
@@ -590,9 +598,9 @@ function TracesTab() {
 
   if (traces.length === 0) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-slate-50 p-6 text-center">
-        <Brain className="mx-auto mb-3 h-8 w-8 text-slate-300" />
-        <p className="text-sm text-slate-500">
+      <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-6 text-center">
+        <Brain className="mx-auto mb-3 h-8 w-8 text-[color:var(--ds-text-subtle)]" />
+        <p className="text-sm text-[color:var(--ds-text-muted)]">
           Noch keine Reasoning Traces gespeichert. Sobald Anfragen über den Think-Pipeline
           verarbeitet werden, werden hier die Traces mit Query, Guardrail-Status und Hash-Chain
           angezeigt.
@@ -604,7 +612,7 @@ function TracesTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500">{traces.length} Traces geladen</p>
+        <p className="text-sm text-[color:var(--ds-text-muted)]">{traces.length} Traces geladen</p>
         <Button variant="outline" size="sm" onClick={handleCsvExport}>
           <Download className="mr-2 h-4 w-4" />
           CSV-Export (EU AI Act Art. 13)
@@ -612,18 +620,34 @@ function TracesTab() {
       </div>
 
       {/* Trace Table */}
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-[color:var(--ds-surface)] shadow-sm">
+      <div className="overflow-x-auto rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-sm">
         <table className="w-full text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50">
+          <thead className="border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
             <tr>
-              <th className="px-3 py-2 text-left font-medium text-slate-600">Zeit</th>
-              <th className="px-3 py-2 text-left font-medium text-slate-600">Query</th>
-              <th className="px-3 py-2 text-left font-medium text-slate-600">Jur</th>
-              <th className="px-3 py-2 text-left font-medium text-slate-600">Guard</th>
-              <th className="px-3 py-2 text-left font-medium text-slate-600">Cross-V</th>
-              <th className="px-3 py-2 text-left font-medium text-slate-600">Conf</th>
-              <th className="px-3 py-2 text-left font-medium text-slate-600">Regen</th>
-              <th className="px-3 py-2 text-left font-medium text-slate-600">Modell</th>
+              <th className="px-3 py-2 text-left font-medium text-[color:var(--ds-text-muted)]">
+                Zeit
+              </th>
+              <th className="px-3 py-2 text-left font-medium text-[color:var(--ds-text-muted)]">
+                Query
+              </th>
+              <th className="px-3 py-2 text-left font-medium text-[color:var(--ds-text-muted)]">
+                Jur
+              </th>
+              <th className="px-3 py-2 text-left font-medium text-[color:var(--ds-text-muted)]">
+                Guard
+              </th>
+              <th className="px-3 py-2 text-left font-medium text-[color:var(--ds-text-muted)]">
+                Cross-V
+              </th>
+              <th className="px-3 py-2 text-left font-medium text-[color:var(--ds-text-muted)]">
+                Conf
+              </th>
+              <th className="px-3 py-2 text-left font-medium text-[color:var(--ds-text-muted)]">
+                Regen
+              </th>
+              <th className="px-3 py-2 text-left font-medium text-[color:var(--ds-text-muted)]">
+                Modell
+              </th>
               <th className="px-3 py-2"></th>
             </tr>
           </thead>
@@ -631,13 +655,13 @@ function TracesTab() {
             {traces.map((t) => (
               <tr
                 key={t.trace_id}
-                className="cursor-pointer border-b border-slate-100 hover:bg-slate-50"
+                className="cursor-pointer border-b border-[color:var(--ds-border)] hover:bg-[color:var(--ds-surface-2)]"
                 onClick={() => openTrace(t.trace_id)}
               >
-                <td className="px-3 py-2 text-xs whitespace-nowrap text-slate-500">
+                <td className="px-3 py-2 text-xs whitespace-nowrap text-[color:var(--ds-text-muted)]">
                   {fmtDate(t.timestamp)}
                 </td>
-                <td className="max-w-xs truncate px-3 py-2 text-slate-700">
+                <td className="max-w-xs truncate px-3 py-2 text-[color:var(--ds-text)]">
                   {truncate(t.query || "—", 60)}
                 </td>
                 <td className="px-3 py-2">
@@ -651,7 +675,7 @@ function TracesTab() {
                   ) : t.guardrail_passed === false ? (
                     <ShieldAlert className="h-4 w-4 text-red-600" />
                   ) : (
-                    <span className="text-slate-300">—</span>
+                    <span className="text-[color:var(--ds-text-subtle)]">—</span>
                   )}
                 </td>
                 <td className="px-3 py-2">
@@ -660,24 +684,24 @@ function TracesTab() {
                   ) : t.cross_verify_clean === false ? (
                     <ShieldAlert className="h-4 w-4 text-red-600" />
                   ) : (
-                    <span className="text-slate-300">—</span>
+                    <span className="text-[color:var(--ds-text-subtle)]">—</span>
                   )}
                 </td>
-                <td className="px-3 py-2 text-xs text-slate-600">
+                <td className="px-3 py-2 text-xs text-[color:var(--ds-text-muted)]">
                   {t.overall_confidence !== null ? Number(t.overall_confidence).toFixed(2) : "—"}
                 </td>
                 <td className="px-3 py-2 text-xs">
                   {t.regeneration_count > 0 ? (
                     <Badge className="bg-amber-100 text-amber-700">{t.regeneration_count}×</Badge>
                   ) : (
-                    <span className="text-slate-300">0</span>
+                    <span className="text-[color:var(--ds-text-subtle)]">0</span>
                   )}
                 </td>
-                <td className="px-3 py-2 text-xs text-slate-500">
+                <td className="px-3 py-2 text-xs text-[color:var(--ds-text-muted)]">
                   {truncate(t.model_used || "—", 20)}
                 </td>
                 <td className="px-3 py-2">
-                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                  <ChevronRight className="h-4 w-4 text-[color:var(--ds-text-subtle)]" />
                 </td>
               </tr>
             ))}
@@ -701,12 +725,14 @@ function TracesTab() {
                 role="status"
                 aria-live="polite"
               >
-                <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+                <Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-subtle)]" />
               </div>
             ) : selectedTrace ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-slate-800">Trace Detail</h3>
+                  <h3 className="text-lg font-semibold text-[color:var(--ds-text)]">
+                    Trace Detail
+                  </h3>
                   <Button variant="ghost" size="sm" onClick={() => setSelectedTrace(null)}>
                     <X className="h-4 w-4" />
                   </Button>
@@ -715,74 +741,82 @@ function TracesTab() {
                 {/* Meta info */}
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                   <div className="flex items-center gap-2 text-sm">
-                    <Clock className="h-4 w-4 text-slate-400" />
-                    <span className="text-slate-600">{fmtDate(selectedTrace.timestamp)}</span>
+                    <Clock className="h-4 w-4 text-[color:var(--ds-text-subtle)]" />
+                    <span className="text-[color:var(--ds-text-muted)]">
+                      {fmtDate(selectedTrace.timestamp)}
+                    </span>
                   </div>
                   {selectedTrace.jurisdiction && (
                     <div className="flex items-center gap-2 text-sm">
-                      <Globe className="h-4 w-4 text-slate-400" />
-                      <span className="text-slate-600">{selectedTrace.jurisdiction}</span>
+                      <Globe className="h-4 w-4 text-[color:var(--ds-text-subtle)]" />
+                      <span className="text-[color:var(--ds-text-muted)]">
+                        {selectedTrace.jurisdiction}
+                      </span>
                     </div>
                   )}
                   {selectedTrace.model_used && (
                     <div className="flex items-center gap-2 text-sm">
-                      <Cpu className="h-4 w-4 text-slate-400" />
-                      <span className="text-slate-600">{selectedTrace.model_used}</span>
+                      <Cpu className="h-4 w-4 text-[color:var(--ds-text-subtle)]" />
+                      <span className="text-[color:var(--ds-text-muted)]">
+                        {selectedTrace.model_used}
+                      </span>
                     </div>
                   )}
                   {selectedTrace.latency_ms !== null && (
                     <div className="flex items-center gap-2 text-sm">
-                      <Activity className="h-4 w-4 text-slate-400" />
-                      <span className="text-slate-600">{selectedTrace.latency_ms}ms</span>
+                      <Activity className="h-4 w-4 text-[color:var(--ds-text-subtle)]" />
+                      <span className="text-[color:var(--ds-text-muted)]">
+                        {selectedTrace.latency_ms}ms
+                      </span>
                     </div>
                   )}
                 </div>
 
                 {/* Query */}
                 <div>
-                  <h4 className="mb-1 text-sm font-semibold text-slate-700">Query</h4>
-                  <div className="rounded-md bg-slate-50 p-3 text-sm text-slate-800">
+                  <h4 className="mb-1 text-sm font-semibold text-[color:var(--ds-text)]">Query</h4>
+                  <div className="rounded-md bg-[color:var(--ds-surface-2)] p-3 text-sm text-[color:var(--ds-text)]">
                     {selectedTrace.query || "—"}
                   </div>
                 </div>
 
                 {/* Guardrail Status */}
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                  <div className="rounded-md border border-slate-200 p-3">
-                    <div className="text-xs text-slate-500">Guardrail</div>
+                  <div className="rounded-md border border-[color:var(--ds-border)] p-3">
+                    <div className="text-xs text-[color:var(--ds-text-muted)]">Guardrail</div>
                     <div className="mt-1">
                       {selectedTrace.guardrail_passed === true ? (
                         <Badge className="bg-emerald-100 text-emerald-700">Passed</Badge>
                       ) : selectedTrace.guardrail_passed === false ? (
                         <Badge className="bg-red-100 text-red-700">Failed</Badge>
                       ) : (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-[color:var(--ds-text-subtle)]">—</span>
                       )}
                     </div>
                   </div>
-                  <div className="rounded-md border border-slate-200 p-3">
-                    <div className="text-xs text-slate-500">Cross-Verify</div>
+                  <div className="rounded-md border border-[color:var(--ds-border)] p-3">
+                    <div className="text-xs text-[color:var(--ds-text-muted)]">Cross-Verify</div>
                     <div className="mt-1">
                       {selectedTrace.cross_verify_clean === true ? (
                         <Badge className="bg-emerald-100 text-emerald-700">Clean</Badge>
                       ) : selectedTrace.cross_verify_clean === false ? (
                         <Badge className="bg-red-100 text-red-700">Flagged</Badge>
                       ) : (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-[color:var(--ds-text-subtle)]">—</span>
                       )}
                     </div>
                   </div>
-                  <div className="rounded-md border border-slate-200 p-3">
-                    <div className="text-xs text-slate-500">Confidence</div>
-                    <div className="mt-1 text-sm font-semibold text-slate-700">
+                  <div className="rounded-md border border-[color:var(--ds-border)] p-3">
+                    <div className="text-xs text-[color:var(--ds-text-muted)]">Confidence</div>
+                    <div className="mt-1 text-sm font-semibold text-[color:var(--ds-text)]">
                       {selectedTrace.overall_confidence !== null
                         ? Number(selectedTrace.overall_confidence).toFixed(3)
                         : "—"}
                     </div>
                   </div>
-                  <div className="rounded-md border border-slate-200 p-3">
-                    <div className="text-xs text-slate-500">Regenerations</div>
-                    <div className="mt-1 text-sm font-semibold text-slate-700">
+                  <div className="rounded-md border border-[color:var(--ds-border)] p-3">
+                    <div className="text-xs text-[color:var(--ds-text-muted)]">Regenerations</div>
+                    <div className="mt-1 text-sm font-semibold text-[color:var(--ds-text)]">
                       {selectedTrace.regeneration_count}
                     </div>
                   </div>
@@ -791,11 +825,11 @@ function TracesTab() {
                 {/* Hash Chain */}
                 {selectedTrace.hash_chain && (
                   <div>
-                    <h4 className="mb-1 flex items-center gap-1 text-sm font-semibold text-slate-700">
+                    <h4 className="mb-1 flex items-center gap-1 text-sm font-semibold text-[color:var(--ds-text)]">
                       <Hash className="h-4 w-4" />
                       Hash-Chain (Integrität)
                     </h4>
-                    <div className="rounded-md bg-slate-50 p-3 font-mono text-xs break-all text-slate-600">
+                    <div className="rounded-md bg-[color:var(--ds-surface-2)] p-3 font-mono text-xs break-all text-[color:var(--ds-text-muted)]">
                       {selectedTrace.hash_chain}
                     </div>
                   </div>
@@ -804,7 +838,9 @@ function TracesTab() {
                 {/* Warnings */}
                 {selectedTrace.warnings && selectedTrace.warnings.length > 0 && (
                   <div>
-                    <h4 className="mb-1 text-sm font-semibold text-slate-700">Warnings</h4>
+                    <h4 className="mb-1 text-sm font-semibold text-[color:var(--ds-text)]">
+                      Warnings
+                    </h4>
                     <div className="flex flex-wrap gap-1">
                       {selectedTrace.warnings.map((w, i) => (
                         <Badge key={i} variant="default" className="text-xs">
@@ -818,18 +854,25 @@ function TracesTab() {
                 {/* Retrieved Chunks */}
                 {selectedTrace.retrieved_chunks && selectedTrace.retrieved_chunks.length > 0 && (
                   <div>
-                    <h4 className="mb-1 text-sm font-semibold text-slate-700">
+                    <h4 className="mb-1 text-sm font-semibold text-[color:var(--ds-text)]">
                       Retrieved Chunks ({selectedTrace.retrieved_chunks.length})
                     </h4>
                     <div className="space-y-2">
                       {selectedTrace.retrieved_chunks.slice(0, 10).map((c, i) => (
-                        <div key={i} className="rounded-md border border-slate-200 p-2">
+                        <div
+                          key={i}
+                          className="rounded-md border border-[color:var(--ds-border)] p-2"
+                        >
                           <div className="flex items-center justify-between text-xs">
-                            <span className="font-mono text-slate-600">{c.slug}</span>
-                            <span className="text-slate-500">Score: {c.score.toFixed(3)}</span>
+                            <span className="font-mono text-[color:var(--ds-text-muted)]">
+                              {c.slug}
+                            </span>
+                            <span className="text-[color:var(--ds-text-muted)]">
+                              Score: {c.score.toFixed(3)}
+                            </span>
                           </div>
                           {c.chunk_text && (
-                            <p className="mt-1 line-clamp-2 text-xs text-slate-500">
+                            <p className="mt-1 line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
                               {truncate(c.chunk_text, 120)}
                             </p>
                           )}
@@ -842,7 +885,7 @@ function TracesTab() {
                 {/* Citations */}
                 {selectedTrace.citations && selectedTrace.citations.length > 0 && (
                   <div>
-                    <h4 className="mb-1 text-sm font-semibold text-slate-700">
+                    <h4 className="mb-1 text-sm font-semibold text-[color:var(--ds-text)]">
                       Zitate ({selectedTrace.citations.length})
                     </h4>
                     <div className="flex flex-wrap gap-1">
@@ -898,7 +941,7 @@ function TrendTab({ days }: { days: number }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
-        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+        <Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-subtle)]" />
       </div>
     );
   }
@@ -914,9 +957,9 @@ function TrendTab({ days }: { days: number }) {
 
   if (traceTrend.length === 0 && calibTrend.length === 0) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-slate-50 p-6 text-center">
-        <TrendingUp className="mx-auto mb-3 h-8 w-8 text-slate-300" />
-        <p className="text-sm text-slate-500">
+      <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-6 text-center">
+        <TrendingUp className="mx-auto mb-3 h-8 w-8 text-[color:var(--ds-text-subtle)]" />
+        <p className="text-sm text-[color:var(--ds-text-muted)]">
           Noch keine Trend-Daten verfügbar. Sobald genügend Traces gesammelt wurden, werden hier
           Zeitverläufe für Hallucination-Rate, Guardrail-Pass-Rate und ECE angezeigt.
         </p>
@@ -943,11 +986,11 @@ function TrendTab({ days }: { days: number }) {
     <div className="space-y-6">
       {/* Quality Trend Chart */}
       <section>
-        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-slate-800">
-          <TrendingUp className="h-5 w-5 text-violet-600" />
+        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-[color:var(--ds-text)]">
+          <TrendingUp className="brand-text h-5 w-5" />
           Qualitäts-Trend ({days} Tage)
         </h2>
-        <div className="rounded-lg border border-slate-200 bg-[color:var(--ds-surface)] p-4 shadow-sm">
+        <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 shadow-sm">
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
@@ -1006,18 +1049,20 @@ function TrendTab({ days }: { days: number }) {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <p className="py-8 text-center text-sm text-slate-400">Keine Trace-Daten im Zeitraum</p>
+            <p className="py-8 text-center text-sm text-[color:var(--ds-text-subtle)]">
+              Keine Trace-Daten im Zeitraum
+            </p>
           )}
         </div>
       </section>
 
       {/* Confidence Trend */}
       <section>
-        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-slate-800">
+        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-[color:var(--ds-text)]">
           <Gauge className="h-5 w-5 text-amber-600" />
           Confidence & Trace-Volume
         </h2>
-        <div className="rounded-lg border border-slate-200 bg-[color:var(--ds-surface)] p-4 shadow-sm">
+        <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 shadow-sm">
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
@@ -1071,18 +1116,20 @@ function TrendTab({ days }: { days: number }) {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <p className="py-8 text-center text-sm text-slate-400">Keine Daten</p>
+            <p className="py-8 text-center text-sm text-[color:var(--ds-text-subtle)]">
+              Keine Daten
+            </p>
           )}
         </div>
       </section>
 
       {/* Calibration ECE Trend */}
       <section>
-        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-slate-800">
+        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-[color:var(--ds-text)]">
           <Target className="h-5 w-5 text-emerald-600" />
           ECE-Kalibrierung Trend
         </h2>
-        <div className="rounded-lg border border-slate-200 bg-[color:var(--ds-surface)] p-4 shadow-sm">
+        <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 shadow-sm">
           {calibChartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={calibChartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
@@ -1143,7 +1190,7 @@ function TrendTab({ days }: { days: number }) {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <p className="py-8 text-center text-sm text-slate-400">
+            <p className="py-8 text-center text-sm text-[color:var(--ds-text-subtle)]">
               Noch keine Calibration-Samples im Zeitraum
             </p>
           )}
@@ -1262,7 +1309,7 @@ export default function AiQualityPage() {
               role="status"
               aria-live="polite"
             >
-              <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+              <Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-subtle)]" />
             </div>
           )}
           {error && (
