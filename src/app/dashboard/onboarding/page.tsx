@@ -245,7 +245,7 @@ export default function OnboardingPage() {
 
   return (
     <div
-      className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8 flex min-h-full items-center justify-center"
+      className="mx-auto flex min-h-full max-w-[1200px] items-center justify-center space-y-6 p-4 md:p-6 lg:p-8"
       style={{
         background:
           "linear-gradient(135deg, var(--brand-gradient-from, hsl(230, 60%, 36%)) 0%, var(--brand-gradient-via, hsl(230, 60%, 64%)) 50%, var(--brand-gradient-to, hsl(260, 60%, 65%)) 100%)",
@@ -372,8 +372,8 @@ export default function OnboardingPage() {
                         : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)]/30"
                     }`}
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-500/10">
-                      <Briefcase size={18} className="text-slate-600" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
+                      <Briefcase size={18} className="text-[color:var(--ds-text-muted)]" />
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-[color:var(--ds-text)]">
@@ -659,7 +659,8 @@ export default function OnboardingPage() {
                     </Label>
                     <Input
                       id="ob-rate"
-                      type="number" inputMode="numeric"
+                      type="number"
+                      inputMode="numeric"
                       value={billing.stundensatz}
                       onChange={(e) => setBilling((b) => ({ ...b, stundensatz: e.target.value }))}
                       placeholder="220"
