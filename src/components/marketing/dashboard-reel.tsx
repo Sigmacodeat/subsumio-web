@@ -81,7 +81,7 @@ const _deBranches: ViewContent = {
       title: "Schwarz Erbrecht",
       client: "Fam. Schwarz",
       status: "Aktiv",
-      statusColor: "blue",
+      statusColor: "info",
     },
     {
       id: "AZ-2026-035",
@@ -123,7 +123,7 @@ const _deBranches: ViewContent = {
     weekday: "Freitag",
     entries: [
       { time: "09:00", title: "Verhandlung Bauer", matter: "AZ-2026-041", tone: "warning" },
-      { time: "11:30", title: "Mandantengespräch Schwarz", matter: "AZ-2026-038", tone: "blue" },
+      { time: "11:30", title: "Mandantengespräch Schwarz", matter: "AZ-2026-038", tone: "info" },
       { time: "14:00", title: "Frist Klageerwiderung", matter: "AZ-2026-041", tone: "danger" },
       { time: "16:00", title: "Aktennotiz Müller", matter: "AZ-2026-035", tone: "violet" },
     ],
@@ -164,7 +164,7 @@ const _deBranches: ViewContent = {
         submittedBy: "Fr. Klein",
         submittedAt: "vor 1 Std",
         status: "Zur Freigabe",
-        statusColor: "blue",
+        statusColor: "info",
       },
       {
         title: "Vertragsentwurf Müller",
@@ -211,7 +211,7 @@ const BRANCHES: Record<string, Branch> = {
             title: "Schwarz Estate",
             client: "Schwarz Fam.",
             status: "Active",
-            statusColor: "blue",
+            statusColor: "info",
           },
           {
             id: "AZ-2026-035",
@@ -258,7 +258,7 @@ const BRANCHES: Record<string, Branch> = {
           weekday: "Friday",
           entries: [
             { time: "09:00", title: "Hearing — Bauer", matter: "AZ-2026-041", tone: "warning" },
-            { time: "11:30", title: "Client call — Schwarz", matter: "AZ-2026-038", tone: "blue" },
+            { time: "11:30", title: "Client call — Schwarz", matter: "AZ-2026-038", tone: "info" },
             { time: "14:00", title: "Filing deadline", matter: "AZ-2026-041", tone: "danger" },
             { time: "16:00", title: "Case note — Müller", matter: "AZ-2026-035", tone: "violet" },
           ],
@@ -308,7 +308,7 @@ const BRANCHES: Record<string, Branch> = {
               submittedBy: "Fr. Klein",
               submittedAt: "1 hr ago",
               status: "For approval",
-              statusColor: "blue",
+              statusColor: "info",
             },
             {
               title: "Contract draft — Müller",
@@ -336,7 +336,7 @@ const STATUS_COLORS: Record<string, { text: string; bg: string }> = {
     text: "var(--ds-warning-text)",
     bg: "var(--ds-warning-bg)",
   },
-  blue: { text: "var(--brand-text)", bg: "color-mix(in srgb, var(--brand-text) 12%, transparent)" },
+  info: { text: "var(--ds-info-text)", bg: "var(--ds-info-bg)" },
   danger: {
     text: "var(--ds-danger-text)",
     bg: "var(--ds-danger-bg)",
