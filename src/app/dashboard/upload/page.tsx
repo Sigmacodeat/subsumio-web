@@ -611,7 +611,7 @@ function UploadPageInner() {
         <button
           onClick={() => setMode("case")}
           className={cn(
-            "flex items-start gap-3 rounded-xl border p-4 text-left transition-all duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            "flex items-start gap-3 rounded-xl border p-4 text-left transition-[border-color,background-color,box-shadow,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
             mode === "case"
               ? "brand-border brand-soft ring-1 ring-[color:var(--brand-primary)]/20"
               : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
@@ -636,7 +636,7 @@ function UploadPageInner() {
         <button
           onClick={() => setMode("knowledge")}
           className={cn(
-            "flex items-start gap-3 rounded-xl border p-4 text-left transition-all duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            "flex items-start gap-3 rounded-xl border p-4 text-left transition-[border-color,background-color,box-shadow,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
             mode === "knowledge"
               ? "brand-border brand-soft ring-1 ring-[color:var(--brand-primary)]/20"
               : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
@@ -1198,7 +1198,8 @@ function UploadPageInner() {
                   {f.status === "pending" && (
                     <button
                       onClick={() => removeFile(f.id)}
-                      className="text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-danger-text)]"
+                      aria-label="Datei entfernen"
+                      className="rounded-md p-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-150 hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                     >
                       <X size={14} />
                     </button>
