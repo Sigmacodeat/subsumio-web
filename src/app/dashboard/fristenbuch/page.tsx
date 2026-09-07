@@ -45,7 +45,7 @@ const STATUS_MAP: Record<
   DeadlineStatus,
   { labelKey: DashboardKey; color: StatusColor; icon: React.ElementType }
 > = {
-  overdue: { labelKey: "deadlines.status_overdue", color: "rose", icon: XCircle },
+  overdue: { labelKey: "deadlines.status_overdue", color: "red", icon: XCircle },
   critical: { labelKey: "deadlines.status_critical", color: "red", icon: AlertTriangle },
   warning: { labelKey: "deadlines.status_warning", color: "amber", icon: AlertTriangle },
   vorfrist: { labelKey: "deadlines.vorfrist_reached", color: "blue", icon: Clock },

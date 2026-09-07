@@ -85,7 +85,7 @@ const STATUS_CONFIG: Record<
   pending: { labelKey: "deadlines.status_pending", color: "blue", icon: Clock },
   warning: { labelKey: "deadlines.status_warning", color: "amber", icon: AlertTriangle },
   critical: { labelKey: "deadlines.status_critical", color: "red", icon: AlertTriangle },
-  overdue: { labelKey: "deadlines.status_overdue", color: "rose", icon: XCircle },
+  overdue: { labelKey: "deadlines.status_overdue", color: "red", icon: XCircle },
   done: { labelKey: "deadlines.status_done", color: "emerald", icon: CheckCircle2 },
   vorfrist: { labelKey: "deadlines.vorfrist_reached", color: "blue", icon: Clock },
 };
