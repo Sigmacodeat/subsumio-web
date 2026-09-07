@@ -42,8 +42,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               // Mobile: text-base (16px) verhindert iOS Auto-Zoom beim Fokus,
               // Desktop: text-sm (14px) für kompaktere Formulare
               "text-base sm:text-sm",
-              "placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-ring)] focus:outline-none",
-              "transition-colors duration-150 motion-reduce:transition-none",
+              "placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-ring)] focus:ring-2 focus:ring-[color:var(--ds-ring)]/30 focus:outline-none",
+              "transition-[border-color,box-shadow] duration-150 motion-reduce:transition-none",
               // Mobile: 44px Touch-Target (WCAG 2.5.5), Desktop: kompakt
               "h-11 sm:h-auto sm:py-2.5",
               icon && "pl-10",
@@ -76,8 +76,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         ref={ref}
         className={cn(
           "w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 text-sm text-[color:var(--ds-text)]",
-          "placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-ring)] focus:outline-none",
-          "transition-colors duration-150 motion-reduce:transition-none",
+          "placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-ring)] focus:ring-2 focus:ring-[color:var(--ds-ring)]/30 focus:outline-none",
+          "transition-[border-color,box-shadow] duration-150 motion-reduce:transition-none",
           // Mobile: 44px Touch-Target (WCAG 2.5.5), Desktop: kompakt
           "h-11 sm:h-auto sm:py-2.5",
           className
