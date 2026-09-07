@@ -140,14 +140,16 @@ function MaskedInput({
       <div className="absolute right-2 flex items-center gap-1">
         <button
           onClick={() => setShow(!show)}
-          className="p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text-muted)]"
+          aria-label={show ? "Wert verbergen" : "Wert anzeigen"}
+          className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-150 hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
         >
           {show ? <EyeOff size={13} /> : <Eye size={13} />}
         </button>
         {value && (
           <button
             onClick={copy}
-            className="p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text-muted)]"
+            aria-label="Wert kopieren"
+            className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-150 hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
           >
             {copied ? (
               <Check size={13} className="text-[color:var(--ds-success-text)]" />
@@ -506,7 +508,7 @@ function SettingsPageInner() {
                         aria-controls={`panel-${tab.id}`}
                         onClick={() => setActiveTab(tab.id)}
                         className={cn(
-                          "-mb-px flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none",
+                          "-mb-px flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-[background-color,border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                           activeTab === tab.id
                             ? "brand-text border-[color:var(--brand-primary)]"
                             : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -578,7 +580,7 @@ function SettingsPageInner() {
                         key={mode}
                         onClick={() => setSearchMode(mode)}
                         className={cn(
-                          "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                          "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                           searchMode === mode
                             ? "brand-soft brand-text brand-border"
                             : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
@@ -605,7 +607,7 @@ function SettingsPageInner() {
                         <button
                           onClick={() => navigator.clipboard.writeText(cmd)}
                           aria-label={t("aria.copy_command")}
-                          className="shrink-0 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text-muted)]"
+                          className="shrink-0 rounded-md p-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-150 hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                         >
                           <Copy size={12} />
                         </button>
@@ -916,7 +918,7 @@ function SettingsPageInner() {
                         key={opt.key}
                         onClick={() => kanzleiForm.setValue("tarifModell", opt.key)}
                         className={cn(
-                          "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                          "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                           tarifModellWatch === opt.key
                             ? "brand-soft brand-text brand-border"
                             : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
@@ -934,7 +936,8 @@ function SettingsPageInner() {
                       <div className="flex flex-wrap items-center gap-2">
                         <Euro size={14} className="text-[color:var(--ds-text-muted)]" />
                         <Input
-                          type="number" inputMode="numeric"
+                          type="number"
+                          inputMode="numeric"
                           {...kanzleiForm.register("stundensatz")}
                           placeholder="200"
                           className="w-32"
@@ -943,7 +946,8 @@ function SettingsPageInner() {
                           {t("settings.per_hour")}
                         </span>
                         <Input
-                          type="number" inputMode="numeric"
+                          type="number"
+                          inputMode="numeric"
                           {...kanzleiForm.register("abrechnungstakt")}
                           placeholder="15"
                           className="ml-2 w-24"
@@ -966,7 +970,8 @@ function SettingsPageInner() {
                             </span>
                             <Euro size={12} className="text-[color:var(--ds-text-muted)]" />
                             <input
-                              type="number" inputMode="numeric"
+                              type="number"
+                              inputMode="numeric"
                               value={String(satz)}
                               onChange={(e) => {
                                 const updated = {
@@ -1034,7 +1039,8 @@ function SettingsPageInner() {
                   <div className="flex items-center gap-2">
                     <Input
                       id="settings-zahlungsziel-tage"
-                      type="number" inputMode="numeric"
+                      type="number"
+                      inputMode="numeric"
                       {...kanzleiForm.register("zahlungszielTage")}
                       placeholder="14"
                       className="w-24"
@@ -1069,7 +1075,7 @@ function SettingsPageInner() {
                         key={opt.key}
                         onClick={() => kanzleiForm.setValue("datevKontenrahmen", opt.key)}
                         className={cn(
-                          "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                          "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                           kanzleiForm.watch("datevKontenrahmen") === opt.key
                             ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                             : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
