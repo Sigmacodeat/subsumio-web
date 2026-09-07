@@ -142,7 +142,9 @@ export default function IntakePage() {
   const [filter, setFilter] = useState<"all" | IntakeStatus>("all");
   const [sourceFilter, setSourceFilter] = useState<"all" | IntakeSource>("all");
   const [search, setSearch] = useState("");
-  const [searchParams] = useState(() => new URLSearchParams(typeof window !== "undefined" ? window.location.search : ""));
+  const [searchParams] = useState(
+    () => new URLSearchParams(typeof window !== "undefined" ? window.location.search : "")
+  );
 
   const [wizardItem, setWizardItem] = useState<IntakeRecord | null>(null);
   const [updatingSlug, setUpdatingSlug] = useState<string | null>(null);
@@ -414,7 +416,7 @@ export default function IntakePage() {
                   : items.filter((i) => i.frontmatter.source === tab.key).length;
             const isActive = sourceFilter === (tab.key as string);
             const className = cn(
-              "flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm transition-colors",
+              "flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm transition-[color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
               isActive
                 ? "border-[color:var(--brand-primary)] font-medium text-[color:var(--ds-text)]"
                 : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -500,7 +502,7 @@ export default function IntakePage() {
               {search && (
                 <button
                   onClick={() => setSearch("")}
-                  className="absolute top-1/2 right-2.5 -translate-y-1/2 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+                  className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-md p-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-150 hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                   aria-label="Clear search"
                 >
                   <X size={15} />
@@ -628,7 +630,7 @@ export default function IntakePage() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
-                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-150 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-150 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                             aria-label={t("intake.aria_menu")}
                           >
                             <MoreVertical size={15} />
@@ -724,7 +726,7 @@ export default function IntakePage() {
                             void navigator.clipboard.writeText(item.frontmatter.phone_hash || "");
                             addToast({ type: "info", title: t("intake.toast_copy_hash") });
                           }}
-                          className="inline-flex items-center gap-1 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+                          className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-150 hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
                         >
                           <Copy size={12} />
                           {t("intake.copy_hash")}
@@ -1124,7 +1126,7 @@ function TriagePanel({ items }: { items: IntakeRecord[] }) {
     <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between px-4 py-3 text-left"
+        className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left transition-[background-color] duration-150 hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
       >
         <div className="flex items-center gap-2">
           <Zap size={16} className="brand-text" />
@@ -1203,7 +1205,7 @@ function TriagePanel({ items }: { items: IntakeRecord[] }) {
                 {card.rawSlug && (
                   <Link
                     href={`/dashboard/brain/${encodeURIComponent(card.rawSlug)}`}
-                    className="shrink-0 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                    className="shrink-0 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-150 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                     title={t("intake.aria_details")}
                   >
                     <ChevronRight size={14} />
