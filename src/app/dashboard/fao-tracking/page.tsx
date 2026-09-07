@@ -216,7 +216,7 @@ export default function FAOTrackingPage() {
         </div>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-[color:var(--ds-surface-2)]">
           <div
-            className={`h-full transition-all ${progress === 100 ? "bg-[color:var(--ds-success-solid)]" : "bg-[color:var(--ds-info-solid)]"}`}
+            className={`h-full transition-[background-color,border-color,color,box-shadow,transform,opacity] ${progress === 100 ? "bg-[color:var(--ds-success-solid)]" : "bg-[color:var(--ds-info-solid)]"}`}
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -280,7 +280,8 @@ export default function FAOTrackingPage() {
                 {t("fao.hours")} *
               </Label>
               <Input
-                type="number" inputMode="numeric"
+                type="number"
+                inputMode="numeric"
                 min="0"
                 max="24"
                 step="0.5"

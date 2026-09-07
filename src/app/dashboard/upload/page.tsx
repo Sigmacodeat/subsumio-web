@@ -998,7 +998,7 @@ function UploadPageInner() {
                   aria-label="Gesamtfortschritt Upload"
                 >
                   <div
-                    className="brand-bg h-full rounded-full transition-all"
+                    className="brand-bg h-full rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity]"
                     style={{ width: `${overallProgress}%` }}
                   />
                 </div>
@@ -1068,7 +1068,7 @@ function UploadPageInner() {
                         aria-label={`Upload ${f.file.name}`}
                       >
                         <div
-                          className="brand-bg h-full rounded-full transition-all"
+                          className="brand-bg h-full rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity]"
                           style={{ width: `${f.progress}%` }}
                         />
                       </div>

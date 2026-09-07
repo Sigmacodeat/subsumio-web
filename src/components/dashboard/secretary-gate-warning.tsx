@@ -50,7 +50,7 @@ export function SecretaryGateWarning() {
   return (
     <Link
       href="/dashboard/admin"
-      className="group flex items-center gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 transition-all hover:scale-[1.005] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
+      className="group flex items-center gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:scale-[1.005] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none"
       role="alert"
     >
       <AlertTriangle size={18} className="shrink-0 text-[color:var(--ds-danger-text)]" />

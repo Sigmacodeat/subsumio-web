@@ -191,7 +191,7 @@ export function KanzleiOperationsPanel() {
           <Link
             key={href}
             href={href}
-            className="group rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3 transition-all hover:-translate-y-0.5 hover:border-[color:var(--ds-border-strong)] hover:shadow-sm focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-[0.98]"
+            className="group rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3 transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:-translate-y-0.5 hover:border-[color:var(--ds-border-strong)] hover:shadow-sm focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-[0.98]"
           >
             <div className="flex items-center justify-between">
               <Icon size={16} className="text-[color:var(--brand-primary)]" />

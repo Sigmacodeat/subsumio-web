@@ -833,7 +833,7 @@ function TourOverlay({
               aria-selected={i === currentStep}
               aria-label={t("tour.step_label").replace("{current}", String(i + 1))}
               onClick={() => onGoTo(i)}
-              className={`h-1.5 rounded-full transition-all duration-200 hover:opacity-80 ${
+              className={`h-1.5 rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 hover:opacity-80 ${
                 i === currentStep
                   ? "w-6 bg-[color:var(--brand-primary)]"
                   : i < currentStep

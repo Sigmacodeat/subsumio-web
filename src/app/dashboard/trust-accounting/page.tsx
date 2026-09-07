@@ -409,7 +409,7 @@ export default function TrustAccountingPage() {
               <button
                 key={a.slug}
                 onClick={() => setSelectedSlug(a.slug)}
-                className="group rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-all hover:border-[color:var(--brand-primary)] hover:shadow-md"
+                className="group rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:border-[color:var(--brand-primary)] hover:shadow-md"
               >
                 <div className="mb-3 flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -782,7 +782,8 @@ export default function TrustAccountingPage() {
                   {t("trust.tx_amount" as DashboardKey)} *
                 </label>
                 <Input
-                  type="number" inputMode="decimal"
+                  type="number"
+                  inputMode="decimal"
                   step="0.01"
                   value={txAmount}
                   onChange={(e) => setTxAmount(Number(e.target.value))}
@@ -848,7 +849,8 @@ export default function TrustAccountingPage() {
                     Bankbestand (Kontoauszug) *
                   </label>
                   <Input
-                    type="number" inputMode="decimal"
+                    type="number"
+                    inputMode="decimal"
                     step="0.01"
                     value={reconcileBankBalance}
                     onChange={(e) => setReconcileBankBalance(Number(e.target.value))}
@@ -1105,7 +1107,8 @@ export default function TrustAccountingPage() {
                 {t("trust.opening_balance" as DashboardKey)}
               </label>
               <Input
-                type="number" inputMode="decimal"
+                type="number"
+                inputMode="decimal"
                 step="0.01"
                 value={newOpening}
                 onChange={(e) => setNewOpening(Number(e.target.value))}

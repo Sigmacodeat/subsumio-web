@@ -293,7 +293,7 @@ export function CryptoForensicsPanel({
           {/* Progress bar */}
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--ds-hover)]">
             <div
-              className="h-full rounded-full transition-all duration-500"
+              className="h-full rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-500"
               style={{ width: `${progressVal}%`, backgroundColor: color }}
             />
           </div>

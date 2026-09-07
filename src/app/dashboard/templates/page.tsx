@@ -367,7 +367,7 @@ export default function TemplateLibraryPage() {
               <div
                 key={template.slug}
                 className={cn(
-                  "group relative flex flex-col rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-all hover:border-[color:var(--brand-primary)]/30 hover:shadow-md",
+                  "group relative flex flex-col rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:border-[color:var(--brand-primary)]/30 hover:shadow-md",
                   selectedTemplate?.slug === template.slug &&
                     "ring-2 ring-[color:var(--brand-primary)]/40"
                 )}

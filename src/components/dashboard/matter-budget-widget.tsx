@@ -254,7 +254,10 @@ export function MatterBudgetWidget() {
               {budget.status.budget_cap && budget.status.budget_cap > 0 ? (
                 <div className="mb-1 h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--ds-border)]">
                   <div
-                    className={cn("h-full rounded-full transition-all", barColor)}
+                    className={cn(
+                      "h-full rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity]",
+                      barColor
+                    )}
                     style={{ width: `${Math.min(pct, 100)}%` }}
                   />
                 </div>

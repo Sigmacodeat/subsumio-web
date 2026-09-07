@@ -450,17 +450,17 @@ export function Topbar({
         >
           <span className="relative flex h-4 w-4 items-center justify-center">
             <span
-              className={`absolute h-0.5 w-4 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              className={`absolute h-0.5 w-4 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                 mobileOpen ? "top-1/2 -translate-y-1/2 rotate-45" : "top-[2px]"
               }`}
             />
             <span
-              className={`absolute h-0.5 w-4 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              className={`absolute h-0.5 w-4 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                 mobileOpen ? "top-1/2 -translate-y-1/2 opacity-0" : "top-1/2 -translate-y-1/2"
               }`}
             />
             <span
-              className={`absolute h-0.5 w-4 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              className={`absolute h-0.5 w-4 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                 mobileOpen ? "top-1/2 -translate-y-1/2 -rotate-45" : "bottom-[2px]"
               }`}
             />

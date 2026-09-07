@@ -272,7 +272,7 @@ export default function AdoptionAnalyticsPage() {
                         title={`${formatDate(t.date)}: ${t.total_requests} Anfragen, ${t.unique_users} Nutzer`}
                       >
                         <div
-                          className="bg-brand hover:bg-brand/80 w-full rounded-t transition-all"
+                          className="bg-brand hover:bg-brand/80 w-full rounded-t transition-[background-color,border-color,color,box-shadow,transform,opacity]"
                           style={{ height: `${Math.max(heightPct, 2)}%` }}
                         />
                         {i % Math.ceil(data.usage_trends.length / 12) === 0 && (

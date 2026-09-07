@@ -2348,12 +2348,12 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               setMobileOpen(false);
               if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
             }}
-            className="group flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-all duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-90 md:hidden"
+            className="group flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-90 md:hidden"
             aria-label={t("sidebar.close_menu")}
           >
             <span className="relative flex h-4 w-4 items-center justify-center">
-              <span className="absolute top-1/2 h-0.5 w-4 -translate-y-1/2 rotate-45 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
-              <span className="absolute top-1/2 h-0.5 w-4 -translate-y-1/2 -rotate-45 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
+              <span className="absolute top-1/2 h-0.5 w-4 -translate-y-1/2 rotate-45 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
+              <span className="absolute top-1/2 h-0.5 w-4 -translate-y-1/2 -rotate-45 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
             </span>
           </button>
           <Link

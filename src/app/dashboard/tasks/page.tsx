@@ -62,7 +62,7 @@ export default function TasksPage() {
   }, [tasks, filter]);
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8 flex h-full w-full flex-col">
+    <div className="mx-auto flex h-full w-full max-w-[1200px] flex-col space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("tasks.title")}
         description={t("tasks.description")}
@@ -73,7 +73,7 @@ export default function TasksPage() {
                 key={f}
                 onClick={() => setFilter(f)}
                 className={cn(
-                  "px-2 py-1 text-xs font-medium transition-all",
+                  "px-2 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity]",
                   filter === f
                     ? "rounded-md bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                     : "text-[color:var(--ds-text-muted)]"
