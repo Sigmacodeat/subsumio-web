@@ -409,7 +409,8 @@ function OverviewTab({ report, onRefresh }: { report: QualityReport; onRefresh: 
                 Predicted Confidence (0–1)
               </label>
               <input
-                type="number" inputMode="decimal"
+                type="number"
+                inputMode="decimal"
                 step="0.01"
                 min="0"
                 max="1"
@@ -951,10 +952,24 @@ function TrendTab({ days }: { days: number }) {
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--ds-border)" />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--ds-text-subtle)" }} stroke="var(--ds-text-subtle)" />
-                <YAxis tick={{ fontSize: 11, fill: "var(--ds-text-subtle)" }} stroke="var(--ds-text-subtle)" domain={[0, 100]} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11, fill: "var(--ds-text-subtle)" }}
+                  stroke="var(--ds-text-subtle)"
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: "var(--ds-text-subtle)" }}
+                  stroke="var(--ds-text-subtle)"
+                  domain={[0, 100]}
+                />
                 <Tooltip
-                  contentStyle={{ background: "var(--ds-surface)", borderRadius: 8, border: "1px solid var(--ds-border)", color: "var(--ds-text)", fontSize: 12 }}
+                  contentStyle={{
+                    background: "var(--ds-surface)",
+                    borderRadius: 8,
+                    border: "1px solid var(--ds-border)",
+                    color: "var(--ds-text)",
+                    fontSize: 12,
+                  }}
                   labelStyle={{ fontWeight: 600, color: "var(--ds-text)" }}
                 />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
@@ -1007,8 +1022,17 @@ function TrendTab({ days }: { days: number }) {
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--ds-border)" />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--ds-text-subtle)" }} stroke="var(--ds-text-subtle)" />
-                <YAxis yAxisId="left" tick={{ fontSize: 11, fill: "var(--ds-text-subtle)" }} stroke="var(--ds-text-subtle)" domain={[0, 100]} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11, fill: "var(--ds-text-subtle)" }}
+                  stroke="var(--ds-text-subtle)"
+                />
+                <YAxis
+                  yAxisId="left"
+                  tick={{ fontSize: 11, fill: "var(--ds-text-subtle)" }}
+                  stroke="var(--ds-text-subtle)"
+                  domain={[0, 100]}
+                />
                 <YAxis
                   yAxisId="right"
                   orientation="right"
@@ -1016,7 +1040,13 @@ function TrendTab({ days }: { days: number }) {
                   stroke="var(--ds-text-subtle)"
                 />
                 <Tooltip
-                  contentStyle={{ background: "var(--ds-surface)", borderRadius: 8, border: "1px solid var(--ds-border)", color: "var(--ds-text)", fontSize: 12 }}
+                  contentStyle={{
+                    background: "var(--ds-surface)",
+                    borderRadius: 8,
+                    border: "1px solid var(--ds-border)",
+                    color: "var(--ds-text)",
+                    fontSize: 12,
+                  }}
                   labelStyle={{ fontWeight: 600, color: "var(--ds-text)" }}
                 />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
@@ -1057,8 +1087,17 @@ function TrendTab({ days }: { days: number }) {
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={calibChartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--ds-border)" />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--ds-text-subtle)" }} stroke="var(--ds-text-subtle)" />
-                <YAxis yAxisId="left" tick={{ fontSize: 11, fill: "var(--ds-text-subtle)" }} stroke="var(--ds-text-subtle)" domain={[0, 1]} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11, fill: "var(--ds-text-subtle)" }}
+                  stroke="var(--ds-text-subtle)"
+                />
+                <YAxis
+                  yAxisId="left"
+                  tick={{ fontSize: 11, fill: "var(--ds-text-subtle)" }}
+                  stroke="var(--ds-text-subtle)"
+                  domain={[0, 1]}
+                />
                 <YAxis
                   yAxisId="right"
                   orientation="right"
@@ -1066,7 +1105,13 @@ function TrendTab({ days }: { days: number }) {
                   stroke="var(--ds-text-subtle)"
                 />
                 <Tooltip
-                  contentStyle={{ background: "var(--ds-surface)", borderRadius: 8, border: "1px solid var(--ds-border)", color: "var(--ds-text)", fontSize: 12 }}
+                  contentStyle={{
+                    background: "var(--ds-surface)",
+                    borderRadius: 8,
+                    border: "1px solid var(--ds-border)",
+                    color: "var(--ds-text)",
+                    fontSize: 12,
+                  }}
                   labelStyle={{ fontWeight: 600, color: "var(--ds-text)" }}
                 />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
@@ -1190,16 +1235,16 @@ export default function AiQualityPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-slate-200">
+      <div className="flex gap-1 border-b border-[color:var(--ds-border)]">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors",
+              "flex items-center gap-2 px-4 py-2 text-sm font-medium transition-[color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
               activeTab === tab.id
-                ? "border-b-2 border-violet-600 text-violet-600"
-                : "text-slate-500 hover:text-slate-700"
+                ? "brand-text border-b-2 border-[color:var(--brand-primary)]"
+                : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
             )}
           >
             <tab.icon className="h-4 w-4" />
