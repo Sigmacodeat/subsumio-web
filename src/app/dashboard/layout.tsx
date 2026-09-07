@@ -749,7 +749,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           </div>
           <button
             onClick={nativeFeatures.clearPushNotification}
-            className="shrink-0 text-[color:var(--ds-text-subtle)] transition-colors hover:text-[color:var(--ds-text)]"
+            className="shrink-0 rounded-md p-0.5 text-[color:var(--ds-text-subtle)] transition-[color,transform] duration-150 hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
             aria-label={t("common.close")}
           >
             <svg
