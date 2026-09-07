@@ -102,7 +102,7 @@ const _deBranches: ViewContent = {
       title: "Klein ./. Versicherung",
       client: "Klein S.",
       status: "Abgeschlossen",
-      statusColor: "green",
+      statusColor: "success",
     },
   ],
   brain: {
@@ -232,7 +232,7 @@ const BRANCHES: Record<string, Branch> = {
             title: "Klein ./. Insurance",
             client: "Klein S.",
             status: "Closed",
-            statusColor: "green",
+            statusColor: "success",
           },
         ],
         brain: {
@@ -345,9 +345,9 @@ const STATUS_COLORS: Record<string, { text: string; bg: string }> = {
     text: "var(--brand-tertiary)",
     bg: "color-mix(in srgb, var(--brand-tertiary) 12%, transparent)",
   },
-  green: {
-    text: "var(--signal-green)",
-    bg: "color-mix(in srgb, var(--signal-green) 12%, transparent)",
+  success: {
+    text: "var(--ds-success-text)",
+    bg: "var(--ds-success-bg)",
   },
 };
 
