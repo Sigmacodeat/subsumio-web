@@ -75,7 +75,7 @@ function ToastViewport() {
         <div
           key={toast.id}
           className={cn(
-            "animate-in slide-in-from-bottom-2 fade-in relative flex w-full max-w-sm items-start gap-3 rounded-lg border px-4 py-3 shadow-lg",
+            "animate-in slide-in-from-bottom-2 fade-in relative flex w-full max-w-sm items-start gap-3 rounded-lg border px-4 py-3 shadow-lg motion-reduce:animate-none",
             typeStyles[toast.type]
           )}
         >
@@ -86,7 +86,7 @@ function ToastViewport() {
           <button
             onClick={() => removeToast(toast.id)}
             aria-label="Benachrichtigung schließen"
-            className="opacity-60 hover:opacity-100"
+            className="rounded-md p-0.5 opacity-60 transition-[background-color,color,opacity,transform] duration-150 hover:bg-black/10 hover:opacity-100 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9]"
           >
             <X className="h-4 w-4" />
           </button>

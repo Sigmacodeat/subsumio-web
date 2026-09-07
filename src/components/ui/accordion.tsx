@@ -89,7 +89,7 @@ export function AccordionTrigger({
     <button
       onClick={() => onValueChange(itemValue)}
       className={cn(
-        "flex w-full items-center justify-between px-4 py-4 text-left text-sm font-medium transition-all outline-none hover:bg-[color:var(--ds-surface-2)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)]",
+        "flex w-full items-center justify-between px-4 py-4 text-left text-sm font-medium transition-[background-color,transform] duration-150 outline-none hover:bg-[color:var(--ds-surface-2)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] active:scale-[0.99] motion-reduce:transition-none",
         className
       )}
     >

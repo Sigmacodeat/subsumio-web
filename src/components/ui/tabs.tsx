@@ -28,7 +28,7 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "ring-offset-[color:var(--ds-surface)] inline-flex items-center justify-center rounded-md px-3 py-1 text-sm font-medium whitespace-nowrap transition-all focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-[color:var(--ds-surface)] data-[state=active]:text-[color:var(--ds-text)] data-[state=active]:shadow",
+      "inline-flex items-center justify-center rounded-md px-3 py-1 text-sm font-medium whitespace-nowrap ring-offset-[color:var(--ds-surface)] transition-[background-color,color,box-shadow,transform] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:ring-offset-2 focus-visible:outline-none active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-[color:var(--ds-surface)] data-[state=active]:text-[color:var(--ds-text)] data-[state=active]:shadow motion-reduce:transition-none",
       className
     )}
     {...props}
@@ -43,7 +43,7 @@ const TabsContent = React.forwardRef<
   <TabsPrimitive.Content
     ref={ref}
     className={cn(
-      "ring-offset-[color:var(--ds-surface)] mt-2 focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:ring-offset-2 focus-visible:outline-none",
+      "mt-2 ring-offset-[color:var(--ds-surface)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:ring-offset-2 focus-visible:outline-none",
       className
     )}
     {...props}
