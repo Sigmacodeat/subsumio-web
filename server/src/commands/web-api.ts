@@ -6219,7 +6219,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const pipelineData: Record<string, unknown> = {
           case_slug: caseSlug,
           part_slugs: partSlugs,
-          _source_id: requestSourceId(req),
+          // The handler reads `source_id`; `_source_id` was ignored and
+          // silently dropped tenant scope on every pipeline run.
+          source_id: requestSourceId(req),
         };
 
         // Billing context: owner_id (org or user), owner_type, user_id.
@@ -6233,6 +6235,25 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         }
         if (typeof body.user_id === "string" && body.user_id) {
           pipelineData.user_id = body.user_id;
+        }
+        if (typeof body.pipeline_key === "string" && body.pipeline_key) {
+          pipelineData.pipeline_key = body.pipeline_key;
+        }
+        if (typeof body.reserved_credits === "number" && body.reserved_credits >= 0) {
+          pipelineData.reserved_credits = body.reserved_credits;
+        }
+        if (
+          typeof body.workflow_id === "string" &&
+          [
+            "quick_answer",
+            "aktencheck",
+            "memo",
+            "fristen_report",
+            "schriftsatz",
+            "full_pipeline",
+          ].includes(body.workflow_id)
+        ) {
+          pipelineData.workflow_id = body.workflow_id;
         }
 
         let jurisdictionCandidate =

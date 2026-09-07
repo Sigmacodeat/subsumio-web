@@ -5,6 +5,8 @@
  * The modularized pipeline only executes layers listed in the workflow definition.
  *
  * Workflows:
+ *   quick_answer   — schnelle, quellengebundene Ersteinschätzung
+ *   aktencheck     — alltagsoptimierter Standard für eine neue Akte
  *   memo           — T5.1: Rechtsfrage → Kurzmemorandum
  *   fristen_report — T5.2: Gerichtsakt → Fristen- und Risikoreport
  *   schriftsatz    — T5.3: Schriftsatzentwurf
@@ -13,7 +15,13 @@
 
 import { LAYER_REGISTRY, getLayerDeclaration } from "./pipeline-registry.ts";
 
-export type WorkflowId = "memo" | "fristen_report" | "schriftsatz" | "full_pipeline";
+export type WorkflowId =
+  | "quick_answer"
+  | "aktencheck"
+  | "memo"
+  | "fristen_report"
+  | "schriftsatz"
+  | "full_pipeline";
 
 export interface PipelineWorkflowDef {
   /** Unique workflow identifier */
@@ -39,6 +47,58 @@ export interface PipelineWorkflowDef {
 // ── Workflow Definitions ──────────────────────────────────────
 
 export const WORKFLOW_DEFS: Record<WorkflowId, PipelineWorkflowDef> = {
+  // ── Everyday intake: minimal, grounded answer ──
+  quick_answer: {
+    id: "quick_answer",
+    label: "Schnelle Ersteinschätzung",
+    description:
+      "Prüft Dokumenttyp, Parteien, Kernfakten und passende Rechtsgrundlagen für eine " +
+      "schnelle, quellengebundene Ersteinschätzung — ohne Entwurf oder Ensemble-Lauf.",
+    icon: "⚡",
+    layers: [
+      "doc-classifier",
+      "on-scanner",
+      "entity-extractor",
+      "forensic-analyst",
+      "law-matcher",
+      "subsumption-checker",
+    ],
+    approvalGates: [],
+    featureFlag: "workflow_quick_answer",
+    dod: [
+      "Kernfakten, Parteien und einschlägige Normen sind strukturiert erfasst",
+      "Antwort enthält Quellen und offene Tatsachenfragen",
+      "Kein Schriftsatz oder automatischer Versand wird erzeugt",
+    ],
+  },
+
+  // ── Everyday default: new case review ──
+  aktencheck: {
+    id: "aktencheck",
+    label: "Aktencheck",
+    description:
+      "Der alltagsoptimierte Standardlauf für neue Akten: Fakten, Rechtsgrundlagen, " +
+      "Fristen und Verjährung — ohne teuren Entwurfs- oder Ensemble-Block.",
+    icon: "📂",
+    layers: [
+      "doc-classifier",
+      "on-scanner",
+      "entity-extractor",
+      "forensic-analyst",
+      "law-matcher",
+      "damage-deadline-extractor",
+      "deadline-validator",
+      "limitation-scanner",
+    ],
+    approvalGates: ["deadline-validator", "limitation-scanner"],
+    featureFlag: "workflow_aktencheck",
+    dod: [
+      "Fakten, Beteiligte und Rechtsgrundlagen sind nachvollziehbar erfasst",
+      "Fristen und Verjährung sind als zu prüfende Risikopunkte sichtbar",
+      "Kein Schriftsatz, Gegner-Simulator oder Ensemble wird unnötig ausgeführt",
+    ],
+  },
+
   // ── T5.1: Rechtsfrage → Kurzmemorandum ──
   memo: {
     id: "memo",

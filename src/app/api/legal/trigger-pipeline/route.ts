@@ -1,6 +1,14 @@
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
 import { ENGINE_URL, engineHeaders, enginePatchPage } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { estimatePipelineCredits } from "@/lib/billing/credit-rate-card";
+import {
+  insufficientCreditsResponse,
+  refundCredits,
+  reserveCredits,
+  type OwnerType,
+} from "@/lib/billing/credits";
 
 export const maxDuration = 30;
 
@@ -8,6 +16,9 @@ const triggerSchema = z.object({
   case_slug: z.string().min(1, "case_slug_required"),
   part_slugs: z.array(z.string()).optional(),
   jurisdiction: z.enum(["at", "de", "ch", "eu"]).optional(),
+  workflow_id: z
+    .enum(["quick_answer", "aktencheck", "memo", "fristen_report", "schriftsatz", "full_pipeline"])
+    .optional(),
   as_of_date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -56,11 +67,41 @@ export const POST = createHandler(
       const casePage = await casePageRes.json();
       const fm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
 
+      // The everyday default deliberately avoids the expensive draft and
+      // ensemble layers. Full pipeline remains an explicit user choice.
+      const workflowId = body.workflow_id ?? "aktencheck";
+      const ownerType: OwnerType = ctx.user.orgId ? "org" : "user";
+      const ownerId = ctx.user.orgId ?? ctx.user.id;
+
       // If part_slugs not provided, fetch case documents
       let partSlugs = body.part_slugs ?? [];
       if (partSlugs.length === 0 && !body.resume_from_layer) {
         const documents = (fm.documents as Array<Record<string, unknown>>) ?? [];
         partSlugs = documents.map((d) => String(d.slug ?? "")).filter(Boolean);
+      }
+
+      const documents = (fm.documents as Array<Record<string, unknown>>) ?? [];
+      const documentedPages = documents.reduce((sum, document) => {
+        const pageCount = Number(
+          document.page_count ??
+            (document.extraction_metadata as Record<string, unknown> | undefined)?.page_count ??
+            0
+        );
+        return sum + (Number.isFinite(pageCount) && pageCount > 0 ? pageCount : 0);
+      }, 0);
+      const casePages = Number(fm.total_pages ?? fm.page_count ?? 0);
+      const pages = Math.max(
+        1,
+        Number.isFinite(casePages) && casePages > 0
+          ? casePages
+          : documentedPages || partSlugs.length
+      );
+      const tier = workflowId === "quick_answer" ? 1 : workflowId === "full_pipeline" ? 3 : 2;
+      const estimatedCredits = estimatePipelineCredits(pages, tier).estimatedCredits;
+      const pipelineKey = `pipeline-${randomUUID()}`;
+      const reservation = await reserveCredits(ownerId, ownerType, estimatedCredits, pipelineKey);
+      if (!reservation.ok) {
+        return insufficientCreditsResponse(reservation.balanceAfterReservation, estimatedCredits);
       }
 
       if (partSlugs.length === 0 && !body.resume_from_layer) {
@@ -80,9 +121,12 @@ export const POST = createHandler(
         part_slugs: partSlugs,
         // Billing context: owner_id is org_id if user has org, else user.id.
         // user_id is always the individual user (for saas_usage_ledger).
-        owner_id: ctx.user.orgId ?? ctx.user.id,
-        owner_type: ctx.user.orgId ? "org" : "user",
+        owner_id: ownerId,
+        owner_type: ownerType,
         user_id: ctx.user.id,
+        pipeline_key: pipelineKey,
+        reserved_credits: reservation.reservedCredits,
+        workflow_id: workflowId,
       };
 
       const jurisdictionCandidate = String(
@@ -118,6 +162,7 @@ export const POST = createHandler(
 
       if (!triggerRes.ok) {
         const detail = await triggerRes.text().catch(() => "");
+        await refundCredits(ownerId, ownerType, reservation.reservedCredits, 0, pipelineKey);
         return apiError("trigger_failed", `Pipeline-Trigger fehlgeschlagen: ${detail}`, 502);
       }
 
@@ -132,6 +177,9 @@ export const POST = createHandler(
         frontmatter: {
           pipeline_status: body.resume_from_layer ? "resuming" : "running",
           pipeline_triggered_at: new Date().toISOString(),
+          pipeline_workflow: workflowId,
+          pipeline_key: pipelineKey,
+          pipeline_reserved_credits: reservation.reservedCredits,
         },
       });
 
@@ -139,6 +187,8 @@ export const POST = createHandler(
         ok: true,
         job_id: triggerResult.job_id ?? "unknown",
         status: "queued",
+        workflow_id: workflowId,
+        reserved_credits: reservation.reservedCredits,
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

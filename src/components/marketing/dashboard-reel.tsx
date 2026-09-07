@@ -95,7 +95,7 @@ const _deBranches: ViewContent = {
       title: "Reichmann Mietrecht",
       client: "Reichmann W.",
       status: "Gutachten",
-      statusColor: "violet",
+      statusColor: "accent",
     },
     {
       id: "AZ-2025-098",
@@ -125,7 +125,7 @@ const _deBranches: ViewContent = {
       { time: "09:00", title: "Verhandlung Bauer", matter: "AZ-2026-041", tone: "warning" },
       { time: "11:30", title: "Mandantengespräch Schwarz", matter: "AZ-2026-038", tone: "info" },
       { time: "14:00", title: "Frist Klageerwiderung", matter: "AZ-2026-041", tone: "danger" },
-      { time: "16:00", title: "Aktennotiz Müller", matter: "AZ-2026-035", tone: "violet" },
+      { time: "16:00", title: "Aktennotiz Müller", matter: "AZ-2026-035", tone: "accent" },
     ],
   },
   review: {
@@ -172,7 +172,7 @@ const _deBranches: ViewContent = {
         submittedBy: "Hr. Schmidt",
         submittedAt: "vor 3 Std",
         status: "Überarbeitet",
-        statusColor: "violet",
+        statusColor: "accent",
       },
     ],
     auditTrail: [
@@ -225,7 +225,7 @@ const BRANCHES: Record<string, Branch> = {
             title: "Reichmann Tenancy",
             client: "Reichmann W.",
             status: "Expert",
-            statusColor: "violet",
+            statusColor: "accent",
           },
           {
             id: "AZ-2025-098",
@@ -260,7 +260,7 @@ const BRANCHES: Record<string, Branch> = {
             { time: "09:00", title: "Hearing — Bauer", matter: "AZ-2026-041", tone: "warning" },
             { time: "11:30", title: "Client call — Schwarz", matter: "AZ-2026-038", tone: "info" },
             { time: "14:00", title: "Filing deadline", matter: "AZ-2026-041", tone: "danger" },
-            { time: "16:00", title: "Case note — Müller", matter: "AZ-2026-035", tone: "violet" },
+            { time: "16:00", title: "Case note — Müller", matter: "AZ-2026-035", tone: "accent" },
           ],
         },
         review: {
@@ -316,7 +316,7 @@ const BRANCHES: Record<string, Branch> = {
               submittedBy: "Hr. Schmidt",
               submittedAt: "3 hrs ago",
               status: "Revised",
-              statusColor: "violet",
+              statusColor: "accent",
             },
           ],
           auditTrail: [
@@ -341,7 +341,7 @@ const STATUS_COLORS: Record<string, { text: string; bg: string }> = {
     text: "var(--ds-danger-text)",
     bg: "var(--ds-danger-bg)",
   },
-  violet: {
+  accent: {
     text: "var(--brand-tertiary)",
     bg: "color-mix(in srgb, var(--brand-tertiary) 12%, transparent)",
   },
