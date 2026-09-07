@@ -277,7 +277,7 @@ export default function OnboardingPage() {
                 <button
                   onClick={skipOnboarding}
                   disabled={completing}
-                  className="text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+                  className="text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
                 >
                   {t("onboarding.skip")}
                 </button>
@@ -328,7 +328,7 @@ export default function OnboardingPage() {
                       industry === "legal"
                         ? "brand-border bg-[color:var(--brand-primary)]/5"
                         : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)]/30"
-                    }`}
+                    } active:scale-[0.97]`}
                   >
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-info-bg)]">
                       <Scale size={18} className="text-[color:var(--ds-info-text)]" />
@@ -349,7 +349,7 @@ export default function OnboardingPage() {
                       industry === "tax"
                         ? "brand-border bg-[color:var(--brand-primary)]/5"
                         : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)]/30"
-                    }`}
+                    } active:scale-[0.97]`}
                   >
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-success-bg)]">
                       <FileText size={20} className="text-[color:var(--ds-success-text)]" />
@@ -370,7 +370,7 @@ export default function OnboardingPage() {
                       industry === "other"
                         ? "brand-border bg-[color:var(--brand-primary)]/5"
                         : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)]/30"
-                    }`}
+                    } active:scale-[0.97]`}
                   >
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
                       <Briefcase size={18} className="text-[color:var(--ds-text-muted)]" />

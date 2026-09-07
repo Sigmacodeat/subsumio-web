@@ -435,7 +435,7 @@ export default function AltlastenPage() {
               key={key}
               onClick={() => setSortKey(key)}
               className={cn(
-                "rounded-md px-3 py-1 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
+                "rounded-md px-3 py-1 text-sm font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
                 sortKey === key
                   ? "bg-[color:var(--brand-primary)] text-white"
                   : "bg-[color:var(--ds-surface-2)] hover:bg-[color:var(--ds-surface-2)]/80"
@@ -453,7 +453,7 @@ export default function AltlastenPage() {
           <button
             onClick={() => setFilterStatus(null)}
             className={cn(
-              "rounded-md px-3 py-1 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
+              "rounded-md px-3 py-1 text-sm font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
               !filterStatus
                 ? "bg-[color:var(--brand-primary)] text-white"
                 : "bg-[color:var(--ds-surface-2)] hover:bg-[color:var(--ds-surface-2)]/80"
@@ -466,7 +466,7 @@ export default function AltlastenPage() {
               key={s}
               onClick={() => setFilterStatus(s)}
               className={cn(
-                "rounded-md px-3 py-1 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
+                "rounded-md px-3 py-1 text-sm font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
                 filterStatus === s
                   ? "bg-[color:var(--brand-primary)] text-white"
                   : "bg-[color:var(--ds-surface-2)] hover:bg-[color:var(--ds-surface-2)]/80"

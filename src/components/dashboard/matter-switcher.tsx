@@ -144,7 +144,7 @@ export function MatterSwitcher() {
         aria-expanded={open}
         aria-haspopup="listbox"
         className={cn(
-          "flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-[13px] font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
+          "flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-[13px] font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
           open
             ? "brand-soft brand-text brand-border"
             : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -339,7 +339,7 @@ function MatterSwitcherItem({
           onTogglePin(slug);
         }}
         className={cn(
-          "flex h-6 w-6 shrink-0 items-center justify-center rounded transition-[background-color,border-color,color] motion-reduce:transition-none",
+          "flex h-6 w-6 shrink-0 items-center justify-center rounded transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
           isPinned
             ? "brand-text"
             : "text-[color:var(--ds-text-subtle)] opacity-0 group-hover:opacity-100 hover:text-[color:var(--ds-text)]"

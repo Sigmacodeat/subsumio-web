@@ -260,7 +260,7 @@ export default function CalendarExportPage() {
               </code>
               <button
                 onClick={copySubscriptionUrl}
-                className="flex shrink-0 items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-3 py-1.5 text-xs font-medium text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] motion-reduce:transition-none"
+                className="flex shrink-0 items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-3 py-1.5 text-xs font-medium text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] active:scale-[0.97] motion-reduce:transition-none"
               >
                 {copied ? <Check size={12} /> : <Copy size={12} />}
                 {copied ? "Kopiert!" : "Kopieren"}
@@ -293,7 +293,7 @@ export default function CalendarExportPage() {
               filter === f
                 ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
                 : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
-            }`}
+            } active:scale-[0.97]`}
           >
             {f === "all"
               ? "Alle"

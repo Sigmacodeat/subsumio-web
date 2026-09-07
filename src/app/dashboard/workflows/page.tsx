@@ -374,7 +374,7 @@ export default function WorkflowsPage() {
                 <button
                   key={template.id}
                   onClick={() => setSelectedTemplate(template.id)}
-                  className="hover:brand-border hover:brand-soft/5 space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
+                  className="hover:brand-border hover:brand-soft/5 space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none"
                 >
                   <div className="flex items-start gap-2">
                     <span className="shrink-0 text-xl">{template.icon}</span>
@@ -415,7 +415,7 @@ export default function WorkflowsPage() {
                   key={f.key}
                   onClick={() => setFilter(f.key)}
                   className={cn(
-                    "rounded-lg px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
+                    "rounded-lg px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
                     filter === f.key
                       ? "brand-soft brand-text brand-border border"
                       : "border border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -496,7 +496,7 @@ function WorkflowCard({
       {/* Header row */}
       <button
         onClick={onToggle}
-        className="flex w-full items-center gap-3 p-4 text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)]/50 motion-reduce:transition-none"
+        className="flex w-full items-center gap-3 p-4 text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)]/50 active:scale-[0.97] motion-reduce:transition-none"
         aria-expanded={expanded}
       >
         {expanded ? (

@@ -270,7 +270,7 @@ function MonitorFormDialog({
                     form.sources.includes(src)
                       ? "brand-soft brand-text brand-border"
                       : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
-                  }`}
+                  } active:scale-[0.97]`}
                 >
                   {SOURCE_LABELS[src]}
                 </button>
@@ -445,7 +445,7 @@ function MonitorCard({
                 ? t("monitoring.card_pause")
                 : t("monitoring.card_activate")
             }
-            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
           >
             {monitor.status === "active" ? <Pause size={14} /> : <Play size={14} />}
           </button>
@@ -453,7 +453,7 @@ function MonitorCard({
             onClick={onEdit}
             title={t("monitoring.card_edit")}
             aria-label={t("monitoring.card_edit")}
-            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
           >
             <Pencil size={14} />
           </button>
@@ -461,7 +461,7 @@ function MonitorCard({
             onClick={onDelete}
             title={t("monitoring.card_delete")}
             aria-label={t("monitoring.card_delete")}
-            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-danger-text)] motion-reduce:transition-none"
+            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-danger-text)] active:scale-[0.97] motion-reduce:transition-none"
           >
             <Trash2 size={14} />
           </button>
@@ -591,7 +591,7 @@ function AlertItem({
             {!alert.read && (
               <button
                 onClick={onMarkRead}
-                className="inline-flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+                className="inline-flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
               >
                 <Check size={11} /> {t("monitoring.alert_mark_read")}
               </button>
@@ -955,19 +955,19 @@ export default function MonitoringPage() {
                 </span>
                 <button
                   onClick={() => setSortBy("date_desc")}
-                  className={`rounded-lg px-2 py-1 text-xs transition-[background-color,border-color,color] motion-reduce:transition-none ${sortBy === "date_desc" ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
+                  className={`rounded-lg px-2 py-1 text-xs transition-[background-color,border-color,color] motion-reduce:transition-none ${sortBy === "date_desc" ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"} active:scale-[0.97]`}
                 >
                   {t("monitoring.sort_date_desc")}
                 </button>
                 <button
                   onClick={() => setSortBy("date_asc")}
-                  className={`rounded-lg px-2 py-1 text-xs transition-[background-color,border-color,color] motion-reduce:transition-none ${sortBy === "date_asc" ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
+                  className={`rounded-lg px-2 py-1 text-xs transition-[background-color,border-color,color] motion-reduce:transition-none ${sortBy === "date_asc" ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"} active:scale-[0.97]`}
                 >
                   {t("monitoring.sort_date_asc")}
                 </button>
                 <button
                   onClick={() => setSortBy("severity")}
-                  className={`rounded-lg px-2 py-1 text-xs transition-[background-color,border-color,color] motion-reduce:transition-none ${sortBy === "severity" ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
+                  className={`rounded-lg px-2 py-1 text-xs transition-[background-color,border-color,color] motion-reduce:transition-none ${sortBy === "severity" ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"} active:scale-[0.97]`}
                 >
                   {t("monitoring.sort_severity")}
                 </button>

@@ -371,7 +371,7 @@ export default function MailboxClient({
                   isActive
                     ? "bg-[color:var(--ds-surface-2)] font-medium text-[color:var(--ds-text)]"
                     : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)]"
-                }`}
+                } active:scale-[0.97]`}
               >
                 <span className="flex items-center gap-2">
                   <Icon size={15} />
@@ -515,7 +515,7 @@ export default function MailboxClient({
                       isSelected
                         ? "bg-[color:var(--ds-surface-2)]"
                         : "hover:bg-[color:color-mix(in_srgb,var(--ds-surface-2)_50%,transparent)]"
-                    } ${isUnread ? "border-l-2 border-l-[color:var(--ds-category-violet-text)]" : "border-l-2 border-l-transparent"}`}
+                    } ${isUnread ? "border-l-2 border-l-[color:var(--ds-category-violet-text)]" : "border-l-2 border-l-transparent"} active:scale-[0.97]`}
                   >
                     {/* Avatar */}
                     <div

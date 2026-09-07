@@ -179,7 +179,7 @@ export default function CostCalculatorPage() {
           <button
             onClick={() => setJurisdiction("de")}
             className={cn(
-              "flex-1 rounded-xl border px-4 py-3 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
+              "flex-1 rounded-xl border px-4 py-3 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
               jurisdiction === "de"
                 ? "brand-soft brand-border brand-text"
                 : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -190,7 +190,7 @@ export default function CostCalculatorPage() {
           <button
             onClick={() => setJurisdiction("at")}
             className={cn(
-              "flex-1 rounded-xl border px-4 py-3 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
+              "flex-1 rounded-xl border px-4 py-3 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
               jurisdiction === "at"
                 ? "brand-soft brand-border brand-text"
                 : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"

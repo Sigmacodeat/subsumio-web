@@ -740,7 +740,7 @@ export default function AgentsPage() {
         <button
           onClick={() => setTab("jobs")}
           className={cn(
-            "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
+            "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
             tab === "jobs"
               ? "brand-soft brand-text brand-border border"
               : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -752,7 +752,7 @@ export default function AgentsPage() {
         <button
           onClick={() => setTab("builder")}
           className={cn(
-            "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
+            "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
             tab === "builder"
               ? "brand-soft brand-text brand-border border"
               : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -820,7 +820,7 @@ export default function AgentsPage() {
                     onClick={() => {
                       setSubmitPrompt(template.prompt);
                     }}
-                    className="hover:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-left text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+                    className="hover:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-left text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
                   >
                     <span className="mr-1.5">{template.icon}</span>
                     {template.label}
@@ -882,7 +882,7 @@ export default function AgentsPage() {
                     key={f}
                     onClick={() => setFilter(f)}
                     className={cn(
-                      "rounded-md px-2 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
+                      "rounded-md px-2 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
                       filter === f
                         ? "brand-soft brand-text brand-border border"
                         : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text-muted)]"
@@ -916,7 +916,7 @@ export default function AgentsPage() {
                   key={job.id}
                   onClick={() => setSelectedJob(job.id)}
                   className={cn(
-                    "w-full rounded-lg border p-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
+                    "w-full rounded-lg border p-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
                     selectedJob === job.id
                       ? "brand-soft brand-border"
                       : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"

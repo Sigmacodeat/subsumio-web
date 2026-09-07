@@ -434,7 +434,7 @@ export function ReviewInboxTab() {
               key={tab.key}
               onClick={() => setFilter(isActive ? "all" : tab.key)}
               className={cn(
-                "flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm transition-[background-color,border-color,color] motion-reduce:transition-none",
+                "flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
                 isActive
                   ? "border-[color:var(--brand-primary)] font-medium text-[color:var(--ds-text)]"
                   : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -573,7 +573,7 @@ export function ReviewInboxTab() {
                             })
                           }
                           disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] disabled:opacity-50 motion-reduce:transition-none"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                         >
                           {busy ? (
                             <Loader2 size={12} className="animate-spin" />
@@ -585,7 +585,7 @@ export function ReviewInboxTab() {
                         {item.portalUrl && (
                           <button
                             onClick={() => copyPortalUrl(item)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
+                            className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] active:scale-[0.97] motion-reduce:transition-none"
                           >
                             <ArrowUpRight size={12} />
                             {tr("copy_portal", lang)}
@@ -603,7 +603,7 @@ export function ReviewInboxTab() {
                           })
                         }
                         disabled={busy}
-                        className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] disabled:opacity-50 motion-reduce:transition-none"
+                        className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                       >
                         {busy ? (
                           <Loader2 size={12} className="animate-spin" />
@@ -624,7 +624,7 @@ export function ReviewInboxTab() {
                             })
                           }
                           disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] disabled:opacity-50 motion-reduce:transition-none"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                         >
                           {busy ? (
                             <Loader2 size={12} className="animate-spin" />
@@ -642,7 +642,7 @@ export function ReviewInboxTab() {
                             })
                           }
                           disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-1 text-xs text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] disabled:opacity-50 motion-reduce:transition-none"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-1 text-xs text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                         >
                           {busy ? <Loader2 size={12} className="animate-spin" /> : <X size={12} />}
                           {tr("reject", lang)}
@@ -660,7 +660,7 @@ export function ReviewInboxTab() {
                             })
                           }
                           disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] disabled:opacity-50 motion-reduce:transition-none"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                         >
                           {busy ? (
                             <Loader2 size={12} className="animate-spin" />
@@ -678,7 +678,7 @@ export function ReviewInboxTab() {
                             })
                           }
                           disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-2 py-1 text-xs text-[color:var(--ds-info-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-info-bg)] disabled:opacity-50 motion-reduce:transition-none"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-2 py-1 text-xs text-[color:var(--ds-info-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-info-bg)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                         >
                           {busy ? (
                             <Loader2 size={12} className="animate-spin" />
@@ -700,7 +700,7 @@ export function ReviewInboxTab() {
                             })
                           }
                           disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] disabled:opacity-50 motion-reduce:transition-none"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                         >
                           {busy ? (
                             <Loader2 size={12} className="animate-spin" />
@@ -718,7 +718,7 @@ export function ReviewInboxTab() {
                             })
                           }
                           disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-1 text-xs text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] disabled:opacity-50 motion-reduce:transition-none"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-1 text-xs text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-danger-bg)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                         >
                           {busy ? <Loader2 size={12} className="animate-spin" /> : <X size={12} />}
                           {tr("reject", lang)}
@@ -736,7 +736,7 @@ export function ReviewInboxTab() {
                             })
                           }
                           disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] disabled:opacity-50 motion-reduce:transition-none"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-success-bg)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                         >
                           {busy ? (
                             <Loader2 size={12} className="animate-spin" />
@@ -754,7 +754,7 @@ export function ReviewInboxTab() {
                             })
                           }
                           disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-1 text-xs text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-warning-bg)] disabled:opacity-50 motion-reduce:transition-none"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-1 text-xs text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-warning-bg)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
                         >
                           {busy ? (
                             <Loader2 size={12} className="animate-spin" />

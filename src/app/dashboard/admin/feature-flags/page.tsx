@@ -405,7 +405,7 @@ function CreateFlagDialog({
                     allowedPlans.includes(plan)
                       ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : "text-[color:var(--ds-text-muted)]"
-                  }`}
+                  } active:scale-[0.97]`}
                 >
                   {plan}
                 </button>
@@ -425,7 +425,7 @@ function CreateFlagDialog({
                     allowedRoles.includes(role)
                       ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : "text-[color:var(--ds-text-muted)]"
-                  }`}
+                  } active:scale-[0.97]`}
                 >
                   {role}
                 </button>
@@ -558,7 +558,7 @@ function EditFlagDialog({
                     allowedPlans.includes(plan)
                       ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : "text-[color:var(--ds-text-muted)]"
-                  }`}
+                  } active:scale-[0.97]`}
                 >
                   {plan}
                 </button>
@@ -578,7 +578,7 @@ function EditFlagDialog({
                     allowedRoles.includes(role)
                       ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : "text-[color:var(--ds-text-muted)]"
-                  }`}
+                  } active:scale-[0.97]`}
                 >
                   {role}
                 </button>

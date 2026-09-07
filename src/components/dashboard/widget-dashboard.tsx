@@ -364,7 +364,7 @@ export function QueueRow({
         title={pin.pinned ? pin.unpinLabel : pin.pinLabel}
         className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none ${
           pin.pinned ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-        }`}
+        } active:scale-[0.97]`}
       >
         {pin.pinned ? (
           <Pin size={13} className="fill-current text-[var(--brand-primary)]" />
@@ -508,7 +508,7 @@ export function PinnedMatters({ cases }: { cases: DashboardPageLike[] }) {
                 onClick={() => togglePin(slug)}
                 aria-label={pinnedNow ? t("cockpit.unpin") : t("cockpit.pin")}
                 title={pinnedNow ? t("cockpit.unpin") : t("cockpit.pin")}
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
               >
                 {pinnedNow ? (
                   <Pin size={12} className="fill-current text-[var(--brand-primary)]" />
@@ -602,7 +602,7 @@ export function QuickActions() {
             <button
               key={action.label}
               onClick={() => window.dispatchEvent(new CustomEvent(action.event!))}
-              className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-[13px] font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+              className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-[13px] font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
             >
               <Icon size={13} className="shrink-0" />
               <span className="min-w-0 truncate">{action.label}</span>

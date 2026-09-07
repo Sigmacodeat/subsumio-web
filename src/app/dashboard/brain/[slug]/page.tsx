@@ -186,7 +186,7 @@ export default function BrainDetailPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={copySlug}
-              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text-muted)] motion-reduce:transition-none"
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text-muted)] active:scale-[0.97] motion-reduce:transition-none"
             >
               {copied ? (
                 <Check size={12} className="text-[color:var(--ds-success-text)]" />
@@ -198,7 +198,7 @@ export default function BrainDetailPage() {
             <button
               onClick={() => setEditMode(!editMode)}
               className={cn(
-                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
+                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
                 editMode
                   ? "brand-soft brand-text brand-border"
                   : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text-muted)]"
@@ -444,7 +444,7 @@ export default function BrainDetailPage() {
       <div className="mt-6">
         <button
           onClick={() => setChatOpen((v) => !v)}
-          className="flex w-full items-center justify-between rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm font-medium text-[color:var(--ds-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
+          className="flex w-full items-center justify-between rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm font-medium text-[color:var(--ds-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] active:scale-[0.97] motion-reduce:transition-none"
         >
           <span className="flex items-center gap-2">
             <MessageCircle size={16} className="brand-text" />

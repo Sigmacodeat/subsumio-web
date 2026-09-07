@@ -106,7 +106,7 @@ export function ModelSelector({
       <button
         onClick={() => setOpen(!open)}
         className={cn(
-          "flex items-center gap-1.5 rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none",
+          "flex items-center gap-1.5 rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none",
           isCompact
             ? "bg-[color:var(--ds-surface-2)] px-2 py-1 text-xs hover:bg-[color:var(--ds-hover)]"
             : "border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-xs hover:border-[color:var(--ds-border-strong)]"
@@ -141,7 +141,7 @@ export function ModelSelector({
             <button
               onClick={() => handleSelect("auto")}
               className={cn(
-                "flex w-full items-start gap-2.5 border-b border-[color:var(--ds-border)] text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none",
+                "flex w-full items-start gap-2.5 border-b border-[color:var(--ds-border)] text-left transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] active:scale-[0.97] motion-reduce:transition-none",
                 isCompact ? "px-3 py-2" : "px-4 py-3",
                 activeModelId === "auto" && "brand-soft"
               )}
@@ -178,7 +178,7 @@ export function ModelSelector({
                   key={model.id}
                   onClick={() => handleSelect(model.id)}
                   className={cn(
-                    "flex w-full items-start gap-2.5 border-b border-[color:var(--ds-border)] text-left transition-[background-color,border-color,color] last:border-0 hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none",
+                    "flex w-full items-start gap-2.5 border-b border-[color:var(--ds-border)] text-left transition-[background-color,border-color,color] last:border-0 hover:bg-[color:var(--ds-hover)] active:scale-[0.97] motion-reduce:transition-none",
                     isCompact ? "px-3 py-2" : "px-4 py-3",
                     isActive && "brand-soft"
                   )}

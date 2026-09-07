@@ -803,7 +803,7 @@ function TourOverlay({
               </div>
               <button
                 onClick={onClose}
-                className="rounded-md p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+                className="rounded-md p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
                 aria-label={t("tour.close")}
               >
                 <X size={16} />
@@ -839,7 +839,7 @@ function TourOverlay({
                   : i < currentStep
                     ? "w-1.5 bg-[color:var(--brand-primary)]/50"
                     : "w-1.5 bg-[color:var(--ds-border)]"
-              }`}
+              } active:scale-[0.97]`}
             />
           ))}
         </div>
@@ -872,7 +872,7 @@ function TourOverlay({
         {/* Skip link */}
         <button
           onClick={onClose}
-          className="mt-3 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+          className="mt-3 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
         >
           {t("tour.skip")}
         </button>

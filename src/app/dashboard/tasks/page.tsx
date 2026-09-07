@@ -73,7 +73,7 @@ export default function TasksPage() {
                 key={f}
                 onClick={() => setFilter(f)}
                 className={cn(
-                  "px-2 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none",
+                  "px-2 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] active:scale-[0.97] motion-reduce:transition-none",
                   filter === f
                     ? "rounded-md bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                     : "text-[color:var(--ds-text-muted)]"

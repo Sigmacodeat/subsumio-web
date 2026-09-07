@@ -405,7 +405,7 @@ export default function BackupRestorePage() {
                               restorePageTypes.includes(type)
                                 ? "border-[color:var(--ds-brand)] bg-[color:var(--ds-brand)] text-white"
                                 : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)]"
-                            }`}
+                            } active:scale-[0.97]`}
                           >
                             {type}
                           </button>

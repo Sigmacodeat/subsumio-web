@@ -510,7 +510,7 @@ function PlaybookCard({
         <div className="flex shrink-0 items-center gap-1">
           <button
             onClick={() => setExpanded(!expanded)}
-            className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
+            className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none"
             title={t("playbooks.title_expand")}
             aria-label={t("playbooks.title_expand")}
           >
@@ -518,7 +518,7 @@ function PlaybookCard({
           </button>
           <button
             onClick={onEdit}
-            className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
+            className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none"
             title={t("playbooks.title_edit")}
             aria-label={t("playbooks.title_edit")}
           >
@@ -526,7 +526,7 @@ function PlaybookCard({
           </button>
           <button
             onClick={onDelete}
-            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] motion-reduce:transition-none"
+            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] active:scale-[0.97] motion-reduce:transition-none"
             title={t("playbooks.title_delete")}
             aria-label={t("playbooks.title_delete")}
           >
@@ -666,7 +666,7 @@ function PlaybookEditor(props: {
                   selected
                     ? "brand-bg border-transparent text-white"
                     : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--brand-primary)]"
-                }`}
+                } active:scale-[0.97]`}
               >
                 {t}
               </button>
@@ -768,7 +768,7 @@ function RuleRow({
         />
         <button
           onClick={onDuplicate}
-          className="hover:brand-text rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
+          className="hover:brand-text rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none"
           title={t("playbooks.title_duplicate")}
           aria-label={t("playbooks.title_duplicate")}
         >
@@ -776,7 +776,7 @@ function RuleRow({
         </button>
         <button
           onClick={onRemove}
-          className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-[color:var(--ds-danger-text)] motion-reduce:transition-none"
+          className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-[color:var(--ds-danger-text)] active:scale-[0.97] motion-reduce:transition-none"
           title={t("playbooks.title_remove")}
           aria-label={t("playbooks.title_remove")}
         >

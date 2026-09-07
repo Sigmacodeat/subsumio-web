@@ -250,7 +250,7 @@ export default function TeamMeetingPage() {
                           item.status === "done"
                             ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-white"
                             : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)]"
-                        }`}
+                        } active:scale-[0.97]`}
                         aria-label={item.title}
                       >
                         {item.status === "done" && "✓"}

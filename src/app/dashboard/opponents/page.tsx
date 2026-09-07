@@ -205,7 +205,7 @@ export default function OpponentsPage() {
           {query && (
             <button
               onClick={() => setQuery("")}
-              className="absolute top-1/2 right-2.5 -translate-y-1/2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+              className="absolute top-1/2 right-2.5 -translate-y-1/2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
               aria-label={t("opponents.search_clear")}
             >
               <X size={15} />
@@ -235,7 +235,7 @@ export default function OpponentsPage() {
             <div className="space-y-4">
               <button
                 onClick={() => setSelectedOpponent(null)}
-                className="text-sm text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+                className="text-sm text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
               >
                 {t("opponents.back")}
               </button>
@@ -354,7 +354,7 @@ export default function OpponentsPage() {
                 <button
                   key={o.name}
                   onClick={() => setSelectedOpponent(o)}
-                  className="hover:brand-border hover:brand-soft group flex w-full items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
+                  className="hover:brand-border hover:brand-soft group flex w-full items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none"
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]">
                     <ShieldAlert size={18} className="text-[color:var(--ds-danger-text)]" />

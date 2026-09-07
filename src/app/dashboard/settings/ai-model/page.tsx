@@ -70,7 +70,7 @@ export default function AIModelSettingsPage() {
           </p>
           <button
             onClick={() => query.refetch()}
-            className="mt-3 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+            className="mt-3 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
           >
             Erneut versuchen
           </button>

@@ -357,7 +357,7 @@ export default function AuditLogPage() {
             {activeFilterCount > 0 && (
               <button
                 onClick={resetFilters}
-                className="text-xs text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+                className="text-xs text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
               >
                 {t("audit.reset")}
               </button>
@@ -656,7 +656,7 @@ export default function AuditLogPage() {
                 ref={drawerCloseRef}
                 onClick={() => setSelectedEntry(null)}
                 aria-label={t("common.close")}
-                className="text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] motion-reduce:transition-none"
+                className="text-[color:var(--ds-text-subtle)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] active:scale-[0.97] motion-reduce:transition-none"
               >
                 <X size={18} />
               </button>

@@ -409,7 +409,7 @@ export default function TrustAccountingPage() {
               <button
                 key={a.slug}
                 onClick={() => setSelectedSlug(a.slug)}
-                className="group rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:border-[color:var(--brand-primary)] hover:shadow-md motion-reduce:transition-none"
+                className="group rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:border-[color:var(--brand-primary)] hover:shadow-md active:scale-[0.97] motion-reduce:transition-none"
               >
                 <div className="mb-3 flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
