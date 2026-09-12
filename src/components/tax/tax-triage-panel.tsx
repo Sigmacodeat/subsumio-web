@@ -86,13 +86,21 @@ const URGENCY_STYLES: Record<string, { color: string; icon: typeof AlertCircle }
       "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)]",
     icon: AlertCircle,
   },
-  high: { color: "text-orange-600 bg-orange-500/10 border-orange-500/20", icon: AlertTriangle },
+  high: {
+    color:
+      "text-[color:var(--ds-attention-text)] bg-[color:var(--ds-attention-bg)] border-[color:var(--ds-attention-border)]",
+    icon: AlertTriangle,
+  },
   medium: {
     color:
       "text-[color:var(--ds-warning-text)] bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)]",
     icon: AlertTriangle,
   },
-  low: { color: "text-slate-600 bg-slate-500/10 border-slate-500/20", icon: CheckCircle2 },
+  low: {
+    color:
+      "text-[color:var(--ds-neutral-text)] bg-[color:var(--ds-neutral-bg)] border-[color:var(--ds-neutral-border)]",
+    icon: CheckCircle2,
+  },
 };
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -107,7 +115,7 @@ const SOURCE_LABELS: Record<string, string> = {
 const RISK_STYLES: Record<string, string> = {
   critical:
     "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)]",
-  high: "text-orange-600 bg-orange-500/10 border-orange-500/20",
+  high: "text-[color:var(--ds-attention-text)] bg-[color:var(--ds-attention-bg)] border-[color:var(--ds-attention-border)]",
   medium:
     "text-[color:var(--ds-warning-text)] bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)]",
   low: "text-[color:var(--ds-success-text)] bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)]",
@@ -319,8 +327,10 @@ export function TaxTriagePanel() {
               {t("tax.triage.critical")}
             </div>
           </div>
-          <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-2 text-center">
-            <div className="text-lg font-bold text-orange-600">{summary.high}</div>
+          <div className="rounded-lg border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] p-2 text-center">
+            <div className="text-lg font-bold text-[color:var(--ds-attention-text)]">
+              {summary.high}
+            </div>
             <div className="text-xs text-[color:var(--ds-text-muted)]">{t("tax.triage.high")}</div>
           </div>
           <div className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-2 text-center">
@@ -331,8 +341,10 @@ export function TaxTriagePanel() {
               {t("tax.triage.medium")}
             </div>
           </div>
-          <div className="rounded-lg border border-slate-500/20 bg-slate-500/5 p-2 text-center">
-            <div className="text-lg font-bold text-slate-600">{summary.low}</div>
+          <div className="rounded-lg border border-[color:var(--ds-neutral-border)] bg-[color:var(--ds-neutral-bg)] p-2 text-center">
+            <div className="text-lg font-bold text-[color:var(--ds-neutral-text)]">
+              {summary.low}
+            </div>
             <div className="text-xs text-[color:var(--ds-text-muted)]">{t("tax.triage.low")}</div>
           </div>
         </div>

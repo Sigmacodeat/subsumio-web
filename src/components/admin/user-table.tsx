@@ -19,7 +19,8 @@ function industryBadgeClass(industry: string | null | undefined): string {
     return "border-blue-500/25 bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]";
   if (industry === "tax")
     return "border-emerald-500/25 bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]";
-  if (industry === "other") return "border-violet-500/25 bg-violet-500/10 text-violet-400";
+  if (industry === "other")
+    return "border-[color:var(--ds-category-violet-border)] bg-[color:var(--ds-category-violet-bg)] text-[color:var(--ds-category-violet-text)]";
   return "border-[color:var(--ds-border)] text-[color:var(--ds-text-subtle)] bg-[color:var(--ds-surface-2)]";
 }
 

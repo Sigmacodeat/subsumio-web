@@ -81,7 +81,7 @@ export default function ChatAnalyticsPage() {
       icon: TrendingUp,
       label: "Ø Tokens/Nachricht",
       value: avgTokensPerMessage.toLocaleString(lang === "en" ? "en-GB" : "de-DE"),
-      color: "text-purple-500",
+      color: "text-[color:var(--ds-category-purple-text)]",
     },
     {
       icon: Pin,
@@ -93,7 +93,7 @@ export default function ChatAnalyticsPage() {
       icon: Tag,
       label: "Getaggt",
       value: stats.taggedCount,
-      color: "text-cyan-500",
+      color: "text-[color:var(--ds-info-text)]",
     },
   ];
 

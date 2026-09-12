@@ -66,9 +66,9 @@ const CARDS = [
     icon: BarChart3,
     titleKey: "portfolio_insights",
     descKey: "portfolio_insights_desc",
-    color: "text-violet-600",
-    bg: "bg-violet-500/10",
-    border: "border-violet-500/20",
+    color: "text-[color:var(--ds-category-violet-text)]",
+    bg: "bg-[color:var(--ds-category-violet-bg)]",
+    border: "border-[color:var(--ds-category-violet-border)]",
   },
   {
     href: "/dashboard/reports",

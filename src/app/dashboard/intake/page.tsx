@@ -101,8 +101,10 @@ const STATUS_FILTERS: Array<{ key: "all" | IntakeStatus; labelKey: DashboardKey 
 
 const STATUS_BADGE: Record<IntakeStatus, string> = {
   new: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
-  needs_info: "border-slate-500/20 bg-slate-500/10 text-slate-600",
-  conflict_check: "border-violet-500/20 bg-violet-500/10 text-violet-600",
+  needs_info:
+    "border-[color:var(--ds-neutral-border)] bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)]",
+  conflict_check:
+    "border-[color:var(--ds-category-violet-border)] bg-[color:var(--ds-category-violet-bg)] text-[color:var(--ds-category-violet-text)]",
   accepted:
     "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
   rejected:
@@ -605,7 +607,7 @@ export default function IntakePage() {
                           {item.frontmatter.conflict_check_status && (
                             <Badge
                               variant="default"
-                              className="border border-slate-500/20 bg-slate-500/10 text-xs text-slate-600"
+                              className="border border-[color:var(--ds-neutral-border)] bg-[color:var(--ds-neutral-bg)] text-xs text-[color:var(--ds-neutral-text)]"
                             >
                               {item.frontmatter.conflict_check_status}
                             </Badge>
@@ -1040,7 +1042,7 @@ function StatCard({
           : tone === "red"
             ? "text-[color:var(--ds-danger-text)]"
             : tone === "violet"
-              ? "text-violet-600"
+              ? "text-[color:var(--ds-category-violet-text)]"
               : "text-[color:var(--ds-text)]";
   return (
     <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
@@ -1081,7 +1083,7 @@ const URGENCY_STYLES: Record<string, string> = {
   high: "border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)]",
   medium:
     "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
-  low: "border-slate-500/20 bg-slate-500/10 text-slate-600",
+  low: "border-[color:var(--ds-neutral-border)] bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)]",
 };
 
 const ACTION_ICONS: Record<string, React.ElementType> = {

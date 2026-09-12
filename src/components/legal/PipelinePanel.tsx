@@ -1381,7 +1381,7 @@ export function PipelinePanel({
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <Network size={18} className="text-purple-600" />
+                <Network size={18} className="text-[color:var(--ds-category-purple-text)]" />
                 <div>
                   <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
                     ON-Querverweis-Graph
@@ -1452,9 +1452,9 @@ export function PipelinePanel({
                         {refs.map((ref, i) => (
                           <div
                             key={i}
-                            className="flex items-center gap-1.5 rounded-lg border border-purple-500/20 bg-purple-500/5 px-2.5 py-1.5"
+                            className="flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-category-purple-border)] bg-[color:var(--ds-category-purple-bg)] px-2.5 py-1.5"
                           >
-                            <span className="font-mono text-xs font-semibold text-purple-600">
+                            <span className="font-mono text-xs font-semibold text-[color:var(--ds-category-purple-text)]">
                               {ref.on}
                             </span>
                             <ChevronRight size={10} className="text-[color:var(--ds-text-muted)]" />
@@ -1477,7 +1477,7 @@ export function PipelinePanel({
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <Scale size={18} className="text-indigo-600" />
+              <Scale size={18} className="text-[color:var(--ds-category-indigo-text)]" />
               <div>
                 <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
                   Narrative Kohärenz (Ensemble Critic)
@@ -1522,8 +1522,10 @@ export function PipelinePanel({
           {showCoherence && (
             <div className="mt-3 space-y-3">
               {pipelineState.ensemble_verdict.consensus.central_thesis && (
-                <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3">
-                  <span className="text-xs font-semibold text-indigo-600">Zentrale These</span>
+                <div className="rounded-lg border border-[color:var(--ds-category-indigo-border)] bg-[color:var(--ds-category-indigo-bg)] p-3">
+                  <span className="text-xs font-semibold text-[color:var(--ds-category-indigo-text)]">
+                    Zentrale These
+                  </span>
                   <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text)]">
                     {pipelineState.ensemble_verdict.consensus.central_thesis}
                   </p>

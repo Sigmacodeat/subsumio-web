@@ -231,8 +231,8 @@ export function ActivityTab() {
           )}
           {caseData.documents.length > 0 && (
             <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-600/15">
-                <FileText size={20} className="text-gray-400" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color:var(--ds-neutral-text)]/15">
+                <FileText size={20} className="text-[color:var(--ds-neutral-text)]" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-xs text-[color:var(--ds-text-muted)]">
@@ -246,8 +246,8 @@ export function ActivityTab() {
           )}
           {ctx.deadlinesList.length > 0 && (
             <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-pink-600/15">
-                <CalendarClock size={20} className="text-pink-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color:var(--ds-category-pink-bg)]">
+                <CalendarClock size={20} className="text-[color:var(--ds-category-pink-text)]" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-xs text-[color:var(--ds-text-muted)]">

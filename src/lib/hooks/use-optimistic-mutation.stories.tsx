@@ -123,7 +123,7 @@ function OptimisticDemoInner({ failMode }: { failMode: "never" | "always" }) {
           Mutation status: <code>{toggleMutation.status}</code>
         </div>
         {toggleMutation.isPending && (
-          <div className="text-yellow-600">
+          <div className="text-[color:var(--ds-warning-text)]">
             Optimistic Write aktiv — UI zeigt schon den neuen State.
           </div>
         )}

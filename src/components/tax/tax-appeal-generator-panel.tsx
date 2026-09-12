@@ -58,7 +58,8 @@ const PROSPECT_COLORS: Record<string, string> = {
     "text-[color:var(--ds-success-text)] bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)]",
   mittel:
     "text-[color:var(--ds-warning-text)] bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)]",
-  schwach: "text-orange-600 bg-orange-500/10 border-orange-500/20",
+  schwach:
+    "text-[color:var(--ds-attention-text)] bg-[color:var(--ds-attention-bg)] border-[color:var(--ds-attention-border)]",
   keine:
     "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)]",
 };

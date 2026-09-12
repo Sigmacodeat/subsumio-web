@@ -168,11 +168,13 @@ export function getAbsenceStatusBadge(absence: AbsenceRecord): {
     },
     active: {
       labelKey: "absence.status_active",
-      className: "border-orange-500/20 bg-orange-500/10 text-orange-600",
+      className:
+        "border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)]",
     },
     completed: {
       labelKey: "absence.status_completed",
-      className: "border-slate-500/20 bg-slate-500/10 text-slate-600",
+      className:
+        "border-[color:var(--ds-neutral-border)] bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)]",
     },
     cancelled: {
       labelKey: "absence.status_cancelled",

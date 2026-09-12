@@ -57,7 +57,8 @@ const POSITION_KEYS = ["favorable", "neutral", "exclude", "must_include"] as con
 const POSITION_COLORS: Record<string, string> = {
   favorable:
     "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
-  neutral: "bg-slate-500/10 border-slate-500/20 text-slate-600",
+  neutral:
+    "bg-[color:var(--ds-neutral-bg)] border-[color:var(--ds-neutral-border)] text-[color:var(--ds-neutral-text)]",
   exclude:
     "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
   must_include:

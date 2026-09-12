@@ -367,7 +367,7 @@ export default function DocumentRequestsPage() {
                     </Badge>
                     <Badge
                       variant="default"
-                      className="border border-slate-500/20 bg-slate-500/10 text-xs text-slate-600"
+                      className="border border-[color:var(--ds-neutral-border)] bg-[color:var(--ds-neutral-bg)] text-xs text-[color:var(--ds-neutral-text)]"
                     >
                       {item.frontmatter.recipient_role}
                     </Badge>

@@ -71,8 +71,8 @@ export function TaxPrecedentSearchPanel({ initialQuery = "" }: TaxPrecedentSearc
   return (
     <Card className="p-5">
       <div className="mb-4 flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-violet-500/20 bg-violet-500/10">
-          <Scale size={16} className="text-violet-600" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--ds-category-violet-border)] bg-[color:var(--ds-category-violet-bg)]">
+          <Scale size={16} className="text-[color:var(--ds-category-violet-text)]" />
         </div>
         <div>
           <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">

@@ -20,7 +20,7 @@ export function StatCard({ icon: Icon, label, value, hint }: StatCardProps) {
 
 const PLAN_STYLES: Record<string, string> = {
   free: "text-[color:var(--ds-text-muted)] bg-[color:var(--ds-surface-2)]",
-  pro: "text-violet-300 bg-violet-500/15 border border-violet-500/25",
+  pro: "text-[color:var(--ds-category-violet-text)] bg-[color:var(--ds-category-violet-bg)] border border-[color:var(--ds-category-violet-border)]",
   team: "text-[color:var(--ds-info-text)] bg-blue-500/15 border border-blue-500/25",
   enterprise: "text-[color:var(--ds-warning-text)] bg-amber-500/15 border border-amber-500/25",
 };

@@ -132,8 +132,8 @@ export function SignatureQuickCreateDialog({
         <form onSubmit={handleSubmit} className="flex max-h-[85vh] flex-col">
           <DialogHeader className="px-6 pt-6 pb-4">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-500/20 bg-indigo-500/10">
-                <FileSignature size={16} className="text-indigo-600" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--ds-category-indigo-border)] bg-[color:var(--ds-category-indigo-bg)]">
+                <FileSignature size={16} className="text-[color:var(--ds-category-indigo-text)]" />
               </div>
               <DialogTitle>{t("signature.quick_title" as DashboardKey)}</DialogTitle>
             </div>
@@ -223,7 +223,12 @@ export function SignatureQuickCreateDialog({
               <Label htmlFor="quick-sig-expires" className="text-xs">
                 {t("signature.quick_expires" as DashboardKey)}
               </Label>
-              <Input id="quick-sig-expires" type="number" inputMode="numeric" {...sigForm.register("expiresDays")} />
+              <Input
+                id="quick-sig-expires"
+                type="number"
+                inputMode="numeric"
+                {...sigForm.register("expiresDays")}
+              />
               {sigForm.formState.errors.expiresDays && (
                 <p className="text-xs text-[color:var(--ds-danger-text)]">
                   {sigForm.formState.errors.expiresDays.message}
@@ -254,7 +259,7 @@ export function SignatureQuickCreateDialog({
                 type="submit"
                 variant="primary"
                 disabled={saving || !canSubmit}
-                className="gap-2 bg-indigo-600 text-white hover:bg-indigo-500"
+                className="gap-2 bg-[color:var(--ds-category-indigo-text)] text-white hover:opacity-90"
               >
                 {saving ? <Loader2 size={16} className="animate-spin" /> : <PenTool size={16} />}
                 {t("signature.quick_save" as DashboardKey)}

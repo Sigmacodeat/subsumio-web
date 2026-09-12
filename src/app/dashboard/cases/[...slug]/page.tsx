@@ -87,7 +87,7 @@ export default function CaseDetailPage() {
         )}
         {caseData.status === "archived" && (
           <div
-            className="flex items-center gap-2 border-b border-gray-500/20 bg-gray-500/10 px-6 py-2.5 text-sm text-gray-700"
+            className="flex items-center gap-2 border-b border-[color:var(--ds-neutral-border)] bg-[color:var(--ds-neutral-bg)] px-6 py-2.5 text-sm text-[color:var(--ds-neutral-text)]"
             role="status"
           >
             <Archive size={14} aria-hidden="true" className="shrink-0" />

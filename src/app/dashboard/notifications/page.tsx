@@ -39,16 +39,24 @@ const TYPE_META: Record<string, { icon: typeof Bell; label: string; color: strin
   deadline: { icon: Clock, label: "Frist", color: "text-[color:var(--ds-warning-text)]" },
   mention: { icon: MessageSquare, label: "Erwähnung", color: "text-[color:var(--ds-info-text)]" },
   reply: { icon: MessageSquare, label: "Antwort", color: "text-[color:var(--ds-info-text)]" },
-  system: { icon: Bell, label: "System", color: "text-slate-500" },
+  system: { icon: Bell, label: "System", color: "text-[color:var(--ds-neutral-text)]" },
   notification_failure: {
     icon: AlertCircle,
     label: "Fehler",
     color: "text-[color:var(--ds-danger-text)]",
   },
-  document_request: { icon: FileText, label: "Dokumentenanforderung", color: "text-purple-500" },
-  retention: { icon: FileText, label: "Aufbewahrung", color: "text-purple-500" },
+  document_request: {
+    icon: FileText,
+    label: "Dokumentenanforderung",
+    color: "text-[color:var(--ds-category-purple-text)]",
+  },
+  retention: {
+    icon: FileText,
+    label: "Aufbewahrung",
+    color: "text-[color:var(--ds-category-purple-text)]",
+  },
   autonomous_task: { icon: Bot, label: "Autonom", color: "text-[color:var(--ds-success-text)]" },
-  inbox_triage: { icon: Inbox, label: "Inbox", color: "text-cyan-500" },
+  inbox_triage: { icon: Inbox, label: "Inbox", color: "text-[color:var(--ds-info-text)]" },
 };
 
 function formatDate(dateStr: string): string {

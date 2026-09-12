@@ -358,9 +358,9 @@ const STATUS_STYLES: Record<
     icon: AlertTriangle,
   },
   critical: {
-    bg: "bg-orange-50 dark:bg-orange-950/30",
-    text: "text-orange-700 dark:text-orange-300",
-    border: "border-orange-200 dark:border-orange-900",
+    bg: "bg-[color:var(--ds-attention-bg)]",
+    text: "text-[color:var(--ds-attention-text)]",
+    border: "border-[color:var(--ds-attention-border)]",
     icon: AlertTriangle,
   },
   overdue: {
@@ -376,9 +376,10 @@ const STATUS_STYLES: Record<
     icon: CheckCircle2,
   },
   vorfrist: {
-    bg: "bg-purple-50 dark:bg-purple-950/30",
-    text: "text-purple-700 dark:text-purple-300",
-    border: "border-purple-200 dark:border-purple-900",
+    bg: "bg-[color:var(--ds-category-purple-bg)] ",
+    text: "text-[color:var(--ds-category-purple-text)] dark:text-[color:var(--ds-category-purple-text)]",
+    border:
+      "border-[color:var(--ds-category-purple-border)] dark:border-[color:var(--ds-category-purple-border)]",
     icon: Bell,
   },
 };
@@ -400,21 +401,22 @@ const EVENT_TYPE_STYLES: Record<
     icon: CalendarDays,
   },
   meeting: {
-    bg: "bg-purple-50 dark:bg-purple-950/30",
-    text: "text-purple-700 dark:text-purple-300",
-    border: "border-purple-200 dark:border-purple-900",
+    bg: "bg-[color:var(--ds-category-purple-bg)] ",
+    text: "text-[color:var(--ds-category-purple-text)] dark:text-[color:var(--ds-category-purple-text)]",
+    border:
+      "border-[color:var(--ds-category-purple-border)] dark:border-[color:var(--ds-category-purple-border)]",
     icon: Users,
   },
   deadline: {
-    bg: "bg-orange-50 dark:bg-orange-950/30",
-    text: "text-orange-700 dark:text-orange-300",
-    border: "border-orange-200 dark:border-orange-900",
+    bg: "bg-[color:var(--ds-attention-bg)]",
+    text: "text-[color:var(--ds-attention-text)]",
+    border: "border-[color:var(--ds-attention-border)]",
     icon: Clock,
   },
   other: {
-    bg: "bg-slate-50 dark:bg-slate-950/30",
-    text: "text-slate-700 dark:text-slate-300",
-    border: "border-slate-200 dark:border-slate-800",
+    bg: "bg-[color:var(--ds-neutral-bg)]",
+    text: "text-[color:var(--ds-neutral-text)]",
+    border: "border-[color:var(--ds-neutral-border)]",
     icon: Calendar,
   },
 };
@@ -426,9 +428,9 @@ const PRIORITY_STYLES: Record<string, { bg: string; text: string; border: string
     border: "border-[color:var(--ds-danger-border)]",
   },
   high: {
-    bg: "bg-orange-50 dark:bg-orange-950/30",
-    text: "text-orange-700 dark:text-orange-300",
-    border: "border-orange-200 dark:border-orange-900",
+    bg: "bg-[color:var(--ds-attention-bg)]",
+    text: "text-[color:var(--ds-attention-text)]",
+    border: "border-[color:var(--ds-attention-border)]",
   },
   medium: {
     bg: "bg-[color:var(--ds-warning-bg)]",
@@ -436,9 +438,9 @@ const PRIORITY_STYLES: Record<string, { bg: string; text: string; border: string
     border: "border-[color:var(--ds-warning-border)]",
   },
   low: {
-    bg: "bg-slate-50 dark:bg-slate-950/30",
-    text: "text-slate-700 dark:text-slate-300",
-    border: "border-slate-200 dark:border-slate-800",
+    bg: "bg-[color:var(--ds-neutral-bg)]",
+    text: "text-[color:var(--ds-neutral-text)]",
+    border: "border-[color:var(--ds-neutral-border)]",
   },
 };
 
@@ -721,7 +723,7 @@ function DeadlineCard({
               </span>
             )}
             {item.isVorfrist && (
-              <span className="shrink-0 rounded bg-purple-100 px-1 py-0.5 text-[9px] font-bold text-purple-700 dark:bg-purple-950/40 dark:text-purple-300">
+              <span className="/40 shrink-0 rounded bg-[color:var(--ds-category-purple-bg)] px-1 py-0.5 text-[9px] font-bold text-[color:var(--ds-category-purple-text)] dark:text-[color:var(--ds-category-purple-text)]">
                 {t("chat.deadline.vorfrist" as never)}
               </span>
             )}
@@ -1010,7 +1012,7 @@ function ClientOverviewDisplay({
               <span
                 className={cn(
                   "inline-flex items-center gap-1",
-                  s.openDeadlines > 0 && "text-orange-600 dark:text-orange-400"
+                  s.openDeadlines > 0 && "text-[color:var(--ds-attention-text)]"
                 )}
               >
                 <CalendarClock size={10} />
@@ -1030,7 +1032,7 @@ function ClientOverviewDisplay({
               </span>
             )}
             {s.nextDeadlineDate && (
-              <span className="inline-flex items-center gap-1 font-medium text-orange-600 dark:text-orange-400">
+              <span className="inline-flex items-center gap-1 font-medium text-[color:var(--ds-attention-text)]">
                 <Clock size={10} />
                 {new Date(s.nextDeadlineDate).toLocaleDateString(
                   lang === "en" ? "en-GB" : "de-DE",

@@ -654,7 +654,7 @@ export function CalendarInUiEditor() {
                       appt.type === "hearing"
                         ? "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] hover:bg-[color:var(--ds-info-bg)]"
                         : appt.type === "consultation"
-                          ? "bg-violet-500/10 text-violet-700 hover:bg-violet-500/20"
+                          ? "bg-[color:var(--ds-category-violet-bg)] text-[color:var(--ds-category-violet-text)] hover:bg-[color:var(--ds-category-violet-bg)]"
                           : "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
                     )}
                   >

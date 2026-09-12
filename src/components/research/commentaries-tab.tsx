@@ -405,7 +405,7 @@ function CommentaryStatuteGroup({
                 {c.title}
               </span>
               {c.commentary_type === "synthetic" ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700 dark:bg-purple-950 dark:text-purple-300">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--ds-category-purple-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-category-purple-text)]">
                   <Brain className="h-3 w-3" />
                   Synthetisch
                 </span>
@@ -470,7 +470,7 @@ function CommentaryDetail({
             <div>
               <div className="mb-2 flex items-center gap-2">
                 {commentary.commentary_type === "synthetic" ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700 dark:bg-purple-950 dark:text-purple-300">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--ds-category-purple-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-category-purple-text)]">
                     <Brain className="h-3 w-3" />
                     Synthetisch
                   </span>
@@ -645,7 +645,7 @@ function TreatmentBadge({
     red: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)]",
     amber: "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)]",
     blue: "bg-[color:var(--ds-info-solid)] text-[color:var(--ds-info-text)]",
-    gray: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+    gray: "bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)]",
   };
   return (
     <span

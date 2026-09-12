@@ -575,7 +575,7 @@ export default function DeadlinesPage() {
                 {d.reviewStatus === "unreviewed" && (
                   <Badge
                     variant="default"
-                    className="flex items-center gap-0.5 border border-slate-400/20 bg-slate-400/10 text-xs text-slate-600"
+                    className="flex items-center gap-0.5 border border-[color:var(--ds-neutral-border)] bg-[color:var(--ds-neutral-bg)] text-xs text-[color:var(--ds-neutral-text)]"
                   >
                     <EyeOff size={10} />
                     {t("deadlines.unreviewed")}

@@ -193,7 +193,7 @@ export default function DeepAnalysisPage() {
         <>
           {/* Warnings */}
           {report.warnings.length > 0 && (
-            <Card className="border-yellow-200 bg-[color:var(--ds-warning-solid)] p-4">
+            <Card className="border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-solid)] p-4">
               <div className="flex items-start gap-2">
                 <AlertTriangle className="h-5 w-5 shrink-0 text-[color:var(--ds-warning-text)]" />
                 <div className="text-sm">

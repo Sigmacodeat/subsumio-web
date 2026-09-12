@@ -245,7 +245,7 @@ export function statusLabel(status: ExtractionStatus): string {
 const STATUS_COLORS: Record<ExtractionStatus, string> = {
   uploaded: "bg-blue-100 text-blue-800",
   processing: "bg-blue-100 text-blue-800",
-  text_layer: "bg-indigo-100 text-indigo-800",
+  text_layer: "bg-[color:var(--ds-category-indigo-bg)] text-[color:var(--ds-category-indigo-text)]",
   ocr_needed: "bg-amber-100 text-amber-800",
   ocr_processing: "bg-amber-100 text-amber-800",
   ocr_complete: "bg-green-100 text-green-800",
@@ -257,5 +257,7 @@ const STATUS_COLORS: Record<ExtractionStatus, string> = {
 };
 
 export function statusColor(status: ExtractionStatus): string {
-  return STATUS_COLORS[status] ?? "bg-gray-100 text-gray-800";
+  return (
+    STATUS_COLORS[status] ?? "bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)]"
+  );
 }

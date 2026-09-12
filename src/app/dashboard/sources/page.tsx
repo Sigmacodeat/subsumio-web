@@ -105,7 +105,8 @@ const AUTHORITY_CONFIG: Record<AuthorityTier, { labelKey: DashboardKey; badge: s
   },
   commercial: {
     labelKey: "sources.auth_commercial",
-    badge: "bg-purple-500/10 text-purple-600 border-purple-500/20",
+    badge:
+      "bg-[color:var(--ds-category-purple-bg)] text-[color:var(--ds-category-purple-text)] border-[color:var(--ds-category-purple-border)]",
   },
 };
 

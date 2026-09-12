@@ -69,9 +69,10 @@ interface DecisionRecord {
 
 const TIER_COLORS: Record<string, string> = {
   utility: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
-  reasoning: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+  reasoning:
+    "bg-[color:var(--ds-category-purple-bg)] text-[color:var(--ds-category-purple-text)]text-[color:var(--ds-category-purple-text)]",
   deep: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
-  subagent: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+  subagent: "bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)]",
 };
 
 function formatDuration(ms: number): string {

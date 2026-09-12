@@ -59,7 +59,8 @@ const TYPE_COLOR: Record<string, string> = {
   document: "brand-text brand-soft brand-border",
   event:
     "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)]",
-  place: "text-teal-600 bg-teal-500/10 border-teal-500/20",
+  place:
+    "text-[color:var(--ds-category-teal-text)] bg-[color:var(--ds-category-teal-bg)] border-[color:var(--ds-category-teal-border)]",
 };
 
 export default function BrainDetailPage() {

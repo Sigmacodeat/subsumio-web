@@ -52,9 +52,10 @@ const STATUS_CONFIG: Record<
   draft: {
     label: "sig.status_draft",
     icon: PenTool,
-    iconClass: "text-gray-400",
-    badgeClass: "bg-gray-500/5 border-gray-500/20 text-gray-400",
-    tileClass: "bg-gray-500/10",
+    iconClass: "text-[color:var(--ds-neutral-text)]",
+    badgeClass:
+      "bg-[color:var(--ds-neutral-bg)] border-[color:var(--ds-neutral-border)] text-[color:var(--ds-neutral-text)]",
+    tileClass: "bg-[color:var(--ds-neutral-bg)]",
   },
   sent: {
     label: "sig.status_sent",

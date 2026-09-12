@@ -63,7 +63,8 @@ const PHASE_COLORS: Record<TaxAuditPhase, string> = {
     "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
   pruefung:
     "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
-  abschluss: "border-violet-500/20 bg-violet-500/10 text-violet-600",
+  abschluss:
+    "border-[color:var(--ds-category-violet-border)] bg-[color:var(--ds-category-violet-bg)] text-[color:var(--ds-category-violet-text)]",
   rechtsbehelf:
     "border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)]",
   abgeschlossen:

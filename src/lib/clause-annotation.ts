@@ -78,7 +78,7 @@ export const RISK_LABELS: Record<ClauseRiskLevel, string> = {
 export const RISK_COLORS: Record<ClauseRiskLevel, string> = {
   low: "text-emerald-600",
   medium: "text-amber-600",
-  high: "text-orange-600",
+  high: "text-[color:var(--ds-attention-text)]",
   critical: "text-red-600",
 };
 

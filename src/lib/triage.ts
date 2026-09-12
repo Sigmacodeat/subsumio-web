@@ -111,7 +111,8 @@ const URGENCY_RULES: TriageRule[] = [
   },
   // ── TAXUMIO: Steuerrechtliche Triage-Regeln ──
   {
-    pattern: /\b(steuerbescheid|einkommensteuerbescheid|umsatzsteuerbescheid|körperschaftsteuerbescheid|gewerbesteuerbescheid|festsetzungsbescheid)\b/i,
+    pattern:
+      /\b(steuerbescheid|einkommensteuerbescheid|umsatzsteuerbescheid|körperschaftsteuerbescheid|gewerbesteuerbescheid|festsetzungsbescheid)\b/i,
     urgency: "critical",
     actionType: "frist",
     legalArea: "steuerrecht",
@@ -123,31 +124,36 @@ const URGENCY_RULES: TriageRule[] = [
     legalArea: "steuerrecht",
   },
   {
-    pattern: /\b(betriebsprüfung|betriebspruefung|außenprüfung|aussenpruefung|bp-ankündigung|prüfungsanordnung)\b/i,
+    pattern:
+      /\b(betriebsprüfung|betriebspruefung|außenprüfung|aussenpruefung|bp-ankündigung|prüfungsanordnung)\b/i,
     urgency: "critical",
     actionType: "termin",
     legalArea: "steuerrecht",
   },
   {
-    pattern: /\b(umsatzsteuervoranmeldung|ust-voranmeldung|elster|elster-portal|steuererklärung|steuererklaerung)\b/i,
+    pattern:
+      /\b(umsatzsteuervoranmeldung|ust-voranmeldung|elster|elster-portal|steuererklärung|steuererklaerung)\b/i,
     urgency: "high",
     actionType: "frist",
     legalArea: "steuerrecht",
   },
   {
-    pattern: /\b(festsetzungsverjährung|verjährung|festsetzungsfrist|nachforderung|nachveranlagung)\b/i,
+    pattern:
+      /\b(festsetzungsverjährung|verjährung|festsetzungsfrist|nachforderung|nachveranlagung)\b/i,
     urgency: "high",
     actionType: "frist",
     legalArea: "steuerrecht",
   },
   {
-    pattern: /\b(steuerhinterziehung|hinterziehung|strafverfahren|strafanzeige|selbstanzeige|strafbefreiend)\b/i,
+    pattern:
+      /\b(steuerhinterziehung|hinterziehung|strafverfahren|strafanzeige|selbstanzeige|strafbefreiend)\b/i,
     urgency: "critical",
     actionType: "konflikt",
     legalArea: "steuerrecht",
   },
   {
-    pattern: /\b(vorauszahlung|vorauszahlungsbescheid|solz|solidaritätszuschlag|gewerbesteuer-vorauszahlung)\b/i,
+    pattern:
+      /\b(vorauszahlung|vorauszahlungsbescheid|solz|solidaritätszuschlag|gewerbesteuer-vorauszahlung)\b/i,
     urgency: "high",
     actionType: "zahlung",
     legalArea: "steuerrecht",
@@ -209,15 +215,36 @@ const LEGAL_AREA_RULES: Array<{ pattern: RegExp; area: string }> = [
   },
   { pattern: /\b(steuer|finanzamt|einspruch|steuerrecht)\b/i, area: "steuerrecht" },
   // TAXUMIO: Detaillierte Steuerrecht-Unterkategorien
-  { pattern: /\b(einkommensteuer|estg|einkünfte|werbungskosten|betriebsausgaben|sonderausgaben)\b/i, area: "einkommensteuer" },
-  { pattern: /\b(umsatzsteuer|ustg|vorsteuer|reverse.charge|innergemeinschaftlich)\b/i, area: "umsatzsteuer" },
-  { pattern: /\b(körperschaftsteuer|kstg|verdeckte.gewinnausschüttung|vga)\b/i, area: "körperschaftsteuer" },
+  {
+    pattern: /\b(einkommensteuer|estg|einkünfte|werbungskosten|betriebsausgaben|sonderausgaben)\b/i,
+    area: "einkommensteuer",
+  },
+  {
+    pattern: /\b(umsatzsteuer|ustg|vorsteuer|reverse.charge|innergemeinschaftlich)\b/i,
+    area: "umsatzsteuer",
+  },
+  {
+    pattern: /\b(körperschaftsteuer|kstg|verdeckte.gewinnausschüttung|vga)\b/i,
+    area: "körperschaftsteuer",
+  },
   { pattern: /\b(gewerbesteuer|gewstg|gewerbeertrag)\b/i, area: "gewerbesteuer" },
-  { pattern: /\b(erbschaftsteuer|erbschaftssteuer|schenkungsteuer|erbstg|freibetrag)\b/i, area: "erbschaftsteuer" },
-  { pattern: /\b(abgabenordnung|ao\b|bao\b|festsetzungsverjährung|betriebsstätte)\b/i, area: "abgabenordnung" },
+  {
+    pattern: /\b(erbschaftsteuer|erbschaftssteuer|schenkungsteuer|erbstg|freibetrag)\b/i,
+    area: "erbschaftsteuer",
+  },
+  {
+    pattern: /\b(abgabenordnung|ao\b|bao\b|festsetzungsverjährung|betriebsstätte)\b/i,
+    area: "abgabenordnung",
+  },
   { pattern: /\b(finanzgericht|fgo|bfh|bundesfinanzhof)\b/i, area: "finanzgerichtsbarkeit" },
-  { pattern: /\b(doppelbesteuerung|dba|astg|außensteuergesetz|verrechnungspreis)\b/i, area: "international_steuerrecht" },
-  { pattern: /\b(steuerhinterziehung|selbstanzeige|strafbefreiend|finstrg|steuerstrafrecht)\b/i, area: "steuerstrafrecht" },
+  {
+    pattern: /\b(doppelbesteuerung|dba|astg|außensteuergesetz|verrechnungspreis)\b/i,
+    area: "international_steuerrecht",
+  },
+  {
+    pattern: /\b(steuerhinterziehung|selbstanzeige|strafbefreiend|finstrg|steuerstrafrecht)\b/i,
+    area: "steuerstrafrecht",
+  },
   {
     pattern: /\b(vertrag|werkvertrag|kaufvertrag|lieferung|vertragsrecht)\b/i,
     area: "vertragsrecht",
@@ -333,13 +360,23 @@ export const URGENCY_LABELS: Record<TriageUrgency, { de: string; en: string; col
     en: "Critical",
     color: "border-red-500/20 bg-red-500/10 text-red-600",
   },
-  high: { de: "Hoch", en: "High", color: "border-orange-500/20 bg-orange-500/10 text-orange-600" },
+  high: {
+    de: "Hoch",
+    en: "High",
+    color:
+      "border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)]",
+  },
   medium: {
     de: "Mittel",
     en: "Medium",
     color: "border-amber-500/20 bg-amber-500/10 text-amber-600",
   },
-  low: { de: "Niedrig", en: "Low", color: "border-slate-500/20 bg-slate-500/10 text-slate-600" },
+  low: {
+    de: "Niedrig",
+    en: "Low",
+    color:
+      "border-[color:var(--ds-neutral-border)] bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)]",
+  },
 };
 
 export const ACTION_TYPE_LABELS: Record<TriageActionType, { de: string; en: string }> = {

@@ -315,7 +315,7 @@ export default function ScimSettingsPage() {
               label="Gruppen (letzter Sync)"
               value={status?.lastSyncResult?.groupsProcessed ?? 0}
               icon={FolderTree}
-              color="bg-purple-500/10 text-purple-600"
+              color="bg-[color:var(--ds-category-purple-bg)] text-[color:var(--ds-category-purple-text)]"
             />
           </div>
 
@@ -443,7 +443,7 @@ export default function ScimSettingsPage() {
                 {
                   icon: FolderTree,
                   text: t("scim.feature_group_sync"),
-                  color: "text-purple-600",
+                  color: "text-[color:var(--ds-category-purple-text)]",
                 },
               ].map((item, i) => {
                 const Icon = item.icon;

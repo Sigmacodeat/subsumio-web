@@ -158,7 +158,7 @@ export default function WebhooksPage() {
                     onClick={() => toggleEvent(evt)}
                     className={`rounded-lg border px-3 py-1.5 text-xs transition-[background-color,border-color,color] motion-reduce:transition-none ${
                       form.events.includes(evt)
-                        ? "border-violet-500/20 bg-violet-600/15 text-violet-300"
+                        ? "border-[color:var(--ds-category-violet-border)] bg-[color:var(--ds-category-violet-bg)] text-[color:var(--ds-category-violet-text)]"
                         : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-3)]"
                     } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97]`}
                   >

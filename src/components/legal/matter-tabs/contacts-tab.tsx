@@ -51,9 +51,9 @@ const ROLE_COLORS: Record<string, string> = {
   opponent: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
   court: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
   lawyer: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
-  witness: "bg-purple-600/15 text-purple-600",
-  expert: "bg-indigo-600/15 text-indigo-600",
-  authority: "bg-gray-600/15 text-gray-600",
+  witness: "bg-[color:var(--ds-category-purple-bg)] text-[color:var(--ds-category-purple-text)]",
+  expert: "bg-[color:var(--ds-category-indigo-bg)] text-[color:var(--ds-category-indigo-text)]",
+  authority: "bg-[color:var(--ds-neutral-text)]/15 text-[color:var(--ds-neutral-text)]",
   other: "bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]",
 };
 

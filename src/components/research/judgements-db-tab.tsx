@@ -147,11 +147,9 @@ const TREATMENT_ICONS: Record<string, typeof CheckCircle2> = {
 const TREATMENT_COLORS: Record<string, string> = {
   good_law: "text-[color:var(--ds-success-text)] bg-[color:var(--ds-success-solid)]",
   bad_law: "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-solid)]",
-  at_risk:
-    "text-[color:var(--ds-attention-text)] bg-[color:var(--ds-attention-solid)] dark:bg-orange-950/30",
-  mixed:
-    "text-[color:var(--ds-warning-text)] bg-[color:var(--ds-warning-solid)] dark:bg-yellow-950/30",
-  unknown: "text-gray-500 bg-gray-50 dark:bg-gray-950/30",
+  at_risk: "text-[color:var(--ds-attention-text)] bg-[color:var(--ds-attention-solid)]",
+  mixed: "text-[color:var(--ds-warning-text)] bg-[color:var(--ds-warning-solid)] ",
+  unknown: "text-[color:var(--ds-neutral-text)] bg-[color:var(--ds-neutral-bg)]",
 };
 
 const TREATMENT_LABELS: Record<string, { de: string; en: string }> = {
@@ -790,7 +788,7 @@ function ResultCard({ result, onClick }: { result: SearchResult; onClick: () => 
             )}
             {result.rerank_score !== undefined && (
               <span
-                className="flex items-center gap-1 text-purple-500"
+                className="flex items-center gap-1 text-[color:var(--ds-category-purple-text)]"
                 title={result.rerank_reason}
               >
                 <Sparkles className="h-3 w-3" />
@@ -927,7 +925,7 @@ function PipelinePanel({ result }: { result: PipelineResultData }) {
               <AlertTriangle className="h-3 w-3" />
               {result.validation_summary.at_risk} At Risk
             </span>
-            <span className="flex items-center gap-1 text-gray-500">
+            <span className="flex items-center gap-1 text-[color:var(--ds-neutral-text)]">
               <HelpCircle className="h-3 w-3" />
               {result.validation_summary.unknown} Unknown
             </span>
@@ -1128,10 +1126,10 @@ function CitationItem({ cite }: { cite: CitationNode; direction: "outgoing" | "i
   const treatmentColors: Record<string, string> = {
     positive: "text-[color:var(--ds-success-text)]",
     negative: "text-[color:var(--ds-danger-text)]",
-    neutral: "text-gray-500",
+    neutral: "text-[color:var(--ds-neutral-text)]",
     distinguishing: "text-[color:var(--ds-warning-text)]",
     overruled: "text-[color:var(--ds-danger-text)]",
-    unknown: "text-gray-400",
+    unknown: "text-[color:var(--ds-neutral-text)]",
   };
 
   return (

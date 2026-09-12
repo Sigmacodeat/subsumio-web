@@ -34,7 +34,8 @@ const STATUS_STYLES: Record<string, string> = {
     "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
   changes_requested:
     "bg-[color:var(--ds-attention-bg)] border-[color:var(--ds-attention-border)] text-[color:var(--ds-attention-text)]",
-  awaiting_review: "bg-purple-500/10 border-purple-500/20 text-purple-600",
+  awaiting_review:
+    "bg-[color:var(--ds-category-purple-bg)] border-[color:var(--ds-category-purple-border)] text-[color:var(--ds-category-purple-text)]",
   needs_human_review:
     "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
 };

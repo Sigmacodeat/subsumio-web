@@ -93,18 +93,20 @@ const ROLE_COLORS: Record<ContactRole, string> = {
     "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
   opponent:
     "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
-  court: "bg-violet-500/10 border-violet-500/20 text-violet-600",
+  court:
+    "bg-[color:var(--ds-category-violet-bg)] border-[color:var(--ds-category-violet-border)] text-[color:var(--ds-category-violet-text)]",
   lawyer:
     "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
-  other: "bg-gray-500/10 border-gray-500/20 text-gray-500",
+  other:
+    "bg-[color:var(--ds-neutral-bg)] border-[color:var(--ds-neutral-border)] text-[color:var(--ds-neutral-text)]",
 };
 
 const ROLE_DOT: Record<ContactRole, string> = {
   client: "bg-[color:var(--ds-info-solid)]",
   opponent: "bg-[color:var(--ds-danger-solid)]",
-  court: "bg-violet-500",
+  court: "bg-[color:var(--ds-category-violet-text)]",
   lawyer: "bg-[color:var(--ds-success-solid)]",
-  other: "bg-gray-400",
+  other: "bg-[color:var(--ds-neutral-text)]",
 };
 
 function parseContact(page: BrainPage): ContactItem {

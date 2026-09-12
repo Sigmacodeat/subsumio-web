@@ -175,7 +175,7 @@ export default function LitigationAnalyticsPage() {
         <KpiCard
           label={t("analytics.kpi_hours")}
           value={kpis.avgLawyerHours ? kpis.avgLawyerHours.toFixed(1) : "—"}
-          color="text-purple-600"
+          color="text-[color:var(--ds-category-purple-text)]"
         />
         <KpiCard
           label={t("analytics.kpi_dispute")}
@@ -752,7 +752,8 @@ function CreateOutcomeModal({
                 {t("analytics.lawyer_hours")}
               </label>
               <input
-                type="number" inputMode="numeric"
+                type="number"
+                inputMode="numeric"
                 step="0.1"
                 value={form.lawyerHours}
                 onChange={(e) => setForm({ ...form, lawyerHours: e.target.value })}
@@ -764,7 +765,8 @@ function CreateOutcomeModal({
                 {t("analytics.amount_in_dispute")}
               </label>
               <input
-                type="number" inputMode="decimal"
+                type="number"
+                inputMode="decimal"
                 step="0.01"
                 value={form.amountInDispute}
                 onChange={(e) => setForm({ ...form, amountInDispute: e.target.value })}
@@ -776,7 +778,8 @@ function CreateOutcomeModal({
                 {t("analytics.amount_awarded")}
               </label>
               <input
-                type="number" inputMode="decimal"
+                type="number"
+                inputMode="decimal"
                 step="0.01"
                 value={form.amountAwarded}
                 onChange={(e) => setForm({ ...form, amountAwarded: e.target.value })}

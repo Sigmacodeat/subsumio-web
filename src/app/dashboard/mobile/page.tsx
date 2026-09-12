@@ -132,8 +132,8 @@ export default function MobilePage() {
         {/* Push */}
         <div className="flex items-center justify-between rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-500/10">
-              <Bell size={18} className="text-teal-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color:var(--ds-category-teal-bg)]">
+              <Bell size={18} className="text-[color:var(--ds-category-teal-text)]" />
             </div>
             <div>
               <p className="text-sm font-medium text-[color:var(--ds-text)]">
@@ -147,7 +147,7 @@ export default function MobilePage() {
           </div>
           <Button
             variant="primary"
-            className="gap-2 bg-teal-600 text-sm text-white hover:bg-teal-500"
+            className="gap-2 bg-[color:var(--ds-category-teal-text)] text-sm text-white hover:opacity-90"
             disabled={!caps?.push}
             onClick={handlePush}
           >
@@ -266,11 +266,16 @@ export default function MobilePage() {
 
       {/* Install hint */}
       {!caps?.isNative && (
-        <div className="rounded-xl border border-teal-500/20 bg-teal-500/5 p-4">
+        <div className="rounded-xl border border-[color:var(--ds-category-teal-border)] bg-[color:var(--ds-category-teal-bg)] p-4">
           <div className="flex items-start gap-3">
-            <QrCode size={18} className="mt-0.5 shrink-0 text-teal-800" />
+            <QrCode
+              size={18}
+              className="mt-0.5 shrink-0 text-[color:var(--ds-category-teal-text)]"
+            />
             <div>
-              <p className="text-sm font-medium text-teal-800">Native App installieren</p>
+              <p className="text-sm font-medium text-[color:var(--ds-category-teal-text)]">
+                Native App installieren
+              </p>
               <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
                 Für Push, Biometrie und Kamera-Scan: Baue die Capacitor-App mit{" "}
                 <code className="rounded bg-[color:var(--ds-hover)] px-1.5 py-0.5 font-mono text-xs">

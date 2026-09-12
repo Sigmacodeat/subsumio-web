@@ -73,8 +73,8 @@ interface PortfolioInsights {
 const riskColors: Record<string, string> = {
   low: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
   medium:
-    "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)] border-yellow-200",
-  high: "bg-[color:var(--ds-attention-solid)] text-[color:var(--ds-attention-text)] border-orange-200",
+    "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
+  high: "bg-[color:var(--ds-attention-solid)] text-[color:var(--ds-attention-text)] border-[color:var(--ds-attention-border)]",
   critical:
     "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
 };
@@ -164,7 +164,7 @@ export default function PortfolioInsightsPage() {
       </div>
 
       {data.warnings.length > 0 && (
-        <Card className="border-yellow-200 bg-[color:var(--ds-warning-solid)] p-4">
+        <Card className="border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-solid)] p-4">
           <div className="flex items-start gap-2">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[color:var(--ds-warning-text)]" />
             <div className="text-sm">

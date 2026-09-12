@@ -36,13 +36,15 @@ const TYPE_LABELS_EN: Record<string, string> = {
 };
 
 const TYPE_COLORS: Record<string, string> = {
-  preference: "bg-purple-500/10 text-purple-600 border-purple-500/20",
+  preference:
+    "bg-[color:var(--ds-category-purple-bg)] text-[color:var(--ds-category-purple-text)] border-[color:var(--ds-category-purple-border)]",
   fact: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
   topic:
     "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
   instruction:
     "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
-  case_note: "bg-cyan-500/10 text-cyan-600 border-cyan-500/20",
+  case_note:
+    "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
 };
 
 export function CopilotMemoryPanel() {
