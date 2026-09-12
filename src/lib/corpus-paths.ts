@@ -4,12 +4,17 @@ import { join } from "path";
  * Canonical corpus path resolution.
  *
  * The legal corpus (law-corpus/) is DATA, not code — it can live outside the
- * app source tree via SUBSUMIO_LAW_CORPUS_DIR (same convention as the engine
- * in server/src/core/legal/corpus-lookup-adapter.ts). Keeping it out of the
+ * app source tree via SUBSUMIO_LAW_CORPUS_DIR (engine convention, see
+ * server/src/core/legal/corpus-lookup-adapter.ts) or LAW_CORPUS_ROOT
+ * (server scripts + docker-compose convention). Keeping it out of the
  * Next.js project root prevents bundler file-scanning of ~772k corpus files.
  */
 export function lawCorpusDir(): string {
-  return process.env.SUBSUMIO_LAW_CORPUS_DIR ?? join(process.cwd(), "law-corpus");
+  return (
+    process.env.SUBSUMIO_LAW_CORPUS_DIR ??
+    process.env.LAW_CORPUS_ROOT ??
+    join(process.cwd(), "law-corpus")
+  );
 }
 
 export function lawCorpusNormalizedDir(): string {

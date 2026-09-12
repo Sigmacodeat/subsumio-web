@@ -30,7 +30,7 @@ function loadFixture(path: string): SubsumptionCase[] {
     .map((l) => JSON.parse(l));
 }
 
-describe("T2.2 Subsumption Case Audit", () => {
+describe.skipIf(!existsSync(LAW_CORPUS))("T2.2 Subsumption Case Audit", () => {
   const fixtureDir = join(REPO_ROOT, "server", "test", "fixtures");
   const deCases = loadFixture(join(fixtureDir, "de-subsumption-expanded.jsonl"));
   const atCases = loadFixture(join(fixtureDir, "at-subsumption-expanded.jsonl"));

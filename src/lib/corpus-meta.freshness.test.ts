@@ -1,11 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { CORPUS_META } from "@/lib/legal-grounding";
 import { collectStatutes, resolveCollisions } from "../../scripts/generate-corpus-meta";
-import { statSync } from "node:fs";
+import { statSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { lawCorpusDir } from "@/lib/corpus-paths";
 
-describe("CORPUS_META freshness", () => {
+// Corpus is external data (SUBSUMIO_LAW_CORPUS_DIR) — skip on machines
+// without it (CI, fresh checkouts) instead of failing.
+describe.skipIf(!existsSync(lawCorpusDir()))("CORPUS_META freshness", () => {
   it("matches the current generator output", { timeout: 120_000 }, () => {
     const raw = collectStatutes();
     const { entries: resolved } = resolveCollisions(raw);

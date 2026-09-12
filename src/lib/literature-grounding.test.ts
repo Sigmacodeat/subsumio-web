@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { describe, test, expect, beforeAll, afterAll } from "vitest";
-import { mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdirSync, writeFileSync, rmSync, existsSync } from "node:fs";
 import path from "node:path";
 import { extractLiteratureCitations } from "@/lib/citation-gate-client";
 import { groundLiteratureCitations } from "@/lib/legal-grounding";
@@ -54,7 +54,8 @@ describe("extractLiteratureCitations", () => {
   });
 });
 
-describe("groundLiteratureCitations", () => {
+// Skip ohne Corpus — sonst würde die Fixture law-corpus/ im Repo anlegen.
+describe.skipIf(!existsSync(lawCorpusDir()))("groundLiteratureCitations", () => {
   // Synthetische Fixture: Wahlperiode 99 existiert nicht — kollidiert nie mit
   // echten DIP-Importen. Wird nach dem Test entfernt.
   const fixtureDir = path.join(lawCorpusDir(), "de-materialien");

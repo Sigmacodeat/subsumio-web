@@ -12,6 +12,8 @@ import {
   type SourceRegistryResponse,
 } from "@/lib/source-registry";
 import { lawCorpusDir } from "@/lib/corpus-paths";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 
 // ── calculateFreshness ────────────────────────────────────────────────
 
@@ -69,16 +71,19 @@ describe("scanCorpusFile", () => {
     expect(result.size).toBe(0);
   });
 
-  it("returns exists=true with hash and document_count for valid file", async () => {
-    // Use a known corpus file
-    const path = await import("node:path");
-    const corpusPath = path.join(lawCorpusDir(), "de", "bgb.md");
-    const result = await scanCorpusFile(corpusPath);
-    expect(result.exists).toBe(true);
-    expect(result.hash).toMatch(/^[a-f0-9]{16}$/);
-    expect(result.document_count).toBeGreaterThan(0);
-    expect(result.size).toBeGreaterThan(0);
-  });
+  it.skipIf(!existsSync(join(lawCorpusDir(), "de", "bgb.md")))(
+    "returns exists=true with hash and document_count for valid file",
+    async () => {
+      // Use a known corpus file
+      const path = await import("node:path");
+      const corpusPath = path.join(lawCorpusDir(), "de", "bgb.md");
+      const result = await scanCorpusFile(corpusPath);
+      expect(result.exists).toBe(true);
+      expect(result.hash).toMatch(/^[a-f0-9]{16}$/);
+      expect(result.document_count).toBeGreaterThan(0);
+      expect(result.size).toBeGreaterThan(0);
+    }
+  );
 });
 
 // ── hashContent ───────────────────────────────────────────────────────
