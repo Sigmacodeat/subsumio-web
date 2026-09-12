@@ -119,6 +119,7 @@ export default function DeadlinesPage() {
   const { addToast } = useToast();
   const { t, lang } = useLang();
   const meQuery = useMe();
+  const currentUserName = meQuery.data?.user?.name ?? meQuery.data?.user?.email ?? "Unbekannt";
   const [deadlines, setDeadlines] = useState<DeadlineItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -301,6 +302,7 @@ export default function DeadlinesPage() {
         frontmatter: {
           status: "done",
           completed_at: now,
+          completed_by: userName,
           second_check_required: true,
           second_check_by: userName,
           second_check_at: now,
@@ -663,6 +665,9 @@ export default function DeadlinesPage() {
                   void updateDeadlinePage(d, {
                     review_status: "approved",
                     reviewed_at: new Date().toISOString(),
+                    // Needed for the four-eyes check: the second check must be
+                    // done by someone other than the approver.
+                    reviewed_by: currentUserName,
                   });
                 }}
                 className="gap-1 text-xs"
@@ -696,6 +701,7 @@ export default function DeadlinesPage() {
                   void updateDeadlinePage(d, {
                     status: "done",
                     completed_at: new Date().toISOString(),
+                    completed_by: currentUserName,
                   });
                 }}
                 className="gap-1 text-xs"

@@ -27,6 +27,7 @@ import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { useFristen, type Frist } from "@/lib/queries/legal";
+import { inTimeWindow, type TimeWindow } from "@/lib/fristenbuch-window";
 
 type FristenbuchEintrag = Frist;
 
@@ -53,6 +54,11 @@ const STATUS_MAP: Record<
   done: { labelKey: "deadlines.status_done", color: "emerald", icon: CheckCircle2 },
 };
 
+function csvCell(value: string | number | boolean | undefined | null): string {
+  const text = value === undefined || value === null ? "" : String(value);
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
 function getDaysUntil(dateStr: string): number {
   const target = new Date(dateStr);
   const now = new Date();
@@ -72,12 +78,19 @@ export default function FristenbuchPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [caseFilter, setCaseFilter] = useState<string>("");
+  const [responsibleFilter, setResponsibleFilter] = useState<string>("");
+  const [timeWindow, setTimeWindow] = useState<TimeWindow>("all");
 
   const loadError = isError ? t("deadlines.error_load") : null;
 
   const caseSlugs = useMemo(() => {
     const set = new Set(fristen.map((e) => e.case_slug).filter(Boolean) as string[]);
     return [...set].sort();
+  }, [fristen]);
+
+  const responsibles = useMemo(() => {
+    const set = new Set(fristen.map((e) => e.responsible).filter(Boolean) as string[]);
+    return [...set].sort((a, b) => a.localeCompare(b, "de"));
   }, [fristen]);
 
   const filtered = useMemo(() => {
@@ -89,9 +102,16 @@ export default function FristenbuchPage() {
         (e.case_slug ?? "").toLowerCase().includes(search.toLowerCase());
       const matchesStatus = filter === "all" || e.status === filter;
       const matchesCase = caseFilter === "" || e.case_slug === caseFilter;
-      return matchesSearch && matchesStatus && matchesCase;
+      const matchesResponsible = responsibleFilter === "" || e.responsible === responsibleFilter;
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesCase &&
+        matchesResponsible &&
+        inTimeWindow(e, timeWindow)
+      );
     });
-  }, [fristen, search, filter, caseFilter]);
+  }, [fristen, search, filter, caseFilter, responsibleFilter, timeWindow]);
 
   const stats: FristenbuchSummary = data?.zusammenfassung ?? {
     gesamt: 0,
@@ -125,26 +145,32 @@ export default function FristenbuchPage() {
     const headers = [
       "Datum",
       "Frist",
-      "Aktenzeichen",
+      "Akte",
+      "Zuständig",
       "Rechtsgrundlage",
-      "Folge bei Versäumnis",
-      "Beleg",
       "Status",
       "Vorfrist",
-      "Eskalation",
+      "Notfrist",
+      "Zweitkontrolle durch",
+      "Erledigt am",
+      "Erledigt von",
+      "Quelle",
     ];
     const rows = filtered.map((e) => [
       e.due_date,
-      `"${e.title.replace(/"/g, '""')}"`,
-      e.case_slug ?? "",
-      `"${(e.law ?? "").replace(/"/g, '""')}"`,
-      `""`,
-      `""`,
+      e.title,
+      e.case_title ?? e.case_slug,
+      e.responsible,
+      e.law,
       e.status,
-      e.vorfrist_date ?? "",
+      e.vorfrist_date,
       e.is_notfrist ? "ja" : "nein",
+      e.second_check_by,
+      e.completed_at?.slice(0, 10),
+      e.completed_by,
+      e.source,
     ]);
-    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const csv = [headers, ...rows].map((r) => r.map(csvCell).join(";")).join("\r\n");
     const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -263,8 +289,18 @@ export default function FristenbuchPage() {
         ),
     },
     {
+      key: "responsible",
+      header: t("deadlines.fristenbuch_responsible"),
+      sortable: true,
+      sortAccessor: (e) => e.responsible ?? "",
+      hideOnMobile: true,
+      cell: (e) => (
+        <span className="text-xs text-[color:var(--ds-text)]">{e.responsible ?? "—"}</span>
+      ),
+    },
+    {
       key: "folge",
-      header: t("deadlines.fristenbuch_folge"),
+      header: t("deadlines.fristenbuch_source"),
       hideOnMobile: true,
       cell: (e) => (
         <span className="text-xs text-[color:var(--ds-text-muted)]">
@@ -300,6 +336,22 @@ export default function FristenbuchPage() {
           </Badge>
         );
       },
+    },
+    {
+      key: "completed",
+      header: t("deadlines.fristenbuch_completed"),
+      hideOnMobile: true,
+      cell: (e) =>
+        e.status === "done" && (e.completed_at || e.completed_by) ? (
+          <span className="text-xs text-[color:var(--ds-text-muted)]">
+            {e.completed_at
+              ? new Date(e.completed_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")
+              : ""}
+            {e.completed_by ? ` · ${e.completed_by}` : ""}
+          </span>
+        ) : (
+          <span className="text-xs text-[color:var(--ds-text-muted)]">—</span>
+        ),
     },
   ];
 
@@ -437,6 +489,32 @@ export default function FristenbuchPage() {
           onClear={() => setSearch("")}
           className="max-w-md"
         />
+        <select
+          value={timeWindow}
+          onChange={(e) => setTimeWindow(e.target.value as TimeWindow)}
+          aria-label={t("deadlines.fristenbuch_window_all")}
+          className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+        >
+          <option value="all">{t("deadlines.fristenbuch_window_all")}</option>
+          <option value="today">{t("deadlines.fristenbuch_window_today")}</option>
+          <option value="7">{t("deadlines.fristenbuch_window_7")}</option>
+          <option value="14">{t("deadlines.fristenbuch_window_14")}</option>
+        </select>
+        {responsibles.length > 0 && (
+          <select
+            value={responsibleFilter}
+            onChange={(e) => setResponsibleFilter(e.target.value)}
+            aria-label={t("deadlines.fristenbuch_responsible")}
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+          >
+            <option value="">{t("deadlines.fristenbuch_all_responsible")}</option>
+            {responsibles.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        )}
         {caseSlugs.length > 0 && (
           <select
             value={caseFilter}
@@ -487,8 +565,18 @@ export default function FristenbuchPage() {
       <div className="hidden print:block">
         <p className="mt-4 border-t border-[color:var(--ds-border)] pt-2 text-xs text-[color:var(--ds-text-muted)]">
           {t("deadlines.fristenbuch_print_footer")}:{" "}
-          {new Date().toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")} — {stats.gesamt}{" "}
+          {new Date().toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")} — {filtered.length}{" "}
           {t("deadlines.count")}
+          {timeWindow !== "all" &&
+            ` · ${t(
+              timeWindow === "today"
+                ? "deadlines.fristenbuch_window_today"
+                : timeWindow === "7"
+                  ? "deadlines.fristenbuch_window_7"
+                  : "deadlines.fristenbuch_window_14"
+            )}`}
+          {responsibleFilter &&
+            ` · ${t("deadlines.fristenbuch_responsible")}: ${responsibleFilter}`}
         </p>
       </div>
     </div>

@@ -532,6 +532,9 @@ export const api = {
         reviewed_by?: string;
         reminder_sent_at?: string;
         calculation_note?: string;
+        responsible?: string;
+        completed_at?: string;
+        completed_by?: string;
       }>;
       zusammenfassung: {
         gesamt: number;
