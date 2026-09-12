@@ -9,7 +9,7 @@ import { z } from "zod";
 
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     rateTier: "standard",
   },
   async () => {
@@ -30,7 +30,7 @@ const createSchema = z.object({
 
 export const POST = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     rateTier: "standard",
     body: createSchema,
     audit: (_ctx, body) => ({
@@ -69,14 +69,18 @@ const patchSchema = z.object({
 
 export const PATCH = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     rateTier: "standard",
     body: patchSchema,
     audit: (_ctx, body) => ({
       action: "admin.feature_flag" as const,
       entityType: "feature_flag",
       entityId: body.key,
-      details: { op: "update", key: body.key, fields: Object.keys(body).filter((k) => k !== "key") },
+      details: {
+        op: "update",
+        key: body.key,
+        fields: Object.keys(body).filter((k) => k !== "key"),
+      },
     }),
   },
   async (ctx, body) => {
@@ -93,7 +97,7 @@ const deleteSchema = z.object({
 
 export const DELETE = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     rateTier: "standard",
     body: deleteSchema,
     audit: (_ctx, body) => ({

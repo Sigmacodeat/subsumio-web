@@ -22,7 +22,7 @@ export const maxDuration = 30;
 
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     cacheMaxAge: 0,
   },
   async () => {
@@ -41,7 +41,7 @@ export const GET = createHandler(
 
 export const POST = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     cacheMaxAge: 0,
     body: drPostSchema,
     audit: (_ctx, body) => ({

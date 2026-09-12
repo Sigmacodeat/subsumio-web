@@ -31,7 +31,7 @@ const reviewSchema = z.object({
 
 export const POST = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     rateTier: "standard",
     body: reviewSchema,
     audit: (_ctx, body) => ({
@@ -76,7 +76,7 @@ export const POST = createHandler(
 
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     rateTier: "standard",
     audit: (_ctx, _body, _query, _req) => ({
       action: "human_review.summary" as const,

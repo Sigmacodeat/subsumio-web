@@ -18,7 +18,7 @@ const querySchema = z.object({
  */
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     query: querySchema,
   },
   async (_ctx, _body, query) => {
@@ -42,7 +42,7 @@ export const GET = createHandler(
  */
 export const POST = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     audit: (_ctx, _body) => ({
       action: "corpus_alerts.mark_read" as const,
       entityType: "corpus_alert",

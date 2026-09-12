@@ -18,7 +18,7 @@ const qualitySnapshotSchema = z.object({
  */
 export const POST = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     cacheMaxAge: 0,
     skipCsrf: true,
     body: qualitySnapshotSchema,

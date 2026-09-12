@@ -6,7 +6,7 @@ export const maxDuration = 120;
 
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     rateTier: "standard",
     query: z.object({
       action: z.enum(["download", "preview"]).optional(),
@@ -51,7 +51,7 @@ const restoreSchema = z.object({
 
 export const POST = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     rateTier: "heavy",
     body: restoreSchema,
     audit: (ctx, body) => ({
@@ -148,7 +148,7 @@ export const POST = createHandler(
 
 export const DELETE = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     rateTier: "standard",
     audit: (ctx, _body, _query, _req) => ({
       action: "backup.delete" as const,

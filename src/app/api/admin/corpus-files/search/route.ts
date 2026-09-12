@@ -33,7 +33,7 @@ interface SearchResult {
  */
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     query: querySchema,
   },
   async (ctx, _body, query) => {

@@ -1,4 +1,4 @@
-import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
+import { createHandler, apiSuccess } from "@/lib/api-handler";
 import {
   evaluateGate,
   HARNESS_REGISTRY,
@@ -17,15 +17,10 @@ import { getFeedbackStats, getFeedbackForOrg } from "@/lib/retrieval-feedback";
  */
 export const GET = createHandler(
   {
-    action: "connector.read",
+    action: "platform.operator",
     rateTier: "standard",
-    admin: true,
   },
   async (ctx) => {
-    if (ctx.user.role !== "admin") {
-      return apiError("forbidden", "Admin access required", 403);
-    }
-
     // Collect live results from available harnesses
     const results: Partial<Record<HarnessId, HarnessResult>> = {};
 

@@ -18,9 +18,8 @@ const querySchema = z.object({
 
 export const GET = createHandler(
   {
-    action: "billing.read",
+    action: "platform.operator",
     rateTier: "standard",
-    admin: true,
     query: querySchema,
   },
   async (ctx, _body, query, _req) => {

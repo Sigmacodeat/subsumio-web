@@ -16,11 +16,11 @@ export const maxDuration = 10;
  */
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     cacheMaxAge: 0,
   },
   async (ctx, _body, _query, req: NextRequest) => {
-    const routeContext = (req as unknown as { params?: Promise<Record<string, string>> });
+    const routeContext = req as unknown as { params?: Promise<Record<string, string>> };
     const params = routeContext.params ? await routeContext.params : {};
     const trace_id = params.trace_id;
 

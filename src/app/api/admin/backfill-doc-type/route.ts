@@ -7,7 +7,7 @@ import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
  */
 export const POST = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     rateTier: "heavy",
     audit: (ctx) => ({
       action: "admin.backfill_doc_type" as const,
@@ -16,10 +16,6 @@ export const POST = createHandler(
     }),
   },
   async (ctx) => {
-    if (ctx.user.role !== "admin") {
-      return apiError("forbidden", "Admin access required", 403);
-    }
-
     const ENGINE_URL = process.env.ENGINE_URL || "http://localhost:8080";
     const r = await fetch(`${ENGINE_URL}/api/admin/backfill-doc-type`, {
       method: "POST",

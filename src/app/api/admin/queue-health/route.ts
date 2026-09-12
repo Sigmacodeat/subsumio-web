@@ -12,9 +12,8 @@ import { ENGINE_URL } from "@/lib/engine";
  */
 export const GET = createHandler(
   {
-    action: "brain.read",
+    action: "platform.operator",
     rateTier: "standard",
-    admin: true,
     cacheMaxAge: 15,
   },
   async (ctx, _body, _query, _req) => {

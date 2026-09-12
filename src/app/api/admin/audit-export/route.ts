@@ -6,7 +6,7 @@
  */
 
 import { z } from "zod";
-import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
+import { createHandler, apiSuccess } from "@/lib/api-handler";
 import { listAuditLogs } from "@/lib/audit";
 import {
   verifyAuditChain,
@@ -28,7 +28,7 @@ const exportSchema = z.object({
 
 export const POST = createHandler(
   {
-    action: "admin.audit_export",
+    action: "platform.operator",
     rateTier: "heavy",
     body: exportSchema,
     audit: (ctx, body) => ({
@@ -45,10 +45,6 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
-    if (ctx.user.role !== "admin") {
-      return apiError("forbidden", "Admin access required for audit export", 403);
-    }
-
     const entries = await listAuditLogs({
       brainId: body.brain_id,
       action: body.action_filter,

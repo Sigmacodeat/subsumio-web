@@ -34,9 +34,8 @@ const spendCapSchema = z.object({
 
 export const POST = createHandler(
   {
-    action: "billing.write",
+    action: "platform.operator",
     rateTier: "standard",
-    admin: true,
     body: spendCapSchema,
     audit: (ctx, body, _query, _req) => ({
       action: "settings.update" as const,
@@ -67,9 +66,8 @@ export const POST = createHandler(
 
 export const GET = createHandler(
   {
-    action: "billing.read",
+    action: "platform.operator",
     rateTier: "standard",
-    admin: true,
     query: spendCapQuerySchema,
   },
   async (ctx, _body, query, _req) => {

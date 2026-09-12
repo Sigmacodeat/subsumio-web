@@ -26,7 +26,7 @@ const saasUsageQuerySchema = z.object({
 
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     rateTier: "standard",
     cacheMaxAge: 60,
     query: saasUsageQuerySchema,

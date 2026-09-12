@@ -27,6 +27,17 @@
 	}
 }
 
+# Operator console — same web container; the app only serves /ops and the
+# operator APIs on this host (OPS_HOSTS). Session cookies are host-only, so a
+# firm-app login never authenticates here.
+{$OPS_DOMAIN} {
+	encode gzip
+	import common
+	reverse_proxy web:3000 {
+		import proxy-transport
+	}
+}
+
 {$ENGINE_DOMAIN} {
 	encode gzip
 	import common

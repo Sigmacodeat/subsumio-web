@@ -19,7 +19,7 @@ const querySchema = z.object({
  */
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     query: querySchema,
     cacheMaxAge: 0,
   },
@@ -27,7 +27,11 @@ export const GET = createHandler(
     const hours = (query as { hours: number }).hours;
     const pool = getSharedPgPool();
     if (!pool) {
-      return apiSuccess({ total_pipelines: 0, by_layer: [], cross_verify: { total: 0, clean: 0, flagged: 0, clean_rate: 0, total_flags: 0 } });
+      return apiSuccess({
+        total_pipelines: 0,
+        by_layer: [],
+        cross_verify: { total: 0, clean: 0, flagged: 0, clean_rate: 0, total_flags: 0 },
+      });
     }
 
     // Fetch pipeline states with guardrail data from the last N hours
@@ -39,43 +43,59 @@ export const GET = createHandler(
          WHERE slug LIKE 'pipeline-state/%'
            AND created_at >= now() - interval '${hours} hours'
          ORDER BY created_at DESC
-         LIMIT 200`,
+         LIMIT 200`
       );
     } catch (err) {
       console.error("[pipeline-stats] query failed:", (err as Error).message);
-      return apiSuccess({ total_pipelines: 0, by_layer: [], cross_verify: { total: 0, clean: 0, flagged: 0, clean_rate: 0, total_flags: 0 } });
+      return apiSuccess({
+        total_pipelines: 0,
+        by_layer: [],
+        cross_verify: { total: 0, clean: 0, flagged: 0, clean_rate: 0, total_flags: 0 },
+      });
     }
 
-    const states = result.rows.map((r) => {
-      const fm = typeof r.frontmatter === "string" ? JSON.parse(r.frontmatter) : r.frontmatter;
-      return {
-        guardrail_results: fm.guardrail_results as Record<number, {
-          passed: boolean;
-          flags_count: number;
-          flag_types: string[];
-          regenerated: boolean;
-          regen_passed?: boolean;
-        }> | undefined,
-        cross_verify_results: fm.cross_verify_results as {
-          clean: boolean;
-          flags_count: number;
-          flag_types: string[];
-          regenerated: boolean;
-          regen_clean?: boolean;
-        } | undefined,
-        status: fm.status as string,
-        created_at: r.created_at,
-      };
-    }).filter((s) => s.guardrail_results || s.cross_verify_results);
+    const states = result.rows
+      .map((r) => {
+        const fm = typeof r.frontmatter === "string" ? JSON.parse(r.frontmatter) : r.frontmatter;
+        return {
+          guardrail_results: fm.guardrail_results as
+            | Record<
+                number,
+                {
+                  passed: boolean;
+                  flags_count: number;
+                  flag_types: string[];
+                  regenerated: boolean;
+                  regen_passed?: boolean;
+                }
+              >
+            | undefined,
+          cross_verify_results: fm.cross_verify_results as
+            | {
+                clean: boolean;
+                flags_count: number;
+                flag_types: string[];
+                regenerated: boolean;
+                regen_clean?: boolean;
+              }
+            | undefined,
+          status: fm.status as string,
+          created_at: r.created_at,
+        };
+      })
+      .filter((s) => s.guardrail_results || s.cross_verify_results);
 
     // Aggregate per-layer guardrail stats
-    const layerStats: Record<number, {
-      total: number;
-      passed: number;
-      flagged: number;
-      total_flags: number;
-      flag_types: Record<string, number>;
-    }> = {};
+    const layerStats: Record<
+      number,
+      {
+        total: number;
+        passed: number;
+        flagged: number;
+        total_flags: number;
+        flag_types: Record<string, number>;
+      }
+    > = {};
 
     let crossVerifyTotal = 0;
     let crossVerifyClean = 0;
@@ -119,11 +139,13 @@ export const GET = createHandler(
     }
 
     // Convert to arrays for the frontend
-    const byLayer = Object.entries(layerStats).map(([layer, stats]) => ({
-      layer: Number(layer),
-      ...stats,
-      pass_rate: stats.total > 0 ? stats.passed / stats.total : 0,
-    })).sort((a, b) => a.layer - b.layer);
+    const byLayer = Object.entries(layerStats)
+      .map(([layer, stats]) => ({
+        layer: Number(layer),
+        ...stats,
+        pass_rate: stats.total > 0 ? stats.passed / stats.total : 0,
+      }))
+      .sort((a, b) => a.layer - b.layer);
 
     return apiSuccess({
       total_pipelines: states.length,

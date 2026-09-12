@@ -17,7 +17,7 @@ const querySchema = z.object({
  */
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     query: querySchema,
   },
   async (ctx, _body, query) => {
@@ -26,5 +26,5 @@ export const GET = createHandler(
       entries,
       count: entries.length,
     });
-  },
+  }
 );

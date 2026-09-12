@@ -41,14 +41,17 @@ import { requireEngineContext } from "@/lib/engine";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { saveQualitySnapshot, getQualityTrends } from "@/lib/quality-snapshots";
 
-function mockCtx(role = "admin") {
+const OPERATOR_EMAIL = "ops@subsumio.example";
+
+function mockCtx(role = "admin", email = OPERATOR_EMAIL) {
   return {
     headers: {},
     brainId: "brain_test",
     plan: "free" as const,
     user: {
       id: "user_1",
-      email: "test@test.com",
+      email,
+      twoFactorEnabled: true,
       name: "Test User",
       passwordHash: "",
       role,
@@ -81,7 +84,29 @@ describe("Corpus Monitoring API Routes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal("fetch", vi.fn());
+    vi.unstubAllEnvs();
+    vi.stubEnv("PLATFORM_OPERATOR_EMAILS", OPERATOR_EMAIL);
     vi.mocked(requireEngineContext).mockResolvedValue(mockCtx() as any);
+  });
+
+  describe("platform operator gate", () => {
+    it("rejects a Kanzlei admin who is not a platform operator", async () => {
+      vi.mocked(requireEngineContext).mockResolvedValue(
+        mockCtx("admin", "partner@kanzlei.example") as any
+      );
+      vi.mocked(getSharedPgPool).mockReturnValue(mockPool() as any);
+
+      const res = await corpusStatsGET(makeRequest("/api/monitoring/corpus-stats"));
+      expect(res.status).toBe(403);
+    });
+
+    it("hides operator routes outside the ops host in production", async () => {
+      vi.stubEnv("NODE_ENV", "production");
+      vi.mocked(getSharedPgPool).mockReturnValue(mockPool() as any);
+
+      const res = await corpusStatsGET(makeRequest("/api/monitoring/corpus-stats"));
+      expect(res.status).toBe(404);
+    });
   });
 
   describe("GET /api/monitoring/corpus-stats", () => {

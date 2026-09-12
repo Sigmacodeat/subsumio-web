@@ -23,7 +23,7 @@ const bodySchema = z.object({
  */
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     query: querySchema,
   },
   async (ctx, _body, query) => {
@@ -37,7 +37,7 @@ export const GET = createHandler(
 
 export const POST = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     body: bodySchema,
     audit: (_ctx, body) => ({
       action: "corpus_files.validate_schema" as const,

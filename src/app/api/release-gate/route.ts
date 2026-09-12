@@ -9,7 +9,7 @@ import {
 
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     rateTier: "standard",
   },
   async (ctx, _body, _query, _req) => {

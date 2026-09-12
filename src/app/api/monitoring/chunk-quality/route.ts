@@ -18,7 +18,7 @@ const CURRENT_MARKDOWN_CHUNKER_VERSION = 3;
  */
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     cacheMaxAge: 120,
   },
   async (_ctx) => {

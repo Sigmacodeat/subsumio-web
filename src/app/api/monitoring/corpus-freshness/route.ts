@@ -14,7 +14,7 @@ export const maxDuration = 10;
  */
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     cacheMaxAge: 60,
   },
   async (_ctx) => {
@@ -45,7 +45,12 @@ export const GET = createHandler(
     }
 
     // Get per-source freshness from source registry
-    let sourceStats: Array<{ source_id: string; status: string; last_sync: string | null; doc_count: number }> = [];
+    let sourceStats: Array<{
+      source_id: string;
+      status: string;
+      last_sync: string | null;
+      doc_count: number;
+    }> = [];
     try {
       const sourceResult = await pool.query(
         `SELECT source_id, status, last_sync_at, document_count
@@ -53,7 +58,12 @@ export const GET = createHandler(
          WHERE source_id LIKE 'law-%'
          ORDER BY source_id`
       );
-      sourceStats = sourceResult.rows as Array<{ source_id: string; status: string; last_sync: string | null; doc_count: number }>;
+      sourceStats = sourceResult.rows as Array<{
+        source_id: string;
+        status: string;
+        last_sync: string | null;
+        doc_count: number;
+      }>;
     } catch {
       // Table might not exist
     }

@@ -21,7 +21,7 @@ const bodySchema = z.object({
  */
 export const POST = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     body: bodySchema,
     audit: (ctx, body) => ({
       action: "corpus_files.flag" as const,

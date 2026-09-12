@@ -28,7 +28,7 @@ const postBodySchema = z.object({
 
 export const POST = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     rateTier: "heavy",
     body: postBodySchema,
     audit: (_ctx, body) => ({
@@ -58,7 +58,7 @@ const getQuerySchema = z.object({
 
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     rateTier: "standard",
     query: getQuerySchema,
     cacheMaxAge: 10,

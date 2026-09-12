@@ -7,7 +7,11 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 10;
 
 const querySchema = z.object({
-  hours: z.coerce.number().min(1).max(168 * 7).default(168),
+  hours: z.coerce
+    .number()
+    .min(1)
+    .max(168 * 7)
+    .default(168),
 });
 
 /**
@@ -26,7 +30,7 @@ const querySchema = z.object({
  */
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     query: querySchema,
     cacheMaxAge: 0,
   },
@@ -36,7 +40,11 @@ export const GET = createHandler(
     // Frist metrics contain matter metadata. Fail closed when the authenticated
     // request has no tenant/brain scope instead of aggregating all firms.
     if (!sourceId) {
-      return apiError("tenant_scope_required", "Tenant scope is required for deadline metrics", 400);
+      return apiError(
+        "tenant_scope_required",
+        "Tenant scope is required for deadline metrics",
+        400
+      );
     }
     const pool = getSharedPgPool();
     if (!pool) {
@@ -62,7 +70,7 @@ export const GET = createHandler(
            AND created_at >= now() - ($1 * interval '1 hour')
          ORDER BY created_at DESC
          LIMIT 500`,
-        [hours, sourceId],
+        [hours, sourceId]
       );
     } catch (err) {
       console.error("[fristen-stats] query failed:", (err as Error).message);
@@ -91,7 +99,8 @@ export const GET = createHandler(
     const byClassification = { ok: 0, vorfrist: 0, kritisch: 0, ueberfaellig: 0 };
 
     for (const row of result.rows) {
-      const fm = typeof row.frontmatter === "string" ? JSON.parse(row.frontmatter) : row.frontmatter;
+      const fm =
+        typeof row.frontmatter === "string" ? JSON.parse(row.frontmatter) : row.frontmatter;
       if (!fm || fm.type !== "deadline") continue;
 
       total++;

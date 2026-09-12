@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
  */
 export const POST = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     audit: (ctx, _body) => ({
       action: "corpus_command_center.trigger_delta" as const,
       entityType: "corpus_pipeline",

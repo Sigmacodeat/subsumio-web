@@ -45,7 +45,7 @@ export interface CorpusPipelineResponse {
  */
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     cacheMaxAge: 10,
   },
   async () => {

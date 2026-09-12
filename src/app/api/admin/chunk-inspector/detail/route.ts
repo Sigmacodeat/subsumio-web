@@ -42,7 +42,7 @@ interface ChunkDetail {
  */
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     query: querySchema,
     cacheMaxAge: 30,
   },
@@ -148,7 +148,7 @@ const patchSchema = z.object({
  */
 export const PATCH = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     body: patchSchema,
     rateTier: "heavy",
     audit: (_ctx, body) => ({
@@ -243,7 +243,7 @@ const deleteSchema = z.object({
  */
 export const DELETE = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     body: deleteSchema,
     rateTier: "heavy",
     audit: (_ctx, body) => ({

@@ -35,15 +35,10 @@ import {
  */
 export const GET = createHandler(
   {
-    action: "connector.read",
+    action: "platform.operator",
     rateTier: "standard",
-    admin: true,
   },
   async (ctx, _body, query) => {
-    if (ctx.user.role !== "admin") {
-      return apiError("forbidden", "Admin access required", 403);
-    }
-
     const action = (query.action as string) ?? "queue";
     const orgId = ctx.user.orgId ?? "default";
 
@@ -96,9 +91,8 @@ export const GET = createHandler(
  */
 export const POST = createHandler(
   {
-    action: "connector.write",
+    action: "platform.operator",
     rateTier: "standard",
-    admin: true,
     body: adminBodySchema,
     audit: (ctx, body) => ({
       action: "admin.feedback_triage" as const,
@@ -110,10 +104,6 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
-    if (ctx.user.role !== "admin") {
-      return apiError("forbidden", "Admin access required", 403);
-    }
-
     const action = ((body ?? {}) as Record<string, unknown>).action as string;
     const orgId = ctx.user.orgId ?? "default";
 

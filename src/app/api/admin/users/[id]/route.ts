@@ -14,7 +14,7 @@ const updateSchema = z.object({
 
 export const PATCH = createHandler(
   {
-    action: "admin.user_update",
+    action: "platform.operator",
     rateTier: "standard",
     body: updateSchema,
     audit: (ctx, body) => ({
@@ -24,10 +24,6 @@ export const PATCH = createHandler(
     }),
   },
   async (ctx, body, _query, req) => {
-    if (ctx.user.role !== "admin") {
-      return apiError("forbidden", "Admin access required", 403);
-    }
-
     const { id } = await (req as unknown as { params: Promise<{ id: string }> }).params;
     const store = getStore();
     const target = await store.getById(id);
@@ -79,7 +75,7 @@ export const PATCH = createHandler(
 
 export const DELETE = createHandler(
   {
-    action: "admin.user_deactivate",
+    action: "platform.operator",
     rateTier: "standard",
     audit: () => ({
       action: "admin.user_deactivate" as const,
@@ -87,10 +83,6 @@ export const DELETE = createHandler(
     }),
   },
   async (ctx, _body, _query, req) => {
-    if (ctx.user.role !== "admin") {
-      return apiError("forbidden", "Admin access required", 403);
-    }
-
     const { id } = await (req as unknown as { params: Promise<{ id: string }> }).params;
     const store = getStore();
     const target = await store.getById(id);

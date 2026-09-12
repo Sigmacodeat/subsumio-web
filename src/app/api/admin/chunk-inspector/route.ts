@@ -46,7 +46,7 @@ const SORT_MAP: Record<string, [string, "ASC" | "DESC"]> = {
  */
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     query: querySchema,
     cacheMaxAge: 15,
   },

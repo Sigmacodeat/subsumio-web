@@ -48,7 +48,7 @@ const LENGTH_BUCKETS: Array<{ bucket: string; label: string; min: number; max: n
  */
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     cacheMaxAge: 30,
   },
   async () => {

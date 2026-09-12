@@ -24,7 +24,7 @@ const bodySchema = z.object({
  */
 export const POST = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     body: bodySchema,
     skipCsrf: false,
     audit: (ctx, body) => ({

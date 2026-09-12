@@ -37,15 +37,10 @@ import { getVettingReport } from "@/lib/model-vetting";
  */
 export const GET = createHandler(
   {
-    action: "connector.read",
+    action: "platform.operator",
     rateTier: "standard",
-    admin: true,
   },
   async (ctx, _body, query) => {
-    if (ctx.user.role !== "admin") {
-      return apiError("forbidden", "Admin access required", 403);
-    }
-
     const action = (query.action as string) ?? "list";
 
     switch (action) {
@@ -114,9 +109,8 @@ export const GET = createHandler(
  */
 export const POST = createHandler(
   {
-    action: "connector.write",
+    action: "platform.operator",
     rateTier: "standard",
-    admin: true,
     body: adminBodySchema,
     audit: (ctx, body) => ({
       action: "admin.fine_tuning_gate" as const,
@@ -128,10 +122,6 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
-    if (ctx.user.role !== "admin") {
-      return apiError("forbidden", "Admin access required", 403);
-    }
-
     const data = (body ?? {}) as Record<string, unknown>;
     const action = data.action as string;
 

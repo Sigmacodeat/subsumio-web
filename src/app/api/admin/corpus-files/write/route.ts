@@ -32,7 +32,7 @@ const bodySchema = z.object({
  */
 export const PUT = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     body: bodySchema,
     audit: (ctx, body) => ({
       action: "settings.update" as const,

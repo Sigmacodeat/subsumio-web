@@ -8,7 +8,7 @@ import {
 
 export const GET = createHandler(
   {
-    action: "brain.read",
+    action: "platform.operator",
     rateTier: "standard",
   },
   async (_ctx, _body, _query, _req) => {

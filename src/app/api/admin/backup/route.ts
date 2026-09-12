@@ -7,7 +7,7 @@ export const maxDuration = 120;
 
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     rateTier: "standard",
   },
   async (_ctx) => {
@@ -22,7 +22,7 @@ const postSchema = z.object({
 
 export const POST = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     rateTier: "heavy",
     body: postSchema,
     audit: (ctx) => ({

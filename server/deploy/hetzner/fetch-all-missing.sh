@@ -30,7 +30,10 @@ if [[ -z "$DOMAIN" ]]; then
   exit 1
 fi
 
-# Auth: Cookie oder API-Key
+# Auth: Cookie oder API-Key.
+# /api/admin/* sind Betreiber-Routen: nur mit Betreiber-Session (Cookie von
+# einer Anmeldung auf OPS_DOMAIN) und SUBSUMIO_DOMAIN=https://<OPS_DOMAIN>.
+# API-Keys werden dort bewusst abgelehnt.
 AUTH_HEADER=""
 if [[ -n "${SUBSUMIO_API_KEY:-}" ]]; then
   AUTH_HEADER="Authorization: Bearer $SUBSUMIO_API_KEY"

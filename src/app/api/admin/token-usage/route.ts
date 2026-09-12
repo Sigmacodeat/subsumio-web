@@ -23,7 +23,7 @@ const adminTokenUsageQuerySchema = z.object({
 
 export const GET = createHandler(
   {
-    action: "billing.read",
+    action: "platform.operator",
     rateTier: "standard",
     cacheMaxAge: 60,
     query: adminTokenUsageQuerySchema,

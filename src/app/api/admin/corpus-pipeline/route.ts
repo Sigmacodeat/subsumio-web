@@ -38,7 +38,7 @@ const actionSchema = z.discriminatedUnion("action", [
  */
 export const POST = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     rateTier: "standard",
     body: actionSchema,
     audit: (_ctx, body) => ({

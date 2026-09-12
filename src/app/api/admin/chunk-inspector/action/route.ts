@@ -20,7 +20,7 @@ const actionSchema = z.object({
  */
 export const POST = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     body: actionSchema,
     rateTier: "heavy",
     audit: (_ctx, body) => ({

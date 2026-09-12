@@ -14,7 +14,7 @@ export const maxDuration = 120;
 
 export const POST = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     rateTier: "heavy",
     audit: (_ctx, _body) => ({
       action: "admin.rag_eval" as unknown as AuditAction,
@@ -59,7 +59,7 @@ export const POST = createHandler(
 
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     rateTier: "standard",
     audit: (_ctx, _body) => ({
       action: "admin.rag_eval" as unknown as AuditAction,
@@ -86,7 +86,7 @@ export const GET = createHandler(
 
 export const PUT = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     rateTier: "standard",
     audit: (_ctx, _body) => ({
       action: "admin.rag_eval" as unknown as AuditAction,

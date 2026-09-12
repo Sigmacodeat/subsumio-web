@@ -49,7 +49,7 @@ const bodySchema = z.object({
  */
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
   },
   async () => {
     const eintraege: WarteEintrag[] = offeneEintraege();
@@ -144,7 +144,7 @@ export const GET = createHandler(
 
 export const POST = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     body: bodySchema,
     audit: (ctx, body) => ({
       action: "corpus_files.publish" as const,

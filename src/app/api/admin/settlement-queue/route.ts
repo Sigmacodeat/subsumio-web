@@ -22,18 +22,14 @@ const retrySchema = z.object({
 
 export const GET = createHandler(
   {
-    action: "brain.read",
+    action: "platform.operator",
     rateTier: "standard",
-    admin: true,
     cacheMaxAge: 10,
   },
   async (ctx, _body, query, _req) => {
     // Admin-only: settlement queue contains sensitive billing data
     // (owner_ids, credit amounts, error messages). Non-admin users must
     // not see other users' failed settlements.
-    if (ctx.user.role !== "admin") {
-      return apiError("forbidden", "Admin access required", 403);
-    }
     const status = (query.status as string) ?? "pending";
     const limit = Math.min(Number(query.limit ?? 50), 200);
 
@@ -77,9 +73,8 @@ export const GET = createHandler(
  */
 export const POST = createHandler(
   {
-    action: "brain.write",
+    action: "platform.operator",
     rateTier: "standard",
-    admin: true,
     body: retrySchema,
     audit: (ctx, body, _query, _req) => ({
       action: "admin.settlement_retry",
@@ -90,9 +85,6 @@ export const POST = createHandler(
   },
   async (ctx, body, _query, _req) => {
     // Admin-only: retrying settlements can re-charge users' credits.
-    if (ctx.user.role !== "admin") {
-      return apiError("forbidden", "Admin access required", 403);
-    }
     if (!body?.pipeline_key || typeof body.pipeline_key !== "string") {
       return apiError("missing_pipeline_key", "pipeline_key is required", 400);
     }
