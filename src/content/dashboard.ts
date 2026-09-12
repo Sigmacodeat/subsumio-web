@@ -129,7 +129,6 @@ export const D = {
   "nav.brain": { de: "Kanzleiwissen", en: "Knowledge Base" },
   "nav.graph": { de: "Graph", en: "Graph" },
   "nav.upload": { de: "Upload", en: "Upload" },
-  "nav.rag_eval": { de: "RAG-Eval", en: "RAG Eval" },
   "nav.portfolio_insights": { de: "Portfolio-Analysen", en: "Portfolio Insights" },
   "nav.analytics_hub": { de: "Berichte & Insights", en: "Reports & Insights" },
   "nav.deep_analysis": { de: "Cross-Doc Analyse", en: "Cross-Doc Analysis" },
@@ -175,15 +174,7 @@ export const D = {
   "nav.operations_cockpit": { de: "Operations-Cockpit", en: "Operations Cockpit" },
   "nav.version_history": { de: "Versionshistorie", en: "Version History" },
   "nav.monitoring": { de: "Monitoring", en: "Monitoring" },
-  "nav.compliance_export": { de: "Compliance-Audit", en: "Compliance Audit" },
   "nav.sources": { de: "Rechtsquellen", en: "Legal Sources" },
-  "nav.admin_overview": { de: "Admin-Übersicht", en: "Admin Overview" },
-  "nav.admin_users": { de: "Kunden", en: "Customers" },
-  "nav.admin_mailbox": { de: "Mailbox", en: "Mailbox" },
-  "nav.feedback_triage": { de: "Feedback-Triage", en: "Feedback Triage" },
-  "nav.guardrails": { de: "Guardrails", en: "Guardrails" },
-  "nav.rag_optimizer": { de: "RAG-Optimizer", en: "RAG Optimizer" },
-  "nav.eval_review": { de: "Eval-Fixture-Review", en: "Eval Fixture Review" },
 
   // ── Sidebar: nav items (drafts & billing) ──
   "nav.drafting": { de: "Schriftsatz", en: "Drafting" },
@@ -200,11 +191,6 @@ export const D = {
   "nav.intake": { de: "Posteingang", en: "Inbox" },
   "nav.document_requests": { de: "Dokumentenanfragen", en: "Document Requests" },
   "nav.import_kanzlei": { de: "Kanzlei-Import", en: "Firm Import" },
-  "nav.backup_restore": { de: "Backup & Restore", en: "Backup & Restore" },
-  "nav.dr": { de: "Disaster Recovery", en: "Disaster Recovery" },
-  "nav.feature_flags": { de: "Feature Flags", en: "Feature Flags" },
-  "nav.slo": { de: "SLO Monitoring", en: "SLO Monitoring" },
-  "nav.corpus_dashboard": { de: "Corpus & Embeddings", en: "Corpus & Embeddings" },
   "nav.corpus_pipeline": { de: "Korpus-Pipeline", en: "Corpus pipeline" },
   "nav.bea": { de: "beA", en: "beA" },
   "nav.communications": { de: "Kommunikation", en: "Communications" },
@@ -390,10 +376,6 @@ export const D = {
   "nav.tooltip.ai_model": {
     de: "KI-Modell-Auswahl und Provider-Konfiguration — selten geändert, bewusst im System-Tier",
     en: "AI model selection and provider configuration — rarely changed, intentionally in system tier",
-  },
-  "nav.tooltip.corpus_dashboard": {
-    de: "Chunking, Embedding-Coverage und Retrieval-Qualität überwachen — Corpus-Gesundheit und Re-Chunk-Empfehlungen",
-    en: "Monitor chunking, embedding coverage and retrieval quality — corpus health and re-chunk recommendations",
   },
 
   // ── Sidebar: nav items (industries — coming soon) ──
@@ -1577,14 +1559,6 @@ export const D = {
   "settings.tile_monitoring_desc": {
     de: "System-Überwachung und Alerts",
     en: "System monitoring and alerts",
-  },
-  "settings.tile_rag_eval_desc": {
-    de: "Qualitätsbewertung der KI-Antworten",
-    en: "Quality evaluation of AI responses",
-  },
-  "settings.tile_ai_quality_desc": {
-    de: "Halluzinations-Metriken, Guardrail-Stats und ECE-Kalibrierung",
-    en: "Hallucination metrics, guardrail stats and ECE calibration",
   },
   "settings.tile_chat_analytics_desc": {
     de: "Nutzungsstatistiken der KI-Chat-Funktion",
@@ -4018,7 +3992,6 @@ export const D = {
     en: "Hallucination metrics, guardrail stats, ECE calibration and reasoning traces",
   },
   "ai_quality.breadcrumb": { de: "KI-Qualität", en: "AI Quality" },
-  "nav.ai_quality": { de: "KI-Qualität", en: "AI Quality" },
 
   // ── Review Queue page ──
   "review_queue.title": { de: "Freigaben", en: "Approvals" },
@@ -9367,110 +9340,10 @@ export const D = {
   "litigation.delete_failed": { de: "Löschen fehlgeschlagen", en: "Failed to delete" },
 
   // ── Admin: Feature Flags ──
-  "admin.flags.title": { de: "Feature Flags", en: "Feature Flags" },
-  "admin.flags.desc": {
-    de: "Verwalte Feature-Freigaben, Rollout-Prozentsätze und Plan/Rollen-Beschränkungen",
-    en: "Manage feature releases, rollout percentages and plan/role restrictions",
-  },
-  "admin.flags.new": { de: "Neuer Flag", en: "New flag" },
-  "admin.flags.err_load": {
-    de: "Fehler beim Laden der Feature Flags.",
-    en: "Failed to load feature flags.",
-  },
-  "admin.flags.empty": { de: "Keine Feature Flags vorhanden.", en: "No feature flags available." },
-  "admin.flags.create_first": { de: "Ersten Flag erstellen", en: "Create first flag" },
-  "admin.flags.disable": { de: "Deaktivieren", en: "Disable" },
-  "admin.flags.enable": { de: "Aktivieren", en: "Enable" },
-  "admin.flags.active": { de: "Aktiv", en: "Active" },
-  "admin.flags.inactive": { de: "Inaktiv", en: "Inactive" },
-  "admin.flags.updated_by": { de: "Aktualisiert von", en: "Updated by" },
-  "admin.flags.on": { de: "am", en: "on" },
-  "admin.flags.edit": { de: "Bearbeiten", en: "Edit" },
-  "admin.flags.delete_title": { de: "Feature Flag löschen?", en: "Delete feature flag?" },
-  "admin.flags.delete_desc": {
-    de: "Der Flag wird entfernt. Features, die diesen Flag prüfen, sind danach standardmäßig deaktiviert.",
-    en: "The flag will be removed. Features that check this flag will be disabled by default.",
-  },
-  "admin.flags.cancel": { de: "Abbrechen", en: "Cancel" },
-  "admin.flags.delete": { de: "Löschen", en: "Delete" },
-  "admin.flags.updated": { de: "Flag aktualisiert", en: "Flag updated" },
-  "admin.flags.err_update": { de: "Fehler beim Aktualisieren", en: "Failed to update" },
-  "admin.flags.created": { de: "Flag erstellt", en: "Flag created" },
-  "admin.flags.err_create": { de: "Fehler beim Erstellen", en: "Failed to create" },
-  "admin.flags.deleted": { de: "Flag gelöscht", en: "Flag deleted" },
-  "admin.flags.err_delete": { de: "Fehler beim Löschen", en: "Failed to delete" },
-  "admin.flags.create_title": { de: "Neuer Feature Flag", en: "New feature flag" },
-  "admin.flags.create_desc": {
-    de: "Erstelle einen neuen Feature Flag.",
-    en: "Create a new feature flag.",
-  },
-  "admin.flags.key_label": { de: "Key", en: "Key" },
-  "admin.flags.key_placeholder": { de: "z.B. deep_analysis", en: "e.g. deep_analysis" },
-  "admin.flags.name_label": { de: "Name", en: "Name" },
-  "admin.flags.name_placeholder": { de: "z.B. Deep Analysis Tool", en: "e.g. Deep Analysis Tool" },
-  "admin.flags.desc_label": { de: "Beschreibung", en: "Description" },
-  "admin.flags.desc_placeholder": {
-    de: "Kurze Beschreibung des Features...",
-    en: "Brief description of the feature...",
-  },
-  "admin.flags.activated": { de: "Aktiviert", en: "Enabled" },
-  "admin.flags.deactivated": { de: "Deaktiviert", en: "Disabled" },
-  "admin.flags.rollout": { de: "Rollout", en: "Rollout" },
-  "admin.flags.plans_label": {
-    de: "Erlaubte Pläne (leer = alle)",
-    en: "Allowed plans (empty = all)",
-  },
-  "admin.flags.roles_label": {
-    de: "Erlaubte Rollen (leer = alle)",
-    en: "Allowed roles (empty = all)",
-  },
-  "admin.flags.create_btn": { de: "Erstellen", en: "Create" },
-  "admin.flags.edit_title": { de: "Flag bearbeiten", en: "Edit flag" },
-  "admin.flags.edit_desc": {
-    de: "Passe die Einstellungen für diesen Feature Flag an.",
-    en: "Adjust the settings for this feature flag.",
-  },
-  "admin.flags.save": { de: "Speichern", en: "Save" },
 
   // ── Admin: Backup ──
-  "admin.backup.title": { de: "Backup & Restore", en: "Backup & Restore" },
-  "admin.backup.desc": {
-    de: "Voll-Backups verwalten — erstellen, einspielen, herunterladen und löschen",
-    en: "Manage full backups — create, restore, download and delete",
-  },
-  "admin.backup.created": { de: "Backup erstellt", en: "Backup created" },
-  "admin.backup.created_desc": {
-    de: "Voll-Backup erfolgreich erstellt",
-    en: "Full backup successfully created",
-  },
-  "admin.backup.failed": { de: "Backup fehlgeschlagen", en: "Backup failed" },
-  "admin.backup.restore_done": { de: "Restore abgeschlossen", en: "Restore completed" },
-  "admin.backup.restore_failed": { de: "Restore fehlgeschlagen", en: "Restore failed" },
-  "admin.backup.deleted": { de: "Backup gelöscht", en: "Backup deleted" },
-  "admin.backup.delete_failed": { de: "Löschen fehlgeschlagen", en: "Failed to delete" },
-  "admin.backup.creating": { de: "Erstelle...", en: "Creating..." },
-  "admin.backup.new": { de: "Neues Backup", en: "New backup" },
-  "admin.backup.restore_confirm": { de: "Restore bestätigen", en: "Confirm restore" },
-  "admin.backup.restoring": { de: "Stelle wieder her...", en: "Restoring..." },
-  "admin.backup.deleting": { de: "Lösche...", en: "Deleting..." },
-  "admin.backup.delete": { de: "Löschen", en: "Delete" },
-  "admin.backup.cancel": { de: "Abbrechen", en: "Cancel" },
-  "admin.backup.aria_delete": { de: "Löschen", en: "Delete" },
 
   // ── Admin: Feedback Triage ──
-  "admin.feedback.title": { de: "Feedback-Triage", en: "Feedback Triage" },
-  "admin.feedback.desc": {
-    de: "Nutzerfeedback → Kandidat → Jurist bestätigt Fehlerklasse, Korrektur & Root Cause",
-    en: "User feedback → Candidate → Lawyer confirms error class, correction & root cause",
-  },
-  "admin.feedback.filter_status": { de: "Filter nach Status", en: "Filter by status" },
-  "admin.feedback.choose": { de: "Wählen...", en: "Choose..." },
-  "admin.feedback.correct_placeholder": {
-    de: "Was hätte die AI antworten sollen?",
-    en: "What should the AI have answered?",
-  },
-  "admin.feedback.notes_placeholder": { de: "Optionale Notizen...", en: "Optional notes..." },
-  "admin.feedback.error_occurred": { de: "Fehler aufgetreten", en: "Error occurred" },
 
   // ── Upload page strings ──
   "upload.original_not_saved": {
@@ -9674,53 +9547,18 @@ export const D = {
   "translate.lang_zh": { de: "Chinesisch", en: "Chinese" },
 
   // ── Admin: Pipeline ──
-  "admin.pipeline.title": { de: "Korpus-Pipeline", en: "Corpus Pipeline" },
-  "admin.pipeline.desc": {
-    de: "Supervisor-Zustand je Source: Backfill → Import → Embed → Reconcile. Pause/Resume wirkt ab dem nächsten Zyklus (≤10 min).",
-    en: "Supervisor state per source: Backfill → Import → Embed → Reconcile. Pause/Resume takes effect from the next cycle (≤10 min).",
-  },
 
   // ── Admin: DR ──
-  "admin.dr.title": { de: "Backups & Disaster Recovery", en: "Backups & Disaster Recovery" },
-  "admin.dr.desc": {
-    de: "Backup-Manifeste, Restore-Drills, RPO/RTO-Compliance und Wiederherstellung",
-    en: "Backup manifests, restore drills, RPO/RTO compliance and recovery",
-  },
 
   // ── Admin: Guardrails ──
-  "admin.guardrails.title": { de: "Guardrail Monitoring", en: "Guardrail Monitoring" },
-  "admin.guardrails.desc": {
-    de: "Tier-0 (deterministic) + Tier-1 (Cross-Model Verification) Metriken",
-    en: "Tier-0 (deterministic) + Tier-1 (Cross-Model Verification) metrics",
-  },
 
   // ── Admin: RAG Optimizer ──
-  "admin.ragopt.title": { de: "RAG Auto-Optimizer", en: "RAG Auto-Optimizer" },
-  "admin.ragopt.desc": {
-    de: "One-Click-Recall-Optimierung & automatische Gesetzes-Ingestion",
-    en: "One-click recall optimization & automatic law ingestion",
-  },
 
   // ── Admin: Corpus ──
-  "admin.corpus.title": { de: "Corpus & Embeddings", en: "Corpus & Embeddings" },
-  "admin.corpus.desc": {
-    de: "Chunking, Embedding-Coverage und Retrieval-Qualität überwachen",
-    en: "Monitor chunking, embedding coverage and retrieval quality",
-  },
 
   // ── Admin: Compliance Export ──
-  "admin.compliance_export.title": { de: "Compliance Audit Log", en: "Compliance Audit Log" },
-  "admin.compliance_export.desc": {
-    de: "EU AI Act Art. 12 — Reasoning Traces",
-    en: "EU AI Act Art. 12 — Reasoning Traces",
-  },
 
   // ── Admin: SLO ──
-  "admin.slo.title": { de: "SLO Monitoring", en: "SLO Monitoring" },
-  "admin.slo.desc": {
-    de: "Service Level Objectives für alle Workflows — Status, Alerts und Metriken",
-    en: "Service Level Objectives for all workflows — status, alerts and metrics",
-  },
 
   // ── Calendar Export ──
   "calexport.title": { de: "Kalender-Export", en: "Calendar Export" },

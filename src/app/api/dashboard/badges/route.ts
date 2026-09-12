@@ -1,6 +1,5 @@
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiSuccess } from "@/lib/api-handler";
-import { offeneEintraege } from "@/lib/corpus-import-queue";
 
 interface BadgeCounts {
   [href: string]: { count: number; variant: "danger" | "warning" | "info" };
@@ -207,13 +206,6 @@ export const GET = createHandler(
     }
     if (reviewInboxCount > 0) {
       badges["/dashboard/communications"] = { count: reviewInboxCount, variant: "warning" };
-    }
-
-    // Import-Queue — offene Einträge die noch nicht in die Such-DB importiert wurden.
-    // warning weil es keine kritische Aktion ist, aber der Admin dran denken muss.
-    const importQueueCount = offeneEintraege().length;
-    if (importQueueCount > 0) {
-      badges["/dashboard/admin/corpus"] = { count: importQueueCount, variant: "warning" };
     }
 
     return apiSuccess(badges);

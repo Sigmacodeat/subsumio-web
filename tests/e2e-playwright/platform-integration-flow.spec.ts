@@ -2,7 +2,7 @@
  * E2E Tests — Platform & Integration Module
  * ============================================
  * Covers: shared-spaces, sources, version-history, word-addin, workflows/builder,
- *         case-scanner, mobile/pipeline, monitoring/engine
+ *         case-scanner, mobile/pipeline
  * Tests: Page render, no 503, key UI elements
  */
 
@@ -60,7 +60,6 @@ test.describe("Platform & Integration: Pages Render", () => {
     { path: "/dashboard/workflows/builder", name: "Workflow Builder" },
     { path: "/dashboard/case-scanner", name: "Case Scanner" },
     { path: "/dashboard/mobile/pipeline", name: "Mobile Pipeline" },
-    { path: "/dashboard/monitoring/engine", name: "Engine Monitoring" },
   ];
 
   for (const p of pages) {
@@ -114,13 +113,6 @@ test.describe("Platform & Integration: Pages Render", () => {
     expect(await content.count()).toBeGreaterThan(0);
   });
 
-  test("monitoring/engine shows engine performance heading", async ({ page }) => {
-    await page.goto("/dashboard/monitoring/engine", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(2000);
-    const heading = page.getByRole("heading", { name: /Engine Performance/i }).first();
-    await expect(heading).toBeVisible({ timeout: 10_000 });
-  });
-
   test("workflows/builder shows builder interface", async ({ page }) => {
     await page.goto("/dashboard/workflows/builder", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
@@ -135,16 +127,6 @@ test.describe("Platform & Integration: Pages Render", () => {
 test.describe("Platform: Functional", () => {
   test.beforeEach(async ({ page }) => {
     await signUpViaApi(page);
-  });
-
-  test("monitoring/engine shows engine metrics or status", async ({ page }) => {
-    await page.goto("/dashboard/monitoring/engine", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
-    // Should show some metrics — numbers, charts, or status indicators
-    const metrics = page.locator(
-      ".tabular-nums, .recharts-surface, text=/CPU|Memory|Status|Online|Offline/i"
-    );
-    expect(await metrics.count()).toBeGreaterThan(0);
   });
 
   test("word-addin shows installation or download info", async ({ page }) => {

@@ -82,7 +82,6 @@ const CMD_LABEL_KEYS: Record<string, DashboardKey> = {
   "review-queue": "nav.review_queue",
   "version-history": "nav.version_history",
   monitoring: "nav.monitoring",
-  "ai-quality": "nav.ai_quality",
   sources: "nav.sources",
   // Schriftsätze & Abrechnung
   drafting: "nav.drafting",

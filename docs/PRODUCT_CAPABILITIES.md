@@ -31,6 +31,10 @@ auditierbar bleiben.
 - **Legal-only Provisioning:** Neue Nutzer und Brains werden ausschließlich als
   `legal` provisioniert. Alte unbekannte Industry-Metadaten fallen sicher auf
   das Subsumio-Theme zurück.
+- **Kanzlei-Client-Build:** Die Betreiber-/Ops-Flächen (`dashboard/admin/*`,
+  `monitoring/engine`, `rag-eval`, `ai-quality`) sind nicht Teil des
+  Kanzlei-Builds. Die zugehörigen `api/admin/*`-, `api/monitoring/*`- und
+  Eval-Routen bleiben als Server-Oberfläche für Betrieb und Engine erhalten.
 
 ### Kanzlei-Dashboard (Legal)
 

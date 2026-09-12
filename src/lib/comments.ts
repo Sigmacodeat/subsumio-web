@@ -786,7 +786,7 @@ export async function createCorpusDeltaNotification(opts: {
       failedCount: opts.failedCount ?? 0,
       applikationen: opts.applikationen,
       total,
-      url: "/dashboard/admin/corpus",
+      url: "/dashboard/sources",
       syncDate: today,
     },
     readAt: null,

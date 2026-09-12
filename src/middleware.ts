@@ -1,4 +1,4 @@
-// Edge middleware: Subsumio-only routing plus protected dashboard/admin.
+// Edge middleware: Subsumio-only routing plus protected dashboard.
 // Also sets CSRF cookie for double-submit pattern and validates it on
 // state-changing API requests.
 //
@@ -325,21 +325,12 @@ export async function middleware(req: NextRequest) {
   }
 
   // --- Protected areas ---
-  if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) {
+  if (pathname.startsWith("/dashboard")) {
     const session = await verifySessionCore(req.cookies.get(SESSION_COOKIE)?.value);
     if (!session) {
       const login = new URL("/login", req.url);
       login.searchParams.set("next", pathname);
       return applyCsp(NextResponse.redirect(login));
-    }
-    if (pathname.startsWith("/admin") && session.role !== "admin") {
-      return applyCsp(NextResponse.redirect(new URL("/dashboard", req.url)));
-    }
-    // /dashboard/admin/* — ebenfalls Admin-only (separate vom /admin Bereich).
-    // Die Middleware prüft beide Pfade, weil /dashboard/admin nicht unter /admin
-    // liegt und deshalb der Check oben nicht greift.
-    if (pathname.startsWith("/dashboard/admin") && session.role !== "admin") {
-      return applyCsp(NextResponse.redirect(new URL("/dashboard", req.url)));
     }
 
     // Set CSRF cookie if not present

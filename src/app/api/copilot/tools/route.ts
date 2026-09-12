@@ -64,7 +64,6 @@ const ALLOWED_DASHBOARD_ROUTES = new Set([
   "/dashboard/opponents",
   "/dashboard/playbooks",
   "/dashboard/process-strategy",
-  "/dashboard/rag-eval",
   "/dashboard/research",
   "/dashboard/review-queue",
   "/dashboard/settings",
