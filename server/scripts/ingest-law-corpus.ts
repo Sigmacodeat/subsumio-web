@@ -102,7 +102,7 @@ const DE_LAWS: DeLaw[] = [
   { slug: "urhg", abbr: "UrhG", title: "Gesetz über Urheberrecht und verwandte Schutzrechte" },
   { slug: "kstg_1977", abbr: "KStG", title: "Körperschaftsteuergesetz" },
   { slug: "gewo", abbr: "GewO", title: "Gewerbeordnung" },
-  // ── Tax-specific laws for TAXUMIO ──
+  // ── Tax law statutes (Steuerrecht as legal practice area) ──
   { slug: "gewstg", abbr: "GewStG", title: "Gewerbesteuergesetz" },
   { slug: "erbstg_1974", abbr: "ErbStG", title: "Erbschaftsteuer- und Schenkungsteuergesetz" },
   { slug: "bewg", abbr: "BewG", title: "Bewertungsgesetz" },
@@ -607,13 +607,25 @@ const CH_LAWS: ChLaw[] = [
   { srNumber: "642.11", abbr: "DBG", title: "Bundesgesetz über die direkte Bundessteuer" },
   { srNumber: "642.14", abbr: "StHG", title: "Steuerharmonisierungsgesetz" },
   // SR 832.10 is the KVG; the BVG (berufliche Vorsorge) is SR 831.40.
-  { srNumber: "831.40", abbr: "BVG", title: "Bundesgesetz über die berufliche Alters-, Hinterlassenen- und Invalidenvorsorge" },
+  {
+    srNumber: "831.40",
+    abbr: "BVG",
+    title: "Bundesgesetz über die berufliche Alters-, Hinterlassenen- und Invalidenvorsorge",
+  },
   { srNumber: "235.1", abbr: "DSG", title: "Bundesgesetz über den Datenschutz" },
   { srNumber: "172.021", abbr: "VwVG", title: "Verwaltungsverfahrensgesetz" },
   { srNumber: "241", abbr: "UWG", title: "Bundesgesetz gegen den unlauteren Wettbewerb" },
   // SR 822.11 is the ArG (Arbeitsgesetz); the BGFA (Anwaltsgesetz) is SR 935.61.
-  { srNumber: "935.61", abbr: "BGFA", title: "Bundesgesetz über die Freizügigkeit der Anwältinnen und Anwälte" },
-  { srNumber: "822.11", abbr: "ArG", title: "Bundesgesetz über die Arbeit in Industrie, Gewerbe und Handel" },
+  {
+    srNumber: "935.61",
+    abbr: "BGFA",
+    title: "Bundesgesetz über die Freizügigkeit der Anwältinnen und Anwälte",
+  },
+  {
+    srNumber: "822.11",
+    abbr: "ArG",
+    title: "Bundesgesetz über die Arbeit in Industrie, Gewerbe und Handel",
+  },
   // ── DACH-Legal-Ausbau 2026-07-18 ──
   { srNumber: "101", abbr: "BV", title: "Bundesverfassung der Schweizerischen Eidgenossenschaft" },
   { srNumber: "173.110", abbr: "BGG", title: "Bundesgerichtsgesetz" },

@@ -36,6 +36,7 @@ mock.module("../src/commands/web-api.ts", () => ({
   ) => {
     putPageCalls.push({ name: "put_page", slug, frontmatter });
   },
+  persistEnginePostUploadTasks: async () => {},
   UnsupportedUploadError: FakeUnsupportedUploadError,
 }));
 

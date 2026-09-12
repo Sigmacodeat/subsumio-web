@@ -167,7 +167,7 @@ export async function runInit(args: string[]) {
     }
   } else {
     console.log("\nEnter your Postgres connection URL:");
-    console.log("  Format: postgresql://user:password@host:port/database\n");
+    console.log("  Format: postgresql URL mit Benutzer, Passwort, Host, Port und Datenbank\n");
     const url = await readLine("Connection URL: ");
     if (!url) {
       console.error("No URL provided.");

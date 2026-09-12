@@ -5,7 +5,6 @@ import { createSession, SESSION_COOKIE, REF_COOKIE } from "@/lib/auth/session";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { signActionToken, bindFragment, VERIFY_TOKEN_TTL_SECONDS } from "@/lib/auth/tokens";
 import { sendMail, siteUrl } from "@/lib/mail";
-import { isValidIndustry } from "@/lib/industry-pack";
 import { provisionBrainAsync } from "@/lib/provision";
 import { signupSchema } from "@/lib/api-validation";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
@@ -32,7 +31,7 @@ export const POST = createPublicHandler(
     rateLimitWindowMs: 60 * 60_000,
   },
   async (req, body) => {
-    const { email, password, name, locale, industry: rawIndustry } = body;
+    const { email, password, name, locale } = body;
 
     if (name.length < 1 || name.length > 120) {
       return apiError("invalid_name", "Invalid name", 400);
@@ -51,11 +50,10 @@ export const POST = createPublicHandler(
       if (referrer && referrer.email !== email) referredBy = refCode; // no self-referrals
     }
 
-    // Industry powers dashboard personalization AND the schema pack the tenant's
-    // brain gets provisioned with (packForIndustry → subsumio-<vertical>). Allowlist
-    // is the single source in lib/industry-pack (covers all 8 branded verticals);
-    // optional, silently dropped when unknown.
-    const industry = isValidIndustry(rawIndustry) ? rawIndustry : null;
+    // Subsumio is currently a legal-only product. Archived vertical metadata
+    // remains readable for existing tenants, but every new brain is provisioned
+    // with the canonical legal pack.
+    const industry = "legal";
 
     const passwordHash = await hashPassword(password);
     const user = await store.create(

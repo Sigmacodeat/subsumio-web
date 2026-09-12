@@ -42,6 +42,7 @@ ssh root@<IP>
 git clone <this repo> /opt/subsumio
 cd /opt/subsumio/server/deploy/hetzner
 cp .env.example .env && nano .env             # APP_DOMAIN, ENGINE_DOMAIN + secrets
+./preflight.sh .env                           # must print PASSED before a production start
 docker compose up -d --build                  # ~3-5 min first build
 docker compose logs -f web engine             # watch Next boot + engine migrations
 
@@ -76,6 +77,11 @@ RPO/RTO in [`docs/BACKUP-RESTORE-PLAN.md`](../../../docs/BACKUP-RESTORE-PLAN.md)
 this VM; turn on versioning/object-lock), then set `BACKUP_*` in `.env` (see
 `.env.example`). Generate the repo password with `openssl rand -base64 48` and
 **store it offline** — without it the backups can't be decrypted.
+
+`./preflight.sh .env` blocks a production start if encrypted offsite backup,
+storage encryption, OpenRouter-only routing, tenant enforcement or the engine
+billing webhook key is missing. It is a configuration check; the first backup
+snapshot and restore drill still have to be observed in the running stack.
 
 - Daily 01:00 UTC: `backup/run.sh` — `pg_dump` + original files → encrypted restic
   snapshot, retention (7d/4w/6m), integrity check.

@@ -71,7 +71,7 @@ export default function AutonomousTasksPage() {
         "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
       normal:
         "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
-      low: "bg-gray-500/10 text-gray-500 border-gray-500/20",
+      low: "bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)] border-[color:var(--ds-neutral-border)]",
     };
     return (
       <Badge className={colors[priority as keyof typeof colors] || colors.normal}>{priority}</Badge>
@@ -91,7 +91,7 @@ export default function AutonomousTasksPage() {
       case "requires_approval":
         return <AlertTriangle className="h-4 w-4 text-[color:var(--ds-attention-text)]" />;
       default:
-        return <Clock className="h-4 w-4 text-gray-500" />;
+        return <Clock className="h-4 w-4 text-[color:var(--ds-neutral-text)]" />;
     }
   };
 
@@ -108,11 +108,11 @@ export default function AutonomousTasksPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Ausstehend</CardTitle>
-            <Clock className="text-[color:var(--ds-text-muted)] h-4 w-4" />
+            <Clock className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.pending ?? 0}</div>
-            <p className="text-[color:var(--ds-text-muted)] text-xs">
+            <p className="text-xs text-[color:var(--ds-text-muted)]">
               {stats?.by_priority?.urgent ?? 0} dringend
             </p>
           </CardContent>
@@ -120,7 +120,7 @@ export default function AutonomousTasksPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Läuft</CardTitle>
-            <RefreshCw className="text-[color:var(--ds-text-muted)] h-4 w-4" />
+            <RefreshCw className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.running ?? 0}</div>
@@ -129,17 +129,17 @@ export default function AutonomousTasksPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Genehmigung erforderlich</CardTitle>
-            <AlertTriangle className="text-[color:var(--ds-text-muted)] h-4 w-4" />
+            <AlertTriangle className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.requires_approval ?? 0}</div>
-            <p className="text-[color:var(--ds-text-muted)] text-xs">Benötigt Review</p>
+            <p className="text-xs text-[color:var(--ds-text-muted)]">Benötigt Review</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Abgeschlossen</CardTitle>
-            <CheckCircle className="text-[color:var(--ds-text-muted)] h-4 w-4" />
+            <CheckCircle className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.completed ?? 0}</div>
@@ -163,7 +163,7 @@ export default function AutonomousTasksPage() {
             </CardHeader>
             <CardContent>
               {pendingLoading ? (
-                <div className="text-[color:var(--ds-text-muted)] py-8 text-center">Laden...</div>
+                <div className="py-8 text-center text-[color:var(--ds-text-muted)]">Laden...</div>
               ) : pendingTasks && pendingTasks.length > 0 ? (
                 <div className="space-y-4">
                   {pendingTasks.map((task) => (
@@ -175,7 +175,7 @@ export default function AutonomousTasksPage() {
                         {getStatusIcon(task.status)}
                         <div>
                           <div className="font-medium">{task.title}</div>
-                          <div className="text-[color:var(--ds-text-muted)] text-sm">
+                          <div className="text-sm text-[color:var(--ds-text-muted)]">
                             {task.task_type} • {task.case_slug || "Global"}
                           </div>
                         </div>
@@ -185,7 +185,9 @@ export default function AutonomousTasksPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-[color:var(--ds-text-muted)] py-8 text-center">Keine Aufgaben</div>
+                <div className="py-8 text-center text-[color:var(--ds-text-muted)]">
+                  Keine Aufgaben
+                </div>
               )}
             </CardContent>
           </Card>
@@ -199,7 +201,7 @@ export default function AutonomousTasksPage() {
             </CardHeader>
             <CardContent>
               {approvalLoading ? (
-                <div className="text-[color:var(--ds-text-muted)] py-8 text-center">Laden...</div>
+                <div className="py-8 text-center text-[color:var(--ds-text-muted)]">Laden...</div>
               ) : approvalTasks && approvalTasks.length > 0 ? (
                 <div className="space-y-4">
                   {approvalTasks.map((task) => (
@@ -209,7 +211,7 @@ export default function AutonomousTasksPage() {
                           {getStatusIcon(task.status)}
                           <div>
                             <div className="font-medium">{task.title}</div>
-                            <div className="text-[color:var(--ds-text-muted)] text-sm">
+                            <div className="text-sm text-[color:var(--ds-text-muted)]">
                               {task.task_type} • {task.case_slug || "Global"}
                             </div>
                           </div>
@@ -247,7 +249,9 @@ export default function AutonomousTasksPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-[color:var(--ds-text-muted)] py-8 text-center">Keine Genehmigungen</div>
+                <div className="py-8 text-center text-[color:var(--ds-text-muted)]">
+                  Keine Genehmigungen
+                </div>
               )}
             </CardContent>
           </Card>
@@ -261,7 +265,7 @@ export default function AutonomousTasksPage() {
             </CardHeader>
             <CardContent>
               {completedLoading ? (
-                <div className="text-[color:var(--ds-text-muted)] py-8 text-center">Laden...</div>
+                <div className="py-8 text-center text-[color:var(--ds-text-muted)]">Laden...</div>
               ) : completedTasks && completedTasks.length > 0 ? (
                 <div className="space-y-4">
                   {completedTasks.map((task) => (
@@ -273,19 +277,19 @@ export default function AutonomousTasksPage() {
                         {getStatusIcon(task.status)}
                         <div>
                           <div className="font-medium">{task.title}</div>
-                          <div className="text-[color:var(--ds-text-muted)] text-sm">
+                          <div className="text-sm text-[color:var(--ds-text-muted)]">
                             {task.task_type} • {task.case_slug || "Global"}
                           </div>
                         </div>
                       </div>
-                      <div className="text-[color:var(--ds-text-muted)] text-sm">
+                      <div className="text-sm text-[color:var(--ds-text-muted)]">
                         {task.completed_at ? new Date(task.completed_at).toLocaleString() : "-"}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-[color:var(--ds-text-muted)] py-8 text-center">
+                <div className="py-8 text-center text-[color:var(--ds-text-muted)]">
                   Keine abgeschlossenen Aufgaben
                 </div>
               )}

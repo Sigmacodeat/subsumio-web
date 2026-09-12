@@ -13,7 +13,7 @@ import { api } from "@/lib/api";
 import type { InterviewDefinition } from "@/lib/document-interviews";
 
 const STATUS_COLORS: Record<string, string> = {
-  unreviewed: "bg-slate-100 text-slate-600",
+  unreviewed: "bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)]",
   reviewed: "bg-[color:var(--ds-info-solid)] text-[color:var(--ds-info-text)]",
   approved: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]",
 };

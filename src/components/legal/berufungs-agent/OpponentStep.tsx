@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Loader2,
   AlertTriangle,
@@ -17,6 +17,8 @@ import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { AIActConformityBanner } from "@/components/legal/AIActConformityBanner";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import { useLang } from "@/lib/use-lang";
 import type { BerufungsGrund, OpponentFinding } from "@/app/dashboard/berufungs-agent/page";
 
@@ -59,6 +61,7 @@ export function OpponentStep({
   const [overallAssessment, setOverallAssessment] = useState("");
   const [recommendedResponse, setRecommendedResponse] = useState("");
   const [streamingProgress, setStreamingProgress] = useState("");
+  const { grounding, isGrounding, groundAnswer } = useGroundedAnswer();
   const { addToast } = useToast();
   const { t } = useLang();
 
@@ -108,6 +111,22 @@ export function OpponentStep({
   }, [caseSlug, draftContent, selectedGruende, onFindingsChange, addToast, t]);
 
   const hasResults = findings.length > 0 || overallAssessment || recommendedResponse;
+
+  // Grounding invariant (CLAUDE.md): the opponent simulation argues law back at
+  // the user — its counter-arguments must be corpus-verified like every other
+  // AI legal output surface.
+  useEffect(() => {
+    if (!hasResults) return;
+    const groundingText = [
+      overallAssessment,
+      recommendedResponse,
+      ...findings.flatMap((f) => [f.argument, f.gegenargument, f.empfehlung]),
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+    groundAnswer(groundingText).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasResults, overallAssessment, recommendedResponse, findings]);
 
   return (
     <div className="space-y-6">
@@ -265,6 +284,17 @@ export function OpponentStep({
               <p className="text-sm text-[color:var(--ds-text-muted)]">{recommendedResponse}</p>
             </div>
           )}
+
+          <CitationPanel
+            data={
+              {
+                grounding: grounding ?? null,
+                citations: [],
+                isStreaming: isGrounding,
+              } satisfies CitationPanelData
+            }
+            compact
+          />
         </div>
       )}
 

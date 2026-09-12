@@ -28,7 +28,7 @@ const STATUS_COLORS: Record<string, string> = {
     "bg-[color:var(--ds-attention-solid)] text-[color:var(--ds-attention-text)]",
   zwangsvollstreckung: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)]",
   paid: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]",
-  written_off: "bg-slate-100 text-slate-600",
+  written_off: "bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)]",
 };
 
 function fmtEUR(n: number) {
@@ -225,7 +225,8 @@ export default function ClaimAccountPage() {
             <div>
               <Label>{t("claim.principal")} *</Label>
               <Input
-                type="number" inputMode="numeric"
+                type="number"
+                inputMode="numeric"
                 value={form.principal_amount}
                 onChange={(e) => setForm({ ...form, principal_amount: e.target.value })}
               />
@@ -233,7 +234,8 @@ export default function ClaimAccountPage() {
             <div>
               <Label>{t("claim.interest")}</Label>
               <Input
-                type="number" inputMode="numeric"
+                type="number"
+                inputMode="numeric"
                 value={form.interest_amount}
                 onChange={(e) => setForm({ ...form, interest_amount: e.target.value })}
               />
@@ -241,7 +243,8 @@ export default function ClaimAccountPage() {
             <div>
               <Label>{t("claim.costs")}</Label>
               <Input
-                type="number" inputMode="numeric"
+                type="number"
+                inputMode="numeric"
                 value={form.costs_amount}
                 onChange={(e) => setForm({ ...form, costs_amount: e.target.value })}
               />
@@ -293,7 +296,8 @@ export default function ClaimAccountPage() {
           <div>
             <Label>{t("claim.payment_amount")}</Label>
             <Input
-              type="number" inputMode="numeric"
+              type="number"
+              inputMode="numeric"
               value={paymentAmount}
               onChange={(e) => setPaymentAmount(e.target.value)}
             />

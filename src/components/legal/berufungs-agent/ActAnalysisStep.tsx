@@ -20,6 +20,8 @@ import { api, type BrainPage } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { AIActConformityBanner } from "@/components/legal/AIActConformityBanner";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import { useLang } from "@/lib/use-lang";
 import type { ActAnalysis } from "@/app/dashboard/berufungs-agent/page";
 
@@ -53,6 +55,7 @@ export function ActAnalysisStep({
   const [loadingCases, setLoadingCases] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { grounding, isGrounding, groundAnswer } = useGroundedAnswer();
   const { addToast } = useToast();
   const { t } = useLang();
 
@@ -102,6 +105,24 @@ export function ActAnalysisStep({
       setAnalyzing(false);
     }
   }, [caseSlug, onAnalysisComplete, addToast]);
+
+  // Grounding invariant (CLAUDE.md): the strategy text is AI-generated legal
+  // content and must be verified against the corpus before it is shown as
+  // usable. Same pattern as matter-tabs/overview-tab for this endpoint.
+  useEffect(() => {
+    if (!analysis) return;
+    const groundingText = [
+      analysis.summary,
+      analysis.recommended,
+      analysis.recommendedApproach,
+      ...(analysis.risks ?? []).map((r) => r.description),
+      ...(analysis.next_steps ?? []),
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+    groundAnswer(groundingText).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [analysis]);
 
   return (
     <div className="space-y-6">
@@ -297,6 +318,17 @@ export function ActAnalysisStep({
               </ol>
             </div>
           )}
+
+          <CitationPanel
+            data={
+              {
+                grounding: grounding ?? null,
+                citations: [],
+                isStreaming: isGrounding,
+              } satisfies CitationPanelData
+            }
+            compact
+          />
 
           {/* Re-analyze + next */}
           <div className="flex items-center justify-between gap-2 pt-2">

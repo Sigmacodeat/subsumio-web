@@ -202,7 +202,7 @@ export interface RunThinkOpts {
    */
   legalMode?: boolean;
   /**
-   * TAXUMIO — when true, activates tax-aware system prompt with tax statute
+   * Tax law mode — when true, activates tax-aware system prompt with tax statute
    * citation discipline, tax jurisdiction awareness (DE/AT/CH/EU), and
    * Steuerberater review disclaimers. Auto-detected when gathered pages
    * contain tax law page types (slug starting with 'law/de/' + tax law slug,
@@ -730,7 +730,7 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
     );
   });
   const legalMode = opts.legalMode || autoLegalMode;
-  // TAXUMIO: Auto-detect tax mode from gathered page slugs. Tax law pages
+  // Auto-detect tax mode from gathered page slugs. Tax law pages
   // have slugs starting with 'law/de/' + tax law slug (estg, ustg, kstg, etc.),
   // 'law/ch/' + tax law slug (dbg, mwstg, sthg, zg), or 'law/eu/' + tax law slug.
   const TAX_SLUG_PREFIXES = [

@@ -18,6 +18,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [],
     formats: ["image/avif", "image/webp"],
   },
+  productionBrowserSourceMaps: false,
   async redirects() {
     return [
       // German is the default locale at root (/); /de/* routes are not part of
@@ -99,6 +100,11 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     reactCompiler: false,
+    // This application has hundreds of routes. Keep Webpack's peak memory
+    // bounded during production compilation (supported since Next.js 15).
+    webpackMemoryOptimizations: true,
+    webpackBuildWorker: true,
+    serverSourceMaps: false,
     optimizePackageImports: ["lucide-react", "framer-motion", "date-fns", "radash"],
     // In Next 15.5 these options both live under `experimental`. The web upload
     // route is matched by middleware, while Server Actions use their own limit.
@@ -134,17 +140,8 @@ const nextConfig: NextConfig = {
       "**/tmp/**",
     ],
   },
-  webpack: (config) => {
-    config.resolve = config.resolve || {};
-    config.resolve.alias = config.resolve.alias || {};
-    // ioredis is an optional dynamic import for Redis presence.
-    // Mark it as externals so webpack doesn't try to bundle it.
-    config.externals = [...(config.externals || []), { ioredis: "ioredis" }];
-    // pg is a Node.js-only module that should never end up in the client bundle.
-    // If a client component accidentally imports a server module that imports pg,
-    // this prevents webpack from trying to resolve fs/dns/net/tls in the browser.
-    config.externals = [...(config.externals || []), { pg: "pg" }];
-    return config;
+  outputFileTracingIncludes: {
+    "*": ["./src/lib/corpus-meta.json"],
   },
 };
 

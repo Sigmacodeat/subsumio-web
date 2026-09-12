@@ -115,9 +115,6 @@ function defaultPackLocator(name: string): string | null {
     // v0.42+ vertical pack: legal / law firm domain with jurisdiction-aware
     // deadlines, legal-specific link verbs, and case-outcome calibration.
     "gbrain-legal",
-    // v0.42+ vertical pack: tax / accounting domain with DE/AT/CH tax
-    // deadlines, invoice link verbs, and filing/deadline calibration.
-    "gbrain-tax",
     // v0.42+ vertical pack: medical / healthcare domain with ICD-coded
     // diagnoses, medication tracking, and diagnosis/treatment calibration.
     "gbrain-medical",

@@ -16,15 +16,7 @@ import { Button } from "@/components/ui/button";
 import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { FEATURES_PAGE } from "@/content/features";
 import SubsumioShowcase from "./subsumio-showcase";
-import {
-  ICONS,
-  useSiteBrand,
-  PageHero,
-  SectionHeading,
-  CTASection,
-  Section,
-  H2_CTA_CLASS,
-} from "./chrome";
+import { ICONS, PageHero, SectionHeading, CTASection, Section, H2_CTA_CLASS } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import {
   GuidedCursor,
@@ -511,8 +503,6 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
 
 export default function FeaturesPage({ lang }: { lang: Lang }) {
   const t = FEATURES_PAGE[lang];
-  const brand = useSiteBrand();
-  const isSubsumio = brand === "subsumio";
   const [active, setActive] = useState(t.categories[0].id);
   const cat = t.categories.find((c) => c.id === active) ?? t.categories[0];
   const CatIcon = ICONS[cat.icon];
@@ -621,7 +611,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
 
       {/* On the Subsumio brand: the comprehensive law-firm feature set
             (WhatsApp copilot spotlight + the full capability bento). */}
-      {isSubsumio && <SubsumioShowcase lang={lang} />}
+      <SubsumioShowcase lang={lang} />
 
       {/* Category explorer */}
       <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">

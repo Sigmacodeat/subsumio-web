@@ -965,6 +965,10 @@ export async function runExtractionAndImport(
     aclGroups?: string[] | "all";
     /** Bulk-act imports defer analysis until every raw document is ready. */
     autoTriggerLegalPipeline?: boolean;
+    /** Signed owner context. Auto AI is forbidden without it. */
+    ownerId?: string;
+    ownerType?: "user" | "org";
+    userId?: string;
   }
 ): Promise<{ partSlugs: string[]; stamp_failures?: string[] }> {
   const {
@@ -981,6 +985,9 @@ export async function runExtractionAndImport(
     matterScope,
     aclGroups,
     autoTriggerLegalPipeline = true,
+    ownerId,
+    ownerType,
+    userId,
   } = params;
 
   const markdown = await buildMarkdownFromUpload(engine, filename, data, title, uploadFrontmatter, {
@@ -1109,7 +1116,8 @@ export async function runExtractionAndImport(
   // entity-extracted, or analyzed. Now every document gets the full pipeline.
   // For non-split documents, part_slugs is empty and the pipeline processes
   // the single parent slug directly.
-  if (autoTriggerLegalPipeline)
+  if (autoTriggerLegalPipeline && ownerId && ownerType) {
+    let reservation: { pipeline_key: string; reserved_credits: number } | undefined;
     try {
       const { MinionQueue } = await import("../core/minions/queue.ts");
       const queue = new MinionQueue(engine);
@@ -1120,6 +1128,47 @@ export async function runExtractionAndImport(
       uploadFrontmatter.jurisdiction = jurisdiction;
       uploadFrontmatter.jurisdiction_confidence = jurResult.confidence;
       if (jurResult.unverified) uploadFrontmatter.jurisdiction_unverified = true;
+
+      const billingBaseUrl = process.env.ENGINE_BILLING_URL ?? process.env.SUBSUMIO_WEB_URL;
+      const webhookKey = process.env.ENGINE_WEBHOOK_API_KEY;
+      if (!billingBaseUrl || !webhookKey) {
+        throw new Error("auto pipeline billing is not configured");
+      }
+      const reserveRes = await fetch(
+        `${billingBaseUrl.replace(/\/$/, "")}/api/billing/pipeline-reserve`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-engine-webhook-key": webhookKey },
+          body: JSON.stringify({
+            owner_id: ownerId,
+            owner_type: ownerType,
+            case_slug: uploadPipelineCaseSlug(slug, caseSlug),
+            pages: Math.max(1, Math.ceil(markdown.length / 3_000)),
+            workflow_id: "aktencheck",
+          }),
+          signal: AbortSignal.timeout(15_000),
+        }
+      );
+      if (!reserveRes.ok) {
+        throw new Error(`pipeline credit reservation rejected: ${reserveRes.status}`);
+      }
+      const reservationBody = (await reserveRes.json()) as {
+        pipeline_key?: string;
+        reserved_credits?: number;
+      };
+      const reservedCredits = reservationBody.reserved_credits;
+      if (
+        !reservationBody.pipeline_key ||
+        typeof reservedCredits !== "number" ||
+        !Number.isFinite(reservedCredits)
+      ) {
+        throw new Error("pipeline credit reservation returned an invalid response");
+      }
+      const activeReservation = {
+        pipeline_key: reservationBody.pipeline_key,
+        reserved_credits: reservedCredits,
+      };
+      reservation = activeReservation;
 
       // G6 fix: parallelize jurisdiction stamping across all parts.
       await Promise.all(
@@ -1141,6 +1190,12 @@ export async function runExtractionAndImport(
           part_slugs: pipelineSlugs,
           ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
           trigger: "post_upload",
+          workflow_id: "aktencheck",
+          owner_id: ownerId,
+          owner_type: ownerType,
+          ...(userId ? { user_id: userId } : {}),
+          pipeline_key: activeReservation.pipeline_key,
+          reserved_credits: activeReservation.reserved_credits,
           // Jurisdiction is mandatory at handler entry. AT must be explicit as
           // well; omitting it relied on the removed implicit-AT default.
           jurisdiction,
@@ -1160,11 +1215,48 @@ export async function runExtractionAndImport(
         { allowProtectedSubmit: true }
       );
     } catch (pipelineErr) {
+      // The pipeline worker settles the reservation after it has been queued.
+      // If queuing itself failed, no worker can do that cleanup, so refund the
+      // full reservation here. `pipeline_key` makes this retry-safe.
+      if (reservation) {
+        try {
+          const billingBaseUrl = process.env.ENGINE_BILLING_URL ?? process.env.SUBSUMIO_WEB_URL;
+          const webhookKey = process.env.ENGINE_WEBHOOK_API_KEY;
+          if (!billingBaseUrl || !webhookKey) throw new Error("pipeline billing is not configured");
+          const refundRes = await fetch(
+            `${billingBaseUrl.replace(/\/$/, "")}/api/billing/pipeline-settle`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "x-engine-webhook-key": webhookKey },
+              body: JSON.stringify({
+                pipeline_key: reservation.pipeline_key,
+                owner_id: ownerId,
+                owner_type: ownerType,
+                case_slug: uploadPipelineCaseSlug(slug, caseSlug),
+                reserved_credits: reservation.reserved_credits,
+                actual_credits_override: 0,
+              }),
+              signal: AbortSignal.timeout(15_000),
+            }
+          );
+          if (!refundRes.ok) throw new Error(`reservation refund rejected: ${refundRes.status}`);
+        } catch (refundErr) {
+          console.error(
+            `[web-api] CRITICAL: pipeline reservation ${reservation.pipeline_key} could not be refunded: ` +
+              (refundErr instanceof Error ? refundErr.message : String(refundErr))
+          );
+        }
+      }
       console.error(
         `[web-api] legal-pipeline auto-trigger failed for ${slug}: ` +
           (pipelineErr instanceof Error ? pipelineErr.message : String(pipelineErr))
       );
     }
+  } else if (autoTriggerLegalPipeline) {
+    console.error(
+      `[web-api] refusing unbilled auto pipeline for ${slug}: signed owner context is required`
+    );
+  }
 
   // v0.46 — Post-upload incremental consolidation (Hindsight trigger).
   // Enqueue a consolidate-incremental job for all part slugs so newly
@@ -1902,6 +1994,8 @@ async function enrichCitations(
 interface UploadTokenPayload {
   brain_id: string;
   user_id: string;
+  owner_id: string;
+  owner_type: "user" | "org";
   case_slug?: string;
   source: string;
   title?: string;
@@ -1944,6 +2038,8 @@ function verifyUploadToken(token: string): UploadTokenPayload | null {
     if (
       !payload.brain_id ||
       !payload.user_id ||
+      !payload.owner_id ||
+      (payload.owner_type !== "user" && payload.owner_type !== "org") ||
       !payload.source ||
       !payload.filename ||
       !Number.isSafeInteger(payload.size) ||
@@ -1953,6 +2049,96 @@ function verifyUploadToken(token: string): UploadTokenPayload | null {
     return payload;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Queue a beA case analysis with exactly the same reserve → queue → refund
+ * contract as normal document uploads. beA is a privileged ingestion route,
+ * not an exemption from tenant billing.
+ */
+async function queueBilledBeaPipeline(
+  engine: BrainEngine,
+  input: {
+    ownerId?: string;
+    ownerType?: "user" | "org";
+    userId?: string;
+    tenantSource: string;
+    caseSlug: string;
+    documentSlug: string;
+    jurisdiction: string;
+  }
+): Promise<void> {
+  if (!input.ownerId || !input.ownerType) {
+    throw new Error("beA pipeline billing context is required");
+  }
+  const billingBaseUrl = process.env.ENGINE_BILLING_URL ?? process.env.SUBSUMIO_WEB_URL;
+  const webhookKey = process.env.ENGINE_WEBHOOK_API_KEY;
+  if (!billingBaseUrl || !webhookKey) throw new Error("beA pipeline billing is not configured");
+  const base = billingBaseUrl.replace(/\/$/, "");
+  let reservation: { pipeline_key: string; reserved_credits: number } | undefined;
+  try {
+    const reserve = await fetch(`${base}/api/billing/pipeline-reserve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-engine-webhook-key": webhookKey },
+      body: JSON.stringify({
+        owner_id: input.ownerId,
+        owner_type: input.ownerType,
+        case_slug: input.caseSlug,
+        pages: 1,
+        workflow_id: "aktencheck",
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!reserve.ok) throw new Error(`beA pipeline reservation rejected: ${reserve.status}`);
+    const body = (await reserve.json()) as { pipeline_key?: string; reserved_credits?: number };
+    if (!body.pipeline_key || !Number.isFinite(body.reserved_credits)) {
+      throw new Error("beA pipeline reservation returned an invalid response");
+    }
+    reservation = { pipeline_key: body.pipeline_key, reserved_credits: body.reserved_credits! };
+    const queue = new MinionQueue(engine);
+    await queue.add(
+      "legal-pipeline",
+      {
+        case_slug: input.caseSlug,
+        part_slugs: [input.documentSlug],
+        ...(input.tenantSource !== "default" ? { source_id: input.tenantSource } : {}),
+        trigger: "bea_import",
+        workflow_id: "aktencheck",
+        jurisdiction: input.jurisdiction,
+        as_of_date: new Date().toISOString().slice(0, 10),
+        owner_id: input.ownerId,
+        owner_type: input.ownerType,
+        ...(input.userId ? { user_id: input.userId } : {}),
+        pipeline_key: reservation.pipeline_key,
+        reserved_credits: reservation.reserved_credits,
+      },
+      {
+        timeout_ms: 60 * 60 * 1000,
+        max_attempts: 3,
+        idempotency_key: legalPipelineIdempotencyKey(input.tenantSource, input.caseSlug, [
+          input.documentSlug,
+        ]),
+      },
+      { allowProtectedSubmit: true }
+    );
+  } catch (error) {
+    if (reservation) {
+      await fetch(`${base}/api/billing/pipeline-settle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-engine-webhook-key": webhookKey },
+        body: JSON.stringify({
+          pipeline_key: reservation.pipeline_key,
+          owner_id: input.ownerId,
+          owner_type: input.ownerType,
+          case_slug: input.caseSlug,
+          reserved_credits: reservation.reserved_credits,
+          actual_credits_override: 0,
+        }),
+        signal: AbortSignal.timeout(15_000),
+      }).catch(() => undefined);
+    }
+    throw error;
   }
 }
 
@@ -2024,7 +2210,15 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     };
     await engine.executeRaw(
       `INSERT INTO sources (id, name, jurisdiction, config)
-       VALUES ($1, $1, $2, jsonb_build_object('jurisdiction', $2, 'legal_reference', $2 IS NOT NULL))
+       VALUES (
+         $1::text,
+         $1::text,
+         $2::text,
+         jsonb_build_object(
+           'jurisdiction', $2::text,
+           'legal_reference', $2::text IS NOT NULL
+         )
+       )
        ON CONFLICT (id) DO UPDATE SET
          jurisdiction = COALESCE(sources.jurisdiction, EXCLUDED.jurisdiction),
          config = sources.config || EXCLUDED.config`,
@@ -2298,26 +2492,15 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                   (beaPage?.frontmatter ?? {}) as Record<string, unknown>,
                   event.content
                 ).jurisdiction;
-                const beaQueue = new MinionQueue(engine);
-                await beaQueue.add(
-                  "legal-pipeline",
-                  {
-                    case_slug: pipelineCaseSlug,
-                    part_slugs: [beaSlug],
-                    ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
-                    trigger: "bea_import",
-                    jurisdiction: beaJurisdiction,
-                    as_of_date: new Date().toISOString().slice(0, 10),
-                  },
-                  {
-                    timeout_ms: 60 * 60 * 1000,
-                    max_attempts: 3,
-                    idempotency_key: legalPipelineIdempotencyKey(tenantSource, pipelineCaseSlug, [
-                      beaSlug,
-                    ]),
-                  },
-                  { allowProtectedSubmit: true }
-                );
+                await queueBilledBeaPipeline(engine, {
+                  ownerId: payload.owner_id,
+                  ownerType: payload.owner_type,
+                  userId: payload.user_id,
+                  tenantSource,
+                  caseSlug: pipelineCaseSlug,
+                  documentSlug: beaSlug,
+                  jurisdiction: beaJurisdiction,
+                });
               } catch (beaPipelineErr) {
                 console.error(
                   `[direct-upload] legal-pipeline trigger failed for beA import ${beaSlug}: ` +
@@ -2491,6 +2674,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               password: suppliedPassword,
               upload_frontmatter: uploadFrontmatter,
               auto_trigger_legal_pipeline: !payload.defer_pipeline,
+              owner_id: payload.owner_id,
+              owner_type: payload.owner_type,
+              user_id: payload.user_id,
             },
             { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
             { allowProtectedSubmit: true }
@@ -2511,6 +2697,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               payload.defer_pipeline,
               source
             ),
+            ownerId: payload.owner_id,
+            ownerType: payload.owner_type,
+            userId: payload.user_id,
           });
           partSlugs = result.partSlugs;
           if (result.stamp_failures) stampFailures = result.stamp_failures;
@@ -3959,7 +4148,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       res.json({ slug, success: true, ...(result && typeof result === "object" ? result : {}) });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
-      res.status(500).json({ error: "put_page_failed", message: msg });
+      console.error("[web-api] put_page failed:", e);
+      res.status(500).json({
+        error: "put_page_failed",
+        message: msg,
+      });
     }
   });
 
@@ -4285,6 +4478,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   });
 
   app.post("/api/upload", uploadConcurrencyGuard, async (req: Request, res: Response) => {
+    let cleanupTempFile: (() => void) | null = null;
     try {
       // Pre-check Content-Length before parsing. Rejects oversized early.
       const declaredLength = parseInt(String(req.headers["content-length"] ?? "0"), 10);
@@ -4454,7 +4648,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         return fileBuffer;
       };
       // Cleanup temp file when done (called in finally or at end of route)
-      const cleanupTempFile = () => {
+      cleanupTempFile = () => {
         try {
           unlinkSync(file.tmpPath);
         } catch {}
@@ -4524,6 +4718,15 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
       const source = fields.source || "documents";
       const title = fields.title || undefined;
+      // Billing identity originates only from the authenticated web proxy.
+      // Browser multipart fields must never be able to select a credit owner.
+      const billingOwnerId = String(req.headers["x-subsumio-owner-id"] ?? "").trim();
+      const billingOwnerTypeHeader = String(req.headers["x-subsumio-owner-type"] ?? "");
+      const billingOwnerType =
+        billingOwnerTypeHeader === "org" || billingOwnerTypeHeader === "user"
+          ? billingOwnerTypeHeader
+          : undefined;
+      const billingUserId = String(req.headers["x-subsumio-user-id"] ?? "").trim();
       let tagList: string[] = [];
       if (fields.tags) {
         try {
@@ -4626,26 +4829,15 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                 (beaPage?.frontmatter ?? {}) as Record<string, unknown>,
                 event.content
               ).jurisdiction;
-              const beaQueue2 = new MinionQueue(engine);
-              await beaQueue2.add(
-                "legal-pipeline",
-                {
-                  case_slug: pipelineCaseSlug,
-                  part_slugs: [beaSlug],
-                  ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
-                  trigger: "bea_import",
-                  jurisdiction: beaJurisdiction,
-                  as_of_date: new Date().toISOString().slice(0, 10),
-                },
-                {
-                  timeout_ms: 60 * 60 * 1000,
-                  max_attempts: 3,
-                  idempotency_key: legalPipelineIdempotencyKey(tenantSource, pipelineCaseSlug, [
-                    beaSlug,
-                  ]),
-                },
-                { allowProtectedSubmit: true }
-              );
+              await queueBilledBeaPipeline(engine, {
+                ownerId: billingOwnerId || undefined,
+                ownerType: billingOwnerType,
+                userId: billingUserId || undefined,
+                tenantSource,
+                caseSlug: pipelineCaseSlug,
+                documentSlug: beaSlug,
+                jurisdiction: beaJurisdiction,
+              });
             } catch (beaPipelineErr) {
               console.error(
                 `[web-api] legal-pipeline trigger failed for beA import ${beaSlug}: ` +
@@ -4770,6 +4962,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               fields.defer_pipeline,
               source
             ),
+            ...(billingOwnerId && billingOwnerType
+              ? {
+                  owner_id: billingOwnerId,
+                  owner_type: billingOwnerType,
+                  ...(billingUserId ? { user_id: billingUserId } : {}),
+                }
+              : {}),
             matter_scope: req.matterScope ?? "all",
             acl_groups: req.aclGroups ?? "all",
           },
@@ -4791,6 +4990,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           matterScope: req.matterScope ?? "all",
           aclGroups: req.aclGroups ?? "all",
           autoTriggerLegalPipeline: shouldAutoTriggerUploadPipeline(fields.defer_pipeline, source),
+          ownerId: billingOwnerId || undefined,
+          ownerType: billingOwnerType,
+          userId: billingUserId || undefined,
         });
         partSlugs = result.partSlugs;
         if (result.stamp_failures) stampFailures = result.stamp_failures;
@@ -4845,7 +5047,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       res.status(500).json({ error: "upload_failed", message: msg });
     } finally {
       // G5 fix: always clean up the temp file, even on error paths.
-      if (fileData) cleanupTempFile();
+      cleanupTempFile?.();
     }
   });
 
@@ -5486,6 +5688,14 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           return;
         }
 
+        const billingOwnerId = String(req.headers["x-subsumio-owner-id"] ?? "").trim();
+        const billingOwnerTypeHeader = String(req.headers["x-subsumio-owner-type"] ?? "");
+        const billingOwnerType =
+          billingOwnerTypeHeader === "org" || billingOwnerTypeHeader === "user"
+            ? billingOwnerTypeHeader
+            : undefined;
+        const billingUserId = String(req.headers["x-subsumio-user-id"] ?? "").trim();
+
         // For multipart uploads, the hash is computed during the upload loop
         // and sent at confirm time (not presign). Update the pending record.
         const confirmSha256 = typeof body.expected_sha256 === "string" ? body.expected_sha256 : "";
@@ -5857,6 +6067,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               upload_frontmatter: uploadFrontmatter,
               matter_scope: req.matterScope ?? "all",
               acl_groups: req.aclGroups ?? "all",
+              ...(billingOwnerId && billingOwnerType
+                ? {
+                    owner_id: billingOwnerId,
+                    owner_type: billingOwnerType,
+                    ...(billingUserId ? { user_id: billingUserId } : {}),
+                  }
+                : {}),
             },
             { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
             { allowProtectedSubmit: true }
@@ -5882,6 +6099,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             password: pending.password,
             matterScope: req.matterScope ?? "all",
             aclGroups: req.aclGroups ?? "all",
+            ownerId: billingOwnerId || undefined,
+            ownerType: billingOwnerType,
+            userId: billingUserId || undefined,
           });
           partSlugs = result.partSlugs;
           if (result.stamp_failures) stampFailures = result.stamp_failures;
@@ -6174,6 +6394,27 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           return;
         }
 
+        // Every legal pipeline consumes paid AI capacity. This endpoint is
+        // called only by trusted web-server routes, but it still must fail
+        // closed: a forgotten reservation on a secondary trigger path would
+        // otherwise create an unbilled worker job.
+        const ownerId = typeof body.owner_id === "string" ? body.owner_id.trim() : "";
+        const ownerType =
+          body.owner_type === "user" || body.owner_type === "org" ? body.owner_type : "";
+        const pipelineKey = typeof body.pipeline_key === "string" ? body.pipeline_key.trim() : "";
+        const reservedCredits =
+          typeof body.reserved_credits === "number" && Number.isFinite(body.reserved_credits)
+            ? body.reserved_credits
+            : -1;
+        if (!ownerId || !ownerType || !pipelineKey || reservedCredits < 0) {
+          res.status(400).json({
+            error: "billing_context_required",
+            message:
+              "owner_id, owner_type, pipeline_key und reserved_credits müssen vor dem Pipeline-Start reserviert werden.",
+          });
+          return;
+        }
+
         // If part_slugs not provided, discover all case documents via the
         // canonical case_slug frontmatter stamp. This is the same logic the
         // pipeline handler uses internally (discoverAllCaseDocuments) — the
@@ -6227,21 +6468,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         // Billing context: owner_id (org or user), owner_type, user_id.
         // Passed from the web app's trigger-pipeline route; used by
         // settlePipeline() for saas_usage_ledger (margin analysis).
-        if (typeof body.owner_id === "string" && body.owner_id) {
-          pipelineData.owner_id = body.owner_id;
-        }
-        if (typeof body.owner_type === "string" && body.owner_type) {
-          pipelineData.owner_type = body.owner_type;
-        }
+        pipelineData.owner_id = ownerId;
+        pipelineData.owner_type = ownerType;
         if (typeof body.user_id === "string" && body.user_id) {
           pipelineData.user_id = body.user_id;
         }
-        if (typeof body.pipeline_key === "string" && body.pipeline_key) {
-          pipelineData.pipeline_key = body.pipeline_key;
-        }
-        if (typeof body.reserved_credits === "number" && body.reserved_credits >= 0) {
-          pipelineData.reserved_credits = body.reserved_credits;
-        }
+        pipelineData.pipeline_key = pipelineKey;
+        pipelineData.reserved_credits = reservedCredits;
         if (
           typeof body.workflow_id === "string" &&
           [
@@ -7898,25 +8131,32 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   // dashboard talks to this web API instead, so expose a source-scoped,
   // non-secret status view plus safe lifecycle triggers here as well.
 
-  app.get("/api/connectors", async (_req: Request, res: Response) => {
+  app.get("/api/connectors", async (req: Request, res: Response) => {
     try {
       const { ConnectorManager, SUPPORTED_CONNECTORS } =
         await import("../core/ingestion/connectors/manager.ts");
-      const mgr = new ConnectorManager();
-      const configured = await mgr.list();
+      const mgr = new ConnectorManager(undefined, engine);
+      const tenantSource = requestSourceId(req);
+      const configured = await mgr.list(requireTenant ? tenantSource : undefined);
       const enabled = await mgr.loadEnabled();
       const runningIds = new Set(enabled.map((c) => c.id));
-      const configuredByService = new Map(configured.map((c) => [c.service, c]));
+      const visibleConfigured = requireTenant
+        ? configured.filter((entry) => entry.tenant_source_id === tenantSource)
+        : configured;
+      const configuredByService = new Map(visibleConfigured.map((c) => [c.service, c]));
 
       const connectors = await Promise.all(
         SUPPORTED_CONNECTORS.map(async (service) => {
           const entry = configuredByService.get(service);
-          const syncMeta = entry ? await mgr.getSyncMetadata(service) : {};
+          const syncMeta = entry
+            ? await mgr.getSyncMetadata(entry.id, requireTenant ? tenantSource : undefined)
+            : {};
           return {
             service,
             configured: Boolean(entry),
             enabled: entry?.enabled ?? false,
-            connected: entry ? runningIds.has(service) : false,
+            connector_id: entry?.id ?? null,
+            connected: entry ? runningIds.has(entry.id) : false,
             hasCredentials: entry?.hasCredentials ?? false,
             last_sync_at: syncMeta.last_sync_at ?? null,
             last_sync_status: syncMeta.last_sync_status ?? null,
@@ -8062,25 +8302,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   );
 
-  // Connector lifecycle is INSTALL-GLOBAL (writes land in the host source,
-  // config lives in the host DB). In fail-closed tenant mode these actions
-  // are host-operator-only — a tenant-scoped caller gets a clear 403 instead
-  // of silently mutating shared state.
-  const rejectConnectorActionsInTenantMode = (req: Request, res: Response): boolean => {
-    if (!requireTenant) return false;
-    res.status(403).json({
-      error: "host_admin_only",
-      message:
-        "Connector-Verwaltung ist installationsweit und in Multi-Tenant-Deployments dem Host-Betreiber (CLI/Admin-Server) vorbehalten.",
-    });
-    return true;
-  };
-
   app.post("/api/connectors/:service/sync", async (req: Request, res: Response) => {
-    if (rejectConnectorActionsInTenantMode(req, res)) return;
     try {
       const service = String(req.params.service);
-      const { ConnectorManager, SUPPORTED_CONNECTORS, CONNECTOR_REGISTRY } =
+      const { ConnectorManager, SUPPORTED_CONNECTORS } =
         await import("../core/ingestion/connectors/manager.ts");
       if (!SUPPORTED_CONNECTORS.includes(service)) {
         res
@@ -8089,9 +8314,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         return;
       }
 
-      const mgr = new ConnectorManager();
-      const entries = await mgr.list();
-      const entry = entries.find((e) => e.service === service);
+      const mgr = new ConnectorManager(undefined, engine);
+      const tenantSource = requestSourceId(req);
+      const entries = await mgr.list(requireTenant ? tenantSource : undefined);
+      const connectorRef = requireTenant ? `${service}-${tenantSource}` : service;
+      const entry = entries.find(
+        (e) => e.id === connectorRef || (!requireTenant && e.service === service)
+      );
       if (!entry) {
         res
           .status(404)
@@ -8103,14 +8332,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         return;
       }
 
-      const config = (await mgr.getConfig(service)) ?? {};
-      const Ctor = CONNECTOR_REGISTRY[service];
-      if (!Ctor) {
-        res.status(500).json({ error: "internal", message: "Connector registry inconsistency" });
-        return;
-      }
-
-      const connector = new Ctor(config);
+      const connector = await mgr.createConfigured(
+        connectorRef,
+        requireTenant ? tenantSource : undefined
+      );
       const queued: Promise<unknown>[] = [];
       const queue = new MinionQueue(engine);
       await connector.sync({
@@ -8119,7 +8344,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           queued.push(
             queue.add(
               "ingest_capture",
-              { event },
+              {
+                event,
+                ...(connector.getDispatchContext()
+                  ? { connector_context: connector.getDispatchContext() }
+                  : {}),
+              },
               {
                 idempotency_key: `ingest:${event.source_kind}:${event.content_hash}`,
                 maxWaiting: 100,
@@ -8133,11 +8363,17 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           error: (message: string) => console.error(`[connector:${service}] ERROR ${message}`),
         },
         abortSignal: new AbortController().signal,
-        config,
+        config: (await mgr.getConfig(connectorRef, requireTenant ? tenantSource : undefined)) ?? {},
       });
       await Promise.all(queued);
 
-      res.json({ success: true, status: "sync_queued", service, jobs: queued.length });
+      res.json({
+        success: true,
+        status: "sync_queued",
+        service,
+        connector_id: connectorRef,
+        jobs: queued.length,
+      });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
       res.status(500).json({ error: "connector_sync_failed", message: msg });
@@ -8148,7 +8384,6 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     "/api/connectors/:service/configure",
     express.json({ limit: "32kb" }),
     async (req: Request, res: Response) => {
-      if (rejectConnectorActionsInTenantMode(req, res)) return;
       try {
         const service = String(req.params.service);
         if (!["advokat-import", "bea-import"].includes(service)) {
@@ -8159,6 +8394,14 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           return;
         }
         const body = req.body as Record<string, unknown>;
+        const tenantSource = requestSourceId(req);
+        if (requireTenant && tenantSource === "default") {
+          res.status(400).json({
+            error: "tenant_source_required",
+            message: "Connectoren müssen einer Kanzlei-Quelle zugeordnet werden.",
+          });
+          return;
+        }
         const requestedPath = String(body.watch_dir ?? "").trim();
         if (!requestedPath || !requestedPath.startsWith("/")) {
           res.status(400).json({
@@ -8183,15 +8426,37 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           Math.min(Number(body.poll_interval_ms) || 60_000, 3_600_000)
         );
         const { ConnectorManager } = await import("../core/ingestion/connectors/manager.ts");
-        const mgr = new ConnectorManager();
+        const mgr = new ConnectorManager(undefined, engine);
+        const instanceId = requireTenant ? `${service}-${tenantSource}` : service;
+        const defaultCaseSlug =
+          typeof body.default_case_slug === "string" && body.default_case_slug.trim()
+            ? body.default_case_slug.trim()
+            : undefined;
+        const responsibleUserId =
+          typeof body.responsible_user_id === "string" && body.responsible_user_id.trim()
+            ? body.responsible_user_id.trim()
+            : undefined;
+        const ownerId =
+          typeof body.owner_id === "string" && body.owner_id.trim()
+            ? body.owner_id.trim()
+            : undefined;
+        const ownerType =
+          body.owner_type === "org" || body.owner_type === "user" ? body.owner_type : undefined;
         await mgr.add(service, {
+          instance_id: instanceId,
           poll_interval_ms: pollInterval,
           filters: { watch_dir: watchDir },
+          ...(requireTenant ? { tenant_source_id: tenantSource } : {}),
+          ...(defaultCaseSlug ? { default_case_slug: defaultCaseSlug } : {}),
+          ...(responsibleUserId ? { responsible_user_id: responsibleUserId } : {}),
+          ...(ownerId && ownerType ? { owner_id: ownerId, owner_type: ownerType } : {}),
         });
         res.json({
           success: true,
           service,
+          connector_id: instanceId,
           enabled: true,
+          ...(requireTenant ? { tenant_source_id: tenantSource } : {}),
           watch_dir: watchDir,
           poll_interval_ms: pollInterval,
         });
@@ -8205,7 +8470,6 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   );
 
   app.post("/api/connectors/:service/toggle", async (req: Request, res: Response) => {
-    if (rejectConnectorActionsInTenantMode(req, res)) return;
     try {
       const service = String(req.params.service);
       const { ConnectorManager, SUPPORTED_CONNECTORS } =
@@ -8217,9 +8481,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         return;
       }
 
-      const mgr = new ConnectorManager();
-      const entries = await mgr.list();
-      const entry = entries.find((e) => e.service === service);
+      const mgr = new ConnectorManager(undefined, engine);
+      const tenantSource = requestSourceId(req);
+      const entries = await mgr.list(requireTenant ? tenantSource : undefined);
+      const connectorRef = requireTenant ? `${service}-${tenantSource}` : service;
+      const entry = entries.find(
+        (e) => e.id === connectorRef || (!requireTenant && e.service === service)
+      );
       if (!entry) {
         res
           .status(404)
@@ -8228,8 +8496,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       }
 
       const nextEnabled = !entry.enabled;
-      await mgr.setEnabled(service, nextEnabled);
-      res.json({ success: true, service, enabled: nextEnabled });
+      await mgr.setEnabled(connectorRef, nextEnabled, requireTenant ? tenantSource : undefined);
+      res.json({ success: true, service, connector_id: connectorRef, enabled: nextEnabled });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
       res.status(500).json({ error: "connector_toggle_failed", message: msg });
@@ -8277,7 +8545,16 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       Object.entries(LAW_SOURCE_MAP).find(([, id]) => id === sourceId)?.[0] ?? null;
     await engine.executeRaw(
       `INSERT INTO sources (id, name, jurisdiction, config)
-       VALUES ($1, $1, $2, jsonb_build_object('federated', true, 'legal_reference', true, 'jurisdiction', $2))
+       VALUES (
+         $1::text,
+         $1::text,
+         $2::text,
+         jsonb_build_object(
+           'federated', true,
+           'legal_reference', true,
+           'jurisdiction', $2::text
+         )
+       )
        ON CONFLICT (id) DO UPDATE SET
          config = sources.config || EXCLUDED.config,
          jurisdiction = COALESCE(sources.jurisdiction, EXCLUDED.jurisdiction)`,

@@ -153,8 +153,6 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
             >
               <option value="">— Keine —</option>
               <option value="legal">Legal</option>
-              <option value="tax">Tax</option>
-              <option value="other">Other</option>
             </select>
           </div>
         </div>

@@ -397,7 +397,7 @@ export function BillingTab() {
                   {entry.billed && entry.invoice_number && (
                     <a
                       href={`/dashboard/invoicing?invoice=${encodeURIComponent(entry.invoice_number)}`}
-                      className="flex shrink-0 items-center gap-1 text-xs text-violet-600 hover:underline"
+                      className="flex shrink-0 items-center gap-1 text-xs text-[color:var(--ds-category-violet-text)] hover:underline"
                       title={`${t("billingtab.invoice_link")} ${entry.invoice_number}`}
                     >
                       <FileText size={12} />
@@ -527,7 +527,7 @@ export function BillingTab() {
                   {expense.billed && expense.invoice_number && (
                     <a
                       href={`/dashboard/invoicing?invoice=${encodeURIComponent(expense.invoice_number)}`}
-                      className="flex shrink-0 items-center gap-1 text-xs text-violet-600 hover:underline"
+                      className="flex shrink-0 items-center gap-1 text-xs text-[color:var(--ds-category-violet-text)] hover:underline"
                       title={`${t("billingtab.invoice_link")} ${expense.invoice_number}`}
                     >
                       <FileText size={12} />

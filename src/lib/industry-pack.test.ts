@@ -1,11 +1,8 @@
-/**
- * Guards the industry → brain link. Subsumio supports multiple industries:
- * each signup industry must be valid and map to its schema pack.
- */
 import { describe, test, expect } from "vitest";
 import {
-  INDUSTRY_PACK,
+  ACTIVE_INDUSTRIES,
   INDUSTRIES,
+  INDUSTRY_PACK,
   INDUSTRY_PROFILES,
   isValidIndustry,
   packForIndustry,
@@ -14,71 +11,39 @@ import {
 } from "./industry-pack";
 
 describe("industry-pack", () => {
-  test("legal is accepted and maps to the subsumio-legal pack", () => {
+  test("only Legal is active and maps to the canonical pack", () => {
+    expect([...ACTIVE_INDUSTRIES]).toEqual(["legal"]);
+    expect([...INDUSTRIES]).toEqual(["legal"]);
+    expect(Object.keys(INDUSTRY_PACK)).toEqual(["legal"]);
     expect(isValidIndustry("legal")).toBe(true);
     expect(packForIndustry("legal")).toBe("subsumio-legal");
   });
 
-  test("tax is accepted and maps to the subsumio-tax pack", () => {
-    expect(isValidIndustry("tax")).toBe(true);
-    expect(packForIndustry("tax")).toBe("subsumio-tax");
-  });
-
-  test("'other' is valid but has no vertical pack", () => {
-    expect(isValidIndustry("other")).toBe(true);
-    expect(packForIndustry("other")).toBeNull();
-  });
-
-  test("unknown / empty → invalid, null pack", () => {
-    expect(isValidIndustry("banking")).toBe(false);
+  test("archived and unknown industries are rejected", () => {
+    expect(isValidIndustry("tax")).toBe(false);
+    expect(isValidIndustry("other")).toBe(false);
     expect(isValidIndustry(null)).toBe(false);
     expect(isValidIndustry(undefined)).toBe(false);
-    expect(packForIndustry(null)).toBeNull();
-    expect(packForIndustry("banking")).toBeNull();
+    expect(packForIndustry("tax")).toBeNull();
+    expect(profileForIndustry("tax")).toBeNull();
   });
 
-  test("INDUSTRIES = mapped verticals + 'other'", () => {
-    expect(INDUSTRIES.size).toBe(Object.keys(INDUSTRY_PACK).length + 1);
-    expect(INDUSTRIES.has("other")).toBe(true);
-    expect(INDUSTRIES.has("legal")).toBe(true);
-    expect(INDUSTRIES.has("tax")).toBe(true);
-  });
-
-  test("legal has complete brand profile and theme", () => {
+  test("Legal has the complete Subsumio profile and token-based theme", () => {
     const profile = profileForIndustry("legal");
     expect(profile).toBeTruthy();
     expect(profile?.brand).toBe("Subsumio");
     expect(profile?.dashboardHref).toBe("/dashboard");
-    expect(profile?.marketingHref.startsWith("/")).toBe(true);
+    expect(profile?.marketingHref).toBe("/");
     expect(profile?.pack).toBe("subsumio-legal");
+    expect(Object.keys(INDUSTRY_PROFILES)).toEqual(["legal"]);
+
     const theme = themeForIndustry("legal");
-    expect(theme.primary).toMatch(/^#[0-9a-f]{6}$/i);
-    expect(theme.secondary).toMatch(/^#[0-9a-f]{6}$/i);
-    expect(theme.gradientFrom).toMatch(/^#[0-9a-f]{6}$/i);
-    expect(theme.gradientVia).toMatch(/^#[0-9a-f]{6}$/i);
-    expect(theme.gradientTo).toMatch(/^#[0-9a-f]{6}$/i);
-    expect(Object.keys(INDUSTRY_PROFILES)).toEqual(Object.keys(INDUSTRY_PACK));
+    expect(theme.primary).toBe("var(--brand-500)");
+    expect(theme.secondary).toBe("var(--brand-400)");
+    expect(theme.gradientFrom).toBe("var(--brand-700)");
   });
 
-  test("tax has complete brand profile and theme", () => {
-    const profile = profileForIndustry("tax");
-    expect(profile).toBeTruthy();
-    expect(profile?.brand).toBe("Taxumio");
-    expect(profile?.dashboardHref).toBe("/dashboard");
-    expect(profile?.marketingHref.startsWith("/")).toBe(true);
-    expect(profile?.pack).toBe("subsumio-tax");
-    const theme = themeForIndustry("tax");
-    expect(theme.primary).toMatch(/^#[0-9a-f]{6}$/i);
-    expect(theme.secondary).toMatch(/^#[0-9a-f]{6}$/i);
-    expect(theme.gradientFrom).toMatch(/^#[0-9a-f]{6}$/i);
-    expect(theme.gradientVia).toMatch(/^#[0-9a-f]{6}$/i);
-    expect(theme.gradientTo).toMatch(/^#[0-9a-f]{6}$/i);
-  });
-
-  test("tax theme differs from legal theme", () => {
-    const legalTheme = themeForIndustry("legal");
-    const taxTheme = themeForIndustry("tax");
-    expect(legalTheme.primary).not.toBe(taxTheme.primary);
-    expect(legalTheme.gradientFrom).not.toBe(taxTheme.gradientFrom);
+  test("unknown legacy metadata falls back to the Subsumio theme", () => {
+    expect(themeForIndustry("tax")).toEqual(themeForIndustry("legal"));
   });
 });

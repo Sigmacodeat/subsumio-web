@@ -506,8 +506,9 @@ export async function deductCredits(
         await client.query("BEGIN");
         if (opts?.idempotencyKey) {
           const existing = await client.query<{ balance_after: number }>(
-            `SELECT balance_after FROM subsumio_credit_transactions WHERE idempotency_key = $1`,
-            [opts.idempotencyKey]
+            `SELECT balance_after FROM subsumio_credit_transactions
+             WHERE idempotency_key = $1 AND owner_id = $2 AND owner_type = $3`,
+            [opts.idempotencyKey, ownerId, ownerType]
           );
           if (existing.rows[0]) {
             await client.query("ROLLBACK");
@@ -563,9 +564,13 @@ export async function deductCredits(
           if (pgCode === "23505" && opts?.idempotencyKey) {
             await client.query("ROLLBACK");
             const winner = await client.query<{ balance_after: number }>(
-              `SELECT balance_after FROM subsumio_credit_transactions WHERE idempotency_key = $1`,
-              [opts.idempotencyKey]
+              `SELECT balance_after FROM subsumio_credit_transactions
+               WHERE idempotency_key = $1 AND owner_id = $2 AND owner_type = $3`,
+              [opts.idempotencyKey, ownerId, ownerType]
             );
+            if (!winner.rows[0]) {
+              return { ok: false, balance: 0, required: amount };
+            }
             return {
               ok: true,
               balance: winner.rows[0]?.balance_after ?? newBalance,
@@ -595,7 +600,12 @@ export async function deductCredits(
   // Memory fallback
   if (opts?.idempotencyKey) {
     const existing = memFindByIdempotencyKey(opts.idempotencyKey);
-    if (existing) return { ok: true, balance: existing.balanceAfter, required: amount };
+    if (existing) {
+      if (existing.ownerId !== ownerId || existing.ownerType !== ownerType) {
+        return { ok: false, balance: 0, required: amount };
+      }
+      return { ok: true, balance: existing.balanceAfter, required: amount };
+    }
   }
   const key = memKey(ownerId, ownerType);
   const current = memBalances.get(key);
@@ -880,6 +890,66 @@ export interface ReservationResult {
   idempotencyKey: string;
 }
 
+export interface CreditReservation {
+  reservedCredits: number;
+  balanceAfterReservation: number;
+}
+
+/**
+ * Lädt ausschließlich eine echte, zum Owner gehörende Pipeline-Reservation.
+ * Caller-supplied Beträge dürfen niemals die Grundlage eines Settlements sein.
+ */
+export async function getCreditReservation(
+  ownerId: string,
+  ownerType: OwnerType,
+  idempotencyKey: string
+): Promise<CreditReservation | null> {
+  const pool = getSharedPgPool();
+  if (pool) {
+    try {
+      await ensureCreditSchema();
+      const { rows } = await pool.query<{ amount: number; balance_after: number }>(
+        `SELECT amount, balance_after
+           FROM subsumio_credit_transactions
+          WHERE idempotency_key = $1
+            AND owner_id = $2
+            AND owner_type = $3
+            AND type = 'consumption'
+            AND operation = 'reservation'
+          LIMIT 1`,
+        [idempotencyKey, ownerId, ownerType]
+      );
+      const reservation = rows[0];
+      if (!reservation || reservation.amount >= 0) return null;
+      return {
+        reservedCredits: roundCredits(Math.abs(reservation.amount)),
+        balanceAfterReservation: reservation.balance_after,
+      };
+    } catch (error) {
+      log.error("getCreditReservation error", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    }
+  }
+
+  const reservation = memFindByIdempotencyKey(idempotencyKey);
+  if (
+    !reservation ||
+    reservation.ownerId !== ownerId ||
+    reservation.ownerType !== ownerType ||
+    reservation.type !== "consumption" ||
+    reservation.operation !== "reservation" ||
+    reservation.amount >= 0
+  ) {
+    return null;
+  }
+  return {
+    reservedCredits: roundCredits(Math.abs(reservation.amount)),
+    balanceAfterReservation: reservation.balanceAfter,
+  };
+}
+
 /**
  * Credits VOR Pipeline-Start reservieren (atomic, verhindert Overdraft).
  *
@@ -917,8 +987,12 @@ export async function reserveCredits(
         // Check idempotency: if reservation with this key already exists, return it
         const existing = await client.query<{ amount: number; balance_after: number }>(
           `SELECT amount, balance_after FROM subsumio_credit_transactions
-           WHERE idempotency_key = $1 AND type = 'consumption'`,
-          [idempotencyKey]
+           WHERE idempotency_key = $1
+             AND owner_id = $2
+             AND owner_type = $3
+             AND type = 'consumption'
+             AND operation = 'reservation'`,
+          [idempotencyKey, ownerId, ownerType]
         );
         if (existing.rows[0]) {
           await client.query("ROLLBACK");
@@ -982,6 +1056,14 @@ export async function reserveCredits(
   // Memory fallback
   const existingMem = memFindByIdempotencyKey(idempotencyKey);
   if (existingMem) {
+    if (existingMem.ownerId !== ownerId || existingMem.ownerType !== ownerType) {
+      return {
+        ok: false,
+        reservedCredits: 0,
+        balanceAfterReservation: (await getBalance(ownerId, ownerType)).balance,
+        idempotencyKey,
+      };
+    }
     return {
       ok: true,
       reservedCredits: Math.abs(existingMem.amount),
@@ -1042,14 +1124,35 @@ export async function refundCredits(
   actualCredits: number,
   idempotencyKey: string
 ): Promise<{ refunded: number; balanceAfter: number }> {
-  const refund = roundCredits(Math.max(0, reservedCredits - actualCredits));
+  const reservation = await getCreditReservation(ownerId, ownerType, idempotencyKey);
+  if (!reservation) {
+    log.warn("refund rejected: matching reservation not found", {
+      ownerId,
+      ownerType,
+      idempotencyKey,
+    });
+    const { balance } = await getBalance(ownerId, ownerType);
+    return { refunded: 0, balanceAfter: balance };
+  }
+
+  if (roundCredits(reservedCredits) !== reservation.reservedCredits) {
+    log.warn("refund ignored caller-supplied reservation amount", {
+      ownerId,
+      ownerType,
+      idempotencyKey,
+      supplied: roundCredits(reservedCredits),
+      persisted: reservation.reservedCredits,
+    });
+  }
+
+  const refund = roundCredits(Math.max(0, reservation.reservedCredits - actualCredits));
   if (refund <= 0) {
     const { balance } = await getBalance(ownerId, ownerType);
     return { refunded: 0, balanceAfter: balance };
   }
 
   const refundKey = `${idempotencyKey}-refund`;
-  return addCreditsRefund(ownerId, ownerType, refund, refundKey);
+  return addCreditsRefund(ownerId, ownerType, refund, refundKey, idempotencyKey);
 }
 
 /**
@@ -1092,8 +1195,11 @@ export async function deductTokenCredits(
         // Idempotency check: if already deducted with this key, return cached result
         const existing = await client.query<{ amount: number; balance_after: number }>(
           `SELECT amount, balance_after FROM subsumio_credit_transactions
-           WHERE idempotency_key = $1`,
-          [idempotencyKey]
+           WHERE idempotency_key = $1
+             AND owner_id = $2
+             AND owner_type = $3
+             AND operation = 'token_usage'`,
+          [idempotencyKey, ownerId, ownerType]
         );
         if (existing.rows[0]) {
           await client.query("ROLLBACK");
@@ -1160,6 +1266,14 @@ export async function deductTokenCredits(
   // Memory fallback
   const existingMem = memFindByIdempotencyKey(idempotencyKey);
   if (existingMem) {
+    if (existingMem.ownerId !== ownerId || existingMem.ownerType !== ownerType) {
+      return {
+        ok: false,
+        credits,
+        balance: (await getBalance(ownerId, ownerType)).balance,
+        idempotent: false,
+      };
+    }
     return {
       ok: true,
       credits: Math.abs(existingMem.amount),
@@ -1203,7 +1317,8 @@ async function addCreditsRefund(
   ownerId: string,
   ownerType: OwnerType,
   amount: number,
-  idempotencyKey: string
+  idempotencyKey: string,
+  reservationKey: string
 ): Promise<{ refunded: number; balanceAfter: number }> {
   const pool = getSharedPgPool();
   if (pool) {
@@ -1222,6 +1337,24 @@ async function addCreditsRefund(
           const { balance } = await getBalance(ownerId, ownerType);
           return { refunded: 0, balanceAfter: balance };
         }
+        const reservation = await client.query<{ amount: number }>(
+          `SELECT amount
+             FROM subsumio_credit_transactions
+            WHERE idempotency_key = $1
+              AND owner_id = $2
+              AND owner_type = $3
+              AND type = 'consumption'
+              AND operation = 'reservation'
+            FOR UPDATE`,
+          [reservationKey, ownerId, ownerType]
+        );
+        const reservedAmount = Math.abs(reservation.rows[0]?.amount ?? 0);
+        if (reservedAmount <= 0) {
+          await client.query("ROLLBACK");
+          const { balance } = await getBalance(ownerId, ownerType);
+          return { refunded: 0, balanceAfter: balance };
+        }
+        const boundedAmount = roundCredits(Math.min(amount, reservedAmount));
         // Refund: reduce used_credit (gives credits back to the pool)
         await client.query(
           `UPDATE saas_credit_balance
@@ -1229,7 +1362,7 @@ async function addCreditsRefund(
                overage_eur = GREATEST(0, GREATEST(0, used_credit - $2) - included_credit),
                updated_at = now()
            WHERE org_id = $1 AND period_end > now()`,
-          [ownerId, amount]
+          [ownerId, boundedAmount]
         );
         const { rows } = await client.query<{ balance: number }>(
           `SELECT (included_credit + purchased_credit - used_credit) as balance
@@ -1238,15 +1371,22 @@ async function addCreditsRefund(
            ORDER BY period_start DESC LIMIT 1 FOR UPDATE`,
           [ownerId]
         );
-        const newBalance = rows[0]?.balance ?? amount;
+        const newBalance = rows[0]?.balance ?? boundedAmount;
         await client.query(
           `INSERT INTO subsumio_credit_transactions
              (owner_id, owner_type, type, amount, balance_after, operation, idempotency_key, description)
            VALUES ($1, $2, 'refund', $3, $4, 'reservation_refund', $5, $6)`,
-          [ownerId, ownerType, amount, newBalance, idempotencyKey, `Refund unused reservation`]
+          [
+            ownerId,
+            ownerType,
+            boundedAmount,
+            newBalance,
+            idempotencyKey,
+            `Refund unused reservation`,
+          ]
         );
         await client.query("COMMIT");
-        return { refunded: amount, balanceAfter: newBalance };
+        return { refunded: boundedAmount, balanceAfter: newBalance };
       } catch (err) {
         await client.query("ROLLBACK");
         throw err;
@@ -1266,10 +1406,22 @@ async function addCreditsRefund(
   if (existingMem) {
     return { refunded: 0, balanceAfter: existingMem.balanceAfter };
   }
+  const reservation = memFindByIdempotencyKey(reservationKey);
+  if (
+    !reservation ||
+    reservation.ownerId !== ownerId ||
+    reservation.ownerType !== ownerType ||
+    reservation.type !== "consumption" ||
+    reservation.operation !== "reservation"
+  ) {
+    const { balance } = await getBalance(ownerId, ownerType);
+    return { refunded: 0, balanceAfter: balance };
+  }
+  const boundedAmount = roundCredits(Math.min(amount, Math.abs(reservation.amount)));
   const key = memKey(ownerId, ownerType);
   const current = memBalances.get(key);
   if (current) {
-    const newBalance = roundCredits(current.balance + amount);
+    const newBalance = roundCredits(current.balance + boundedAmount);
     memBalances.set(key, { ...current, balance: newBalance, updatedAt: new Date().toISOString() });
     memTransactions.push({
       id: `tx-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -1277,14 +1429,14 @@ async function addCreditsRefund(
       ownerId,
       ownerType,
       type: "refund",
-      amount,
+      amount: boundedAmount,
       balanceAfter: newBalance,
       operation: "reservation_refund",
       idempotencyKey,
       createdAt: new Date().toISOString(),
     });
     await persistMemory();
-    return { refunded: amount, balanceAfter: newBalance };
+    return { refunded: boundedAmount, balanceAfter: newBalance };
   }
   return { refunded: 0, balanceAfter: 0 };
 }

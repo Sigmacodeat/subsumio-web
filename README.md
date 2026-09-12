@@ -10,7 +10,7 @@ Currently verticalized for **Legal** (law firms / in-house legal) and **Tax** (t
 - **Synthesized answers.** Ask a question, get an answer with citations and gap analysis — not just a list of matching pages.
 - **Deadline detection.** AI-powered extraction of absolute dates, relative deadlines, and statutory deadlines from documents and emails.
 - **Case law sync.** Connector-based sync of public court decisions (AT, DE) with delta-sync deduplication.
-- **beA integration.** Import and manage Austrian bar association (beA) messages.
+- **Electronic filing workspace.** Import German beA XML exports, prepare XJustiz filing packages, and optionally hand them to a separately configured beA middleware. Native Austrian webERV transmission is not included.
 - **DocuSign integration.** Send and track electronic signatures without leaving the dashboard.
 - **DMS connectors.** iManage Work and NetDocuments support for document round-tripping.
 - **Multi-tenant.** Each firm gets an isolated brain. Row-level security, scoped queries, zero cross-tenant leakage.

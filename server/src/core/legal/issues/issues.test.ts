@@ -43,7 +43,8 @@ function makeUnverifiedEvidence(overrides: Partial<EvidenceSpan> = {}): Evidence
 }
 
 function makeValidIssue(overrides: Partial<LegalIssue> = {}): LegalIssue {
-  const statuteText = "§ 433 BGB: Durch den Kaufvertrag wird der Verkäufer einer Sache verpflichtet, dem Käufer die Sache zu übergeben und das Eigentum an ihr zu verschaffen.";
+  const statuteText =
+    "§ 433 BGB: Durch den Kaufvertrag wird der Verkäufer einer Sache verpflichtet, dem Käufer die Sache zu übergeben und das Eigentum an ihr zu verschaffen.";
   const statuteEvidence: EvidenceSpan = {
     id: "ev-statute",
     source_slug: "law/de/bgb",
@@ -737,7 +738,9 @@ describe("InMemoryIssueStore", () => {
 
   it("throws on update of non-existent issue", async () => {
     store = createInMemoryIssueStore();
-    await expect(store.update("non-existent", { status: "concluded" })).rejects.toThrow(IssueStoreError);
+    await expect(store.update("non-existent", { status: "concluded" })).rejects.toThrow(
+      IssueStoreError
+    );
   });
 
   it("deletes an issue", async () => {
@@ -802,13 +805,13 @@ describe("InMemoryIssueStore", () => {
 
 // ── Migration Test ────────────────────────────────────────────────────
 
-describe("migration 005_legal_issues.sql", () => {
+describe("migration 014_legal_issues.sql", () => {
   it("migration file exists", async () => {
     const fs = await import("node:fs/promises");
     const path = await import("node:path");
     const migrationPath = path.resolve(
       path.dirname(new URL(".", import.meta.url).pathname),
-      "../../../migrations/005_legal_issues.sql"
+      "../../../migrations/014_legal_issues.sql"
     );
     const content = await fs.readFile(migrationPath, "utf-8");
     expect(content).toContain("CREATE TABLE IF NOT EXISTS legal_issues");
@@ -828,7 +831,7 @@ describe("migration 005_legal_issues.sql", () => {
     const path = await import("node:path");
     const migrationPath = path.resolve(
       path.dirname(new URL(".", import.meta.url).pathname),
-      "../../../migrations/005_legal_issues.sql"
+      "../../../migrations/014_legal_issues.sql"
     );
     const content = await fs.readFile(migrationPath, "utf-8");
     // I3: jurisdiction check
@@ -844,7 +847,7 @@ describe("migration 005_legal_issues.sql", () => {
     const path = await import("node:path");
     const migrationPath = path.resolve(
       path.dirname(new URL(".", import.meta.url).pathname),
-      "../../../migrations/005_legal_issues.sql"
+      "../../../migrations/014_legal_issues.sql"
     );
     const content = await fs.readFile(migrationPath, "utf-8");
     expect(content).toContain("trg_legal_issues_updated_at");

@@ -46,7 +46,7 @@ vi.mock("@/components/legal/CitationPanel", () => ({
 
 const noopT = ((key: string) => key) as unknown as import("@/content/dashboard").TFunc;
 
-import { RoleOutputCard, PerspektivenSessionCard } from "./page";
+import { RoleOutputCard, PerspektivenSessionCard } from "./perspektivenraum-cards";
 
 const richterOutput: PerspektivenRoleOutput = {
   role: "richter",

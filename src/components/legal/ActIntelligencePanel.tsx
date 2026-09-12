@@ -92,7 +92,7 @@ export function ActIntelligencePanel({ caseSlug }: { caseSlug: string }) {
       <div className="flex flex-wrap gap-3 text-xs">
         <Link
           className="brand-text hover:underline"
-          href={`/dashboard/brain/${encode(`on-index/${caseSlug}`)}`}
+          href={`/dashboard/brain/${encode(`on-indexes/${caseSlug}`)}`}
         >
           ON-Liste öffnen
         </Link>

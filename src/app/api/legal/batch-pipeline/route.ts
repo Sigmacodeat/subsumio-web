@@ -1,6 +1,9 @@
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
 import { ENGINE_URL, engineHeaders, enginePatchPage } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { estimatePipelineCredits } from "@/lib/billing/credit-rate-card";
+import { refundCredits, reserveCredits, type OwnerType } from "@/lib/billing/credits";
 
 export const maxDuration = 60;
 
@@ -84,13 +87,55 @@ export const POST = createHandler(
               };
             }
 
+            const jurisdiction = String(fm.jurisdiction ?? "").toLowerCase();
+            if (!["at", "de", "ch", "eu"].includes(jurisdiction)) {
+              return {
+                case_slug: caseSlug,
+                status: "error" as const,
+                error: "Die Jurisdiktion der Akte muss vor dem Pipeline-Start bestätigt werden.",
+              };
+            }
+
+            const ownerType: OwnerType = ctx.user.orgId ? "org" : "user";
+            const ownerId = ctx.user.orgId ?? ctx.user.id;
+            const workflowId = "aktencheck";
+            // A document can span many pages. Reserving by document count
+            // underestimates multi-page Akten and makes settlement fail later.
+            // Use the canonical per-document page metadata when available;
+            // fall back to one page per document for legacy records.
+            const estimatedPages = Math.max(
+              1,
+              documents.reduce((total, document) => {
+                const pages = Number(document.total_pages ?? document.page_count ?? 1);
+                return total + (Number.isFinite(pages) && pages > 0 ? Math.ceil(pages) : 1);
+              }, 0)
+            );
+            const estimatedCredits = estimatePipelineCredits(estimatedPages, 2).estimatedCredits;
+            const pipelineKey = `pipeline-${randomUUID()}`;
+            const reservation = await reserveCredits(
+              ownerId,
+              ownerType,
+              estimatedCredits,
+              pipelineKey
+            );
+            if (!reservation.ok) {
+              return {
+                case_slug: caseSlug,
+                status: "error" as const,
+                error: "Nicht genügend Credits für die Aktenanalyse.",
+              };
+            }
+
             const triggerPayload: Record<string, unknown> = {
               case_slug: caseSlug,
               part_slugs: partSlugs,
-              // Billing context: owner_id is org_id if user has org, else user.id.
-              owner_id: ctx.user.orgId ?? ctx.user.id,
-              owner_type: ctx.user.orgId ? "org" : "user",
+              jurisdiction,
+              workflow_id: workflowId,
+              owner_id: ownerId,
+              owner_type: ownerType,
               user_id: ctx.user.id,
+              pipeline_key: pipelineKey,
+              reserved_credits: reservation.reservedCredits,
             };
 
             if (body.manual_overrides) {
@@ -106,6 +151,7 @@ export const POST = createHandler(
 
             if (!triggerRes.ok) {
               const detail = await triggerRes.text().catch(() => "");
+              await refundCredits(ownerId, ownerType, reservation.reservedCredits, 0, pipelineKey);
               return {
                 case_slug: caseSlug,
                 status: "error" as const,
@@ -123,6 +169,9 @@ export const POST = createHandler(
               frontmatter: {
                 pipeline_status: "running",
                 pipeline_triggered_at: new Date().toISOString(),
+                pipeline_workflow: workflowId,
+                pipeline_key: pipelineKey,
+                pipeline_reserved_credits: reservation.reservedCredits,
               },
             });
 

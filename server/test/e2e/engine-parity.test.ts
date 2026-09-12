@@ -101,25 +101,32 @@ async function seedEngine(eng: BrainEngine) {
 
 const QUERIES = ["fat code thin harness", "fat code thin harness part 3", "fat code production"];
 
+let pgEngine: BrainEngine;
+let pgliteEngine: PGLiteEngine;
+
+// The suites below share the process-global Postgres connection managed by
+// helpers.ts. A single lifecycle prevents sibling beforeAll hooks from
+// truncating/reconnecting the database while another suite is asserting.
+beforeAll(async () => {
+  if (SKIP_PG) return;
+  pgEngine = await setupDB();
+  await seedEngine(pgEngine);
+  await seedRelational(pgEngine);
+
+  pgliteEngine = new PGLiteEngine();
+  await pgliteEngine.connect({});
+  await pgliteEngine.initSchema();
+  await seedEngine(pgliteEngine);
+  await seedRelational(pgliteEngine);
+}, 90_000);
+
+afterAll(async () => {
+  if (SKIP_PG) return;
+  await pgliteEngine.disconnect();
+  await teardownDB();
+}, 30_000);
+
 describeBoth("Engine parity — Postgres vs PGLite", () => {
-  let pgEngine: BrainEngine;
-  let pgliteEngine: PGLiteEngine;
-
-  beforeAll(async () => {
-    pgEngine = await setupDB();
-    await seedEngine(pgEngine);
-
-    pgliteEngine = new PGLiteEngine();
-    await pgliteEngine.connect({});
-    await pgliteEngine.initSchema();
-    await seedEngine(pgliteEngine);
-  }, 90_000);
-
-  afterAll(async () => {
-    await pgliteEngine.disconnect();
-    await teardownDB();
-  }, 30_000);
-
   for (const q of QUERIES) {
     test(`searchKeyword: top-5 slugs match for "${q}"`, async () => {
       const pgResults = await pgEngine.searchKeyword(q, { limit: 5 });
@@ -136,6 +143,22 @@ describeBoth("Engine parity — Postgres vs PGLite", () => {
       expect(new Set(pgSlugs)).toEqual(new Set(pgliteSlugs));
     });
   }
+
+  test("findByTitleFuzzy: typed parameters and result match across engines", async () => {
+    const pgResult = await pgEngine.findByTitleFuzzy(
+      "Fat Code Thin Harness Part 3",
+      undefined,
+      0.5
+    );
+    const pgliteResult = await pgliteEngine.findByTitleFuzzy(
+      "Fat Code Thin Harness Part 3",
+      undefined,
+      0.5
+    );
+
+    expect(pgResult).toEqual(pgliteResult);
+    expect(pgResult?.slug).toBe("originals/talks/article-outline-fat-code");
+  });
 
   test("searchVector: top result matches between engines", async () => {
     const queryVec = basisEmbedding(7); // article direction
@@ -356,20 +379,48 @@ describeBoth("Engine parity — Postgres vs PGLite", () => {
   });
 
   test("v114 (#1941) listLinkSources parity: same ordered provenance counts on both engines", async () => {
+    const sourceId = "link-source-parity";
     const mk = async (eng: BrainEngine) => {
+      await eng.executeRaw(
+        "INSERT INTO sources (id, name, config) VALUES ($1, $2, '{}'::jsonb) ON CONFLICT DO NOTHING",
+        [sourceId, "Link Source Parity"]
+      );
       for (const s of ["lsp-a", "lsp-b", "lsp-c"]) {
-        await eng.putPage(s, { type: "note", title: s, compiled_truth: "b", timeline: "" });
+        await eng.putPage(
+          s,
+          { type: "note", title: s, compiled_truth: "b", timeline: "" },
+          { sourceId }
+        );
       }
       // citation-graph:2, manual:1 — exercises count DESC + the kebab regex.
-      await eng.addLink("lsp-a", "lsp-b", "", "cites", "citation-graph");
-      await eng.addLink("lsp-a", "lsp-c", "", "cites", "citation-graph");
-      await eng.addLink("lsp-b", "lsp-c", "", "rel", "manual");
+      const linkOpts = { fromSourceId: sourceId, toSourceId: sourceId };
+      await eng.addLink(
+        "lsp-a",
+        "lsp-b",
+        "",
+        "cites",
+        "citation-graph",
+        undefined,
+        undefined,
+        linkOpts
+      );
+      await eng.addLink(
+        "lsp-a",
+        "lsp-c",
+        "",
+        "cites",
+        "citation-graph",
+        undefined,
+        undefined,
+        linkOpts
+      );
+      await eng.addLink("lsp-b", "lsp-c", "", "rel", "manual", undefined, undefined, linkOpts);
     };
     await mk(pgEngine);
     await mk(pgliteEngine);
 
-    const pg = await pgEngine.listLinkSources({ sourceId: "default" });
-    const pglite = await pgliteEngine.listLinkSources({ sourceId: "default" });
+    const pg = await pgEngine.listLinkSources({ sourceId });
+    const pglite = await pgliteEngine.listLinkSources({ sourceId });
 
     const norm = (rows: { link_source: string | null; count: number }[]) =>
       rows.filter((r) => r.link_source === "citation-graph" || r.link_source === "manual");
@@ -617,23 +668,6 @@ async function seedRelational(eng: BrainEngine) {
 }
 
 describeBoth("Engine parity — relationalFanout", () => {
-  let pgEngine: BrainEngine;
-  let pgliteEngine: PGLiteEngine;
-
-  beforeAll(async () => {
-    pgEngine = await setupDB();
-    await seedRelational(pgEngine);
-    pgliteEngine = new PGLiteEngine();
-    await pgliteEngine.connect({});
-    await pgliteEngine.initSchema();
-    await seedRelational(pgliteEngine);
-  }, 90_000);
-
-  afterAll(async () => {
-    await pgliteEngine.disconnect();
-    await teardownDB();
-  }, 30_000);
-
   const shape = (rows: Awaited<ReturnType<BrainEngine["relationalFanout"]>>) =>
     rows.map(
       (r) =>

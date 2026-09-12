@@ -57,6 +57,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { csrfFetch } from "@/lib/csrf";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -214,7 +215,7 @@ export function CorpusFileViewer({ path, onClose }: Props) {
   }>({
     queryKey: ["corpus-file-validate", editFrontmatter],
     queryFn: async () => {
-      const res = await fetch("/api/admin/corpus-files/validate-schema", {
+      const res = await csrfFetch("/api/admin/corpus-files/validate-schema", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ frontmatter: editFrontmatter }),
@@ -247,7 +248,7 @@ export function CorpusFileViewer({ path, onClose }: Props) {
   // ── Write Mutation ────────────────────────────────────────────────────
   const writeMut = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/admin/corpus-files/write", {
+      const res = await csrfFetch("/api/admin/corpus-files/write", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -282,7 +283,7 @@ export function CorpusFileViewer({ path, onClose }: Props) {
   // ── Flag Mutation ─────────────────────────────────────────────────────
   const flagMut = useMutation({
     mutationFn: async (flag: QualityFlag) => {
-      const res = await fetch("/api/admin/corpus-files/flag", {
+      const res = await csrfFetch("/api/admin/corpus-files/flag", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ path: path!, flag }),
@@ -307,7 +308,7 @@ export function CorpusFileViewer({ path, onClose }: Props) {
   // ── Delete Mutation ───────────────────────────────────────────────────
   const deleteMut = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/admin/corpus-files/delete", {
+      const res = await csrfFetch("/api/admin/corpus-files/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ path: path! }),
@@ -333,7 +334,7 @@ export function CorpusFileViewer({ path, onClose }: Props) {
   // ── Restore Mutation ──────────────────────────────────────────────────
   const restoreMut = useMutation({
     mutationFn: async (version: number) => {
-      const res = await fetch("/api/admin/corpus-files/restore", {
+      const res = await csrfFetch("/api/admin/corpus-files/restore", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ path: path!, version }),

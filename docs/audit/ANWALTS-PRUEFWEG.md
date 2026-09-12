@@ -7,6 +7,9 @@
 >
 > **Status:** Blueprint / Prüfkatalog — noch nicht abgearbeitet.
 >
+> **Nachtrag 2026-09-12:** Ausführungs-Reihenfolge, Baseline-Ist-Zustand und
+> 66 nachgetragene Pages stehen in `docs/audit/MASTER-TESTPLAN-2026-09-12.md`.
+>
 > **Quellen:** Recherche zu Kanzleisoftware-Standards 2026 (renostar.de,
 > optimaite.eu, lexdial.de, datev.de, advolux.de, door3.com, cleverx.com,
 > smotrow.com) + Subsumio-Codebasis-Analyse (160 Dashboard-Seiten, 484

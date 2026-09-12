@@ -8,11 +8,11 @@
  * Unlike import-statutes.ts (one monolithic page per law — too large to embed),
  * this splits each code into per-§ pages via src/core/legal/split-statute.ts so
  * each paragraph is an independently embeddable, retrievable unit. That is what
- * steuer-subsumption / legal-subsumption need: retrieve the exact §, not the
+ * legal-subsumption agents need: retrieve the exact §, not the
  * whole code.
  *
  *   slug: legal/statutes/<jur>/<abbr>/<section-id>   e.g. legal/statutes/de/estg/p-15
- *   type: law   (classified by gbrain-legal / gbrain-tax packs)
+ *   type: law   (classified by the gbrain-legal pack)
  *
  * --dry-run prints the section counts without touching a DB (no engine needed).
  * --db <path> targets a throwaway brain instead of the configured ~/.gbrain.

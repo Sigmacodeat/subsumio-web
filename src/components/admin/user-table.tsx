@@ -11,16 +11,12 @@ interface UserTableProps {
 }
 
 type PlanFilter = "all" | "free" | "pro" | "team" | "enterprise";
-type RoleFilter = "all" | "admin" | "lawyer" | "tax_advisor" | "assistant" | "client_viewer";
-type IndustryFilter = "all" | "legal" | "tax" | "other" | "none";
+type RoleFilter = "all" | "admin" | "lawyer" | "assistant" | "client_viewer";
+type IndustryFilter = "all" | "legal" | "none";
 
 function industryBadgeClass(industry: string | null | undefined): string {
   if (industry === "legal")
     return "border-blue-500/25 bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]";
-  if (industry === "tax")
-    return "border-emerald-500/25 bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]";
-  if (industry === "other")
-    return "border-[color:var(--ds-category-violet-border)] bg-[color:var(--ds-category-violet-bg)] text-[color:var(--ds-category-violet-text)]";
   return "border-[color:var(--ds-border)] text-[color:var(--ds-text-subtle)] bg-[color:var(--ds-surface-2)]";
 }
 
@@ -84,7 +80,6 @@ export function UserTable({ users }: UserTableProps) {
           <option value="all">Alle Rollen</option>
           <option value="admin">Admin</option>
           <option value="lawyer">Lawyer</option>
-          <option value="tax_advisor">Tax Advisor</option>
           <option value="assistant">Assistant</option>
           <option value="client_viewer">Client Viewer</option>
         </select>
@@ -104,8 +99,6 @@ export function UserTable({ users }: UserTableProps) {
         >
           <option value="all">Alle Branchen</option>
           <option value="legal">Legal</option>
-          <option value="tax">Tax</option>
-          <option value="other">Other</option>
           <option value="none">Ohne</option>
         </select>
       </div>

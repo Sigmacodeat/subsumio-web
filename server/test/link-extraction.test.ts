@@ -1102,6 +1102,34 @@ describe("makeResolver — fallback chain", () => {
     expect(await r.resolve("Nonexistent Person", "people")).toBeNull();
   });
 
+  test("all resolver fallbacks stay inside the configured source", async () => {
+    const seen: Array<{ method: string; sourceId?: string }> = [];
+    const engine = {
+      async getPage(_slug: string, opts?: { sourceId?: string }) {
+        seen.push({ method: "getPage", sourceId: opts?.sourceId });
+        return null;
+      },
+      async findByTitleFuzzy(
+        _name: string,
+        _dirPrefix?: string,
+        _minSimilarity?: number,
+        opts?: { sourceId?: string }
+      ) {
+        seen.push({ method: "findByTitleFuzzy", sourceId: opts?.sourceId });
+        return null;
+      },
+      async searchKeyword(_query: string, opts?: { sourceId?: string }) {
+        seen.push({ method: "searchKeyword", sourceId: opts?.sourceId });
+        return [];
+      },
+    } as unknown as BrainEngine;
+
+    const r = makeResolver(engine, { mode: "live", sourceId: "tenant-a" });
+    expect(await r.resolve("Unbekannte Person", "people")).toBeNull();
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.every((call) => call.sourceId === "tenant-a")).toBe(true);
+  });
+
   // ─── issue #972: resolveBasenameMatches ───────────────────────────────
 
   // Extended fake engine that also implements `getAllSlugs` so

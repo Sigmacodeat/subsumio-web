@@ -70,7 +70,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { EASE, ClipReveal, Reveal, GlowCard, AnimatedCounter } from "./motion-system";
 import { SubsumioLogo, SubsumioMark } from "@/components/brand/subsumio-logo";
-import { type SiteBrand, brandForHost } from "@/lib/brand";
 import {
   NAV,
   FOOTER,
@@ -87,15 +86,6 @@ import {
 /** Persist the user's explicit language choice so the browser-language redirect doesn't override it. */
 function setLangPref(lang: Lang) {
   document.cookie = `sb_lang=${lang};path=/;max-age=${365 * 24 * 3600};samesite=lax`;
-}
-
-export function useSiteBrand(): SiteBrand {
-  // Detect brand from host on the client. Falls back to subsumio for
-  // unknown hosts (localhost, preview, etc.).
-  if (typeof window !== "undefined") {
-    return brandForHost(window.location.host);
-  }
-  return "subsumio";
 }
 
 function BrandLogo() {
@@ -170,7 +160,7 @@ const ACCENT_TILE = {
     rose: "text-[color:var(--ds-category-rose-text)] bg-[color:var(--ds-category-rose-bg)] border-[color:var(--ds-category-rose-border)]",
     purple: "text-purple-700 bg-purple-50 border-purple-200",
     orange: "text-orange-700 bg-orange-50 border-orange-200",
-    gray: "text-gray-700 bg-gray-50 border-gray-200",
+    gray: "text-[color:var(--ds-neutral-text)] bg-[color:var(--ds-neutral-bg)] border-[color:var(--ds-neutral-border)]",
   },
   slate: {
     violet: "brand-text brand-soft brand-border",

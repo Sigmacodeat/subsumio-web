@@ -175,14 +175,23 @@ describe("signupSchema", () => {
     expect(result.success).toBe(true);
   });
 
-  test("accepts optional locale and industry", () => {
+  test("accepts the active legal industry", () => {
     const result = signupSchema.safeParse({
       email: "test@example.com",
       password: "StrongPass1!",
       locale: "de",
-      industry: "law",
+      industry: "legal",
     });
     expect(result.success).toBe(true);
+  });
+
+  test("rejects archived tax onboarding", () => {
+    const result = signupSchema.safeParse({
+      email: "test@example.com",
+      password: "StrongPass1!",
+      industry: "tax",
+    });
+    expect(result.success).toBe(false);
   });
 
   test("rejects invalid locale", () => {

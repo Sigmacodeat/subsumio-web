@@ -409,7 +409,7 @@ export function AiDeadlineSuggestions() {
                       </span>
                     )}
                     {s.reviewStatus === "unreviewed" && (
-                      <span className="flex items-center gap-0.5 rounded-full border border-slate-400/20 bg-slate-400/10 px-2 py-0.5 text-xs text-slate-600">
+                      <span className="flex items-center gap-0.5 rounded-full border border-[color:var(--ds-neutral-border)] bg-[color:var(--ds-neutral-bg)] px-2 py-0.5 text-xs text-[color:var(--ds-neutral-text)]">
                         <EyeOff size={10} />
                         {tr("unreviewed", lang)}
                       </span>

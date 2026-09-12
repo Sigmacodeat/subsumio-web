@@ -921,6 +921,7 @@ describe("migrate: v8 (links_dedup) regression — must be fast on 1K duplicate 
     await db.exec(
       `ALTER TABLE links DROP CONSTRAINT IF EXISTS links_from_to_type_source_origin_unique`
     );
+    await db.exec(`DROP INDEX IF EXISTS idx_links_current_unique`);
 
     // Two pages so the FK is satisfied
     await engine.putPage("p/from", {
@@ -1670,8 +1671,11 @@ describe("resolveSessionTimeouts — env var overrides", () => {
     resetEnv();
     process.env.GBRAIN_STATEMENT_TIMEOUT = "0";
     process.env.GBRAIN_IDLE_TX_TIMEOUT = "off";
+    process.env.GBRAIN_CLIENT_CHECK_INTERVAL = "off";
     const t = resolveSessionTimeouts();
-    expect(Object.keys(t)).toHaveLength(0);
+    expect(t.statement_timeout).toBeUndefined();
+    expect(t.idle_in_transaction_session_timeout).toBeUndefined();
+    expect(t.client_connection_check_interval).toBeUndefined();
   });
 });
 

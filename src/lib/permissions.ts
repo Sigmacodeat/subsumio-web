@@ -101,16 +101,6 @@ export type RouteAction =
   | "legal.reorder_gruende"
   | "legal.case_investigation"
   | "legal.case_investigation_review"
-  | "tax.stbvv"
-  | "tax.analyze"
-  | "tax.summarize"
-  | "tax.strategy"
-  | "tax.risk_analysis"
-  | "tax.precedent_search"
-  | "tax.appeal_generator"
-  | "tax.bfh_feed"
-  | "tax.client_letter"
-  | "tax.triage"
   | "team.role_change"
   | "billing.read"
   | "billing.write"
@@ -177,9 +167,6 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "legal.fristenreport": ["admin", "lawyer", "assistant"],
   "legal.playbook": ["admin", "lawyer"],
   "legal.rvg": ["admin", "lawyer", "assistant"],
-  "tax.stbvv": ["admin", "lawyer", "assistant"],
-  "tax.analyze": ["admin", "lawyer", "assistant"],
-  "tax.summarize": ["admin", "lawyer", "assistant"],
   "legal.statute": ["admin", "lawyer", "assistant"],
   "team.role_change": ["admin"],
   "billing.read": ["admin", "lawyer"],
@@ -217,13 +204,6 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "legal.obligation_extract": ["admin", "lawyer", "assistant"],
   "legal.case_scanner": ["admin", "lawyer", "assistant"],
   "legal.precedent_search": ["admin", "lawyer", "assistant"],
-  "tax.strategy": ["admin", "lawyer"],
-  "tax.risk_analysis": ["admin", "lawyer"],
-  "tax.precedent_search": ["admin", "lawyer", "assistant"],
-  "tax.appeal_generator": ["admin", "lawyer"],
-  "tax.bfh_feed": ["admin", "lawyer", "assistant"],
-  "tax.client_letter": ["admin", "lawyer", "assistant"],
-  "tax.triage": ["admin", "lawyer", "assistant"],
 };
 
 /** Prüft, ob ein User eine Aktion ausführen darf. */
@@ -292,16 +272,6 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "legal.fristenreport": "legal.fristenreport",
     "legal.playbook": "legal.playbook",
     "legal.rvg": "legal.rvg",
-    "tax.stbvv": "tax.stbvv",
-    "tax.analyze": "tax.analyze",
-    "tax.summarize": "tax.summarize",
-    "tax.strategy": "tax.strategy",
-    "tax.risk_analysis": "tax.risk_analysis",
-    "tax.precedent_search": "tax.precedent_search",
-    "tax.appeal_generator": "tax.appeal_generator",
-    "tax.bfh_feed": "tax.bfh_feed",
-    "tax.client_letter": "tax.client_letter",
-    "tax.triage": "tax.triage",
     "legal.statute": "legal.statute",
     "legal.contradictions": "legal.contradictions",
     "legal.retrieval_feedback": "legal.retrieval_feedback",

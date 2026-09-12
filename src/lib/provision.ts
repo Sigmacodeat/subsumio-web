@@ -115,13 +115,12 @@ export function provisionBrainAsync(brainId: string, opts?: { industry?: string 
 }
 
 const SEED_TEMPLATE_IDS_LEGAL = ["due_diligence", "contract_review", "fristen_management"];
-const SEED_TEMPLATE_IDS_TAX = ["tax_appeal", "tax_assessment_review", "tax_return_prep"];
 
 async function seedWorkflows(
   headers: Record<string, string>,
-  industry?: string | null
+  _industry?: string | null
 ): Promise<void> {
-  const templateIds = industry === "tax" ? SEED_TEMPLATE_IDS_TAX : SEED_TEMPLATE_IDS_LEGAL;
+  const templateIds = SEED_TEMPLATE_IDS_LEGAL;
 
   for (const templateId of templateIds) {
     const template = WORKFLOW_TEMPLATES.find((t) => t.id === templateId);

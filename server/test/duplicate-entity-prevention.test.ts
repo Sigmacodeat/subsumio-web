@@ -43,6 +43,37 @@ describe("duplicate entity prevention", () => {
     expect(similar!.slug).toBe("people/alice-chen");
   });
 
+  test("findByTitleFuzzy stays inside the requested source", async () => {
+    await engine.executeRaw(
+      `INSERT INTO sources (id, name, local_path) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING`,
+      ["tenant-alpha", "Tenant Alpha", "/tmp/tenant-alpha"]
+    );
+    await engine.executeRaw(
+      `INSERT INTO sources (id, name, local_path) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING`,
+      ["tenant-beta", "Tenant Beta", "/tmp/tenant-beta"]
+    );
+    await engine.putPage(
+      "people/alice-alpha",
+      {
+        type: "person",
+        title: "Alice Example",
+        compiled_truth: "alpha",
+        frontmatter: { type: "person" },
+      },
+      { sourceId: "tenant-alpha" }
+    );
+
+    const crossTenant = await engine.findByTitleFuzzy("Alice Example", "people", 0.5, {
+      sourceId: "tenant-beta",
+    });
+    expect(crossTenant).toBeNull();
+
+    const ownTenant = await engine.findByTitleFuzzy("Alice Example", "people", 0.5, {
+      sourceId: "tenant-alpha",
+    });
+    expect(ownTenant?.slug).toBe("people/alice-alpha");
+  });
+
   test("does not flag different titles as similar", async () => {
     await truncateAll();
 

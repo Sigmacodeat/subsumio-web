@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 const folderConfigSchema = z.object({
   watch_dir: z.string().min(1).max(1_024),
   poll_interval_ms: z.number().int().min(30_000).max(3_600_000).optional(),
+  default_case_slug: z.string().min(1).max(240).optional(),
 });
 
 export const POST = createHandler(
@@ -26,6 +27,7 @@ export const POST = createHandler(
           watch_dir: body.watch_dir,
           poll_interval_ms: body.poll_interval_ms,
           by: ctx.user.email,
+          default_case_slug: body.default_case_slug,
         },
       };
     },
@@ -44,7 +46,14 @@ export const POST = createHandler(
         {
           method: "POST",
           headers: { ...ctx.headers, "Content-Type": "application/json" },
-          body: JSON.stringify(body),
+          body: JSON.stringify({
+            ...body,
+            // The browser cannot select an organisation or user id. The
+            // authenticated dashboard context supplies both server-side.
+            responsible_user_id: ctx.user.id,
+            owner_id: ctx.user.orgId ?? ctx.user.id,
+            owner_type: ctx.user.orgId ? "org" : "user",
+          }),
           signal: AbortSignal.timeout(15_000),
         }
       );

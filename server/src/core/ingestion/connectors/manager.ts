@@ -13,7 +13,9 @@ import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
 import { type IngestionSource, type IngestionSourceContext } from "../types.ts";
+import type { BrainEngine } from "../../engine.ts";
 import { BaseConnector, type ConnectorConfig, type ConnectorState } from "./base.ts";
+import { ConnectorSecretStore, type ConnectorInstanceRecord } from "./secret-store.ts";
 import { GoogleDriveConnector } from "./google-drive.ts";
 import { GmailConnector } from "./gmail.ts";
 import { NotionConnector } from "./notion.ts";
@@ -37,6 +39,8 @@ import {
 
 /** Registry entry: one line per active connector. */
 interface ConnectorRegistryEntry {
+  /** Stable instance identifier. Legacy entries omit it and use service. */
+  connector_id?: string;
   service: string;
   enabled: boolean;
   config: ConnectorConfig;
@@ -73,7 +77,18 @@ export class ConnectorManager {
   // keyed by connector.id but lookups used service name → always missed.
   private serviceToId: Map<string, string> = new Map();
 
-  constructor(private readonly baseDir?: string) {}
+  /**
+   * `engine` activates encrypted database persistence. File persistence is
+   * retained only for the local CLI's explicitly filesystem-scoped mode.
+   */
+  constructor(
+    private readonly baseDir?: string,
+    private readonly engine?: BrainEngine
+  ) {}
+
+  private _secretStore(): ConnectorSecretStore | undefined {
+    return this.engine ? new ConnectorSecretStore(this.engine) : undefined;
+  }
 
   private _registryPath(): string {
     return join(this.baseDir ?? homedir(), ".gbrain", "connectors.json");
@@ -100,6 +115,7 @@ export class ConnectorManager {
    */
   async loadEnabled(): Promise<BaseConnector[]> {
     const entries = await this._loadRegistry();
+    const stateStore = this._secretStore();
     const sources: BaseConnector[] = [];
     for (const entry of entries) {
       if (!entry.enabled) continue;
@@ -109,7 +125,10 @@ export class ConnectorManager {
         continue;
       }
       try {
-        const connector = new ctor(entry.config);
+        const connector = new ctor({
+          ...entry.config,
+          ...(stateStore ? { state_store: stateStore } : {}),
+        });
         this.connectors.set(connector.id, connector);
         this.serviceToId.set(entry.service, connector.id);
         sources.push(connector);
@@ -132,25 +151,48 @@ export class ConnectorManager {
         `Unsupported connector: ${service}. Supported: ${SUPPORTED_CONNECTORS.join(", ")}`
       );
     }
+    const connectorId = config.instance_id ?? service;
+    const normalizedConfig: ConnectorConfig = { ...config, instance_id: connectorId };
     const ctor = CONNECTOR_REGISTRY[service];
-    const connector = new ctor(config);
+    const stateStore = this._secretStore();
+    if (stateStore && !normalizedConfig.tenant_source_id) {
+      throw new Error("tenant_source_id is required for SaaS connector configuration");
+    }
+    const connector = new ctor({
+      ...normalizedConfig,
+      ...(stateStore ? { state_store: stateStore } : {}),
+    });
 
     // Persist initial state.
     const state: ConnectorState = {
       connector_id: connector.id,
       service,
-      access_token: config.api_key ?? "",
-      config: config as Record<string, unknown>,
+      access_token: normalizedConfig.api_key ?? "",
     };
-    const statePath = join(homedir(), ".gbrain", "connectors", `${service}.json`);
+    if (stateStore) {
+      await stateStore.upsert(
+        { id: connectorId, service, enabled: true, config: normalizedConfig },
+        state
+      );
+      this.connectors.set(connector.id, connector);
+      this.serviceToId.set(service, connector.id);
+      return connector;
+    }
+    const statePath = join(
+      this.baseDir ?? homedir(),
+      ".gbrain",
+      "connectors",
+      `${connectorId}.json`
+    );
     await mkdir(dirname(statePath), { recursive: true });
     await writeFile(statePath, JSON.stringify(state, null, 2));
 
     // Add to registry.
     const entries = await this._loadRegistry();
-    const existing = entries.findIndex((e) => e.service === service);
-    if (existing >= 0) entries[existing] = { service, enabled: true, config };
-    else entries.push({ service, enabled: true, config });
+    const existing = entries.findIndex((e) => (e.connector_id ?? e.service) === connectorId);
+    const entry = { connector_id: connectorId, service, enabled: true, config: normalizedConfig };
+    if (existing >= 0) entries[existing] = entry;
+    else entries.push(entry);
     await this._saveRegistry(entries);
 
     this.connectors.set(connector.id, connector);
@@ -160,6 +202,19 @@ export class ConnectorManager {
 
   /** Remove a connector from the registry and delete its state. */
   async remove(service: string): Promise<void> {
+    const stateStore = this._secretStore();
+    if (stateStore) {
+      const entry = (await this._loadRegistry()).find(
+        (candidate) =>
+          (candidate.connector_id ?? candidate.service) === service || candidate.service === service
+      );
+      if (!entry) return;
+      const connectorId = entry.connector_id ?? entry.service;
+      await stateStore.remove(connectorId);
+      this.connectors.delete(connectorId);
+      this.serviceToId.delete(entry.service);
+      return;
+    }
     const entries = await this._loadRegistry();
     const idx = entries.findIndex((e) => e.service === service);
     if (idx >= 0) {
@@ -180,25 +235,41 @@ export class ConnectorManager {
   }
 
   /** Enable or disable a connector. */
-  async setEnabled(service: string, enabled: boolean): Promise<void> {
-    const entries = await this._loadRegistry();
-    const entry = entries.find((e) => e.service === service);
+  async setEnabled(service: string, enabled: boolean, tenantSourceId?: string): Promise<void> {
+    const entries = await this._loadRegistry(tenantSourceId);
+    const entry = entries.find(
+      (e) => (e.connector_id ?? e.service) === service || e.service === service
+    );
     if (!entry) throw new Error(`Connector not found: ${service}`);
+    const stateStore = this._secretStore();
+    if (stateStore) {
+      await stateStore.setEnabled(entry.connector_id ?? entry.service, enabled);
+      return;
+    }
     entry.enabled = enabled;
     await this._saveRegistry(entries);
   }
 
   /** List all registered connectors with status. */
-  async list(): Promise<
-    Array<{ service: string; enabled: boolean; connected: boolean; hasCredentials: boolean }>
+  async list(tenantSourceId?: string): Promise<
+    Array<{
+      id: string;
+      service: string;
+      enabled: boolean;
+      connected: boolean;
+      hasCredentials: boolean;
+      tenant_source_id?: string;
+    }>
   > {
-    const entries = await this._loadRegistry();
+    const entries = await this._loadRegistry(tenantSourceId);
     return entries.map((e) => ({
+      id: e.connector_id ?? e.service,
       service: e.service,
       enabled: e.enabled,
       // G21 fix: look up by service→id index, not by raw service name.
-      connected: this._findConnectorIdByService(e.service) !== undefined,
+      connected: this.connectors.has(e.connector_id ?? e.service),
       hasCredentials: !!(e.config.client_id || e.config.client_secret || e.config.api_key),
+      ...(e.config.tenant_source_id ? { tenant_source_id: e.config.tenant_source_id } : {}),
     }));
   }
 
@@ -215,7 +286,7 @@ export class ConnectorManager {
     // Pre-fix, connector.sync() could hang forever with no abort signal.
     const SYNC_TIMEOUT_MS = 5 * 60 * 1000;
     try {
-      const result = await Promise.race([
+      await Promise.race([
         connector.sync(ctx),
         new Promise<never>((_, reject) =>
           setTimeout(
@@ -224,9 +295,6 @@ export class ConnectorManager {
           )
         ),
       ]);
-      if (result && typeof result === "object" && "itemsCount" in result) {
-        itemsRetrieved = (result as { itemsCount: number }).itemsCount;
-      }
     } catch (err) {
       syncError = err instanceof Error ? err.message : String(err);
       await this._persistSyncMetadata(service, {
@@ -252,6 +320,13 @@ export class ConnectorManager {
     service: string,
     metadata: Record<string, unknown>
   ): Promise<void> {
+    const stateStore = this._secretStore();
+    if (stateStore) {
+      const state = await stateStore.load(service);
+      if (!state) return;
+      await stateStore.save(service, { ...state, ...metadata } as ConnectorState);
+      return;
+    }
     const statePath = join(this.baseDir ?? homedir(), ".gbrain", "connectors", `${service}.json`);
     let state: Record<string, unknown> = {};
     if (existsSync(statePath)) {
@@ -275,27 +350,68 @@ export class ConnectorManager {
   }
 
   /** Get the raw config for a registered connector. */
-  async getConfig(service: string): Promise<Record<string, unknown> | null> {
-    const entries = await this._loadRegistry();
-    const entry = entries.find((e) => e.service === service);
+  async getConfig(
+    service: string,
+    tenantSourceId?: string
+  ): Promise<Record<string, unknown> | null> {
+    const entries = await this._loadRegistry(tenantSourceId);
+    const entry = entries.find(
+      (e) => (e.connector_id ?? e.service) === service || e.service === service
+    );
     return (entry?.config as Record<string, unknown>) ?? null;
   }
 
+  /** Instantiate one configured connector with the active state backend. */
+  async createConfigured(connectorRef: string, tenantSourceId?: string): Promise<BaseConnector> {
+    const entries = await this._loadRegistry(tenantSourceId);
+    const entry = entries.find(
+      (candidate) =>
+        (candidate.connector_id ?? candidate.service) === connectorRef ||
+        candidate.service === connectorRef
+    );
+    if (!entry) throw new Error(`Connector not found: ${connectorRef}`);
+    const ctor = CONNECTOR_REGISTRY[entry.service];
+    if (!ctor) throw new Error(`Unsupported connector: ${entry.service}`);
+    const stateStore = this._secretStore();
+    return new ctor({ ...entry.config, ...(stateStore ? { state_store: stateStore } : {}) });
+  }
+
   /** Get last successful sync timestamp from the connector state file. */
-  async getLastSync(service: string): Promise<number | null> {
-    const meta = await this.getSyncMetadata(service);
+  async getLastSync(service: string, tenantSourceId?: string): Promise<number | null> {
+    const meta = await this.getSyncMetadata(service, tenantSourceId);
     return meta.last_sync_at ?? null;
   }
 
   /** Get full sync metadata (timestamp, status, duration, items, error). */
-  async getSyncMetadata(service: string): Promise<{
+  async getSyncMetadata(
+    service: string,
+    tenantSourceId?: string
+  ): Promise<{
     last_sync_at?: number;
     last_sync_status?: "ok" | "error";
     last_sync_duration_ms?: number;
     last_items_retrieved?: number;
     last_sync_error?: string;
   }> {
-    const statePath = join(this.baseDir ?? homedir(), ".gbrain", "connectors", `${service}.json`);
+    const entries = await this._loadRegistry(tenantSourceId);
+    const entry = entries.find(
+      (e) => (e.connector_id ?? e.service) === service || e.service === service
+    );
+    const stateId = entry?.connector_id ?? service;
+    const stateStore = this._secretStore();
+    if (stateStore) {
+      const state = await stateStore.load(stateId);
+      return state
+        ? {
+            last_sync_at: state.last_sync_at,
+            last_sync_status: state.last_sync_status,
+            last_sync_duration_ms: state.last_sync_duration_ms,
+            last_items_retrieved: state.last_items_retrieved,
+            last_sync_error: state.last_sync_error,
+          }
+        : {};
+    }
+    const statePath = join(this.baseDir ?? homedir(), ".gbrain", "connectors", `${stateId}.json`);
     if (!existsSync(statePath)) return {};
     try {
       const raw = await readFile(statePath, "utf-8");
@@ -313,7 +429,17 @@ export class ConnectorManager {
 
   // ── Registry I/O ────────────────────────────────────────────────────
 
-  private async _loadRegistry(): Promise<ConnectorRegistryEntry[]> {
+  private async _loadRegistry(tenantSourceId?: string): Promise<ConnectorRegistryEntry[]> {
+    const stateStore = this._secretStore();
+    if (stateStore) {
+      const records = await stateStore.list(tenantSourceId);
+      return records.map((record) => ({
+        connector_id: record.id,
+        service: record.service,
+        enabled: record.enabled,
+        config: record.config,
+      }));
+    }
     const path = this._registryPath();
     if (!existsSync(path)) return [];
     try {

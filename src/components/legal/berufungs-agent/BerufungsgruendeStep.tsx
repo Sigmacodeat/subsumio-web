@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Loader2,
   AlertTriangle,
@@ -42,6 +42,8 @@ import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { AIActConformityBanner } from "@/components/legal/AIActConformityBanner";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import type { ActAnalysis, BerufungsGrund } from "@/app/dashboard/berufungs-agent/page";
 
 interface BerufungsgruendeStepProps {
@@ -210,6 +212,7 @@ export function BerufungsgruendeStep({
   const [manualScore, setManualScore] = useState<1 | 2 | 3 | 4 | 5>(3);
   const [manualQuelle, setManualQuelle] = useState("");
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const { grounding, isGrounding, groundAnswer } = useGroundedAnswer();
   const { addToast } = useToast();
 
   // dnd-kit sensors: pointer for mouse/touch, keyboard for accessibility.
@@ -325,6 +328,17 @@ export function BerufungsgruendeStep({
   ]);
 
   const selectedCount = berufungsgruende.filter((g) => g.selected).length;
+
+  // Grounding invariant (CLAUDE.md): the generated Berufungsgründe cite norms
+  // and case law — verify them against the corpus before they read as usable.
+  useEffect(() => {
+    if (berufungsgruende.length === 0) return;
+    const groundingText = berufungsgruende
+      .map((g) => [g.titel, g.beschreibung, g.quelle].filter(Boolean).join(" — "))
+      .join("\n\n");
+    groundAnswer(groundingText).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [berufungsgruende]);
 
   return (
     <div className="space-y-6">
@@ -519,6 +533,17 @@ export function BerufungsgruendeStep({
               ) : null}
             </DragOverlay>
           </DndContext>
+
+          <CitationPanel
+            data={
+              {
+                grounding: grounding ?? null,
+                citations: [],
+                isStreaming: isGrounding,
+              } satisfies CitationPanelData
+            }
+            compact
+          />
         </div>
       )}
 

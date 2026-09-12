@@ -80,7 +80,7 @@ function statusColor(status: AgentJob["status"]): string {
     case "failed":
       return "bg-[color:var(--ds-danger-solid)]";
     case "paused":
-      return "bg-gray-500";
+      return "bg-[color:var(--ds-neutral-text)]";
     case "partial_success":
       return "bg-[color:var(--ds-warning-solid)]";
     case "needs_review":
@@ -88,7 +88,7 @@ function statusColor(status: AgentJob["status"]): string {
     case "monitoring":
       return "bg-[color:var(--ds-info-solid)]";
     default:
-      return "bg-gray-400";
+      return "bg-[color:var(--ds-neutral-text)]";
   }
 }
 
@@ -154,7 +154,7 @@ function statusIcon(status: AgentJob["status"]) {
     case "failed":
       return <XCircle size={14} className="text-[color:var(--ds-danger-text)]" />;
     case "paused":
-      return <Pause size={14} className="text-gray-400" />;
+      return <Pause size={14} className="text-[color:var(--ds-neutral-text)]" />;
   }
 }
 

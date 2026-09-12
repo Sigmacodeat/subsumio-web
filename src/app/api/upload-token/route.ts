@@ -42,6 +42,9 @@ const LEGAL_SOURCES = new Set(["documents", "legal_case", "legal"]);
 interface UploadTokenPayload {
   brain_id: string;
   user_id: string;
+  /** Billing owner is signed server-side; the browser cannot choose it. */
+  owner_id: string;
+  owner_type: "user" | "org";
   case_slug?: string;
   source: string;
   title?: string;
@@ -167,6 +170,8 @@ export const POST = createHandler(
     const payload: UploadTokenPayload = {
       brain_id: ctx.brainId,
       user_id: ctx.user.id,
+      owner_id: ctx.user.orgId ?? ctx.user.id,
+      owner_type: ctx.user.orgId ? "org" : "user",
       source,
       ...(caseSlug ? { case_slug: caseSlug } : {}),
       ...(title ? { title } : {}),

@@ -123,7 +123,9 @@ describe("locateMutablePackFile — bundled guard", () => {
     expect(BUNDLED_PACK_NAMES.has("gbrain-recommended")).toBe(true);
     // v0.42 (T22): gbrain-base-v2 joins the bundled set.
     expect(BUNDLED_PACK_NAMES.has("gbrain-base-v2")).toBe(true);
-    expect(BUNDLED_PACK_NAMES.size).toBe(3);
+    expect(BUNDLED_PACK_NAMES.has("gbrain-legal")).toBe(true);
+    expect(BUNDLED_PACK_NAMES.has("gbrain-medical")).toBe(true);
+    expect(BUNDLED_PACK_NAMES.size).toBe(5);
   });
 
   it("rejects gbrain-base-v2 with PACK_READONLY (bundled guard)", () => {

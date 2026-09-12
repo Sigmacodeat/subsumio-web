@@ -61,7 +61,7 @@ const STATUS_COLORS: Record<string, string> = {
   completed: "text-[color:var(--ds-success-text)]",
   failed: "text-[color:var(--ds-danger-text)]",
   awaiting_review: "text-[color:var(--ds-warning-text)]",
-  paused: "text-gray-500",
+  paused: "text-[color:var(--ds-neutral-text)]",
 };
 
 const LAYER_NAMES: Record<number, string> = {
@@ -197,7 +197,7 @@ export default function MobilePipelinePage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8 min-h-screen bg-[color:var(--ds-bg)]">
+    <div className="mx-auto min-h-screen max-w-[1200px] space-y-6 bg-[color:var(--ds-bg)] p-4 md:p-6 lg:p-8">
       {/* Header */}
       <div className="sticky top-0 z-10 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
         <h1 className="text-lg font-semibold text-[color:var(--ds-text)]">Pipeline</h1>
@@ -214,7 +214,8 @@ export default function MobilePipelinePage() {
         {pipelines.map((pipeline) => {
           const isExpanded = expandedPipeline === pipeline.case_slug;
           const StatusIcon = STATUS_ICONS[pipeline.status] ?? Clock;
-          const statusColor = STATUS_COLORS[pipeline.status] ?? "text-gray-500";
+          const statusColor =
+            STATUS_COLORS[pipeline.status] ?? "text-[color:var(--ds-neutral-text)]";
 
           return (
             <div key={pipeline.case_slug} className="px-4 py-3">
@@ -262,7 +263,8 @@ export default function MobilePipelinePage() {
                       .map(([layerNum, layerState]) => {
                         const num = Number(layerNum);
                         const LayerIcon = STATUS_ICONS[layerState.status] ?? Clock;
-                        const layerColor = STATUS_COLORS[layerState.status] ?? "text-gray-500";
+                        const layerColor =
+                          STATUS_COLORS[layerState.status] ?? "text-[color:var(--ds-neutral-text)]";
                         const layerKey = `${pipeline.case_slug}:${layerNum}`;
                         const isLayerExpanded = expandedLayer === layerKey;
 

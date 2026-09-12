@@ -1,9 +1,9 @@
 import type { Jurisdiction } from "@/components/chat/chat-types";
 import type { ChatMessage } from "@/components/chat/chat-types";
 import {
-  buildJurisdictionPromptSection,
-  buildCollisionWarningSection,
-} from "@/lib/legal-jurisdiction-config";
+  buildClientJurisdictionPromptSection,
+  buildClientCollisionWarningSection,
+} from "@/components/chat/jurisdiction-prompt";
 
 export const JURISDICTION_LABELS: Record<Jurisdiction, string> = {
   de: "deutschen",
@@ -131,7 +131,7 @@ Aktuelle Tageszeit: ${timeOfDay} (${hour}:${String(now.getMinutes()).padStart(2,
 - Wenn ein Begriff in den Quellen definiert wird (z.B. "§ 12 — Betriebstätte"), zitiere DIESE Definition wörtlich.
 - Wenn du eine Information nicht in den Quellen findest, sage: "Diese Information ist in den bereitgestellten Rechtsquellen nicht enthalten."
 
-${buildJurisdictionPromptSection(jurisdiction)}`);
+${buildClientJurisdictionPromptSection(jurisdiction)}`);
 
   // ── User Context ──
   if (userContext) {
@@ -163,7 +163,7 @@ ${buildJurisdictionPromptSection(jurisdiction)}`);
 Wenn eine konkrete Akte aktiv ist, beantworte Fragen NUR im Kontext dieser Akte. Vermeide mandantenübergreifende Informationen. Wenn ein Nutzer nach anderen Mandanten fragt, weise darauf hin, dass du nur im Kontext der aktuellen Akte antworten kannst.`);
 
   // ── Jurisdiction Collision Warnings ──
-  const collisionWarnings = buildCollisionWarningSection(jurisdiction);
+  const collisionWarnings = buildClientCollisionWarningSection(jurisdiction);
   if (collisionWarnings) {
     personaParts.push(`\n${collisionWarnings}`);
   }

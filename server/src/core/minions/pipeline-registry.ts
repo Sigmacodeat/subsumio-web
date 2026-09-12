@@ -95,7 +95,7 @@ export const LAYER_REGISTRY: LayerDeclaration[] = [
     specialist: "on-scanner",
     inputs: ["part_slugs", "allTexts"],
     outputs: ["on_table", "verfahrenstyp"],
-    sideEffects: ["writePage:on-index/{case_slug}"],
+    sideEffects: ["writePage:on-indexes/{case_slug}"],
     risk: "medium",
     timeoutSec: 120,
     failurePolicy: "fail",

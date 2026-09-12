@@ -1,7 +1,7 @@
 #!/bin/bash
 # Sequential RIS backfill queue — runs each source one at a time
 # with direct connection (no proxy needed, RIS lock not required since single process)
-export PGPASSWORD=2bfa7d4107f0b40e171cb508f27a9a703501b160d61957f0
+: "${DATABASE_URL:?DATABASE_URL is required}"
 export RIS_PROXY_URLS=
 cd /app
 

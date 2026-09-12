@@ -1,25 +1,20 @@
 # Subsumio Produktfähigkeiten
 
-Stand: 2026-06-28 (Revision 3 — Multi-Industry Update)
+Stand: 2026-09-12 (Revision 4 — Kanzlei-OS-Fokus)
 Zweck: kompakte, produktorientierte Übersicht darüber, was Subsumio kann,
 welche Module im Repository angelegt sind und wo Produktreife noch durch
 End-to-End-Verdrahtung nachgewiesen werden muss.
 
 ## Positionierung
 
-Subsumio ist eine **Multi-Industry AI-Plattform für professionelle Dienstleister**
-im DACH-Raum. Aktuell vertikalisiert für **Legal** (Kanzleien / Rechtsabteilungen)
-und **Tax** (Steuerberatungen / Buchhaltung).
+Subsumio ist das **AI Operating System für Anwaltskanzleien und
+Rechtsabteilungen** im DACH-Raum. Auth, DMS, Audit, Billing, AI Engine, Search
+und RBAC sind gemeinsame Plattformdienste, aber das aktive Produkt hat nur
+eine fachliche Vertikale: Legal.
 
-Die Plattform-Architektur ist **Platform-First**: ein domain-agnostischer Kern
-(Auth, DMS, Audit, Billing, AI Engine, Search, RBAC) bedient beliebig viele
-Industry Packs. Jede Industry bekommt ihr eigenes Branding, Theme, Sidebar,
-Quick-Create, Onboarding und Corpus — gesteuert über `src/lib/industry-pack.ts`.
-
-| Industry | Brand        | Pack             | Theme        | Status                   |
-| -------- | ------------ | ---------------- | ------------ | ------------------------ |
-| Legal    | Subsumio     | `subsumio-legal` | Blue/Indigo  | ✅ Produktion            |
-| Tax      | Subsumio Tax | `subsumio-tax`   | Emerald/Teal | ✅ Registriert, UI aktiv |
+Das frühere Taxumio-Steuerberaterprodukt ist archiviert. Snapshot, Grenze und
+Wiederherstellung sind in `docs/archive/TAXUMIO_ARCHIVE_MANIFEST.md`
+dokumentiert.
 
 Der Kernanspruch branchenübergreifend: Antworten und Aktionen sollen aus echtem
 Mandantenkontext kommen, belegbar sein, Berechtigungen respektieren und
@@ -27,22 +22,15 @@ auditierbar bleiben.
 
 ## Hauptmodule
 
-### Multi-Industry Architektur
+### Kanzlei-OS-Architektur
 
-Subsumio nutzt eine Platform-First-Architektur mit Industry Packs:
-
-- **Platform Core** (domain-agnostisch): Auth, DMS, Audit, Billing, AI Engine,
-  Search, RBAC, Upload, Realtime, Mobile, WhatsApp, Email, DocuSign, SCIM.
-- **Industry Packs** (vertikal): Gesetze, Gebühren, Fristen, Schreibstile,
-  Sidebar-Nav, Quick-Create, Onboarding, Marketing-Pages, Corpus.
-- **Industry Switch** zur Laufzeit: `navForIndustry()` rendert industry-spezifische
-  Sidebar; `profileForIndustry()` liefert Brand/Theme; `packForIndustry()` mappt
-  auf Engine-Skill-Pack.
-- **Registrierte Industries**: `legal` (Subsumio, Blue/Indigo) und `tax`
-  (Subsumio Tax, Emerald/Teal). Weitere Industries können durch Erweiterung von
-  `INDUSTRY_PROFILES` in `src/lib/industry-pack.ts` hinzugefügt werden.
-- **Brain Provisioning**: Bei Signup wird automatisch das Industry-spezifische
-  Skill-Pack auf dem Engine-Brain gemountet (`provisionBrainAsync`).
+- **Platform Core:** Auth, DMS, Audit, Billing, AI Engine, Search, RBAC, Upload,
+  Realtime, Mobile, WhatsApp, E-Mail, DocuSign und SCIM.
+- **Legal Product:** Gesetze, Kanzleigebühren, Fristen, Schriftsätze,
+  Aktenführung, Kanzlei-Navigation, Onboarding und Legal Corpus.
+- **Legal-only Provisioning:** Neue Nutzer und Brains werden ausschließlich als
+  `legal` provisioniert. Alte unbekannte Industry-Metadaten fallen sicher auf
+  das Subsumio-Theme zurück.
 
 ### Kanzlei-Dashboard (Legal)
 
@@ -72,39 +60,6 @@ Subsumio enthält API- und UI-Bausteine für:
 - Precedent Search, Playbooks und Clause Annotations.
 - Human Review, Citation/AI-Notice-Komponenten und RAG-/Release-Gates.
 - Litigation Flow (Phasen, Steps, Transitions), Review Sets (Privilege, Redaction, Bates), Trust Accounting, Litigation Analytics.
-
-### Tax-Vertical (Steuerberatung)
-
-Die Tax-Industry ist registriert mit eigenem Branding (Subsumio Tax),
-Theme (Emerald/Teal), Sidebar-Nav und Brain-Skill-Pack.
-
-**Bereits vorhanden und direkt reusebar:**
-
-- DATEV-Export/Import (CSV, SKR03/SKR04/SKR49)
-- GoBD-Verfahrensdokumentation und Compliance
-- Client Portal, Kontakte, DMS, Audit Trail, Billing, WhatsApp, Mobile
-- Fristen-Engine (generisch, erweiterbar für Steuerfristen)
-- AI Engine / Brain (jurisdiktions-agnostisch)
-
-**Implementiert (Stand 2026-06-29):**
-
-- StBVV-Gebührenberechnung (`src/lib/stbvv.ts` mit Anlage 1 Tabelle, Aktivitätsfaktoren, Min/Max)
-- StBVV API Route (`/api/tax/stbvv` — GET + POST mit Audit Logging)
-- Cost Calculator industry-conditional (RVG für Legal, StBVV für Tax)
-- Steuerfristen-Engine (`src/lib/tax-deadlines.ts` mit § 109, § 149, § 152, § 153, § 168, § 226, § 234, § 355, § 367, § 477 AO, EStG § 56, GewStG § 9)
-- Tax Corpus (AO, EStG, UStG, KStG, GewStG, ErbStG, BewG, StBVV, StBerG, GrEStG, LStDV)
-- Tax AI Pipelines (`/api/tax/analyze`, `/api/tax/summarize` mit tax-spezifischen Prompts)
-- Tax Prompt Templates (`src/lib/tax-prompts.ts` — Analyse, Summarize, Fristen-Extraktion, Risiko-Bewertung, Plausibilitäts-Check)
-- Industry Route Guards (`src/lib/industry-guards.ts` — Legal-Only Pages für Tax-User blockiert)
-- Tax-spezifisches Onboarding (industry-conditional Labels, Placeholders, Rollen)
-- Tax Marketing-Landingpage (`/tax`)
-- Tax i18n Keys in allen Sprachen (DE, EN, IT, ES, PL, FR, NL)
-- Admin Panel mit Industry-Spalte + Filter
-
-**Noch offen für volle Tax-Produktreife:**
-
-- Tax-spezifische Dashboard-Pages (`/dashboard/tax-returns`, `tax-assessments`, `tax-audit`)
-- ELSTER-Integration (optional, 4-8 Wochen)
 
 ### Kanzlei Brain und Retrieval
 
@@ -174,7 +129,7 @@ DSGVO-/Retention-Regeln und klare Matter-Berechtigung.
 
 Im Repository angelegte Integrationen:
 
-- beA/ERV-orientierte Architektur und Dashboard.
+- Deutscher beA-XML-Import, Filing-Pakete und optionaler Versand über eine separat konfigurierte Middleware. Keine native österreichische webERV-Anbindung.
 - DocuSign OAuth, Envelopes, Status und Webhook.
 - DMS-Suche und Import, inklusive iManage/NetDocuments-Konnektor-Schicht.
 - Outlook Add-in und Word Add-in.
@@ -212,20 +167,25 @@ Vorhandene Qualitätsbausteine:
 
 Diese Übersicht unterscheidet bewusst zwischen "angelegt" und "produktfertig":
 
-| Bereich              | Reifegrad             | Hinweis                                                                            |
-| -------------------- | --------------------- | ---------------------------------------------------------------------------------- |
-| Multi-Industry Core  | produktionsreif       | `industry-pack.ts` mit legal + tax, `navForIndustry()` aktiv, Brain-Provisioning.  |
-| Kanzlei-Dashboard    | breit angelegt        | Viele Flows vorhanden; End-to-End-Abdeckung pro kritischem Flow prüfen.            |
-| Legal-AI APIs        | stark angelegt        | Citation/Grounding und Human Review müssen je Route nachweisbar greifen.           |
-| Tax-Vertical         | registriert, partiell | Industry-Pack + Sidebar aktiv; Tax-Pages, StBVV, Steuerfristen noch offen.         |
-| Brain/Retrieval      | Kern vorhanden        | Matter-/Tenant-Scope ist der wichtigste Regressionstest.                           |
-| WhatsApp Secretary   | stark ausgebaut       | Outbound, Consent, Feedback und Metrics müssen als kompletter Loop geprüft werden. |
-| Billing/DATEV        | angelegt              | Trust Accounting und AI-Spend pro Matter/User sind eigene Restthemen.              |
-| Contract/CLM         | teilweise produktnah  | Voller CLM-End-to-End-Flow ist noch als Gate zu beweisen.                          |
-| Bulk Review          | teilweise             | Defensible Review-Sets, Coding, Sampling und Export brauchen Produktnachweis.      |
-| Litigation Analytics | Modell angelegt       | Gericht-/Richter-/Outcome-Analytics als Nutzerprodukt prüfen.                      |
-| Co-Editing           | teilweise             | Kommentare/SSE sind da; echte Presence/Cursor/Typing fehlen als Nachweis.          |
-| Add-ins              | angelegt              | Auth, Audit, Grounding und sichere Speicherung je Add-in prüfen.                   |
+| Bereich              | Reifegrad            | Hinweis                                                                            |
+| -------------------- | -------------------- | ---------------------------------------------------------------------------------- |
+| Kanzlei-OS Core      | produktionsreif      | Legal-only Signup, Navigation, Branding und Brain-Provisioning.                    |
+| Kanzlei-Dashboard    | breit angelegt       | Viele Flows vorhanden; End-to-End-Abdeckung pro kritischem Flow prüfen.            |
+| Legal-AI APIs        | stark angelegt       | Citation/Grounding und Human Review müssen je Route nachweisbar greifen.           |
+| Brain/Retrieval      | Kern vorhanden       | Matter-/Tenant-Scope ist der wichtigste Regressionstest.                           |
+| WhatsApp Secretary   | stark ausgebaut      | Outbound, Consent, Feedback und Metrics müssen als kompletter Loop geprüft werden. |
+| Billing/DATEV        | angelegt             | Trust Accounting und AI-Spend pro Matter/User sind eigene Restthemen.              |
+| Contract/CLM         | teilweise produktnah | Voller CLM-End-to-End-Flow ist noch als Gate zu beweisen.                          |
+| Bulk Review          | teilweise            | Defensible Review-Sets, Coding, Sampling und Export brauchen Produktnachweis.      |
+| Litigation Analytics | Modell angelegt      | Gericht-/Richter-/Outcome-Analytics als Nutzerprodukt prüfen.                      |
+| Co-Editing           | teilweise            | Kommentare/SSE sind da; echte Presence/Cursor/Typing fehlen als Nachweis.          |
+| Add-ins              | angelegt             | Auth, Audit, Grounding und sichere Speicherung je Add-in prüfen.                   |
+
+### Grenzen der Kanzleisoftware-Integration
+
+- ADVOKAT ist derzeit eine read-only Datei-/Export-Bridge. Native Synchronisation von Stammdaten, Fristen und Leistungen sowie Write-back benötigen einen Vertrag und die Schnittstellendokumentation des Herstellers.
+- beA bezeichnet den deutschen elektronischen Rechtsverkehr. Österreichischer webERV-Versand ist derzeit nicht implementiert.
+- Subsumio ergänzt im österreichischen Pilotbetrieb daher die bestehende Kanzleisoftware und ersetzt sie nicht als führendes System.
 
 ## Dokumentationsstandard
 

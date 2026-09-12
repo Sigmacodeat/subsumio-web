@@ -119,6 +119,7 @@ test.describe("Smoke: Case CRUD", () => {
     expect(createRes.status()).not.toBe(403);
     expect(createRes.status()).not.toBe(503);
     const created = await createRes.json();
+    expect(createRes.status(), JSON.stringify(created)).toBe(200);
     expect(created.slug).toBe(slug);
 
     // List should contain the case
@@ -158,9 +159,10 @@ test.describe("Smoke: Search", () => {
   });
 
   test("search page renders", async ({ page }) => {
-    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    const searchInput = page.locator('input[placeholder*="Suchen"], input[placeholder*="Search"]');
-    await expect(searchInput).toBeVisible({ timeout: 10_000 });
+    await page.goto("/dashboard/search", { waitUntil: "domcontentloaded" });
+    await expect(page.getByPlaceholder(/Suchbegriff eingeben|Enter search term/i)).toBeVisible({
+      timeout: 10_000,
+    });
   });
 });
 
@@ -204,7 +206,7 @@ test.describe("Smoke: Dashboard Pages Render", () => {
     // HeutePanel and widget sections should be visible
     await expect(page.getByText(/Heute|Today/i).first()).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText(/Inbox|Eingang/i).first()).toBeVisible();
-    await expect(page.getByText(/Reviews/i).first()).toBeVisible();
+    await expect(page.getByText(/Review approvals|Freigaben prüfen/i).first()).toBeVisible();
 
     const nav = page.getByRole("navigation", { name: /Main navigation|Hauptnavigation/i });
     if ((await nav.isVisible().catch(() => false)) === false) {
@@ -262,7 +264,16 @@ test.describe("Smoke: Dashboard Pages Render", () => {
 
   for (const p of dashboardPages) {
     test(`${p.name} page loads without 503`, async ({ page }) => {
-      const response = await page.goto(p.path, { waitUntil: "domcontentloaded" });
+      let response: Awaited<ReturnType<typeof page.goto>> = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          response = await page.goto(p.path, { waitUntil: "domcontentloaded" });
+          break;
+        } catch (error) {
+          if (attempt > 0 || !String(error).includes("ERR_ABORTED")) throw error;
+          await page.waitForTimeout(500);
+        }
+      }
       expect(response?.status()).not.toBe(503);
       // Page should not show error
       const errorText = page.locator("text=/Engine nicht erreichbar|Service unavailable|503/i");

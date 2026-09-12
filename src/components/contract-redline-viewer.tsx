@@ -27,6 +27,8 @@ import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 import { diffWords, buildAcceptedText, diffStats, type DiffToken } from "@/lib/word-diff";
 import { ReceiptBadge } from "@/components/receipt-badge";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import type { WorkProductReceipt } from "@/lib/work-product-receipts";
 
 interface RedlineClause {
@@ -158,6 +160,7 @@ export function ContractRedlineViewer({
   const [perspective, setPerspective] = useState<"client" | "counterparty" | "neutral">("client");
   const [copied, setCopied] = useState(false);
   const [activeClause, setActiveClause] = useState(0);
+  const { grounding, isGrounding, groundAnswer } = useGroundedAnswer();
   const _abortRef = useRef<AbortController | null>(null);
   const clauseRefs = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -293,6 +296,15 @@ export function ContractRedlineViewer({
   const highRiskCount = clauses.filter((c) => c.risk === "high").length;
   const mediumRiskCount = clauses.filter((c) => c.risk === "medium").length;
   const lowRiskCount = clauses.filter((c) => c.risk === "low").length;
+
+  // Grounding invariant (CLAUDE.md): the redline rewrites contract language and
+  // states risks — AI legal output, so it carries the verification panel like
+  // every other such surface.
+  useEffect(() => {
+    if (!redlineText) return;
+    groundAnswer(redlineText).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [redlineText]);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/60 backdrop-blur-sm">
@@ -662,6 +674,17 @@ export function ContractRedlineViewer({
                 </div>
               );
             })}
+
+            <CitationPanel
+              data={
+                {
+                  grounding: grounding ?? null,
+                  citations: [],
+                  isStreaming: isGrounding || loading,
+                } satisfies CitationPanelData
+              }
+              compact
+            />
           </div>
         )}
       </div>

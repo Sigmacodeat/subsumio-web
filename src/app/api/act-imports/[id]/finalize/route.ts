@@ -1,8 +1,11 @@
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { actImportSessionSlug, computeActImportMetrics, safeImportId } from "@/lib/act-import";
 import { fetchAllActImportItems, fetchEnginePage } from "@/lib/act-import-server";
+import { estimatePipelineCredits } from "@/lib/billing/credit-rate-card";
+import { refundCredits, reserveCredits, type OwnerType } from "@/lib/billing/credits";
 
 const schema = z.object({
   allow_partial: z.boolean().default(false),
@@ -64,6 +67,19 @@ export const POST = createHandler(
     ];
     if (partSlugs.length === 0)
       return apiError("no_documents", "Keine analysierbaren Dokumente", 409);
+    const jurisdiction = String(sfm.jurisdiction ?? "").toLowerCase();
+    if (!["at", "de", "ch", "eu"].includes(jurisdiction)) {
+      return apiError(
+        "jurisdiction_required",
+        "Die Jurisdiktion der Akte muss vor der vollständigen Analyse bestätigt werden.",
+        400
+      );
+    }
+    const ownerType: OwnerType = ctx.user.orgId ? "org" : "user";
+    const ownerId = ctx.user.orgId ?? ctx.user.id;
+    // Finalizing a complete act preserves the former full-pipeline behavior;
+    // unlike the everyday trigger, it is an explicit, reviewed bulk action.
+    const workflowId = "full_pipeline";
     const snapshotSlug = `act-snapshots/${snapshotId}`;
     const snapshot = {
       id: snapshotId,
@@ -95,25 +111,45 @@ export const POST = createHandler(
       },
     });
     if (!write.ok) return apiError("snapshot_write_failed", await write.text(), 502);
+    const pipelineKey = `pipeline-${randomUUID()}`;
+    const estimatedPages = Math.max(1, metrics.pages || partSlugs.length);
+    const reservation = await reserveCredits(
+      ownerId,
+      ownerType,
+      estimatePipelineCredits(estimatedPages, 3).estimatedCredits,
+      pipelineKey
+    );
+    if (!reservation.ok) {
+      return apiError(
+        "insufficient_credits",
+        "Nicht genügend Credits für die vollständige Aktenanalyse.",
+        402
+      );
+    }
     const trigger = await fetch(`${ENGINE_URL}/api/legal-pipeline/trigger`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...ctx.headers },
       body: JSON.stringify({
         case_slug: caseSlug,
         part_slugs: partSlugs,
-        jurisdiction: sfm.jurisdiction ?? "at",
+        jurisdiction,
         verfahrenstyp: sfm.verfahrenstyp ?? "sonstiges",
         snapshot_id: snapshotId,
         import_session_id: id,
-        // Billing context: owner_id is org_id if user has org, else user.id.
-        owner_id: ctx.user.orgId ?? ctx.user.id,
-        owner_type: ctx.user.orgId ? "org" : "user",
+        workflow_id: workflowId,
+        owner_id: ownerId,
+        owner_type: ownerType,
         user_id: ctx.user.id,
+        pipeline_key: pipelineKey,
+        reserved_credits: reservation.reservedCredits,
         ...(body.max_cost_usd ? { max_cost_usd: body.max_cost_usd } : {}),
       }),
       signal: AbortSignal.timeout(30_000),
     });
-    if (!trigger.ok) return apiError("pipeline_trigger_failed", await trigger.text(), 502);
+    if (!trigger.ok) {
+      await refundCredits(ownerId, ownerType, reservation.reservedCredits, 0, pipelineKey);
+      return apiError("pipeline_trigger_failed", await trigger.text(), 502);
+    }
     const job = (await trigger.json()) as { job_id?: string | number };
     await enginePatchPage(ctx.headers, {
       slug: actImportSessionSlug(id),
@@ -122,6 +158,8 @@ export const POST = createHandler(
         snapshot_id: snapshotId,
         snapshot_slug: snapshotSlug,
         pipeline_job_id: String(job.job_id ?? ""),
+        pipeline_key: pipelineKey,
+        pipeline_reserved_credits: reservation.reservedCredits,
         metrics,
         updated_at: new Date().toISOString(),
       },

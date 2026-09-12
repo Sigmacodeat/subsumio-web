@@ -750,48 +750,6 @@ const DE: DocsContent = {
         },
       ],
     },
-    {
-      id: "tax",
-      title: "Steuer & Buchhaltung",
-      sub: "Steuererklärungen, ELSTER, StBVV, Betriebsprüfung.",
-      features: [
-        {
-          icon: "FileText",
-          title: "Steuererklärungen",
-          desc: "Erstellung und Verwaltung von Steuererklärungen (ESt, USt, GewSt, KSt). Strukturierte Erfassung, Validierung, Status-Tracking.",
-        },
-        {
-          icon: "FileText",
-          title: "Steuerbescheide",
-          desc: "Erfassung und Analyse von Steuerbescheiden. Abgleich mit Erklärung, Abweichungsanalyse, Einspruch-Fristen-Tracking.",
-        },
-        {
-          icon: "Shield",
-          title: "Betriebsprüfung",
-          desc: "Vorbereitung und Begleitung von Betriebsprüfungen. Prüffeld-Management, Dokumentbereitstellung, Protokollführung.",
-        },
-        {
-          icon: "CalendarClock",
-          title: "Steuerfristen",
-          desc: "Alle steuerlichen Fristen (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) mit automatischer Wochenend- und Feiertagsverschiebung.",
-        },
-        {
-          icon: "Calculator",
-          title: "StBVV-Gebührenrechner",
-          desc: "Steuerberatervergütungsverordnung: 10 Aktivitäten, VV-Nummern, Faktor-Berechnung, Mehrwertsteuer. Interaktiv und exportierbar.",
-        },
-        {
-          icon: "Users",
-          title: "Steuermandanten",
-          desc: "Separate Mandantenverwaltung für Steuerberater: Stammdaten, Steuernummer, Finanzamt, Zuordnung zu Erklärungen und Bescheiden.",
-        },
-        {
-          icon: "Landmark",
-          title: "ELSTER-Integration",
-          desc: "Elektronische Steuererklärungen via ELSTER. XML-Generierung, Form-Typen, Submission-Wizard — direkt aus dem Dashboard.",
-        },
-      ],
-    },
   ],
   arch: {
     title: "Technische Architektur",
@@ -799,13 +757,13 @@ const DE: DocsContent = {
     items: [
       {
         icon: "Database",
-        title: "90+ API Endpunkte",
+        title: "480+ API-Endpunkte",
         desc: "Vollständige REST-API mit Auth, Rate-Limiting, Audit-Logging und TypeScript-Typen.",
       },
       {
         icon: "FolderOpen",
-        title: "97+ Dashboard-Seiten",
-        desc: "Jede Funktion hat eine eigene, responsive Seite — von der Akte bis zum ELSTER-Wizard.",
+        title: "150+ Dashboard-Seiten",
+        desc: "Jede Funktion hat eine eigene, responsive Seite — von der Akte bis zum Kostenrechner.",
       },
       {
         icon: "Shield",
@@ -1566,48 +1524,6 @@ const EN: DocsContent = {
         },
       ],
     },
-    {
-      id: "tax",
-      title: "Tax & Accounting",
-      sub: "Tax returns, ELSTER, StBVV, tax audits.",
-      features: [
-        {
-          icon: "FileText",
-          title: "Tax Returns",
-          desc: "Preparation and management of tax returns (income, VAT, trade, corporate). Structured entry, validation, status tracking.",
-        },
-        {
-          icon: "FileText",
-          title: "Tax Assessments",
-          desc: "Capture and analysis of tax assessments. Comparison with return, deviation analysis, objection deadline tracking.",
-        },
-        {
-          icon: "Shield",
-          title: "Tax Audit",
-          desc: "Preparation and support of tax audits. Audit field management, document provision, protocol management.",
-        },
-        {
-          icon: "CalendarClock",
-          title: "Tax Deadlines",
-          desc: "All tax deadlines (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) with automatic weekend and holiday shifting.",
-        },
-        {
-          icon: "Calculator",
-          title: "StBVV Fee Calculator",
-          desc: "Tax adviser remuneration ordinance: 10 activities, VV numbers, factor calculation, VAT. Interactive and exportable.",
-        },
-        {
-          icon: "Users",
-          title: "Tax Clients",
-          desc: "Separate client management for tax advisers: master data, tax number, tax office, assignment to returns and assessments.",
-        },
-        {
-          icon: "Landmark",
-          title: "ELSTER Integration",
-          desc: "Electronic tax returns via ELSTER. XML generation, form types, submission wizard — directly from the dashboard.",
-        },
-      ],
-    },
   ],
   arch: {
     title: "Technical Architecture",
@@ -1615,13 +1531,13 @@ const EN: DocsContent = {
     items: [
       {
         icon: "Database",
-        title: "90+ API Endpoints",
+        title: "480+ API Endpoints",
         desc: "Complete REST API with auth, rate limiting, audit logging and TypeScript types.",
       },
       {
         icon: "FolderOpen",
-        title: "97+ Dashboard Pages",
-        desc: "Every function has its own responsive page — from the case file to the ELSTER wizard.",
+        title: "150+ Dashboard Pages",
+        desc: "Every function has its own responsive page — from the case file to the cost calculator.",
       },
       {
         icon: "Shield",
@@ -1830,11 +1746,11 @@ const IT_DOCS_REPLACEMENTS: Record<string, string> = {
     "Bozze assistite AI per querelle, memorie di difesa, ricorsi e rimedi legali. Con fonti e citazioni.",
   "Technical Architecture": "Architettura Tecnica",
   "Straight from the backend — no speculation.": "Direttamente dal backend — nessuna speculazione.",
-  "90+ API Endpoints": "90+ Endpoint API",
+  "480+ API Endpoints": "480+ Endpoint API",
   "Complete REST API with auth, rate limiting, audit logging and TypeScript types.":
     "API REST completa con auth, rate limiting, audit logging e tipi TypeScript.",
-  "97+ Dashboard Pages": "97+ Pagine Dashboard",
-  "Every function has its own responsive page — from the case file to the ELSTER wizard.":
+  "150+ Dashboard Pages": "150+ Pagine Dashboard",
+  "Every function has its own responsive page — from the case file to the cost calculator.":
     "Ogni funzione ha la sua pagina responsive — dal fascicolo al calcolatore costi.",
   "Self-Hosted or EU Cloud": "Self-Hosted o EU Cloud",
   "Local Docker installation or hosted in the EU with DPA. Data never leaves your control.":
@@ -1961,29 +1877,6 @@ const IT_DOCS_REPLACEMENTS: Record<string, string> = {
   "Process Strategy": "Strategia di Processo",
   "Structured strategy capture per case: argument lines, evidence, counter-arguments. With AI suggestions and success prognosis.":
     "Acquisizione strutturata della strategia per caso: linee argomentative, prove, contro-argomenti. Con suggerimenti AI e prognosi di successo.",
-  "Tax & Accounting": "Fiscali & Contabilità",
-  "Tax returns, ELSTER, StBVV, tax audits.": "Dichiarazioni fiscali, ELSTER, StBVV, audit fiscali.",
-  "Tax Returns": "Dichiarazioni Fiscali",
-  "Preparation and management of tax returns (income, VAT, trade, corporate). Structured entry, validation, status tracking.":
-    "Preparazione e gestione di dichiarazioni fiscali (reddito, IVA, commercio, società). Inserimento strutturato, validazione, tracciamento stato.",
-  "Tax Assessments": "Valutazioni Fiscali",
-  "Capture and analysis of tax assessments. Comparison with return, deviation analysis, objection deadline tracking.":
-    "Acquisizione e analisi di valutazioni fiscali. Confronto con dichiarazione, analisi deviazioni, tracciamento scadenze ricorso.",
-  "Tax Audit": "Audit Fiscale",
-  "Preparation and support of tax audits. Audit field management, document provision, protocol management.":
-    "Preparazione e supporto di audit fiscali. Gestione campi di audit, fornitura documenti, gestione protocolli.",
-  "Tax Deadlines": "Scadenze Fiscali",
-  "All tax deadlines (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) with automatic weekend and holiday shifting.":
-    "Tutte le scadenze fiscali (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) con spostamento automatico weekend e festività.",
-  "StBVV Fee Calculator": "Calcolatore StBVV",
-  "Tax adviser remuneration ordinance: 10 activities, VV numbers, factor calculation, VAT. Interactive and exportable.":
-    "Ordinamento remunerazione consulenti fiscali: 10 attività, numeri VV, calcolo fattore, IVA. Interattivo ed esportabile.",
-  "Tax Clients": "Clienti Fiscali",
-  "Separate client management for tax advisers: master data, tax number, tax office, assignment to returns and assessments.":
-    "Gestione clienti separata per consulenti fiscali: dati anagrafici, numero fiscale, ufficio fiscale, assegnazione a dichiarazioni e valutazioni.",
-  "ELSTER Integration": "Integrazione ELSTER",
-  "Electronic tax returns via ELSTER. XML generation, form types, submission wizard — directly from the dashboard.":
-    "Dichiarazioni fiscali elettroniche via ELSTER. Generazione XML, tipi modulo, wizard di invio — direttamente dalla dashboard.",
   "Chat Analytics": "Analytics Chat",
   "Usage statistics for the AI copilot: sessions, messages, token consumption, pinned answers — per day and per user.":
     "Statistiche di utilizzo per il copilota AI: sessioni, messaggi, consumo token, risposte fissate — per giorno e per utente.",
@@ -2260,11 +2153,11 @@ const ES_DOCS_REPLACEMENTS: Record<string, string> = {
     "Borradores asistidos por AI para demandas, escritos de defensa, recursos y remedios legales. Con fuentes y citas.",
   "Technical Architecture": "Arquitectura Técnica",
   "Straight from the backend — no speculation.": "Directo del backend — sin especulación.",
-  "90+ API Endpoints": "90+ Endpoint API",
+  "480+ API Endpoints": "480+ Endpoint API",
   "Complete REST API with auth, rate limiting, audit logging and TypeScript types.":
     "API REST completa con auth, rate limiting, audit logging y tipos TypeScript.",
-  "97+ Dashboard Pages": "97+ Páginas Dashboard",
-  "Every function has its own responsive page — from the case file to the ELSTER wizard.":
+  "150+ Dashboard Pages": "150+ Páginas Dashboard",
+  "Every function has its own responsive page — from the case file to the cost calculator.":
     "Cada función tiene su propia página responsive — desde el expediente hasta la calculadora de costos.",
   "Self-Hosted or EU Cloud": "Self-Hosted o EU Cloud",
   "Local Docker installation or hosted in the EU with DPA. Data never leaves your control.":
@@ -2391,33 +2284,6 @@ const ES_DOCS_REPLACEMENTS: Record<string, string> = {
   "Process Strategy": "Estrategia de Proceso",
   "Structured strategy capture per case: argument lines, evidence, counter-arguments. With AI suggestions and success prognosis.":
     "Captura estructurada de estrategia por caso: líneas argumentativas, evidencia, contraargumentos. Con sugerencias AI y pronóstico de éxito.",
-  "Tax & Accounting": "Fiscal & Contabilidad",
-  "Tax returns, ELSTER, StBVV, tax audits.":
-    "Declaraciones fiscales, ELSTER, StBVV, auditorías fiscales.",
-  "Tax Returns": "Declaraciones Fiscales",
-  "Preparation and management of tax returns (income, VAT, trade, corporate). Structured entry, validation, status tracking.":
-    "Preparación y gestión de declaraciones fiscales (renta, IVA, comercio, sociedades). Entrada estructurada, validación, seguimiento de estado.",
-  "Tax Assessments": "Liquidaciones Fiscales",
-  "Capture and analysis of tax assessments. Comparison with return, deviation analysis, objection deadline tracking.":
-    "Captura y análisis de liquidaciones fiscales. Comparación con declaración, análisis de desviaciones, seguimiento de plazos de recurso.",
-  "Tax Audit": "Auditoría Fiscal",
-  "Preparation and support of tax audits. Audit field management, document provision, protocol management.":
-    "Preparación y soporte de auditorías fiscales. Gestión de campos de auditoría, provisión de documentos, gestión de protocolos.",
-  "Tax Deadlines": "Plazos Fiscales",
-  "All tax deadlines (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) with automatic weekend and holiday shifting.":
-    "Todos los plazos fiscales (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) con desplazamiento automático de fines de semana y festivos.",
-  "StBVV Fee Calculator": "Calculadora StBVV",
-  "Tax adviser remuneration ordinance: 10 activities, VV numbers, factor calculation, VAT. Interactive and exportable.":
-    "Ordenanza de remuneración de asesores fiscales: 10 actividades, números VV, cálculo de factor, IVA. Interactiva y exportable.",
-  "Tax Clients": "Clientes Fiscales",
-  "Separate client management for tax advisers: master data, tax number, tax office, assignment to returns and assessments.":
-    "Gestión de clientes separada para asesores fiscales: datos maestros, número fiscal, oficina fiscal, asignación a declaraciones y liquidaciones.",
-  "ELSTER Integration": "Integración ELSTER",
-  "Electronic tax returns via ELSTER. XML generation, form types, submission wizard — directly from the dashboard.":
-    "Declaraciones fiscales electrónicas vía ELSTER. Generación XML, tipos de formulario, asistente de envío — directamente desde el dashboard.",
-  "Chat Analytics": "Analytics Chat",
-  "Usage statistics for the AI copilot: sessions, messages, token consumption, pinned answers — per day and per user.":
-    "Estadísticas de uso del copiloto AI: sesiones, mensajes, consumo de tokens, respuestas fijadas — por día y por usuario.",
   "Model Comparison": "Comparación de Modelos",
   "Side-by-side comparison of different AI models: same question to multiple models at once, evaluate answers next to each other.":
     "Comparación lado a lado de diferentes modelos AI: misma pregunta a múltiples modelos a la vez, evaluar respuestas una al lado de otra.",
@@ -2690,11 +2556,11 @@ const PL_DOCS_REPLACEMENTS: Record<string, string> = {
     "Projekty asystowane AI dla pozwów, pism obronnych, skarg i środków prawnych. Ze źródłami i cytatami.",
   "Technical Architecture": "Architektura Techniczna",
   "Straight from the backend — no speculation.": "Prosto z backendu — bez spekulacji.",
-  "90+ API Endpoints": "90+ Endpoint API",
+  "480+ API Endpoints": "480+ Endpoint API",
   "Complete REST API with auth, rate limiting, audit logging and TypeScript types.":
     "Kompletne REST API z auth, rate limiting, audit logging i typami TypeScript.",
-  "97+ Dashboard Pages": "97+ Stron Dashboard",
-  "Every function has its own responsive page — from the case file to the ELSTER wizard.":
+  "150+ Dashboard Pages": "150+ Stron Dashboard",
+  "Every function has its own responsive page — from the case file to the cost calculator.":
     "Każda funkcja ma własną stronę responsive — od akt sprawy po kalkulator kosztów.",
   "Self-Hosted or EU Cloud": "Self-Hosted lub EU Cloud",
   "Local Docker installation or hosted in the EU with DPA. Data never leaves your control.":
@@ -2821,29 +2687,6 @@ const PL_DOCS_REPLACEMENTS: Record<string, string> = {
   "Process Strategy": "Strategia Procesu",
   "Structured strategy capture per case: argument lines, evidence, counter-arguments. With AI suggestions and success prognosis.":
     "Ustrukturyzowane przechwytywanie strategii per sprawa: linie argumentacyjne, dowody, kontrargumenty. Z sugestiami AI i prognozą sukcesu.",
-  "Tax & Accounting": "Podatki & Księgowość",
-  "Tax returns, ELSTER, StBVV, tax audits.": "Zeznania podatkowe, ELSTER, StBVV, audyty podatkowe.",
-  "Tax Returns": "Zeznania Podatkowe",
-  "Preparation and management of tax returns (income, VAT, trade, corporate). Structured entry, validation, status tracking.":
-    "Przygotowanie i zarządzanie zeznaniami podatkowymi (dochodowe, VAT, handlowe, spółkowe). Ustrukturyzowany wpis, walidacja, śledzenie statusu.",
-  "Tax Assessments": "Decyzje Podatkowe",
-  "Capture and analysis of tax assessments. Comparison with return, deviation analysis, objection deadline tracking.":
-    "Przechwytywanie i analiza decyzji podatkowych. Porównanie z zeznaniem, analiza odchyleń, śledzenie terminów odwołań.",
-  "Tax Audit": "Audyt Podatkowy",
-  "Preparation and support of tax audits. Audit field management, document provision, protocol management.":
-    "Przygotowanie i wsparcie audytów podatkowych. Zarządzanie obszarami audytu, dostarczanie dokumentów, zarządzanie protokołami.",
-  "Tax Deadlines": "Terminy Podatkowe",
-  "All tax deadlines (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) with automatic weekend and holiday shifting.":
-    "Wszystkie terminy podatkowe (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) z automatycznym przesunięciem weekendów i świąt.",
-  "StBVV Fee Calculator": "Kalkulator StBVV",
-  "Tax adviser remuneration ordinance: 10 activities, VV numbers, factor calculation, VAT. Interactive and exportable.":
-    "Rozporządzenie o wynagrodzeniu doradców podatkowych: 10 działalności, numery VV, obliczanie czynnika, VAT. Interaktywny i eksportowalny.",
-  "Tax Clients": "Klienci Podatkowi",
-  "Separate client management for tax advisers: master data, tax number, tax office, assignment to returns and assessments.":
-    "Oddzielne zarządzanie klientami dla doradców podatkowych: dane master, NIP, urząd skarbowy, przypisanie do zeznań i decyzji.",
-  "ELSTER Integration": "Integracja ELSTER",
-  "Electronic tax returns via ELSTER. XML generation, form types, submission wizard — directly from the dashboard.":
-    "Elektroniczne zeznania podatkowe przez ELSTER. Generacja XML, typy formularzy, kreator wysyłki — bezpośrednio z dashboard.",
   "Chat Analytics": "Analytics Czatu",
   "Usage statistics for the AI copilot: sessions, messages, token consumption, pinned answers — per day and per user.":
     "Statystyki użycia kopilota AI: sesje, wiadomości, zużycie tokenów, przypięte odpowiedzi — per dzień i per użytkownik.",
@@ -3119,11 +2962,11 @@ const FR_DOCS_REPLACEMENTS: Record<string, string> = {
     "Projets assistés par AI pour plaintes, mémoires de défense, recours et remèdes juridiques. Avec sources et citations.",
   "Technical Architecture": "Architecture Technique",
   "Straight from the backend — no speculation.": "Directement du backend — sans spéculation.",
-  "90+ API Endpoints": "90+ Endpoints API",
+  "480+ API Endpoints": "480+ Endpoints API",
   "Complete REST API with auth, rate limiting, audit logging and TypeScript types.":
     "API REST complète avec auth, rate limiting, audit logging et types TypeScript.",
-  "97+ Dashboard Pages": "97+ Pages Dashboard",
-  "Every function has its own responsive page — from the case file to the ELSTER wizard.":
+  "150+ Dashboard Pages": "150+ Pages Dashboard",
+  "Every function has its own responsive page — from the case file to the cost calculator.":
     "Chaque fonction a sa propre page responsive — du dossier au calculateur de coûts.",
   "Self-Hosted or EU Cloud": "Self-Hosted ou EU Cloud",
   "Local Docker installation or hosted in the EU with DPA. Data never leaves your control.":
@@ -3250,30 +3093,6 @@ const FR_DOCS_REPLACEMENTS: Record<string, string> = {
   "Process Strategy": "Stratégie de Procédure",
   "Structured strategy capture per case: argument lines, evidence, counter-arguments. With AI suggestions and success prognosis.":
     "Capture structurée de stratégie par dossier: lignes argumentaires, preuves, contre-arguments. Avec suggestions AI et pronostic de succès.",
-  "Tax & Accounting": "Fiscalité & Comptabilité",
-  "Tax returns, ELSTER, StBVV, tax audits.":
-    "Déclarations fiscales, ELSTER, StBVV, audits fiscaux.",
-  "Tax Returns": "Déclarations Fiscales",
-  "Preparation and management of tax returns (income, VAT, trade, corporate). Structured entry, validation, status tracking.":
-    "Préparation et gestion des déclarations fiscales (impôt, TVA, commerce, société). Saisie structurée, validation, suivi de statut.",
-  "Tax Assessments": "Avis d'Imposition",
-  "Capture and analysis of tax assessments. Comparison with return, deviation analysis, objection deadline tracking.":
-    "Capture et analyse des avis d'imposition. Comparaison avec déclaration, analyse des écarts, suivi des délais de recours.",
-  "Tax Audit": "Audit Fiscal",
-  "Preparation and support of tax audits. Audit field management, document provision, protocol management.":
-    "Préparation et support des audits fiscaux. Gestion des domaines d'audit, provision de documents, gestion des protocoles.",
-  "Tax Deadlines": "Délais Fiscaux",
-  "All tax deadlines (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) with automatic weekend and holiday shifting.":
-    "Tous les délais fiscaux (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) avec décalage automatique des week-ends et jours fériés.",
-  "StBVV Fee Calculator": "Calculateur StBVV",
-  "Tax adviser remuneration ordinance: 10 activities, VV numbers, factor calculation, VAT. Interactive and exportable.":
-    "Ordonnance de rémunération des conseillers fiscaux: 10 activités, numéros VV, calcul de facteur, TVA. Interactif et exportable.",
-  "Tax Clients": "Clients Fiscaux",
-  "Separate client management for tax advisers: master data, tax number, tax office, assignment to returns and assessments.":
-    "Gestion séparée des clients pour conseillers fiscaux: données maîtresses, numéro fiscal, bureau des impôts, assignation aux déclarations et avis.",
-  "ELSTER Integration": "Intégration ELSTER",
-  "Electronic tax returns via ELSTER. XML generation, form types, submission wizard — directly from the dashboard.":
-    "Déclarations fiscales électroniques via ELSTER. Génération XML, types de formulaires, assistant de soumission — directement depuis le dashboard.",
   "Chat Analytics": "Analytics Chat",
   "Usage statistics for the AI copilot: sessions, messages, token consumption, pinned answers — per day and per user.":
     "Statistiques d'utilisation du copilote AI: sessions, messages, consommation tokens, réponses épinglées — par jour et par utilisateur.",
@@ -3551,11 +3370,11 @@ const NL_DOCS_REPLACEMENTS: Record<string, string> = {
   "Technical Architecture": "Technische Architectuur",
   "Straight from the backend — no speculation.":
     "Rechtstreeks vanuit de backend — geen speculatie.",
-  "90+ API Endpoints": "90+ API-Endpoints",
+  "480+ API Endpoints": "480+ API-Endpoints",
   "Complete REST API with auth, rate limiting, audit logging and TypeScript types.":
     "Compleet REST API met auth, rate limiting, audit logging en TypeScript-types.",
-  "97+ Dashboard Pages": "97+ Dashboard-Pagina's",
-  "Every function has its own responsive page — from the case file to the ELSTER wizard.":
+  "150+ Dashboard Pages": "150+ Dashboard-Pagina's",
+  "Every function has its own responsive page — from the case file to the cost calculator.":
     "Elke functie heeft zijn eigen responsive pagina — van het dossier tot de kosten-calculator.",
   "Self-Hosted or EU Cloud": "Self-Hosted of EU Cloud",
   "Local Docker installation or hosted in the EU with DPA. Data never leaves your control.":
@@ -3682,29 +3501,6 @@ const NL_DOCS_REPLACEMENTS: Record<string, string> = {
   "Process Strategy": "Processtrategie",
   "Structured strategy capture per case: argument lines, evidence, counter-arguments. With AI suggestions and success prognosis.":
     "Gestructureerde strategie-vastlegging per zaak: argumentatielijnen, bewijs, tegenargumenten. Met AI-suggesties en succesprognose.",
-  "Tax & Accounting": "Fiscaliteit & Boekhouding",
-  "Tax returns, ELSTER, StBVV, tax audits.": "Belastingaangiften, ELSTER, StBVV, belastingaudits.",
-  "Tax Returns": "Belastingaangiften",
-  "Preparation and management of tax returns (income, VAT, trade, corporate). Structured entry, validation, status tracking.":
-    "Voorbereiding en beheer van belastingaangiften (inkomsten, btw, handel, vennootschap). Gestructureerde invoer, validatie, status-tracking.",
-  "Tax Assessments": "Belastingaanslagen",
-  "Capture and analysis of tax assessments. Comparison with return, deviation analysis, objection deadline tracking.":
-    "Vastlegging en analyse van belastingaanslagen. Vergelijking met aangifte, afwijkingsanalyse, bezwaartermijn-tracking.",
-  "Tax Audit": "Belastingaudit",
-  "Preparation and support of tax audits. Audit field management, document provision, protocol management.":
-    "Voorbereiding en ondersteuning van belastingaudits. Audit-veldbeheer, documentvoorziening, protocolbeheer.",
-  "Tax Deadlines": "Belastingtermijnen",
-  "All tax deadlines (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) with automatic weekend and holiday shifting.":
-    "Alle belastingtermijnen (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) met automatische weekend- en feestdagaverschuiving.",
-  "StBVV Fee Calculator": "StBVV-Calculator",
-  "Tax adviser remuneration ordinance: 10 activities, VV numbers, factor calculation, VAT. Interactive and exportable.":
-    "Belastingadviseurs-vergoedingsverordening: 10 activiteiten, VV-nummers, factorberekening, btw. Interactief en exporteerbaar.",
-  "Tax Clients": "Belastingcliënten",
-  "Separate client management for tax advisers: master data, tax number, tax office, assignment to returns and assessments.":
-    "Separate cliëntbeheer voor belastingadviseurs: masterdata, belastingnummer, belastingkantoor, toewijzing aan aangiften en aanslagen.",
-  "ELSTER Integration": "ELSTER-Integratie",
-  "Electronic tax returns via ELSTER. XML generation, form types, submission wizard — directly from the dashboard.":
-    "Elektronische belastingaangiften via ELSTER. XML-generatie, formuliertypes, indieningswizard — direct vanuit het dashboard.",
   "Chat Analytics": "Chat Analytics",
   "Usage statistics for the AI copilot: sessions, messages, token consumption, pinned answers — per day and per user.":
     "Gebruiksstatistieken voor de AI-copiloot: sessies, berichten, token-verbruik, vastgemaakte antwoorden — per dag en per gebruiker.",

@@ -36,6 +36,7 @@ import { useState, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
+import { csrfFetch } from "@/lib/csrf";
 
 const API_BASE = "/api/admin/corpus-command-center";
 
@@ -199,7 +200,7 @@ function SyncStatusSection({
 
   const fetchMissing = useMutation({
     mutationFn: async (payload: { action: string; source_key: string }) => {
-      const res = await fetch("/api/admin/corpus-pipeline", {
+      const res = await csrfFetch("/api/admin/corpus-pipeline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -788,7 +789,7 @@ function PipelineSection({
 
   const pipelineAction = useMutation({
     mutationFn: async (payload: Record<string, unknown>) => {
-      const res = await fetch("/api/admin/corpus-pipeline", {
+      const res = await csrfFetch("/api/admin/corpus-pipeline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -1234,7 +1235,9 @@ function RisDeltaSection({
   const { addToast } = useToast();
   const triggerMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/admin/corpus-command-center/trigger-delta", { method: "POST" });
+      const res = await csrfFetch("/api/admin/corpus-command-center/trigger-delta", {
+        method: "POST",
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json();
     },

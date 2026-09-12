@@ -217,7 +217,7 @@ export default function ClientPortalPage() {
                   className={`text-xs ${
                     space.status === "active"
                       ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
-                      : "border-gray-500/20 bg-gray-500/10 text-gray-400"
+                      : "border-[color:var(--ds-neutral-border)] bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)]"
                   }`}
                 >
                   {space.status === "active" ? "Aktiv" : "Abgelaufen"}
@@ -294,7 +294,7 @@ export default function ClientPortalPage() {
                   variant="default"
                   className={`text-xs ${
                     c.status === "closed"
-                      ? "border-gray-500/20 bg-gray-500/10 text-gray-400"
+                      ? "border-[color:var(--ds-neutral-border)] bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)]"
                       : c.status === "won"
                         ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                         : "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"

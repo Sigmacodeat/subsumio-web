@@ -221,7 +221,7 @@ async function connectSql(databaseUrl?: string) {
   if (!url) {
     throw new Error(
       "Keine DB-Verbindung. --database-url postgresql://... oder env DATABASE_URL setzen " +
-        "(Prod: SSH-Tunnel, z. B. postgresql://user:pass@localhost:15432/db)."
+        "(Prod: SSH-Tunnel mit DATABASE_URL über den lokalen Tunnelport)."
     );
   }
   const { default: postgres } = await import("postgres");

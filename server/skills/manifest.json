@@ -320,26 +320,6 @@
       "description": "Generates German court brief drafts (Klageschrift, Klageerwiderung, Berufung, einstweilige Verfuegung) from case brain context in ZPO format. Drafts only - attorney review required."
     },
     {
-      "name": "tax-ruling-lookup",
-      "path": "tax-ruling-lookup/SKILL.md",
-      "description": "Analyzes tax notices (Bescheide) using the indexed tax corpus, computes Einspruch deadlines per AO, rates appeal prospects, and drafts Einspruchsschreiben."
-    },
-    {
-      "name": "steuer-subsumption",
-      "path": "steuer-subsumption/SKILL.md",
-      "description": "Tax subsumption (Tatbestand → Steuerfolge) over EStG/KStG/UStG/GewStG/AO (DE) and EStG/UStG/BAO (AT). Gutachtenstil with cited §§ and BFH/BFG case law; advisor-review-required."
-    },
-    {
-      "name": "steuer-gestaltung",
-      "path": "steuer-gestaltung/SKILL.md",
-      "description": "Comparative tax-structuring options (Rechtsformwahl, Holding/§8b, Thesaurierung §34a, Umwandlung) with burden estimates and a § 42 AO substance-risk note. Advisory tool for tax professionals."
-    },
-    {
-      "name": "umsatzsteuer-check",
-      "path": "umsatzsteuer-check/SKILL.md",
-      "description": "VAT/USt compliance check: place of supply (§3a), Reverse-Charge (§13b), intra-Community supply (§6a), input VAT (§15), invoice fields (§14/14a) and e-invoicing mandate. Checklist + gap report."
-    },
-    {
       "name": "policy-review",
       "path": "policy-review/SKILL.md",
       "description": "Broker-side insurance policy review: coverage scope, limits/sub-limits, deductibles and exclusions extracted with clause locations, risks flagged against the client situation. Not a binding coverage confirmation."

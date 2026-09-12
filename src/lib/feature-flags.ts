@@ -125,17 +125,6 @@ const DEFAULT_FLAGS: FeatureFlag[] = [
     updatedAt: new Date().toISOString(),
     updatedBy: "system",
   },
-  {
-    key: "elster_integration",
-    name: "ELSTER Integration",
-    description: "Tax filing via ELSTER XML submission",
-    enabled: true,
-    rolloutPercentage: 100,
-    allowedPlans: [],
-    allowedRoles: [],
-    updatedAt: new Date().toISOString(),
-    updatedBy: "system",
-  },
 ];
 
 async function ensureDataDir(): Promise<void> {

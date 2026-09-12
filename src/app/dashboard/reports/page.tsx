@@ -75,7 +75,7 @@ function statusIcon(status: AgentStatus) {
     case "failed":
       return <XCircle size={14} className="text-[color:var(--ds-danger-text)]" />;
     case "paused":
-      return <Clock size={14} className="text-gray-400" />;
+      return <Clock size={14} className="text-[color:var(--ds-neutral-text)]" />;
     case "partial_success":
       return <AlertCircle size={14} className="text-[color:var(--ds-warning-text)]" />;
     case "needs_review":
@@ -110,7 +110,7 @@ function statusColor(status: AgentStatus): string {
     case "failed":
       return "bg-[color:var(--ds-danger-solid)]";
     case "paused":
-      return "bg-gray-500";
+      return "bg-[color:var(--ds-neutral-text)]";
     case "partial_success":
       return "bg-[color:var(--ds-warning-solid)]";
     case "needs_review":

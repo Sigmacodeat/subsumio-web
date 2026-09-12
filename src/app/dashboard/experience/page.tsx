@@ -61,9 +61,9 @@ interface LayerSummary {
 }
 
 const LEVEL_COLORS: Record<string, string> = {
-  beginner: "bg-gray-100 text-gray-700",
+  beginner: "bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)]",
   intermediate: "bg-[color:var(--ds-info-solid)] text-[color:var(--ds-info-text)]",
-  advanced: "bg-purple-100 text-purple-700",
+  advanced: "bg-[color:var(--ds-category-purple-bg)] text-[color:var(--ds-category-purple-text)]",
   expert: "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)]",
 };
 

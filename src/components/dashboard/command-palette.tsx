@@ -247,19 +247,17 @@ export function CommandPalette({
         keywords: item.keywords,
       });
     }
-    // Legal-only routes that live outside the sidebar but must stay findable.
-    if (industry !== "tax") {
-      commands.push({
-        id: "altlasten",
-        label: "nav.altlasten",
-        labelKey: "nav.altlasten",
-        icon: Archive,
-        href: "/dashboard/altlasten",
-        section: "nav.section.clients_comm",
-        sectionKey: "nav.section.clients_comm",
-        keywords: "bestandsakten altlasten backlog alte akten archiv legacy",
-      });
-    }
+    // Legal-only route that lives outside the sidebar but must stay findable.
+    commands.push({
+      id: "altlasten",
+      label: "nav.altlasten",
+      labelKey: "nav.altlasten",
+      icon: Archive,
+      href: "/dashboard/altlasten",
+      section: "nav.section.clients_comm",
+      sectionKey: "nav.section.clients_comm",
+      keywords: "bestandsakten altlasten backlog alte akten archiv legacy",
+    });
     return commands;
   }, [industry, role]);
   const resolveLabel = useCallback(

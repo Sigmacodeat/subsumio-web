@@ -48,9 +48,9 @@ export class AdvokatImportConnector extends BaseConnector {
   constructor(config: ConnectorConfig = {}) {
     super("advokat-import", config);
     this.watchDir = String(config.filters?.watch_dir ?? "");
-    this.targetSourceId = String(
-      config.filters?.target_source_id ?? process.env.ADVOKAT_TARGET_SOURCE_ID ?? "default"
-    );
+    // The target source is registry-owned. Never honour target_source_id
+    // from an import directory or from a remote document's metadata.
+    this.targetSourceId = String(config.tenant_source_id ?? "default");
     if (!this.watchDir) {
       throw new Error("advokat-import requires filters.watch_dir");
     }
@@ -206,7 +206,6 @@ export class AdvokatImportConnector extends BaseConnector {
         slug,
         title: doc.title,
         matter_reference: doc.matterReference,
-        target_source_id: this.targetSourceId,
       },
     };
   }

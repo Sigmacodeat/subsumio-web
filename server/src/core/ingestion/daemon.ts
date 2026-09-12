@@ -87,7 +87,22 @@ export type DispatchOutcome =
   | { kind: "queued"; jobId?: number }
   | { kind: "failed"; error: string };
 
-export type IngestionDispatcher = (event: IngestionEvent) => Promise<DispatchOutcome>;
+/** Trusted context attached by a registered source, never by its payload. */
+export interface IngestionDispatchContext {
+  connector?: {
+    connector_instance_id: string;
+    tenant_source_id: string;
+    default_case_slug?: string;
+    responsible_user_id?: string;
+    owner_id?: string;
+    owner_type?: "user" | "org";
+  };
+}
+
+export type IngestionDispatcher = (
+  event: IngestionEvent,
+  context?: IngestionDispatchContext
+) => Promise<DispatchOutcome>;
 
 export interface IngestionDaemonOpts {
   /** Engine handle exposed to sources via ctx.engine. Sources should only
@@ -479,7 +494,14 @@ export class IngestionDaemon {
     let attempt = 0;
     while (!this._stopping) {
       try {
-        const outcome = await this.opts.dispatch(effectiveEvent);
+        const registered = state.registration.source as IngestionSource & {
+          getDispatchContext?: () => IngestionDispatchContext["connector"] | undefined;
+        };
+        const connector = registered.getDispatchContext?.();
+        const outcome = await this.opts.dispatch(
+          effectiveEvent,
+          connector ? { connector } : undefined
+        );
         if (outcome.kind === "queued") return;
         attempt++;
         this.opts.logger.warn(

@@ -1378,11 +1378,12 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
 
   // v0.42: Connector status endpoint for admin dashboard.
   // Returns all configured connectors with their enabled/disabled state
-  // and last-known health. Reads from the connector registry on disk.
+  // and last-known health. SaaS instances are read from encrypted database
+  // persistence; local CLI mode can still use its explicit local registry.
   app.get("/admin/api/connectors", requireAdmin, async (_req: Request, res: Response) => {
     try {
       const { ConnectorManager } = await import("../core/ingestion/connectors/manager.ts");
-      const mgr = new ConnectorManager();
+      const mgr = new ConnectorManager(undefined, engine);
       const entries = await mgr.list();
       const enabled = await mgr.loadEnabled();
       const enabledIds = new Set(enabled.map((c) => c.id));
@@ -1411,7 +1412,7 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
     async (req: Request, res: Response) => {
       try {
         const service = String(req.params.service);
-        const { ConnectorManager, SUPPORTED_CONNECTORS, CONNECTOR_REGISTRY } =
+        const { ConnectorManager, SUPPORTED_CONNECTORS } =
           await import("../core/ingestion/connectors/manager.ts");
         if (!SUPPORTED_CONNECTORS.includes(service)) {
           res.status(400).json({
@@ -1420,7 +1421,7 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
           });
           return;
         }
-        const mgr = new ConnectorManager();
+        const mgr = new ConnectorManager(undefined, engine);
         const entries = await mgr.list();
         const entry = entries.find((e) => e.service === service);
         if (!entry) {
@@ -1436,24 +1437,7 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
           });
           return;
         }
-        // Load raw registry to get config for instantiation.
-        const rawPath = (mgr as any)._registryPath ? (mgr as any)._registryPath() : "";
-        const { readFileSync, existsSync } = await import("node:fs");
-        let config: Record<string, unknown> = {};
-        if (existsSync(rawPath)) {
-          const raw = JSON.parse(readFileSync(rawPath, "utf-8")) as Array<{
-            service: string;
-            config: Record<string, unknown>;
-          }>;
-          const found = raw.find((r) => r.service === service);
-          if (found) config = found.config;
-        }
-        const Ctor = CONNECTOR_REGISTRY[service];
-        if (!Ctor) {
-          res.status(500).json({ error: "internal", message: "Connector registry inconsistency" });
-          return;
-        }
-        const connector = new Ctor(config);
+        const connector = await mgr.createConfigured(entry.id);
         connector.sync().catch((err: unknown) => {
           console.error(
             `[admin] Manual sync failed for ${service}:`,
@@ -1484,7 +1468,7 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
           });
           return;
         }
-        const mgr = new ConnectorManager();
+        const mgr = new ConnectorManager(undefined, engine);
         const entries = await mgr.list();
         const entry = entries.find((e) => e.service === service);
         if (!entry) {
@@ -1519,7 +1503,7 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
           });
           return;
         }
-        const mgr = new ConnectorManager();
+        const mgr = new ConnectorManager(undefined, engine);
         const entries = await mgr.list();
         const entry = entries.find((e) => e.service === service);
         if (!entry) {
@@ -2964,11 +2948,14 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // ---------------------------------------------------------------------------
   let connectorDaemon: Awaited<ReturnType<typeof startConnectorIngestion>> | undefined;
   try {
-    const dispatch: import("../core/ingestion/daemon.ts").IngestionDispatcher = async (event) => {
+    const dispatch: import("../core/ingestion/daemon.ts").IngestionDispatcher = async (
+      event,
+      context
+    ) => {
       const queue = new MinionQueue(engine);
       const job = await queue.add(
         "ingest_capture",
-        { event },
+        { event, ...(context?.connector ? { connector_context: context.connector } : {}) },
         {
           idempotency_key: `ingest:${event.source_kind}:${event.content_hash}`,
           maxWaiting: 100,

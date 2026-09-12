@@ -110,6 +110,10 @@ export const CREDIT_RATE_CARD: Record<string, ModelCreditRate> = {
     cacheCreate: 2.5,
     output: 10,
   }),
+  "openrouter:anthropic/claude-haiku-4.5": rateFromCanonical(
+    "openrouter:anthropic/claude-haiku-4.5",
+    { input: 12, cachedInput: 1.2, cacheCreate: 15, output: 60 }
+  ),
   "anthropic:claude-haiku-4-5-20251001": rateFromCanonical("anthropic:claude-haiku-4-5-20251001", {
     input: 2,
     cachedInput: 0.2,
@@ -129,6 +133,10 @@ export const CREDIT_RATE_CARD: Record<string, ModelCreditRate> = {
     cacheCreate: 7.5,
     output: 30,
   }),
+  "openrouter:anthropic/claude-sonnet-4.6": rateFromCanonical(
+    "openrouter:anthropic/claude-sonnet-4.6",
+    { input: 36, cachedInput: 3.6, cacheCreate: 45, output: 180 }
+  ),
   // BenGER Benchathon #1 (69.3), AT-Future-Law Gesamtsieger, für Subsumption + Drafter
   "anthropic:claude-opus-4-8": rateFromCanonical("anthropic:claude-opus-4-8", {
     input: 10,
@@ -157,6 +165,12 @@ export const CREDIT_RATE_CARD: Record<string, ModelCreditRate> = {
     cachedInput: 1,
     cacheCreate: 12.5,
     output: 30,
+  }),
+  "openrouter:openai/gpt-5.4": rateFromCanonical("openrouter:openai/gpt-5.4", {
+    input: 30,
+    cachedInput: 3,
+    cacheCreate: 37.5,
+    output: 180,
   }),
   "openai:gpt-5.4-mini": rateFromCanonical("openai:gpt-5.4-mini", {
     input: 1,
@@ -224,6 +238,12 @@ export const CREDIT_RATE_CARD: Record<string, ModelCreditRate> = {
     cacheCreate: 0.35,
     output: 0.56,
   }),
+  "openrouter:deepseek/deepseek-chat": rateFromCanonical("openrouter:deepseek/deepseek-chat", {
+    input: 3.84,
+    cachedInput: 0.384,
+    cacheCreate: 4.8,
+    output: 10.68,
+  }),
 
   // ── xAI Grok (HAQQ #2, schnell) ─────────────────────────────────────────
   "xai:grok-4.3": rateFromCanonical("xai:grok-4.3", {
@@ -231,6 +251,12 @@ export const CREDIT_RATE_CARD: Record<string, ModelCreditRate> = {
     cachedInput: 0.25,
     cacheCreate: 3.125,
     output: 5,
+  }),
+  "openrouter:x-ai/grok-4.3": rateFromCanonical("openrouter:x-ai/grok-4.3", {
+    input: 15,
+    cachedInput: 1.5,
+    cacheCreate: 18.75,
+    output: 30,
   }),
 
   // ── Mistral (EU-hosted, GDPR) ───────────────────────────────────────────

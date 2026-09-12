@@ -13,7 +13,6 @@ import {
   Landmark,
   Mail,
   MessageSquareText,
-  Receipt,
   RefreshCw,
   Search,
   User,
@@ -31,7 +30,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ReviewInboxTab } from "@/components/dashboard/review-inbox-tab";
-import { TaxTriagePanel } from "@/components/tax/tax-triage-panel";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
@@ -224,7 +222,7 @@ function tr(key: string, lang: Lang): string {
   return entry ? (lang === "en" ? entry.en : entry.de) : key;
 }
 
-type View = "messages" | "review" | "tax";
+type View = "messages" | "review";
 
 export default function CommunicationsPage() {
   const { t, lang } = useLang();
@@ -241,8 +239,7 @@ export default function CommunicationsPage() {
   // directly (used by sidebar badge + dashboard action banner).
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get("view");
-    if (requested === "review" || requested === "messages" || requested === "tax")
-      setView(requested);
+    if (requested === "review" || requested === "messages") setView(requested);
   }, []);
 
   const batchQuery = useQuery({
@@ -365,7 +362,6 @@ export default function CommunicationsPage() {
   const VIEW_TABS: Array<{ key: View; label: string; icon: React.ElementType }> = [
     { key: "messages", label: lang === "en" ? "Messages" : "Nachrichten", icon: InboxIcon },
     { key: "review", label: lang === "en" ? "Review" : "Eingang prüfen", icon: ClipboardCheck },
-    { key: "tax", label: lang === "en" ? "Tax Triage" : "Steuer-Triage", icon: Receipt },
   ];
 
   return (
@@ -420,9 +416,6 @@ export default function CommunicationsPage() {
 
       {/* Review Inbox Tab */}
       {view === "review" && <ReviewInboxTab />}
-
-      {/* Tax Triage Tab */}
-      {view === "tax" && <TaxTriagePanel />}
 
       {/* Messages view */}
       {view === "messages" && (

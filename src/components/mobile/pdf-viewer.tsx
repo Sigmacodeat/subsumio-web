@@ -144,7 +144,7 @@ export function PdfViewer({ url, filename, open, onOpenChange }: PdfViewerProps)
       </div>
 
       {/* PDF Content */}
-      <div ref={containerRef} className="flex-1 overflow-auto bg-gray-900">
+      <div ref={containerRef} className="flex-1 overflow-auto bg-[color:var(--ds-neutral-bg)]">
         {loading && !error && (
           <div className="flex h-full items-center justify-center" role="status" aria-live="polite">
             <Loader2 size={32} className="animate-spin text-[color:var(--ds-text-muted)]" />

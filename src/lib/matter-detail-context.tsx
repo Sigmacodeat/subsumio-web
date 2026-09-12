@@ -1486,9 +1486,17 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
           "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
       };
     if (es === "processing")
-      return { key: "uploaded", color: "bg-gray-500/10 border-gray-500/20 text-gray-600" };
+      return {
+        key: "uploaded",
+        color:
+          "bg-[color:var(--ds-neutral-bg)] border-[color:var(--ds-neutral-border)] text-[color:var(--ds-neutral-text)]",
+      };
     if (es === "uploaded")
-      return { key: "uploaded", color: "bg-gray-500/10 border-gray-500/20 text-gray-600" };
+      return {
+        key: "uploaded",
+        color:
+          "bg-[color:var(--ds-neutral-bg)] border-[color:var(--ds-neutral-border)] text-[color:var(--ds-neutral-text)]",
+      };
     const ocr = doc.ocr_status;
     if (ocr === "ocr_complete")
       return {
@@ -1508,7 +1516,11 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
         color:
           "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
       };
-    return { key: "uploaded", color: "bg-gray-500/10 border-gray-500/20 text-gray-600" };
+    return {
+      key: "uploaded",
+      color:
+        "bg-[color:var(--ds-neutral-bg)] border-[color:var(--ds-neutral-border)] text-[color:var(--ds-neutral-text)]",
+    };
   }
 
   function formatUploadBytesLocal(bytes: number): string {

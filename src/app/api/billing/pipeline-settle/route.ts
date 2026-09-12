@@ -5,25 +5,22 @@
  *   1. berechnet die tatsächlichen Kosten aus den Token-Usages
  *   2. verrechnet diese genau einmal gegen die bereits abgebuchte Reservation
  *
- * Zwei Aufrufer, zwei Auth-Wege:
- *   - Die Engine ruft server-seitig auf (kein Browser-Tab, keine Session) —
- *     authentifiziert über den x-engine-webhook-key Header (ENGINE_WEBHOOK_API_KEY),
- *     denselben Mechanismus wie /api/billing/engine-token-report. owner_id/
- *     owner_type kommen dann aus dem Body, weil es keine ctx.user gibt.
- *   - Ein Browser-Client (Legacy-Fallback) ruft mit Session-Auth auf; ownerId
- *     kommt dann aus ctx.user, nicht aus dem Body (ein Client darf sich nicht
- *     selbst als beliebigen owner_id ausgeben).
+ * Ausschließlich die Engine darf diesen Endpunkt serverseitig aufrufen. Sie
+ * authentifiziert sich über x-engine-webhook-key (ENGINE_WEBHOOK_API_KEY).
+ * Browser-Settlement ist absichtlich nicht erlaubt: Nutzereingaben dürfen nie
+ * Reservierungsbetrag oder Ist-Verbrauch bestimmen.
  *
  * Idempotency: pipeline_key (+ Layer-Index) verhindert Double-Settlement bei Retries.
  */
 
 import { z } from "zod";
-import { createHandler, apiError, type RouteContext } from "@/lib/api-handler";
+import { apiError, createWebhookHandler } from "@/lib/api-handler";
 import type { NextRequest } from "next/server";
 import {
   refundCredits,
   deductCredits,
   getBalance,
+  getCreditReservation,
   checkAndSendBudgetAlert,
   type OwnerType,
 } from "@/lib/billing/credits";
@@ -33,6 +30,7 @@ import {
   type TokenUsage,
 } from "@/lib/billing/credit-rate-card";
 import { timingSafeCompare } from "@/lib/crypto-utils";
+import { clientIp } from "@/lib/auth/rate-limit";
 
 const tokenUsageSchema = z.object({
   modelId: z.string().min(1),
@@ -55,21 +53,36 @@ const settleSchema = z.object({
   failed_at_layer: z.number().int().min(1).optional(),
   /** Total Layer Count der Pipeline (für proportionale Berechnung bei failed_at_layer) */
   total_layers: z.number().int().min(1).optional(),
-  /** Nur für den Engine-Webhook-Pfad: es gibt keine ctx.user, also muss der
-   *  Owner explizit mitgeschickt werden. Vom Session-Pfad ignoriert. */
-  owner_id: z.string().min(1).optional(),
-  owner_type: z.enum(["user", "org"]).optional(),
+  owner_id: z.string().min(1),
+  owner_type: z.enum(["user", "org"]),
 });
 
 type SettleBody = z.infer<typeof settleSchema>;
 
-/** Shared settlement core — used by both the webhook path and the session path. */
+/** Settlement core for the authenticated engine webhook. */
 async function runSettlement(
   ownerId: string,
   ownerType: OwnerType,
   body: SettleBody,
   userEmail?: string
 ): Promise<Response> {
+  const reservation = await getCreditReservation(ownerId, ownerType, body.pipeline_key);
+  if (!reservation) {
+    return apiError(
+      "reservation_not_found",
+      "Keine passende Credit-Reservation für diese Pipeline gefunden",
+      404
+    );
+  }
+  if (roundCredits(body.reserved_credits) !== reservation.reservedCredits) {
+    return apiError(
+      "reservation_mismatch",
+      "Der übermittelte Reservierungsbetrag stimmt nicht mit dem Ledger überein",
+      409
+    );
+  }
+  const reservedCredits = reservation.reservedCredits;
+
   // Die Reservation ist bereits beim Start vom Guthaben abgezogen. Deshalb
   // dürfen die einzelnen LLM-Calls hier nicht nochmals abgebucht werden.
   // Wir berechnen nur den Ist-Verbrauch und erstatten danach den Rest zurück.
@@ -90,17 +103,17 @@ async function runSettlement(
     // Failed-Request Refund: proportionale Berechnung
     // Pipeline brach bei Layer N von M ab → nur N/M der Reservation wird abgezogen
     const proportion = body.failed_at_layer / body.total_layers;
-    actualCredits = body.reserved_credits * proportion;
+    actualCredits = reservedCredits * proportion;
   } else {
     // Fallback: volle Reservation (sollte nicht vorkommen wenn Engine angeschlossen)
-    actualCredits = body.reserved_credits;
+    actualCredits = reservedCredits;
   }
 
   actualCredits = roundCredits(actualCredits);
 
   // Eine Schätzung darf nicht dazu führen, dass Mehrverbrauch kostenlos
   // bleibt. Der Differenzbetrag wird genau einmal und retry-sicher belastet.
-  const overage = roundCredits(Math.max(0, actualCredits - body.reserved_credits));
+  const overage = roundCredits(Math.max(0, actualCredits - reservedCredits));
   if (overage > 0) {
     const overageResult = await deductCredits(ownerId, ownerType, overage, {
       operation: "agent",
@@ -119,7 +132,7 @@ async function runSettlement(
   const refund = await refundCredits(
     ownerId,
     ownerType,
-    body.reserved_credits,
+    reservedCredits,
     actualCredits,
     body.pipeline_key
   );
@@ -164,7 +177,7 @@ async function runSettlement(
     ok: true,
     pipeline_key: body.pipeline_key,
     case_slug: body.case_slug,
-    reserved_credits: body.reserved_credits,
+    reserved_credits: reservedCredits,
     actual_credits: Math.round(actualCredits * 100) / 100,
     refunded_credits: refund.refunded,
     balance_after: balance,
@@ -175,64 +188,27 @@ async function runSettlement(
   });
 }
 
-/** Session-authenticated fallback path (legacy browser caller). */
-const sessionSettle = createHandler(
+export const POST = createWebhookHandler(
   {
-    action: "billing.write",
-    rateTier: "standard",
     body: settleSchema,
-    audit: (ctx, body, _query, _req) => ({
+    audit: (body) => ({
       action: "billing.credit_consumption" as const,
       entityType: "billing",
-      details: { pipelineKey: body.pipeline_key, caseSlug: body.case_slug, user: ctx.user.email },
+      entityId: body.pipeline_key,
+      details: { caseSlug: body.case_slug, ownerType: body.owner_type },
     }),
+    rateLimitKey: (req) => `engine:pipeline-settle:${clientIp(req.headers)}`,
+    rateLimitMax: 1_000,
+    rateLimitWindowMs: 60_000,
   },
-  async (ctx, body) => {
-    const ownerType: OwnerType = ctx.user.orgId ? "org" : "user";
-    const ownerId = ctx.user.orgId ?? ctx.user.id;
-    return runSettlement(ownerId, ownerType, body, ctx.user.email);
-  }
-);
+  async (body, req: NextRequest): Promise<Response> => {
+    const expectedKey = process.env.ENGINE_WEBHOOK_API_KEY;
+    const providedKey = req.headers.get("x-engine-webhook-key") ?? "";
 
-export async function POST(req: NextRequest, routeContext: RouteContext): Promise<Response> {
-  const expectedKey = process.env.ENGINE_WEBHOOK_API_KEY;
-  const providedKey = req.headers.get("x-engine-webhook-key") ?? "";
+    if (!expectedKey || !providedKey || !timingSafeCompare(providedKey, expectedKey)) {
+      return apiError("unauthorized", "Ungültige Engine-Authentifizierung", 401);
+    }
 
-  // Engine webhook path: requires ENGINE_WEBHOOK_API_KEY to be set AND
-  // the provided key to match. If the key is not configured, the engine
-  // path is disabled entirely — prevents auth bypass when the env is missing.
-  if (expectedKey && providedKey && timingSafeCompare(providedKey, expectedKey)) {
-    // Engine webhook path — no user session, owner comes from the body.
-    let raw: unknown;
-    try {
-      raw = await req.json();
-    } catch {
-      return apiError("invalid_body", "Ungültiger JSON-Body", 400);
-    }
-    const parsed = settleSchema.safeParse(raw);
-    if (!parsed.success) {
-      return apiError("invalid_body", parsed.error.message, 400);
-    }
-    const body = parsed.data;
-    if (!body.owner_id || !body.owner_type) {
-      return apiError(
-        "missing_owner",
-        "owner_id und owner_type sind für den Engine-Webhook-Pfad erforderlich",
-        400
-      );
-    }
     return runSettlement(body.owner_id, body.owner_type as OwnerType, body);
   }
-
-  // If the engine webhook key header was provided but didn't match (or
-  // ENGINE_WEBHOOK_API_KEY is not configured), reject explicitly — don't
-  // silently fall through to session auth. This prevents an attacker from
-  // using the engine path with a guessed/empty key.
-  if (providedKey || !expectedKey) {
-    // Header was present but invalid, OR engine key not configured at all
-    // but someone tried the engine path — require session auth instead.
-  }
-
-  // No webhook key — fall back to session auth (browser caller).
-  return sessionSettle(req, routeContext);
-}
+);

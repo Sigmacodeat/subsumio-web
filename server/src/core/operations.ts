@@ -1153,7 +1153,9 @@ const put_page: Operation = {
         m.parseMarkdown(p.content as string, slug + ".md")
       );
       if (parsed.title) {
-        const similar = await ctx.engine.findByTitleFuzzy(parsed.title, undefined, 0.7);
+        const similar = await ctx.engine.findByTitleFuzzy(parsed.title, undefined, 0.7, {
+          ...(ctx.sourceId ? { sourceId: ctx.sourceId } : {}),
+        });
         if (similar && similar.slug !== slug) {
           console.warn(
             `[put_page] Possible duplicate detected: "${parsed.title}" already exists as "${similar.slug}" (similarity: ${similar.similarity.toFixed(2)}). Use that slug or confirm this is intentional.`

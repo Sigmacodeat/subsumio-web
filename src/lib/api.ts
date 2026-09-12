@@ -3,6 +3,7 @@ import type {
   BrainPage,
   BrainStats,
   CaseScannerResponse,
+  Citation,
   ConflictCheckResponse,
   ConnectorStatus,
   DocumentAnalysisResult,
@@ -23,6 +24,7 @@ import type {
   TabularReviewStartRequest,
   TabularReviewStartResponse,
 } from "./types";
+import type { GroundingMetadata } from "./citation-gate-client";
 import type { SourceRegistryResponse } from "./source-registry";
 import type { QueryMode } from "./matter-context-types";
 import type { WorkProductReceipt } from "./work-product-receipts";
@@ -1350,7 +1352,11 @@ export const api = {
       language?: string;
       template_slug?: string;
       onChunk?: (chunk: string) => void;
-    }): Promise<{ content: string }> {
+    }): Promise<{
+      content: string;
+      citations: Citation[];
+      grounding: GroundingMetadata | null;
+    }> {
       const res = await csrfFetch(`${BASE_URL}/api/legal/schriftsatz`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1364,19 +1370,31 @@ export const api = {
         );
       }
       let content = "";
+      let citations: Citation[] = [];
+      let grounding: GroundingMetadata | null = null;
       if (res.body) {
         await consumeSSEStream(res.body, (data, parsed) => {
           if (data === "[DONE]") return;
-          if (parsed && typeof parsed.chunk === "string") {
-            content += parsed.chunk;
-            input.onChunk?.(parsed.chunk);
-          } else if (!parsed) {
+          if (parsed) {
+            if (typeof parsed.chunk === "string") {
+              content += parsed.chunk;
+              input.onChunk?.(parsed.chunk);
+            }
+            // The citation gate (createEngineProxy citationGate:true) attaches
+            // `grounding` to the same SSE event that carries `citations`.
+            // Dropping them here would render AI legal text without the
+            // verification panel — see CLAUDE.md grounding invariant.
+            if (Array.isArray(parsed.citations)) citations = parsed.citations as Citation[];
+            if (parsed.grounding && typeof parsed.grounding === "object") {
+              grounding = parsed.grounding as GroundingMetadata;
+            }
+          } else {
             content += data;
             input.onChunk?.(data);
           }
         });
       }
-      return { content };
+      return { content, citations, grounding };
     },
 
     /** Simulate the opponent on a draft with streaming. */
@@ -1458,551 +1476,6 @@ export const api = {
         overall_assessment: string;
         recommended_response: string;
       }>;
-    },
-  },
-
-  tax: {
-    returns: {
-      list(options?: {
-        type?: string;
-        year?: number;
-        status?: string;
-        limit?: number;
-      }): Promise<BrainPage[]> {
-        const params = new URLSearchParams();
-        if (options?.limit) params.set("limit", String(options.limit));
-        if (options?.type) params.set("type", options.type);
-        if (options?.year) params.set("year", String(options.year));
-        if (options?.status) params.set("status", options.status);
-        const qs = params.toString();
-        return request(`/api/tax/returns${qs ? `?${qs}` : ""}`);
-      },
-
-      create(input: {
-        clientName: string;
-        type?: string;
-        year?: number;
-        status?: string;
-        dueDate?: string;
-        notes?: string;
-      }): Promise<{ slug: string }> {
-        return request("/api/tax/returns", {
-          method: "POST",
-          body: JSON.stringify(input),
-        });
-      },
-
-      get(slug: string): Promise<BrainPage> {
-        return request(`/api/tax/returns/${encodeURIComponent(slug)}`);
-      },
-
-      update(
-        slug: string,
-        input: Partial<{
-          clientName: string;
-          type: string;
-          year: number;
-          status: string;
-          dueDate: string | null;
-          submittedDate: string | null;
-          assessedDate: string | null;
-          assessmentNotice: string | null;
-          taxAmount: number | null;
-          refundAmount: number | null;
-          assignedTo: string | null;
-          notes: string | null;
-        }>
-      ): Promise<BrainPage> {
-        return request(`/api/tax/returns/${encodeURIComponent(slug)}`, {
-          method: "PATCH",
-          body: JSON.stringify(input),
-        });
-      },
-
-      remove(slug: string): Promise<{ success: boolean }> {
-        return request(`/api/tax/returns/${encodeURIComponent(slug)}`, {
-          method: "DELETE",
-        });
-      },
-    },
-
-    assessments: {
-      list(options?: { type?: string; year?: number; limit?: number }): Promise<BrainPage[]> {
-        const params = new URLSearchParams();
-        if (options?.limit) params.set("limit", String(options.limit));
-        if (options?.type) params.set("type", options.type);
-        if (options?.year) params.set("year", String(options.year));
-        const qs = params.toString();
-        return request(`/api/tax/assessments${qs ? `?${qs}` : ""}`);
-      },
-
-      create(input: {
-        clientName: string;
-        type: string;
-        taxType?: string;
-        year: number;
-        noticeDate: string;
-        amount: number;
-        noticeNumber?: string;
-        dueDate?: string;
-        notes?: string;
-      }): Promise<{ slug: string }> {
-        return request("/api/tax/assessments", {
-          method: "POST",
-          body: JSON.stringify(input),
-        });
-      },
-
-      get(slug: string): Promise<BrainPage> {
-        return request(`/api/tax/assessments/${encodeURIComponent(slug)}`);
-      },
-
-      update(
-        slug: string,
-        input: Partial<{
-          clientName: string;
-          type: string;
-          taxType: string;
-          year: number;
-          noticeNumber: string | null;
-          noticeDate: string | null;
-          dueDate: string | null;
-          amount: number;
-          paidDate: string | null;
-          contested: boolean;
-          contestDeadline: string | null;
-          notes: string | null;
-        }>
-      ): Promise<BrainPage> {
-        return request(`/api/tax/assessments/${encodeURIComponent(slug)}`, {
-          method: "PATCH",
-          body: JSON.stringify(input),
-        });
-      },
-
-      remove(slug: string): Promise<{ success: boolean }> {
-        return request(`/api/tax/assessments/${encodeURIComponent(slug)}`, {
-          method: "DELETE",
-        });
-      },
-    },
-
-    audits: {
-      list(options?: { type?: string; phase?: string; limit?: number }): Promise<BrainPage[]> {
-        const params = new URLSearchParams();
-        if (options?.limit) params.set("limit", String(options.limit));
-        if (options?.type) params.set("type", options.type);
-        if (options?.phase) params.set("phase", options.phase);
-        const qs = params.toString();
-        return request(`/api/tax/audits${qs ? `?${qs}` : ""}`);
-      },
-
-      create(input: {
-        clientName: string;
-        type: string;
-        year: number;
-        phase?: string;
-        auditor?: string;
-        startDate?: string;
-        endDate?: string;
-        notes?: string;
-      }): Promise<{ slug: string }> {
-        return request("/api/tax/audits", {
-          method: "POST",
-          body: JSON.stringify(input),
-        });
-      },
-
-      get(slug: string): Promise<BrainPage> {
-        return request(`/api/tax/audits/${encodeURIComponent(slug)}`);
-      },
-
-      update(
-        slug: string,
-        input: Partial<{
-          clientName: string;
-          type: string;
-          year: number;
-          phase: string;
-          auditor: string | null;
-          startDate: string | null;
-          endDate: string | null;
-          findings: Array<{
-            id: string;
-            issue: string;
-            amount?: number | null;
-            accepted?: boolean;
-            resolvedAt?: string | null;
-          }>;
-          totalAdditionalTax: number | null;
-          notes: string | null;
-        }>
-      ): Promise<BrainPage> {
-        return request(`/api/tax/audits/${encodeURIComponent(slug)}`, {
-          method: "PATCH",
-          body: JSON.stringify(input),
-        });
-      },
-
-      remove(slug: string): Promise<{ success: boolean }> {
-        return request(`/api/tax/audits/${encodeURIComponent(slug)}`, {
-          method: "DELETE",
-        });
-      },
-    },
-
-    clients: {
-      list(options?: { type?: string; search?: string; limit?: number }): Promise<BrainPage[]> {
-        const params = new URLSearchParams();
-        if (options?.limit) params.set("limit", String(options.limit));
-        if (options?.type) params.set("type", options.type);
-        if (options?.search) params.set("search", options.search);
-        const qs = params.toString();
-        return request(`/api/tax/clients${qs ? `?${qs}` : ""}`);
-      },
-
-      create(input: {
-        name: string;
-        type?: string;
-        taxId: string;
-        vatId?: string;
-        fiscalYearStart?: string;
-        fiscalYearEnd?: string;
-        industryCode?: string;
-        contactEmail?: string;
-        contactPhone?: string;
-        street?: string;
-        postalCode?: string;
-        city?: string;
-        country?: string;
-        notes?: string;
-      }): Promise<{ slug: string }> {
-        return request("/api/tax/clients", {
-          method: "POST",
-          body: JSON.stringify(input),
-        });
-      },
-
-      get(slug: string): Promise<BrainPage> {
-        return request(`/api/tax/clients/${encodeURIComponent(slug)}`);
-      },
-
-      update(
-        slug: string,
-        input: Partial<{
-          name: string;
-          type: string;
-          taxId: string;
-          vatId: string | null;
-          fiscalYearStart: string;
-          fiscalYearEnd: string;
-          industryCode: string | null;
-          contactEmail: string | null;
-          contactPhone: string | null;
-          street: string | null;
-          postalCode: string | null;
-          city: string | null;
-          country: string;
-          notes: string | null;
-        }>
-      ): Promise<BrainPage> {
-        return request(`/api/tax/clients/${encodeURIComponent(slug)}`, {
-          method: "PATCH",
-          body: JSON.stringify(input),
-        });
-      },
-
-      remove(slug: string): Promise<{ success: boolean }> {
-        return request(`/api/tax/clients/${encodeURIComponent(slug)}`, {
-          method: "DELETE",
-        });
-      },
-    },
-
-    elster: {
-      status(): Promise<{
-        status: {
-          mode: string;
-          connected: boolean;
-          certificateExpiresAt?: string;
-          lastError?: string;
-        };
-        submissions: BrainPage[];
-      }> {
-        return request("/api/tax/elster");
-      },
-
-      submit(input: {
-        clientId: string;
-        clientName: string;
-        formType: string;
-        period: string;
-        year: number;
-        taxAmount?: number;
-        refundAmount?: number;
-        vatPrevious?: number;
-        vatPayable?: number;
-        vatDeductible?: number;
-        grossWages?: number;
-        withheldTax?: number;
-        euCountryCode?: string;
-        euVatId?: string;
-        euTurnover?: number;
-        notes?: string;
-      }): Promise<{
-        slug: string;
-        submission: { id: string; status: string; elsterReference?: string };
-      }> {
-        return request("/api/tax/elster", {
-          method: "POST",
-          body: JSON.stringify(input),
-        });
-      },
-    },
-
-    caseStrategy(input: {
-      returnSlug: string;
-      jurisdiction?: "de" | "at";
-      language?: "de" | "en";
-    }): Promise<{
-      summary: string;
-      recommended: string;
-      recommendedApproach: string;
-      risks: Array<{
-        description: string;
-        probability: "high" | "medium" | "low";
-        impact: "high" | "medium" | "low";
-        mitigation: string;
-      }>;
-      next_steps: string[];
-      cost_estimate?: {
-        min: number;
-        max: number;
-        currency: string;
-        basis: string;
-      };
-      success_probability: number;
-      generatedAt: string;
-    }> {
-      return request("/api/tax/case-strategy", {
-        method: "POST",
-        body: JSON.stringify({
-          return_slug: input.returnSlug,
-          jurisdiction: input.jurisdiction,
-          language: input.language,
-        }),
-      });
-    },
-
-    riskAnalysis(input: {
-      clientSlug?: string;
-      returnSlug?: string;
-      text?: string;
-      jurisdiction?: "de" | "at";
-    }): Promise<{
-      overall_risk_level: "low" | "medium" | "high";
-      risks: Array<{
-        category: string;
-        description: string;
-        severity: "low" | "medium" | "high";
-        potential_amount?: number;
-        mitigation: string;
-        legal_basis?: string;
-      }>;
-      recommendations: string[];
-      generatedAt: string;
-    }> {
-      return request("/api/tax/risk-analysis", {
-        method: "POST",
-        body: JSON.stringify({
-          client_slug: input.clientSlug,
-          return_slug: input.returnSlug,
-          text: input.text,
-          jurisdiction: input.jurisdiction,
-        }),
-      });
-    },
-
-    precedentSearch(input: { query: string; jurisdiction?: "de" | "at"; limit?: number }): Promise<{
-      precedents: Array<{
-        court: string;
-        date: string;
-        file_number: string;
-        summary: string;
-        relevance: number;
-        key_holdings: string[];
-        legal_basis: string[];
-      }>;
-      generatedAt: string;
-    }> {
-      return request("/api/tax/precedent-search", {
-        method: "POST",
-        body: JSON.stringify({
-          query: input.query,
-          jurisdiction: input.jurisdiction,
-          limit: input.limit,
-        }),
-      });
-    },
-
-    appealGenerator(input: {
-      assessmentSlug: string;
-      contestedPoints?: string;
-      jurisdiction?: "de" | "at";
-      language?: "de" | "en";
-    }): Promise<{
-      assessment_summary: string;
-      contested_points: Array<{
-        position: string;
-        tax_office_view: string;
-        taxpayer_view: string;
-        legal_basis: string;
-        disputed_amount: number;
-        success_prospect: "stark" | "mittel" | "schwach" | "keine";
-        required_evidence: string[];
-      }>;
-      deadline: string;
-      deadline_legal_basis: string;
-      days_remaining: number;
-      success_prospect_summary: string;
-      total_disputed_amount: number;
-      draft_letter: {
-        recipient: string;
-        subject: string;
-        body: string;
-        requests: string[];
-      };
-      recommendations: string[];
-      generatedAt: string;
-    }> {
-      return request("/api/tax/appeal-generator", {
-        method: "POST",
-        body: JSON.stringify({
-          assessment_slug: input.assessmentSlug,
-          contested_points: input.contestedPoints,
-          jurisdiction: input.jurisdiction,
-          language: input.language,
-        }),
-      });
-    },
-
-    bfhFeed(input: { topic?: string; limit?: number; jurisdiction?: "de" | "at" }): Promise<{
-      decisions: Array<{
-        court: string;
-        file_number: string;
-        date: string;
-        topic: string;
-        summary: string;
-        key_holdings: string[];
-        legal_basis: string[];
-        relevance: "high" | "medium" | "low";
-      }>;
-      topic_summary: string;
-      generatedAt: string;
-    }> {
-      return request("/api/tax/bfh-feed", {
-        method: "POST",
-        body: JSON.stringify({
-          topic: input.topic,
-          limit: input.limit,
-          jurisdiction: input.jurisdiction,
-        }),
-      });
-    },
-
-    clientLetter(input: {
-      clientSlug: string;
-      occasion:
-        | "quarterly_update"
-        | "law_change"
-        | "reminder"
-        | "assessment_received"
-        | "audit_notice"
-        | "year_end"
-        | "custom";
-      customOccasion?: string;
-      keyPoints?: string;
-      language?: "de" | "en";
-    }): Promise<{
-      recipient_name: string;
-      recipient_address: string;
-      subject: string;
-      body: string;
-      key_points: string[];
-      call_to_action: string;
-      generatedAt: string;
-    }> {
-      return request("/api/tax/client-letter", {
-        method: "POST",
-        body: JSON.stringify({
-          client_slug: input.clientSlug,
-          occasion: input.occasion,
-          custom_occasion: input.customOccasion,
-          key_points: input.keyPoints,
-          language: input.language,
-        }),
-      });
-    },
-
-    triage(input: {
-      messages: Array<{
-        source: "bea" | "email" | "scan" | "whatsapp" | "portal" | "manual";
-        subject: string;
-        body?: string;
-        sender?: string;
-        date?: string;
-        caseRef?: string;
-        rawSlug?: string;
-        suggestedCaseSlug?: string;
-      }>;
-      jurisdiction?: "de" | "at" | "ch";
-      useAi?: boolean;
-    }): Promise<{
-      results: Array<{
-        card: {
-          id: string;
-          source: string;
-          urgency: string;
-          actionType: string;
-          title: string;
-          summary: string;
-          legalArea?: string;
-          deadline?: string;
-          confidence: string;
-          status: string;
-        };
-        enrichment: {
-          document_type: string;
-          tax_area: string;
-          deadline_type: string | null;
-          deadline_date: string | null;
-          deadline_legal_basis: string | null;
-          required_actions: string[];
-          risk_level: string;
-          estimated_amount: number | null;
-          jurisdiction: string;
-          key_entities: { label: string; value: string }[];
-        } | null;
-        ai_classified: boolean;
-      }>;
-      summary: {
-        total: number;
-        tax_related: number;
-        critical: number;
-        high: number;
-        medium: number;
-        low: number;
-        ai_enriched: number;
-      };
-    }> {
-      return request("/api/tax/triage", {
-        method: "POST",
-        body: JSON.stringify({
-          messages: input.messages,
-          jurisdiction: input.jurisdiction,
-          use_ai: input.useAi,
-        }),
-      });
     },
   },
 

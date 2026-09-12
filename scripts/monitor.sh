@@ -472,8 +472,8 @@ render_balancer() {
         [ -z "$src" ] && continue
         printf "    ${C_CYAN}# %s auf Hetzner killen + auf MacBook starten:${C_RESET}\n" "$src"
         printf "    ${C_DIM}ssh subsumio-hetzner 'pkill -f \"import-judikatur.*--source $src\"'${C_RESET}\n"
-        printf "    ${C_DIM}PGPASSWORD=2bfa7d4107f0b40e171cb508f27a9a703501b160d61957f0 \\\\\n"
-        printf "    ${C_DIM}DATABASE_URL=postgres://sigmabrain:2bfa7d4107f0b40e171cb508f27a9a703501b160d61957f0@localhost:5433/sigmabrain \\\\\n"
+        printf "    ${C_DIM}MONITOR_DATABASE_URL=<Postgres-URL über SSH-Tunnel> \\\\\n"
+        printf "    ${C_DIM}DATABASE_URL=\"$MONITOR_DATABASE_URL\" \\\\\n"
         printf "    ${C_DIM}bun run server/scripts/import-judikatur.ts --source $src --no-embed${C_RESET}\n"
       done
     fi
@@ -497,6 +497,11 @@ do_rebalance() {
   echo ""
   printf "${C_BOLD}${C_MAGENTA}  ⚖  AUTO-REBALANCE START${C_RESET}\n"
   echo ""
+
+  if [ -z "${MONITOR_DATABASE_URL:-}" ]; then
+    printf "${C_RED}  ✗ MONITOR_DATABASE_URL fehlt; Rebalance wird nicht gestartet${C_RESET}\n"
+    return 1
+  fi
 
   # 1. Check SSH tunnel
   local tunnel=$(lsof -i :5433 -P 2>/dev/null | grep LISTEN | head -1)
@@ -547,8 +552,7 @@ do_rebalance() {
     # Start on MacBook with SSH tunnel DB
     printf "    ${C_DIM}Starten auf MacBook...${C_RESET}\n"
     local log_file="/tmp/rebalance-import-$src.log"
-    PGPASSWORD=2bfa7d4107f0b40e171cb508f27a9a703501b160d61957f0 \
-    DATABASE_URL="postgres://sigmabrain:2bfa7d4107f0b40e171cb508f27a9a703501b160d61957f0@localhost:5433/sigmabrain" \
+    DATABASE_URL="${MONITOR_DATABASE_URL}" \
     nohup bun run server/scripts/import-judikatur.ts --source "$src" --no-embed > "$log_file" 2>&1 &
     local new_pid=$!
     printf "    ${C_GREEN}✓ Gestartet: PID %s (Log: %s)${C_RESET}\n" "$new_pid" "$log_file"

@@ -21,6 +21,13 @@ const UTILITY_SPECIALISTS = new Set([
   "on-scanner",
   "entity-extractor",
   "law-matcher",
+  // These are deterministic extraction/validation tasks. Keeping them on the
+  // utility tier prevents Sonnet/Grok spend without weakening legal analysis.
+  "damage-extractor",
+  "deadline-validator",
+  "precedent-matcher",
+  "admissibility-checker",
+  "limitation-scanner",
 ]);
 
 // All other specialists should be on "reasoning" tier.

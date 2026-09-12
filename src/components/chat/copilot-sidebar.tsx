@@ -55,10 +55,6 @@ const PAGE_CONTEXT_MAP: Record<string, { de: string; en: string }> = {
   "/dashboard/email": { de: "E-Mail", en: "Email" },
   "/dashboard/chat": { de: "KI-Assistent", en: "AI Assistant" },
   "/dashboard/knowledge": { de: "Wissensbasis", en: "Knowledge Base" },
-  "/dashboard/tax-returns": { de: "Steuererklärungen", en: "Tax Returns" },
-  "/dashboard/tax-clients": { de: "Steuer-Mandanten", en: "Tax Clients" },
-  "/dashboard/tax-deadlines": { de: "Steuerfristen", en: "Tax Deadlines" },
-  "/dashboard/elster": { de: "ELSTER", en: "ELSTER" },
 };
 
 const PAGE_EXAMPLE_QUERIES: Record<string, { de: string[]; en: string[] }> = {

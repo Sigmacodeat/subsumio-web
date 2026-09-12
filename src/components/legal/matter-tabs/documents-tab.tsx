@@ -470,6 +470,8 @@ export function DocumentsTab() {
                               frontmatter: {
                                 case_slug: caseData.slug,
                                 assignment_status: "assigned",
+                                intake_status: "assigned",
+                                assigned_at: new Date().toISOString(),
                               },
                               merge: true,
                             }),
@@ -648,7 +650,13 @@ export function DocumentsTab() {
                             frontmatter: {
                               case_slug: null,
                               assignment_status: "unassigned",
-                              tombstoned_at: new Date().toISOString(),
+                              intake_status: "needs_assignment",
+                              unassigned_at: new Date().toISOString(),
+                              // Removing a document from the wrong matter is
+                              // a triage action, never a deletion. Keeping the
+                              // original available prevents evidence loss and
+                              // lets the user reassign it from the inbox.
+                              tombstoned_at: null,
                             },
                             merge: true,
                           }),
@@ -660,6 +668,8 @@ export function DocumentsTab() {
                     await ctx.refreshCaseData();
                   }}
                   className="text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-danger-text)] active:scale-[0.97] motion-reduce:transition-none"
+                  title="Aus Akte entfernen und zur Zuordnung zurückgeben"
+                  aria-label="Aus Akte entfernen und zur Zuordnung zurückgeben"
                 >
                   <Trash2 size={14} />
                 </button>

@@ -20,7 +20,7 @@ Eine produktionsreife Data Factory, die jede Rechtsquelle (Gesetze, Verordnungen
 | ---------------------------------------------------- | ------ | ---------------------------------------------- |
 | CorpusReceipt Schema                                 | ✅     | `server/src/core/legal/corpus-receipt.ts`      |
 | SnapshotStore (DB)                                   | ✅     | `server/src/core/legal/snapshot-store.ts`      |
-| Migration 004 (snapshots, amendments, stale_outputs) | ✅     | `server/migrations/004_corpus_snapshots.sql`   |
+| Migration 004 (snapshots, amendments, stale_outputs) | ✅     | `server/migrations/015_corpus_snapshots.sql`   |
 | WorkProductReceipt                                   | ✅     | `src/lib/work-product-receipts.ts`             |
 | Connector Base (retry, rate-limit, cursor)           | ✅     | `server/src/core/ingestion/connectors/base.ts` |
 | Connector Health (in-memory)                         | ✅     | `src/lib/statute-freshness.ts`                 |

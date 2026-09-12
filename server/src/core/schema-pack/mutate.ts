@@ -103,7 +103,6 @@ export const BUNDLED_PACK_NAMES = new Set([
   "gbrain-recommended",
   "gbrain-base-v2",
   "gbrain-legal",
-  "gbrain-tax",
   "gbrain-medical",
 ]);
 

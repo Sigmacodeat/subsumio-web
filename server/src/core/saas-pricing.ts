@@ -132,8 +132,8 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     id: "solo",
     display_name: "Solo",
     // €249/Monat — Premium über Irys ($299/€275) und Legora ($300/€276)
-    // aber unter Harvey ($1.200). Subsumio bietet 13 Unique Features
-    // (WhatsApp, BEA, DATEV, ELSTER, Crypto-Forensics, Legal-Hold,
+    // aber unter Harvey ($1.200). Subsumio bietet 12 Unique Features
+    // (WhatsApp, BEA, DATEV, Crypto-Forensics, Legal-Hold,
     // Red-Team, War-Room, Signature, Online-Booking, Dictation,
     // DACH-First, 32-Layer Pipeline) die kein Konkurrent hat.
     monthly_seat_price: 249,
@@ -167,14 +167,14 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     // Premium über Legora ($300/€276) und Irys ($299/€275),
     // aber deutlich unter Harvey ($1.200/seat).
     // Begründung: Full Pipeline (32 Layer + Ensemble Critic),
-    // Massen-Ingest, WhatsApp-Intake, BEA, DATEV, ELSTER,
-    // Steuer-Bereich (StBVV), Kollisionsprüfung, Legal-Hold,
+    // Massen-Ingest, WhatsApp-Intake, BEA, DATEV,
+    // Kollisionsprüfung, Legal-Hold,
     // War-Room, Red-Team, White-Label, Custom Agents, API.
     monthly_seat_price: 299,
     included_credit: 200,
     // 18× markup → 94.4% margin on usage (über Irys 93%)
     // Premium für: 32-Layer Pipeline + Ensemble Critic (3-Modell),
-    // 13 Unique Features, DACH-First, White-Label, Custom Agents.
+    // 12 Unique Features, DACH-First, White-Label, Custom Agents.
     // Competitive: Irys 93%, Harvey 85-98.5%.
     markup_multiplier: 18,
     max_seats: 50,

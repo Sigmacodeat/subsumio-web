@@ -44,7 +44,8 @@ const STATUS_STYLES: Record<StatuteOfLimitations["status"], string> = {
     "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
   interrupted:
     "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
-  suspended: "border-purple-500/20 bg-purple-500/5 text-purple-700",
+  suspended:
+    "border-[color:var(--ds-category-purple-border)] bg-[color:var(--ds-category-purple-bg)] text-[color:var(--ds-category-purple-text)]",
 };
 
 const STATUS_LABELS_DE: Record<StatuteOfLimitations["status"], string> = {

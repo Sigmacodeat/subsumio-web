@@ -12,7 +12,7 @@
  *   bun run src/eval/seed-ci-corpus.ts [--jurisdiction de|at|ch|eu|all]
  *
  * Environment:
- *   DATABASE_URL — Postgres connection string (e.g. postgresql://postgres:postgres@localhost:5432/gbrain_test)
+ *   DATABASE_URL — Postgres connection string (user, password, host, port and database required)
  */
 
 import { readFileSync, readdirSync, existsSync } from "fs";

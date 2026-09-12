@@ -6,7 +6,7 @@
  * this codebase (src/lib/citation-gate.ts) for AI-generated answers should
  * hold here too: every legal answer names what it's based on.
  */
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/lib/audit", () => ({ logAudit: vi.fn(async () => undefined) }));
 
@@ -29,6 +29,17 @@ function identity(): WhatsAppIdentity {
     role: "lawyer",
   };
 }
+
+// handleLegalChatMessage awaits createInboxPage/createOutboxPage (engine writes)
+// before and after the calculation. Without a fetch stub those hit the real
+// ENGINE_URL and block for the client's 30s AbortSignal timeout, so the test
+// times out even though the calculation itself is pure and synchronous.
+beforeEach(() => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response(JSON.stringify([]), { status: 200 }))
+  );
+});
 
 describe("rvg_calc reply includes its VV-RVG legal basis", () => {
   it("cites § 13 RVG and the VV-RVG fee-item numbers", async () => {

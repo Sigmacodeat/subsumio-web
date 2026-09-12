@@ -19,6 +19,7 @@ import {
   type CreditsHealthResult,
   type ProviderHealth,
 } from "../../src/core/ai/credits-preflight.ts";
+import { withEnv } from "../helpers/with-env.ts";
 
 // Helper: create a mock Response
 const mockResponse = (status: number, body: string, ok?: boolean): Response => {
@@ -52,12 +53,6 @@ describe("credits-preflight", () => {
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
-    delete process.env.ANTHROPIC_API_KEY;
-    delete process.env.OPENROUTER_API_KEY;
-    delete process.env.OPENROUTER_API_KEY_FALLBACK;
-    delete process.env.ADMIN_EMAIL;
-    delete process.env.RESEND_API_KEY;
-    delete process.env.CREDITS_ALERT_WEBHOOK_URL;
   });
 
   // ── pingAnthropic ──────────────────────────────────────────────────
@@ -65,7 +60,6 @@ describe("credits-preflight", () => {
   describe("pingAnthropic", () => {
     it("returns ok on HTTP 200", async () => {
       globalThis.fetch = createMockFetch([mockResponse(200, "{}")]);
-      process.env.ANTHROPIC_API_KEY = "test-key";
       const result = await __test.pingAnthropic("test-key");
       expect(result.status).toBe("ok");
       expect(result.latencyMs).toBeGreaterThanOrEqual(0);
@@ -218,11 +212,19 @@ describe("credits-preflight", () => {
     });
 
     it("calls checkAllProviders when cache is empty", async () => {
-      // No env vars → not_configured for both
-      const result = await getCreditsHealth();
-      expect(result.providers.anthropic?.status).toBe("not_configured");
-      expect(result.providers.openrouter?.status).toBe("not_configured");
-      expect(result.allOk).toBe(true);
+      await withEnv(
+        {
+          ANTHROPIC_API_KEY: undefined,
+          OPENROUTER_API_KEY: undefined,
+          OPENROUTER_API_KEY_FALLBACK: undefined,
+        },
+        async () => {
+          const result = await getCreditsHealth();
+          expect(result.providers.anthropic?.status).toBe("not_configured");
+          expect(result.providers.openrouter?.status).toBe("not_configured");
+          expect(result.allOk).toBe(true);
+        }
+      );
     });
   });
 

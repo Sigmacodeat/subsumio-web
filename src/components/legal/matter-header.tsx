@@ -391,7 +391,7 @@ export function MatterHeader() {
                       ? "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
                       : matter.jurisdiction === "ch"
                         ? "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
-                        : "bg-purple-500/10 text-purple-700"
+                        : "bg-[color:var(--ds-category-purple-bg)] text-[color:var(--ds-category-purple-text)]"
                 )}
               >
                 <Globe size={11} className="shrink-0" />
@@ -437,7 +437,7 @@ export function MatterHeader() {
           {isArchived && (
             <Badge
               variant="default"
-              className="border-gray-500/20 bg-gray-500/10 text-xs text-gray-500"
+              className="border-[color:var(--ds-neutral-border)] bg-[color:var(--ds-neutral-bg)] text-xs text-[color:var(--ds-neutral-text)]"
             >
               <Archive size={11} className="mr-1" />
               {t("matterheader.archived")}

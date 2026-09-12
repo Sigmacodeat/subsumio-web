@@ -37,7 +37,6 @@ import { importFromContent } from "../../import-file.ts";
 import { persistFileBuffer } from "../../file-store.ts";
 import { inspectUploadFile } from "../../upload-security.ts";
 import { runExtractionAndImport } from "../../../commands/web-api.ts";
-import { legalPipelineIdempotencyKey } from "../../upload-pipeline-routing.ts";
 import { classifyLegalDocument, legalDocTypeLabel } from "../../legal/doc-classifier.ts";
 import { MinionQueue } from "../queue.ts";
 import { basename, extname, isAbsolute } from "node:path";
@@ -54,6 +53,157 @@ export interface IngestCaptureResult {
   consolidate_queued: boolean;
 }
 
+interface TrustedConnectorContext {
+  connector_instance_id: string;
+  tenant_source_id: string;
+  default_case_slug?: string;
+  responsible_user_id?: string;
+  owner_id?: string;
+  owner_type?: "user" | "org";
+}
+
+const SOURCE_ID_RE = /^[a-z0-9][a-z0-9_-]{0,63}$/;
+
+function trustedConnectorContext(value: unknown): TrustedConnectorContext | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const raw = value as Record<string, unknown>;
+  if (
+    typeof raw.connector_instance_id !== "string" ||
+    typeof raw.tenant_source_id !== "string" ||
+    !SOURCE_ID_RE.test(raw.tenant_source_id)
+  ) {
+    return undefined;
+  }
+  return {
+    connector_instance_id: raw.connector_instance_id,
+    tenant_source_id: raw.tenant_source_id,
+    ...(typeof raw.default_case_slug === "string" && raw.default_case_slug.length > 0
+      ? { default_case_slug: raw.default_case_slug }
+      : {}),
+    ...(typeof raw.responsible_user_id === "string" && raw.responsible_user_id.length > 0
+      ? { responsible_user_id: raw.responsible_user_id }
+      : {}),
+    ...(typeof raw.owner_id === "string" &&
+    raw.owner_id.length > 0 &&
+    (raw.owner_type === "user" || raw.owner_type === "org")
+      ? { owner_id: raw.owner_id, owner_type: raw.owner_type }
+      : {}),
+  };
+}
+
+function normalizeCaseReference(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+/**
+ * Only an exact, unique court/case number is eligible for automatic filing.
+ * Fuzzy name matches remain an inbox task: filing into the wrong legal file
+ * is materially worse than asking a lawyer once.
+ */
+async function resolveExactConnectorCase(
+  engine: BrainEngine,
+  sourceId: string,
+  event: IngestionEvent
+): Promise<string | undefined> {
+  const reference = [event.metadata?.case_reference, event.metadata?.matter_reference].find(
+    (value): value is string => typeof value === "string" && value.trim().length > 0
+  );
+  if (!reference) return undefined;
+  const normalizedReference = normalizeCaseReference(reference);
+  if (normalizedReference.length < 4) return undefined;
+
+  const cases = await engine.listPages({ type: "legal_case", limit: 500, sourceId });
+  const matches = cases.filter((page) => {
+    const frontmatter = (page.frontmatter ?? {}) as Record<string, unknown>;
+    return [frontmatter.case_number, frontmatter.court_case_number, frontmatter.geschäftszahl]
+      .filter((value): value is string => typeof value === "string")
+      .some((value) => normalizeCaseReference(value) === normalizedReference);
+  });
+  return matches.length === 1 ? matches[0]?.slug : undefined;
+}
+
+async function queueApprovedConnectorAnalysis(
+  engine: BrainEngine,
+  context: TrustedConnectorContext | undefined,
+  sourceId: string,
+  caseSlug: string | undefined,
+  documentSlug: string
+): Promise<boolean> {
+  if (!context?.owner_id || !context.owner_type || !caseSlug) return false;
+  const casePage = await engine.getPage(caseSlug, { sourceId });
+  const jurisdiction = String(casePage?.frontmatter?.jurisdiction ?? "").toLowerCase();
+  if (!new Set(["at", "de", "ch", "eu"]).has(jurisdiction)) return false;
+  const billingBaseUrl = process.env.ENGINE_BILLING_URL ?? process.env.SUBSUMIO_WEB_URL;
+  const webhookKey = process.env.ENGINE_WEBHOOK_API_KEY;
+  if (!billingBaseUrl || !webhookKey) return false;
+  const base = billingBaseUrl.replace(/\/$/, "");
+  let reservation: { pipeline_key: string; reserved_credits: number } | undefined;
+  try {
+    const reserve = await fetch(`${base}/api/billing/pipeline-reserve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-engine-webhook-key": webhookKey },
+      body: JSON.stringify({
+        owner_id: context.owner_id,
+        owner_type: context.owner_type,
+        case_slug: caseSlug,
+        pages: 1,
+        workflow_id: "aktencheck",
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!reserve.ok) return false;
+    const body = (await reserve.json()) as { pipeline_key?: string; reserved_credits?: number };
+    if (!body.pipeline_key || !Number.isFinite(body.reserved_credits)) return false;
+    reservation = { pipeline_key: body.pipeline_key, reserved_credits: body.reserved_credits! };
+    const queue = new MinionQueue(engine);
+    await queue.add(
+      "legal-pipeline",
+      {
+        case_slug: caseSlug,
+        part_slugs: [documentSlug],
+        ...(sourceId !== "default" ? { source_id: sourceId } : {}),
+        trigger: "connector_auto_assignment",
+        workflow_id: "aktencheck",
+        jurisdiction,
+        as_of_date: new Date().toISOString().slice(0, 10),
+        owner_id: context.owner_id,
+        owner_type: context.owner_type,
+        ...(context.responsible_user_id ? { user_id: context.responsible_user_id } : {}),
+        pipeline_key: reservation.pipeline_key,
+        reserved_credits: reservation.reserved_credits,
+      },
+      {
+        timeout_ms: 60 * 60 * 1000,
+        max_attempts: 3,
+        idempotency_key: `connector-pipeline:${sourceId}:${caseSlug}:${documentSlug}`,
+      },
+      { allowProtectedSubmit: true }
+    );
+    return true;
+  } catch (error) {
+    if (reservation) {
+      await fetch(`${base}/api/billing/pipeline-settle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-engine-webhook-key": webhookKey },
+        body: JSON.stringify({
+          pipeline_key: reservation.pipeline_key,
+          owner_id: context.owner_id,
+          owner_type: context.owner_type,
+          case_slug: caseSlug,
+          reserved_credits: reservation.reserved_credits,
+          actual_credits_override: 0,
+        }),
+        signal: AbortSignal.timeout(15_000),
+      }).catch(() => undefined);
+    }
+    console.error(
+      `[ingest_capture] connector legal-pipeline trigger failed for ${documentSlug}: ` +
+        (error instanceof Error ? error.message : String(error))
+    );
+    return false;
+  }
+}
+
 /** Builds the default slug for an event when the caller didn't provide one. */
 export function defaultSlugForEvent(event: IngestionEvent, now: Date = new Date()): string {
   const y = now.getUTCFullYear();
@@ -65,7 +215,7 @@ export function defaultSlugForEvent(event: IngestionEvent, now: Date = new Date(
 
 export function makeIngestCaptureHandler(engine: BrainEngine) {
   return async function ingestCaptureHandler(job: MinionJobContext): Promise<IngestCaptureResult> {
-    const data = job.data as { event?: unknown; slug?: unknown };
+    const data = job.data as { event?: unknown; slug?: unknown; connector_context?: unknown };
     const event = data.event as IngestionEvent | undefined;
     if (!event) {
       throw new Error("ingest_capture: job.data.event is required");
@@ -104,16 +254,34 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
       event.content_type === "application/json" ||
       event.content_type === "unknown";
 
+    const connectorContext = trustedConnectorContext(data.connector_context);
+    // A connector's remote source_id identifies the remote item, not a
+    // Subsumio tenant. Only the dispatcher can provide a tenant binding.
+    // Legacy, unbound connectors stay on default rather than trusting
+    // target_source_id from an import file.
     const targetSource =
-      event.source_kind === "connector:advokat-import" &&
-      typeof event.metadata?.target_source_id === "string"
-        ? event.metadata.target_source_id
-        : event.source_id || "default";
+      connectorContext?.tenant_source_id ??
+      (event.source_kind.startsWith("connector:") ? "default" : event.source_id || "default");
+    const exactMatchedCaseSlug =
+      connectorContext && !connectorContext.default_case_slug
+        ? await resolveExactConnectorCase(engine, targetSource, event).catch(() => undefined)
+        : undefined;
+    const configuredCaseSlug = connectorContext?.default_case_slug ?? exactMatchedCaseSlug;
+    const assignmentStatus = connectorContext?.default_case_slug
+      ? "assigned"
+      : exactMatchedCaseSlug
+        ? "auto"
+        : "pending_review";
 
     // Connector documents must become semantically queryable in the same job.
     // Other high-volume capture sources may still explicitly request deferred
     // embeddings with noEmbed=true.
-    const noEmbed = (data as { noEmbed?: unknown }).noEmbed === true;
+    // Connector intake has no embedding-credit reservation. Keep the
+    // original and searchable text, but defer paid semantic embedding until
+    // a lawyer has assigned/approved the document through the billed case
+    // workflow. This prevents a mailbox flood from silently spending tokens.
+    const noEmbed =
+      (data as { noEmbed?: unknown }).noEmbed === true || connectorContext !== undefined;
 
     // Connector/webhook source ids are dynamic tenants in SaaS mode. Provision
     // the FK row before any page/blob write, idempotently and fail-closed.
@@ -154,8 +322,7 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
         throw new Error(`ingest_capture: binary security rejection: ${security.code}`);
       }
       const bytes = await readFile(resolvedPath);
-      const caseSlug =
-        typeof event.metadata?.case_slug === "string" ? event.metadata.case_slug : undefined;
+      const caseSlug = configuredCaseSlug;
       await persistFileBuffer({
         data: bytes,
         filename,
@@ -177,12 +344,47 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
           source_kind: event.source_kind,
           source_uri: event.source_uri,
           ingested_via: "ingest_capture",
-          ...(caseSlug ? { case_slug: caseSlug, assignment_status: "assigned" } : {}),
+          ...(connectorContext
+            ? {
+                connector_instance_id: connectorContext.connector_instance_id,
+                intake_status: caseSlug ? "assigned" : "needs_assignment",
+                assignment_status: assignmentStatus,
+                semantic_index_status: "pending_approval",
+                ...(connectorContext.responsible_user_id
+                  ? { responsible_user_id: connectorContext.responsible_user_id }
+                  : {}),
+              }
+            : {}),
+          ...(caseSlug ? { case_slug: caseSlug } : {}),
         },
         tenantSource: targetSource,
         noEmbed,
-        autoTriggerLegalPipeline: true,
+        // Connector events do not carry a signed billing reservation. Keep
+        // ingestion/search working, but never start a paid analysis here.
+        autoTriggerLegalPipeline: false,
       });
+      const pipelineQueued = await queueApprovedConnectorAnalysis(
+        engine,
+        connectorContext,
+        targetSource,
+        caseSlug,
+        slug
+      );
+      if (pipelineQueued) {
+        const imported = await engine.getPage(slug, { sourceId: targetSource });
+        if (imported) {
+          await engine.putPage(
+            slug,
+            {
+              type: imported.type,
+              title: imported.title,
+              compiled_truth: imported.compiled_truth ?? "",
+              frontmatter: { ...(imported.frontmatter ?? {}), semantic_index_status: "queued" },
+            },
+            { sourceId: targetSource }
+          );
+        }
+      }
       return {
         slug,
         status: "imported",
@@ -190,7 +392,7 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
         untrusted_payload: false,
         source_kind: event.source_kind,
         source_uri: event.source_uri,
-        pipeline_queued: true,
+        pipeline_queued: pipelineQueued,
         consolidate_queued: false,
       };
     }
@@ -202,6 +404,61 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
       source_uri: event.source_uri,
       ingested_via: "ingest_capture",
     });
+
+    // importFromContent intentionally accepts only import concerns. Add the
+    // trusted connector routing data afterwards, so it cannot be smuggled in
+    // through a document's YAML frontmatter.
+    if (connectorContext && result.status === "imported") {
+      const imported = await engine.getPage(slug, { sourceId: targetSource });
+      if (imported) {
+        await engine.putPage(
+          slug,
+          {
+            type: imported.type,
+            title: imported.title,
+            compiled_truth: imported.compiled_truth ?? "",
+            frontmatter: {
+              ...(imported.frontmatter ?? {}),
+              connector_instance_id: connectorContext.connector_instance_id,
+              intake_status: configuredCaseSlug ? "assigned" : "needs_assignment",
+              assignment_status: assignmentStatus,
+              semantic_index_status: "pending_approval",
+              ...(configuredCaseSlug ? { case_slug: configuredCaseSlug } : {}),
+              ...(connectorContext.responsible_user_id
+                ? { responsible_user_id: connectorContext.responsible_user_id }
+                : {}),
+            },
+          },
+          { sourceId: targetSource }
+        );
+      }
+    }
+
+    // Persist the trusted case link before queueing. A fast worker must never
+    // start analysis against a document that has not yet become part of the
+    // assigned matter in the database.
+    const connectorPipelineQueued = await queueApprovedConnectorAnalysis(
+      engine,
+      connectorContext,
+      targetSource,
+      configuredCaseSlug,
+      slug
+    );
+    if (connectorContext && connectorPipelineQueued && result.status === "imported") {
+      const imported = await engine.getPage(slug, { sourceId: targetSource });
+      if (imported) {
+        await engine.putPage(
+          slug,
+          {
+            type: imported.type,
+            title: imported.title,
+            compiled_truth: imported.compiled_truth ?? "",
+            frontmatter: { ...(imported.frontmatter ?? {}), semantic_index_status: "queued" },
+          },
+          { sourceId: targetSource }
+        );
+      }
+    }
 
     // E2: Trigger legal-pipeline for non-upload ingestion paths (email, portal,
     // WhatsApp, beA, connectors). The upload path triggers it via
@@ -244,25 +501,13 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
           jurisdiction === "ch" ||
           jurisdiction === "eu"
         ) {
-          const queue = new MinionQueue(engine);
-          await queue.add(
-            "legal-pipeline",
-            {
-              case_slug: slug,
-              part_slugs: [slug],
-              ...(targetSource !== "default" ? { source_id: targetSource } : {}),
-              trigger: "ingest_capture",
-              jurisdiction,
-              as_of_date: new Date().toISOString().slice(0, 10),
-            },
-            {
-              timeout_ms: 60 * 60 * 1000,
-              max_attempts: 3,
-              idempotency_key: legalPipelineIdempotencyKey(targetSource, slug, [slug]),
-            },
-            { allowProtectedSubmit: true }
+          // Connector events do not carry the signed owner + reservation
+          // context required by the paid legal pipeline. Never let a mailbox,
+          // portal, or webhook bypass tenant billing; the document remains
+          // searchable and can be analysed through the billed case workflow.
+          console.warn(
+            `[ingest_capture] legal-pipeline not auto-queued for ${slug}: billing reservation required`
           );
-          pipeline_queued = true;
         } else {
           console.warn(
             `[ingest_capture] legal-pipeline not queued for ${slug}: jurisdiction requires intake confirmation`
@@ -313,7 +558,7 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
       untrusted_payload: untrustedPayload,
       source_kind: event.source_kind,
       source_uri: event.source_uri,
-      pipeline_queued,
+      pipeline_queued: pipeline_queued || connectorPipelineQueued,
       consolidate_queued,
     };
   };

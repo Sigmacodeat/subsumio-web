@@ -64,6 +64,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useLang } from "@/lib/use-lang";
+import { csrfFetch } from "@/lib/csrf";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -349,7 +350,10 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
   // ── Build Index Mutation ──────────────────────────────────────────────
   const buildIndexMut = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/admin/corpus-files/build-index", {
+      const res = await csrfFetch("/api/admin/corpus-files/build-index", {
+        // The route declares maxDuration = 60; csrfFetch would otherwise abort
+        // the client at its 30s default and cut off work the server finishes.
+        signal: AbortSignal.timeout(65_000),
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ corpus: selectedCorpus }),
@@ -377,7 +381,7 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
   // ── Flag Mutation ─────────────────────────────────────────────────────
   const flagMut = useMutation({
     mutationFn: async ({ paths, flag }: { paths: string[]; flag: QualityFlag }) => {
-      const res = await fetch("/api/admin/corpus-files/flag", {
+      const res = await csrfFetch("/api/admin/corpus-files/flag", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paths, flag }),
@@ -405,7 +409,7 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
   // ── Delete Mutation ───────────────────────────────────────────────────
   const deleteMut = useMutation({
     mutationFn: async (paths: string[]) => {
-      const res = await fetch("/api/admin/corpus-files/delete", {
+      const res = await csrfFetch("/api/admin/corpus-files/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paths }),
@@ -445,7 +449,7 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
         jurisdiction: createJurisdiction,
         doc_id: createDocId,
       };
-      const res = await fetch("/api/admin/corpus-files/create", {
+      const res = await csrfFetch("/api/admin/corpus-files/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ path: fullPath, frontmatter, body: createBody }),
@@ -511,7 +515,10 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
       ) {
         payload.text = bulkEditText;
       }
-      const res = await fetch("/api/admin/corpus-files/bulk-edit", {
+      const res = await csrfFetch("/api/admin/corpus-files/bulk-edit", {
+        // The route declares maxDuration = 60; csrfFetch would otherwise abort
+        // the client at its 30s default and cut off work the server finishes.
+        signal: AbortSignal.timeout(65_000),
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

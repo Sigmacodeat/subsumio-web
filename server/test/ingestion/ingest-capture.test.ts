@@ -160,6 +160,35 @@ describe("ingest_capture handler — validation + routing", () => {
     expect(result.source_kind).toBe("inbox-folder");
     expect(result.source_uri).toBe("/Users/test/.gbrain/inbox/note.md");
   });
+
+  test("connector routing uses only the trusted queue context", async () => {
+    const handler = makeIngestCaptureHandler(engine);
+    const event = makeEvent({
+      source_id: "remote-mailbox-99",
+      source_kind: "connector:bea-import",
+      content: "# beA Nachricht",
+      metadata: { target_source_id: "attacker-source" },
+    });
+    await handler(
+      makeJob({
+        event,
+        slug: "legal/bea/safe-routing",
+        noEmbed: true,
+        connector_context: {
+          connector_instance_id: "bea-import-firm_a",
+          tenant_source_id: "firm_a",
+          responsible_user_id: "user-1",
+        },
+      })
+    );
+
+    const page = await engine.getPage("legal/bea/safe-routing", { sourceId: "firm_a" });
+    expect(page?.frontmatter?.connector_instance_id).toBe("bea-import-firm_a");
+    expect(page?.frontmatter?.assignment_status).toBe("pending_review");
+    expect(
+      await engine.getPage("legal/bea/safe-routing", { sourceId: "attacker-source" })
+    ).toBeNull();
+  });
 });
 
 describe("ingest_capture handler — integration with importFromContent", () => {

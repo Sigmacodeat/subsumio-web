@@ -88,7 +88,7 @@ export const signupSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   referralCode: z.string().optional(),
   locale: z.enum(["de", "en"]).optional(),
-  industry: z.string().max(50).optional(),
+  industry: z.literal("legal").optional(),
 });
 
 export const registerSchema = signupSchema

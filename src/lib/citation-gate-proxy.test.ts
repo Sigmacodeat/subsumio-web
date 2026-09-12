@@ -2,10 +2,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { promises as fs } from "node:fs";
 import type { NextRequest } from "next/server";
 
-vi.mock("node:fs", () => {
+vi.mock("node:fs", async () => {
+  const actual = await vi.importActual<typeof import("node:fs")>("node:fs");
   const fn = vi.fn();
   return {
-    default: { promises: { readFile: fn } },
+    ...actual,
+    default: { ...actual, promises: { readFile: fn } },
     promises: { readFile: fn },
   };
 });

@@ -5,7 +5,6 @@
  * Each tenant's audit trail is isolated by brain_id.
  */
 
-import { api } from "@/lib/api";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { createHash } from "node:crypto";
 import { createSchemaInit } from "@/lib/schema-init";
@@ -13,6 +12,16 @@ export type { AuditEntry, AuditAction } from "@/lib/audit-labels";
 export { auditLabel } from "@/lib/audit-labels";
 import type { AuditEntry, AuditAction } from "@/lib/audit-labels";
 import { auditLabel } from "@/lib/audit-labels";
+
+// The browser/engine API client is only needed by the local development
+// fallback. Loading it eagerly made every API route that records an audit log
+// compile the complete upload/SSE/client graph as a server dependency.
+let apiModule: Promise<typeof import("@/lib/api")> | undefined;
+
+async function loadApi() {
+  apiModule ??= import("@/lib/api");
+  return (await apiModule).api;
+}
 
 const ensureAuditSchema = createSchemaInit([
   `CREATE TABLE IF NOT EXISTS subsumio_audit_log (
@@ -119,6 +128,7 @@ export async function logAudit(
   // Dev fallback: store as brain page
   const id = `audit/${now.slice(0, 10)}/${action.replace(/\./g, "-")}-${Date.now()}`;
   try {
+    const api = await loadApi();
     await api.brain.createPage({
       slug: id,
       title: auditLabel(action),
@@ -423,6 +433,7 @@ export async function listAuditLogs(opts: {
 
   // Dev fallback: read from brain pages
   try {
+    const api = await loadApi();
     const pages = await api.brain.listPages({ type: "audit_log", limit: opts?.limit || 200 });
     const entries: AuditEntry[] = pages.map((p) => {
       const fm = p.frontmatter || {};

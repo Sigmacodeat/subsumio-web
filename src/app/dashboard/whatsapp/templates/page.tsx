@@ -42,7 +42,8 @@ interface WhatsAppTemplate {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  draft: "bg-gray-500/10 text-gray-600 border-gray-500/20",
+  draft:
+    "bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)] border-[color:var(--ds-neutral-border)]",
   pending:
     "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
   approved:

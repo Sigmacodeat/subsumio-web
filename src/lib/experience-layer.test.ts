@@ -108,7 +108,7 @@ const PROFILE_LAWYER_2 = makeProfile({
       active: true,
     },
   ],
-  endorsements: [{ skill_id: "steuer-subsumption", endorsed_by: "user-1", endorsed_at: NOW }],
+  endorsements: [{ skill_id: "legal-subsumption", endorsed_by: "user-1", endorsed_at: NOW }],
   languages: ["de"],
   qualifications: ["Rechtsanwalt"],
   visibility: "all_members",

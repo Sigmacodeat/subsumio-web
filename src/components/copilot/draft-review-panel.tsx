@@ -81,9 +81,9 @@ const SEVERITY_STYLES = {
   },
   suggestion: {
     icon: Lightbulb,
-    color: "text-purple-600",
-    bg: "bg-purple-500/10",
-    border: "border-purple-500/20",
+    color: "text-[color:var(--ds-category-purple-text)]",
+    bg: "bg-[color:var(--ds-category-purple-bg)]",
+    border: "border-[color:var(--ds-category-purple-border)]",
     labelDe: "Vorschlag",
     labelEn: "Suggestion",
   },

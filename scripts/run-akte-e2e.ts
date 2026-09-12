@@ -14,7 +14,10 @@
  * Usage:
  *   bun run akte:e2e -- --dir "/path/to/raw-act" \
  *     --case-slug legal/cases/acceptance-2026-001 \
- *     --title "Acceptance 2026-001" --jurisdiction at --verfahrenstyp straf
+ *     --title "Acceptance 2026-001" --jurisdiction at --verfahrenstyp straf \
+ *     --expect-gz "12 Cg 34/26x" --expect-on "ON 7" \
+ *     --expect-party "Muster GmbH" --expect-deadline "Klagebeantwortung" \
+ *     --expect-date "15.04.2026"
  */
 
 import { readdir, writeFile } from "node:fs/promises";
@@ -74,15 +77,51 @@ function arg(name: string, fallback = ""): string {
   return i >= 0 ? (process.argv[i + 1] ?? fallback) : fallback;
 }
 
+function args(name: string): string[] {
+  const values: string[] = [];
+  for (let index = 0; index < process.argv.length; index++) {
+    if (process.argv[index] !== `--${name}`) continue;
+    const value = process.argv[index + 1]?.trim();
+    if (value) values.push(value);
+  }
+  return values;
+}
+
 const directory = arg("dir");
 const caseSlug = arg("case-slug");
 const title = arg("title", basename(caseSlug || "acceptance-act"));
 const jurisdiction = arg("jurisdiction", "at");
 const verfahrenstyp = arg("verfahrenstyp", "sonstiges");
 const reportPath = arg("report", `akte-e2e-${Date.now()}.json`);
+const expectedGz = args("expect-gz");
+const expectedOn = args("expect-on");
+const expectedParties = args("expect-party");
+const expectedDeadlines = args("expect-deadline");
+const expectedDates = args("expect-date");
+const expectedText = args("expect-text");
 const engineUrl = (process.env.SUBSUMIO_ENGINE_URL ?? "http://127.0.0.1:3001").replace(/\/$/, "");
 const apiKey = process.env.SUBSUMIO_WEB_API_KEY ?? "";
 const brainId = process.env.SUBSUMIO_BRAIN_ID ?? process.env.SUBSUMIO_DEMO_BRAIN ?? "";
+
+if (process.argv.includes("--help") || process.argv.includes("-h")) {
+  console.log(`Usage: bun run akte:e2e -- --dir <raw-act-dir> --case-slug <slug> [options]
+
+Options:
+  --title <title>                 Case title
+  --jurisdiction at|de|ch|eu      Default: at
+  --verfahrenstyp <type>          Default: sonstiges
+  --expect-gz <Geschäftszahl>     Repeatable acceptance assertion
+  --expect-on <ON-Nummer>         Repeatable acceptance assertion
+  --expect-party <Partei>         Repeatable assertion against structured outputs
+  --expect-deadline <Frist>       Repeatable assertion against structured outputs
+  --expect-date <Datum>           Repeatable assertion against structured outputs
+  --expect-text <text>            Repeatable assertion against pipeline outputs
+  --report <path>                 Default: akte-e2e-<timestamp>.json
+
+Required environment: SUBSUMIO_WEB_API_KEY, SUBSUMIO_BRAIN_ID
+Optional environment: SUBSUMIO_ENGINE_URL (default: http://127.0.0.1:3001)`);
+  process.exit(0);
+}
 
 if (!directory || !caseSlug) throw new Error("--dir and --case-slug are required");
 if (!apiKey || !brainId) throw new Error("SUBSUMIO_WEB_API_KEY and SUBSUMIO_BRAIN_ID are required");
@@ -102,6 +141,27 @@ async function request(path: string, init: RequestInit = {}): Promise<Json> {
   const body = text ? (JSON.parse(text) as Json) : {};
   if (!response.ok) throw new Error(`${init.method ?? "GET"} ${path}: ${response.status} ${text}`);
   return body;
+}
+
+/**
+ * Confirms that the protected original-file endpoint can resolve the stored
+ * bytes. The engine resolves the file before sending headers, so cancelling
+ * the stream after the first byte proves ledger + storage availability without
+ * downloading a potentially very large act a second time.
+ */
+async function originalIsAvailable(slug: string): Promise<boolean> {
+  const response = await fetch(
+    `${engineUrl}/api/files/${slug.split("/").map(encodeURIComponent).join("/")}`,
+    {
+      headers: authHeaders,
+      signal: AbortSignal.timeout(30_000),
+    }
+  );
+  if (!response.ok) return false;
+  const length = Number(response.headers.get("content-length") ?? "0");
+  if (!Number.isFinite(length) || length <= 0) return false;
+  await response.body?.cancel();
+  return true;
 }
 
 function pagePath(slug: string): string {
@@ -139,6 +199,26 @@ function parseState(page: Json): Json {
   const raw = String(page.content ?? page.compiled_truth ?? "").trim();
   if (raw.startsWith("{")) return JSON.parse(raw) as Json;
   return (page.frontmatter ?? {}) as Json;
+}
+
+function pageText(page: Json): string {
+  return [page.title, page.content, page.compiled_truth, JSON.stringify(page.frontmatter ?? {})]
+    .filter((value): value is string => typeof value === "string")
+    .join("\n")
+    .toLocaleLowerCase("de-AT");
+}
+
+function assertExpectedText(
+  label: string,
+  expected: string[],
+  searchablePages: Json[]
+): Array<{ label: string; value: string; found: boolean }> {
+  const corpus = searchablePages.map(pageText).join("\n");
+  return expected.map((value) => ({
+    label,
+    value,
+    found: corpus.includes(value.toLocaleLowerCase("de-AT")),
+  }));
 }
 
 async function main() {
@@ -231,6 +311,54 @@ async function main() {
   for (const slug of [...new Set(outputSlugs)])
     persistedOutputs.push(await request(pagePath(slug)));
 
+  // This page is what powers the dashboard's Aktenansicht. Validate the
+  // projection, not merely the existence of background output pages.
+  const caseProjection = await request(pagePath(caseSlug));
+  const caseFrontmatter = (caseProjection.frontmatter ?? {}) as Json;
+  const legalDataRefs = (caseFrontmatter.legal_data_refs ?? {}) as Json;
+
+  const sourceDocuments = uploaded.map((item) => item.extraction);
+  const onIndexPages = persistedOutputs.filter((page) =>
+    String(page.slug ?? "")
+      .toLocaleLowerCase("de-AT")
+      .includes("on-index")
+  );
+  const originalAvailability = await Promise.all(
+    uploaded.map(async (item) => ({ slug: item.slug, found: await originalIsAvailable(item.slug) }))
+  );
+  const assertions = [
+    ...uploaded.map((item) => ({
+      label: "aktenzuordnung",
+      value: item.slug,
+      found: String((item.extraction.frontmatter ?? {}).case_slug ?? "") === caseSlug,
+    })),
+    ...originalAvailability.map((item) => ({
+      label: "originaldatei",
+      value: item.slug,
+      found: item.found,
+    })),
+    ...(expectedGz.length > 0
+      ? assertExpectedText("aktenprojektion_geschäftszahl", expectedGz, [caseProjection])
+      : []),
+    ...assertExpectedText("geschäftszahl", expectedGz, [...sourceDocuments, ...persistedOutputs]),
+    ...(expectedOn.length > 0
+      ? [
+          {
+            label: "aktenprojektion_on_index",
+            value: `on-indexes/${caseSlug}`,
+            found: legalDataRefs.on_index === `on-indexes/${caseSlug}`,
+          },
+          { label: "on_index", value: "canonical ON-Index", found: onIndexPages.length > 0 },
+        ]
+      : []),
+    ...assertExpectedText("on_nummer", expectedOn, onIndexPages),
+    ...assertExpectedText("partei", expectedParties, persistedOutputs),
+    ...assertExpectedText("frist", expectedDeadlines, persistedOutputs),
+    ...assertExpectedText("datum", expectedDates, persistedOutputs),
+    ...assertExpectedText("fachinhalt", expectedText, persistedOutputs),
+  ];
+  const failedAssertions = assertions.filter((assertion) => !assertion.found);
+
   const report = {
     generated_at: new Date().toISOString(),
     engine_url: engineUrl,
@@ -244,10 +372,25 @@ async function main() {
     })),
     pipeline_job_id: trigger.job_id,
     pipeline_state: state,
+    case_projection: {
+      slug: caseProjection.slug,
+      frontmatter: caseFrontmatter,
+    },
     persisted_output_slugs: persistedOutputs.map((page) => page.slug),
+    acceptance_assertions: assertions,
+    accepted: failedAssertions.length === 0,
+    failed_assertions: failedAssertions,
   };
   await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
   console.log(`✓ Complete report: ${reportPath}`);
+
+  if (failedAssertions.length > 0) {
+    throw new Error(
+      `acceptance assertions failed: ${failedAssertions
+        .map((assertion) => `${assertion.label}=${JSON.stringify(assertion.value)}`)
+        .join(", ")}`
+    );
+  }
 }
 
 await main();

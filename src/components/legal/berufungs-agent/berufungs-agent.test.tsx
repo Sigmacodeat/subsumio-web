@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { describe, test, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -48,7 +49,20 @@ vi.mock("@/lib/api", () => ({
       })),
       schriftsatz: vi.fn(async (input: { onChunk?: (c: string) => void }) => {
         input.onChunk?.("Test draft content");
-        return { content: "Test draft content" };
+        // Mirrors the real contract: the citation gate attaches `citations`
+        // and `grounding` to the stream — see src/lib/citation-gate.ts.
+        return {
+          content: "Test draft content",
+          citations: [{ slug: "gesetz/zpo/421", title: "§ 421 ZPO" }],
+          grounding: {
+            citations_verified: 1,
+            citations_unverified: 0,
+            corpus_checked: true,
+            grounded_citations: [],
+            analyzed_at: "2026-01-01T00:00:00.000Z",
+            has_unverified: false,
+          },
+        };
       }),
       opponentSimulation: vi.fn(async () => ({
         findings: [
@@ -167,7 +181,7 @@ describe("Berufungs-Agent Steps", () => {
           canProceed={true}
         />
       );
-      expect(screen.getByText(/KI-generiert/)).toBeDefined();
+      expect(screen.getByText(/EU AI Act Art\. 52/)).toBeDefined();
     });
 
     test("shows success probability percentage", () => {
@@ -228,7 +242,7 @@ describe("Berufungs-Agent Steps", () => {
           canProceed={true}
         />
       );
-      expect(screen.getByText(/KI-generiert/)).toBeDefined();
+      expect(screen.getByText(/EU AI Act Art\. 52/)).toBeDefined();
     });
 
     test("uses correct singular form for 1 grund", () => {
@@ -360,7 +374,8 @@ describe("Berufungs-Agent Steps", () => {
           canProceed={true}
         />
       );
-      expect(screen.getByText(/KI-generiert/)).toBeDefined();
+      expect(screen.getAllByText(/KI-generiert/)).toHaveLength(2);
+      expect(screen.getByLabelText(/anwaltlich zu prüfen und freizugeben/)).toBeDefined();
     });
 
     test("shows correct singular form for 1 grund", () => {
@@ -451,6 +466,57 @@ describe("Berufungs-Agent Steps", () => {
       createPageSpy.mockRestore();
       updatePageSpy.mockRestore();
     });
+
+    // Grounding invariant (CLAUDE.md): no screen may render AI-generated legal
+    // text without the citation/trust panel. The Berufungsbegründung is the
+    // highest-stakes output in the product — pin it here so the panel cannot
+    // silently disappear again.
+    test("renders CitationPanel with the attorney-review badge for a draft", () => {
+      withQueryClient(
+        <EntwurfStep
+          caseSlug="test-case"
+          selectedGruende={[baseGrund]}
+          draftContent="Test draft content"
+          onDraftChange={vi.fn()}
+          draftSlug="legal/berufungs-entwurf/test"
+          onDraftSlugChange={vi.fn()}
+          onNext={vi.fn()}
+          onBack={vi.fn()}
+          canProceed={true}
+        />
+      );
+      expect(screen.getByText("Anwaltlich zu prüfen")).toBeDefined();
+    });
+
+    test("surfaces grounding returned by the schriftsatz stream", async () => {
+      // Controlled wrapper — the real page owns draftContent, and
+      // displayContent falls back to it once streaming ends.
+      function Harness() {
+        const [draft, setDraft] = useState("");
+        return (
+          <EntwurfStep
+            caseSlug="test-case"
+            selectedGruende={[baseGrund]}
+            draftContent={draft}
+            onDraftChange={setDraft}
+            draftSlug="legal/berufungs-entwurf/test"
+            onDraftSlugChange={vi.fn()}
+            onNext={vi.fn()}
+            onBack={vi.fn()}
+            canProceed={false}
+          />
+        );
+      }
+      withQueryClient(<Harness />);
+      fireEvent.click(screen.getByText("Schriftsatz generieren"));
+      await waitFor(() => {
+        expect(api.legal.schriftsatz).toHaveBeenCalled();
+      });
+      // The gate's grounding must reach the UI, not be dropped in the client.
+      await waitFor(() => {
+        expect(screen.getByText("Anwaltlich zu prüfen")).toBeDefined();
+      });
+    });
   });
 
   describe("OpponentStep", () => {
@@ -481,7 +547,7 @@ describe("Berufungs-Agent Steps", () => {
           onBack={vi.fn()}
         />
       );
-      expect(screen.getByText(/KI-generiert/)).toBeDefined();
+      expect(screen.getByText(/EU AI Act Art\. 52/)).toBeDefined();
     });
 
     test("renders severity badge for kritisch finding", () => {

@@ -3350,7 +3350,8 @@ export class PostgresEngine implements BrainEngine {
   async findByTitleFuzzy(
     name: string,
     dirPrefix?: string,
-    minSimilarity: number = 0.55
+    minSimilarity: number = 0.55,
+    opts?: { sourceId?: string; sourceIds?: string[] }
   ): Promise<{ slug: string; similarity: number } | null> {
     const sql = this.sql;
     // Use the `similarity()` function directly with an explicit threshold
@@ -3364,11 +3365,18 @@ export class PostgresEngine implements BrainEngine {
     // same winner when multiple pages score equally (prevents churn
     // in put_page auto-link reconciliation).
     const prefixPattern = dirPrefix ? `${dirPrefix}/%` : "%";
+    const sourceCondition =
+      opts?.sourceIds && opts.sourceIds.length > 0
+        ? sql`AND source_id = ANY(${opts.sourceIds}::text[])`
+        : opts?.sourceId
+          ? sql`AND source_id = ${opts.sourceId}::text`
+          : sql``;
     const rows = await sql`
-      SELECT slug, similarity(title, ${name}) AS sim
+      SELECT slug, similarity(title, ${name}::text) AS sim
       FROM pages
-      WHERE similarity(title, ${name}) >= ${minSimilarity}
-        AND slug LIKE ${prefixPattern}
+      WHERE similarity(title, ${name}::text) >= ${minSimilarity}::double precision
+        AND slug LIKE ${prefixPattern}::text
+        ${sourceCondition}
       ORDER BY sim DESC, slug ASC
       LIMIT 1
     `;

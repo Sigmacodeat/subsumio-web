@@ -28,7 +28,8 @@ export const POST = createPublicHandler(
     rateLimitWindowMs: 60 * 60_000,
   },
   async (req, body) => {
-    const { email, password, name, referredBy, industry } = body;
+    const { email, password, name, referredBy } = body;
+    const industry = "legal";
 
     try {
       const store = getStore();
@@ -43,12 +44,12 @@ export const POST = createPublicHandler(
         passwordHash: await hashPassword(password),
         locale: "de",
         referredBy: referredBy || null,
-        industry: industry || null,
+        industry,
       });
 
       const user = await store.create(draft);
 
-      provisionBrainAsync(user.brainId, { industry: industry || null });
+      provisionBrainAsync(user.brainId, { industry });
 
       const session = await createSession(user.id, user.email, user.role);
       const jar = await cookies();

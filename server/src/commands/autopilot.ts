@@ -504,11 +504,14 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
   // v0.42+ Connector ingestion daemon.
   let connectorDaemon: IngestionDaemon | undefined;
   try {
-    const dispatch = async (event: import("../core/ingestion/types.ts").IngestionEvent) => {
+    const dispatch: import("../core/ingestion/daemon.ts").IngestionDispatcher = async (
+      event,
+      context
+    ) => {
       const queue = new MinionQueue(engine);
       const job = await queue.add(
         "ingest_capture",
-        { event },
+        { event, ...(context?.connector ? { connector_context: context.connector } : {}) },
         { idempotency_key: `ingest:${event.source_kind}:${event.content_hash}`, maxWaiting: 100 }
       );
       return { kind: "queued" as const, jobId: job.id };

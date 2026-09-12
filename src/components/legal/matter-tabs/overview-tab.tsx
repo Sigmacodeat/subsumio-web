@@ -51,6 +51,7 @@ import { api } from "@/lib/api";
 import type { DashboardKey } from "@/content/dashboard";
 import type { CaseDetail } from "@/lib/matter-detail-types";
 import { MatterWorkflowCockpit } from "@/components/legal/MatterWorkflowCockpit";
+import { ActIntelligencePanel } from "@/components/legal/ActIntelligencePanel";
 import { VerjaehrungPanel } from "@/components/legal/VerjaehrungPanel";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
@@ -122,6 +123,7 @@ export function OverviewTab() {
 
   return (
     <div className="space-y-4 p-4 md:p-6">
+      <ActIntelligencePanel caseSlug={caseData.slug} />
       {/* Quick actions bar — max 3 primary + "More" dropdown (Hick's Law) */}
       <div className="flex flex-wrap items-center gap-2">
         {/* Primary action 1: AI Strategy */}

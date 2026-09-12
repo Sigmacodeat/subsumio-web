@@ -273,9 +273,20 @@ export function makeSubagentHandler(deps: SubagentDeps) {
     // provider in src/core/ai/recipes/). When OFF, route through the legacy
     // Anthropic-direct path AND refuse non-Anthropic models loudly.
     const useGatewayLoopRaw = await engine.getConfig("agent.use_gateway_loop").catch(() => null);
-    const useGatewayLoop =
+    const useGatewayLoopConfigured =
       typeof useGatewayLoopRaw === "string" &&
       (useGatewayLoopRaw === "true" || useGatewayLoopRaw === "1");
+    const openRouterOnly = process.env.SUBSUMIO_AI_PROVIDER?.trim().toLowerCase() === "openrouter";
+    if (openRouterOnly && !model.startsWith("openrouter:")) {
+      throw new Error(
+        `subagent job: OpenRouter-only deployment resolved direct model "${model}". ` +
+          `Set models.tier.subagent to an openrouter:<vendor>/<model> id before processing.`
+      );
+    }
+    // The OpenRouter-only deployment is deliberately gateway-native. This
+    // avoids a second, direct vendor account and makes the model guard above
+    // enforceable even when the legacy config flag has not been persisted yet.
+    const useGatewayLoop = useGatewayLoopConfigured || openRouterOnly;
     if (!useGatewayLoop && !isAnthropicProvider(model)) {
       throw new Error(
         `subagent job: resolved model "${model}" is non-Anthropic but agent.use_gateway_loop is not enabled. ` +

@@ -9,35 +9,141 @@
  */
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
-const DB_URL = "postgres://sigmabrain:2bfa7d4107f0b40e171cb508f27a9a703501b160d61957f0@localhost:15432/sigmabrain?sslmode=disable";
+const DB_URL = process.env.DATABASE_URL;
+if (!DB_URL) throw new Error("DATABASE_URL is required");
 
 // ─── RIS API counts (from API reference + live verification) ───
 
-const RIS_TOTALS: Record<string, { label: string; applikation: string; endpoint: string; total: number; corpusDir: string }> = {
-  "bundesrecht": { label: "Bundesrecht (Normen)", applikation: "BrKons", endpoint: "Bundesrecht", total: 439943, corpusDir: "at-normen/" },
-  "landesrecht": { label: "Landesrecht", applikation: "LrKons", endpoint: "Landesrecht", total: 279786, corpusDir: "at-landesrecht/" },
-  "judikatur-ogh": { label: "Judikatur OGH", applikation: "Justiz", endpoint: "Judikatur", total: 138435, corpusDir: "at-judikatur/" },
-  "judikatur-vwgh": { label: "Judikatur VwGH", applikation: "Vwgh", endpoint: "Judikatur", total: 356540, corpusDir: "at-judikatur-vwgh/" },
-  "judikatur-vfgh": { label: "Judikatur VfGH", applikation: "Vfgh", endpoint: "Judikatur", total: 24082, corpusDir: "at-judikatur-vfgh/" },
-  "judikatur-asylgh": { label: "Judikatur AsylGH", applikation: "AsylGH", endpoint: "Judikatur", total: 53113, corpusDir: "at-judikatur-asylgh/" },
-  "judikatur-bvwg": { label: "Judikatur BVwG", applikation: "Bvwg", endpoint: "Judikatur", total: 287732, corpusDir: "at-judikatur-bvwg/" },
-  "judikatur-lvwg": { label: "Judikatur LVwG", applikation: "Lvwg", endpoint: "Judikatur", total: 76507, corpusDir: "at-judikatur-lvwg/" },
-  "judikatur-uvs": { label: "Judikatur UVS", applikation: "Uvs", endpoint: "Judikatur", total: 25939, corpusDir: "at-judikatur-uvs/" },
-  "judikatur-dsk": { label: "Judikatur DSK", applikation: "Dsk", endpoint: "Judikatur", total: 1873, corpusDir: "at-judikatur-dsk/" },
-  "judikatur-gbk": { label: "Judikatur GBK", applikation: "Gbk", endpoint: "Judikatur", total: 1042, corpusDir: "at-judikatur-gbk/" },
-  "judikatur-pvak": { label: "Judikatur PVAK", applikation: "Pvak", endpoint: "Judikatur", total: 2550, corpusDir: "at-judikatur-pvak/" },
-  "judikatur-dok": { label: "Judikatur DOK", applikation: "Dok", endpoint: "Judikatur", total: 4822, corpusDir: "at-judikatur-dok/" },
-  "judikatur-ubas": { label: "Judikatur UBAS", applikation: "Ubas", endpoint: "Judikatur", total: 4052, corpusDir: "at-judikatur-ubas/" },
-  "judikatur-umse": { label: "Judikatur UmSE", applikation: "Umse", endpoint: "Judikatur", total: 742, corpusDir: "at-judikatur-umse/" },
-  "bezirke": { label: "Bezirke", applikation: "", endpoint: "Bezirke", total: 2484, corpusDir: "at-bezirke/" },
-  "gemeinden": { label: "Gemeinden", applikation: "", endpoint: "Gemeinden", total: 18384, corpusDir: "at-gemeinden/" },
+const RIS_TOTALS: Record<
+  string,
+  { label: string; applikation: string; endpoint: string; total: number; corpusDir: string }
+> = {
+  bundesrecht: {
+    label: "Bundesrecht (Normen)",
+    applikation: "BrKons",
+    endpoint: "Bundesrecht",
+    total: 439943,
+    corpusDir: "at-normen/",
+  },
+  landesrecht: {
+    label: "Landesrecht",
+    applikation: "LrKons",
+    endpoint: "Landesrecht",
+    total: 279786,
+    corpusDir: "at-landesrecht/",
+  },
+  "judikatur-ogh": {
+    label: "Judikatur OGH",
+    applikation: "Justiz",
+    endpoint: "Judikatur",
+    total: 138435,
+    corpusDir: "at-judikatur/",
+  },
+  "judikatur-vwgh": {
+    label: "Judikatur VwGH",
+    applikation: "Vwgh",
+    endpoint: "Judikatur",
+    total: 356540,
+    corpusDir: "at-judikatur-vwgh/",
+  },
+  "judikatur-vfgh": {
+    label: "Judikatur VfGH",
+    applikation: "Vfgh",
+    endpoint: "Judikatur",
+    total: 24082,
+    corpusDir: "at-judikatur-vfgh/",
+  },
+  "judikatur-asylgh": {
+    label: "Judikatur AsylGH",
+    applikation: "AsylGH",
+    endpoint: "Judikatur",
+    total: 53113,
+    corpusDir: "at-judikatur-asylgh/",
+  },
+  "judikatur-bvwg": {
+    label: "Judikatur BVwG",
+    applikation: "Bvwg",
+    endpoint: "Judikatur",
+    total: 287732,
+    corpusDir: "at-judikatur-bvwg/",
+  },
+  "judikatur-lvwg": {
+    label: "Judikatur LVwG",
+    applikation: "Lvwg",
+    endpoint: "Judikatur",
+    total: 76507,
+    corpusDir: "at-judikatur-lvwg/",
+  },
+  "judikatur-uvs": {
+    label: "Judikatur UVS",
+    applikation: "Uvs",
+    endpoint: "Judikatur",
+    total: 25939,
+    corpusDir: "at-judikatur-uvs/",
+  },
+  "judikatur-dsk": {
+    label: "Judikatur DSK",
+    applikation: "Dsk",
+    endpoint: "Judikatur",
+    total: 1873,
+    corpusDir: "at-judikatur-dsk/",
+  },
+  "judikatur-gbk": {
+    label: "Judikatur GBK",
+    applikation: "Gbk",
+    endpoint: "Judikatur",
+    total: 1042,
+    corpusDir: "at-judikatur-gbk/",
+  },
+  "judikatur-pvak": {
+    label: "Judikatur PVAK",
+    applikation: "Pvak",
+    endpoint: "Judikatur",
+    total: 2550,
+    corpusDir: "at-judikatur-pvak/",
+  },
+  "judikatur-dok": {
+    label: "Judikatur DOK",
+    applikation: "Dok",
+    endpoint: "Judikatur",
+    total: 4822,
+    corpusDir: "at-judikatur-dok/",
+  },
+  "judikatur-ubas": {
+    label: "Judikatur UBAS",
+    applikation: "Ubas",
+    endpoint: "Judikatur",
+    total: 4052,
+    corpusDir: "at-judikatur-ubas/",
+  },
+  "judikatur-umse": {
+    label: "Judikatur UmSE",
+    applikation: "Umse",
+    endpoint: "Judikatur",
+    total: 742,
+    corpusDir: "at-judikatur-umse/",
+  },
+  bezirke: {
+    label: "Bezirke",
+    applikation: "",
+    endpoint: "Bezirke",
+    total: 2484,
+    corpusDir: "at-bezirke/",
+  },
+  gemeinden: {
+    label: "Gemeinden",
+    applikation: "",
+    endpoint: "Gemeinden",
+    total: 18384,
+    corpusDir: "at-gemeinden/",
+  },
 };
 
 // ─── DB source_id mapping ───
 
 const SOURCE_MAP: Record<string, string> = {
-  "bundesrecht": "law-at",
-  "landesrecht": "law-at-landesrecht",
+  bundesrecht: "law-at",
+  landesrecht: "law-at-landesrecht",
   "judikatur-ogh": "law-at-judikatur",
   "judikatur-vwgh": "law-at-judikatur-vwgh",
   "judikatur-vfgh": "law-at-judikatur-vfgh",
@@ -84,7 +190,9 @@ function countDisk(dir: string): number {
 
 // ─── DB counts ───
 
-async function dbCounts(): Promise<Record<string, { pages: number; chunks: number; embedded: number }>> {
+async function dbCounts(): Promise<
+  Record<string, { pages: number; chunks: number; embedded: number }>
+> {
   const { Client } = await import("pg");
   const client = new Client(DB_URL);
   await client.connect();
@@ -138,22 +246,27 @@ async function main() {
 
   for (const [key, info] of Object.entries(RIS_TOTALS)) {
     const sourceId = SOURCE_MAP[key] ?? "";
-    const dbData = sourceId ? db[sourceId] ?? { pages: 0, chunks: 0, embedded: 0 } : { pages: 0, chunks: 0, embedded: 0 };
+    const dbData = sourceId
+      ? (db[sourceId] ?? { pages: 0, chunks: 0, embedded: 0 })
+      : { pages: 0, chunks: 0, embedded: 0 };
     const disk = countDisk(info.corpusDir);
-    const embPct = dbData.chunks > 0 ? ((dbData.embedded / dbData.chunks) * 100).toFixed(1) + "%" : "—";
+    const embPct =
+      dbData.chunks > 0 ? ((dbData.embedded / dbData.chunks) * 100).toFixed(1) + "%" : "—";
     const gap = info.total - dbData.pages;
     const gapStr = gap > 0 ? `−${gap}` : "✓";
 
-    console.log([
-      info.label.padEnd(widths[0]),
-      String(info.total).padStart(widths[1]),
-      String(disk).padStart(widths[2]),
-      String(dbData.pages).padStart(widths[3]),
-      String(dbData.chunks).padStart(widths[4]),
-      String(dbData.embedded).padStart(widths[5]),
-      embPct.padStart(widths[6]),
-      gapStr.padStart(widths[7]),
-    ].join(" | "));
+    console.log(
+      [
+        info.label.padEnd(widths[0]),
+        String(info.total).padStart(widths[1]),
+        String(disk).padStart(widths[2]),
+        String(dbData.pages).padStart(widths[3]),
+        String(dbData.chunks).padStart(widths[4]),
+        String(dbData.embedded).padStart(widths[5]),
+        embPct.padStart(widths[6]),
+        gapStr.padStart(widths[7]),
+      ].join(" | ")
+    );
 
     totalRis += info.total;
     totalDisk += disk;
@@ -163,16 +276,18 @@ async function main() {
   }
 
   console.log(widths.map((w) => "-".repeat(w)).join("-+-"));
-  console.log([
-    "TOTAL".padEnd(widths[0]),
-    String(totalRis).padStart(widths[1]),
-    String(totalDisk).padStart(widths[2]),
-    String(totalPages).padStart(widths[3]),
-    String(totalChunks).padStart(widths[4]),
-    String(totalEmb).padStart(widths[5]),
-    ((totalEmb / totalChunks) * 100).toFixed(1) + "%".padStart(widths[6] - 4),
-    String(totalRis - totalPages).padStart(widths[7]),
-  ].join(" | "));
+  console.log(
+    [
+      "TOTAL".padEnd(widths[0]),
+      String(totalRis).padStart(widths[1]),
+      String(totalDisk).padStart(widths[2]),
+      String(totalPages).padStart(widths[3]),
+      String(totalChunks).padStart(widths[4]),
+      String(totalEmb).padStart(widths[5]),
+      ((totalEmb / totalChunks) * 100).toFixed(1) + "%".padStart(widths[6] - 4),
+      String(totalRis - totalPages).padStart(widths[7]),
+    ].join(" | ")
+  );
 
   // ─── Additional DB issues ───
   console.log("\n\nDB Issues (law-at only):");
@@ -183,12 +298,30 @@ async function main() {
   await client.connect();
 
   const issues = [
-    ["statute_abbr NULL", `SELECT count(*) FROM content_chunks c JOIN pages p ON p.id = c.page_id WHERE p.source_id = 'law-at' AND p.deleted_at IS NULL AND c.statute_abbr IS NULL`],
-    ["paragraph_ref NULL", `SELECT count(*) FROM content_chunks c JOIN pages p ON p.id = c.page_id WHERE p.source_id = 'law-at' AND p.deleted_at IS NULL AND c.paragraph_ref IS NULL`],
-    ["chunk_role NULL", `SELECT count(*) FROM content_chunks c JOIN pages p ON p.id = c.page_id WHERE p.source_id = 'law-at' AND p.deleted_at IS NULL AND c.chunk_role IS NULL`],
-    ["Old slug format (legal/at/)", `SELECT count(*) FROM pages WHERE source_id = 'law-at' AND deleted_at IS NULL AND slug LIKE 'legal/at/%' AND slug NOT LIKE 'legal/statutes/at/%'`],
-    ["Pages without chunks", `SELECT count(*) FROM pages p LEFT JOIN content_chunks c ON c.page_id = p.id WHERE p.source_id = 'law-at' AND p.deleted_at IS NULL AND c.id IS NULL`],
-    ["Chunks without embedding (law-at)", `SELECT count(*) FROM content_chunks c JOIN pages p ON p.id = c.page_id WHERE p.source_id = 'law-at' AND p.deleted_at IS NULL AND c.embedding IS NULL`],
+    [
+      "statute_abbr NULL",
+      `SELECT count(*) FROM content_chunks c JOIN pages p ON p.id = c.page_id WHERE p.source_id = 'law-at' AND p.deleted_at IS NULL AND c.statute_abbr IS NULL`,
+    ],
+    [
+      "paragraph_ref NULL",
+      `SELECT count(*) FROM content_chunks c JOIN pages p ON p.id = c.page_id WHERE p.source_id = 'law-at' AND p.deleted_at IS NULL AND c.paragraph_ref IS NULL`,
+    ],
+    [
+      "chunk_role NULL",
+      `SELECT count(*) FROM content_chunks c JOIN pages p ON p.id = c.page_id WHERE p.source_id = 'law-at' AND p.deleted_at IS NULL AND c.chunk_role IS NULL`,
+    ],
+    [
+      "Old slug format (legal/at/)",
+      `SELECT count(*) FROM pages WHERE source_id = 'law-at' AND deleted_at IS NULL AND slug LIKE 'legal/at/%' AND slug NOT LIKE 'legal/statutes/at/%'`,
+    ],
+    [
+      "Pages without chunks",
+      `SELECT count(*) FROM pages p LEFT JOIN content_chunks c ON c.page_id = p.id WHERE p.source_id = 'law-at' AND p.deleted_at IS NULL AND c.id IS NULL`,
+    ],
+    [
+      "Chunks without embedding (law-at)",
+      `SELECT count(*) FROM content_chunks c JOIN pages p ON p.id = c.page_id WHERE p.source_id = 'law-at' AND p.deleted_at IS NULL AND c.embedding IS NULL`,
+    ],
   ];
 
   for (const [label, query] of issues) {
@@ -201,4 +334,7 @@ async function main() {
   await client.end();
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

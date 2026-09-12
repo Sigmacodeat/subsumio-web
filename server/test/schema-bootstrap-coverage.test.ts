@@ -845,6 +845,21 @@ const COLUMN_EXEMPTIONS = new Set<string>([
   // content_chunks.source_id — column-only addition; the partial index in
   // the same migration is co-defined there, not in PGLITE_SCHEMA_SQL.
   "content_chunks.source_id",
+  // v0.46.3/v0.46.4 (migrations v136/v137) — the SaaS credit wallet table is
+  // created entirely by v134 and is deliberately absent from PGLITE_SCHEMA_SQL.
+  // Its subsequent columns have no schema-blob FK/index/filter forward
+  // reference: upgrades execute v134 → v136 → v137 in order, while fresh
+  // installs execute the same migration chain. Bootstrapping it would add a
+  // permanent probe to every engine start without closing a replay hazard.
+  "saas_credit_balance.purchased_credit",
+  "saas_credit_balance.auto_reload_enabled",
+  "saas_credit_balance.auto_reload_threshold",
+  "saas_credit_balance.auto_reload_pack_id",
+  "saas_credit_balance.credit_limit",
+  "saas_credit_balance.credit_limit_period",
+  "saas_credit_balance.allow_negative_balance",
+  "saas_credit_balance.max_negative_balance",
+  "saas_credit_balance.auto_reload_last_triggered_at",
 ]);
 
 test("every ALTER TABLE ADD COLUMN in MIGRATIONS is covered by applyForwardReferenceBootstrap (column-only class)", async () => {

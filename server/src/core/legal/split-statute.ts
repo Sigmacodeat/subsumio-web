@@ -6,7 +6,7 @@
  * embed — it lands keyword-only and the subsumption skills retrieve the entire
  * code instead of the relevant §. Splitting per § makes each paragraph an
  * independently embeddable, retrievable unit, which is what
- * steuer-subsumption / legal-subsumption actually need.
+ * legal-subsumption agents actually need.
  *
  * Pure + deterministic: no I/O, no engine. The importer
  * (scripts/import-statutes-split.ts) does the I/O and calls importFromContent

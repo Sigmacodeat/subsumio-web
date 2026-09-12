@@ -52,6 +52,10 @@ export const POST = createHandler(
   async (ctx, body) => {
     const headers = await engineHeaders();
     if (!headers) return apiError("unauthorized", "Nicht authentifiziert", 401);
+    const ownerType: OwnerType = ctx.user.orgId ? "org" : "user";
+    const ownerId = ctx.user.orgId ?? ctx.user.id;
+    let pendingReservation: { pipelineKey: string; reservedCredits: number } | undefined;
+    let pipelineQueued = false;
 
     try {
       // The case page is also the authoritative intake context for explicit
@@ -70,14 +74,31 @@ export const POST = createHandler(
       // The everyday default deliberately avoids the expensive draft and
       // ensemble layers. Full pipeline remains an explicit user choice.
       const workflowId = body.workflow_id ?? "aktencheck";
-      const ownerType: OwnerType = ctx.user.orgId ? "org" : "user";
-      const ownerId = ctx.user.orgId ?? ctx.user.id;
 
       // If part_slugs not provided, fetch case documents
       let partSlugs = body.part_slugs ?? [];
       if (partSlugs.length === 0 && !body.resume_from_layer) {
         const documents = (fm.documents as Array<Record<string, unknown>>) ?? [];
         partSlugs = documents.map((d) => String(d.slug ?? "")).filter(Boolean);
+      }
+
+      if (partSlugs.length === 0 && !body.resume_from_layer) {
+        return apiError(
+          "no_documents",
+          "Diese Akte hat keine verknüpften Dokumente für die Pipeline.",
+          400
+        );
+      }
+
+      const jurisdictionCandidate = String(
+        body.jurisdiction ?? fm.jurisdiction ?? ""
+      ).toLowerCase();
+      if (!["at", "de", "ch", "eu"].includes(jurisdictionCandidate)) {
+        return apiError(
+          "jurisdiction_required",
+          "Die Jurisdiktion der Akte muss vor dem Pipeline-Start bestätigt werden.",
+          400
+        );
       }
 
       const documents = (fm.documents as Array<Record<string, unknown>>) ?? [];
@@ -103,14 +124,7 @@ export const POST = createHandler(
       if (!reservation.ok) {
         return insufficientCreditsResponse(reservation.balanceAfterReservation, estimatedCredits);
       }
-
-      if (partSlugs.length === 0 && !body.resume_from_layer) {
-        return apiError(
-          "no_documents",
-          "Diese Akte hat keine verknüpften Dokumente für die Pipeline.",
-          400
-        );
-      }
+      pendingReservation = { pipelineKey, reservedCredits: reservation.reservedCredits };
 
       // Call the engine's legal-pipeline trigger endpoint.
       // The engine exposes POST /api/legal-pipeline/trigger which internally
@@ -129,16 +143,6 @@ export const POST = createHandler(
         workflow_id: workflowId,
       };
 
-      const jurisdictionCandidate = String(
-        body.jurisdiction ?? fm.jurisdiction ?? ""
-      ).toLowerCase();
-      if (!["at", "de", "ch", "eu"].includes(jurisdictionCandidate)) {
-        return apiError(
-          "jurisdiction_required",
-          "Die Jurisdiktion der Akte muss vor dem Pipeline-Start bestätigt werden.",
-          400
-        );
-      }
       triggerPayload.jurisdiction = jurisdictionCandidate;
       triggerPayload.as_of_date =
         body.as_of_date ??
@@ -163,8 +167,11 @@ export const POST = createHandler(
       if (!triggerRes.ok) {
         const detail = await triggerRes.text().catch(() => "");
         await refundCredits(ownerId, ownerType, reservation.reservedCredits, 0, pipelineKey);
+        pendingReservation = undefined;
         return apiError("trigger_failed", `Pipeline-Trigger fehlgeschlagen: ${detail}`, 502);
       }
+      // From this point the queued worker owns the reservation settlement.
+      pipelineQueued = true;
 
       const triggerResult = (await triggerRes.json().catch(() => ({}))) as {
         job_id?: number | string;
@@ -191,6 +198,20 @@ export const POST = createHandler(
         reserved_credits: reservation.reservedCredits,
       });
     } catch (err) {
+      if (pendingReservation && !pipelineQueued) {
+        await refundCredits(
+          ownerId,
+          ownerType,
+          pendingReservation.reservedCredits,
+          0,
+          pendingReservation.pipelineKey
+        ).catch((refundError) =>
+          console.error(
+            "[trigger-pipeline] CRITICAL: reservation refund failed:",
+            refundError instanceof Error ? refundError.message : String(refundError)
+          )
+        );
+      }
       const msg = err instanceof Error ? err.message : String(err);
       console.error("[trigger-pipeline] error:", msg);
       return apiError("internal_error", `Pipeline-Trigger fehlgeschlagen: ${msg}`, 500);

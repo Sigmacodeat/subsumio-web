@@ -188,13 +188,13 @@ export function MatterContextPanel({
                     icon={FileText}
                     label="Dokumente"
                     value={bundle.documents.length}
-                    color="text-gray-600"
+                    color="text-[color:var(--ds-neutral-text)]"
                   />
                   <SummaryItem
                     icon={Activity}
                     label="Aktivitäten"
                     value={bundle.recent_activity.length}
-                    color="text-purple-600"
+                    color="text-[color:var(--ds-category-purple-text)]"
                   />
                   <SummaryItem
                     icon={AlertTriangle}
@@ -374,10 +374,10 @@ function PartyRow({ party }: { party: MatterParty }) {
     client: "text-[color:var(--ds-info-text)]",
     opponent: "text-[color:var(--ds-danger-text)]",
     lawyer: "text-[color:var(--ds-success-text)]",
-    court: "text-purple-600",
+    court: "text-[color:var(--ds-category-purple-text)]",
     witness: "text-[color:var(--ds-warning-text)]",
-    third_party: "text-gray-600",
-    other: "text-gray-500",
+    third_party: "text-[color:var(--ds-neutral-text)]",
+    other: "text-[color:var(--ds-neutral-text)]",
   };
   return (
     <div className="flex items-start justify-between gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2">

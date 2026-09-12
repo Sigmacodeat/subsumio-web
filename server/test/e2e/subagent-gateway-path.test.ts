@@ -448,6 +448,42 @@ describe("runSubagentViaGateway (v0.38 Slice 1 — full handler path through gat
     expect(result.stop_reason).toBe("end_turn");
   });
 
+  it("OpenRouter-only mode enables the gateway loop even before legacy config is persisted", async () => {
+    const previousMode = process.env.SUBSUMIO_AI_PROVIDER;
+    process.env.SUBSUMIO_AI_PROVIDER = "openrouter";
+    await engine.setConfig("agent.use_gateway_loop", "false");
+    __setChatTransportForTests(
+      async () =>
+        ({
+          text: "gateway-only ok",
+          blocks: [{ type: "text", text: "gateway-only ok" }] as ChatBlock[],
+          stopReason: "end",
+          usage: {
+            input_tokens: 4,
+            output_tokens: 2,
+            cache_read_tokens: 0,
+            cache_creation_tokens: 0,
+          },
+          model: "openrouter:anthropic/claude-haiku-4.5",
+          providerId: "openrouter",
+        }) satisfies ChatResult
+    );
+
+    try {
+      const handler = buildHandler(makeStubTools([]));
+      const { ctx } = await makeFakeJob({
+        prompt: "hi",
+        model: "openrouter:anthropic/claude-haiku-4.5",
+      });
+      const result = await handler(ctx);
+      expect(result.result).toBe("gateway-only ok");
+      expect(result.stop_reason).toBe("end_turn");
+    } finally {
+      if (previousMode === undefined) delete process.env.SUBSUMIO_AI_PROVIDER;
+      else process.env.SUBSUMIO_AI_PROVIDER = previousMode;
+    }
+  });
+
   it("write-ordering invariant: assistant message persisted BEFORE tool pending row", async () => {
     // The D11 + codex P1 write-ordering invariant: persistence callbacks
     // fire in order so a SIGKILL between any two steps leaves the DB in a

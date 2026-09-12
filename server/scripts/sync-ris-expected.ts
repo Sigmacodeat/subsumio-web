@@ -114,7 +114,10 @@ const DRY_RUN = values["dry-run"] ?? false;
 
 const DATABASE_URL =
   process.env.DATABASE_URL ??
-  "postgresql://sigmabrain:2bfa7d4107f0b40e171cb508f27a9a703501b160d61957f0@localhost:15432/subsumio_law_v2";
+  process.env.DATABASE_URL ??
+  (() => {
+    throw new Error("DATABASE_URL is required");
+  })();
 
 async function getDb() {
   const { default: postgres } = await import("postgres");

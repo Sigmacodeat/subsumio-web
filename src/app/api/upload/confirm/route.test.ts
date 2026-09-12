@@ -128,6 +128,10 @@ describe("POST /api/upload/confirm", () => {
     const [url, init] = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(String(url)).toBe("http://engine.test/api/upload/confirm");
     expect((init as RequestInit).method).toBe("POST");
+    const headers = new Headers((init as RequestInit).headers);
+    expect(headers.get("x-subsumio-owner-id")).toBe("user-1");
+    expect(headers.get("x-subsumio-owner-type")).toBe("user");
+    expect(headers.get("x-subsumio-user-id")).toBe("user-1");
 
     // analysis_status=pending was stamped
     expect(mockEnginePatch).toHaveBeenCalledTimes(1);

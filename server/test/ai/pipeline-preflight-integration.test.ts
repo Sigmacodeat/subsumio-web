@@ -34,7 +34,9 @@ describe("legal-pipeline pre-flight integration", () => {
       new URL("../../src/core/minions/handlers/legal-pipeline.ts", import.meta.url),
       "utf-8"
     );
-    const preflightLine = source.indexOf("await assertProviderCredits()");
+    const preflightLine = source.indexOf(
+      "await assertProviderCredits(isOpenRouterOnlyDeployment()"
+    );
     const billingLine = source.indexOf("return billingContextStore.run(");
     expect(preflightLine).toBeGreaterThan(0);
     expect(billingLine).toBeGreaterThan(0);
@@ -48,7 +50,9 @@ describe("legal-pipeline pre-flight integration", () => {
       "utf-8"
     );
     const validationLine = source.indexOf("unknown workflow_id");
-    const preflightLine = source.indexOf("await assertProviderCredits()");
+    const preflightLine = source.indexOf(
+      "await assertProviderCredits(isOpenRouterOnlyDeployment()"
+    );
     // Find the first specialist call INSIDE the handler (not the import)
     // The handler starts at "export function makeLegalPipelineHandler"
     const handlerStart = source.indexOf("export function makeLegalPipelineHandler");
@@ -69,7 +73,7 @@ describe("legal-pipeline pre-flight integration", () => {
       new URL("../../src/core/minions/handlers/legal-pipeline.ts", import.meta.url),
       "utf-8"
     );
-    const preflightIdx = source.indexOf("await assertProviderCredits()");
+    const preflightIdx = source.indexOf("await assertProviderCredits(isOpenRouterOnlyDeployment()");
     // Look backwards for the comment
     const before = source.slice(Math.max(0, preflightIdx - 500), preflightIdx);
     expect(before).toContain("Pre-Flight");

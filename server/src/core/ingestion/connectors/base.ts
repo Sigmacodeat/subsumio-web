@@ -2,7 +2,7 @@
  * BaseConnector — abstract ingestion source for external system integrations.
  *
  * Provides the foundation every connector inherits:
- *   - OAuth2 token management (refresh, storage in ~/.gbrain/connectors/)
+ *   - OAuth2 token management (encrypted database storage for SaaS)
  *   - Delta sync with cursor persistence
  *   - Rate limiting (token bucket per API)
  *   - Exponential backoff on API errors
@@ -29,8 +29,9 @@ import {
   type IngestionContentType,
   computeContentHash,
 } from "../types.ts";
+import type { ConnectorStateStore } from "./secret-store.ts";
 
-/** Stored per-connector state in ~/.gbrain/connectors/ */
+/** Stored per-connector state; SaaS uses encrypted database persistence. */
 export interface ConnectorState {
   /** Connector instance id. */
   connector_id: string;
@@ -54,10 +55,17 @@ export interface ConnectorState {
   webhook_resource_id?: string;
   /** Push webhook expiration timestamp (Google Drive). */
   webhook_expires_at?: number;
+  /** Observability metadata written by ConnectorManager after a sync. */
+  last_sync_status?: "ok" | "error";
+  last_sync_duration_ms?: number;
+  last_items_retrieved?: number;
+  last_sync_error?: string;
 }
 
 /** Per-connector configuration passed at construction. */
 export interface ConnectorConfig {
+  /** Stable instance id. Makes two connectors of the same service independent. */
+  instance_id?: string;
   /** OAuth2 / API credentials. */
   client_id?: string;
   client_secret?: string;
@@ -77,6 +85,29 @@ export interface ConnectorConfig {
   webhook_url?: string;
   /** Base URL for self-hosted or cloud instances (Jira, Confluence). */
   base_url?: string;
+  /**
+   * Server-owned routing context. This is deliberately supplied by the
+   * connector registry, never read from a document, email, or beA payload.
+   */
+  tenant_source_id?: string;
+  /** Optional default matter, configured by the firm rather than inferred. */
+  default_case_slug?: string;
+  /** User id used only for notification/audit assignment. */
+  responsible_user_id?: string;
+  /** Billing owner injected by the authenticated dashboard configuration route. */
+  owner_id?: string;
+  owner_type?: "user" | "org";
+  /** Internal persistence adapter, injected by ConnectorManager only. */
+  state_store?: ConnectorStateStore;
+}
+
+export interface ConnectorDispatchContext {
+  connector_instance_id: string;
+  tenant_source_id: string;
+  default_case_slug?: string;
+  responsible_user_id?: string;
+  owner_id?: string;
+  owner_type?: "user" | "org";
 }
 
 /** Opaque cursor for delta sync. */
@@ -130,12 +161,36 @@ export abstract class BaseConnector implements IngestionSource {
     public readonly service: string,
     protected _config: ConnectorConfig
   ) {
-    this.id = _config.filters?.id ? `${service}-${_config.filters.id}` : service;
+    this.id =
+      _config.instance_id ?? (_config.filters?.id ? `${service}-${_config.filters.id}` : service);
     this.kind = `connector:${service}`;
     this.mode = _config.mode ?? "trickle";
     // Default: 100 requests per 100s (Google's default). Subclass override via getApiRateLimit().
     const { capacity = 100, windowMs = 100_000 } = this.getApiRateLimit();
     this._bucket = new TokenBucket(capacity, capacity / windowMs);
+  }
+
+  /**
+   * Context passed alongside a daemon job. It is not document metadata: the
+   * queue obtains it from the configured connector instance, which prevents a
+   * sender from selecting a different tenant source or matter.
+   */
+  getDispatchContext(): ConnectorDispatchContext | undefined {
+    const sourceId = this._config.tenant_source_id;
+    if (!sourceId) return undefined;
+    return {
+      connector_instance_id: this.id,
+      tenant_source_id: sourceId,
+      ...(this._config.default_case_slug
+        ? { default_case_slug: this._config.default_case_slug }
+        : {}),
+      ...(this._config.responsible_user_id
+        ? { responsible_user_id: this._config.responsible_user_id }
+        : {}),
+      ...(this._config.owner_id && this._config.owner_type
+        ? { owner_id: this._config.owner_id, owner_type: this._config.owner_type }
+        : {}),
+    };
   }
 
   // ── Abstract hooks (subclass implements) ───────────────────────────
@@ -384,10 +439,15 @@ export abstract class BaseConnector implements IngestionSource {
   // ── State persistence ────────────────────────────────────────────────
 
   private _statePath(): string {
-    return join(homedir(), ".gbrain", "connectors", `${this.service}.json`);
+    return join(homedir(), ".gbrain", "connectors", `${this.id}.json`);
   }
 
   protected async _loadState(): Promise<ConnectorState | undefined> {
+    if (this._config.state_store) {
+      const state = await this._config.state_store.load(this.id);
+      if (state && this._config.api_key) state.access_token = this._config.api_key;
+      return state;
+    }
     const path = this._statePath();
     if (!existsSync(path)) return undefined;
     try {
@@ -402,6 +462,10 @@ export abstract class BaseConnector implements IngestionSource {
   }
 
   protected async _saveState(state: ConnectorState): Promise<void> {
+    if (this._config.state_store) {
+      await this._config.state_store.save(this.id, state);
+      return;
+    }
     const path = this._statePath();
     await mkdir(dirname(path), { recursive: true });
     await writeFile(path, JSON.stringify(state, null, 2));

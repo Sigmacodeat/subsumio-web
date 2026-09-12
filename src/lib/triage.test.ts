@@ -238,8 +238,8 @@ describe("URGENCY_LABELS", () => {
 
   test("has color classes", () => {
     expect(URGENCY_LABELS.critical.color).toContain("red");
-    expect(URGENCY_LABELS.high.color).toContain("orange");
+    expect(URGENCY_LABELS.high.color).toContain("--ds-attention-");
     expect(URGENCY_LABELS.medium.color).toContain("amber");
-    expect(URGENCY_LABELS.low.color).toContain("slate");
+    expect(URGENCY_LABELS.low.color).toContain("--ds-neutral-");
   });
 });

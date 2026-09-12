@@ -53,6 +53,9 @@ interface ExtractJobData {
   matter_scope?: string[] | "all";
   acl_groups?: string[] | "all";
   auto_trigger_legal_pipeline?: boolean;
+  owner_id?: string;
+  owner_type?: "user" | "org";
+  user_id?: string;
 }
 
 export function makeExtractDocumentHandler({ engine }: { engine: BrainEngine }) {
@@ -90,6 +93,9 @@ export function makeExtractDocumentHandler({ engine }: { engine: BrainEngine }) 
         matterScope: d.matter_scope,
         aclGroups: d.acl_groups,
         autoTriggerLegalPipeline: d.auto_trigger_legal_pipeline ?? true,
+        ownerId: d.owner_id,
+        ownerType: d.owner_type,
+        userId: d.user_id,
       });
 
       // Guarantee a terminal status. The import normally overwrites the stub's

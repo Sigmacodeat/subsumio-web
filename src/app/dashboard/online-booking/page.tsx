@@ -103,7 +103,8 @@ export default function OnlineBookingPage() {
           <div>
             <Label>{t("booking.duration")}</Label>
             <Input
-              type="number" inputMode="numeric"
+              type="number"
+              inputMode="numeric"
               value={slotDuration}
               onChange={(e) => setSlotDuration(e.target.value)}
             />
@@ -139,7 +140,9 @@ export default function OnlineBookingPage() {
                   — {formatTime(slot.end)}
                 </div>
                 {slot.status === "booked" ? (
-                  <Badge className="mt-2 bg-slate-100 text-slate-500">{t("booking.booked")}</Badge>
+                  <Badge className="mt-2 bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)]">
+                    {t("booking.booked")}
+                  </Badge>
                 ) : (
                   <Badge className="mt-2 bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]">
                     {t("booking.free")}

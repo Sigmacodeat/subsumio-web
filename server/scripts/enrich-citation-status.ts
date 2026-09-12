@@ -22,7 +22,10 @@ import pg from "pg";
 
 const DATABASE_URL =
   process.env.DATABASE_URL ??
-  "postgres://sigmabrain:2bfa7d4107f0b40e171cb508f27a9a703501b160d61957f0@localhost:15432/sigmabrain?sslmode=disable";
+  process.env.DATABASE_URL ??
+  (() => {
+    throw new Error("DATABASE_URL is required");
+  })();
 
 const args = process.argv.slice(2);
 const DRY = args.includes("--dry-run");

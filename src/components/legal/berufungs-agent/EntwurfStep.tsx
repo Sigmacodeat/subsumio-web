@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { AIActConformityBanner } from "@/components/legal/AIActConformityBanner";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import { AI_FRONTMATTER } from "@/lib/ai-act";
 import { useAutosave } from "@/lib/hooks/use-autosave";
 import type { BerufungsGrund } from "@/app/dashboard/berufungs-agent/page";
@@ -51,6 +52,8 @@ export function EntwurfStep({
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [streamingContent, setStreamingContent] = useState("");
+  const [citations, setCitations] = useState<CitationPanelData["citations"]>([]);
+  const [grounding, setGrounding] = useState<CitationPanelData["grounding"]>(null);
   const [saving, setSaving] = useState(false);
   const [instructions, setInstructions] = useState("");
   const [jurisdiction, setJurisdiction] = useState<"at" | "de" | "ch">("at");
@@ -81,6 +84,8 @@ export function EntwurfStep({
     setGenerating(true);
     setError(null);
     setStreamingContent("");
+    setCitations([]);
+    setGrounding(null);
     const ctrl = new AbortController();
     abortRef.current = ctrl;
 
@@ -118,6 +123,8 @@ Der Schriftsatz soll enthalten:
       });
       if (ctrl.signal.aborted) return;
       onDraftChange(result.content);
+      setCitations(result.citations);
+      setGrounding(result.grounding);
       addToast({
         type: "success",
         title: "Entwurf generiert",
@@ -464,6 +471,14 @@ Der Schriftsatz soll enthalten:
             className="font-mono text-sm leading-relaxed"
             placeholder="Der generierte Schriftsatz erscheint hier — Sie können ihn bearbeiten."
             aria-label="Schriftsatz-Entwurf Editor"
+          />
+          <CitationPanel
+            data={{
+              citations,
+              grounding,
+              isStreaming: generating,
+            }}
+            compact
           />
         </div>
       )}

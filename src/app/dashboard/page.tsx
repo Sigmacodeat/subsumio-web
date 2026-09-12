@@ -39,10 +39,6 @@ const WidgetBoard = dynamic(
   () => import("@/components/dashboard/widget-board").then((m) => m.WidgetBoard),
   { loading: () => <PageSkeleton /> }
 );
-const TaxWidgetBoard = dynamic(
-  () => import("@/components/dashboard/tax-widget-board").then((m) => m.TaxWidgetBoard),
-  { loading: () => <PageSkeleton /> }
-);
 const MorningBriefing = dynamic(
   () => import("@/components/dashboard/morning-briefing").then((m) => m.MorningBriefing),
   { ssr: false, loading: () => <PageSkeleton /> }
@@ -472,8 +468,6 @@ export default function DashboardPage() {
   }
 
   const userName = meQuery.data?.user?.name ?? meQuery.data?.user?.email ?? null;
-  const industry = meQuery.data?.user?.industry ?? "legal";
-  const isTax = industry === "tax";
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
@@ -488,10 +482,10 @@ export default function DashboardPage() {
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                    {isTax ? t("dashboard.welcome_tax") : t("dashboard.welcome")}
+                    {t("dashboard.welcome")}
                   </h2>
                   <p className="mt-1 max-w-3xl text-[13px] leading-relaxed text-[color:var(--ds-text-muted)]">
-                    {isTax ? t("dashboard.welcome_tax_desc") : t("dashboard.welcome_desc")}
+                    {t("dashboard.welcome_desc")}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -501,15 +495,7 @@ export default function DashboardPage() {
                     data-tour="quick-create"
                     onClick={() => window.dispatchEvent(new CustomEvent("subsumio:quick-create"))}
                   >
-                    {isTax ? (
-                      <>
-                        <FileText size={14} /> {t("dashboard.welcome_tax_action")}
-                      </>
-                    ) : (
-                      <>
-                        <Briefcase size={14} /> {t("cockpit.action_case")}
-                      </>
-                    )}
+                    <Briefcase size={14} /> {t("cockpit.action_case")}
                   </Button>
                   <Link href="/dashboard/import-kanzlei">
                     <Button size="sm" variant="outline">
@@ -579,7 +565,7 @@ export default function DashboardPage() {
         <h2 id="dashboard-view-heading-dashboard" className="sr-only">
           {t("today.dashboard")}
         </h2>
-        {dashboardView === "dashboard" && (isTax ? <TaxWidgetBoard /> : <WidgetBoard />)}
+        {dashboardView === "dashboard" && <WidgetBoard />}
       </div>
     </div>
   );

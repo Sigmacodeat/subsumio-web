@@ -201,7 +201,15 @@ export const POST = createHandler(
 
         const upstream = await fetch(`${ENGINE_URL}/api/upload`, {
           method: "POST",
-          headers: ctx.headers,
+          headers: {
+            ...ctx.headers,
+            // The engine may start the paid legal pipeline after extraction.
+            // Ownership is added only by this authenticated server-side proxy,
+            // never accepted from the browser multipart body.
+            "x-subsumio-owner-id": ctx.user.orgId ?? ctx.user.id,
+            "x-subsumio-owner-type": ctx.user.orgId ? "org" : "user",
+            "x-subsumio-user-id": ctx.user.id,
+          },
           body: cleanForm,
           signal: AbortSignal.timeout(540_000),
         }).catch((err: unknown) => {

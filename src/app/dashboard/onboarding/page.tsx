@@ -12,7 +12,6 @@ import {
   ArrowLeft,
   Loader2,
   Scale,
-  Briefcase,
   FileText,
   Smartphone,
   CreditCard,
@@ -37,35 +36,17 @@ import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/upload-formats";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 
-type Step =
-  | "welcome"
-  | "industry"
-  | "profile"
-  | "whatsapp"
-  | "billing"
-  | "upload"
-  | "query"
-  | "done";
+type Step = "welcome" | "profile" | "whatsapp" | "billing" | "upload" | "query" | "done";
 
-const STEPS: Step[] = [
-  "welcome",
-  "industry",
-  "profile",
-  "whatsapp",
-  "billing",
-  "upload",
-  "query",
-  "done",
-];
+const STEPS: Step[] = ["welcome", "profile", "whatsapp", "billing", "upload", "query", "done"];
 const STEP_INDEX: Record<Step, number> = {
   welcome: 0,
-  industry: 1,
-  profile: 2,
-  whatsapp: 3,
-  billing: 4,
-  upload: 5,
-  query: 6,
-  done: 7,
+  profile: 1,
+  whatsapp: 2,
+  billing: 3,
+  upload: 4,
+  query: 5,
+  done: 6,
 };
 
 export default function OnboardingPage() {
@@ -74,7 +55,7 @@ export default function OnboardingPage() {
   const meQuery = useMe();
   const { t } = useLang();
   const [step, setStep] = useState<Step>("welcome");
-  const [industry, setIndustry] = useState<string | null>("legal");
+  const industry = "legal";
   const [profile, setProfile] = useState({
     kanzleiName: "",
     anwaltName: "",
@@ -229,7 +210,7 @@ export default function OnboardingPage() {
       await csrfFetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ industry: null }),
+        body: JSON.stringify({ industry }),
       });
       await qc.invalidateQueries({ queryKey: ["auth", "me"] });
       router.replace("/dashboard");
@@ -237,7 +218,7 @@ export default function OnboardingPage() {
       router.replace("/dashboard");
     }
     setCompleting(false);
-  }, [qc, router]);
+  }, [industry, qc, router]);
 
   const updateProfile = (key: keyof typeof profile, value: string) => {
     setProfile((current) => ({ ...current, [key]: value }));
@@ -305,108 +286,12 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {/* Industry */}
-            {step === "industry" && (
-              <div className="space-y-5">
-                <div className="flex items-center gap-3">
-                  <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border">
-                    <Briefcase size={18} className="brand-text" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-[color:var(--ds-text)]">
-                      {t("onboarding.step_industry")}
-                    </h2>
-                    <p className="text-xs text-[color:var(--ds-text-muted)]">
-                      {t("onboarding.step_industry_desc")}
-                    </p>
-                  </div>
-                </div>
-                <div className="grid gap-3">
-                  <button
-                    onClick={() => setIndustry("legal")}
-                    className={`flex items-center gap-4 rounded-xl border-2 p-4 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
-                      industry === "legal"
-                        ? "brand-border bg-[color:var(--brand-primary)]/5"
-                        : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)]/30"
-                    } active:scale-[0.97]`}
-                  >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-info-bg)]">
-                      <Scale size={18} className="text-[color:var(--ds-info-text)]" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-[color:var(--ds-text)]">
-                        {t("onboarding.industry_legal")}
-                      </p>
-                      <p className="text-xs text-[color:var(--ds-text-muted)]">
-                        Fristen, RVG, beA, Akten-Graph
-                      </p>
-                    </div>
-                    {industry === "legal" && <CheckCircle2 size={18} className="brand-text" />}
-                  </button>
-                  <button
-                    onClick={() => setIndustry("tax")}
-                    className={`flex items-center gap-4 rounded-xl border-2 p-4 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
-                      industry === "tax"
-                        ? "brand-border bg-[color:var(--brand-primary)]/5"
-                        : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)]/30"
-                    } active:scale-[0.97]`}
-                  >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-success-bg)]">
-                      <FileText size={20} className="text-[color:var(--ds-success-text)]" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-[color:var(--ds-text)]">
-                        {t("onboarding.industry_tax")}
-                      </p>
-                      <p className="text-xs text-[color:var(--ds-text-muted)]">
-                        Steuererklärungen, StBVV, Bescheide, Fristen
-                      </p>
-                    </div>
-                    {industry === "tax" && <CheckCircle2 size={18} className="brand-text" />}
-                  </button>
-                  <button
-                    onClick={() => setIndustry("other")}
-                    className={`flex items-center gap-4 rounded-xl border-2 p-4 text-left opacity-70 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
-                      industry === "other"
-                        ? "brand-border bg-[color:var(--brand-primary)]/5"
-                        : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)]/30"
-                    } active:scale-[0.97]`}
-                  >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
-                      <Briefcase size={18} className="text-[color:var(--ds-text-muted)]" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-[color:var(--ds-text)]">
-                        {t("onboarding.industry_other")}
-                      </p>
-                      <p className="text-xs text-[color:var(--ds-text-muted)]">
-                        Subsumio ist aktuell für Kanzlei-Workflows optimiert
-                      </p>
-                    </div>
-                    {industry === "other" && <CheckCircle2 size={18} className="brand-text" />}
-                  </button>
-                </div>
-                <div className="flex justify-between pt-2">
-                  <Button variant="ghost" size="sm" onClick={back}>
-                    <ArrowLeft size={14} /> {t("onboarding.back")}
-                  </Button>
-                  <Button variant="glow" size="sm" onClick={next} disabled={!industry}>
-                    {t("onboarding.next")} <ArrowRight size={14} />
-                  </Button>
-                </div>
-              </div>
-            )}
-
             {/* Profile */}
             {step === "profile" && (
               <div className="space-y-5">
                 <div className="flex items-center gap-3">
                   <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border">
-                    {industry === "tax" ? (
-                      <FileText size={18} className="brand-text" />
-                    ) : (
-                      <Scale size={18} className="brand-text" />
-                    )}
+                    <Scale size={18} className="brand-text" />
                   </div>
                   <div>
                     <h2 className="text-lg font-bold text-[color:var(--ds-text)]">
@@ -430,9 +315,7 @@ export default function OnboardingPage() {
                       id="ob-firm"
                       value={profile.kanzleiName}
                       onChange={(e) => updateProfile("kanzleiName", e.target.value)}
-                      placeholder={
-                        industry === "tax" ? t("onboarding.tax_firm_placeholder") : "Kanzlei Muster"
-                      }
+                      placeholder="Kanzlei Muster"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -446,10 +329,7 @@ export default function OnboardingPage() {
                       id="ob-owner"
                       value={profile.anwaltName}
                       onChange={(e) => updateProfile("anwaltName", e.target.value)}
-                      placeholder={
-                        userName ||
-                        (industry === "tax" ? t("onboarding.tax_owner_placeholder") : "Dr. Muster")
-                      }
+                      placeholder={userName || "Dr. Muster"}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -463,12 +343,7 @@ export default function OnboardingPage() {
                       id="ob-email"
                       value={profile.kanzleiEmail}
                       onChange={(e) => updateProfile("kanzleiEmail", e.target.value)}
-                      placeholder={
-                        userEmail ||
-                        (industry === "tax"
-                          ? t("onboarding.tax_email_placeholder")
-                          : "office@kanzlei.at")
-                      }
+                      placeholder={userEmail || "office@kanzlei.at"}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -507,11 +382,7 @@ export default function OnboardingPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {industry === "tax" ? (
-                          <SelectItem value="lawyer">{t("onboarding.role_tax_advisor")}</SelectItem>
-                        ) : (
-                          <SelectItem value="lawyer">{t("onboarding.role_lawyer")}</SelectItem>
-                        )}
+                        <SelectItem value="lawyer">{t("onboarding.role_lawyer")}</SelectItem>
                         <SelectItem value="assistant">{t("onboarding.role_assistant")}</SelectItem>
                         <SelectItem value="management">
                           {t("onboarding.role_management")}
@@ -530,11 +401,7 @@ export default function OnboardingPage() {
                       id="ob-focus"
                       value={profile.focus}
                       onChange={(e) => updateProfile("focus", e.target.value)}
-                      placeholder={
-                        industry === "tax"
-                          ? t("onboarding.tax_focus_placeholder")
-                          : t("onboarding.profile_focus_hint")
-                      }
+                      placeholder={t("onboarding.profile_focus_hint")}
                     />
                   </div>
                 </div>

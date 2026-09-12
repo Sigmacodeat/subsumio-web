@@ -124,7 +124,7 @@ export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
               icon={Users}
               label="Entitäten"
               value={summary.total_entities}
-              color="text-purple-600"
+              color="text-[color:var(--ds-category-purple-text)]"
             />
             <StatCard
               icon={GitBranch}

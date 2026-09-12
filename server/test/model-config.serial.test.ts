@@ -37,6 +37,7 @@ beforeEach(() => {
     return true;
   }) as typeof process.stderr.write;
   delete process.env.GBRAIN_MODEL;
+  delete process.env.SUBSUMIO_AI_PROVIDER;
   _resetDeprecationWarningsForTest();
 });
 
@@ -177,6 +178,14 @@ describe("resolveModel — v0.31.12 tier system", () => {
       fallback: "haiku",
     });
     expect(m).toBe(TIER_DEFAULTS.reasoning);
+  });
+
+  test("OpenRouter-only mode rejects a stale direct-provider override before a request is made", async () => {
+    process.env.SUBSUMIO_AI_PROVIDER = "openrouter";
+    stub.set("models.tier.reasoning", "anthropic:claude-sonnet-4-6");
+    await expect(
+      resolveModel(stub as never, { tier: "reasoning", fallback: "sonnet" })
+    ).rejects.toThrow("OpenRouter-only deployment resolved direct model");
   });
 
   test("v0.38 D7: tier.subagent accepts non-Anthropic models that support tools (with cost warn)", async () => {

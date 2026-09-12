@@ -58,6 +58,7 @@
 
 import type { MinionJobContext } from "../types.ts";
 import type { BrainEngine } from "../../engine.ts";
+import type { Page } from "../../types.ts";
 import { MinionQueue } from "../queue.ts";
 import { createHash } from "node:crypto";
 import { resolveSpecialist } from "../specialist-defs.ts";
@@ -839,7 +840,40 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
     // pipeline. Fails fast with an actionable error instead of crashing
     // mid-flight after partial work (wasting specialist turns + tokens).
     // 60s cache means this adds <1ms on rapid re-runs.
-    await assertProviderCredits();
+    try {
+      // Pre-Flight remains cached for 60s; OpenRouter-only checks only its
+      // single configured billing gateway.
+      // A deployment explicitly configured for the OpenRouter gateway must
+      // not be blocked by a stale/depleted direct-provider key. The model
+      // routing guard below ensures this mode cannot silently fall back to a
+      // direct vendor, so checking the gateway credit balance is sufficient.
+      await assertProviderCredits(isOpenRouterOnlyDeployment() ? ["openrouter"] : undefined);
+    } catch (preflightError) {
+      // Pre-flight runs before the main pipeline state exists. A paid
+      // reservation must nevertheless be released: no model call or layer
+      // was executed when the provider reports depleted credits.
+      if (data.pipeline_key && data.owner_id !== undefined) {
+        const workflowDef = data.workflow_id ? getWorkflowDef(data.workflow_id) : undefined;
+        await settlePipeline(engine, {
+          pipeline_key: data.pipeline_key,
+          owner_id: data.owner_id,
+          owner_type: data.owner_type ?? "user",
+          case_slug: data.case_slug,
+          reserved_credits: data.reserved_credits ?? 0,
+          actual_credits_override: 0,
+          total_layers: workflowDef?.layers.length ?? 7,
+          workflow_id: data.workflow_id,
+          user_id: data.user_id,
+        }).catch((settleErr: unknown) => {
+          console.warn(
+            `[legal-pipeline] pre-flight reservation refund failed: ${
+              settleErr instanceof Error ? settleErr.message : String(settleErr)
+            }`
+          );
+        });
+      }
+      throw preflightError;
+    }
 
     return billingContextStore.run(
       {
@@ -2904,6 +2938,24 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
           state.updated_at = new Date().toISOString();
           await persistPipelineState(engine, stateSlug, state, sourceStamp);
 
+          // Project the canonical, citation-bearing output pages onto the case
+          // itself. The raw AI text remains on its dedicated pages; the matter
+          // dashboard gets stable references instead of duplicating unverified
+          // content into frontmatter.
+          await projectPipelineOutputsToCase(engine, {
+            caseSlug: data.case_slug,
+            sourceId: sourceStamp,
+            status: state.status,
+            updatedAt: state.updated_at,
+            onIndexSlug: `on-indexes/${data.case_slug}`,
+            entitySlugs: state.layers[2]?.output_slugs ?? [],
+            forensicSlug: state.layers[3]?.output_slugs?.[0],
+            groundingSlug: state.layers[4]?.output_slugs?.[0],
+            damageSlug: state.layers[5]?.output_slugs?.[0],
+            deadlineSlug: state.layers[5]?.output_slugs?.[1],
+            pipelineStateSlug: stateSlug,
+          });
+
           await ctx.updateProgress({ step: 8, total: 8, message: "Pipeline completed" });
 
           // F1 fix: Server-side settlement — reconcile actual token usage against
@@ -4125,6 +4177,15 @@ async function runDraftLayer(opts: {
 
 // ── Ensemble Critic Layer (3-Model Consensus) ──────────────
 
+/** True only for an explicit single-gateway deployment (never inferred from a key).
+ *
+ * Keeping this opt-in prevents a mixed direct-provider installation from
+ * accidentally skipping the credit pre-flight for a provider it still uses.
+ */
+function isOpenRouterOnlyDeployment(): boolean {
+  return process.env.SUBSUMIO_AI_PROVIDER?.trim().toLowerCase() === "openrouter";
+}
+
 /** Default models for the ensemble critic — diverse perspectives for robust quality gate.
  * v0.42.38.0+ — Switched to Anthropic models to benefit from prompt caching.
  * The critic prompt is large (case + outputs + subsumption context) and runs
@@ -4138,6 +4199,17 @@ const DEFAULT_ENSEMBLE_CRITIC_MODELS = [
   "openrouter:openai/gpt-5.4", // Cross-vendor diversity (non-Anthropic for genuine ensemble)
 ];
 
+/** OpenRouter-only equivalent of the critic ensemble.
+ *
+ * Explicit OpenRouter ids preserve vendor diversity while ensuring every
+ * request is billed to the one provider account selected for this deployment.
+ */
+const OPENROUTER_ENSEMBLE_CRITIC_MODELS = [
+  "openrouter:anthropic/claude-sonnet-4.6",
+  "openrouter:anthropic/claude-haiku-4.5",
+  "openrouter:openai/gpt-5.4",
+];
+
 /**
  * Resolves the ensemble critic models from the `SUBSUMIO_ENSEMBLE_CRITIC_MODELS`
  * env var (comma-separated `provider:model` strings) or falls back to the
@@ -4146,7 +4218,11 @@ const DEFAULT_ENSEMBLE_CRITIC_MODELS = [
  */
 function resolveEnsembleCriticModels(): string[] {
   const envVal = process.env.SUBSUMIO_ENSEMBLE_CRITIC_MODELS;
-  if (!envVal) return DEFAULT_ENSEMBLE_CRITIC_MODELS;
+  if (!envVal) {
+    return isOpenRouterOnlyDeployment()
+      ? OPENROUTER_ENSEMBLE_CRITIC_MODELS
+      : DEFAULT_ENSEMBLE_CRITIC_MODELS;
+  }
   const parsed = envVal
     .split(",")
     .map((s) => s.trim())
@@ -6145,6 +6221,8 @@ export async function settlePipeline(
     owner_type: string;
     case_slug: string;
     reserved_credits: number;
+    /** Use 0 for failures before the first provider request. */
+    actual_credits_override?: number;
     failed_at_layer?: number;
     total_layers: number;
     workflow_id?: string;
@@ -6154,7 +6232,10 @@ export async function settlePipeline(
     user_id?: string;
   }
 ): Promise<void> {
-  const settlementUrl = process.env.ENGINE_SETTLEMENT_URL ?? "";
+  const billingBaseUrl = process.env.ENGINE_BILLING_URL ?? process.env.SUBSUMIO_WEB_URL;
+  const settlementUrl =
+    process.env.ENGINE_SETTLEMENT_URL ??
+    (billingBaseUrl ? `${billingBaseUrl.replace(/\/$/, "")}/api/billing/pipeline-settle` : "");
   if (!settlementUrl) {
     // Dev mode without web app running — skip settlement
     return;
@@ -6281,6 +6362,9 @@ export async function settlePipeline(
         ...(params.user_id ? { user_id: params.user_id } : {}),
         case_slug: params.case_slug,
         reserved_credits: params.reserved_credits,
+        ...(params.actual_credits_override !== undefined
+          ? { actual_credits_override: params.actual_credits_override }
+          : {}),
         token_usage,
         failed_at_layer: params.failed_at_layer,
         total_layers: params.total_layers,
@@ -8740,7 +8824,10 @@ async function rerunSpecificLayer(
         budget,
       });
       const newOnTable = extractOnEntries(result);
-      const onSlug = `on-indices/${data.case_slug}`;
+      // Keep re-runs on the same canonical page as the first run. A separate
+      // `on-indices/` spelling made the dashboard and downstream specialists
+      // read stale ON data after a critic-triggered retry.
+      const onSlug = `on-indexes/${data.case_slug}`;
       await writeOnIndexPage(engine, onSlug, data.case_slug, newOnTable, sourceStamp);
       // Update state with new output
       state.layers[1]!.output_slugs = [onSlug];
@@ -10349,6 +10436,53 @@ async function validateLegalGroundingMap(
 }
 
 // ── Page Writers ────────────────────────────────────────────
+
+async function projectPipelineOutputsToCase(
+  engine: BrainEngine,
+  input: {
+    caseSlug: string;
+    sourceId?: string;
+    status: PipelineState["status"];
+    updatedAt: string;
+    onIndexSlug: string;
+    entitySlugs: string[];
+    forensicSlug?: string;
+    groundingSlug?: string;
+    damageSlug?: string;
+    deadlineSlug?: string;
+    pipelineStateSlug: string;
+  }
+): Promise<void> {
+  const page = await engine.getPage(
+    input.caseSlug,
+    input.sourceId !== undefined ? { sourceId: input.sourceId } : undefined
+  );
+  if (!page) return;
+  const refs = {
+    on_index: input.onIndexSlug,
+    entities: input.entitySlugs,
+    ...(input.forensicSlug ? { sachverhalt: input.forensicSlug } : {}),
+    ...(input.groundingSlug ? { legal_grounding: input.groundingSlug } : {}),
+    ...(input.damageSlug ? { damage_table: input.damageSlug } : {}),
+    ...(input.deadlineSlug ? { deadline_calendar: input.deadlineSlug } : {}),
+    pipeline_state: input.pipelineStateSlug,
+  };
+  await engine.putPage(
+    input.caseSlug,
+    {
+      type: page.type,
+      title: page.title,
+      compiled_truth: page.compiled_truth ?? "",
+      frontmatter: {
+        ...(page.frontmatter ?? {}),
+        pipeline_status: input.status,
+        pipeline_completed_at: input.updatedAt,
+        legal_data_refs: refs,
+      },
+    },
+    input.sourceId !== undefined ? { sourceId: input.sourceId } : undefined
+  );
+}
 
 async function writeOnIndexPage(
   engine: BrainEngine,

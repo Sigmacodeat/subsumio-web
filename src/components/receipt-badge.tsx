@@ -24,7 +24,7 @@ const STATE_CONFIG: Record<
     label: "Menschliche Prüfung erforderlich",
     icon: ShieldAlert,
     className:
-      "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300 dark:border-orange-800",
+      "bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)] border-[color:var(--ds-attention-border)]",
   },
   BLOCKED: {
     label: "Blockiert",
@@ -36,7 +36,7 @@ const STATE_CONFIG: Record<
     label: "Verifizierungsfehler",
     icon: ShieldOff,
     className:
-      "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700",
+      "bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)] border-[color:var(--ds-neutral-border)]",
   },
 };
 

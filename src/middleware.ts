@@ -12,7 +12,7 @@ import { verifySessionCore, SESSION_COOKIE } from "@/lib/auth/session-core";
 import { generateCsrfToken, CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf";
 import { env } from "@/lib/env";
 import { hasValidInternalSecret } from "@/lib/auth/internal";
-import { TAXUMIO_HOSTS } from "@/lib/brand";
+import { LEGACY_TAXUMIO_HOSTS, SUBSUMIO_SITE_URL } from "@/lib/brand";
 
 // --- CSP nonce generation ---
 function generateCspNonce(): string {
@@ -59,8 +59,7 @@ const APP_HOSTS = new Set(
     .filter(Boolean)
 );
 
-// Taxumio-branded hosts (taxum.io, taxumio.com, …) — resolve to /taxumio
-const TAXUMIO_HOSTS_SET = new Set(TAXUMIO_HOSTS.map((h) => h.toLowerCase()));
+const LEGACY_PRODUCT_HOSTS = new Set(LEGACY_TAXUMIO_HOSTS.map((host) => host.toLowerCase()));
 
 // --- IP Allow-listing (G8: Enterprise Security) ---
 // When SUBSUMIO_IP_ALLOWLIST is set, only requests from these IPs/CIDRs
@@ -154,6 +153,13 @@ const API_CSRF_EXEMPT_PATHS = new Set([
   // Presence is an authenticated best-effort heartbeat endpoint. The route
   // handler also opts out so navigator.sendBeacon can report leave events.
   "/api/realtime/presence",
+  // Engine-to-web credit reservations authenticate with ENGINE_WEBHOOK_API_KEY
+  // inside the route. They have no browser cookie and must not be stopped by
+  // the global double-submit CSRF guard before that signature is verified.
+  "/api/billing/pipeline-reserve",
+  // Same server-to-server authentication as the reservation endpoint; this
+  // reconciliation call must remain reachable even after a worker failure.
+  "/api/billing/pipeline-settle",
 ]);
 
 function isWebhookCsrfExempt(pathname: string): boolean {
@@ -220,14 +226,12 @@ export async function middleware(req: NextRequest) {
     return applyCsp(NextResponse.redirect(dashboard));
   }
 
-  // --- Taxumio host routing: taxum.io / taxumio.com → /taxumio ---
-  // When a Taxumio-branded host is detected, rewrite the root path to the
-  // Taxumio landing page. Other paths (e.g. /dashboard, /api) pass through
-  // unchanged so the shared platform core works on both domains.
-  if (TAXUMIO_HOSTS_SET.has(host) && pathname === "/") {
-    const taxumio = req.nextUrl.clone();
-    taxumio.pathname = "/taxumio";
-    return applyCsp(NextResponse.rewrite(taxumio));
+  // Former product domains now have one canonical destination: Subsumio.
+  if (LEGACY_PRODUCT_HOSTS.has(host)) {
+    const canonical = new URL(SUBSUMIO_SITE_URL, req.url);
+    canonical.pathname = "/";
+    canonical.search = "";
+    return applyCsp(NextResponse.redirect(canonical, { status: 308 }));
   }
 
   // --- Canonical domain: redirect /de/ and /de to / (DE is default, no prefix) ---

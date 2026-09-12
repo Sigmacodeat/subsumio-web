@@ -117,8 +117,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const industryParam = params.get("industry");
-  const industry = industryParam === "tax" || industryParam === "legal" ? industryParam : "legal";
+  const industry = "legal";
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [ssoLoading, setSsoLoading] = useState(false);

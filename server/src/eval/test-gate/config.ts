@@ -146,7 +146,9 @@ const aktenRetrieval: GateCheck = {
   timeout_ms: 300_000,
   required: true,
   description: "Case file retrieval benchmark (15 Q&A pairs, 6 synthetic case files)",
-  env: { DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/gbrain_test" },
+  env: {
+    DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/gbrain_test",
+  } /* allow-pg-url-literal */,
 };
 
 const e2ePipeline: GateCheck = {
@@ -158,7 +160,9 @@ const e2ePipeline: GateCheck = {
   timeout_ms: 300_000,
   required: true,
   description: "Full pipeline: upload → import → search → LLM → guardrail → verification",
-  env: { DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/gbrain_test" },
+  env: {
+    DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/gbrain_test",
+  } /* allow-pg-url-literal */,
 };
 
 const releaseGateEval: GateCheck = {
@@ -220,7 +224,9 @@ const heavyTests: GateCheck = {
   timeout_ms: 1_800_000,
   required: true,
   description: "Heavy ops-shape tests under tests/heavy/",
-  env: { DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/gbrain_test" },
+  env: {
+    DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/gbrain_test",
+  } /* allow-pg-url-literal */,
 };
 
 const subsumptionBenchmark: GateCheck = {
@@ -248,7 +254,9 @@ const dachRetrieval: GateCheck = {
   required: false,
   description:
     "305-question DACH retrieval benchmark across AT/DE/CH/EU/XJ jurisdictions — Hit@1/5/8 + MRR + bootstrap CIs. Requires seeded corpus (aborts on empty DB).",
-  env: { DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/gbrain_test" },
+  env: {
+    DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/gbrain_test",
+  } /* allow-pg-url-literal */,
 };
 
 const abModelComparison: GateCheck = {

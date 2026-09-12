@@ -21,12 +21,19 @@ export const GET = createHandler(
     const fm = (session.frontmatter ?? {}) as Record<string, unknown>;
     const caseSlug = String(fm.case_slug ?? "");
     const items = await fetchAllActImportItems(ctx.headers, id);
-    const [state, onIndex, damage, deadlines] = await Promise.all([
+    const [state, onIndexPages, damage, deadlines] = await Promise.all([
       fetchEnginePage(ctx.headers, `pipeline/state-${caseSlug}`),
-      fetchEnginePage(ctx.headers, `on-index/${caseSlug}`),
+      // `on-indexes/` is canonical. The two legacy forms preserve access to
+      // already processed cases while their next pipeline run consolidates them.
+      Promise.all([
+        fetchEnginePage(ctx.headers, `on-indexes/${caseSlug}`),
+        fetchEnginePage(ctx.headers, `on-indices/${caseSlug}`),
+        fetchEnginePage(ctx.headers, `on-index/${caseSlug}`),
+      ]),
       fetchEnginePage(ctx.headers, `damage-tables/${caseSlug}`),
       fetchEnginePage(ctx.headers, `deadline-calendars/${caseSlug}`),
     ]);
+    const onIndex = onIndexPages.find((page) => page !== null) ?? null;
     return Response.json({
       import_session: session,
       metrics: computeActImportMetrics(items),

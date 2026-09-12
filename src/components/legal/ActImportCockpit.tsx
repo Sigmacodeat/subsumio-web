@@ -314,6 +314,26 @@ export function ActImportCockpit({ caseSlug }: { caseSlug: string }) {
   const metrics = summary?.metrics ?? EMPTY;
   const status = String(summary?.session?.frontmatter?.status ?? "not_started");
   const problemCount = metrics.failed + metrics.partial + metrics.review;
+
+  // Large files complete asynchronously. While an import is in flight, refresh
+  // its persisted manifest automatically so the lawyer sees readiness, OCR
+  // failures, and the enabled analysis action without repeatedly clicking
+  // "Prüfen". The timer stops as soon as every document is terminal.
+  useEffect(() => {
+    if (!sessionId || metrics.pending + metrics.processing === 0) return;
+    const timer = window.setInterval(() => {
+      void csrfFetch(`/api/act-imports/${encodeURIComponent(sessionId)}/refresh`, {
+        method: "POST",
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error("Importstatus konnte nicht aktualisiert werden");
+          return load(sessionId);
+        })
+        .catch(() => undefined);
+    }, 8_000);
+    return () => window.clearInterval(timer);
+  }, [load, metrics.pending, metrics.processing, sessionId]);
+
   const topItems = useMemo(
     () =>
       items

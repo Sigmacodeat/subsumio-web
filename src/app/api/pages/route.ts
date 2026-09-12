@@ -184,7 +184,17 @@ export const POST = createHandler(
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(15_000),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const upstream = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+        console.error("[pages] engine create rejected:", res.status, upstream);
+        return Response.json(
+          upstream ?? {
+            error: "engine_error",
+            message: `Engine returned HTTP ${res.status}`,
+          },
+          { status: res.status }
+        );
+      }
       void recordQuota(ctx, "pages");
       const result = await res.json();
 

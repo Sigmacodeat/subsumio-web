@@ -5,7 +5,6 @@ import Script from "next/script";
 import { usePathname, useRouter } from "next/navigation";
 import { ensureRealtime } from "@/lib/realtime";
 import { styleForIndustry } from "@/lib/industry-theme";
-import { redirectForIndustry } from "@/lib/industry-guards";
 import { CommandPalette } from "@/components/dashboard/command-palette";
 import { KeyboardShortcuts } from "@/components/dashboard/keyboard-shortcuts";
 import { DashboardGuide } from "@/components/dashboard/dashboard-guide";
@@ -31,9 +30,6 @@ const ContractQuickCreateDialog = dynamic(() =>
 );
 const PracticeQuickCreateDialogs = dynamic(() =>
   import("@/components/legal/PracticeQuickCreateDialogs").then((m) => m.PracticeQuickCreateDialogs)
-);
-const TaxQuickCreateDialog = dynamic(() =>
-  import("@/components/tax/TaxQuickCreateDialog").then((m) => m.TaxQuickCreateDialog)
 );
 const CopilotSidebar = dynamic(
   () => import("@/components/chat/copilot-sidebar").then((m) => m.CopilotSidebar),
@@ -302,15 +298,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       router.replace("/dashboard");
     }
   }, [onboardingCompleted, isOnboardingPage, meQuery.isLoading, meQuery.data?.user, router]);
-
-  // Industry route guard — redirect tax users away from legal-only pages and vice versa
-  useEffect(() => {
-    if (meQuery.isLoading || !meQuery.data?.user) return;
-    const redirect = redirectForIndustry(pathname, industry);
-    if (redirect) {
-      router.replace(redirect);
-    }
-  }, [pathname, industry, meQuery.isLoading, meQuery.data?.user, router]);
 
   // Route change: move focus to <main> and announce page change for screen readers
   useEffect(() => {
@@ -768,52 +755,37 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         </motion.div>
       )}
 
-      {industry === "tax" ? (
-        <TaxQuickCreateDialog
-          open={globalQuickCreateOpen}
-          onOpenChange={setGlobalQuickCreateOpen}
-        />
-      ) : (
-        <CaseQuickCreateDialog
-          open={globalQuickCreateOpen}
-          onOpenChange={setGlobalQuickCreateOpen}
-        />
-      )}
+      <CaseQuickCreateDialog open={globalQuickCreateOpen} onOpenChange={setGlobalQuickCreateOpen} />
 
-      {industry !== "tax" && (
-        <>
-          <DeadlineQuickCreateDialog
-            open={globalDeadlineCreateOpen}
-            onOpenChange={setGlobalDeadlineCreateOpen}
-            presetCaseSlug={presetCaseSlug}
-          />
+      <DeadlineQuickCreateDialog
+        open={globalDeadlineCreateOpen}
+        onOpenChange={setGlobalDeadlineCreateOpen}
+        presetCaseSlug={presetCaseSlug}
+      />
 
-          <InvoiceQuickCreateDialog
-            open={globalInvoiceCreateOpen}
-            onOpenChange={setGlobalInvoiceCreateOpen}
-            presetCaseSlug={presetCaseSlug}
-          />
+      <InvoiceQuickCreateDialog
+        open={globalInvoiceCreateOpen}
+        onOpenChange={setGlobalInvoiceCreateOpen}
+        presetCaseSlug={presetCaseSlug}
+      />
 
-          <SignatureQuickCreateDialog
-            open={globalSignatureCreateOpen}
-            onOpenChange={setGlobalSignatureCreateOpen}
-            presetCaseSlug={presetCaseSlug}
-          />
+      <SignatureQuickCreateDialog
+        open={globalSignatureCreateOpen}
+        onOpenChange={setGlobalSignatureCreateOpen}
+        presetCaseSlug={presetCaseSlug}
+      />
 
-          <ClauseQuickCreateDialog
-            open={globalClauseCreateOpen}
-            onOpenChange={setGlobalClauseCreateOpen}
-            presetCaseSlug={presetCaseSlug}
-          />
+      <ClauseQuickCreateDialog
+        open={globalClauseCreateOpen}
+        onOpenChange={setGlobalClauseCreateOpen}
+        presetCaseSlug={presetCaseSlug}
+      />
 
-          <ContractQuickCreateDialog
-            open={globalContractCreateOpen}
-            onOpenChange={setGlobalContractCreateOpen}
-            presetCaseSlug={presetCaseSlug}
-          />
-        </>
-      )}
-
+      <ContractQuickCreateDialog
+        open={globalContractCreateOpen}
+        onOpenChange={setGlobalContractCreateOpen}
+        presetCaseSlug={presetCaseSlug}
+      />
       <PracticeQuickCreateDialogs />
 
       {/* Mobile bottom tab bar — agency-level navigation */}

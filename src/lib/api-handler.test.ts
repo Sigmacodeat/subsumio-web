@@ -2,7 +2,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { NextRequest } from "next/server";
 import { NextRequest as NextRequestImpl } from "next/server";
-import { createHandler, createCronHandler, createPublicHandler } from "./api-handler";
+import {
+  createHandler,
+  createCronHandler,
+  createPublicHandler,
+  createWebhookHandler,
+} from "./api-handler";
 import { AppError } from "./errors";
 import { z } from "zod";
 
@@ -182,6 +187,27 @@ describe("createPublicHandler", () => {
     expect(res.status).toBe(429);
     expect(res.headers.get("Retry-After")).toBe("42");
     expect(hit).toHaveBeenCalledWith("signup:ip:test", 5, 60_000);
+  });
+});
+
+describe("createWebhookHandler", () => {
+  it("enforces its declared webhook rate limit after body validation", async () => {
+    vi.mocked(hit).mockResolvedValueOnce({ ok: false, retryAfterSeconds: 17 });
+    const handler = createWebhookHandler(
+      {
+        body: z.object({ owner: z.string() }),
+        rateLimitKey: (_req, body) => `webhook:${body.owner}`,
+        rateLimitMax: 100,
+        rateLimitWindowMs: 60_000,
+      },
+      async () => Response.json({ ok: true })
+    );
+
+    const res = await handler(makeMockRequest("POST", { owner: "org-1" }), {});
+
+    expect(res.status).toBe(429);
+    expect(res.headers.get("Retry-After")).toBe("17");
+    expect(hit).toHaveBeenCalledWith("webhook:org-1", 100, 60_000);
   });
 });
 

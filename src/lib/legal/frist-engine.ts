@@ -617,7 +617,7 @@ export const FRISTEN_REGISTRY: readonly FristArt[] = [
     gehemmtInVhfz: false,
     verfahrenstyp: "zivil",
   },
-  // ── TAXUMIO: Steuerliche Fristen ──
+  // ── Steuerliche Fristen ──
   // DE (Deutschland) — AO / FGO
   {
     key: "steuer_einspruch_de",
@@ -628,7 +628,8 @@ export const FRISTEN_REGISTRY: readonly FristArt[] = [
     notfrist: true,
     gehemmtInVhfz: false,
     verfahrenstyp: "verwaltungsrecht",
-    hinweis: "Beginnt mit Zustellung des Steuerbescheids. § 355 AO: Einspruch innerhalb eines Monats nach Bekanntgabe.",
+    hinweis:
+      "Beginnt mit Zustellung des Steuerbescheids. § 355 AO: Einspruch innerhalb eines Monats nach Bekanntgabe.",
   },
   {
     key: "steuer_finanzgericht_klage_de",
@@ -706,7 +707,8 @@ export const FRISTEN_REGISTRY: readonly FristArt[] = [
     notfrist: false,
     gehemmtInVhfz: false,
     verfahrenstyp: "verwaltungsrecht",
-    hinweis: "Regelfall 5 Jahre. Bei Hinterziehung oder vorsätzlicher Verkürzung 10 Jahre (§ 207 Abs 2 BAO).",
+    hinweis:
+      "Regelfall 5 Jahre. Bei Hinterziehung oder vorsätzlicher Verkürzung 10 Jahre (§ 207 Abs 2 BAO).",
   },
   // CH (Schweiz) — DBG
   {

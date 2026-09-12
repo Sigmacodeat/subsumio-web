@@ -68,6 +68,10 @@ export const CANONICAL_PRICING: Record<string, ModelPricing> = {
   "anthropic:claude-fable-5": { input: 10.0, output: 50.0 },
   // Haiku 4.5 — both the dateless canonical id and the dated snapshot.
   "anthropic:claude-haiku-4-5": { input: 1.0, output: 5.0 },
+  // OpenRouter-routed variants use explicit catalog prices. They must never
+  // silently inherit a native-provider price because billing differs by route.
+  "openrouter:anthropic/claude-haiku-4.5": { input: 1.0, output: 5.0 },
+  "openrouter:anthropic/claude-sonnet-4.6": { input: 3.0, output: 15.0 },
   "anthropic:claude-haiku-4-5-20251001": { input: 1.0, output: 5.0 },
   "anthropic:claude-3-5-sonnet-20241022": { input: 3.0, output: 15.0 },
   "anthropic:claude-3-5-haiku-20241022": { input: 0.8, output: 4.0 },
@@ -80,6 +84,7 @@ export const CANONICAL_PRICING: Record<string, ModelPricing> = {
   // GPT-5.4 family (released 2026-06): BenGER 83.5, best general legal reasoning.
   // GPT-5.4: $5/$15, mini: $0.50/$2, nano: $0.25/$1.
   "openai:gpt-5.4": { input: 5.0, output: 15.0 },
+  "openrouter:openai/gpt-5.4": { input: 2.5, output: 15.0 },
   "openai:gpt-5.4-mini": { input: 0.5, output: 2.0 },
   "openai:gpt-5.4-nano": { input: 0.25, output: 1.0 },
   // GPT-5.5: $5 in / $30 out (verified July 2026, was stale $4/$16).
@@ -102,6 +107,7 @@ export const CANONICAL_PRICING: Record<string, ModelPricing> = {
   // V3.2 deprecated July 2026 — replaced by V4 Flash/Pro at same pricing.
   "together:meta-llama/Llama-3.3-70B-Instruct-Turbo": { input: 0.88, output: 0.88 },
   "deepseek:deepseek-chat": { input: 0.14, output: 0.28 },
+  "openrouter:deepseek/deepseek-chat": { input: 0.32, output: 0.89 },
   "deepseek:deepseek-v3.2": { input: 0.14, output: 0.28 },
   "deepseek:deepseek-v3.2-exp": { input: 0.14, output: 0.28 },
   "deepseek:deepseek-reasoner": { input: 0.14, output: 0.28 },
@@ -123,6 +129,7 @@ export const CANONICAL_PRICING: Record<string, ModelPricing> = {
   // HAQQ 29.0 (98% of Opus 4.8), $0.003/task, 8.8s — best speed-to-quality.
   // Was stale $0.20/$0.50 — corrected after audit found 6.25x/5x underpricing.
   "xai:grok-4.3": { input: 1.25, output: 2.5 },
+  "openrouter:x-ai/grok-4.3": { input: 1.25, output: 2.5 },
   // Grok 4.1: same tier as 4.3, earlier version.
   "xai:grok-4.1": { input: 1.25, output: 2.5 },
   // Grok 4.1 Fast: budget variant, kept at $0.20/$0.50 (fast-tier pricing).
@@ -174,11 +181,10 @@ export const CANONICAL_PRICING: Record<string, ModelPricing> = {
  * non-Anthropic bare ids therefore miss, preserving the prior null-return
  * contract for ids like `gpt-5`.
  *
- * Nested OpenRouter ids (`openrouter:anthropic/claude-...`) intentionally MISS:
- * splitProviderModelId yields provider `openrouter`, model
- * `anthropic/claude-...`, and `openrouter:anthropic/claude-...` is not a
- * canonical key. OpenRouter markup ≠ native pricing, so we never reprice it as
- * the inner vendor.
+ * Nested OpenRouter ids are only resolved when an explicit catalog-priced key
+ * exists. They never fall through to the inner vendor: OpenRouter billing can
+ * differ from native-provider billing, and an unknown route must remain
+ * unknown rather than under- or over-charge a tenant.
  */
 export function canonicalLookup(modelId: string | null | undefined): ModelPricing | undefined {
   if (!modelId) return undefined;

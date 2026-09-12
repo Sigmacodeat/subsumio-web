@@ -39,6 +39,7 @@ import {
 import { StaggerContainer } from "@/components/marketing/motion-system";
 import { Badge } from "@/components/ui/badge";
 import { useLang } from "@/lib/use-lang";
+import { useMe } from "@/lib/queries/auth";
 import type { DashboardKey } from "@/content/dashboard";
 import { useWidgetPrefs } from "@/lib/hooks/use-widget-prefs";
 import { getWidgetMeta, type WidgetId } from "@/lib/widget-registry";
@@ -65,7 +66,6 @@ import { SilentFailureWidget } from "./silent-failure-widget";
 import { DeadlineCheckWidget } from "./deadline-check-widget";
 import { MatterBudgetWidget } from "./matter-budget-widget";
 import { LegalHoldWidget } from "./legal-hold-widget";
-import { useMe } from "@/lib/queries/auth";
 import type { WidgetPreset } from "@/lib/widget-registry";
 
 const KanzleiInsights = dynamic(() => import("./kanzlei-insights").then((m) => m.KanzleiInsights), {
@@ -327,12 +327,11 @@ export function WidgetBoard() {
   const { t } = useLang();
   const data = useKanzleiCockpitData();
   const meQuery = useMe();
-  const preset: WidgetPreset =
-    meQuery.data?.user?.industry === "tax"
-      ? "tax"
-      : ["partner", "admin", "associate"].includes(meQuery.data?.user?.role ?? "")
-        ? (meQuery.data?.user?.role as WidgetPreset)
-        : "associate";
+  const preset: WidgetPreset = ["partner", "admin", "associate"].includes(
+    meQuery.data?.user?.role ?? ""
+  )
+    ? (meQuery.data?.user?.role as WidgetPreset)
+    : "associate";
   const { prefs, loaded, toggleVisible, reorder, reset } = useWidgetPrefs(preset);
   const [editMode, setEditMode] = useState(false);
   const [activeId, setActiveId] = useState<WidgetId | null>(null);

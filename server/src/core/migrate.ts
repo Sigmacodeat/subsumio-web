@@ -5483,7 +5483,7 @@ export const MIGRATIONS: Migration[] = [
     // T3.4 Stale Dependency Graph — corpus snapshots, amendments, stale outputs,
     // per-paragraph hashes, and output→claim→snapshot dependency tracking.
     //
-    // Combines DDL from server/migrations/004_corpus_snapshots.sql and
+    // Combines DDL from server/migrations/015_corpus_snapshots.sql and
     // server/migrations/006_source_lifecycle.sql (output_dependencies section)
     // into the MIGRATIONS array so both PGLite and Postgres engines create
     // these tables during initSchema(). The standalone .sql files remain as
@@ -6353,6 +6353,28 @@ export const MIGRATIONS: Migration[] = [
           AND a.id < b.id;
       CREATE UNIQUE INDEX IF NOT EXISTS idx_saas_invoices_org_period
         ON saas_invoices (org_id, period_start);
+    `,
+  },
+  {
+    version: 139,
+    name: "encrypted_connector_instances",
+    // Connector credentials and OAuth refresh tokens are tenant secrets. The
+    // ciphertext is AES-GCM encrypted in the application, so a database dump
+    // alone cannot disclose third-party access tokens or sync cursors.
+    idempotent: true,
+    sql: `
+      CREATE TABLE IF NOT EXISTS connector_instances (
+        id text PRIMARY KEY,
+        service text NOT NULL,
+        tenant_source_id text,
+        enabled boolean NOT NULL DEFAULT true,
+        config_ciphertext text NOT NULL,
+        state_ciphertext text,
+        created_at timestamptz NOT NULL DEFAULT NOW(),
+        updated_at timestamptz NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_connector_instances_tenant
+        ON connector_instances (tenant_source_id, service);
     `,
   },
 ];

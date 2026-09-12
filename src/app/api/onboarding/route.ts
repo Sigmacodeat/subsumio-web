@@ -6,7 +6,7 @@ import { provisionBrainAsync } from "@/lib/provision";
 import type { OnboardingProgress } from "@/lib/types";
 
 const completeSchema = z.object({
-  industry: z.string().nullable().optional(),
+  industry: z.literal("legal").nullable().optional(),
   profile: z
     .object({
       kanzleiName: z.string().max(200).optional(),

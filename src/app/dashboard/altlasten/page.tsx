@@ -412,7 +412,7 @@ export default function AltlastenPage() {
           </div>
           <p className="mt-2 text-2xl font-bold text-[color:var(--ds-info-text)]">{pipelineRan}</p>
         </div>
-        <div className="rounded-lg border border-gray-500/20 bg-gray-500/5 p-4">
+        <div className="rounded-lg border border-[color:var(--ds-neutral-border)] bg-[color:var(--ds-neutral-bg)] p-4">
           <div className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-[color:var(--ds-text-muted)]" />
             <span className="text-sm font-medium text-[color:var(--ds-text-muted)]">

@@ -14,7 +14,8 @@
 
 import pg from "pg";
 
-const DATABASE_URL = process.env.DATABASE_URL ?? "postgres://sigmabrain:2bfa7d4107f0b40e171cb508f27a9a703501b160d61957f0@localhost:15432/sigmabrain?sslmode=disable";
+const DATABASE_URL = process.env.DATABASE_URL;
+if (!DATABASE_URL) throw new Error("DATABASE_URL is required");
 
 async function main() {
   const pool = new pg.Pool({ connectionString: DATABASE_URL, max: 5 });
@@ -50,10 +51,11 @@ async function main() {
       }
 
       const newFm = { ...fm, ...updates };
-      await client.query(
-        `UPDATE pages SET title = $1, frontmatter = $2 WHERE id = $3`,
-        [newTitle, JSON.stringify(newFm), row.id]
-      );
+      await client.query(`UPDATE pages SET title = $1, frontmatter = $2 WHERE id = $3`, [
+        newTitle,
+        JSON.stringify(newFm),
+        row.id,
+      ]);
       updated++;
     }
 

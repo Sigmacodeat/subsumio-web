@@ -60,7 +60,7 @@ export interface WidgetMeta {
   conditional?: boolean;
 }
 
-export type WidgetPreset = "associate" | "partner" | "admin" | "tax";
+export type WidgetPreset = "associate" | "partner" | "admin";
 
 const PRESET_ORDER: Record<WidgetPreset, WidgetId[]> = {
   associate: [
@@ -92,16 +92,6 @@ const PRESET_ORDER: Record<WidgetPreset, WidgetId[]> = {
     "legal-hold",
     "activity-feed",
     "kanzlei-insights",
-  ],
-  tax: [
-    "heute-panel",
-    "secondary-stats",
-    "deadlines",
-    "inbox",
-    "active-cases",
-    "quick-actions",
-    "activity-feed",
-    "rundown",
   ],
 };
 

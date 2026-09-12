@@ -61,6 +61,18 @@ describe("token-based credit billing", () => {
       expect(result2.reservedCredits).toBe(result1.reservedCredits);
     });
 
+    it("does not treat another owner's key as this owner's retry", async () => {
+      const otherOwner = `${OWNER_ID}-reservation-collision`;
+      await addCredits(otherOwner, OWNER_TYPE, 100, { type: "grant" });
+      await reserveCredits(OWNER_ID, OWNER_TYPE, 7, "reserve-cross-owner");
+      const before = (await getBalance(otherOwner, OWNER_TYPE)).balance;
+
+      const result = await reserveCredits(otherOwner, OWNER_TYPE, 7, "reserve-cross-owner");
+
+      expect(result.ok).toBe(false);
+      expect((await getBalance(otherOwner, OWNER_TYPE)).balance).toBe(before);
+    });
+
     it("returns ok=true with 0 for zero reservation", async () => {
       const result = await reserveCredits(OWNER_ID, OWNER_TYPE, 0, "reserve-zero");
       expect(result.ok).toBe(true);
@@ -96,6 +108,37 @@ describe("token-based credit billing", () => {
       const refund2 = await refundCredits(OWNER_ID, OWNER_TYPE, 20, 5, "refund-idem-1");
       expect(refund1.refunded).toBe(15);
       expect(refund2.refunded).toBe(0); // Already refunded
+    });
+
+    it("rejects a refund without a matching reservation", async () => {
+      const before = (await getBalance(OWNER_ID, OWNER_TYPE)).balance;
+      const refund = await refundCredits(OWNER_ID, OWNER_TYPE, 10_000, 0, "forged-reservation");
+      const after = (await getBalance(OWNER_ID, OWNER_TYPE)).balance;
+
+      expect(refund.refunded).toBe(0);
+      expect(after).toBe(before);
+    });
+
+    it("derives the refundable amount from the persisted reservation", async () => {
+      await reserveCredits(OWNER_ID, OWNER_TYPE, 12, "refund-bounded-1");
+
+      const refund = await refundCredits(OWNER_ID, OWNER_TYPE, 10_000, 2, "refund-bounded-1");
+
+      expect(refund.refunded).toBe(10);
+    });
+
+    it("does not allow a different owner to settle a reservation", async () => {
+      await reserveCredits(OWNER_ID, OWNER_TYPE, 12, "refund-owner-scope-1");
+
+      const refund = await refundCredits(
+        "different-owner",
+        OWNER_TYPE,
+        12,
+        0,
+        "refund-owner-scope-1"
+      );
+
+      expect(refund.refunded).toBe(0);
     });
   });
 
@@ -142,6 +185,26 @@ describe("token-based credit billing", () => {
       expect(result2.ok).toBe(true);
       expect(result2.idempotent).toBe(true);
       expect(result2.credits).toBe(result1.credits);
+    });
+
+    it("does not return another owner's token deduction as an idempotent hit", async () => {
+      const otherOwner = `${OWNER_ID}-token-collision`;
+      await addCredits(otherOwner, OWNER_TYPE, 100, { type: "grant" });
+      const usage: TokenUsage = {
+        modelId: "anthropic:claude-haiku-4-5",
+        inputTokens: 100_000,
+        cachedInputTokens: 0,
+        cacheCreateTokens: 0,
+        outputTokens: 50_000,
+      };
+      await deductTokenCredits(OWNER_ID, OWNER_TYPE, usage, "deduct-cross-owner");
+      const before = (await getBalance(otherOwner, OWNER_TYPE)).balance;
+
+      const result = await deductTokenCredits(otherOwner, OWNER_TYPE, usage, "deduct-cross-owner");
+
+      expect(result.ok).toBe(false);
+      expect(result.idempotent).toBe(false);
+      expect((await getBalance(otherOwner, OWNER_TYPE)).balance).toBe(before);
     });
 
     it("deducts more credits for Opus than Haiku (same tokens)", async () => {

@@ -100,7 +100,7 @@ export const DEFAULT_ALIASES: Record<string, string> = {
  * Users override via `gbrain config set models.tier.<tier> <model>`.
  * Per-specialist override: `gbrain config set models.specialist.<name> <model>`.
  */
-export const TIER_DEFAULTS: Record<ModelTier, string> = {
+const NATIVE_TIER_DEFAULTS: Record<ModelTier, string> = {
   utility: "openrouter:deepseek/deepseek-chat",
   // v0.43.1: Reasoning tier upgraded from DeepSeek to Sonnet 4.6.
   // DeepSeek-chat is a utility-tier model (classification, extraction) — it
@@ -114,6 +114,32 @@ export const TIER_DEFAULTS: Record<ModelTier, string> = {
   deep: "openrouter:xai/grok-4.3",
   subagent: "anthropic:claude-haiku-4-5",
 };
+
+/** The production SaaS can deliberately use one billed gateway only. */
+export function isOpenRouterOnlyDeployment(): boolean {
+  return process.env.SUBSUMIO_AI_PROVIDER?.trim().toLowerCase() === "openrouter";
+}
+
+const OPENROUTER_TIER_DEFAULTS: Record<ModelTier, string> = {
+  utility: "openrouter:deepseek/deepseek-chat",
+  reasoning: "openrouter:anthropic/claude-sonnet-4.6",
+  deep: "openrouter:x-ai/grok-4.3",
+  subagent: "openrouter:anthropic/claude-haiku-4.5",
+};
+
+export const TIER_DEFAULTS: Record<ModelTier, string> = isOpenRouterOnlyDeployment()
+  ? OPENROUTER_TIER_DEFAULTS
+  : NATIVE_TIER_DEFAULTS;
+
+function enforceProviderMode(model: string): string {
+  if (isOpenRouterOnlyDeployment() && !model.startsWith("openrouter:")) {
+    throw new Error(
+      `OpenRouter-only deployment resolved direct model "${model}". ` +
+        `Configure an openrouter:<vendor>/<model> value instead.`
+    );
+  }
+  return model;
+}
 
 /**
  * v0.31.12 subagent runtime enforcement (layer 2).
@@ -175,7 +201,7 @@ export async function resolveModel(
 
   // 1. CLI flag wins
   if (opts.cliFlag && opts.cliFlag.trim()) {
-    return await resolveAlias(engine, opts.cliFlag.trim());
+    return enforceProviderMode(await resolveAlias(engine, opts.cliFlag.trim()));
   }
 
   if (engine) {
@@ -190,7 +216,7 @@ export async function resolveModel(
             emitDeprecationWarning(opts.deprecatedConfigKey, opts.configKey, /*ignored=*/ true);
           }
         }
-        return await resolveAlias(engine, v.trim());
+        return enforceProviderMode(await resolveAlias(engine, v.trim()));
       }
     }
 
@@ -203,7 +229,7 @@ export async function resolveModel(
           opts.configKey ?? "<no replacement>",
           /*ignored=*/ false
         );
-        return await resolveAlias(engine, v.trim());
+        return enforceProviderMode(await resolveAlias(engine, v.trim()));
       }
     }
 
@@ -211,7 +237,7 @@ export async function resolveModel(
     const def = await engine.getConfig("models.default");
     if (def && def.trim()) {
       const resolved = await resolveAlias(engine, def.trim());
-      return enforceSubagentCapable(resolved, opts.tier, "models.default");
+      return enforceProviderMode(enforceSubagentCapable(resolved, opts.tier, "models.default"));
     }
 
     // 5. Tier override (v0.31.12)
@@ -219,7 +245,9 @@ export async function resolveModel(
       const tierVal = await engine.getConfig(`models.tier.${opts.tier}`);
       if (tierVal && tierVal.trim()) {
         const resolved = await resolveAlias(engine, tierVal.trim());
-        return enforceSubagentCapable(resolved, opts.tier, `models.tier.${opts.tier}`);
+        return enforceProviderMode(
+          enforceSubagentCapable(resolved, opts.tier, `models.tier.${opts.tier}`)
+        );
       }
     }
   }
@@ -228,17 +256,17 @@ export async function resolveModel(
   const env = process.env[envVar];
   if (env && env.trim()) {
     const resolved = await resolveAlias(engine, env.trim());
-    return enforceSubagentCapable(resolved, opts.tier, `env:${envVar}`);
+    return enforceProviderMode(enforceSubagentCapable(resolved, opts.tier, `env:${envVar}`));
   }
 
   // 7. Tier default (v0.31.12 — when no override beats us, the tier's
   //    canonical model wins over caller-supplied fallback)
   if (opts.tier && TIER_DEFAULTS[opts.tier]) {
-    return await resolveAlias(engine, TIER_DEFAULTS[opts.tier]);
+    return enforceProviderMode(await resolveAlias(engine, TIER_DEFAULTS[opts.tier]));
   }
 
   // 8. Hardcoded fallback (caller-supplied)
-  return await resolveAlias(engine, opts.fallback);
+  return enforceProviderMode(await resolveAlias(engine, opts.fallback));
 }
 
 /**

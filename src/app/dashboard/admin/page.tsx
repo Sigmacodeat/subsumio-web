@@ -10,7 +10,6 @@ import {
   ClipboardList,
   ArrowRight,
   Scale,
-  Calculator,
   Mail,
   Database,
   Activity,
@@ -82,8 +81,6 @@ export default async function AdminPage({
 
   const industryBreakdown = {
     legal: users.filter((u) => u.industry === "legal").length,
-    tax: users.filter((u) => u.industry === "tax").length,
-    other: users.filter((u) => u.industry === "other").length,
     none: users.filter((u) => !u.industry).length,
   };
 
@@ -138,7 +135,7 @@ export default async function AdminPage({
         </div>
 
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 lg:col-span-1">
-          <h2 className="mb-4 text-sm font-semibold text-[color:var(--ds-text)]">Produkte</h2>
+          <h2 className="mb-4 text-sm font-semibold text-[color:var(--ds-text)]">Subsumio</h2>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="inline-flex items-center gap-2 text-xs font-medium text-[color:var(--ds-info-text)]">
@@ -146,22 +143,6 @@ export default async function AdminPage({
               </span>
               <span className="text-sm font-medium text-[color:var(--ds-text)]">
                 {industryBreakdown.legal}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-2 text-xs font-medium text-[color:var(--ds-success-text)]">
-                <Calculator size={14} /> Taxumio
-              </span>
-              <span className="text-sm font-medium text-[color:var(--ds-text)]">
-                {industryBreakdown.tax}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-2 text-xs font-medium text-[color:var(--ds-category-violet-text)]">
-                <Users size={14} /> Other
-              </span>
-              <span className="text-sm font-medium text-[color:var(--ds-text)]">
-                {industryBreakdown.other}
               </span>
             </div>
             <div className="flex items-center justify-between">

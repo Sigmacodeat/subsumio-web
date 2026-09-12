@@ -43,7 +43,7 @@ export interface ThinkSystemPromptOpts {
    */
   legalMode?: boolean;
   /**
-   * TAXUMIO — when true (or auto-detected from gathered page types), the
+   * Tax law mode — when true (or auto-detected from gathered page types), the
    * system prompt gains tax-specific instructions: tax law citations with
    * version dates, jurisdiction awareness for DE/AT/CH/EU tax law, §203 StGB
    * AVV compliance disclaimers, and tax advisor review disclaimers.
@@ -297,7 +297,7 @@ export function buildThinkSystemPrompt(opts: ThinkSystemPromptOpts = {}): string
     }
   }
 
-  // ── TAXUMIO: Tax Mode ──
+  // ── Tax law mode ──
   if (opts.taxMode) {
     lines.push(`\nTAX MODE ACTIVE — Additional rules for tax synthesis:`);
     lines.push(
@@ -604,7 +604,9 @@ export function buildStreamingUserMessage(opts: {
     parts.push(`Question: ${opts.question}`);
     parts.push(`</untrusted-user-input>`);
     parts.push("");
-    parts.push("Write your answer as plain text with inline [slug] citations. Use markdown headers.");
+    parts.push(
+      "Write your answer as plain text with inline [slug] citations. Use markdown headers."
+    );
     return parts.join("\n");
   }
 

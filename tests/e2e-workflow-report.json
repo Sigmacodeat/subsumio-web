@@ -1,21 +1,21 @@
 {
-  "timestamp": "2026-07-04T08:57:10.062Z",
+  "timestamp": "2026-09-12T14:33:28.941Z",
   "totalSteps": 48,
   "passed": 48,
   "failed": 0,
-  "durationMs": 253,
+  "durationMs": 284,
   "steps": [
     {
       "step": 1,
       "name": "Mock Engine starten",
       "status": "pass",
-      "durationMs": 226
+      "durationMs": 231
     },
     {
       "step": 2,
       "name": "Fixtures generieren",
       "status": "pass",
-      "durationMs": 3
+      "durationMs": 6
     },
     {
       "step": 3,
@@ -27,37 +27,37 @@
       "step": 4,
       "name": "Intake — Erstellen",
       "status": "pass",
-      "durationMs": 1
+      "durationMs": 2
     },
     {
       "step": 5,
       "name": "Intake — Conflict Check",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 6,
       "name": "Intake → Case konvertieren",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 7,
       "name": "Case — Frontmatter verifizieren",
       "status": "pass",
-      "durationMs": 1
+      "durationMs": 0
     },
     {
       "step": 8,
       "name": "Email Import — mit Case-Matching",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 9,
       "name": "Upload — PDF (Vertrag)",
       "status": "pass",
-      "durationMs": 1
+      "durationMs": 2
     },
     {
       "step": 10,
@@ -69,25 +69,25 @@
       "step": 11,
       "name": "Upload — JPG (Scan Klage, OCR)",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 12,
       "name": "Upload — PNG (Scan Urteil, OCR)",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 13,
       "name": "Upload-Status — Polling bis ready",
       "status": "pass",
-      "durationMs": 1
+      "durationMs": 3
     },
     {
       "step": 14,
       "name": "Dokument-Analyse",
       "status": "pass",
-      "durationMs": 1
+      "durationMs": 2
     },
     {
       "step": 15,
@@ -99,31 +99,31 @@
       "step": 16,
       "name": "Contradictions — Check",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 17,
       "name": "Contract Draft — generieren (SSE)",
       "status": "pass",
-      "durationMs": 1
+      "durationMs": 2
     },
     {
       "step": 18,
       "name": "Contract Redline",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 19,
       "name": "Playbook — erstellen",
       "status": "pass",
-      "durationMs": 1
+      "durationMs": 0
     },
     {
       "step": 20,
       "name": "Obligation Extract",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 21,
@@ -135,7 +135,7 @@
       "step": 22,
       "name": "Litigation — Phase → filing",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 23,
@@ -147,13 +147,13 @@
       "step": 24,
       "name": "Litigation — Phase → pre_trial + Settlement",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 25,
       "name": "Litigation — Phase → trial + Judgment",
       "status": "pass",
-      "durationMs": 1
+      "durationMs": 2
     },
     {
       "step": 26,
@@ -165,7 +165,7 @@
       "step": 27,
       "name": "Review Set — Documents mit Decisions",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 28,
@@ -225,19 +225,19 @@
       "step": 37,
       "name": "Deep Analysis — über alle Dokumente",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 38,
       "name": "Think — AI Query (SSE)",
       "status": "pass",
-      "durationMs": 1
+      "durationMs": 2
     },
     {
       "step": 39,
       "name": "Search — Volltext-Suche",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 40,
@@ -255,19 +255,19 @@
       "step": 42,
       "name": "Edge: Invalid Upload (leere Datei)",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 43,
       "name": "Edge: Concurrent Uploads (3 parallel)",
       "status": "pass",
-      "durationMs": 1
+      "durationMs": 2
     },
     {
       "step": 44,
       "name": "Edge: Archive Guard (PATCH auf archivierte Akte)",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 45,
@@ -285,7 +285,7 @@
       "step": 47,
       "name": "Edge: Invalid Phase Transition (pre_filing → trial)",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 48,
@@ -345,17 +345,17 @@
     ]
   },
   "state": {
-    "caseSlug": "cases/1783155430041",
+    "caseSlug": "cases/1789223608900",
     "documentSlugs": [
-      "documents/1783155430043-sample-contract-pdf",
-      "documents/1783155430044-sample-letter-docx",
-      "documents/1783155430044-scan-klage-jpg",
-      "documents/1783155430044-scan-urteil-png"
+      "documents/1789223608903-sample-contract-pdf",
+      "documents/1789223608904-sample-letter-docx",
+      "documents/1789223608905-scan-klage-jpg",
+      "documents/1789223608905-scan-urteil-png"
     ],
-    "litigationSlug": "litigation/cases/1783155430041/1783155430050",
-    "reviewSetSlug": "review-sets/1783155430052",
-    "trustAccountSlug": "trust-accounts/1783155430053",
-    "analyticsSlug": "litigation-analytics/1783155430056",
-    "playbookSlug": "playbooks/1783155430048"
+    "litigationSlug": "litigation/cases/1789223608900/1789223608917",
+    "reviewSetSlug": "review-sets/1789223608923",
+    "trustAccountSlug": "trust-accounts/1789223608925",
+    "analyticsSlug": "litigation-analytics/1789223608928",
+    "playbookSlug": "playbooks/1789223608916"
   }
 }

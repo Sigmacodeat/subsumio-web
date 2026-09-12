@@ -53,11 +53,7 @@ import { validateCsrf, CSRF_COOKIE_NAME } from "@/lib/csrf";
 import { logAudit, type AuditAction } from "@/lib/audit";
 import { apiError, apiStream } from "@/lib/api-response";
 import { isAppError } from "@/lib/errors";
-import {
-  createCitationGateStream,
-  groundJsonResponse,
-  emptyGroundingMetadata,
-} from "@/lib/citation-gate";
+import { emptyGroundingMetadata } from "@/lib/citation-gate-client";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
 import { validateCronAuth } from "@/lib/cron-auth";
 import { timingSafeCompare } from "@/lib/crypto-utils";
@@ -70,6 +66,18 @@ import type { WorkProductType } from "@/lib/work-product-receipts";
 // ── Types ─────────────────────────────────────────────────────────────
 
 export type HandlerContext = EngineContext;
+
+// Only 16 of roughly 500 API routes enable citation grounding. Keeping the
+// server-only gate as a static dependency pulled the complete legal corpus
+// grounding graph into every route entry during `next build`, multiplying
+// Webpack's memory footprint. Load it only for responses that opt into the
+// invariant; the module promise is shared for subsequent requests.
+let citationGateModule: Promise<typeof import("@/lib/citation-gate")> | undefined;
+
+function loadCitationGate() {
+  citationGateModule ??= import("@/lib/citation-gate");
+  return citationGateModule;
+}
 
 /**
  * Next.js 15.5 generated route context type.
@@ -588,6 +596,9 @@ export function createWebhookHandler<B extends z.ZodTypeAny | undefined = undefi
     body?: B;
     cors?: boolean;
     audit?: (body: ValidatedBody<B>) => AuditSpec | AuditSpec[];
+    rateLimitKey?: (req: NextRequest, body: ValidatedBody<B>) => string;
+    rateLimitMax?: number;
+    rateLimitWindowMs?: number;
   },
   handler: (body: ValidatedBody<B>, req: NextRequest) => Promise<Response>
 ): (req: NextRequest, routeContext: RouteContext) => Promise<Response> {
@@ -602,6 +613,34 @@ export function createWebhookHandler<B extends z.ZodTypeAny | undefined = undefi
       const result = await parseAndValidateBody(options.body, req);
       if ("error" in result) return withCorsHeaders(result.error, options.cors ?? false, req);
       body = result.data as ValidatedBody<B>;
+    }
+
+    if (options.rateLimitKey) {
+      const rate = await hit(
+        options.rateLimitKey(req, body),
+        options.rateLimitMax ?? 20,
+        options.rateLimitWindowMs ?? 60_000
+      );
+      if (!rate.ok) {
+        return withCorsHeaders(
+          new Response(
+            JSON.stringify({
+              error: "rate_limited",
+              message: "Too many requests. Please try again later.",
+              retry_after: rate.retryAfterSeconds,
+            }),
+            {
+              status: 429,
+              headers: {
+                "Content-Type": "application/json",
+                "Retry-After": String(rate.retryAfterSeconds),
+              },
+            }
+          ),
+          options.cors ?? false,
+          req
+        );
+      }
     }
 
     // Handler
@@ -926,6 +965,7 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
           }
           let baseStream: ReadableStream<Uint8Array> = upstream.body as ReadableStream<Uint8Array>;
           if (options.citationGate) {
+            const { createCitationGateStream } = await loadCitationGate();
             baseStream = createCitationGateStream(baseStream);
           }
           if (options.receiptProductType) {
@@ -954,6 +994,7 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
 
         if (options.citationGate) {
           try {
+            const { groundJsonResponse } = await loadCitationGate();
             const grounding = await groundJsonResponse(result);
             result._grounding = grounding;
           } catch (err) {

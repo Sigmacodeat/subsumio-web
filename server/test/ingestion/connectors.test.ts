@@ -32,6 +32,7 @@ import {
   type IngestionSourceContext,
 } from "../../src/core/ingestion/types.ts";
 import type { BrainEngine } from "../../src/core/engine.ts";
+import { withEnv } from "../helpers/with-env.ts";
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -255,9 +256,95 @@ describe("ConnectorManager", () => {
     expect(enabled[0].service).toBe("notion");
   });
 
+  test("keeps same-service connector instances isolated", async () => {
+    const mgr = new ConnectorManager(tmpDir);
+    await mgr.add("github", { api_key: "first", instance_id: "github-firm-a" });
+    await mgr.add("github", { api_key: "second", instance_id: "github-firm-b" });
+
+    const list = await mgr.list();
+    expect(list.map((entry) => entry.id).sort()).toEqual(["github-firm-a", "github-firm-b"]);
+  });
+
   test("add rejects unsupported service", async () => {
     const mgr = new ConnectorManager(tmpDir);
     await expect(mgr.add("confluence", { api_key: "x" })).rejects.toThrow("Unsupported connector");
+  });
+
+  test("SaaS connector state is encrypted and never written to the local registry", async () => {
+    await withEnv(
+      { SUBSUMIO_ENCRYPTION_KEY: "connector-test-key-that-is-long-enough-for-aes" },
+      async () => {
+        const rows = new Map<
+          string,
+          {
+            id: string;
+            service: string;
+            tenant_source_id: string | null;
+            enabled: boolean;
+            config_ciphertext: string;
+            state_ciphertext: string | null;
+          }
+        >();
+        const engine = {
+          async executeRaw<T = Record<string, unknown>>(
+            sql: string,
+            params: unknown[] = []
+          ): Promise<T[]> {
+            if (sql.startsWith("INSERT INTO connector_instances")) {
+              const [id, service, tenantSourceId, enabled, configCiphertext, stateCiphertext] =
+                params as [string, string, string | null, boolean, string, string];
+              rows.set(id, {
+                id,
+                service,
+                tenant_source_id: tenantSourceId,
+                enabled,
+                config_ciphertext: configCiphertext,
+                state_ciphertext: stateCiphertext,
+              });
+              return [];
+            }
+            if (sql.startsWith("SELECT id, service, enabled")) return [...rows.values()] as T[];
+            if (sql.startsWith("SELECT state_ciphertext")) {
+              const row = rows.get(params[0] as string);
+              return row ? ([{ state_ciphertext: row.state_ciphertext }] as T[]) : [];
+            }
+            if (sql.startsWith("UPDATE connector_instances SET enabled")) {
+              const row = rows.get(params[0] as string);
+              if (row) row.enabled = params[1] as boolean;
+              return [];
+            }
+            if (sql.startsWith("UPDATE connector_instances SET state_ciphertext")) {
+              const row = rows.get(params[0] as string);
+              if (row) row.state_ciphertext = params[1] as string;
+              return [];
+            }
+            if (sql.startsWith("DELETE FROM connector_instances")) {
+              rows.delete(params[0] as string);
+              return [];
+            }
+            throw new Error(`Unexpected SQL: ${sql}`);
+          },
+        } as BrainEngine;
+
+        const mgr = new ConnectorManager(undefined, engine);
+        await mgr.add("github", {
+          instance_id: "github-firm-a",
+          tenant_source_id: "firm-a",
+          api_key: "github-private-token",
+        });
+
+        const row = rows.get("github-firm-a");
+        expect(row).toBeDefined();
+        expect(row?.config_ciphertext).not.toContain("github-private-token");
+        expect(row?.state_ciphertext).not.toContain("github-private-token");
+        expect(existsSync(join(tmpDir, ".gbrain", "connectors.json"))).toBe(false);
+
+        const enabled = await mgr.loadEnabled();
+        expect(enabled).toHaveLength(1);
+        await mgr.setEnabled("github-firm-a", false);
+        expect((await mgr.list())[0]?.enabled).toBe(false);
+      }
+    );
   });
 });
 

@@ -14,7 +14,7 @@
  *   SUBSUMIO_DEMO_NAME         - Display name (default: "Demo Kanzlei")
  *   SUBSUMIO_DEMO_PLAN         - Plan: free|pro|team|enterprise (default: enterprise)
  *   SUBSUMIO_DEMO_ROLE         - Role: admin|lawyer|assistant|client_viewer (default: admin)
- *   SUBSUMIO_DEMO_INDUSTRY     - Industry: legal|tax|null (default: legal)
+ *   SUBSUMIO_DEMO_INDUSTRY     - Industry: legal|null (default: legal)
  *   SUBSUMIO_API_URL           - Engine URL to pre-warm the demo brain
  *   SUBSUMIO_WEB_API_KEY       - Engine API key for brain provisioning
  *
@@ -95,9 +95,9 @@ function validRole(value: string): "admin" | "lawyer" | "assistant" | "client_vi
 }
 
 function validIndustry(value: string): string | null {
-  if (value === "legal" || value === "tax") return value;
+  if (value === "legal") return value;
   if (value === "" || value === "null") return null;
-  console.error(`Invalid industry: ${value}. Must be "legal" or "tax"`);
+  console.error(`Invalid industry: ${value}. Must be "legal" or "null"`);
   process.exit(1);
 }
 

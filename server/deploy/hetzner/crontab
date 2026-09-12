@@ -146,3 +146,26 @@
 # anchored in the files table. Detects silent storage corruption/tampering.
 # Rolling: 50 files per run, oldest-first.
 30 3 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/integrity-recheck || true
+
+# ─────────────────────────────────────────────────────────────────────────
+# Abrechnung / SaaS-Billing
+# Diese fünf Jobs standen bisher nur in vercel.json. Beim Betrieb auf
+# Hetzner (supercronic) lief die Abrechnungsautomatik dadurch still nicht.
+# Zeitpläne sind 1:1 aus vercel.json übernommen — beide Scheduler müssen
+# gemeinsam gepflegt werden.
+# ─────────────────────────────────────────────────────────────────────────
+
+# ── 03:00 UTC (05:00 CEST) — Billing-Cleanup ──
+0 3 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/billing-cleanup || true
+
+# ── Alle 15 Minuten — Settlement-Retry (Pipeline-Abrechnung) ──
+*/15 * * * *   curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/settlement-retry || true
+
+# ── Alle 2 Stunden — Credit-Auto-Reload ──
+0 */2 * * *    curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/billing/auto-reload-cron || true
+
+# ── Monatlich am 1. um 00:00 UTC — Monatsrechnung ──
+0 0 1 * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/billing/monthly-invoice || true
+
+# ── 03:00 UTC (05:00 CEST) — Abgelaufene Credits verfallen lassen ──
+0 3 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/billing/expire-credits || true

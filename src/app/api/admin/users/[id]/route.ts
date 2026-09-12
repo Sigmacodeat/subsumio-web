@@ -39,7 +39,15 @@ export const PATCH = createHandler(
     if (body.plan !== undefined) patch.plan = body.plan as Plan;
     if (body.role !== undefined) patch.role = body.role as KanzleiRole;
     if (body.industry !== undefined) {
-      patch.industry = isValidIndustry(body.industry) ? body.industry : null;
+      if (body.industry === null || isValidIndustry(body.industry)) {
+        patch.industry = body.industry;
+      } else if (body.industry !== target.industry) {
+        return apiError(
+          "invalid_industry",
+          "Nur die aktive Branche Legal kann zugewiesen werden",
+          400
+        );
+      }
     }
     if (body.emailVerifiedAt !== undefined) patch.emailVerifiedAt = body.emailVerifiedAt;
     if (body.deactivatedAt !== undefined) patch.deactivatedAt = body.deactivatedAt;

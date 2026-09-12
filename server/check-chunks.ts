@@ -1,9 +1,12 @@
 import postgres from "postgres";
-const sql = postgres("postgres://sigmabrain:2bfa7d4107f0b40e171cb508f27a9a703501b160d61957f0@localhost:15432/sigmabrain?sslmode=disable", { max: 2, ssl: false, onnotice: () => {} });
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) throw new Error("DATABASE_URL is required");
+const sql = postgres(databaseUrl, { max: 2, ssl: false, onnotice: () => {} });
 
 async function main() {
   // Check content_chunks columns
-  const cols = await sql`SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'content_chunks' ORDER BY ordinal_position`;
+  const cols =
+    await sql`SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'content_chunks' ORDER BY ordinal_position`;
   console.log("content_chunks columns:");
   for (const c of cols) console.log("  ", c.column_name, "—", c.data_type);
 
@@ -12,7 +15,8 @@ async function main() {
   console.log("\nTotal content_chunks:", totalChunks[0].c);
 
   // Chunks for new pages
-  const newChunks = await sql`SELECT COUNT(*) as c FROM content_chunks WHERE page_id IN (SELECT id FROM pages WHERE created_at > NOW() - INTERVAL '3 hours')`;
+  const newChunks =
+    await sql`SELECT COUNT(*) as c FROM content_chunks WHERE page_id IN (SELECT id FROM pages WHERE created_at > NOW() - INTERVAL '3 hours')`;
   console.log("Chunks for new pages (last 3h):", newChunks[0].c);
 
   // Pending embeddings (null embedding)
@@ -35,4 +39,7 @@ async function main() {
 
   await sql.end();
 }
-main().catch(e => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

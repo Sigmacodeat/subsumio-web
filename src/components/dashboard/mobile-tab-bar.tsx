@@ -77,24 +77,12 @@ interface TabItem {
   labelKey: DashboardKey;
 }
 
-const LEGAL_TABS: TabItem[] = [
+const MAIN_TABS: TabItem[] = [
   { href: "/dashboard", icon: LayoutDashboard, labelKey: "nav.overview" },
   { href: "/dashboard/cases", icon: Briefcase, labelKey: "nav.cases" },
   { href: "/dashboard/deadlines", icon: CalendarClock, labelKey: "nav.deadlines" },
   { href: "/dashboard/intake", icon: Inbox, labelKey: "nav.intake" },
 ];
-
-const TAX_TABS: TabItem[] = [
-  { href: "/dashboard", icon: LayoutDashboard, labelKey: "nav.overview" },
-  { href: "/dashboard/tax-returns", icon: FileText, labelKey: "nav.tax_returns" },
-  { href: "/dashboard/tax-deadlines", icon: CalendarClock, labelKey: "nav.tax_deadlines" },
-  { href: "/dashboard/tax-assessments", icon: FileCheck, labelKey: "nav.tax_assessments" },
-];
-
-function tabsForIndustry(industry?: string | null): TabItem[] {
-  if (industry === "tax") return TAX_TABS;
-  return LEGAL_TABS;
-}
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/dashboard") return pathname === "/dashboard";
@@ -159,7 +147,7 @@ export function MobileTabBar({
     }
   }, [moreOpen]);
 
-  const tabs = tabsForIndustry(industry);
+  const tabs = MAIN_TABS;
   const activeTab = tabs.findIndex((tab) => isActive(pathname, tab.href));
   const copilotActive = copilotOpen;
   const navigationSections = [

@@ -247,6 +247,7 @@ ${msg.attachments.length > 0 ? `## Anhänge (${msg.attachments.length})\n${msg.a
       metadata: {
         slug: `legal/bea/${dateStr}-${slugifyId(msg.messageId)}`,
         title: `beA: ${msg.subject}`,
+        case_reference: msg.caseReference ?? "",
       },
     };
   }

@@ -126,18 +126,18 @@
   --brand-800: hsl(230, 46%, 28%); /* oklch(0.29 0.09 260) */
   --brand-900: hsl(230, 44%, 20%); /* oklch(0.20 0.06 260) */
 
-  /* ── Tax scale — Hue 165°, perceptually tuned ──
+  /* ── Teal scale — Hue 165°, perceptually tuned ──
      Reference OKLCH: hue 170°, chroma 0.11-0.13. */
-  --tax-50: hsl(168, 55%, 96%); /* oklch(0.97 0.02 170) */
-  --tax-100: hsl(168, 54%, 91%); /* oklch(0.94 0.04 170) */
-  --tax-200: hsl(168, 53%, 82%); /* oklch(0.87 0.07 170) */
-  --tax-300: hsl(168, 52%, 70%); /* oklch(0.76 0.11 170) */
-  --tax-400: hsl(168, 52%, 56%); /* oklch(0.65 0.13 170) */
-  --tax-500: hsl(168, 52%, 42%); /* oklch(0.54 0.12 170) */
-  --tax-600: hsl(168, 52%, 35%); /* oklch(0.46 0.10 170) */
-  --tax-700: hsl(168, 52%, 28%); /* oklch(0.37 0.08 170) */
-  --tax-800: hsl(168, 51%, 21%); /* oklch(0.29 0.06 170) */
-  --tax-900: hsl(168, 50%, 14%); /* oklch(0.20 0.04 170) */
+  --teal-scale-50: hsl(168, 55%, 96%); /* oklch(0.97 0.02 170) */
+  --teal-scale-100: hsl(168, 54%, 91%); /* oklch(0.94 0.04 170) */
+  --teal-scale-200: hsl(168, 53%, 82%); /* oklch(0.87 0.07 170) */
+  --teal-scale-300: hsl(168, 52%, 70%); /* oklch(0.76 0.11 170) */
+  --teal-scale-400: hsl(168, 52%, 56%); /* oklch(0.65 0.13 170) */
+  --teal-scale-500: hsl(168, 52%, 42%); /* oklch(0.54 0.12 170) */
+  --teal-scale-600: hsl(168, 52%, 35%); /* oklch(0.46 0.10 170) */
+  --teal-scale-700: hsl(168, 52%, 28%); /* oklch(0.37 0.08 170) */
+  --teal-scale-800: hsl(168, 51%, 21%); /* oklch(0.29 0.06 170) */
+  --teal-scale-900: hsl(168, 50%, 14%); /* oklch(0.20 0.04 170) */
 
   /* ── Signal scale — perceptually tuned, colorblind-safe lightness jumps ──
      Hues: Success 160°, Warning 40°, Danger 25°, Info 250°, Attention 35°.
@@ -256,7 +256,7 @@
   --graph-idea: var(--accent-premium);
   --graph-document: var(--signal-warning-500);
   --graph-event: var(--signal-attention-500);
-  --graph-place: var(--tax-400);
+  --graph-place: var(--teal-scale-400);
   --graph-fallback: var(--neutral-500);
 
   /* ═══════════════════════════════════════════════════════════════
@@ -438,17 +438,17 @@
   --color-rose-800: var(--signal-danger-800);
   --color-rose-900: var(--signal-danger-900);
 
-  /* Teal → Tax scale (hue 165°) */
-  --color-teal-50: var(--tax-50);
-  --color-teal-100: var(--tax-100);
-  --color-teal-200: var(--tax-200);
-  --color-teal-300: var(--tax-300);
-  --color-teal-400: var(--tax-400);
-  --color-teal-500: var(--tax-500);
-  --color-teal-600: var(--tax-600);
-  --color-teal-700: var(--tax-700);
-  --color-teal-800: var(--tax-800);
-  --color-teal-900: var(--tax-900);
+  /* Teal utility palette (hue 165°) */
+  --color-teal-50: var(--teal-scale-50);
+  --color-teal-100: var(--teal-scale-100);
+  --color-teal-200: var(--teal-scale-200);
+  --color-teal-300: var(--teal-scale-300);
+  --color-teal-400: var(--teal-scale-400);
+  --color-teal-500: var(--teal-scale-500);
+  --color-teal-600: var(--teal-scale-600);
+  --color-teal-700: var(--teal-scale-700);
+  --color-teal-800: var(--teal-scale-800);
+  --color-teal-900: var(--teal-scale-900);
 
   /* Slate / Gray → Neutral scale (hue 230°, chroma 8%) */
   --color-slate-50: var(--neutral-50);
@@ -966,7 +966,7 @@
   --graph-idea: var(--accent-premium);
   --graph-document: var(--signal-warning-600);
   --graph-event: var(--signal-attention-600);
-  --graph-place: var(--tax-500);
+  --graph-place: var(--teal-scale-500);
   --graph-fallback: var(--neutral-500);
   color-scheme: light;
 }
@@ -1096,7 +1096,7 @@
   --graph-idea: var(--accent-premium);
   --graph-document: var(--ds-warning-text);
   --graph-event: var(--ds-attention-text);
-  --graph-place: var(--tax-300);
+  --graph-place: var(--teal-scale-300);
   --graph-fallback: var(--ds-text-muted);
   color-scheme: dark;
 }

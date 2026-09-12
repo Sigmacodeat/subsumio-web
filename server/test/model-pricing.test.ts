@@ -114,8 +114,11 @@ describe("canonicalLookup — id normalization", () => {
     expect(canonicalLookup("gpt-5")).toBeUndefined();
   });
 
-  test("nested OpenRouter id → MISS (markup ≠ native pricing)", () => {
-    expect(canonicalLookup("openrouter:anthropic/claude-sonnet-4-6")).toBeUndefined();
+  test("approved nested OpenRouter id → explicit catalog price", () => {
+    expect(canonicalLookup("openrouter:anthropic/claude-sonnet-4.6")).toEqual({
+      input: 3.0,
+      output: 15.0,
+    });
   });
 
   test("slash-bearing model tail kept as exact key (together Llama)", () => {

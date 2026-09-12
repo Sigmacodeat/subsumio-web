@@ -2,7 +2,7 @@
 # Incremental import loop — re-imports judikatur sources every 30 minutes
 # to pick up newly backfilled files. Only files with actual text get imported
 # (placeholders are auto-skipped by import-judikatur.ts).
-export PGPASSWORD=2bfa7d4107f0b40e171cb508f27a9a703501b160d61957f0
+: "${DATABASE_URL:?DATABASE_URL is required}"
 cd /app
 
 SOURCES="uvs lvwg asylgh bvwg vwgh ogh vfgh dsk gbk pvak dok"

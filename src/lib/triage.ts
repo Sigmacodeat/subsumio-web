@@ -109,7 +109,7 @@ const URGENCY_RULES: TriageRule[] = [
     urgency: "high",
     actionType: "konflikt",
   },
-  // ── TAXUMIO: Steuerrechtliche Triage-Regeln ──
+  // ── Steuerrechtliche Triage-Regeln ──
   {
     pattern:
       /\b(steuerbescheid|einkommensteuerbescheid|umsatzsteuerbescheid|körperschaftsteuerbescheid|gewerbesteuerbescheid|festsetzungsbescheid)\b/i,
@@ -214,7 +214,7 @@ const LEGAL_AREA_RULES: Array<{ pattern: RegExp; area: string }> = [
     area: "datenschutzrecht",
   },
   { pattern: /\b(steuer|finanzamt|einspruch|steuerrecht)\b/i, area: "steuerrecht" },
-  // TAXUMIO: Detaillierte Steuerrecht-Unterkategorien
+  // Detaillierte Steuerrecht-Unterkategorien
   {
     pattern: /\b(einkommensteuer|estg|einkünfte|werbungskosten|betriebsausgaben|sonderausgaben)\b/i,
     area: "einkommensteuer",
@@ -265,7 +265,7 @@ function extractDeadline(text: string): string | undefined {
     /\bfrist.*?(\d{1,2}\.\d{1,2}\.\d{4})\b/i,
     /\bfrist.*?(\d{4}-\d{2}-\d{2})\b/i,
     /\b(\d{1,2}\.\d{1,2}\.\d{4})\s*(?:uhr|ende)\b/i,
-    // TAXUMIO: Steuerrechtliche Frist-Muster
+    // Steuerrechtliche Frist-Muster
     /\b(?:einspruchsfrist|rechtsmittelfrist).*?(?:bis|läuft|abläuft)\s*(?:am\s+)?(\d{1,2}\.\d{1,2}\.\d{4})\b/i,
     /\b(?:voranmeldung|vorauszahlung).*?(?:fällig|bis)\s*(?:am\s+)?(\d{1,2}\.\d{1,2}\.\d{4})\b/i,
     /\b(?:betriebsprüfung|außenprüfung).*?(?:am|beginn|ab)\s*(\d{1,2}\.\d{1,2}\.\d{4})\b/i,

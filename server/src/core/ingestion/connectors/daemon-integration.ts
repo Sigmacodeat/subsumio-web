@@ -29,7 +29,7 @@ export async function startConnectorIngestion(
   const daemon = new IngestionDaemon({ engine, logger, dispatch });
 
   // Load and register all enabled connectors.
-  const manager = new ConnectorManager();
+  const manager = new ConnectorManager(undefined, engine);
   const connectors = await manager.loadEnabled();
 
   if (connectors.length > 0) {

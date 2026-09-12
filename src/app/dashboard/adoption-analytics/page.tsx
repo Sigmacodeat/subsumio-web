@@ -71,7 +71,7 @@ const TREND_ICONS: Record<string, typeof TrendingUp> = {
 const TREND_COLORS: Record<string, string> = {
   up: "text-[color:var(--ds-success-text)] bg-[color:var(--ds-success-bg)]",
   down: "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-bg)]",
-  stable: "text-gray-500 bg-gray-500/10",
+  stable: "text-[color:var(--ds-neutral-text)] bg-[color:var(--ds-neutral-bg)]",
 };
 
 const FEATURE_LABELS: Record<string, string> = {

@@ -1,10 +1,7 @@
-// industry-pack — Subsumio multi-industry registry.
+// Subsumio legal-industry registry.
 //
-// Maps each industry (legal, tax, …) to its schema pack that configures the
-// tenant brain for that vertical (page types, link verbs, calibration).
-// To add a new industry: add it to INDUSTRY_PROFILES with its own theme,
-// brand, signature, and pack name. The rest of the system (sidebar,
-// quick-create, onboarding, admin) reads from this registry.
+// The former Taxumio profile is preserved in the archive tag documented in
+// docs/archive/TAXUMIO_ARCHIVE_MANIFEST.md. The active product is Legal-only.
 
 export interface IndustryTheme {
   primary: string;
@@ -23,7 +20,7 @@ export interface IndustryProfile {
   brand: string;
   dashboardHref: string;
   marketingHref: string;
-  pack: string | null;
+  pack: string;
   signature: {
     title: { en: string; de: string };
     proof: { en: string; de: string };
@@ -41,17 +38,6 @@ export const SUBSUMIO_THEME: IndustryTheme = {
   gradientFrom: "var(--brand-700)",
   gradientVia: "var(--brand-400)",
   gradientTo: "hsl(260, 60%, 65%)",
-};
-
-export const TAX_THEME: IndustryTheme = {
-  primary: "var(--tax-500)",
-  primaryHover: "var(--tax-400)",
-  secondary: "var(--tax-400)",
-  tertiary: "hsl(170, 55%, 50%)",
-  glow: "hsla(165, 55%, 42%, 0.12)",
-  gradientFrom: "var(--tax-700)",
-  gradientVia: "var(--tax-400)",
-  gradientTo: "hsl(170, 55%, 50%)",
 };
 
 export const INDUSTRY_PROFILES = {
@@ -72,64 +58,36 @@ export const INDUSTRY_PROFILES = {
         de: "Akten, Fristen, Beteiligte und Dokumente bleiben als juristischer Graph verbunden.",
       },
       items: [
-        { en: "Case contradictions", de: "Widersprueche in Akten" },
+        { en: "Case contradictions", de: "Widersprüche in Akten" },
         { en: "Deadline-aware answers", de: "Fristenbewusste Antworten" },
         { en: "Cited drafting context", de: "Zitierter Schriftsatzkontext" },
       ],
     },
     theme: SUBSUMIO_THEME,
   },
-  tax: {
-    key: "tax",
-    label: { en: "Tax advisory / accounting", de: "Steuerberatung / Buchhaltung" },
-    brand: "Taxumio",
-    dashboardHref: "/dashboard",
-    marketingHref: "/taxumio",
-    pack: "subsumio-tax",
-    signature: {
-      title: {
-        en: "Client memory with tax deadline discipline",
-        de: "Mandantengedaechtnis mit Steuerfristen-Disziplin",
-      },
-      proof: {
-        en: "Tax returns, assessments, deadlines and documents stay connected as a financial graph.",
-        de: "Steuererklaerungen, Bescheide, Fristen und Dokumente bleiben als Finanz-Graph verbunden.",
-      },
-      items: [
-        { en: "Tax deadline contradictions", de: "Widersprueche in Steuerfristen" },
-        { en: "AO-aware deadline answers", de: "AO-bewusste Fristenantworten" },
-        { en: "Cited assessment context", de: "Zitierter Bescheidkontext" },
-      ],
-    },
-    theme: TAX_THEME,
-  },
 } as const satisfies Record<string, IndustryProfile>;
 
-export const INDUSTRY_PACK = Object.fromEntries(
-  Object.entries(INDUSTRY_PROFILES).map(([key, profile]) => [key, profile.pack])
-) as { [K in keyof typeof INDUSTRY_PROFILES]: NonNullable<(typeof INDUSTRY_PROFILES)[K]["pack"]> };
+export const INDUSTRY_PACK = {
+  legal: INDUSTRY_PROFILES.legal.pack,
+} as const;
 
 export type Industry = keyof typeof INDUSTRY_PACK;
 
-export const INDUSTRIES: ReadonlySet<string> = new Set([
-  ...Object.keys(INDUSTRY_PROFILES),
-  "other",
-]);
+export const INDUSTRIES: ReadonlySet<string> = new Set(Object.keys(INDUSTRY_PROFILES));
+export const ACTIVE_INDUSTRIES: ReadonlySet<string> = INDUSTRIES;
 
-export function isValidIndustry(industry: string | null | undefined): boolean {
-  return !!industry && INDUSTRIES.has(industry);
+export function isValidIndustry(industry: string | null | undefined): industry is Industry {
+  return !!industry && ACTIVE_INDUSTRIES.has(industry);
 }
 
 export function packForIndustry(industry: string | null | undefined): string | null {
-  if (!industry) return null;
-  return (INDUSTRY_PACK as Record<string, string>)[industry] ?? null;
+  return isValidIndustry(industry) ? INDUSTRY_PACK[industry] : null;
 }
 
 export function profileForIndustry(industry: string | null | undefined): IndustryProfile | null {
-  if (!industry || industry === "other") return null;
-  return (INDUSTRY_PROFILES as Record<string, IndustryProfile>)[industry] ?? null;
+  return isValidIndustry(industry) ? INDUSTRY_PROFILES[industry] : null;
 }
 
-export function themeForIndustry(industry: string | null | undefined): IndustryTheme {
-  return profileForIndustry(industry)?.theme ?? SUBSUMIO_THEME;
+export function themeForIndustry(_industry: string | null | undefined): IndustryTheme {
+  return SUBSUMIO_THEME;
 }
