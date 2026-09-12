@@ -16,13 +16,14 @@ function detectLang(pathname: string): Lang {
 function isAuthedOrApi(pathname: string): boolean {
   return (
     pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/ops") ||
     pathname.startsWith("/portal") ||
     pathname.startsWith("/admin") ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/signup") ||
     pathname.startsWith("/reset") ||
     pathname.startsWith("/forgot") ||
-    /^\/(en|it|es|pl|fr|nl)\/(login|signup|reset|forgot)/.test(pathname) ||
+    /^\/en\/(login|signup|reset|forgot)/.test(pathname) ||
     pathname.startsWith("/api")
   );
 }
@@ -30,7 +31,10 @@ function isAuthedOrApi(pathname: string): boolean {
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const lang = detectLang(pathname);
-  const hasOwnMain = pathname.startsWith("/dashboard") || pathname.startsWith("/portal");
+  const hasOwnMain =
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/ops") ||
+    pathname.startsWith("/portal");
   const isMarketingPage = !isAuthedOrApi(pathname);
 
   const pageContent = hasOwnMain ? (

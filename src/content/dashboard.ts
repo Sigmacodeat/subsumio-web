@@ -9808,6 +9808,103 @@ export const D = {
 
   // ── Sheet (UI) ──
   "sheet.aria_close": { de: "Schließen", en: "Close" },
+
+  // ── Betreiber-Konsole (/ops) ──
+  "admin.backup.aria_delete": { de: "Löschen", en: "Delete" },
+  "admin.backup.cancel": { de: "Abbrechen", en: "Cancel" },
+  "admin.backup.created": { de: "Backup erstellt", en: "Backup created" },
+  "admin.backup.created_desc": {
+    de: "Voll-Backup erfolgreich erstellt",
+    en: "Full backup successfully created",
+  },
+  "admin.backup.creating": { de: "Erstelle...", en: "Creating..." },
+  "admin.backup.delete": { de: "Löschen", en: "Delete" },
+  "admin.backup.delete_failed": { de: "Löschen fehlgeschlagen", en: "Failed to delete" },
+  "admin.backup.deleted": { de: "Backup gelöscht", en: "Backup deleted" },
+  "admin.backup.deleting": { de: "Lösche...", en: "Deleting..." },
+  "admin.backup.desc": {
+    de: "Voll-Backups verwalten — erstellen, einspielen, herunterladen und löschen",
+    en: "Manage full backups — create, restore, download and delete",
+  },
+  "admin.backup.failed": { de: "Backup fehlgeschlagen", en: "Backup failed" },
+  "admin.backup.new": { de: "Neues Backup", en: "New backup" },
+  "admin.backup.restore_confirm": { de: "Restore bestätigen", en: "Confirm restore" },
+  "admin.backup.restore_done": { de: "Restore abgeschlossen", en: "Restore completed" },
+  "admin.backup.restore_failed": { de: "Restore fehlgeschlagen", en: "Restore failed" },
+  "admin.backup.restoring": { de: "Stelle wieder her...", en: "Restoring..." },
+  "admin.backup.title": { de: "Backup & Restore", en: "Backup & Restore" },
+  "admin.dr.desc": {
+    de: "Backup-Manifeste, Restore-Drills, RPO/RTO-Compliance und Wiederherstellung",
+    en: "Backup manifests, restore drills, RPO/RTO compliance and recovery",
+  },
+  "admin.dr.title": { de: "Backups & Disaster Recovery", en: "Backups & Disaster Recovery" },
+  "admin.flags.activated": { de: "Aktiviert", en: "Enabled" },
+  "admin.flags.active": { de: "Aktiv", en: "Active" },
+  "admin.flags.cancel": { de: "Abbrechen", en: "Cancel" },
+  "admin.flags.create_btn": { de: "Erstellen", en: "Create" },
+  "admin.flags.create_desc": {
+    de: "Erstelle einen neuen Feature Flag.",
+    en: "Create a new feature flag.",
+  },
+  "admin.flags.create_first": { de: "Ersten Flag erstellen", en: "Create first flag" },
+  "admin.flags.create_title": { de: "Neuer Feature Flag", en: "New feature flag" },
+  "admin.flags.created": { de: "Flag erstellt", en: "Flag created" },
+  "admin.flags.deactivated": { de: "Deaktiviert", en: "Disabled" },
+  "admin.flags.delete": { de: "Löschen", en: "Delete" },
+  "admin.flags.delete_desc": {
+    de: "Der Flag wird entfernt. Features, die diesen Flag prüfen, sind danach standardmäßig deaktiviert.",
+    en: "The flag will be removed. Features that check this flag will be disabled by default.",
+  },
+  "admin.flags.delete_title": { de: "Feature Flag löschen?", en: "Delete feature flag?" },
+  "admin.flags.deleted": { de: "Flag gelöscht", en: "Flag deleted" },
+  "admin.flags.desc": {
+    de: "Verwalte Feature-Freigaben, Rollout-Prozentsätze und Plan/Rollen-Beschränkungen",
+    en: "Manage feature releases, rollout percentages and plan/role restrictions",
+  },
+  "admin.flags.desc_label": { de: "Beschreibung", en: "Description" },
+  "admin.flags.desc_placeholder": {
+    de: "Kurze Beschreibung des Features...",
+    en: "Brief description of the feature...",
+  },
+  "admin.flags.disable": { de: "Deaktivieren", en: "Disable" },
+  "admin.flags.edit": { de: "Bearbeiten", en: "Edit" },
+  "admin.flags.edit_desc": {
+    de: "Passe die Einstellungen für diesen Feature Flag an.",
+    en: "Adjust the settings for this feature flag.",
+  },
+  "admin.flags.edit_title": { de: "Flag bearbeiten", en: "Edit flag" },
+  "admin.flags.empty": { de: "Keine Feature Flags vorhanden.", en: "No feature flags available." },
+  "admin.flags.enable": { de: "Aktivieren", en: "Enable" },
+  "admin.flags.err_create": { de: "Fehler beim Erstellen", en: "Failed to create" },
+  "admin.flags.err_delete": { de: "Fehler beim Löschen", en: "Failed to delete" },
+  "admin.flags.err_load": {
+    de: "Fehler beim Laden der Feature Flags.",
+    en: "Failed to load feature flags.",
+  },
+  "admin.flags.err_update": { de: "Fehler beim Aktualisieren", en: "Failed to update" },
+  "admin.flags.inactive": { de: "Inaktiv", en: "Inactive" },
+  "admin.flags.key_placeholder": { de: "z.B. deep_analysis", en: "e.g. deep_analysis" },
+  "admin.flags.name_placeholder": { de: "z.B. Deep Analysis Tool", en: "e.g. Deep Analysis Tool" },
+  "admin.flags.new": { de: "Neuer Flag", en: "New flag" },
+  "admin.flags.on": { de: "am", en: "on" },
+  "admin.flags.plans_label": {
+    de: "Erlaubte Pläne (leer = alle)",
+    en: "Allowed plans (empty = all)",
+  },
+  "admin.flags.roles_label": {
+    de: "Erlaubte Rollen (leer = alle)",
+    en: "Allowed roles (empty = all)",
+  },
+  "admin.flags.rollout": { de: "Rollout", en: "Rollout" },
+  "admin.flags.save": { de: "Speichern", en: "Save" },
+  "admin.flags.title": { de: "Feature Flags", en: "Feature Flags" },
+  "admin.flags.updated": { de: "Flag aktualisiert", en: "Flag updated" },
+  "admin.flags.updated_by": { de: "Aktualisiert von", en: "Updated by" },
+  "admin.slo.desc": {
+    de: "Service Level Objectives für alle Workflows — Status, Alerts und Metriken",
+    en: "Service Level Objectives for all workflows — status, alerts and metrics",
+  },
+  "admin.slo.title": { de: "SLO Monitoring", en: "SLO Monitoring" },
 } satisfies Record<string, BiString>;
 
 export type DashboardKey = keyof typeof D;

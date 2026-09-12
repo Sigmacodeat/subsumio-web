@@ -13,6 +13,7 @@ import { generateCsrfToken, CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csr
 import { env } from "@/lib/env";
 import { hasValidInternalSecret } from "@/lib/auth/internal";
 import { LEGACY_TAXUMIO_HOSTS, SUBSUMIO_SITE_URL } from "@/lib/brand";
+import { isOpsHost } from "@/lib/auth/platform-operator";
 
 // --- CSP nonce generation ---
 function generateCspNonce(): string {
@@ -60,6 +61,22 @@ const APP_HOSTS = new Set(
 );
 
 const LEGACY_PRODUCT_HOSTS = new Set(LEGACY_TAXUMIO_HOSTS.map((host) => host.toLowerCase()));
+
+// --- Operator console host split ---
+// The ops host (OPS_HOSTS, production: ops.subsum.eu) serves only the operator
+// console plus what it needs to sign in; /ops is invisible on every other host.
+const OPS_HOST_PASSTHROUGH_PREFIXES = ["/ops", "/api/", "/login", "/forgot", "/reset"];
+
+function isOpsPath(pathname: string): boolean {
+  return pathname === "/ops" || pathname.startsWith("/ops/");
+}
+
+function isOpsHostPassthrough(pathname: string): boolean {
+  return OPS_HOST_PASSTHROUGH_PREFIXES.some(
+    (prefix) =>
+      pathname === prefix || pathname.startsWith(prefix.endsWith("/") ? prefix : `${prefix}/`)
+  );
+}
 
 // --- IP Allow-listing (G8: Enterprise Security) ---
 // When SUBSUMIO_IP_ALLOWLIST is set, only requests from these IPs/CIDRs
@@ -220,6 +237,17 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  const onOpsHost = isOpsHost(req.headers.get("host"));
+  if (isOpsPath(pathname) && !onOpsHost) {
+    return applyCsp(new NextResponse("Not found", { status: 404 }));
+  }
+  if (onOpsHost && !isOpsHostPassthrough(pathname)) {
+    const opsUrl = req.nextUrl.clone();
+    opsUrl.pathname = "/ops";
+    opsUrl.search = "";
+    return applyCsp(NextResponse.redirect(opsUrl));
+  }
+
   if (APP_HOSTS.has(host) && pathname === "/") {
     const dashboard = req.nextUrl.clone();
     dashboard.pathname = "/dashboard";
@@ -325,7 +353,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // --- Protected areas ---
-  if (pathname.startsWith("/dashboard")) {
+  if (pathname.startsWith("/dashboard") || isOpsPath(pathname)) {
     const session = await verifySessionCore(req.cookies.get(SESSION_COOKIE)?.value);
     if (!session) {
       const login = new URL("/login", req.url);

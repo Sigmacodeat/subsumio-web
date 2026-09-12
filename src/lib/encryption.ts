@@ -79,11 +79,11 @@ export async function encrypt(plaintext: string | null | undefined): Promise<str
 /** Decrypt a string encrypted with encrypt(). Pass-through for null/undefined. */
 export async function decrypt(ciphertext: string | null | undefined): Promise<string | null> {
   if (!ciphertext) return null;
-  if (!ENCRYPTION_KEY) {
-    // Dev mode: strip marker or return as-is
-    if (ciphertext.startsWith("sbplain:")) return ciphertext.slice(8);
-    return ciphertext;
-  }
+  // Values written while no key was configured carry the plaintext marker.
+  // Strip it regardless of the current key, or a key added later turns every
+  // such secret (e.g. TOTP) into "sbplain:<secret>" and breaks it.
+  if (ciphertext.startsWith("sbplain:")) return ciphertext.slice(8);
+  if (!ENCRYPTION_KEY) return ciphertext;
   if (!ciphertext.startsWith("sbenc:")) {
     // Legacy unencrypted value
     return ciphertext;

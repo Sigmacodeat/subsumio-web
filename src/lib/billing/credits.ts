@@ -2098,9 +2098,9 @@ export async function setSpendCap(
     // credit_limit columns added by migration v136 to saas_credit_balance
     await pool.query(
       `UPDATE saas_credit_balance
-       SET credit_limit = $3, credit_limit_period = $4, updated_at = NOW()
+       SET credit_limit = $2, credit_limit_period = $3, updated_at = NOW()
        WHERE org_id = $1 AND period_end > now()`,
-      [ownerId, ownerType, creditLimit, period]
+      [ownerId, creditLimit, period]
     );
   } catch (err) {
     log.error("setSpendCap error", { error: err instanceof Error ? err.message : String(err) });

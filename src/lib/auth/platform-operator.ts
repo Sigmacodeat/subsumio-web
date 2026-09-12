@@ -16,12 +16,17 @@
 // Edge-safe: nur process.env, keine Node-APIs (wird auch von der Middleware genutzt).
 
 export const DEFAULT_OPS_HOSTS = ["ops.subsum.eu"] as const;
-const DEV_OPS_HOSTS = ["ops.localhost", "ops.localhost:3000"] as const;
+const DEV_OPS_HOSTS = ["ops.localhost"] as const;
 
 export interface OperatorCandidate {
   email?: string | null;
   twoFactorEnabled?: boolean | null;
   deactivatedAt?: string | null;
+}
+
+/** Hostname without port, lowercased ("OPS.subsum.eu:443" → "ops.subsum.eu"). */
+function hostname(host: string): string {
+  return host.trim().toLowerCase().replace(/:\d+$/, "");
 }
 
 function parseList(raw: string | undefined): string[] {
@@ -36,7 +41,7 @@ export function operatorEmails(): Set<string> {
 }
 
 export function opsHosts(): Set<string> {
-  const configured = parseList(process.env.OPS_HOSTS);
+  const configured = parseList(process.env.OPS_HOSTS).map(hostname);
   if (configured.length > 0) return new Set(configured);
   return new Set(
     process.env.NODE_ENV === "production"
@@ -47,7 +52,7 @@ export function opsHosts(): Set<string> {
 
 export function isOpsHost(host: string | null | undefined): boolean {
   if (!host) return false;
-  return opsHosts().has(host.trim().toLowerCase());
+  return opsHosts().has(hostname(host));
 }
 
 export function isPlatformOperator(user: OperatorCandidate | null | undefined): boolean {
