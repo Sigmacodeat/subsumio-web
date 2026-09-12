@@ -721,7 +721,7 @@ export function Topbar({
                   <button
                     type="button"
                     onClick={() => {
-                      router.push("/dashboard/settings/notifications");
+                      router.push("/dashboard/notifications");
                       setNotifOpen(false);
                     }}
                     className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"

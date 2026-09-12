@@ -65,7 +65,6 @@ import ProductWorkflowShowcase from "./product-workflow-showcase";
 import LogoMarquee from "./logo-marquee";
 import HeroQACard from "./hero-qa-card";
 import RotatingBadge from "./rotating-badge";
-import { AudienceSwitcher } from "./audience-switcher";
 
 const TRUST_ICONS: Record<string, LucideIcon> = {
   CreditCard,
@@ -324,29 +323,6 @@ export default function LandingPage({ lang }: { lang: Lang }) {
 
         {/* Logo Marquee — certifications & integrations sliding from right to left */}
         <LogoMarquee lang={lang} />
-
-        <Section
-          tone="light"
-          className="px-4 py-24 sm:px-6 lg:px-8"
-          aria-label={lang === "en" ? "Choose access" : "Zugang wählen"}
-        >
-          <motion.div {...reveal} className="mx-auto max-w-6xl">
-            <SectionHeading
-              badge={lang === "en" ? "Choose your access" : "Zugang wählen"}
-              title={
-                lang === "en"
-                  ? "Private question or professional case work?"
-                  : "Private Frage oder professionelle Aktenarbeit?"
-              }
-              sub={
-                lang === "en"
-                  ? "The two paths have deliberately different functions, limits and prices."
-                  : "Beide Wege haben bewusst unterschiedliche Funktionen, Limits und Preise."
-              }
-            />
-            <AudienceSwitcher lang={lang} />
-          </motion.div>
-        </Section>
 
         {/* Pain + Stats — merged: cost of inaction, then proof metrics in one section. */}
         {"pains" in t && t.pains && (

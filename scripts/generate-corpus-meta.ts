@@ -19,7 +19,7 @@ import { join, basename } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const ROOT = process.cwd();
-const CORPUS_DIR = join(ROOT, "law-corpus");
+const CORPUS_DIR = process.env.SUBSUMIO_LAW_CORPUS_DIR ?? join(ROOT, "law-corpus");
 const OUTPUT_FILE = join(ROOT, "src", "lib", "corpus-meta.ts");
 const OUTPUT_DATA_FILE = join(ROOT, "src", "lib", "corpus-meta.json");
 const EXCLUDED_REPORT_FILE = join(ROOT, "scripts", "corpus-meta-excluded-report.json");

@@ -59,9 +59,4 @@ export const PRODUCTS: Record<Lang, ProductMap> = {
   at: product(at),
   ch: product(ch),
   en: product(en),
-  it: product(en),
-  es: product(en),
-  pl: product(en),
-  fr: product(en),
-  nl: product(en),
 };

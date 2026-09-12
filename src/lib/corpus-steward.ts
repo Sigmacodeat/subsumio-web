@@ -27,6 +27,7 @@ import {
   fsyncSync,
 } from "fs";
 import { join, resolve, relative, dirname } from "path";
+import { lawCorpusDir, lawCorpusNormalizedDir } from "@/lib/corpus-paths";
 
 // ── Atomic Write Helper (BUG 54 + BUG 56) ──────────────────────────────
 // Schreibt Dateien atomar via tmp + fsync + rename. Verhindert korrupte
@@ -56,8 +57,7 @@ export function atomicWrite(absPath: string, content: string): void {
 
 // ── Path Confinement ───────────────────────────────────────────────────
 
-const REPO_ROOT = resolve(process.cwd());
-export const NORMALIZED_ROOT = join(REPO_ROOT, "law-corpus", "_normalized");
+export const NORMALIZED_ROOT = resolve(lawCorpusNormalizedDir());
 const VERSIONS_DIR = join(NORMALIZED_ROOT, "_versions");
 
 /** Max Versionen pro Datei — älteste werden automatisch gelöscht. */
@@ -107,7 +107,7 @@ export function safeCorpusPath(relPath: string): string | null {
  * law-corpus/_normalized/{dir}/. Ohne Sync kommt die Steward-Änderung
  * nie in die DB (BUG 5).
  */
-const RAW_ROOT = join(REPO_ROOT, "law-corpus");
+const RAW_ROOT = resolve(lawCorpusDir());
 
 /**
  * Synchronisiert eine Datei von _normalized/{path} nach law-corpus/{path}.

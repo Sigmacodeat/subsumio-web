@@ -19,9 +19,9 @@ import {
   fsyncSync,
 } from "fs";
 import { join } from "path";
+import { lawCorpusNormalizedDir } from "@/lib/corpus-paths";
 
-const REPO_ROOT = process.cwd();
-const NORMALIZED_ROOT = join(REPO_ROOT, "law-corpus", "_normalized");
+const NORMALIZED_ROOT = lawCorpusNormalizedDir();
 const INDEX_DIR = join(NORMALIZED_ROOT, "_index");
 
 export interface IndexedFile {

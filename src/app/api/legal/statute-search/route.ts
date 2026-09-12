@@ -2,6 +2,7 @@ import { z } from "zod";
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import { createHandler } from "@/lib/api-handler";
+import { lawCorpusDir } from "@/lib/corpus-paths";
 
 const semanticSearchSchema = z.object({
   q: z.string().min(2, "query_too_short").max(500, "query_too_long"),
@@ -9,7 +10,7 @@ const semanticSearchSchema = z.object({
   limit: z.string().optional(),
 });
 
-const CORPUS_DIR = path.join(process.cwd(), "law-corpus");
+const CORPUS_DIR = lawCorpusDir();
 
 interface CorpusEntry {
   jurisdiction: "at" | "de" | "ch";

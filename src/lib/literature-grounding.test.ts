@@ -5,6 +5,7 @@ import { mkdirSync, writeFileSync, rmSync } from "node:fs";
 import path from "node:path";
 import { extractLiteratureCitations } from "@/lib/citation-gate-client";
 import { groundLiteratureCitations } from "@/lib/legal-grounding";
+import { lawCorpusDir } from "@/lib/corpus-paths";
 
 describe("extractLiteratureCitations", () => {
   test("BT-Drucksache mit Seitenangabe", () => {
@@ -56,7 +57,7 @@ describe("extractLiteratureCitations", () => {
 describe("groundLiteratureCitations", () => {
   // Synthetische Fixture: Wahlperiode 99 existiert nicht — kollidiert nie mit
   // echten DIP-Importen. Wird nach dem Test entfernt.
-  const fixtureDir = path.join(process.cwd(), "law-corpus", "de-materialien");
+  const fixtureDir = path.join(lawCorpusDir(), "de-materialien");
   const fixtureFile = path.join(fixtureDir, "btd-99-99999.md");
 
   beforeAll(() => {

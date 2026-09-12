@@ -3,6 +3,7 @@ import { createHandler, apiSuccess } from "@/lib/api-handler";
 import { listCorpusNames, clearCache } from "@/lib/corpus-index";
 import { existsSync, writeFileSync, mkdirSync, renameSync } from "fs";
 import { join } from "path";
+import { lawCorpusNormalizedDir } from "@/lib/corpus-paths";
 import { execFile } from "child_process";
 import { promisify } from "util";
 
@@ -33,7 +34,7 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
-    const NORMALIZED_ROOT = join(process.cwd(), "law-corpus", "_normalized");
+    const NORMALIZED_ROOT = lawCorpusNormalizedDir();
     const INDEX_DIR = join(NORMALIZED_ROOT, "_index");
     mkdirSync(INDEX_DIR, { recursive: true });
 

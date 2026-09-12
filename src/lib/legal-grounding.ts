@@ -7,9 +7,10 @@ import type { RawCitation, GroundedCitation } from "@/lib/types";
 // Re-exported here for backward compatibility — server code can still import from here.
 export { CORPUS_META } from "@/lib/corpus-meta";
 import { CORPUS_META } from "@/lib/corpus-meta";
+import { lawCorpusDir, lawCorpusSplitDir } from "@/lib/corpus-paths";
 
-export const CORPUS_DIR = path.join(process.cwd(), "law-corpus");
-export const CORPUS_SPLIT_DIR = path.join(process.cwd(), "law-corpus-split");
+export const CORPUS_DIR = lawCorpusDir();
+export const CORPUS_SPLIT_DIR = lawCorpusSplitDir();
 
 // ── Helpers ───────────────────────────────────────────────────────────
 

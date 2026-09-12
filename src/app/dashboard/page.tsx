@@ -358,7 +358,12 @@ function DashboardQuickActions() {
       href: "/dashboard/research",
       roles: ["admin", "lawyer"],
     },
-    { label: "Posteingang", icon: Mail, href: "/dashboard/inbox", roles: ["assistant", "admin"] },
+    {
+      label: "Posteingang",
+      icon: Mail,
+      href: "/dashboard/communications",
+      roles: ["assistant", "admin"],
+    },
     {
       label: "Dokument-Anforderung",
       icon: FileCheck,

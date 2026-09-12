@@ -3,6 +3,7 @@ import { CORPUS_META } from "@/lib/legal-grounding";
 import { collectStatutes, resolveCollisions } from "../../scripts/generate-corpus-meta";
 import { statSync } from "node:fs";
 import { join } from "node:path";
+import { lawCorpusDir } from "@/lib/corpus-paths";
 
 describe("CORPUS_META freshness", () => {
   it("matches the current generator output", { timeout: 120_000 }, () => {
@@ -42,7 +43,7 @@ describe("CORPUS_META freshness", () => {
   it("every meta file points to an existing law-corpus file", { timeout: 30_000 }, () => {
     const missing: string[] = [];
     for (const [key, meta] of Object.entries(CORPUS_META)) {
-      const filePath = join(process.cwd(), "law-corpus", meta.file);
+      const filePath = join(lawCorpusDir(), meta.file);
       try {
         if (!statSync(filePath).isFile()) {
           missing.push(key);

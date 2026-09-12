@@ -50,9 +50,18 @@ bulk-import-cursor.json
 law-corpus-split/
 *.bak
 
+# Legal corpus is DATA (26GB, ~772k files) — lives outside the app tree at
+# SUBSUMIO_LAW_CORPUS_DIR (see src/lib/corpus-paths.ts). Not part of the repo.
+law-corpus/
+
 # Deployment
 .vercel
 
 # Keep env templates tracked
 !.env.example
 !**/.env.example
+
+# Local build caches / private ops notes
+.next-turbo/
+*.tsbuildinfo
+SERVER_INVENTORY.md

@@ -19,13 +19,5 @@ describe("KanzleiTools", () => {
       "href",
       "/dashboard/legal-insurance"
     );
-    expect(screen.getByText("Peer-Benchmark").closest("a")).toHaveAttribute(
-      "href",
-      "/dashboard/peer-benchmark"
-    );
-    expect(screen.getByText("White-Label PWA").closest("a")).toHaveAttribute(
-      "href",
-      "/dashboard/white-label"
-    );
   });
 });

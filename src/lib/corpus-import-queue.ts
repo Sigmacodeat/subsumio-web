@@ -17,8 +17,9 @@
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync, unlinkSync } from "fs";
 import { join, dirname } from "path";
+import { lawCorpusNormalizedDir } from "@/lib/corpus-paths";
 
-const WURZEL = join(process.cwd(), "law-corpus", "_normalized");
+const WURZEL = lawCorpusNormalizedDir();
 const DATEI = join(WURZEL, "_import-warteschlange.json");
 
 export interface WarteEintrag {

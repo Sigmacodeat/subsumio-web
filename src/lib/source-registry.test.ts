@@ -11,6 +11,7 @@ import {
   type SourceRegistryEntry,
   type SourceRegistryResponse,
 } from "@/lib/source-registry";
+import { lawCorpusDir } from "@/lib/corpus-paths";
 
 // ── calculateFreshness ────────────────────────────────────────────────
 
@@ -71,7 +72,7 @@ describe("scanCorpusFile", () => {
   it("returns exists=true with hash and document_count for valid file", async () => {
     // Use a known corpus file
     const path = await import("node:path");
-    const corpusPath = path.join(process.cwd(), "law-corpus", "de", "bgb.md");
+    const corpusPath = path.join(lawCorpusDir(), "de", "bgb.md");
     const result = await scanCorpusFile(corpusPath);
     expect(result.exists).toBe(true);
     expect(result.hash).toMatch(/^[a-f0-9]{16}$/);

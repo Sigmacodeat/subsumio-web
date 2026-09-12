@@ -1,11 +1,11 @@
 # CLAUDE.md
 
-**Subsumio** is a multi-industry AI platform for professional services (DACH-first): a knowledge-graph-powered
+**Subsumio** is the AI operating system for law firms (DACH-first): a knowledge-graph-powered
 intelligence platform that turns a firm's documents, cases, deadlines, and
 communications into a queryable brain — synthesized answers with citations,
-deadline-aware retrieval, conflict checks, and contradiction detection. Currently
-verticalized for **Legal** (law firms / in-house legal) and **Tax** (tax advisory / accounting),
-with a platform-first architecture that supports additional industries via `src/lib/industry-pack.ts`.
+deadline-aware retrieval, conflict checks, and contradiction detection. The active
+product is **Legal-only** (law firms / in-house legal); the former Tax vertical (Taxumio) is
+archived per `docs/archive/TAXUMIO_ARCHIVE_MANIFEST.md`.
 The product is a Next.js web app (`src/`) on top of the **Subsumio Engine** (`server/`), a fork of the
 open-source gbrain memory engine (`github:garrytan/gbrain`).
 

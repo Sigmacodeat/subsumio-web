@@ -10,11 +10,6 @@ function detectLang(pathname: string): Lang {
   if (pathname.startsWith("/en")) return "en";
   if (pathname.startsWith("/at")) return "at";
   if (pathname.startsWith("/ch")) return "ch";
-  if (pathname.startsWith("/it")) return "it";
-  if (pathname.startsWith("/es")) return "es";
-  if (pathname.startsWith("/pl")) return "pl";
-  if (pathname.startsWith("/fr")) return "fr";
-  if (pathname.startsWith("/nl")) return "nl";
   return "de";
 }
 

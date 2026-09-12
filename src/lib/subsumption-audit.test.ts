@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const REPO_ROOT = resolve(__dirname, "../..");
+const LAW_CORPUS = process.env.SUBSUMIO_LAW_CORPUS_DIR ?? join(REPO_ROOT, "law-corpus");
 
 interface SubsumptionCase {
   case_id: string;
@@ -65,7 +66,7 @@ describe("T2.2 Subsumption Case Audit", () => {
   it("DE cases use DE law slugs", () => {
     const deLawSlugs = new Set(deCases.map((c) => c.expected_law));
     for (const slug of deLawSlugs) {
-      expect(existsSync(join(REPO_ROOT, "law-corpus", "de", `${slug}.md`))).toBe(true);
+      expect(existsSync(join(LAW_CORPUS, "de", `${slug}.md`))).toBe(true);
     }
   });
 
@@ -77,8 +78,8 @@ describe("T2.2 Subsumption Case Audit", () => {
     for (const c of atCases) {
       const resolved = AT_ALIASES[c.expected_law] ?? c.expected_law;
       // AT laws are directories under at-normen/, not .md files under at/
-      const dirPath = join(REPO_ROOT, "law-corpus", "at-normen", resolved);
-      const mdPath = join(REPO_ROOT, "law-corpus", "at", `${resolved}.md`);
+      const dirPath = join(LAW_CORPUS, "at-normen", resolved);
+      const mdPath = join(LAW_CORPUS, "at", `${resolved}.md`);
       expect(existsSync(dirPath) || existsSync(mdPath)).toBe(true);
     }
   });
@@ -105,8 +106,8 @@ describe("T2.2 Subsumption Case Audit", () => {
         // AT laws live in at-normen/{slug}/ directories; DE laws are .md files under de/
         const corpusPath =
           c.jurisdiction === "at"
-            ? join(REPO_ROOT, "law-corpus", "at-normen", resolved)
-            : join(REPO_ROOT, "law-corpus", c.jurisdiction, `${resolved}.md`);
+            ? join(LAW_CORPUS, "at-normen", resolved)
+            : join(LAW_CORPUS, c.jurisdiction, `${resolved}.md`);
         if (!existsSync(corpusPath)) continue;
         // For AT (directory), read all .md files and search for the section
         let corpusText: string;

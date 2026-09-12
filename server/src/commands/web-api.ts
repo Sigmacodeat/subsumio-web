@@ -8526,13 +8526,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     return true;
   };
 
-  const LAW_CORPUS_DIR = join(
-    dirname(fileURLToPath(import.meta.url)),
-    "..",
-    "..",
-    "..",
-    "law-corpus"
-  );
+  const LAW_CORPUS_DIR =
+    process.env.SUBSUMIO_LAW_CORPUS_DIR ??
+    join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "law-corpus");
   const LAW_SOURCE_MAP: Record<string, string> = {
     de: "law-de",
     at: "law-at",

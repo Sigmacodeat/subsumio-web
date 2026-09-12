@@ -25,12 +25,6 @@ const CAPABILITIES = [
     href: "/dashboard/legal-insurance",
   },
   {
-    name: "Peer-Benchmark",
-    description: "Anonymisierte Kanzlei-Kennzahlen",
-    key: "buildBenchmarkExport",
-    href: "/dashboard/peer-benchmark",
-  },
-  {
     name: "DATEV-Direktanbindung",
     description: "Geplant — noch keine echte DATEV-API-Anbindung, siehe DATEV-Export für CSV",
     key: "createDatevExport",
@@ -60,12 +54,6 @@ const CAPABILITIES = [
     description: "Schriftsätze adversarial prüfen",
     key: "createRedTeamPrompt",
     href: "/dashboard/red-team",
-  },
-  {
-    name: "White-Label PWA",
-    description: "Mandantenportal branden",
-    key: "generateWhiteLabelManifest",
-    href: "/dashboard/white-label",
   },
   {
     name: "Entscheider-Analytics",
@@ -154,7 +142,12 @@ function GkgCard() {
       <div className="grid gap-3">
         <div>
           <Label>Streitwert (€)</Label>
-          <Input type="number" inputMode="decimal" value={streitwert} onChange={(e) => setStreitwert(e.target.value)} />
+          <Input
+            type="number"
+            inputMode="decimal"
+            value={streitwert}
+            onChange={(e) => setStreitwert(e.target.value)}
+          />
         </div>
         <div className="rounded-lg bg-[color:var(--ds-surface-2)] p-3 text-sm">
           <Row label="Streitwert" value={fmtEUR(result.streitwert)} />
@@ -221,12 +214,18 @@ function PkhCard() {
         <div className="grid grid-cols-2 gap-2">
           <div>
             <Label>Einkommen (€)</Label>
-            <Input type="number" inputMode="decimal" value={income} onChange={(e) => setIncome(e.target.value)} />
+            <Input
+              type="number"
+              inputMode="decimal"
+              value={income}
+              onChange={(e) => setIncome(e.target.value)}
+            />
           </div>
           <div>
             <Label>Abzüge (€)</Label>
             <Input
-              type="number" inputMode="numeric"
+              type="number"
+              inputMode="numeric"
               value={deductions}
               onChange={(e) => setDeductions(e.target.value)}
             />
@@ -234,7 +233,8 @@ function PkhCard() {
           <div>
             <Label>Erwachsene</Label>
             <Input
-              type="number" inputMode="numeric"
+              type="number"
+              inputMode="numeric"
               min="1"
               value={adults}
               onChange={(e) => setAdults(e.target.value)}
@@ -243,7 +243,8 @@ function PkhCard() {
           <div>
             <Label>Kinder</Label>
             <Input
-              type="number" inputMode="numeric"
+              type="number"
+              inputMode="numeric"
               min="0"
               value={children}
               onChange={(e) => setChildren(e.target.value)}
@@ -334,7 +335,8 @@ function CreditCard() {
       <div>
         <Label>Bonitäts-Score (0-100)</Label>
         <Input
-          type="number" inputMode="numeric"
+          type="number"
+          inputMode="numeric"
           min="0"
           max="100"
           value={score}

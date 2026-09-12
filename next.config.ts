@@ -14,6 +14,12 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Type-checking runs in `bun run verify` (tsc --noEmit) and CI — running it
+  // again inside every production build roughly doubles the build time on
+  // this codebase. Skip it here; type errors still fail the verify gate.
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   images: {
     remotePatterns: [],
     formats: ["image/avif", "image/webp"],
@@ -63,15 +69,6 @@ const nextConfig: NextConfig = {
         destination: "/dashboard/research?tab=commentaries",
         permanent: true,
       },
-      // Admin section consolidation — /admin/* → /dashboard/admin/*
-      { source: "/admin", destination: "/dashboard/admin", permanent: true },
-      { source: "/admin/users", destination: "/dashboard/admin/users", permanent: true },
-      {
-        source: "/admin/users/:id",
-        destination: "/dashboard/admin/users/:id",
-        permanent: true,
-      },
-      { source: "/admin/mailbox", destination: "/dashboard/admin/mailbox", permanent: true },
     ];
   },
   async headers() {

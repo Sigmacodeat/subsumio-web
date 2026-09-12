@@ -2,6 +2,7 @@ import { z } from "zod";
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { lawCorpusDir, lawCorpusSplitDir } from "@/lib/corpus-paths";
 
 const statuteQuerySchema = z.object({
   code: z.string().optional(),
@@ -70,9 +71,9 @@ const CORPUS_META: Record<
   zgb: { jurisdiction: "ch", label: "ZGB — Zivilgesetzbuch (CH)", file: "ch/zgb.md" },
 };
 
-const CORPUS_DIR = path.join(process.cwd(), "law-corpus");
+const CORPUS_DIR = lawCorpusDir();
 
-const CORPUS_SPLIT_DIR = path.join(process.cwd(), "law-corpus-split");
+const CORPUS_SPLIT_DIR = lawCorpusSplitDir();
 
 /**
  * Try to load a specific paragraph from the pre-split corpus directory.

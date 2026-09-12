@@ -1,7 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getAllPosts } from "@/content/blog";
 import { getAllCitySlugs } from "@/content/city-pages";
-import { getAllNicheSlugs } from "@/content/niche-pages";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu";
 
@@ -12,7 +11,6 @@ const PAGES = [
   "/superbrain",
   "/features",
   "/pricing",
-  "/privat",
   "/kanzlei",
   "/security",
   "/partners",
@@ -134,22 +132,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.6,
-    });
-  }
-
-  // Niche landing pages — DE-only routes (no /at /ch /en prefixes exist).
-  entries.push({
-    url: `${BASE}/nischen`,
-    lastModified: now,
-    changeFrequency: "weekly",
-    priority: 0.7,
-  });
-  for (const slug of getAllNicheSlugs()) {
-    entries.push({
-      url: `${BASE}/nischen/${slug}`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.8,
     });
   }
 

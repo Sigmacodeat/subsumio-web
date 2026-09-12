@@ -2,13 +2,13 @@ import { createHandler, apiSuccess } from "@/lib/api-handler";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { listCorpusNames, getCorpusIndex } from "@/lib/corpus-index";
 import { readFileSync, existsSync } from "fs";
-import { join, resolve } from "path";
+import { join } from "path";
+import { lawCorpusNormalizedDir } from "@/lib/corpus-paths";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 15;
 
-const REPO_ROOT = resolve(process.cwd());
-const NORMALIZED_ROOT = join(REPO_ROOT, "law-corpus", "_normalized");
+const NORMALIZED_ROOT = lawCorpusNormalizedDir();
 const FLAGS_FILE = join(NORMALIZED_ROOT, "_steward-flags.json");
 
 interface CorpusSyncRow {

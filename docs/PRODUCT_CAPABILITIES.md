@@ -35,6 +35,10 @@ auditierbar bleiben.
   `monitoring/engine`, `rag-eval`, `ai-quality`) sind nicht Teil des
   Kanzlei-Builds. Die zugehörigen `api/admin/*`-, `api/monitoring/*`- und
   Eval-Routen bleiben als Server-Oberfläche für Betrieb und Engine erhalten.
+- **Pilot-Fokus:** B2C-Funnels (`/privat`, `/nischen`), die Nicht-DACH-Sprachen
+  (it/es/pl/fr/nl), White-Label-PWA, Peer-Benchmark und Marketing-Agent sind
+  nicht Teil des Builds. Aktive Sprachen: DE, AT, CH, EN. Grenze und
+  Wiederherstellung: `docs/archive/PILOT_FOCUS_ARCHIVE_2026-09-12.md`.
 
 ### Kanzlei-Dashboard (Legal)
 

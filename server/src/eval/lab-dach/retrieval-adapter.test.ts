@@ -56,7 +56,7 @@ function ctx(searchFn?: ToolContext["searchFn"]): ToolContext {
       documentsDir: "/tmp",
       outputDir: "/tmp",
     } as unknown as ToolContext["sandbox"],
-    corpusRoot: "/Users/msc/subsumio-web/law-corpus",
+    corpusRoot: process.env.SUBSUMIO_LAW_CORPUS_DIR ?? "/Users/msc/subsumio-web/law-corpus",
     jurisdiction: "AT",
     searchFn,
   };
