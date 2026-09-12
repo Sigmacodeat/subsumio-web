@@ -26,15 +26,63 @@ export interface BulkImportResult {
   errors_detail: Array<{ row: number; error: string }>;
 }
 
+/**
+ * Parse a single CSV line respecting RFC 4180 quoting rules.
+ * Handles quoted fields containing commas, quotes (escaped as ""),
+ * and newlines (though we split by line first for simplicity).
+ */
+function parseCsvLine(line: string): string[] {
+  const fields: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  let i = 0;
+
+  while (i < line.length) {
+    const char = line[i]!;
+
+    if (inQuotes) {
+      if (char === '"') {
+        // Check for escaped quote ("")
+        if (line[i + 1] === '"') {
+          current += '"';
+          i += 2;
+        } else {
+          // End of quoted field
+          inQuotes = false;
+          i++;
+        }
+      } else {
+        current += char;
+        i++;
+      }
+    } else {
+      if (char === '"') {
+        inQuotes = true;
+        i++;
+      } else if (char === ",") {
+        fields.push(current.trim());
+        current = "";
+        i++;
+      } else {
+        current += char;
+        i++;
+      }
+    }
+  }
+
+  fields.push(current.trim());
+  return fields;
+}
+
 export function parseCsvCases(csvText: string): BulkCaseRow[] {
   const lines = csvText.trim().split("\n");
   if (lines.length < 2) return [];
 
-  const headers = lines[0]!.split(",").map((h) => h.trim().toLowerCase());
+  const headers = parseCsvLine(lines[0]!).map((h) => h.toLowerCase());
   const rows: BulkCaseRow[] = [];
 
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i]!.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
+    const values = parseCsvLine(lines[i]!);
     const row: Partial<BulkCaseRow> = {};
     headers.forEach((header, idx) => {
       const value = values[idx] ?? "";

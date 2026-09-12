@@ -79,25 +79,23 @@ describe("parseCsvCases", () => {
     expect(parseCsvCases("")).toEqual([]);
   });
 
-  test("handles quoted values (without internal commas)", () => {
-    const csv = `case_number,client_name,matter,mandate_id
-123,"Max Muster","Kündigung wegen X",M-001`;
-    const rows = parseCsvCases(csv);
-    expect(rows).toHaveLength(1);
-    expect(rows[0]!.client_name).toBe("Max Muster");
-    expect(rows[0]!.matter).toBe("Kündigung wegen X");
-  });
-
-  test("BUG: quoted values with internal commas are split incorrectly", () => {
-    // CSV parser splits by comma before stripping quotes — RFC 4180 violation.
-    // This test documents the known bug: "Max, Muster" becomes "Max" + "Muster"
+  test("handles quoted values with internal commas (RFC 4180)", () => {
+    // RFC 4180: quoted fields may contain commas
     const csv = `case_number,client_name,matter,mandate_id
 123,"Max, Muster",Kündigung,M-001`;
     const rows = parseCsvCases(csv);
     expect(rows).toHaveLength(1);
-    // Bug: comma inside quotes splits the value, quotes are then stripped
-    expect(rows[0]!.client_name).toBe("Max");
-    expect(rows[0]!.matter).toBe("Muster");
+    expect(rows[0]!.client_name).toBe("Max, Muster");
+    expect(rows[0]!.matter).toBe("Kündigung");
+  });
+
+  test("handles escaped quotes inside quoted fields (RFC 4180)", () => {
+    // RFC 4180: quotes inside quoted fields are escaped as ""
+    const csv = `case_number,client_name,matter,mandate_id
+123,"Firma ""Müller & Co.""",Vertrag,M-001`;
+    const rows = parseCsvCases(csv);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.client_name).toBe('Firma "Müller & Co."');
   });
 
   test("handles non-numeric dispute_value as NaN", () => {

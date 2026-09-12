@@ -1,7 +1,14 @@
 import { z } from "zod";
 import { ENGINE_URL, recordQuota } from "@/lib/engine";
-import { detectDeadlines, enrichAllDeadlines, resolveRelativeDeadline } from "@/lib/ai-deadline-detect";
-import { hybridDeadlineDetection, isLLMDeadlineExtractionAvailable } from "@/lib/llm-deadline-extract";
+import {
+  detectDeadlines,
+  enrichAllDeadlines,
+  resolveRelativeDeadline,
+} from "@/lib/ai-deadline-detect";
+import {
+  hybridDeadlineDetection,
+  isLLMDeadlineExtractionAvailable,
+} from "@/lib/llm-deadline-extract";
 import { createHandler } from "@/lib/api-handler";
 import { groundAnswerCitations, emptyGroundingMetadata } from "@/lib/citation-gate";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
@@ -42,7 +49,7 @@ export const POST = createHandler(
             const dueDate = d.date || resolveRelativeDeadline(d.daysFromNow!);
             const slug = `legal/deadline/${Date.now()}-${createdSlugs.length}`;
             const fristResult = d.fristResult;
-            await fetch(`${ENGINE_URL}/api/pages`, {
+            const createRes = await fetch(`${ENGINE_URL}/api/pages`, {
               method: "POST",
               headers: { ...ctx.headers, "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -60,24 +67,27 @@ export const POST = createHandler(
                   matched_rule: d.matchedRule,
                   ai_confidence: d.confidence,
                   // Deterministisch berechnete Frist-Daten
-                  ...(fristResult ? {
-                    frist_art: fristResult.art.key,
-                    frist_regime: fristResult.art.regime,
-                    rechtsgrundlage: fristResult.art.rechtsgrundlage,
-                    fristbeginn: fristResult.fristbeginn,
-                    fristende: fristResult.fristende,
-                    vorfrist_date: fristResult.vorfrist,
-                    kalendertage: fristResult.kalendertage,
-                    notfrist: fristResult.art.notfrist,
-                    deterministic: true,
-                  } : {
-                    deterministic: false,
-                  }),
+                  ...(fristResult
+                    ? {
+                        frist_art: fristResult.art.key,
+                        frist_regime: fristResult.art.regime,
+                        rechtsgrundlage: fristResult.art.rechtsgrundlage,
+                        fristbeginn: fristResult.fristbeginn,
+                        fristende: fristResult.fristende,
+                        vorfrist_date: fristResult.vorfrist,
+                        kalendertage: fristResult.kalendertage,
+                        notfrist: fristResult.art.notfrist,
+                        deterministic: true,
+                      }
+                    : {
+                        deterministic: false,
+                      }),
                   ...(d.zustellungsdatum ? { zustellungsdatum: d.zustellungsdatum } : {}),
                 },
                 signal: AbortSignal.timeout(30_000),
               }),
             });
+            if (!createRes.ok) continue; // Engine returned error — skip this deadline
             createdSlugs.push(slug);
           } catch {
             // Einzelne Fehler nicht abbrechen

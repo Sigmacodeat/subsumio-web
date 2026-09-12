@@ -196,9 +196,8 @@ describe("POST /api/legal/ai-deadlines", () => {
     expect(res.status).toBe(400);
   });
 
-  test("BUG: continues pushing slugs even when engine returns 500 (no res.ok check)", async () => {
-    // BUG: Route does not check res.ok after fetch — slugs are pushed regardless
-    // of engine response status. This test documents the known bug.
+  test("skips deadline when engine returns error (res.ok check)", async () => {
+    // Bug fix: Route now checks res.ok — failed creates are NOT pushed
     vi.mocked(detectDeadlines).mockReturnValueOnce([
       {
         description: "Frist 1",
@@ -223,8 +222,8 @@ describe("POST /api/legal/ai-deadlines", () => {
     ]);
 
     (global.fetch as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(new Response("Error", { status: 500 }))
-      .mockResolvedValueOnce(new Response("{}", { status: 201 }));
+      .mockResolvedValueOnce(new Response("Error", { status: 500 })) // Frist 1 fails
+      .mockResolvedValueOnce(new Response("{}", { status: 201 })); // Frist 2 succeeds
 
     const req = new Request("http://localhost/api/legal/ai-deadlines", {
       method: "POST",
@@ -237,7 +236,7 @@ describe("POST /api/legal/ai-deadlines", () => {
     const res = await POST(req);
     expect(res.status).toBe(200);
     const body = await res.json();
-    // Bug: both slugs pushed even though first fetch returned 500
-    expect(body.created).toHaveLength(2);
+    // Only successful deadline is pushed
+    expect(body.created).toHaveLength(1);
   });
 });
