@@ -18,6 +18,7 @@ import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf";
 import { useLang } from "@/lib/use-lang";
 
+import { unwrapApiBody } from "@/lib/api-body";
 interface DocuSignSendDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -116,7 +117,7 @@ export function DocuSignSendDialog({
         }),
       });
 
-      const data = await res.json();
+      const data = unwrapApiBody(await res.json());
       if (data.ok) {
         addToast({ title: t("docusign.sent_ok"), type: "success" });
         onOpenChange(false);

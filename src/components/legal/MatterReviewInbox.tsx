@@ -25,6 +25,7 @@ import { DocumentRequestComposer } from "@/components/legal/DocumentRequestCompo
 import type { BrainPage } from "@/lib/types";
 import type { MatterContextBundle, MatterUnderstandingPanel } from "@/lib/matter-context-types";
 import type { DeadlineEntry } from "@/lib/legal-types";
+import { unwrapApiBody } from "@/lib/api-body";
 
 type ReviewItemKind =
   | "client_submission"
@@ -283,7 +284,7 @@ export function MatterReviewInbox({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ submissionSlug: item.pageSlug }),
       });
-      const data = await res.json().catch(() => ({}));
+      const data = unwrapApiBody(await res.json().catch(() => ({})));
       if (!res.ok) {
         throw new Error(
           typeof data?.error === "string" ? data.error : "Dokument-Import fehlgeschlagen"

@@ -94,10 +94,12 @@ export function SendLinkDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
-      if (data.ok) {
+      const data = await res.json().catch(() => ({}));
+      // apiSuccess wraps the result as { data: { url, channel } }.
+      const result = (data?.data ?? data) as { url?: string };
+      if (res.ok && result?.url) {
         if (channel === "copy") {
-          await navigator.clipboard.writeText(data.url);
+          await navigator.clipboard.writeText(result.url);
           setCopied(true);
           setTimeout(() => setCopied(false), 2000);
           addToast({ type: "success", title: t("sendlink.copied_ok") });

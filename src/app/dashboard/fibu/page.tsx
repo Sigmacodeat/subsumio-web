@@ -22,6 +22,7 @@ import { csrfFetch } from "@/lib/csrf";
 import { useLang } from "@/lib/use-lang";
 import { getOposSummary, getDunningLabel, type OpenItem, type BankTransaction } from "@/lib/fibu";
 
+import { unwrapApiBody } from "@/lib/api-body";
 export default function FibuPage() {
   const { t } = useLang();
   const { addToast } = useToast();
@@ -103,7 +104,7 @@ export default function FibuPage() {
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const data = unwrapApiBody(await res.json());
       addToast({
         type: "success",
         title: `${data.imported} Transaktion(en) importiert, ${data.matched} matched`,
@@ -304,7 +305,8 @@ export default function FibuPage() {
             <div className="space-y-1">
               <Label className="text-xs text-[color:var(--ds-text-muted)]">Betrag (€) *</Label>
               <Input
-                type="number" inputMode="decimal"
+                type="number"
+                inputMode="decimal"
                 step="0.01"
                 value={importForm.amount}
                 onChange={(e) => setImportForm({ ...importForm, amount: e.target.value })}
@@ -402,7 +404,8 @@ export default function FibuPage() {
             <div className="space-y-1">
               <Label className="text-xs text-[color:var(--ds-text-muted)]">Betrag (€) *</Label>
               <Input
-                type="number" inputMode="decimal"
+                type="number"
+                inputMode="decimal"
                 step="0.01"
                 value={linkForm.amount}
                 onChange={(e) => setLinkForm({ ...linkForm, amount: e.target.value })}

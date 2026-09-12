@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import type { StatuteOfLimitations } from "@/lib/legal-types";
 import { VERJAEHRUNG_PRESETS, daysUntilBarred, isBarred } from "@/lib/legal-verjaehrung";
 
+import { unwrapApiBody } from "@/lib/api-body";
 interface VerjaehrungItem extends StatuteOfLimitations {
   isBarred?: boolean;
   daysUntilBarred?: number;
@@ -96,7 +97,7 @@ export function VerjaehrungPanel({ caseSlug }: VerjaehrungPanelProps) {
         setItems([]);
         return;
       }
-      const data = await res.json();
+      const data = unwrapApiBody(await res.json());
       setItems(data.items ?? []);
     } catch {
       setError(true);

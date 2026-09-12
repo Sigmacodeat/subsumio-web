@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 
+import { unwrapApiBody } from "@/lib/api-body";
 export default function EthicalWallPage() {
   const { addToast } = useToast();
   const { t } = useLang();
@@ -28,7 +29,7 @@ export default function EthicalWallPage() {
     try {
       const res = await fetch(`/api/cases/ethical-wall?case_slug=${encodeURIComponent(caseSlug)}`);
       if (!res.ok) throw new Error();
-      const data = await res.json();
+      const data = unwrapApiBody(await res.json());
       setBlockedUsers(data.blocked_users ?? []);
       setAuditEvents(data.audit_events ?? []);
     } catch {

@@ -18,6 +18,7 @@ import { POA_TYPE_LABELS, POA_STATUS_LABELS, isPoAValid } from "@/lib/power-of-a
 import { SignatureDialog } from "@/components/legal/SignatureDialog";
 import { SendLinkDialog } from "@/components/legal/SendLinkDialog";
 
+import { unwrapApiBody } from "@/lib/api-body";
 export default function PowerOfAttorneyPage() {
   const { addToast } = useToast();
   const { t } = useLang();
@@ -126,7 +127,7 @@ export default function PowerOfAttorneyPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ poa_id: poa.id }),
       });
-      const data = await res.json();
+      const data = unwrapApiBody(await res.json());
       if (data.ok && data.pdf_base64) {
         const link = document.createElement("a");
         link.href = `data:application/pdf;base64,${data.pdf_base64}`;
@@ -338,7 +339,9 @@ export default function PowerOfAttorneyPage() {
                         size="sm"
                         onClick={() => setSendPoa(poa)}
                         className="gap-1.5 active:scale-[0.98]"
-                        aria-label={poa.status === "sent" ? t("poa.btn_resend_aria") : t("poa.btn_send_aria")}
+                        aria-label={
+                          poa.status === "sent" ? t("poa.btn_resend_aria") : t("poa.btn_send_aria")
+                        }
                         title={poa.status === "sent" ? t("poa.btn_resend") : t("poa.btn_send")}
                       >
                         <Send size={14} />

@@ -41,6 +41,11 @@ interface SignatureDialogProps {
   onSigned?: (signatureId: string) => void;
   /** Whether this is a client-facing (portal) context. */
   isClientFacing?: boolean;
+  /**
+   * Client-portal token. When set, the signature goes through the token-scoped
+   * portal route instead of the firm's session route (clients have no login).
+   */
+  portalToken?: string;
 }
 
 export function SignatureDialog({
@@ -54,6 +59,7 @@ export function SignatureDialog({
   legalLevel = "simple",
   onSigned,
   isClientFacing = false,
+  portalToken,
 }: SignatureDialogProps) {
   const { t } = useLang();
   const { addToast } = useToast();
@@ -80,30 +86,37 @@ export function SignatureDialog({
     if (!signature || signature.empty || name.trim().length < 2) return;
     setSaving(true);
     try {
-      const format: SignatureFormat =
-        signature.mode === "draw" ? "canvas_png" : "typed_name";
-      const res = await csrfFetch("/api/signature/capture", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          document_slug: documentSlug,
-          document_type: documentType,
-          signer_name: name.trim(),
-          signer_email: email.trim() || undefined,
-          signature_format: format,
-          signature_data: signature.dataUrl,
-          signature_paths: signature.paths,
-          legal_level: legalLevel,
-        }),
-      });
-      const data = await res.json();
-      if (data.ok && data.signature) {
+      const format: SignatureFormat = signature.mode === "draw" ? "canvas_png" : "typed_name";
+      const payload = {
+        document_slug: documentSlug,
+        document_type: documentType,
+        signer_name: name.trim(),
+        signer_email: email.trim() || undefined,
+        signature_format: format,
+        signature_data: signature.dataUrl,
+        signature_paths: signature.paths,
+      };
+      const res = portalToken
+        ? await fetch("/api/portal/sign", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...payload, token: portalToken }),
+          })
+        : await csrfFetch("/api/signature/capture", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...payload, legal_level: legalLevel }),
+          });
+      const data = await res.json().catch(() => ({}));
+      // apiSuccess wraps the result as { data: { signature } }.
+      const captured = (data?.data?.signature ?? data?.signature) as { id?: string } | undefined;
+      if (res.ok && captured?.id) {
         addToast({
           title: t("sigdialog.signed_ok"),
           description: t("sigdialog.signed_desc"),
           type: "success",
         });
-        onSigned?.(data.signature.id as string);
+        onSigned?.(captured.id);
         onOpenChange(false);
       } else {
         addToast({
@@ -149,7 +162,10 @@ export function SignatureDialog({
             role="alert"
           >
             {legalLevel === "qualified" ? (
-              <ShieldCheck size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]" />
+              <ShieldCheck
+                size={16}
+                className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]"
+              />
             ) : (
               <AlertTriangle
                 size={16}
@@ -174,10 +190,7 @@ export function SignatureDialog({
           {/* Signer name + email */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <label
-                htmlFor="sigdialog-name"
-                className="text-xs text-[color:var(--ds-text-muted)]"
-              >
+              <label htmlFor="sigdialog-name" className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("sigdialog.signer_name")} *
               </label>
               <input
@@ -186,7 +199,7 @@ export function SignatureDialog({
                 onChange={(e) => setName(e.target.value)}
                 required
                 autoComplete="name"
-                className="min-h-11 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-base text-[color:var(--ds-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:ring-offset-2 sm:min-h-0 sm:text-sm"
+                className="min-h-11 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-base text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:ring-offset-2 focus-visible:outline-none sm:min-h-0 sm:text-sm"
               />
             </div>
             <div className="space-y-1.5">
@@ -205,7 +218,7 @@ export function SignatureDialog({
                 required={isClientFacing}
                 autoComplete="email"
                 inputMode="email"
-                className="min-h-11 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-base text-[color:var(--ds-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:ring-offset-2 sm:min-h-0 sm:text-sm"
+                className="min-h-11 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-base text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:ring-offset-2 focus-visible:outline-none sm:min-h-0 sm:text-sm"
               />
             </div>
           </div>
@@ -225,9 +238,7 @@ export function SignatureDialog({
               onChange={(e) => setConfirmed(e.target.checked)}
               className="mt-0.5 h-4 w-4 rounded border-[color:var(--ds-border)] accent-[color:var(--brand-primary)]"
             />
-            <span className="text-[color:var(--ds-text-muted)]">
-              {t("sigdialog.confirm")}
-            </span>
+            <span className="text-[color:var(--ds-text-muted)]">{t("sigdialog.confirm")}</span>
           </label>
         </div>
 
@@ -240,11 +251,7 @@ export function SignatureDialog({
             disabled={!canSubmit}
             className="brand-bg gap-2 text-white active:scale-[0.98]"
           >
-            {saving ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <PenTool size={16} />
-            )}
+            {saving ? <Loader2 size={16} className="animate-spin" /> : <PenTool size={16} />}
             {t("sigdialog.btn_sign")}
           </Button>
         </DialogFooter>

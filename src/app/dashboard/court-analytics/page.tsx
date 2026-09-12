@@ -9,6 +9,7 @@ import { useLang } from "@/lib/use-lang";
 import type { CourtAnalytics } from "@/lib/court-analytics";
 import { ANALYTICS_DISCLAIMER_DE } from "@/lib/court-analytics";
 
+import { unwrapApiBody } from "@/lib/api-body";
 export default function CourtAnalyticsPage() {
   const { addToast } = useToast();
   const { t } = useLang();
@@ -19,7 +20,7 @@ export default function CourtAnalyticsPage() {
     try {
       const res = await fetch("/api/court-analytics");
       if (!res.ok) throw new Error("API error");
-      const json = await res.json();
+      const json = unwrapApiBody(await res.json());
       setData(json.analytics ?? []);
     } catch {
       addToast({ type: "error", title: t("court_an.err_load") });
