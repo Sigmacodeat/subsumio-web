@@ -17,7 +17,19 @@ export const GET = createHandler(
   },
   async (ctx) => {
     const referrals = await getStore().countReferrals(ctx.user.referralCode);
-    return Response.json({ user: toPublic(ctx.user), referrals });
+    // Only present for a platform operator inside an active support session —
+    // drives the "Support-Zugriff aktiv" banner in the Kanzlei dashboard.
+    // Trimmed to what the banner needs; the operator's own identity is never
+    // sent here (the firm sees it separately, in its own audit trail).
+    const supportSession = ctx.supportSession
+      ? {
+          orgName: ctx.supportSession.orgName,
+          reason: ctx.supportSession.reason,
+          startedAt: ctx.supportSession.startedAt,
+          expiresAt: ctx.supportSession.expiresAt,
+        }
+      : null;
+    return Response.json({ user: toPublic(ctx.user), referrals, supportSession });
   }
 );
 

@@ -3,9 +3,11 @@ import { notFound } from "next/navigation";
 import { Building2, Coins, ShieldCheck, Users } from "lucide-react";
 import { getOrgStore, getStore } from "@/lib/auth/store";
 import { checkSpendCap, getBalance } from "@/lib/billing/credits";
+import { listSupportSessionsForOrg } from "@/lib/support-session";
 import { StatCard, PlanBadge } from "@/components/admin/admin-stat-card";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { SpendCapForm } from "@/components/ops/spend-cap-form";
+import { SupportSessionPanel } from "@/components/ops/support-session-panel";
 
 export const metadata = { title: "Kanzlei" };
 export const dynamic = "force-dynamic";
@@ -22,10 +24,11 @@ export default async function OpsFirmDetailPage({ params }: { params: Promise<{ 
   const org = await getOrgStore().getById(id);
   if (!org) notFound();
 
-  const [members, balance, spend] = await Promise.all([
+  const [members, balance, spend, supportSessions] = await Promise.all([
     getStore().listByOrg(org.id),
     getBalance(org.id, "org"),
     checkSpendCap(org.id, "org", 0),
+    listSupportSessionsForOrg(org.id, 10),
   ]);
   const active = members.filter((u) => !u.deactivatedAt);
   const owner = members.find((u) => u.id === org.ownerId);
@@ -137,9 +140,55 @@ export default async function OpsFirmDetailPage({ params }: { params: Promise<{ 
         spentInPeriod={spend.cap?.spentInPeriod ?? null}
       />
 
+      <SupportSessionPanel orgId={org.id} orgName={org.name} />
+
+      {supportSessions.length > 0 && (
+        <section className="overflow-x-auto rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+          <h2 className="px-5 pt-4 pb-2 text-sm font-semibold">Letzte Support-Zugriffe</h2>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-[color:var(--ds-border)] text-left text-xs tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                <th className="px-5 py-3 font-medium">Betreiber</th>
+                <th className="px-5 py-3 font-medium">Grund</th>
+                <th className="px-5 py-3 font-medium">Gestartet</th>
+                <th className="px-5 py-3 font-medium">Beendet</th>
+              </tr>
+            </thead>
+            <tbody>
+              {supportSessions.map((s) => (
+                <tr
+                  key={s.id}
+                  className="border-b border-[color:var(--ds-border)]/50 last:border-0"
+                >
+                  <td className="px-5 py-3 text-[color:var(--ds-text-muted)]">{s.operatorEmail}</td>
+                  <td className="px-5 py-3">{s.reason}</td>
+                  <td className="px-5 py-3 text-xs text-[color:var(--ds-text-subtle)]">
+                    {new Date(s.startedAt).toLocaleString("de-DE", {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    })}
+                  </td>
+                  <td className="px-5 py-3 text-xs text-[color:var(--ds-text-subtle)]">
+                    {s.endedAt
+                      ? new Date(s.endedAt).toLocaleString("de-DE", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })
+                      : new Date(s.expiresAt) > new Date()
+                        ? "läuft"
+                        : "abgelaufen"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+
       <p className="text-xs text-[color:var(--ds-text-subtle)]">
-        Die Konsole zeigt nur Verwaltungsdaten. Akten, Dokumente und Mandantenkommunikation der
-        Kanzlei sind hier bewusst nicht einsehbar.
+        Diese Konsolenseite zeigt nur Verwaltungsdaten. Akten, Dokumente und
+        Mandantenkommunikation der Kanzlei sind hier nicht einsehbar — ein Support-Zugriff (oben)
+        ist nötig, um sie im Kanzlei-Dashboard selbst zu sehen.
       </p>
     </div>
   );

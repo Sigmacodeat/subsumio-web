@@ -416,9 +416,17 @@ export function createHandler<
     }
 
     // 3b. Platform operator (Subsumio SaaS staff). Never granted via KanzleiRole,
-    // never via API key or custom auth, and in production only on the ops host
-    // (ops.subsum.eu) so the operator surface is unreachable from the firm app.
-    if (options.action === "platform.operator" && !internalContext) {
+    // never via API key or custom auth. "platform.operator" is additionally
+    // locked to the ops host in production so the operator console surface is
+    // unreachable from the firm app. "platform.support_session" is the one
+    // exception: it only ends the caller's own support session (see
+    // src/lib/support-session.ts) and must be callable from the Kanzlei
+    // dashboard the operator is browsing during that session, not just from
+    // ops.subsum.eu — so it skips the host lock but keeps the identity check.
+    if (
+      (options.action === "platform.operator" || options.action === "platform.support_session") &&
+      !internalContext
+    ) {
       if (isApiKeyAuth || customContext || !isPlatformOperator(ctx.user)) {
         return withCorsHeaders(
           apiError("forbidden", "Platform operator access required", 403),
@@ -426,7 +434,11 @@ export function createHandler<
           req
         );
       }
-      if (process.env.NODE_ENV === "production" && !isOpsHost(req.headers.get("host"))) {
+      if (
+        options.action === "platform.operator" &&
+        process.env.NODE_ENV === "production" &&
+        !isOpsHost(req.headers.get("host"))
+      ) {
         return withCorsHeaders(apiError("not_found", "Not found", 404), options.cors ?? false, req);
       }
     }

@@ -23,6 +23,8 @@ import {
 import { requireApiRate, type RateTier } from "@/lib/rate-limit-api";
 import { createHmac } from "node:crypto";
 import { env } from "@/lib/env";
+import { isPlatformOperator } from "@/lib/auth/platform-operator";
+import { getActiveSupportSession, type SupportSession } from "@/lib/support-session";
 
 const CONFIGURED_ENGINE_URL = env("SUBSUMIO_API_URL");
 
@@ -93,12 +95,25 @@ export interface EngineContext {
   /** Plan whose limits apply to this brain (org → the OWNER's plan). */
   plan: Plan;
   user: User;
+  /** Set only while a platform operator is inside a time-boxed support
+   *  session (see src/lib/support-session.ts) — never for firm users. */
+  supportSession?: SupportSession;
 }
 
 /**
  * Full engine-call context for the current session, or null when nobody is
  * signed in. Org membership switches both the brain AND the plan whose
  * fair-use limits apply (the org owner pays; their plan carries the pool).
+ *
+ * A platform operator with an active support session is switched onto the
+ * target firm's brain the same way org membership is — this is the single
+ * enforcement point for "support access": every route built on
+ * requireEngineContext() (i.e. virtually every API route) automatically
+ * operates against the firm's data for the session's duration, and reverts
+ * to the operator's own (empty) brain the instant expires_at passes, with no
+ * separate expiry job. ctx.user.role is elevated to "admin" and ctx.user.orgId
+ * is set to the target org only within this returned, request-scoped object —
+ * the operator's real stored account is never modified.
  */
 export async function engineContext(): Promise<EngineContext | null> {
   const jar = await cookies();
@@ -110,7 +125,23 @@ export async function engineContext(): Promise<EngineContext | null> {
 
   let brainId = user.brainId;
   let plan: Plan = user.plan;
-  if (user.orgId) {
+  let effectiveUser = user;
+  let supportSession: SupportSession | undefined;
+
+  if (isPlatformOperator(user)) {
+    const active = await getActiveSupportSession(user.id);
+    if (active) {
+      const org = await getOrgStore().getById(active.orgId);
+      if (org) {
+        brainId = org.brainId;
+        const owner = await getStore().getById(org.ownerId);
+        if (owner) plan = owner.plan;
+        supportSession = active;
+        effectiveUser = { ...user, role: "admin", orgId: org.id };
+      }
+    }
+  }
+  if (!supportSession && user.orgId) {
     const org = await getOrgStore().getById(user.orgId);
     if (org) {
       brainId = org.brainId;
@@ -129,7 +160,7 @@ export async function engineContext(): Promise<EngineContext | null> {
   if (user.jurisdiction) {
     headers["x-subsumio-jurisdiction"] = user.jurisdiction;
   }
-  return { headers, brainId, plan, user };
+  return { headers, brainId, plan, user: effectiveUser, supportSession };
 }
 
 /**

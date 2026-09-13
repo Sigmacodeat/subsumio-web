@@ -121,7 +121,8 @@ export type RouteAction =
   | "admin.data_delete"
   | "admin.data_export"
   | "admin.audit_export" // nur admin
-  | "platform.operator"; // Subsumio-Betreiber (ops.subsum.eu), nie über KanzleiRole
+  | "platform.operator" // Subsumio-Betreiber (ops.subsum.eu), nie über KanzleiRole
+  | "platform.support_session"; // Support-Sitzung beenden — wie platform.operator, aber ohne Ops-Host-Bindung (Banner läuft auf der Kanzlei-App)
 
 const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   // Auth endpoints are public (no auth required), but we still declare them for audit consistency
@@ -191,6 +192,7 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "admin.audit_export": ["admin"],
   // Keine Kanzlei-Rolle erhält Betreiberrechte — geprüft über isPlatformOperator().
   "platform.operator": [],
+  "platform.support_session": [],
   "legal.contradictions": ["admin", "lawyer"],
   "legal.retrieval_feedback": ["admin", "lawyer", "assistant"],
   "legal.eval_fixture_review": ["admin", "lawyer"],
@@ -212,7 +214,9 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
 
 /** Prüft, ob ein User eine Aktion ausführen darf. */
 export function can(user: User, action: RouteAction): boolean {
-  if (action === "platform.operator") return isPlatformOperator(user);
+  if (action === "platform.operator" || action === "platform.support_session") {
+    return isPlatformOperator(user);
+  }
   if (action.startsWith("admin.") && user.role === "admin") return true;
   const allowed = ACTION_ROLES[action];
   if (!allowed) return false;
@@ -315,6 +319,7 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "admin.data_export": "admin.data_export",
     "admin.audit_export": "admin.audit_export",
     "platform.operator": "settings.update",
+    "platform.support_session": "support.session_end",
   };
   return map[routeAction] ?? "settings.update";
 }
