@@ -1,6 +1,6 @@
 # Subsumio Produktfähigkeiten
 
-Stand: 2026-09-13 (Revision 5 — Kanzlei-/Control-Plane-Trennung)
+Stand: 2026-09-13 (Revision 6 — kanonische Dashboard-Flächen)
 Zweck: kompakte, produktorientierte Übersicht darüber, was Subsumio kann,
 welche Module im Repository angelegt sind und wo Produktreife noch durch
 End-to-End-Verdrahtung nachgewiesen werden muss.
@@ -40,6 +40,13 @@ auditierbar bleiben.
   (it/es/pl/fr/nl), White-Label-PWA, Peer-Benchmark und Marketing-Agent sind
   nicht Teil des Builds. Aktive Sprachen: DE, AT, CH, EN. Grenze und
   Wiederherstellung: `docs/archive/PILOT_FOCUS_ARCHIVE_2026-09-12.md`.
+- **Kanonische Dashboard-Flächen:** Recherche-Unterfunktionen und
+  Zeiterfassung haben jeweils nur eine aktive App-Router-Seite. Alte URLs
+  bleiben als serverseitige Redirects erreichbar. Grenze und Wiederherstellung:
+  `docs/archive/DASHBOARD_ALIAS_ARCHIVE_2026-09-13.md`.
+  Die Navigation bündelt die fachlichen Module in sechs Kanzlei-Arbeitsräume;
+  Detailinventur und nächste Trennkante stehen in
+  `docs/KANZLEI_OS_SURFACE_AUDIT_2026-09-13.md`.
 
 ### Kanzlei-Dashboard (Legal)
 

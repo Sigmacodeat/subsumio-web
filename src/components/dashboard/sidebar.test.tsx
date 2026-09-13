@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { ComponentProps, ReactNode } from "react";
-import { Sidebar } from "./sidebar";
+import { NAV_SECTIONS, Sidebar } from "./sidebar";
 
 // jsdom doesn't implement matchMedia — mock it for use-media-query hook
 if (typeof window !== "undefined" && !window.matchMedia) {
@@ -15,6 +15,10 @@ if (typeof window !== "undefined" && !window.matchMedia) {
     removeEventListener: () => {},
     dispatchEvent: () => false,
   });
+}
+
+if (typeof window !== "undefined") {
+  window.scrollTo = vi.fn();
 }
 
 let pathname = "/dashboard";
@@ -116,7 +120,7 @@ describe("Sidebar accordion", () => {
     renderSidebar();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Mandanten & Kontakte/i })).toHaveAttribute(
+      expect(screen.getByRole("button", { name: /Mandate & Beteiligte/i })).toHaveAttribute(
         "aria-expanded",
         "true"
       );
@@ -133,7 +137,7 @@ describe("Sidebar accordion", () => {
     renderSidebar();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Mandanten & Kontakte/i })).toHaveAttribute(
+      expect(screen.getByRole("button", { name: /Mandate & Beteiligte/i })).toHaveAttribute(
         "aria-expanded",
         "true"
       );
@@ -144,13 +148,13 @@ describe("Sidebar accordion", () => {
       "/dashboard/contacts"
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Dokumente & Entwurf/i }));
-    expect(screen.getByRole("button", { name: /Mandanten & Kontakte/i })).toHaveAttribute(
+    fireEvent.click(screen.getByRole("button", { name: /Dokumente & Wissen/i }));
+    expect(screen.getByRole("button", { name: /Mandate & Beteiligte/i })).toHaveAttribute(
       "aria-expanded",
       "false"
     );
     expect(screen.queryByRole("link", { name: "Kontakte" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Dokumente & Entwurf/i })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /Dokumente & Wissen/i })).toHaveAttribute(
       "aria-expanded",
       "true"
     );
@@ -179,6 +183,22 @@ describe("Sidebar directory + admin filtering", () => {
     expect(screen.queryByRole("link", { name: /^Abrechnung$/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /^Connectors$/i })).not.toBeInTheDocument();
   });
+
+  test("keeps a deep-linked specialist workspace visible in focus mode", async () => {
+    pathname = "/dashboard/compliance";
+    renderSidebar({ role: "member" });
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Kanzlei & Compliance/i })).toHaveAttribute(
+        "aria-expanded",
+        "true"
+      );
+    });
+    expect(screen.getByRole("link", { name: /DSGVO|Compliance/i })).toHaveAttribute(
+      "href",
+      "/dashboard/compliance"
+    );
+  });
 });
 
 describe("Sidebar restructured nav", () => {
@@ -205,12 +225,19 @@ describe("Sidebar restructured nav", () => {
     );
   });
 
-  test("Verträge section exists with contracts and clause-library", async () => {
+  test("groups every workflow module once across six Kanzlei workspaces", () => {
+    const hrefs = NAV_SECTIONS.flatMap((section) => section.items.map((item) => item.href));
+
+    expect(NAV_SECTIONS).toHaveLength(6);
+    expect(new Set(hrefs).size).toBe(hrefs.length);
+  });
+
+  test("Dokumente & Wissen workspace contains contracts and clause-library", async () => {
     renderSidebar();
 
-    fireEvent.click(screen.getByRole("button", { name: /Verträge/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Dokumente & Wissen/i }));
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Verträge/i })).toHaveAttribute(
+      expect(screen.getByRole("button", { name: /Dokumente & Wissen/i })).toHaveAttribute(
         "aria-expanded",
         "true"
       );
@@ -221,12 +248,12 @@ describe("Sidebar restructured nav", () => {
     );
   });
 
-  test("Abrechnung section contains trust-accounting (moved from Litigation)", async () => {
+  test("Honorar & Finanzen workspace contains trust-accounting", async () => {
     renderSidebar();
 
-    fireEvent.click(screen.getByRole("button", { name: /^Abrechnung$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Honorar & Finanzen/i }));
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /^Abrechnung$/i })).toHaveAttribute(
+      expect(screen.getByRole("button", { name: /Honorar & Finanzen/i })).toHaveAttribute(
         "aria-expanded",
         "true"
       );
@@ -237,12 +264,12 @@ describe("Sidebar restructured nav", () => {
     );
   });
 
-  test("Compliance section exists separately from Abrechnung", async () => {
+  test("Kanzlei & Compliance workspace contains the compliance surface", async () => {
     renderSidebar();
 
-    fireEvent.click(screen.getByRole("button", { name: /^Compliance$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Kanzlei & Compliance/i }));
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /^Compliance$/i })).toHaveAttribute(
+      expect(screen.getByRole("button", { name: /Kanzlei & Compliance/i })).toHaveAttribute(
         "aria-expanded",
         "true"
       );

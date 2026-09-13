@@ -145,7 +145,7 @@ type NavSection = {
 // Workflow-ordered sidebar with all items grouped into collapsible sections.
 // Primary items (overview, cases, deadlines, intake, chat) are always visible.
 // Section items expand on click. Search filters across all items.
-export const NAV_SECTIONS: NavSection[] = [
+const NAV_MODULE_SECTIONS: NavSection[] = [
   {
     titleKey: "nav.section.clients_comm",
     descKey: "nav.section.desc.clients_comm",
@@ -708,6 +708,52 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
 ];
+
+/**
+ * The route catalogue is intentionally broader than the everyday navigation.
+ * Group related modules into six stable Kanzlei workspaces so specialists keep
+ * their tools without presenting every implementation module as its own silo.
+ */
+const KANZLEI_WORKSPACE_GROUPS: Array<{
+  titleKey: DashboardKey;
+  moduleKeys: DashboardKey[];
+}> = [
+  {
+    titleKey: "nav.section.clients_comm",
+    moduleKeys: ["nav.section.clients_comm", "nav.section.mandate_docs"],
+  },
+  { titleKey: "nav.section.schedule", moduleKeys: ["nav.section.schedule"] },
+  {
+    titleKey: "nav.section.docs_drafting",
+    moduleKeys: ["nav.section.docs_drafting", "nav.section.contracts", "nav.section.knowledge"],
+  },
+  { titleKey: "nav.section.litigation", moduleKeys: ["nav.section.litigation"] },
+  {
+    titleKey: "nav.section.honorar",
+    moduleKeys: ["nav.section.honorar", "nav.section.buchhaltung"],
+  },
+  {
+    titleKey: "nav.section.kanzleisteuerung",
+    moduleKeys: ["nav.section.kanzleisteuerung", "nav.section.firm_ops", "nav.section.compliance"],
+  },
+];
+
+export const NAV_SECTIONS: NavSection[] = KANZLEI_WORKSPACE_GROUPS.map((workspace) => {
+  const modules = NAV_MODULE_SECTIONS.filter((section) =>
+    workspace.moduleKeys.includes(section.titleKey)
+  );
+  const lead = modules[0];
+
+  if (!lead) {
+    throw new Error(`Missing navigation module for workspace ${workspace.titleKey}`);
+  }
+
+  return {
+    ...lead,
+    titleKey: workspace.titleKey,
+    items: modules.flatMap((section) => section.items),
+  };
+});
 
 export const BOTTOM_ITEMS: NavItem[] = [
   {
@@ -1366,11 +1412,20 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             (item) =>
               !item.comingSoon &&
               isItemVisible(item) &&
-              (!coreMode || !item.audienceTier || item.audienceTier === "quick-start")
+              (!coreMode ||
+                !item.audienceTier ||
+                item.audienceTier === "quick-start" ||
+                isActiveHref(pathname, item.href))
           ),
         }))
         .filter((section) => section.items.length > 0);
-      return coreMode ? base.filter((s) => CORE_SECTION_KEYS.includes(s.titleKey)) : base;
+      return coreMode
+        ? base.filter(
+            (section) =>
+              CORE_SECTION_KEYS.includes(section.titleKey) ||
+              section.items.some((item) => isActiveHref(pathname, item.href))
+          )
+        : base;
     }
     const q = searchQuery.toLowerCase().trim();
     const sections = [...navSections, adminSection];
@@ -1401,6 +1456,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     primaryItems,
     isItemVisible,
     coreMode,
+    pathname,
   ]);
 
   const filteredPrimaryItems = useMemo(() => {

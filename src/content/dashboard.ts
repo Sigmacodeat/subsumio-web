@@ -28,9 +28,12 @@ export const D = {
   "nav.section.research_knowledge": { de: "Recherche & Kanzleiwissen", en: "Research & Knowledge" },
   "nav.section.billing_compliance": { de: "Abrechnung & Compliance", en: "Billing & Compliance" },
   "nav.section.billing": { de: "Abrechnung", en: "Billing" },
-  "nav.section.honorar": { de: "Abrechnung", en: "Billing" },
+  "nav.section.honorar": { de: "Honorar & Finanzen", en: "Fees & Finance" },
   "nav.section.buchhaltung": { de: "Kanzleibuchhaltung", en: "Firm Accounting" },
-  "nav.section.kanzleisteuerung": { de: "Kanzleisteuerung", en: "Firm Management" },
+  "nav.section.kanzleisteuerung": {
+    de: "Kanzlei & Compliance",
+    en: "Firm & Compliance",
+  },
   "nav.section.mandate_docs": { de: "Mandatsdokumente", en: "Mandate Documents" },
   "nav.section.compliance": { de: "Compliance", en: "Compliance" },
   "nav.section.communication": { de: "Kommunikation", en: "Communication" },
@@ -42,9 +45,9 @@ export const D = {
   "nav.section.admin_plan": { de: "Plan & Abrechnung", en: "Plan & Billing" },
   "nav.section.tax_litigation": { de: "Prozessführung (Steuer)", en: "Tax Litigation" },
   "nav.section.industries": { de: "Branchen", en: "Industries" },
-  "nav.section.clients_comm": { de: "Mandanten & Kontakte", en: "Clients & Contacts" },
+  "nav.section.clients_comm": { de: "Mandate & Beteiligte", en: "Matters & Parties" },
   "nav.section.schedule": { de: "Termine & Aufgaben", en: "Schedule & Tasks" },
-  "nav.section.docs_drafting": { de: "Dokumente & Entwurf", en: "Documents & Drafting" },
+  "nav.section.docs_drafting": { de: "Dokumente & Wissen", en: "Documents & Knowledge" },
   "nav.section.knowledge": { de: "Wissen & Recherche", en: "Knowledge & Research" },
   "nav.section.litigation": { de: "Prozess & Gericht", en: "Litigation & Court" },
   "nav.section.billing_ops": {
@@ -56,16 +59,16 @@ export const D = {
 
   // ── Sidebar: section descriptions ──
   "nav.section.desc.clients_comm": {
-    de: "Mandanten, Kontakte und gesamte Kommunikation an einem Ort",
-    en: "Clients, contacts and all communication in one place",
+    de: "Mandate, Beteiligte, Vollmachten und Mandantenkanäle an einem Ort",
+    en: "Matters, parties, powers of attorney and client channels in one place",
   },
   "nav.section.desc.schedule": {
     de: "Fristen, Termine und Aufgaben — das Fristenbuch führt alle Deadlines kanonisch",
     en: "Deadlines, appointments and tasks — the deadline book is the canonical source",
   },
   "nav.section.desc.docs_drafting": {
-    de: "Dokumente, Schriftsätze und Vorlagen — KI-gestützt mit Citations",
-    en: "Documents, drafts and templates — AI-assisted with citations",
+    de: "Dokumente, Entwürfe, Verträge und Kanzleiwissen — KI-gestützt mit Belegen",
+    en: "Documents, drafting, contracts and firm knowledge — AI-assisted with citations",
   },
   "nav.section.desc.contracts": {
     de: "Vertragsanalyse, Klausel-Bibliothek und Playbooks",
@@ -84,16 +87,16 @@ export const D = {
     en: "Invoices, fees, costs and controlling",
   },
   "nav.section.desc.honorar": {
-    de: "Zeiterfassung, Rechnungen, Honorarvereinbarungen und Kosten",
-    en: "Time tracking, invoices, fee agreements and costs",
+    de: "Zeiten, Rechnungen, Gebühren, Fremdgelder und Kanzleibuchhaltung",
+    en: "Time, invoices, fees, client funds and firm accounting",
   },
   "nav.section.desc.buchhaltung": {
     de: "Klientengelder, DATEV, FiBu und finanzielle Buchführung",
     en: "Client funds, DATEV, accounting and financial bookkeeping",
   },
   "nav.section.desc.kanzleisteuerung": {
-    de: "KPIs, Controlling, Benchmarks und Kanzlei-Benachrichtigungen",
-    en: "KPIs, controlling, benchmarks and firm notifications",
+    de: "Workflows, Freigaben, Organisation, Aufsicht und Compliance",
+    en: "Workflows, approvals, organization, governance and compliance",
   },
   "nav.section.desc.mandate_docs": {
     de: "Vollmachten, Mandatsbriefe und Mandatsannahme-Dokumente",

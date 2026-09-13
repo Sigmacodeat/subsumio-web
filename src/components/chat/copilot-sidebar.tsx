@@ -41,7 +41,7 @@ const PAGE_CONTEXT_MAP: Record<string, { de: string; en: string }> = {
   "/dashboard/documents": { de: "Dokumente", en: "Documents" },
   "/dashboard/clients": { de: "Mandanten", en: "Clients" },
   "/dashboard/billing": { de: "Abrechnung", en: "Billing" },
-  "/dashboard/time-tracking": { de: "Zeiterfassung", en: "Time Tracking" },
+  "/dashboard/time": { de: "Zeiterfassung", en: "Time Tracking" },
   "/dashboard/cases": { de: "Akten-Übersicht", en: "Cases" },
   "/dashboard/intake": { de: "Mandatsaufnahme", en: "Intake" },
   "/dashboard/settings": { de: "Einstellungen", en: "Settings" },
