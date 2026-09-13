@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { buildMailDraft, getMailMessage, sendMailboxMessage } from "@/lib/email/mailbox";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { mailboxScopeFor } from "@/lib/email/mailbox-scope";
+import { caseAccessForUser } from "@/lib/email/case-link";
 
 const replySchema = z
   .object({
@@ -37,10 +39,17 @@ export const POST = createHandler(
   async (ctx, body, _query, req) => {
     const { id } = await (req as unknown as { params: Promise<{ id: string }> }).params;
     try {
-      const parent = await getMailMessage(ctx.user, id);
+      const scope = mailboxScopeFor(ctx, req);
+      const parent = await getMailMessage(scope, id);
       if (!parent) return apiError("not_found", "Nachricht nicht gefunden", 404);
+      if (
+        parent.caseSlug &&
+        (await caseAccessForUser(ctx.headers, parent.caseSlug, ctx.user.id)) === "blocked"
+      ) {
+        return apiError("forbidden", "Kein Zugriff auf diese Akte (Ethical Wall)", 403);
+      }
       const draft = buildMailDraft(body, id);
-      const message = await sendMailboxMessage(ctx.user, draft);
+      const message = await sendMailboxMessage(scope, draft);
       return Response.json({ message }, { status: message.status === "sent" ? 201 : 202 });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

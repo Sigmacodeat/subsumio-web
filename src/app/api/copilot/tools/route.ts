@@ -1478,7 +1478,11 @@ async function executeCaseInvestigation(
 }
 
 async function executeSendEmail(
-  ctx: { headers: Record<string, string>; user: { id: string; role: string; brainId: string } },
+  ctx: {
+    headers: Record<string, string>;
+    brainId: string;
+    user: { id: string; role: string; brainId: string };
+  },
   params: z.infer<typeof sendEmailToolSchema>
 ): Promise<ToolResponse> {
   try {
@@ -1497,14 +1501,7 @@ async function executeSendEmail(
       subject: safeSubject,
       text: safeText,
     });
-    const message = await sendMailboxMessage(
-      {
-        id: ctx.user.id,
-        role: ctx.user.role as "admin" | "lawyer" | "assistant" | "client_viewer",
-        brainId: ctx.user.brainId,
-      },
-      draft
-    );
+    const message = await sendMailboxMessage({ userId: ctx.user.id, brainId: ctx.brainId }, draft);
     const sent = message.status === "sent";
 
     return {

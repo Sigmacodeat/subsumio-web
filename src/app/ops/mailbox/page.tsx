@@ -6,6 +6,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { requirePlatformOperator } from "@/lib/auth/require-operator";
+import { supportMailboxBrainId } from "@/lib/email/mailbox-scope";
 import {
   listMailMessages,
   getUnreadCounts,
@@ -32,14 +33,15 @@ function receivingAddress(): string {
 
 export default async function MailboxPage() {
   const me = await requirePlatformOperator("/ops/mailbox");
+  const supportScope = { userId: me.id, brainId: supportMailboxBrainId() };
 
   let messages: MailMessageView[] = [];
   let unreadCounts: Record<string, number> = {};
   let loadError: string | null = null;
   try {
     const [rows, counts] = await Promise.all([
-      listMailMessages(me, { limit: 100, folder: "inbox" }),
-      getUnreadCounts(me),
+      listMailMessages(supportScope, { limit: 100, folder: "inbox" }),
+      getUnreadCounts(supportScope),
     ]);
     unreadCounts = counts;
     messages = rows.map((m) => ({

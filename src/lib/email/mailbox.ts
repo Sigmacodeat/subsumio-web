@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { Webhook } from "svix";
-import { getSharedPgPool, type PublicUser } from "@/lib/auth/store";
+import { getSharedPgPool } from "@/lib/auth/store";
 import { externalFetchTimeout } from "@/lib/retry";
 import { sendMail, type MailInput } from "@/lib/mail";
 import { generateTrackingId, logTrackingEvent } from "@/lib/email/tracking";
@@ -34,6 +34,8 @@ export interface MailMessage {
   inReplyTo: string | null;
   userId: string | null;
   brainId: string | null;
+  /** Matter this message is filed under (null = unassigned). */
+  caseSlug?: string | null;
   raw: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
@@ -57,6 +59,8 @@ export interface MailDraftInput {
   text?: string;
   html?: string;
   replyToMessageId?: string;
+  /** File the sent message under this matter. Replies inherit the parent's matter. */
+  caseSlug?: string;
 }
 
 export type MailFolder = "inbox" | "sent" | "archive" | "spam" | "trash";
@@ -67,6 +71,20 @@ export interface MailListFilters {
   folder?: MailFolder;
   search?: string;
   unreadOnly?: boolean;
+  /** Only messages filed under this matter. */
+  caseSlug?: string;
+}
+
+/**
+ * Whose mail a request may see. Mail belongs to a firm brain: every member of
+ * the firm sees the firm's mail, plus messages they sent themselves. There is
+ * deliberately no role-based bypass — a firm admin must never see other firms'
+ * correspondence. The operator support mailbox is just another brain scope
+ * (see src/lib/email/mailbox-scope.ts).
+ */
+export interface MailboxScope {
+  userId: string;
+  brainId: string;
 }
 
 interface ResendReceivedEmail {
@@ -155,6 +173,8 @@ const ensureMailboxSchema = createSchemaInit([
   "ALTER TABLE subsumio_mail_messages ADD COLUMN IF NOT EXISTS open_count integer NOT NULL DEFAULT 0",
   "ALTER TABLE subsumio_mail_messages ADD COLUMN IF NOT EXISTS click_count integer NOT NULL DEFAULT 0",
   "ALTER TABLE subsumio_mail_messages ADD COLUMN IF NOT EXISTS forwarded boolean NOT NULL DEFAULT false",
+  "ALTER TABLE subsumio_mail_messages ADD COLUMN IF NOT EXISTS case_slug text",
+  "CREATE INDEX IF NOT EXISTS subsumio_mail_messages_case_idx ON subsumio_mail_messages (brain_id, case_slug, created_at DESC) WHERE case_slug IS NOT NULL",
 ]);
 
 async function ensureMailboxReady(): Promise<void> {
@@ -208,6 +228,7 @@ function rowToMessage(row: Record<string, unknown>): MailMessage {
     inReplyTo: row.in_reply_to ? String(row.in_reply_to) : null,
     userId: row.user_id ? String(row.user_id) : null,
     brainId: row.brain_id ? String(row.brain_id) : null,
+    caseSlug: row.case_slug ? String(row.case_slug) : null,
     raw: (row.raw && typeof row.raw === "object" ? row.raw : {}) as Record<string, unknown>,
     createdAt: new Date(String(row.created_at)).toISOString(),
     updatedAt: new Date(String(row.updated_at)).toISOString(),
@@ -228,8 +249,15 @@ function localSort(messages: MailMessage[]) {
   return [...messages].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-function mailboxMatchesUser(message: MailMessage, user: MailboxUser) {
-  return user.role === "admin" || message.userId === user.id || message.brainId === user.brainId;
+function mailboxMatchesScope(message: MailMessage, scope: MailboxScope) {
+  return message.brainId === scope.brainId || message.userId === scope.userId;
+}
+
+function headerValue(headers: Record<string, string> | undefined, name: string): string | null {
+  if (!headers) return null;
+  const key = Object.keys(headers).find((k) => k.toLowerCase() === name);
+  const value = key ? headers[key]?.trim() : "";
+  return value || null;
 }
 
 function parseAddress(input: string | undefined): { email: string; name: string | null } {
@@ -243,11 +271,40 @@ function parseAddress(input: string | undefined): { email: string; name: string 
   return { email: raw.toLowerCase(), name: null };
 }
 
-function mailboxBrainId(to: string[]): string | null {
-  const first = to[0]?.toLowerCase() ?? "";
-  const plus = first.match(/^[^+@]+\+([^@]+)@/);
-  if (plus?.[1]) return plus[1].replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 80) || null;
-  return env("EMAIL_INBOUND_DEFAULT_BRAIN_ID") || null;
+/** Brain id that holds the Subsumio support mailbox (unaddressed inbound mail). */
+export function supportMailboxBrainId(): string {
+  return env("EMAIL_INBOUND_DEFAULT_BRAIN_ID") || "subsumio-support";
+}
+
+function baseMailboxAddress(): string {
+  const raw = (env("MAIL_REPLY_TO") || env("MAIL_FROM") || "Subsumio <hello@subsum.io>").trim();
+  const angle = raw.match(/<([^>]+)>/);
+  return (angle ? angle[1] : raw).trim().toLowerCase();
+}
+
+/**
+ * Inbound address of a firm: plus-addressing on the shared mailbox
+ * (hello+<brainId>@domain). Mail sent there — including client replies to
+ * messages sent from Subsumio — is routed to that firm's brain.
+ */
+export function mailboxAddressForBrain(brainId: string): string {
+  const base = baseMailboxAddress();
+  if (brainId === supportMailboxBrainId()) return base;
+  const at = base.indexOf("@");
+  if (at <= 0) return base;
+  const local = base.slice(0, at).split("+")[0];
+  const safeBrain = brainId.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 80);
+  return safeBrain ? `${local}+${safeBrain}${base.slice(at)}` : base;
+}
+
+function mailboxBrainId(recipients: string[]): string | null {
+  for (const recipient of recipients) {
+    const address = parseAddress(recipient).email;
+    const plus = address.match(/^[^+@]+\+([^@]+)@/);
+    const brain = plus?.[1]?.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 80);
+    if (brain) return brain;
+  }
+  return supportMailboxBrainId();
 }
 
 export function normalizeMailRecipients(value: unknown, field: string): string[] {
@@ -336,15 +393,27 @@ export async function storeInboundResendEmail(
   const createdAt =
     full?.created_at ?? event.data?.created_at ?? event.created_at ?? new Date().toISOString();
   const raw = { event, received: full };
-  const brainId = mailboxBrainId(to);
+  const brainId = mailboxBrainId([...to, ...cc]);
+  const inReplyTo = headerValue(full?.headers, "in-reply-to");
 
   const pool = getSharedPgPool();
   if (pool) {
+    let caseSlug: string | null = null;
+    if (inReplyTo && brainId) {
+      const parent = await pool.query(
+        `SELECT case_slug FROM subsumio_mail_messages
+          WHERE brain_id = $1 AND case_slug IS NOT NULL
+            AND (message_id = $2 OR (provider_id IS NOT NULL AND position(provider_id in $2) > 0))
+          ORDER BY created_at DESC LIMIT 1`,
+        [brainId, inReplyTo]
+      );
+      caseSlug = parent.rows[0]?.case_slug ? String(parent.rows[0].case_slug) : null;
+    }
     const { rows } = await pool.query(
       `INSERT INTO subsumio_mail_messages
         (id, provider_id, direction, status, from_email, from_name, to_emails, cc_emails, bcc_emails,
-         subject, text_body, html_body, message_id, brain_id, raw, created_at, updated_at)
-       VALUES ($1,$2,'inbound','received',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,now())
+         subject, text_body, html_body, message_id, brain_id, raw, created_at, updated_at, in_reply_to, case_slug)
+       VALUES ($1,$2,'inbound','received',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,now(),$15,$16)
        ON CONFLICT (provider_id) DO UPDATE
          SET raw = EXCLUDED.raw,
              text_body = COALESCE(EXCLUDED.text_body, subsumio_mail_messages.text_body),
@@ -366,6 +435,8 @@ export async function storeInboundResendEmail(
         brainId,
         JSON.stringify(raw),
         createdAt,
+        inReplyTo,
+        caseSlug,
       ]
     );
     return rowToMessage(rows[0]);
@@ -392,9 +463,17 @@ export async function storeInboundResendEmail(
         text: full?.text ?? null,
         html: full?.html ?? null,
         messageId,
-        inReplyTo: null,
+        inReplyTo,
         userId: null,
         brainId,
+        caseSlug: inReplyTo
+          ? (messages.find(
+              (m) =>
+                m.brainId === brainId &&
+                m.caseSlug &&
+                (m.messageId === inReplyTo || (m.providerId && inReplyTo.includes(m.providerId)))
+            )?.caseSlug ?? null)
+          : null,
         raw: raw as Record<string, unknown>,
         createdAt,
         updatedAt: new Date().toISOString(),
@@ -413,10 +492,8 @@ export async function storeInboundResendEmail(
   return next;
 }
 
-type MailboxUser = Pick<PublicUser, "id" | "role" | "brainId">;
-
 export async function listMailMessages(
-  user: MailboxUser,
+  scope: MailboxScope,
   filters: MailListFilters = {}
 ): Promise<MailMessage[]> {
   await ensureMailboxReady();
@@ -425,12 +502,13 @@ export async function listMailMessages(
     const messages = await loadLocalMailbox();
     let result = messages.filter(
       (message) =>
-        mailboxMatchesUser(message, user) &&
+        mailboxMatchesScope(message, scope) &&
         (!filters.direction || message.direction === filters.direction) &&
         (!filters.folder ||
           (message.folder ?? (message.direction === "outbound" ? "sent" : "inbox")) ===
             filters.folder) &&
-        (!filters.unreadOnly || !message.isRead)
+        (!filters.unreadOnly || !message.isRead) &&
+        (!filters.caseSlug || message.caseSlug === filters.caseSlug)
     );
     if (filters.search) {
       const q = filters.search.toLowerCase();
@@ -446,7 +524,6 @@ export async function listMailMessages(
     return localSort(result).slice(0, Math.max(1, Math.min(filters.limit ?? 50, 200)));
   }
   const capped = Math.max(1, Math.min(filters.limit ?? 50, 200));
-  const isAdmin = user.role === "admin";
   const direction = filters.direction;
   const folder = filters.folder;
   const search = filters.search?.trim() || null;
@@ -456,10 +533,13 @@ export async function listMailMessages(
   const params: unknown[] = [];
   let paramIdx = 1;
 
-  if (!isAdmin) {
-    conditions.push(`(user_id = $${paramIdx} OR brain_id = $${paramIdx + 1})`);
-    params.push(user.id, user.brainId);
-    paramIdx += 2;
+  conditions.push(`(brain_id = $${paramIdx} OR user_id = $${paramIdx + 1})`);
+  params.push(scope.brainId, scope.userId);
+  paramIdx += 2;
+  if (filters.caseSlug) {
+    conditions.push(`case_slug = $${paramIdx}`);
+    params.push(filters.caseSlug);
+    paramIdx++;
   }
   if (direction) {
     conditions.push(`direction = $${paramIdx}`);
@@ -486,7 +566,7 @@ export async function listMailMessages(
     paramIdx++;
   }
 
-  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const whereClause = `WHERE ${conditions.join(" AND ")}`;
   params.push(capped);
 
   const { rows } = await pool.query(
@@ -496,31 +576,32 @@ export async function listMailMessages(
   return rows.map(rowToMessage);
 }
 
-export async function getMailMessage(user: MailboxUser, id: string): Promise<MailMessage | null> {
+export async function getMailMessage(scope: MailboxScope, id: string): Promise<MailMessage | null> {
   await ensureMailboxReady();
   const pool = getSharedPgPool();
   if (!pool) {
     const messages = await loadLocalMailbox();
     return (
-      messages.find((message) => message.id === id && mailboxMatchesUser(message, user)) ?? null
+      messages.find((message) => message.id === id && mailboxMatchesScope(message, scope)) ?? null
     );
   }
-  const isAdmin = user.role === "admin";
   const { rows } = await pool.query(
-    isAdmin
-      ? "SELECT * FROM subsumio_mail_messages WHERE id = $1"
-      : "SELECT * FROM subsumio_mail_messages WHERE id = $1 AND (user_id = $2 OR brain_id = $3)",
-    isAdmin ? [id] : [id, user.id, user.brainId]
+    "SELECT * FROM subsumio_mail_messages WHERE id = $1 AND (brain_id = $2 OR user_id = $3)",
+    [id, scope.brainId, scope.userId]
   );
   return rows[0] ? rowToMessage(rows[0]) : null;
 }
 
 export async function sendMailboxMessage(
-  user: MailboxUser,
+  scope: MailboxScope,
   input: MailDraftInput
 ): Promise<MailMessage> {
   await ensureMailboxReady();
-  const parent = input.replyToMessageId ? await getMailMessage(user, input.replyToMessageId) : null;
+  const parent = input.replyToMessageId
+    ? await getMailMessage(scope, input.replyToMessageId)
+    : null;
+  if (input.replyToMessageId && !parent) throw new Error("reply_parent_not_found");
+  const caseSlug = input.caseSlug ?? parent?.caseSlug ?? null;
   const headers: Record<string, string> = {};
   if (parent?.messageId) headers["In-Reply-To"] = parent.messageId;
 
@@ -533,7 +614,7 @@ export async function sendMailboxMessage(
     subject: parent && !/^re:/i.test(input.subject) ? `Re: ${input.subject}` : input.subject,
     text: input.text,
     html: input.html,
-    replyTo: env("MAIL_REPLY_TO") || env("MAIL_FROM"),
+    replyTo: mailboxAddressForBrain(scope.brainId),
     headers: Object.keys(headers).length > 0 ? headers : undefined,
     trackingId,
   };
@@ -561,8 +642,9 @@ export async function sendMailboxMessage(
       html: input.html ?? null,
       messageId: result.id ?? null,
       inReplyTo: parent?.messageId ?? null,
-      userId: user.id,
-      brainId: user.brainId,
+      userId: scope.userId,
+      brainId: scope.brainId,
+      caseSlug,
       raw: { provider: "resend", result, trackingId },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -577,8 +659,8 @@ export async function sendMailboxMessage(
   const { rows } = await pool.query(
     `INSERT INTO subsumio_mail_messages
       (id, provider_id, direction, status, from_email, from_name, to_emails, cc_emails, bcc_emails,
-       subject, text_body, html_body, in_reply_to, user_id, brain_id, tracking_id, folder, is_read, raw, created_at, updated_at)
-     VALUES ($1,$2,'outbound',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'sent',true,$16::jsonb,now(),now())
+       subject, text_body, html_body, in_reply_to, user_id, brain_id, tracking_id, folder, is_read, raw, case_slug, created_at, updated_at)
+     VALUES ($1,$2,'outbound',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'sent',true,$16::jsonb,$17,now(),now())
      RETURNING *`,
     [
       randomUUID(),
@@ -593,10 +675,11 @@ export async function sendMailboxMessage(
       input.text ?? null,
       input.html ?? null,
       parent?.messageId ?? null,
-      user.id,
-      user.brainId,
+      scope.userId,
+      scope.brainId,
       trackingId,
       JSON.stringify({ provider: "resend", result, trackingId }),
+      caseSlug,
     ]
   );
   return rowToMessage(rows[0]);
@@ -671,21 +754,22 @@ export async function handleResendTrackingEvent(event: ResendWebhookEvent): Prom
 }
 
 export async function updateMailMessage(
-  user: MailboxUser,
+  scope: MailboxScope,
   id: string,
-  updates: { folder?: MailFolder; isRead?: boolean }
+  updates: { folder?: MailFolder; isRead?: boolean; caseSlug?: string | null }
 ): Promise<MailMessage | null> {
   await ensureMailboxReady();
   const pool = getSharedPgPool();
   if (!pool) {
     const messages = await loadLocalMailbox();
-    const msg = messages.find((m) => m.id === id && mailboxMatchesUser(m, user));
+    const msg = messages.find((m) => m.id === id && mailboxMatchesScope(m, scope));
     if (!msg) return null;
     if (updates.folder !== undefined) msg.folder = updates.folder;
     if (updates.isRead !== undefined) {
       msg.isRead = updates.isRead;
       msg.readAt = updates.isRead ? new Date().toISOString() : null;
     }
+    if (updates.caseSlug !== undefined) msg.caseSlug = updates.caseSlug;
     msg.updatedAt = new Date().toISOString();
     await persistLocalMailbox(messages);
     return msg;
@@ -709,13 +793,14 @@ export async function updateMailMessage(
       sets.push(`read_at = NULL`);
     }
   }
+  if (updates.caseSlug !== undefined) {
+    sets.push(`case_slug = $${idx}`);
+    params.push(updates.caseSlug);
+    idx++;
+  }
 
-  params.push(id);
-  const isAdmin = user.role === "admin";
-  const whereClause = isAdmin
-    ? `id = $${idx}`
-    : `id = $${idx} AND (user_id = $${idx + 1} OR brain_id = $${idx + 2})`;
-  if (!isAdmin) params.push(user.id, user.brainId);
+  params.push(id, scope.brainId, scope.userId);
+  const whereClause = `id = $${idx} AND (brain_id = $${idx + 1} OR user_id = $${idx + 2})`;
 
   const { rows } = await pool.query(
     `UPDATE subsumio_mail_messages SET ${sets.join(", ")} WHERE ${whereClause} RETURNING *`,
@@ -724,26 +809,23 @@ export async function updateMailMessage(
   return rows[0] ? rowToMessage(rows[0]) : null;
 }
 
-export async function getUnreadCounts(user: MailboxUser): Promise<Record<MailFolder, number>> {
+export async function getUnreadCounts(scope: MailboxScope): Promise<Record<MailFolder, number>> {
   await ensureMailboxReady();
   const pool = getSharedPgPool();
   const empty: Record<MailFolder, number> = { inbox: 0, sent: 0, archive: 0, spam: 0, trash: 0 };
   if (!pool) {
     const messages = await loadLocalMailbox();
     for (const m of messages) {
-      if (!mailboxMatchesUser(m, user)) continue;
+      if (!mailboxMatchesScope(m, scope)) continue;
       if (m.isRead) continue;
       const folder = m.folder ?? (m.direction === "outbound" ? "sent" : "inbox");
       empty[folder]++;
     }
     return empty;
   }
-  const isAdmin = user.role === "admin";
   const { rows } = await pool.query(
-    isAdmin
-      ? `SELECT folder, COUNT(*) as cnt FROM subsumio_mail_messages WHERE is_read = false GROUP BY folder`
-      : `SELECT folder, COUNT(*) as cnt FROM subsumio_mail_messages WHERE is_read = false AND (user_id = $1 OR brain_id = $2) GROUP BY folder`,
-    isAdmin ? [] : [user.id, user.brainId]
+    `SELECT folder, COUNT(*) as cnt FROM subsumio_mail_messages WHERE is_read = false AND (brain_id = $1 OR user_id = $2) GROUP BY folder`,
+    [scope.brainId, scope.userId]
   );
   for (const row of rows) {
     const folder = row.folder as MailFolder;
