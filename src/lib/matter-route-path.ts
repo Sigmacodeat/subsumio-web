@@ -9,6 +9,7 @@ const MATTER_TABS = new Set([
   "contacts",
   "notes",
   "phone-notes",
+  "emails",
 ]);
 
 export function caseSlugFromDashboardPath(pathname: string): string | undefined {

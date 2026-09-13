@@ -24,6 +24,7 @@ import {
   ContactsTab,
   NotesTab,
   PhoneNotesTab,
+  EmailsTab,
 } from "@/components/legal/matter-tabs";
 
 export type { CaseDetail } from "@/lib/matter-detail-types";
@@ -136,6 +137,7 @@ export default function CaseDetailPage() {
         {activeTab === "contacts" && <ContactsTab />}
         {activeTab === "notes" && <NotesTab />}
         {activeTab === "phone-notes" && <PhoneNotesTab />}
+        {activeTab === "emails" && <EmailsTab />}
         {![
           "overview",
           "activity",
@@ -147,6 +149,7 @@ export default function CaseDetailPage() {
           "contacts",
           "notes",
           "phone-notes",
+          "emails",
         ].includes(activeTab) && (
           <div className="flex h-full flex-col items-center justify-center space-y-3 py-20">
             <AlertTriangle size={32} className="text-[color:var(--ds-border)]" />

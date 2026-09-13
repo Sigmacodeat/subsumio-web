@@ -21,6 +21,7 @@ import {
   StickyNote,
   Phone,
   Scale,
+  Mail,
 } from "lucide-react";
 import {
   useMatterData,
@@ -43,6 +44,7 @@ const TAB_ICONS: Record<MatterTab, typeof FileText> = {
   contacts: Users,
   notes: StickyNote,
   "phone-notes": Phone,
+  emails: Mail,
   investigation: Scale,
 };
 
@@ -57,6 +59,7 @@ const TAB_LABELS_DE: Record<MatterTab, string> = {
   contacts: "Kontakte",
   notes: "Notizen",
   "phone-notes": "Telefon",
+  emails: "E-Mails",
   investigation: "Sachverhalt",
 };
 
@@ -71,6 +74,7 @@ const TAB_LABELS_EN: Record<MatterTab, string> = {
   contacts: "Contacts",
   notes: "Notes",
   "phone-notes": "Phone",
+  emails: "E-mails",
   investigation: "Investigation",
 };
 
