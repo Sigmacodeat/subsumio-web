@@ -1683,12 +1683,59 @@ export interface BudgetAlertResult {
   peakBalance: number;
 }
 
+/** Consumed-percent thresholds, most severe first. */
+const BUDGET_ALERT_THRESHOLDS = [90, 75, 50] as const;
+
+function billingUrl(): string {
+  const base = (
+    env("NEXT_PUBLIC_APP_URL") ||
+    env("NEXT_PUBLIC_SUBSUMIO_URL") ||
+    "https://subsum.eu"
+  )
+    .trim()
+    .replace(/\/$/, "");
+  return `${base}/dashboard/billing`;
+}
+
+/**
+ * Who is told about a low balance: for a firm the owner and active admins
+ * (they can buy credits), for a single user that user. Falls back to the
+ * e-mail of the user whose action consumed the credits.
+ */
+async function budgetAlertRecipients(
+  ownerId: string,
+  ownerType: OwnerType,
+  fallbackEmail: string
+): Promise<string[]> {
+  try {
+    const { getOrgStore, getStore } = await import("@/lib/auth/store");
+    if (ownerType === "org") {
+      const org = await getOrgStore().getById(ownerId);
+      if (org) {
+        const members = await getStore().listByOrg(org.id);
+        const recipients = members
+          .filter((u) => !u.deactivatedAt && (u.id === org.ownerId || u.role === "admin"))
+          .map((u) => u.email);
+        if (recipients.length > 0) return [...new Set(recipients)];
+      }
+    } else {
+      const user = await getStore().getById(ownerId);
+      if (user?.email && !user.deactivatedAt) return [user.email];
+    }
+  } catch (err) {
+    log.warn("budget alert recipients lookup failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+  return fallbackEmail ? [fallbackEmail] : [];
+}
+
 /**
  * Prüft nach jeder Transaktion ob ein Budget-Alert fällig ist.
- * Alerts bei 50%, 75%, 90% des Peak-Balances (höchster Stand im letzten Jahr).
- * Idempotent: jeder Threshold wird nur einmal pro Abwärtstrend gesendet.
- *
- * Wie OpenAI's "Your credit balance is below 50%" Email.
+ * Schwellen: 50 %, 75 %, 90 % des Peak-Balances verbraucht (höchster Stand im
+ * letzten Jahr). Gemeldet wird die schwerste noch nicht gemeldete Schwelle;
+ * mildere Schwellen gelten damit als erledigt, damit bei einem starken Einbruch
+ * nicht zuerst die harmloseste Warnung verschickt wird.
  */
 export async function checkAndSendBudgetAlert(
   ownerId: string,
@@ -1713,45 +1760,54 @@ export async function checkAndSendBudgetAlert(
     const peak = Number(rows[0]?.peak ?? currentBalance);
     if (peak <= 0) return { triggered: false, balance: currentBalance, peakBalance: peak };
 
-    const thresholds = [50, 75, 90];
-    for (const pct of thresholds) {
-      const thresholdBalance = peak * (1 - pct / 100);
-      if (currentBalance <= thresholdBalance) {
-        // Check if already sent for this threshold (idempotent)
-        const { rows: existing } = await pool.query(
-          `SELECT 1 FROM subsumio_credit_alerts
-           WHERE owner_id = $1 AND threshold_pct = $2
-             AND sent_at >= NOW() - INTERVAL '7 days'`,
-          [ownerId, pct]
-        );
-        if (existing.length > 0) continue; // already sent recently
+    const reached = BUDGET_ALERT_THRESHOLDS.filter(
+      (pct) => currentBalance <= peak * (1 - pct / 100)
+    );
+    for (const pct of reached) {
+      // Idempotent: each threshold at most once per 7 days
+      const { rows: existing } = await pool.query(
+        `SELECT 1 FROM subsumio_credit_alerts
+         WHERE owner_id = $1 AND threshold_pct = $2
+           AND sent_at >= NOW() - INTERVAL '7 days'`,
+        [ownerId, pct]
+      );
+      if (existing.length > 0) {
+        // A more severe (or equal) warning already went out — nothing milder to send.
+        return { triggered: false, balance: currentBalance, peakBalance: peak };
+      }
 
-        // Record alert
+      // Record this threshold and every milder one reached with it
+      for (const covered of reached.filter((t) => t <= pct)) {
         await pool.query(
           `INSERT INTO subsumio_credit_alerts (owner_id, owner_type, threshold_pct, balance_at_alert)
            VALUES ($1, $2, $3, $4)
            ON CONFLICT (owner_id, threshold_pct) DO UPDATE
              SET sent_at = NOW(), balance_at_alert = EXCLUDED.balance_at_alert`,
-          [ownerId, ownerType, pct, currentBalance]
+          [ownerId, ownerType, covered, currentBalance]
         );
+      }
 
-        // Send email (best-effort, non-blocking)
-        const { sendMail, isMailConfigured } = await import("@/lib/mail");
-        if (isMailConfigured()) {
-          const pctLabel = pct === 50 ? "50%" : pct === 75 ? "75%" : "90%";
+      const { sendMail, isMailConfigured } = await import("@/lib/mail");
+      if (isMailConfigured()) {
+        const remaining = 100 - pct;
+        const recipients = await budgetAlertRecipients(ownerId, ownerType, userEmail);
+        const url = billingUrl();
+        const balanceLabel = currentBalance.toFixed(2);
+        const peakLabel = peak.toFixed(2);
+        for (const to of recipients) {
           sendMail({
-            to: userEmail,
-            subject: `Subsumio — Credit-Stand unter ${pctLabel}`,
-            text: `Ihr Credit-Stand ist auf ${currentBalance.toFixed(2)} € gefallen — das sind weniger als ${pctLabel} Ihres Höchststandes (${peak.toFixed(2)} €).\n\nSie können unter https://subsumio.com/dashboard/billing neue Credits kaufen oder Auto-Reload aktivieren.\n\nIhr Subsumio-Team`,
-            html: `<p>Ihr Credit-Stand ist auf <strong>${currentBalance.toFixed(2)} €</strong> gefallen — das sind weniger als ${pctLabel} Ihres Höchststandes (${peak.toFixed(2)} €).</p><p><a href="https://subsumio.com/dashboard/billing">Credits aufladen</a> oder Auto-Reload aktivieren.</p>`,
+            to,
+            subject: `Subsumio — nur noch ${remaining} % Ihres Credit-Guthabens verfügbar`,
+            text: `Ihr Credit-Guthaben ist auf ${balanceLabel} € gesunken — das sind nur noch ${remaining} % Ihres Höchststandes (${peakLabel} €). ${pct === 90 ? "KI-Funktionen können bald nicht mehr ausgeführt werden. " : ""}\n\nCredits aufladen oder Auto-Reload aktivieren: ${url}\n\nIhr Subsumio-Team`,
+            html: `<p>Ihr Credit-Guthaben ist auf <strong>${balanceLabel} €</strong> gesunken — das sind nur noch <strong>${remaining} %</strong> Ihres Höchststandes (${peakLabel} €).</p>${pct === 90 ? "<p>KI-Funktionen können bald nicht mehr ausgeführt werden.</p>" : ""}<p><a href="${url}">Credits aufladen</a> oder Auto-Reload aktivieren.</p>`,
           }).catch(() => {
             // best-effort, ignore errors
           });
         }
-
-        log.info("budget_alert_sent", { ownerId, threshold: pct, balance: currentBalance, peak });
-        return { triggered: true, threshold: pct, balance: currentBalance, peakBalance: peak };
       }
+
+      log.info("budget_alert_sent", { ownerId, threshold: pct, balance: currentBalance, peak });
+      return { triggered: true, threshold: pct, balance: currentBalance, peakBalance: peak };
     }
 
     return { triggered: false, balance: currentBalance, peakBalance: peak };
