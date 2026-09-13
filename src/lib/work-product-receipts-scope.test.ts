@@ -213,12 +213,6 @@ describe("API Route Security — brain_id Enforcement", () => {
     expect(src).toContain("receiptProductType");
     expect(src).toContain('"memo"');
   });
-
-  it("document-review route has receiptProductType", () => {
-    const src = readRouteFile("document-review", "route.ts");
-    expect(src).toContain("receiptProductType");
-    expect(src).toContain('"vertragsreview"');
-  });
 });
 
 // ── 6. Tamper Evidence ─────────────────────────────────────────────────

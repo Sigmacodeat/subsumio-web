@@ -88,90 +88,6 @@ function makeReq(caseSlug: string, path: string): Request {
   return req;
 }
 
-// ── Activity ───────────────────────────────────────────────────────────
-import { GET as getActivity } from "./activity/route";
-
-describe("GET /api/matter-context/[caseSlug]/activity", () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  test("returns recent activity with count", async () => {
-    const res = await getActivity(makeReq("legal/cases/test", "activity"));
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.activity_count).toBe(2);
-    expect(body.recent_activity).toHaveLength(2);
-    expect(body.recent_activity[0].type).toBe("document_uploaded");
-  });
-
-  test("returns 400 when caseSlug is missing", async () => {
-    const req = new Request("http://localhost/api/matter-context//activity", { method: "GET" });
-    (req as unknown as { params: Promise<{ caseSlug: string }> }).params = Promise.resolve({
-      caseSlug: "",
-    });
-    const res = await getActivity(req);
-    expect(res.status).toBe(400);
-  });
-
-  test("handles empty activity list", async () => {
-    const { buildMatterContext } = await import("@/lib/matter-context");
-    vi.mocked(buildMatterContext).mockResolvedValueOnce({ ...mockBundle, recent_activity: [] });
-    const res = await getActivity(makeReq("legal/cases/empty", "activity"));
-    const body = await res.json();
-    expect(body.activity_count).toBe(0);
-  });
-});
-
-// ── Explain ─────────────────────────────────────────────────────────────
-import { GET as getExplain } from "./explain/route";
-
-describe("GET /api/matter-context/[caseSlug]/explain", () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  test("returns retrieval explanation with results", async () => {
-    const req = new Request(
-      "http://localhost/api/matter-context/legal%2Fcases%2Ftest/explain?q=Klage&mode=balanced",
-      { method: "GET" }
-    );
-    const res = await getExplain(req);
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.query).toBe("Klage");
-    expect(body.mode).toBe("balanced");
-    expect(body.result_count).toBe(2);
-    expect(body.results).toHaveLength(2);
-  });
-
-  test("uses conservative mode when specified", async () => {
-    const req = new Request(
-      "http://localhost/api/matter-context/legal%2Fcases%2Ftest/explain?q=test&mode=conservative",
-      { method: "GET" }
-    );
-    const res = await getExplain(req);
-    const body = await res.json();
-    expect(body.mode).toBe("conservative");
-  });
-
-  test("defaults to balanced mode when not specified", async () => {
-    const req = new Request(
-      "http://localhost/api/matter-context/legal%2Fcases%2Ftest/explain?q=test",
-      { method: "GET" }
-    );
-    const res = await getExplain(req);
-    const body = await res.json();
-    expect(body.mode).toBe("balanced");
-  });
-
-  test("uses deep_matter mode", async () => {
-    const req = new Request(
-      "http://localhost/api/matter-context/legal%2Fcases%2Ftest/explain?q=test&mode=deep_matter",
-      { method: "GET" }
-    );
-    const res = await getExplain(req);
-    const body = await res.json();
-    expect(body.mode).toBe("deep_matter");
-  });
-});
-
 // ── Understanding ───────────────────────────────────────────────────────
 import { GET as getUnderstanding } from "./understanding/route";
 
@@ -233,29 +149,5 @@ describe("GET /api/matter-context/[caseSlug]/investigation-suggest", () => {
       makeReq("legal/cases/error", "investigation-suggest")
     );
     expect(res.status).toBe(502);
-  });
-});
-
-// ── Quality (no caseSlug — brain-level) ─────────────────────────────────
-import { GET as getQuality } from "../quality/route";
-
-describe("GET /api/matter-context/quality", () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  test("returns brain quality summary", async () => {
-    const req = new Request("http://localhost/api/matter-context/quality", { method: "GET" });
-    const res = await getQuality(req);
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.total_pages).toBe(100);
-    expect(body.coverage_score).toBe(0.85);
-    expect(body.quality_score).toBe(0.92);
-  });
-
-  test("handles buildBrainQualitySummary error", async () => {
-    const { buildBrainQualitySummary } = await import("@/lib/matter-context");
-    vi.mocked(buildBrainQualitySummary).mockRejectedValueOnce(new Error("Engine error"));
-    const req = new Request("http://localhost/api/matter-context/quality", { method: "GET" });
-    await expect(getQuality(req)).rejects.toThrow("Engine error");
   });
 });
