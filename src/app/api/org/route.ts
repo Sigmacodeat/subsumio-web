@@ -81,7 +81,9 @@ export const POST = createHandler(
     if (ctx.user.orgId) return apiError("already_in_org", "Bereits in einer Organisation", 409);
 
     const org = await getOrgStore().create(buildNewOrg({ name: body.name, ownerId: ctx.user.id }));
-    await getStore().update(ctx.user.id, { orgId: org.id });
+    // The founder administers the new firm (team, roles, settings, billing).
+    // Without this only the very first account of an installation was admin.
+    await getStore().update(ctx.user.id, { orgId: org.id, role: "admin" });
     return Response.json({ org }, { status: 201 });
   }
 );
