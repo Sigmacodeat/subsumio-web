@@ -69,6 +69,11 @@ const nextConfig: NextConfig = {
         destination: "/dashboard/research?tab=commentaries",
         permanent: true,
       },
+      {
+        source: "/dashboard/time-tracking",
+        destination: "/dashboard/time",
+        permanent: true,
+      },
     ];
   },
   async headers() {
