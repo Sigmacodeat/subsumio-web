@@ -15,10 +15,13 @@ import { getFeedbackStats, getFeedbackForOrg } from "@/lib/retrieval-feedback";
  * harnesses, plus live feedback stats from the retrieval feedback store.
  * As each harness gets wired to its data source, it will produce live results.
  */
+// Tenant-scoped (the firm's own retrieval feedback) — used by the Kanzlei
+// monitoring workspace, therefore a firm-admin route, not an operator route.
 export const GET = createHandler(
   {
-    action: "platform.operator",
+    action: "connector.read",
     rateTier: "standard",
+    admin: true,
   },
   async (ctx) => {
     // Collect live results from available harnesses

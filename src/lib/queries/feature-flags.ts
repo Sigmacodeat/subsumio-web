@@ -51,15 +51,3 @@ export function useDeleteFeatureFlag() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["feature-flags"] }),
   });
 }
-
-export function useFeatureFlagCheck(key?: string) {
-  return useQuery<{
-    key?: string;
-    enabled: boolean;
-    flags?: Array<{ key: string; name: string; enabled: boolean }>;
-  }>({
-    queryKey: ["feature-flags", "check", key],
-    queryFn: () => api.featureFlags.check(key),
-    staleTime: 60 * 1000,
-  });
-}

@@ -3122,15 +3122,6 @@ export const api = {
         body: JSON.stringify({ key }),
       });
     },
-
-    check(key?: string): Promise<{
-      key?: string;
-      enabled: boolean;
-      flags?: Array<{ key: string; name: string; enabled: boolean }>;
-    }> {
-      const qs = key ? `?key=${encodeURIComponent(key)}` : "";
-      return request(`/api/feature-flags${qs}`);
-    },
   },
 
   rciid: {

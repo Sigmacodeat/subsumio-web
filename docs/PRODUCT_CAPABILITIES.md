@@ -1,6 +1,6 @@
 # Subsumio Produktfähigkeiten
 
-Stand: 2026-09-12 (Revision 4 — Kanzlei-OS-Fokus)
+Stand: 2026-09-13 (Revision 5 — Kanzlei-/Control-Plane-Trennung)
 Zweck: kompakte, produktorientierte Übersicht darüber, was Subsumio kann,
 welche Module im Repository angelegt sind und wo Produktreife noch durch
 End-to-End-Verdrahtung nachgewiesen werden muss.
@@ -31,10 +31,13 @@ auditierbar bleiben.
 - **Legal-only Provisioning:** Neue Nutzer und Brains werden ausschließlich als
   `legal` provisioniert. Alte unbekannte Industry-Metadaten fallen sicher auf
   das Subsumio-Theme zurück.
-- **Kanzlei-Client-Build:** Die Betreiber-/Ops-Flächen (`dashboard/admin/*`,
-  `monitoring/engine`, `rag-eval`, `ai-quality`) sind nicht Teil des
-  Kanzlei-Builds. Die zugehörigen `api/admin/*`-, `api/monitoring/*`- und
-  Eval-Routen bleiben als Server-Oberfläche für Betrieb und Engine erhalten.
+- **Kanzlei-/Control-Plane-Grenze:** Die Betreiber-Konsole (`/ops`) läuft nur auf
+  dem Ops-Host (`ops.subsum.eu`) für Plattform-Betreiber (E-Mail-Allowlist + 2FA);
+  ihre APIs sind über `platform.operator` gesichert, das keine Kanzlei-Rolle
+  erhält. Nicht benötigte Eval-/Qualitäts-Adapter sind archiviert.
+  Kanzlei-Governance-Endpunkte, Engine-Callbacks und Cron-Routen bleiben.
+  Grenze und Wiederherstellung:
+  `docs/archive/CONTROL_PLANE_ARCHIVE_2026-09-13.md`.
 - **Pilot-Fokus:** B2C-Funnels (`/privat`, `/nischen`), die Nicht-DACH-Sprachen
   (it/es/pl/fr/nl), White-Label-PWA, Peer-Benchmark und Marketing-Agent sind
   nicht Teil des Builds. Aktive Sprachen: DE, AT, CH, EN. Grenze und
