@@ -6,10 +6,12 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
 /**
- * GET /api/export — DSGVO Art. 20 (Datenübertragbarkeit).
- * Liefert ALLE Daten des eingeloggten Nutzers als JSON-Download:
- * Konto (ohne Passwort-Hash), Nutzungszähler und das vollständige Brain
- * (alle Seiten der Tenant-Source mit Volltext, Frontmatter, Tags).
+ * GET /api/export — DSGVO Art. 15/20 für das eigene Konto.
+ * Liefert Konto (ohne Passwort-Hash) und Nutzungszähler. Das Brain gehört nur
+ * dann zum persönlichen Export, wenn es ein persönliches Brain ist. Bei
+ * Kanzlei-Mitgliedern ist es der gemeinsame Aktenbestand der Kanzlei (fremde
+ * Mandanten, Ethical Walls) — der Kanzlei-Export liegt bei den Kanzlei-Admins
+ * (/api/data-export/gdpr, /api/data-export/backup).
  */
 export const GET = createHandler(
   {
@@ -18,18 +20,27 @@ export const GET = createHandler(
     maxDuration: 120,
   },
   async (ctx) => {
-    let brain: unknown = { error: "engine_unavailable", pages: [] };
-    try {
-      const upstream = await fetch(`${ENGINE_URL}/api/export`, {
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (upstream.ok) brain = await upstream.json();
-    } catch {
-      // Engine offline: Konto-Daten trotzdem exportieren, Brain-Teil markiert.
+    const firmMember = Boolean(ctx.user.orgId);
+    let brain: unknown = firmMember
+      ? {
+          excluded: "firm_brain",
+          note: "Akten der Kanzlei sind nicht Teil des persönlichen Exports. Der Kanzlei-Export wird von Kanzlei-Admins erstellt.",
+          pages: [],
+        }
+      : { error: "engine_unavailable", pages: [] };
+    if (!firmMember) {
+      try {
+        const upstream = await fetch(`${ENGINE_URL}/api/export`, {
+          headers: ctx.headers,
+          signal: AbortSignal.timeout(10_000),
+        });
+        if (upstream.ok) brain = await upstream.json();
+      } catch {
+        // Engine offline: Konto-Daten trotzdem exportieren, Brain-Teil markiert.
+      }
     }
 
-    const usage = await usageFor(ctx.brainId).catch(() => null);
+    const usage = firmMember ? null : await usageFor(ctx.brainId).catch(() => null);
 
     const { user } = ctx;
     const payload = {

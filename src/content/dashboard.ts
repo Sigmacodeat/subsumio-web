@@ -2037,8 +2037,8 @@ export const D = {
   },
   "settings.data_export": { de: "Datenexport (DSGVO)", en: "Data export (GDPR)" },
   "settings.data_export_desc": {
-    de: "Alle deine Daten — Konto, Nutzung und die komplette Wissensbasis (Akten, Dokumente, Fristen) — als JSON-Datei (Art. 20 DSGVO).",
-    en: "All your data — account, usage and the complete knowledge base (cases, documents, deadlines) — as a JSON file (Art. 20 GDPR).",
+    de: "Deine Kontodaten als JSON-Datei (Art. 15/20 DSGVO). Ohne eigene Kanzlei enthält der Export auch deine Wissensbasis; Akten einer Kanzlei exportieren deren Admins.",
+    en: "Your account data as a JSON file (Art. 15/20 GDPR). Without a firm the export also contains your knowledge base; firm matters are exported by the firm's admins.",
   },
   "settings.export_button": { de: "Daten exportieren ↓", en: "Export data ↓" },
   "settings.language": { de: "Sprache", en: "Language" },
