@@ -88,11 +88,12 @@ export async function enqueuePostUploadTask(
     status: "pending",
   };
 
-  // Use PUT (upsert) instead of POST (create) — if the page already exists
-  // (race condition with concurrent enqueue), PUT overwrites it idempotently
-  // with the same pending state. A 409 conflict is treated as "already queued".
-  const upsert = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
-    method: "PUT",
+  // Use POST (create-or-update) to create the task page. The mock engine
+  // supported PUT (upsert) at /api/pages/:slug, but the real engine only
+  // supports POST at /api/pages. POST is create-or-update (idempotent) in
+  // both engines, so it's the right method for both.
+  const upsert = await fetch(`${ENGINE_URL}/api/pages`, {
+    method: "POST",
     headers,
     body: JSON.stringify({
       slug,

@@ -66,14 +66,20 @@ describe("GET /api/legal/deadlines.ics", () => {
     expect(fetchUrl).toContain("case=legal%2Fcases%2Ftest");
   });
 
-  test("returns 502 when engine returns error", async () => {
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
-      new Response("Internal error", { status: 500 })
-    );
+  test("falls back to brain-built ICS when the engine feed errors", async () => {
+    // Primary ICS fetch fails; the route falls back to building the ICS
+    // from brain pages directly (fetchPagesByType calls) instead of 502ing —
+    // a Fristenbuch feed staying available beats a hard failure.
+    (global.fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(new Response("Internal error", { status: 500 }))
+      .mockResolvedValueOnce(Response.json([]))
+      .mockResolvedValueOnce(Response.json([]));
 
     const req = new Request("http://localhost/api/legal/deadlines.ics", { method: "GET" });
     const res = await GET(req);
-    expect(res.status).toBe(502);
+    expect(res.status).toBe(200);
+    const body = await res.text();
+    expect(body).toContain("BEGIN:VCALENDAR");
   });
 
   test("returns 502 when engine is unreachable", async () => {

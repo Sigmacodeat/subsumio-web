@@ -62,11 +62,11 @@ describe("post-upload outbox", () => {
       doc_title: "Eingabe.pdf",
     });
 
-    // Should have made 6 calls: 3 GET (idempotency check) + 3 PUT (upsert)
+    // Should have made 6 calls: 3 GET (idempotency check) + 3 POST (upsert)
     expect(fetchMock).toHaveBeenCalledTimes(6);
 
     const createBodies = fetchMock.mock.calls
-      .filter(([, init]) => (init as RequestInit)?.method === "PUT")
+      .filter(([, init]) => (init as RequestInit)?.method === "POST")
       .map(([, init]) => JSON.parse((init as RequestInit).body as string));
 
     expect(createBodies).toHaveLength(3);
@@ -92,11 +92,11 @@ describe("post-upload outbox", () => {
       brain_id: "brain-1",
     });
 
-    // Only 2 calls: 1 GET (idempotency) + 1 PUT (upsert analyze)
+    // Only 2 calls: 1 GET (idempotency) + 1 POST (upsert analyze)
     expect(fetchMock).toHaveBeenCalledTimes(2);
 
     const createBodies = fetchMock.mock.calls
-      .filter(([, init]) => (init as RequestInit)?.method === "PUT")
+      .filter(([, init]) => (init as RequestInit)?.method === "POST")
       .map(([, init]) => JSON.parse((init as RequestInit).body as string));
 
     expect(createBodies).toHaveLength(1);
@@ -147,9 +147,9 @@ describe("post-upload outbox", () => {
       })
     ).rejects.toThrow(/task_upsert_failed_500/);
 
-    // 1 GET + 3 PUTs (all failed)
+    // 1 GET + 3 POSTs (all failed)
     const putCalls = fetchMock.mock.calls.filter(
-      ([, init]) => (init as RequestInit)?.method === "PUT"
+      ([, init]) => (init as RequestInit)?.method === "POST"
     );
     expect(putCalls).toHaveLength(3);
   });
