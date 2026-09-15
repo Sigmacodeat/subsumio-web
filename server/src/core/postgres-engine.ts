@@ -2525,7 +2525,7 @@ export class PostgresEngine implements BrainEngine {
     // list. Image chunks pass embedding=null + embedding_image=Float32Array.
     // v0.43.0 (INDUSTRIENIVEAU): legal metadata columns for §/court/role.
     const cols =
-      "(page_id, chunk_index, chunk_text, chunk_source, embedding, model, token_count, embedded_at, language, symbol_name, symbol_type, start_line, end_line, parent_symbol_path, doc_comment, symbol_name_qualified, modality, embedding_image, document_type, statute_abbr, paragraph_ref, absatz, ziffer, literal, chunk_role, court, case_number, ecli, decision_date, legal_area, canonical_label)";
+      "(page_id, chunk_index, chunk_text, chunk_source, embedding, model, token_count, embedded_at, language, symbol_name, symbol_type, start_line, end_line, parent_symbol_path, doc_comment, symbol_name_qualified, modality, embedding_image, document_type, statute_abbr, paragraph_ref, absatz, ziffer, literal, chunk_role, court, case_number, ecli, decision_date, legal_area, canonical_label, source_id)";
     const rows: string[] = [];
     const params: unknown[] = [];
     let paramIdx = 1;
@@ -2555,7 +2555,7 @@ export class PostgresEngine implements BrainEngine {
           `$${paramIdx++}, ${embeddingImagePh}, ` +
           `$${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, ` +
           `$${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, ` +
-          `$${paramIdx++}, $${paramIdx++}, $${paramIdx++})`
+          `$${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++})`
       );
 
       // Param push order MUST match placeholder allocation order.
@@ -2589,7 +2589,8 @@ export class PostgresEngine implements BrainEngine {
         chunk.ecli || null,
         chunk.decision_date || null,
         chunk.legal_area || null,
-        chunk.canonical_label || null
+        chunk.canonical_label || null,
+        sourceId
       );
     }
 
@@ -2656,7 +2657,8 @@ export class PostgresEngine implements BrainEngine {
          ecli = EXCLUDED.ecli,
          decision_date = EXCLUDED.decision_date,
          legal_area = EXCLUDED.legal_area,
-         canonical_label = EXCLUDED.canonical_label`,
+         canonical_label = EXCLUDED.canonical_label,
+         source_id = EXCLUDED.source_id`,
       params as Parameters<typeof sql.unsafe>[1]
     );
 

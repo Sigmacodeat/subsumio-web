@@ -592,9 +592,20 @@ export function sourceScopeOpts(ctx: OperationContext): {
  */
 export function hardSourceFilter<T extends { source_id?: string }>(
   results: T[],
-  ctx: OperationContext
+  ctx: OperationContext,
+  /**
+   * The scope actually used to run the retrieval, when it can differ from
+   * `ctx.sourceId` (e.g. `query`'s per-call `source_id` param via
+   * `resolveRequestedScope`). Omitting this makes the filter re-derive scope
+   * from `ctx` alone — correct for callers where per-call scope IS ctx
+   * scope, but a silent-empty-results bug for any caller (CLI, future
+   * cross-source features) whose per-call scope legitimately differs from
+   * ctx.sourceId: the filter would then reject every result the retrieval
+   * itself was correctly scoped to return.
+   */
+  usedScope?: { sourceId?: string; sourceIds?: string[] }
 ): T[] {
-  const scope = sourceScopeOpts(ctx);
+  const scope = usedScope ?? sourceScopeOpts(ctx);
   if (scope.sourceIds) {
     const allowed = new Set(scope.sourceIds);
     return results.filter((r) => {
@@ -2337,8 +2348,10 @@ const query: Operation = {
       );
     }
 
-    // Subsumio WP4: Defense-in-depth hard source filter
-    const sourceFiltered = hardSourceFilter(results, ctx);
+    // Subsumio WP4: Defense-in-depth hard source filter. Pass the scope the
+    // search actually ran with (querySourceScope) — it can legitimately
+    // differ from ctx.sourceId when the caller passed a per-call source_id.
+    const sourceFiltered = hardSourceFilter(results, ctx, querySourceScope);
     // Subsumio P0-SECR-002: Filter by verified matter scope
     return matterScopeFilter(sourceFiltered, ctx);
   },

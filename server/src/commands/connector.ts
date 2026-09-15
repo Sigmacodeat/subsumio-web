@@ -21,6 +21,7 @@
 
 import { ConnectorManager, SUPPORTED_CONNECTORS } from "../core/ingestion/connectors/index.ts";
 import type { ConnectorConfig } from "../core/ingestion/connectors/base.ts";
+import type { BrainEngine } from "../core/engine.ts";
 import { generateAuthUrl, exchangeCode } from "../core/ingestion/connectors/google-oauth.ts";
 import { createServer } from "node:http";
 import { readFileSync, writeFileSync } from "node:fs";
@@ -95,10 +96,10 @@ function flagsToConfig(flags: Record<string, string>): ConnectorConfig {
   return config;
 }
 
-export async function runConnector(args: string[]): Promise<number> {
+export async function runConnector(args: string[], engine?: BrainEngine): Promise<number> {
   const [sub, service, ...rest] = args;
   const flags = parseFlags(rest);
-  const manager = new ConnectorManager();
+  const manager = new ConnectorManager(undefined, engine);
 
   switch (sub) {
     case "list": {
@@ -132,6 +133,12 @@ export async function runConnector(args: string[]): Promise<number> {
         return 1;
       }
       const config = flagsToConfig(flags);
+      // The DB-backed store is multi-tenant (SaaS); the CLI is always a
+      // single local brain, so default to the 'default' tenant/source
+      // unless the caller explicitly scoped it.
+      if (engine && !config.tenant_source_id) {
+        config.tenant_source_id = "default";
+      }
       await manager.add(service, config);
       console.log(`Connector added: ${service}`);
       console.log(
@@ -343,18 +350,56 @@ export async function runConnector(args: string[]): Promise<number> {
         console.error(`Run "gbrain connector list" to see configured connectors.`);
         return 1;
       }
-      // Start the connector (loads state, validates token) then run one sync.
+      if (!engine) {
+        console.error(
+          "Error: no engine connected — cannot ingest. This should not happen when " +
+            "invoked via `gbrain connector sync`; run `gbrain doctor` to check the brain config."
+        );
+        return 1;
+      }
+      // Start the connector with a REAL context: items fetched here are
+      // queued through the same ingest_capture pipeline the daemon uses
+      // (autopilot / serve --http), so a worker (`gbrain jobs work`, or
+      // autopilot's own worker) must be running to turn queued events into
+      // pages + embeddings. A CLI-only trigger with no worker running will
+      // enqueue but not visibly finish ingesting — that's expected, not a bug.
+      let queuedCount = 0;
       try {
+        const { MinionQueue } = await import("../core/minions/queue.ts");
+        const queue = new MinionQueue(engine);
         await target.start({
-          emit: () => {},
-          engine: {} as any,
-          logger: { info: () => {}, warn: () => {}, error: () => {} } as any,
+          emit(event) {
+            queuedCount++;
+            queue
+              .add(
+                "ingest_capture",
+                { event },
+                {
+                  idempotency_key: `ingest:${event.source_kind}:${event.content_hash}`,
+                  maxWaiting: 100,
+                }
+              )
+              .catch((err) => {
+                console.error(`[${service}] Failed to queue event: ${err}`);
+              });
+          },
+          engine,
+          logger: {
+            info: (msg: string) => console.log(`[${service}] ${msg}`),
+            warn: (msg: string) => console.error(`[${service}] WARN: ${msg}`),
+            error: (msg: string) => console.error(`[${service}] ERR: ${msg}`),
+          } as any,
           abortSignal: new AbortController().signal,
           config: {},
         });
         await target.sync();
         await target.stop();
-        console.log(`Sync complete for ${service}.`);
+        console.log(`Sync complete for ${service}: ${queuedCount} event(s) queued.`);
+        if (queuedCount > 0) {
+          console.log(
+            `Run "gbrain jobs work" (or start autopilot/serve --http) to process the queue into pages.`
+          );
+        }
         return 0;
       } catch (err) {
         console.error(`Sync failed: ${err instanceof Error ? err.message : String(err)}`);

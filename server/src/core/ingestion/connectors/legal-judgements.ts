@@ -31,8 +31,13 @@ interface JudgementItem extends ConnectorItem {
   az?: string; // Aktenzeichen / Geschäftszahl
   legalArea: string;
   keywords: string[];
+  normen: string[]; // Cited statute paragraphs (e.g. "ABGB §1295")
   text: string;
   url: string;
+  /** Dokumentnummer of the full-text decision (JJT_*), distinct from the
+   *  Rechtssatz id (JJR_*) returned by search. Only the JJT id resolves to
+   *  real judgment text on ris.bka.gv.at. */
+  fullTextDocId?: string;
 }
 
 const RIS_OGD_BASE = "https://data.bka.gv.at/ris/api/v2.6";
@@ -139,11 +144,12 @@ export class LegalJudgementsConnector extends BaseConnector {
       for (const ref of refs) {
         const item = mapRisReference(ref, sinceDate);
         if (!item) continue;
-        // Fetch full text for the first N items per sync
-        if (detailBudget > 0 && item.id) {
+        // Fetch full text for the first N items per sync. The Rechtssatz
+        // search hit never carries the decision body — only the nested
+        // fullTextDocId (a JJT_* document) resolves to real text.
+        if (detailBudget > 0 && item.fullTextDocId) {
           detailBudget--;
-          const risId = item.id.replace(/^ris-/, "");
-          item.text = await this.fetchRisOgdText(risId);
+          item.text = await this.fetchRisOgdText(item.fullTextDocId);
           item.content = item.text;
         }
         items.push(item);
@@ -156,24 +162,20 @@ export class LegalJudgementsConnector extends BaseConnector {
     return items;
   }
 
-  private async fetchRisOgdText(id: string): Promise<string> {
+  /**
+   * The RIS-OGD v2.6 JSON API has no single-document lookup: both
+   * `?Dokumentnummer=X` and `/judikatur/X` are silently ignored and return
+   * the default search listing (verified live against data.bka.gv.at,
+   * 2026-09-15). Full decision text is only published on the human-facing
+   * ris.bka.gv.at page, so it must be scraped from there.
+   */
+  private async fetchRisOgdText(fullTextDocId: string): Promise<string> {
     try {
-      const url = new URL(`${RIS_OGD_BASE}/judikatur`);
-      url.searchParams.set("Applikation", "Justiz");
-      url.searchParams.set("Dokumentnummer", id);
-      const res = await fetch(url.toString());
+      const url = `https://ris.bka.gv.at/Dokument.wxe?Abfrage=Justiz&Dokumentnummer=${encodeURIComponent(fullTextDocId)}`;
+      const res = await fetch(url);
       if (!res.ok) return "";
-      const data = (await res.json()) as Record<string, unknown>;
-      const refs = extractRisReferences(data);
-      if (refs.length === 0) return "";
-      const ref = refs[0];
-      const content = (ref as Record<string, unknown>).Content as
-        | Record<string, unknown>
-        | undefined;
-      if (!content) return "";
-      const dataContent = (content.Data as Record<string, unknown> | undefined) ?? {};
-      const text = String(dataContent.Text ?? "");
-      return stripHtml(text);
+      const html = await res.text();
+      return extractRisDocumentText(html);
     } catch {
       return "";
     }
@@ -231,6 +233,7 @@ export class LegalJudgementsConnector extends BaseConnector {
           az: result.file_number ? String(result.file_number) : undefined,
           legalArea: String(result.type ?? "Allgemein"),
           keywords: [],
+          normen: [],
           text,
         });
       }
@@ -269,6 +272,7 @@ export class LegalJudgementsConnector extends BaseConnector {
         case_number: j.az ?? "",
         legal_area: j.legalArea,
         keywords: j.keywords,
+        normen: j.normen,
         source: j.source,
         source_url: j.url,
       },
@@ -348,14 +352,26 @@ export function mapRisReference(
     .split(";")
     .map((s) => s.trim())
     .filter(Boolean);
+  const normen = listItems(judikatur.Normen);
   const legalArea = firstListItem(justiz.Rechtsgebiete) || "Allgemein";
   const url = String(
     allgemein.DokumentUrl ??
       `https://ris.bka.gv.at/Dokument.wxe?Abfrage=Justiz&Dokumentnummer=${id}`
   );
 
-  // Search results carry metadata, not the decision body — the Schlagworte +
-  // Geschäftszahl + link still make a useful, deduplicatable brain page.
+  // The search hit's own ID (JJR_*) is a Rechtssatz id — it never resolves to
+  // decision text. The real full-text document (JJT_*) is nested under
+  // Justiz.Entscheidungstexte.item[].DokumentUrl; take the first one.
+  const entscheidungstexte = justiz.Entscheidungstexte as Record<string, unknown> | undefined;
+  const firstText = firstListEntry(entscheidungstexte?.item);
+  const fullTextUrl =
+    firstText && typeof firstText === "object"
+      ? String((firstText as Record<string, unknown>).DokumentUrl ?? "")
+      : "";
+  const fullTextDocId = fullTextUrl.match(/Dokumentnummer=([^&]+)/)?.[1];
+
+  // Search results carry metadata, not the decision body — filled in later
+  // by fetchRisOgdText() using fullTextDocId, when a detail-fetch slot is available.
   const text = "";
 
   return {
@@ -372,8 +388,28 @@ export function mapRisReference(
     az: az || undefined,
     legalArea,
     keywords,
+    normen,
     text,
+    fullTextDocId,
   };
+}
+
+/** RIS encodes lists as { item: string | string[] } — return every entry. */
+function listItems(value: unknown): string[] {
+  if (value == null) return [];
+  if (typeof value === "string") return [value];
+  if (typeof value === "object") {
+    const item = (value as Record<string, unknown>).item;
+    if (typeof item === "string") return [item];
+    if (Array.isArray(item)) return item.map((s) => String(s));
+  }
+  return [];
+}
+
+/** RIS encodes lists as { item: T | T[] } — return the first entry, raw (not stringified). */
+function firstListEntry(item: unknown): unknown {
+  if (Array.isArray(item)) return item[0];
+  return item;
 }
 
 /** RIS encodes lists as { item: string | string[] } — return the first entry. */
@@ -395,6 +431,22 @@ function slugify(s: string): string {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "") || "unbekannt"
   );
+}
+
+/**
+ * Extract the decision body from a ris.bka.gv.at Dokument.wxe page.
+ * The real text lives inside `id="MainContent_DocumentRepeater..."`
+ * (Kopf/Spruch/Gründe sections); everything from `id="footer"` on is site
+ * chrome. Verified live against ris.bka.gv.at, 2026-09-15.
+ */
+export function extractRisDocumentText(html: string): string {
+  const start = html.indexOf('id="MainContent_DocumentRepeater');
+  if (start === -1) return "";
+  const footerIdx = html.indexOf('id="footer"', start);
+  const trailerIdx = html.indexOf("Textnummer", start);
+  const end =
+    [footerIdx, trailerIdx].filter((i) => i !== -1).sort((a, b) => a - b)[0] ?? html.length;
+  return stripHtml(html.slice(start, end)).trim();
 }
 
 /** Crude but dependency-free: openlegaldata content is simple HTML. */

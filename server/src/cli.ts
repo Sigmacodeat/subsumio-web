@@ -1191,8 +1191,14 @@ async function handleCliOnly(command: string, args: string[]) {
     return;
   }
   if (command === "connector") {
+    // Connectors persist to the DB-backed secret store (connector_instances
+    // table) so the CLI and the ingestion daemon (autopilot/serve --http)
+    // share one registry instead of the CLI writing to a local file the
+    // daemon never reads.
+    const engine = await connectEngine();
     const { runConnector } = await import("./commands/connector.ts");
-    const exitCode = await runConnector(args);
+    const exitCode = await runConnector(args, engine);
+    await engine.disconnect();
     process.exitCode = exitCode;
     return;
   }
