@@ -256,7 +256,7 @@ export async function orchestrateWhatsAppMessage(
 
   if (message.type === "voice") {
     storedMedia = await downloadMedia(message);
-    const transcription = await transcribeVoice(storedMedia);
+    const transcription = await transcribeVoice(storedMedia, sender.brainId);
     if (transcription.text) normalizedText = transcription.text;
   }
 

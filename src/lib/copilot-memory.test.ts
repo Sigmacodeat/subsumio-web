@@ -225,26 +225,20 @@ describe("session-memory — 3-layer architecture", () => {
 });
 
 describe("copilot-memory-llm — extraction module", () => {
-  test("isLLMExtractionAvailable returns false without API key", async () => {
-    const originalKey = process.env.OPENROUTER_API_KEY;
-    const originalFallback = process.env.OPENROUTER_API_KEY_FALLBACK;
-    delete process.env.OPENROUTER_API_KEY;
-    delete process.env.OPENROUTER_API_KEY_FALLBACK;
+  test("isLLMExtractionAvailable follows the engine configuration", async () => {
+    const original = process.env.SUBSUMIO_API_URL;
+    delete process.env.SUBSUMIO_API_URL;
     const { isLLMExtractionAvailable } = await import("@/lib/copilot-memory-llm");
     expect(isLLMExtractionAvailable()).toBe(false);
-    if (originalKey) process.env.OPENROUTER_API_KEY = originalKey;
-    if (originalFallback) process.env.OPENROUTER_API_KEY_FALLBACK = originalFallback;
+    process.env.SUBSUMIO_API_URL = "http://127.0.0.1:31429";
+    expect(isLLMExtractionAvailable()).toBe(true);
+    if (original === undefined) delete process.env.SUBSUMIO_API_URL;
+    else process.env.SUBSUMIO_API_URL = original;
   });
 
-  test("extractMemoriesWithLLM returns empty array without API key", async () => {
-    const originalKey = process.env.OPENROUTER_API_KEY;
-    const originalFallback = process.env.OPENROUTER_API_KEY_FALLBACK;
-    delete process.env.OPENROUTER_API_KEY;
-    delete process.env.OPENROUTER_API_KEY_FALLBACK;
+  test("extractMemoriesWithLLM returns empty array without engine headers", async () => {
     const { extractMemoriesWithLLM } = await import("@/lib/copilot-memory-llm");
     const result = await extractMemoriesWithLLM("Ich bevorzuge kurze Antworten");
     expect(result).toEqual([]);
-    if (originalKey) process.env.OPENROUTER_API_KEY = originalKey;
-    if (originalFallback) process.env.OPENROUTER_API_KEY_FALLBACK = originalFallback;
   });
 });

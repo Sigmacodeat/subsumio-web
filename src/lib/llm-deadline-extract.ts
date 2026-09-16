@@ -21,11 +21,9 @@
  *   3. Deterministic calculation via frist-engine (berechneFristAuto)
  */
 
-import { env } from "@/lib/env";
+import { engineComplete, isEngineLLMAvailable, parseJsonObject } from "@/lib/engine-llm";
 import { berechneFristAuto, FRISTEN_REGISTRY } from "@/lib/legal/frist-engine";
 import type { DetectedDeadline } from "@/lib/ai-deadline-detect";
-
-const DEFAULT_MODEL = "deepseek/deepseek-chat";
 
 /**
  * Known FRISTEN_REGISTRY keys — the LLM must choose from these.
@@ -87,7 +85,7 @@ interface LLMExtractedDeadline {
  * Check whether LLM-based deadline extraction is available (API key configured).
  */
 export function isLLMDeadlineExtractionAvailable(): boolean {
-  return Boolean(env("OPENROUTER_API_KEY") || env("OPENROUTER_API_KEY_FALLBACK"));
+  return isEngineLLMAvailable();
 }
 
 /**
@@ -98,58 +96,36 @@ export function isLLMDeadlineExtractionAvailable(): boolean {
  */
 export async function extractDeadlinesWithLLM(
   text: string,
-  opts?: { ferialsache?: boolean; vorfristTage?: number }
+  opts?: { ferialsache?: boolean; vorfristTage?: number; headers?: Record<string, string> }
 ): Promise<DetectedDeadline[]> {
-  const apiKey = env("OPENROUTER_API_KEY") || env("OPENROUTER_API_KEY_FALLBACK");
-  if (!apiKey) return [];
-
-  const model = env("DEADLINE_LLM_MODEL") || DEFAULT_MODEL;
+  if (!opts?.headers || !isEngineLLMAvailable()) return [];
+  const headers = opts.headers;
   const truncated =
     text.length > 10_000 ? text.slice(0, 10_000) + "\n\n[... text truncated]" : text;
 
   try {
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-        "HTTP-Referer": "https://subsum.io",
-        "X-Title": "Subsumio",
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: 800,
-        temperature: 0.1,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: `Text:\n${truncated}` },
-        ],
-      }),
-      signal: AbortSignal.timeout(15_000),
+    const result = await engineComplete(headers, {
+      purpose: "deadline_extract",
+      tier: "utility",
+      system: SYSTEM_PROMPT,
+      prompt: `Text:\n${truncated}`,
+      json: true,
+      maxTokens: 800,
+      timeoutMs: 15_000,
     });
-
-    if (!res.ok) {
-      console.error(`[llm-deadline-extract] HTTP ${res.status} ${res.statusText}`);
-      return [];
-    }
-
-    const data = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const content = data.choices?.[0]?.message?.content?.trim();
+    const content = result?.text?.trim();
     if (!content) return [];
-
     // Parse JSON (handle both array and {deadlines: [...]} formats)
-    let parsed: LLMExtractedDeadline[];
-    try {
-      const json = JSON.parse(content);
-      parsed = Array.isArray(json) ? json : Array.isArray(json.deadlines) ? json.deadlines : [];
-    } catch {
+    const json = parseJsonObject<unknown>(content);
+    if (json === null) {
       console.error("[llm-deadline-extract] Failed to parse LLM response as JSON");
       return [];
     }
-
+    const parsed: LLMExtractedDeadline[] = Array.isArray(json)
+      ? (json as LLMExtractedDeadline[])
+      : Array.isArray((json as { deadlines?: unknown }).deadlines)
+        ? (json as { deadlines: LLMExtractedDeadline[] }).deadlines
+        : [];
     // Convert LLM results to DetectedDeadline with frist-engine enrichment
     return parsed.map((item): DetectedDeadline => {
       const dd: DetectedDeadline = {
@@ -211,6 +187,7 @@ export async function extractDeadlinesWithLLM(
 export async function hybridDeadlineDetection(
   text: string,
   regexDetected: DetectedDeadline[],
+  headers?: Record<string, string>,
   opts?: { ferialsache?: boolean; vorfristTage?: number }
 ): Promise<DetectedDeadline[]> {
   const highConfidenceCount = regexDetected.filter((d) => d.confidence === "high").length;
@@ -220,7 +197,7 @@ export async function hybridDeadlineDetection(
     return regexDetected;
   }
 
-  const llmDetected = await extractDeadlinesWithLLM(text, opts);
+  const llmDetected = await extractDeadlinesWithLLM(text, { ...opts, headers });
   if (llmDetected.length === 0) return regexDetected;
 
   // Deduplicate: skip LLM results whose snippet overlaps >60% with an existing regex result

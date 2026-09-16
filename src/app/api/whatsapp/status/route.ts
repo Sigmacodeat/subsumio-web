@@ -1,3 +1,4 @@
+import { isEngineLLMAvailable } from "@/lib/engine-llm";
 import { loadAllowedSenders } from "@/lib/whatsapp/verify";
 import { createHandler } from "@/lib/api-handler";
 import { getWhatsAppIdentityStore } from "@/lib/whatsapp/identity-store";
@@ -28,7 +29,7 @@ export const GET = createHandler(
       mediaStorageProvider: "local",
       mediaStorageDir: process.env.WHATSAPP_MEDIA_STORAGE_DIR || ".data/whatsapp-media",
       mediaMaxBytes: Number(process.env.WHATSAPP_MEDIA_MAX_BYTES || 25 * 1024 * 1024),
-      transcriptionEnabled: Boolean(process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY_FALLBACK),
+      transcriptionEnabled: isEngineLLMAvailable(),
       transcriptionModel: process.env.WHATSAPP_TRANSCRIPTION_MODEL || "whisper-1",
       transcriptionLanguage: process.env.WHATSAPP_TRANSCRIPTION_LANGUAGE || "de",
       dedupProvider: Boolean(process.env.AUTH_DB_URL) ? "postgres" : "memory",

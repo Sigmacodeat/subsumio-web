@@ -103,7 +103,10 @@ export const POST = createHandler(
         }> = [];
 
         if (isLLMExtractionAvailable()) {
-          const llmResults = await extractMemoriesWithLLM(message, { caseSlug });
+          const llmResults = await extractMemoriesWithLLM(message, {
+            caseSlug,
+            headers: ctx.headers,
+          });
           extracted = llmResults.map((r) => ({
             type: r.type,
             key: r.key,

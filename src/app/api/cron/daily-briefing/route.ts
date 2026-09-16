@@ -22,6 +22,8 @@ import {
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { sendMail, isMailConfigured } from "@/lib/mail";
 import { env } from "@/lib/env";
+import { engineComplete, isEngineLLMAvailable } from "@/lib/engine-llm";
+import { engineHeadersForBrain } from "@/lib/engine";
 import type { QuietHours } from "@/lib/whatsapp/outbound-gate";
 
 // One OpenRouter LLM call to sharpen the "Empfehlungen für heute" section.
@@ -29,10 +31,15 @@ import type { QuietHours } from "@/lib/whatsapp/outbound-gate";
 // Cost: ~$0.001/day. Falls back silently to deterministic recommendations on any error.
 async function enrichRecommendationsWithAI(
   baseText: string,
-  context: { deadlineCount: number; approvalCount: number; docCount: number; activityCount: number }
+  context: {
+    deadlineCount: number;
+    approvalCount: number;
+    docCount: number;
+    activityCount: number;
+  },
+  brainId: string
 ): Promise<string> {
-  const apiKey = env("OPENROUTER_API_KEY") || env("OPENROUTER_API_KEY_FALLBACK");
-  if (!apiKey) return baseText;
+  if (!isEngineLLMAvailable()) return baseText;
 
   const systemPrompt = `Du bist ein erfahrener Kanzleiassistent. Gib 3-5 präzise, priorisierte Handlungsempfehlungen für den heutigen Arbeitstag auf Basis der strukturierten Kanzleidaten. Deutsch, kurz, actionable. Keine Wiederholung von Fakten die im Briefing schon stehen.`;
   const userPrompt = `Kanzlei-Daten heute:
@@ -47,28 +54,15 @@ ${baseText.split("🎯 Empfehlungen für heute:")[1]?.split("\n\n")[0] ?? "–"}
 Verbessere die Empfehlungen: priorisiere klarer, erkenne Muster (z.B. viele Fristen + keine Fortschritte = Kapazitätsproblem), formuliere konkrete nächste Schritte.`;
 
   try {
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-        "HTTP-Referer": "https://subsum.io",
-        "X-Title": "Subsumio",
-      },
-      body: JSON.stringify({
-        model: "deepseek/deepseek-chat",
-        max_tokens: 300,
-        temperature: 0.3,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-      }),
-      signal: AbortSignal.timeout(15_000),
+    const result = await engineComplete(engineHeadersForBrain(brainId), {
+      purpose: "whatsapp_briefing",
+      tier: "utility",
+      system: systemPrompt,
+      prompt: userPrompt,
+      maxTokens: 300,
+      timeoutMs: 15_000,
     });
-    if (!res.ok) return baseText;
-    const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    const improved = data.choices?.[0]?.message?.content?.trim();
+    const improved = result?.text?.trim();
     if (!improved) return baseText;
     // Replace the recommendations block in the existing text
     const marker = "🎯 Empfehlungen für heute:";
@@ -230,12 +224,16 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       }
 
       // Optional: one GPT-4o-mini call to sharpen recommendations (~$0.001, silent fallback)
-      const text = await enrichRecommendationsWithAI(baseText, {
-        deadlineCount: cases.reduce((n, c) => n + c.deadlines.length, 0),
-        approvalCount: approvals.length,
-        docCount: newDocuments.length,
-        activityCount: caseActivity.length,
-      });
+      const text = await enrichRecommendationsWithAI(
+        baseText,
+        {
+          deadlineCount: cases.reduce((n, c) => n + c.deadlines.length, 0),
+          approvalCount: approvals.length,
+          docCount: newDocuments.length,
+          activityCount: caseActivity.length,
+        },
+        sender.brainId
+      );
 
       const result = await sendProactiveMessage({
         to: sender.phone,

@@ -9,8 +9,9 @@
  * and logs a warning — the audio file is still stored in the vault.
  */
 
-import { withRetry, externalFetchTimeout } from "@/lib/retry";
 import { logger } from "@/lib/logger";
+import { engineTranscribe, isEngineLLMAvailable } from "@/lib/engine-llm";
+import { engineHeadersForBrain } from "@/lib/engine";
 import type { StoredWhatsAppMedia } from "./media";
 
 const log = logger("whatsapp/transcribe");
@@ -30,84 +31,36 @@ interface TranscriptionResult {
  * and send it to Whisper.
  */
 export async function transcribeVoiceMessage(
-  media: StoredWhatsAppMedia
+  media: StoredWhatsAppMedia,
+  brainId?: string
 ): Promise<TranscriptionResult> {
-  const orKey = process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY_FALLBACK;
-
-  if (!orKey) {
-    log.warn("OPENROUTER_API_KEY not configured — voice transcription skipped");
-    return {
-      text: "",
-      provider: "none",
-    };
+  if (!brainId || !isEngineLLMAvailable()) {
+    log.warn("engine not configured — voice transcription skipped");
+    return { text: "", provider: "none" };
   }
-
   // Fetch the stored audio file
   let audioBytes: Buffer;
   try {
-    // Local file — read from disk
     const { readFile } = await import("node:fs/promises");
     audioBytes = await readFile(media.storagePath);
   } catch (err) {
     log.error("failed to read audio file", {
       error: err instanceof Error ? err.message : String(err),
     });
-    return {
-      text: "",
-      provider: "none",
-    };
+    return { text: "", provider: "none" };
   }
-
-  // Send to OpenAI Whisper API
-  try {
-    const formData = new FormData();
-    const audioBlob = new Blob([new Uint8Array(audioBytes)], {
-      type: media.mimeType || "audio/ogg",
-    });
-    formData.append("file", audioBlob, media.filename || "voice-message.ogg");
-    formData.append("model", process.env.WHATSAPP_TRANSCRIPTION_MODEL || "whisper-1");
-    formData.append("language", process.env.WHATSAPP_TRANSCRIPTION_LANGUAGE || "de");
-
-    const res = await withRetry(() =>
-      fetch("https://openrouter.ai/api/v1/audio/transcriptions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${orKey}`,
-          "HTTP-Referer": "https://subsum.io",
-          "X-Title": "Subsumio",
-        },
-        body: formData,
-        signal: externalFetchTimeout(60_000),
-      })
-    );
-
-    if (!res.ok) {
-      const error = await res.text().catch(() => "");
-      log.error("Whisper API error", { error: error || `HTTP ${res.status}` });
-      return {
-        text: "",
-        provider: "none",
-      };
-    }
-
-    const data = (await res.json().catch(() => ({}))) as {
-      text?: string;
-      language?: string;
-      duration?: number;
-    };
-    return {
-      text: data.text?.trim() ?? "",
-      language: data.language,
-      durationSeconds: data.duration,
-      provider: "openrouter-whisper",
-    };
-  } catch (err) {
-    log.error("Whisper request failed", {
-      error: err instanceof Error ? err.message : String(err),
-    });
-    return {
-      text: "",
-      provider: "none",
-    };
-  }
+  const result = await engineTranscribe(engineHeadersForBrain(brainId), {
+    bytes: new Uint8Array(audioBytes),
+    mimeType: media.mimeType || "audio/ogg",
+    filename: media.filename || "voice-message.ogg",
+    language: process.env.WHATSAPP_TRANSCRIPTION_LANGUAGE || "de",
+    model: process.env.WHATSAPP_TRANSCRIPTION_MODEL || "whisper-1",
+  });
+  if (!result) return { text: "", provider: "none" };
+  return {
+    text: result.text?.trim() ?? "",
+    language: result.language,
+    durationSeconds: result.duration_seconds,
+    provider: "openrouter-whisper",
+  };
 }

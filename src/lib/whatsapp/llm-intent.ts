@@ -17,10 +17,9 @@
  * All dates are pre-expanded by relative-date.ts before sending to the LLM.
  */
 
-import { env } from "@/lib/env";
+import { engineComplete, isEngineLLMAvailable, parseJsonObject } from "@/lib/engine-llm";
+import { engineHeadersForBrain } from "@/lib/engine";
 import type { ParsedIntent } from "@/lib/legal-chat/actions";
-
-const DEFAULT_MODEL = "deepseek/deepseek-chat";
 
 const SYSTEM_PROMPT = `Du bist ein Intent-Parser für einen Legal AI WhatsApp-Assistenten (Subsumio).
 
@@ -81,7 +80,7 @@ interface LLMIntentResponse {
  * Check if the LLM intent parser is available (requires OpenRouter API key).
  */
 export function isLLMIntentParserAvailable(): boolean {
-  return !!(env("OPENROUTER_API_KEY") || env("OPENROUTER_API_KEY_FALLBACK"));
+  return isEngineLLMAvailable();
 }
 
 /**
@@ -90,64 +89,29 @@ export function isLLMIntentParserAvailable(): boolean {
  * @param text The pre-processed message text (relative dates already expanded)
  * @returns A valid ParsedIntent, or null if the LLM is unavailable or fails
  */
-export async function parseIntentWithLLM(text: string): Promise<ParsedIntent | null> {
-  const apiKey = env("OPENROUTER_API_KEY") || env("OPENROUTER_API_KEY_FALLBACK");
-  if (!apiKey) return null;
-
+export async function parseIntentWithLLM(
+  text: string,
+  brainId?: string
+): Promise<ParsedIntent | null> {
+  if (!brainId || !isEngineLLMAvailable()) return null;
   const truncatedText = text.slice(0, 1000);
-
   try {
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-        "HTTP-Referer": "https://subsum.io",
-        "X-Title": "Subsumio",
-      },
-      body: JSON.stringify({
-        model: DEFAULT_MODEL,
-        max_tokens: 300,
-        temperature: 0.1,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: truncatedText },
-        ],
-      }),
-      signal: AbortSignal.timeout(12_000),
+    const result = await engineComplete(engineHeadersForBrain(brainId), {
+      purpose: "whatsapp_intent",
+      tier: "utility",
+      system: SYSTEM_PROMPT,
+      prompt: truncatedText,
+      json: true,
+      maxTokens: 300,
+      timeoutMs: 12_000,
     });
-
-    if (!res.ok) {
-      const errorText = await res.text().catch(() => "");
-      console.warn("[llm-intent] API error:", res.status, errorText.slice(0, 200));
+    const content = result?.text?.trim();
+    if (!content) return null;
+    const parsed = parseJsonObject<LLMIntentResponse>(content);
+    if (!parsed) {
+      console.warn("[llm-intent] no JSON in response:", content.slice(0, 200));
       return null;
     }
-
-    const data = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const content = data.choices?.[0]?.message?.content?.trim();
-    if (!content) return null;
-
-    let parsed: LLMIntentResponse;
-    try {
-      parsed = JSON.parse(content);
-    } catch {
-      // Try to extract JSON from the response
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        console.warn("[llm-intent] no JSON in response:", content.slice(0, 200));
-        return null;
-      }
-      try {
-        parsed = JSON.parse(jsonMatch[0]);
-      } catch {
-        console.warn("[llm-intent] JSON parse failed:", content.slice(0, 200));
-        return null;
-      }
-    }
-
     return validateAndCoerce(parsed, text);
   } catch (err) {
     console.warn("[llm-intent] request failed:", err instanceof Error ? err.message : String(err));

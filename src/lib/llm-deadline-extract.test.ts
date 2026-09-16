@@ -5,59 +5,61 @@ import {
 } from "@/lib/llm-deadline-extract";
 import { detectDeadlines, enrichAllDeadlines } from "@/lib/ai-deadline-detect";
 
-// Mock fetch and env
-const mockFetch = vi.fn();
-vi.stubGlobal("fetch", mockFetch);
+// The LLM fallback goes through the engine gateway client; mock that, keep
+// the JSON parser real.
+vi.mock("@/lib/engine-llm", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/engine-llm")>()),
+  engineComplete: vi.fn(),
+  isEngineLLMAvailable: vi.fn(() => true),
+}));
+import { engineComplete, isEngineLLMAvailable } from "@/lib/engine-llm";
 
-const originalEnv = { ...process.env };
+const mockComplete = vi.mocked(engineComplete);
+const mockAvail = vi.mocked(isEngineLLMAvailable);
+const HEADERS = { Authorization: "Bearer test", "x-subsumio-source": "brain_test" };
+const stubResult = (text: string) => ({
+  text,
+  model: "stub",
+  provider: "stub",
+  stop_reason: "end",
+  usage: { input_tokens: 1, output_tokens: 1 },
+  latency_ms: 1,
+});
 
 beforeEach(() => {
-  vi.resetModules();
-  mockFetch.mockReset();
-  process.env = { ...originalEnv };
+  mockComplete.mockReset();
+  mockAvail.mockReset();
+  mockAvail.mockReturnValue(true);
 });
 
 afterEach(() => {
-  process.env = { ...originalEnv };
+  mockComplete.mockReset();
 });
 
 describe("llm-deadline-extract", () => {
   describe("isLLMDeadlineExtractionAvailable", () => {
-    test("returns false without API key", () => {
-      delete process.env.OPENROUTER_API_KEY;
-      delete process.env.OPENROUTER_API_KEY_FALLBACK;
+    test("mirrors the engine gateway availability", () => {
+      mockAvail.mockReturnValue(false);
       expect(isLLMDeadlineExtractionAvailable()).toBe(false);
-    });
-
-    test("returns true with OPENROUTER_API_KEY", () => {
-      process.env.OPENROUTER_API_KEY = "sk-test-key";
-      expect(isLLMDeadlineExtractionAvailable()).toBe(true);
-    });
-
-    test("returns true with OPENROUTER_API_KEY_FALLBACK", () => {
-      delete process.env.OPENROUTER_API_KEY;
-      process.env.OPENROUTER_API_KEY_FALLBACK = "sk-fallback-key";
+      mockAvail.mockReturnValue(true);
       expect(isLLMDeadlineExtractionAvailable()).toBe(true);
     });
   });
 
   describe("hybridDeadlineDetection", () => {
-    test("returns regex-only results when LLM key not available", async () => {
-      delete process.env.OPENROUTER_API_KEY;
-      delete process.env.OPENROUTER_API_KEY_FALLBACK;
+    test("returns regex-only results when the engine LLM is not available", async () => {
+      mockAvail.mockReturnValue(false);
 
       const text = "Berufungsfrist. Zugestellt am 15.03.2024.";
       const regexDetected = enrichAllDeadlines(detectDeadlines(text), text);
-      const result = await hybridDeadlineDetection(text, regexDetected);
+      const result = await hybridDeadlineDetection(text, regexDetected, HEADERS);
 
       // Should not call LLM, should return regex results as-is
-      expect(mockFetch).not.toHaveBeenCalled();
+      expect(mockComplete).not.toHaveBeenCalled();
       expect(result).toEqual(regexDetected);
     });
 
     test("returns regex-only results when regex finds enough high-confidence deadlines", async () => {
-      process.env.OPENROUTER_API_KEY = "sk-test-key";
-
       // Text with clear Berufung + Zustellungsdatum → regex finds high-confidence
       // Keep under 500 chars so LLM threshold (highConf < 3 && text > 500) is not triggered
       const text =
@@ -66,93 +68,75 @@ describe("llm-deadline-extract", () => {
       const highConf = regexDetected.filter((d) => d.confidence === "high");
       expect(highConf.length).toBeGreaterThanOrEqual(2);
 
-      const result = await hybridDeadlineDetection(text, regexDetected);
-      expect(mockFetch).not.toHaveBeenCalled();
+      const result = await hybridDeadlineDetection(text, regexDetected, HEADERS);
+      expect(mockComplete).not.toHaveBeenCalled();
       expect(result).toEqual(regexDetected);
     });
 
     test("calls LLM when regex finds 0 high-confidence deadlines", async () => {
-      process.env.OPENROUTER_API_KEY = "sk-test-key";
-
       // Complex text without standard regex patterns
       const text =
         "Der Kläger hat binnen der sich aus § 401 Abs 1 ZPO ergebenden Frist zu reagieren. Die Parteien werden auf die Rechtsmittelbelehrung hingewiesen.";
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          choices: [
+      mockComplete.mockResolvedValueOnce(
+        stubResult(
+          JSON.stringify([
             {
-              message: {
-                content: JSON.stringify([
-                  {
-                    frist_key: "berufung",
-                    frist_beschreibung: "Berufungsfrist",
-                    zustellungsdatum: "2024-06-01",
-                    absolutes_datum: null,
-                    tage_relativ: null,
-                    rechtsgrundlage: "§ 464 Abs 1 ZPO",
-                    snippet: "binnen der sich aus § 401 Abs 1 ZPO ergebenden Frist",
-                    confidence: "medium",
-                  },
-                ]),
-              },
+              frist_key: "berufung",
+              frist_beschreibung: "Berufungsfrist",
+              zustellungsdatum: "2024-06-01",
+              absolutes_datum: null,
+              tage_relativ: null,
+              rechtsgrundlage: "§ 464 Abs 1 ZPO",
+              snippet: "binnen der sich aus § 401 Abs 1 ZPO ergebenden Frist",
+              confidence: "medium",
             },
-          ],
-        }),
-      });
+          ])
+        )
+      );
 
       const regexDetected = enrichAllDeadlines(detectDeadlines(text), text);
-      const result = await hybridDeadlineDetection(text, regexDetected);
+      const result = await hybridDeadlineDetection(text, regexDetected, HEADERS);
 
-      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(mockComplete).toHaveBeenCalledTimes(1);
       const llmResults = result.filter((d) => d.matchedRule === "llm_fallback");
       expect(llmResults.length).toBeGreaterThan(0);
     });
 
     test("deduplicates LLM results that overlap with regex results", async () => {
-      process.env.OPENROUTER_API_KEY = "sk-test-key";
-
       const text = "Berufungsfrist. Zugestellt am 15.03.2024.";
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          choices: [
+      mockComplete.mockResolvedValueOnce(
+        stubResult(
+          JSON.stringify([
             {
-              message: {
-                content: JSON.stringify([
-                  {
-                    frist_key: "berufung",
-                    frist_beschreibung: "Berufungsfrist",
-                    zustellungsdatum: "2024-03-15",
-                    absolutes_datum: null,
-                    tage_relativ: null,
-                    rechtsgrundlage: "§ 464 Abs 1 ZPO",
-                    snippet: "Berufungsfrist. Zugestellt am 15.03.2024.",
-                    confidence: "high",
-                  },
-                  {
-                    frist_key: "verjaehrung_kurz",
-                    frist_beschreibung: "Verjährungsfrist 3 Jahre",
-                    zustellungsdatum: null,
-                    absolutes_datum: "2024-01-15",
-                    tage_relativ: null,
-                    rechtsgrundlage: "§ 1489 ABGB",
-                    snippet: "Verjährung 3 Jahre ab Kenntnis",
-                    confidence: "low",
-                  },
-                ]),
-              },
+              frist_key: "berufung",
+              frist_beschreibung: "Berufungsfrist",
+              zustellungsdatum: "2024-03-15",
+              absolutes_datum: null,
+              tage_relativ: null,
+              rechtsgrundlage: "§ 464 Abs 1 ZPO",
+              snippet: "Berufungsfrist. Zugestellt am 15.03.2024.",
+              confidence: "high",
             },
-          ],
-        }),
-      });
+            {
+              frist_key: "verjaehrung_kurz",
+              frist_beschreibung: "Verjährungsfrist 3 Jahre",
+              zustellungsdatum: null,
+              absolutes_datum: "2024-01-15",
+              tage_relativ: null,
+              rechtsgrundlage: "§ 1489 ABGB",
+              snippet: "Verjährung 3 Jahre ab Kenntnis",
+              confidence: "low",
+            },
+          ])
+        )
+      );
 
       const regexDetected = enrichAllDeadlines(detectDeadlines(text), text);
       // Force LLM call by making text long and high-confidence count low
       const longText = text + " ".repeat(600);
-      const result = await hybridDeadlineDetection(longText, regexDetected);
+      const result = await hybridDeadlineDetection(longText, regexDetected, HEADERS);
 
       // The Berufung should be deduplicated (same template + zustellungsdatum)
       const _llmResults = result.filter((d) => d.matchedRule === "llm_fallback");
@@ -162,100 +146,58 @@ describe("llm-deadline-extract", () => {
     });
 
     test("handles LLM API error gracefully", async () => {
-      process.env.OPENROUTER_API_KEY = "sk-test-key";
-
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 429,
-        statusText: "Rate Limited",
-        json: async () => ({}),
-      });
+      mockComplete.mockResolvedValueOnce(null);
 
       const text = "Ein komplexer Text ohne klare Regex-Muster.";
       const regexDetected = enrichAllDeadlines(detectDeadlines(text), text);
-      const result = await hybridDeadlineDetection(text, regexDetected);
+      const result = await hybridDeadlineDetection(text, regexDetected, HEADERS);
 
       // Should return regex results, not throw
       expect(result).toEqual(regexDetected);
     });
 
     test("handles LLM returning invalid JSON gracefully", async () => {
-      process.env.OPENROUTER_API_KEY = "sk-test-key";
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          choices: [
-            {
-              message: {
-                content: "This is not valid JSON",
-              },
-            },
-          ],
-        }),
-      });
+      mockComplete.mockResolvedValueOnce(stubResult("This is not valid JSON"));
 
       const text = "Ein komplexer Text ohne klare Regex-Muster.";
       const regexDetected = enrichAllDeadlines(detectDeadlines(text), text);
-      const result = await hybridDeadlineDetection(text, regexDetected);
+      const result = await hybridDeadlineDetection(text, regexDetected, HEADERS);
 
       expect(result).toEqual(regexDetected);
     });
 
     test("handles LLM returning empty array", async () => {
-      process.env.OPENROUTER_API_KEY = "sk-test-key";
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          choices: [
-            {
-              message: {
-                content: "[]",
-              },
-            },
-          ],
-        }),
-      });
+      mockComplete.mockResolvedValueOnce(stubResult("[]"));
 
       const text = "Ein komplexer Text ohne klare Regex-Muster.";
       const regexDetected = enrichAllDeadlines(detectDeadlines(text), text);
-      const result = await hybridDeadlineDetection(text, regexDetected);
+      const result = await hybridDeadlineDetection(text, regexDetected, HEADERS);
 
       expect(result).toEqual(regexDetected);
     });
 
     test("LLM result with frist_key gets frist-engine enrichment", async () => {
-      process.env.OPENROUTER_API_KEY = "sk-test-key";
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          choices: [
+      mockComplete.mockResolvedValueOnce(
+        stubResult(
+          JSON.stringify([
             {
-              message: {
-                content: JSON.stringify([
-                  {
-                    frist_key: "berufung",
-                    frist_beschreibung: "Berufungsfrist",
-                    zustellungsdatum: "2024-03-15",
-                    absolutes_datum: null,
-                    tage_relativ: null,
-                    rechtsgrundlage: "§ 464 Abs 1 ZPO",
-                    snippet: "Rechtsmittelbelehrung weist auf vierwöchige Frist hin.",
-                    confidence: "medium",
-                  },
-                ]),
-              },
+              frist_key: "berufung",
+              frist_beschreibung: "Berufungsfrist",
+              zustellungsdatum: "2024-03-15",
+              absolutes_datum: null,
+              tage_relativ: null,
+              rechtsgrundlage: "§ 464 Abs 1 ZPO",
+              snippet: "Rechtsmittelbelehrung weist auf vierwöchige Frist hin.",
+              confidence: "medium",
             },
-          ],
-        }),
-      });
+          ])
+        )
+      );
 
       const text =
         "Rechtsmittelbelehrung weist auf vierwöchige Frist hin. Zustellung erfolgte am 15.03.2024.";
       const regexDetected = enrichAllDeadlines(detectDeadlines(text), text);
-      const result = await hybridDeadlineDetection(text, regexDetected);
+      const result = await hybridDeadlineDetection(text, regexDetected, HEADERS);
 
       const llmResult = result.find((d) => d.matchedRule === "llm_fallback");
       expect(llmResult).toBeDefined();

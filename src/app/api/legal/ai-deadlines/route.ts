@@ -38,7 +38,7 @@ export const POST = createHandler(
     const enrichedRegex = enrichAllDeadlines(rawDetected, safeText);
 
     // LLM Fallback: wenn Regex keine/wenige Fristen findet, rufe LLM an
-    const detected = await hybridDeadlineDetection(safeText, enrichedRegex);
+    const detected = await hybridDeadlineDetection(safeText, enrichedRegex, ctx.headers);
     const llmUsed = detected.some((d) => d.matchedRule === "llm_fallback");
 
     const createdSlugs: string[] = [];

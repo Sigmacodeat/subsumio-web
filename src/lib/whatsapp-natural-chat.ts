@@ -369,7 +369,7 @@ export async function naturalWhatsAppReply(ctx: NaturalChatContext): Promise<str
         const followUpIntent = parseIntent(expandedText);
         const llmIntent =
           followUpIntent.kind === "free_text" && isLLMIntentParserAvailable()
-            ? await parseIntentWithLLM(expandedText).catch(() => null)
+            ? await parseIntentWithLLM(expandedText, ctx.sender.brainId).catch(() => null)
             : null;
         const effectiveIntent = llmIntent ?? followUpIntent;
 
@@ -404,7 +404,9 @@ export async function naturalWhatsAppReply(ctx: NaturalChatContext): Promise<str
 
     // Step 4: If regex returns free_text, try LLM-based intent parsing
     if (structuredIntent.kind === "free_text" && isLLMIntentParserAvailable()) {
-      const llmIntent = await parseIntentWithLLM(expandedText).catch(() => null);
+      const llmIntent = await parseIntentWithLLM(expandedText, ctx.sender.brainId).catch(
+        () => null
+      );
       if (llmIntent && llmIntent.kind !== "free_text") {
         structuredIntent = llmIntent;
       }
