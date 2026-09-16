@@ -6,6 +6,7 @@
  */
 
 import { z } from "zod";
+import { uiLanguageSchema } from "@/lib/api-validation";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import {
@@ -21,7 +22,7 @@ const generateSchema = z.object({
   jurisdiction: z.enum(["at", "de", "ch"]),
   case_slug: z.string().min(1),
   legal_area: z.string().max(100).optional(),
-  language: z.enum(["de", "en"]).default("de"),
+  language: uiLanguageSchema.default("de"),
   depth: z.enum(["brief", "standard", "comprehensive"]).default("standard"),
   title: z.string().optional(),
 });

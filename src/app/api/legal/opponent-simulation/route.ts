@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { uiLanguageSchema } from "@/lib/api-validation";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { createHandler } from "@/lib/api-handler";
 
@@ -17,7 +18,7 @@ const opponentSchema = z.object({
     )
     .default([]),
   jurisdiction: z.enum(["at", "de", "ch", "all"]).optional().default("all"),
-  language: z.enum(["de", "en"]).optional().default("de"),
+  language: uiLanguageSchema.optional().default("de"),
 });
 
 interface CaseData {

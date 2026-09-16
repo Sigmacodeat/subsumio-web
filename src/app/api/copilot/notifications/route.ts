@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { uiLanguageSchema } from "@/lib/api-validation";
 import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import {
@@ -10,7 +11,7 @@ import {
 const notifPostSchema = z.object({
   action: z.enum(["dismiss", "refresh"]).optional(),
   notificationId: z.string().max(200).optional(),
-  lang: z.enum(["de", "en"]).optional(),
+  lang: uiLanguageSchema.optional(),
 });
 
 export const dynamic = "force-dynamic";

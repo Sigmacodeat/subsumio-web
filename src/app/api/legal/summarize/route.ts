@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { uiLanguageSchema } from "@/lib/api-validation";
 import { createEngineProxy } from "@/lib/api-handler";
 
 export const maxDuration = 120;
@@ -10,7 +11,7 @@ const summarizeSchema = z
     type: z.enum(["document", "case", "judgement", "contract", "general"]).default("general"),
     depth: z.enum(["brief", "standard", "detailed"]).default("standard"),
     focus: z.string().max(200).optional(),
-    language: z.enum(["de", "en"]).default("de"),
+    language: uiLanguageSchema.default("de"),
   })
   .refine((data) => data.document_slug || (data.text && data.text.trim()), {
     message: "document_slug_or_text_required",

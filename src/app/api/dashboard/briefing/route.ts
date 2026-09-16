@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { uiLanguageSchema } from "@/lib/api-validation";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { DEFAULT_TYPES, fetchPagesByTypes } from "@/lib/cockpit";
@@ -7,7 +8,7 @@ import type { BrainPage } from "@/lib/types";
 export const maxDuration = 60;
 
 const briefingSchema = z.object({
-  language: z.enum(["de", "en"]).optional().default("de"),
+  language: uiLanguageSchema.optional().default("de"),
 });
 
 interface BriefingData {

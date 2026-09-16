@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { uiLanguageSchema } from "@/lib/api-validation";
 import { createEngineProxy } from "@/lib/api-handler";
 
 export const maxDuration = 300;
@@ -9,7 +10,7 @@ const memoSchema = z.object({
   jurisdiction: z.enum(["at", "de", "ch"]),
   legal_area: z.string().max(100).optional(),
   case_slug: z.string().optional(),
-  language: z.enum(["de", "en"]).default("de"),
+  language: uiLanguageSchema.default("de"),
   depth: z.enum(["brief", "standard", "comprehensive"]).default("standard"),
 });
 

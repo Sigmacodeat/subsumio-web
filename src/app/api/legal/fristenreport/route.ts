@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { uiLanguageSchema } from "@/lib/api-validation";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, recordQuota, recordCreditConsumption } from "@/lib/api-handler";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
@@ -10,7 +11,7 @@ export const maxDuration = 300;
 const fristenreportSchema = z.object({
   case_slug: z.string().min(1, "case_slug_required"),
   jurisdiction: z.enum(["at", "de", "ch"]).default("at"),
-  language: z.enum(["de", "en"]).default("de"),
+  language: uiLanguageSchema.default("de"),
   include_overdue: z.boolean().default(true),
   include_upcoming_days: z.number().min(0).max(365).default(30),
 });

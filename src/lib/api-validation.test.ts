@@ -292,3 +292,14 @@ describe("uploadSchema", () => {
     expect(uploadSchema.safeParse({ filename: "x".repeat(256) }).success).toBe(false);
   });
 });
+
+describe("uiLanguageSchema", async () => {
+  const { uiLanguageSchema } = await import("./api-validation");
+  it("normalises the dashboard's regional variants to de and keeps en", () => {
+    expect(uiLanguageSchema.parse("at")).toBe("de");
+    expect(uiLanguageSchema.parse("ch")).toBe("de");
+    expect(uiLanguageSchema.parse("de")).toBe("de");
+    expect(uiLanguageSchema.parse("en")).toBe("en");
+    expect(uiLanguageSchema.safeParse("fr").success).toBe(false);
+  });
+});

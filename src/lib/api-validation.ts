@@ -111,3 +111,13 @@ export const uploadSchema = z.object({
   filename: z.string().min(1).max(255),
   contentType: z.string().max(100).optional(),
 });
+
+/**
+ * Language of the calling UI. The dashboard's useLang() yields "de" | "en" |
+ * "at" | "ch" (html lang de-AT → "at"); AI routes only distinguish German from
+ * English, so the regional variants normalise to "de". Routes that accepted
+ * z.enum(["de", "en"]) answered 400 for every Austrian user.
+ */
+export const uiLanguageSchema = z
+  .enum(["de", "en", "at", "ch"])
+  .transform((lang): "de" | "en" => (lang === "en" ? "en" : "de"));

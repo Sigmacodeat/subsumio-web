@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { uiLanguageSchema } from "@/lib/api-validation";
 import { ENGINE_URL } from "@/lib/engine";
 import {
   createHandler,
@@ -21,7 +22,7 @@ const contractRedlineSchema = z.object({
   contract_type: z.string().max(100).optional(),
   jurisdiction: z.enum(["at", "de", "ch", "all"]).default("all"),
   perspective: z.enum(["client", "counterparty", "neutral"]).default("client"),
-  language: z.enum(["de", "en"]).default("de"),
+  language: uiLanguageSchema.default("de"),
   case_slug: z.string().optional(),
   document_slug: z.string().optional(),
 });

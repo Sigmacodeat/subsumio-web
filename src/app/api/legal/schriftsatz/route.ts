@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { uiLanguageSchema } from "@/lib/api-validation";
 import { createEngineProxy } from "@/lib/api-handler";
 
 export const maxDuration = 300;
@@ -21,7 +22,7 @@ const schriftsatzSchema = z.object({
   file_number: z.string().max(200).optional(),
   instructions: z.string().min(1, "instructions_required").max(10_000, "instructions_too_long"),
   jurisdiction: z.enum(["at", "de", "ch"]),
-  language: z.enum(["de", "en"]).default("de"),
+  language: uiLanguageSchema.default("de"),
   template_slug: z.string().max(200).optional(),
 });
 
