@@ -110,3 +110,19 @@ describe("renderMarkdown XSS prevention", () => {
     expect(result).not.toContain("<a ");
   });
 });
+
+describe("markdownToPlainText", async () => {
+  const { markdownToPlainText } = await import("./markdown");
+  it("drops headers, emphasis, lists and links but keeps the prose", () => {
+    const md =
+      "## 3-Satz-Briefing\n### Fristen\n1. **Demo-Akte** — siehe [Akte](/dashboard/cases/x).\n- *zwei* offene Punkte";
+    expect(markdownToPlainText(md)).toBe(
+      "3-Satz-Briefing Fristen Demo-Akte — siehe Akte. zwei offene Punkte"
+    );
+  });
+  it("is a no-op for plain prose", () => {
+    expect(markdownToPlainText("Heute sind zwei Fristen fällig.")).toBe(
+      "Heute sind zwei Fristen fällig."
+    );
+  });
+});

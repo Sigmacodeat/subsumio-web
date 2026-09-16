@@ -2839,7 +2839,7 @@ export const D = {
   },
   "onboarding.step_profile": { de: "Kanzlei-Grunddaten", en: "Firm basics" },
   "onboarding.step_profile_desc": {
-    de: "Diese Angaben befuellen Cockpit, Briefkopf, Rechnung und erste Workflows.",
+    de: "Diese Angaben befüllen Cockpit, Briefkopf, Rechnung und erste Workflows.",
     en: "These details power the cockpit, letterhead, billing, and first workflows.",
   },
   "onboarding.profile_firm": { de: "Kanzleiname", en: "Firm name" },
@@ -2893,8 +2893,8 @@ export const D = {
   },
   "onboarding.whatsapp_phone": { de: "WhatsApp-Nummer", en: "WhatsApp number" },
   "onboarding.whatsapp_phone_hint": {
-    de: "Format: +49 123 4567890",
-    en: "Format: +49 123 4567890",
+    de: "Format: +43 1 2345678",
+    en: "Format: +43 1 2345678",
   },
   "onboarding.whatsapp_skip": {
     de: "Später einrichten",

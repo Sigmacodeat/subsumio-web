@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { markdownToPlainText } from "@/lib/markdown";
 import { Sparkles, RefreshCw, Clock, Mail, FileCheck, ArrowRight } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 import { csrfFetch } from "@/lib/csrf";
@@ -263,7 +264,7 @@ export function MorningBriefing() {
           </div>
 
           <p className="text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
-            {briefing.narrative}
+            {markdownToPlainText(briefing.narrative)}
           </p>
 
           {!briefing.usedFallback && (

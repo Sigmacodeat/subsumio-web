@@ -74,3 +74,25 @@ export function renderMarkdown(text: string): string {
 
   return out.join("\n");
 }
+
+/**
+ * Reduce markdown to plain prose for surfaces that render a short narrative in
+ * a single paragraph (morning briefing, toast previews). Headers, emphasis,
+ * list markers and links are dropped; paragraph breaks become spaces.
+ */
+export function markdownToPlainText(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+    .replace(/^\s*(?:[-*+]|\d+\.)\s+/gm, "")
+    .replace(/^\s*>\s?/gm, "")
+    .replace(/\*\*\*(.*?)\*\*\*/g, "$1")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1$2")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/\s*\n+\s*/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}

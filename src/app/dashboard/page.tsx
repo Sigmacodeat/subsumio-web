@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useCallback, useEffect } from "react";
+import { firstNameOf } from "@/lib/person-name";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -63,7 +64,7 @@ function useGreeting(name: string | null, lang: Lang): Greeting {
     setHour(new Date().getHours());
   }, []);
   const isFirst = !name;
-  const firstName = name?.split(" ")[0] ?? "";
+  const firstName = firstNameOf(name);
   if (lang === "en") {
     if (hour < 12)
       return {
