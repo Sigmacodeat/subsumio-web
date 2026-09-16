@@ -269,7 +269,7 @@ async function persistNotification(notif: Notification): Promise<void> {
       await pool.query(
         `INSERT INTO subsumio_notifications (id, user_id, brain_id, type, data, read_at, created_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
-         ON CONFLICT (id) DO NOTHING`,
+         ON CONFLICT (id, user_id, brain_id) DO NOTHING`,
         [
           notif.id,
           notif.userId,
@@ -320,7 +320,7 @@ export async function persistNotificationUpsert(notif: Notification): Promise<vo
       await pool.query(
         `INSERT INTO subsumio_notifications (id, user_id, brain_id, type, data, read_at, created_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
-         ON CONFLICT (id) DO UPDATE SET
+         ON CONFLICT (id, user_id, brain_id) DO UPDATE SET
            data = EXCLUDED.data,
            type = EXCLUDED.type
            WHERE subsumio_notifications.read_at IS NULL`,
