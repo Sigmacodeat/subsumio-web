@@ -1494,7 +1494,10 @@ async function tryBuildGatewayClient(
         // existing JSON-parse path produces the graceful degradation answer.
         if (e instanceof AIConfigError) {
           if (opts.explicitModel) throw e;
-          return buildGracefulMessage(modelStr) as unknown as Anthropic.Message;
+          // Carry the real cause (e.g. "Insufficient credits", "key revoked") —
+          // a bare "set anthropic_api_key" hint misled operators whose key was
+          // fine but whose provider balance was empty.
+          return buildGracefulMessage(modelStr, e.message) as unknown as Anthropic.Message;
         }
         throw e;
       }
@@ -1557,7 +1560,10 @@ function mapStopReason(
  * fail on this text, fall through to `LLM_OUTPUT_NOT_JSON`, and surface the
  * sentinel as the answer — matches the legacy graceful-degradation shape.
  */
-function buildGracefulMessage(modelStr: string): {
+function buildGracefulMessage(
+  modelStr: string,
+  cause?: string
+): {
   id: string;
   type: "message";
   role: "assistant";
@@ -1574,7 +1580,9 @@ function buildGracefulMessage(modelStr: string): {
     content: [
       {
         type: "text",
-        text: "(no LLM available — set anthropic_api_key via gbrain config or ANTHROPIC_API_KEY env)",
+        text: cause
+          ? `(no LLM available — ${cause})`
+          : "(no LLM available — set anthropic_api_key via gbrain config or ANTHROPIC_API_KEY env)",
       },
     ],
     usage: { input_tokens: 0, output_tokens: 0 },

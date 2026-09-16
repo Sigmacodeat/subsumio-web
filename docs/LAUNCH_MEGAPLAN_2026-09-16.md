@@ -214,5 +214,5 @@ Offen mit Priorität (siehe Protokoll):
 2. ~~Kontakte aus Akten-Parteien~~ erledigt; offen: Dokumentansicht statt Brain-Seite.
 3. Copy-Reste beA/DE (Kommunikation, Fristen-Statkarte), englische Labels (Freigaben,
    Sicherheit), Sidebar-Links ohne Namen (axe-Lauf), Stundensatz-Plausibilität.
-4. Phase 3: Engine lokal auf echtes Modell (OpenRouter/Anthropic) für die KI-Stationen 4/Strategie.
+4. **Blocker Phase 3:** Engine ist auf OpenRouter/Claude umgestellt, aber Anthropic- und beide OpenRouter-Konten haben kein Guthaben. Guthaben aufladen (OpenRouter reicht, ist der Prod-Provider) — vorher sind Assistent, Strategie, Briefing und Fristen-Erkennung nicht prüfbar.
 5. Phase 2: Playwright-Suite (Mock + Real-Engine) auf dem Prod-Build fahren.

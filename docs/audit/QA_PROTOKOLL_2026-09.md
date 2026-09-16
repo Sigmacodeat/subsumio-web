@@ -78,6 +78,15 @@ behoben (Commit) · ⚠️ offen · ℹ️ Hinweis.
 | Mandantensicht                                            | ✅       | Akte, Beteiligte, Dokumente, Upload, Nachrichten, EN-Umschalter; keine Konsolenfehler.                                                                                                                       |
 | Dokumentsichtbarkeit                                      | ⚠️       | Portal listet das hochgeladene Kündigungsschreiben ohne explizite Freigabe pro Dokument — Produktentscheidung (Freigabe-Flag je Dokument?).                                                                  |
 
+## Station 4 — Assistent mit echtem Modell (Blocker: Provider-Guthaben)
+
+| Prüfpunkt                                  | Ergebnis | Detail                                                                                                                                                                                                                                     |
+| ------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Engine-Modelle auf Claude umgestellt       | ✅       | `models.tier.*`, `models.think`, `models.default` in der Engine-DB-Config auf `openrouter:anthropic/claude-sonnet-4.6` / `claude-haiku-4.5` (Prod-Provider). Engine läuft jetzt aus `server/` (Launch-Config), damit `server/.env` greift. |
+| Anthropic direkt                           | ⛔       | Schlüssel gültig, Konto ohne Guthaben („credit balance too low", HTTP 400).                                                                                                                                                                |
+| OpenRouter (Haupt- und Fallback-Schlüssel) | ⛔       | Beide gültig, beide ohne Guthaben (402 „Insufficient credits"; Verbrauch 475 $ bzw. 9 $). **Blocker für alle KI-Stationen — und für Prod, falls dieselben Schlüssel dort laufen.**                                                         |
+| Fehlermeldung in der App                   | 🔧       | Die Engine lieferte bei Abrechnungsfehlern „(no LLM available — set anthropic_api_key …)" als Antwort mit HTTP 200; jetzt trägt sie die echte Ursache („Insufficient credits …").                                                          |
+
 ## Station 5 — Fristen (aus der Akte)
 
 | Prüfpunkt                                  | Ergebnis | Detail                                                                                                |
