@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { emitDeadlineCreated } from "@/lib/matter-events";
 import { useDialogFetch } from "@/lib/use-dialog-fetch";
 import {
   Dialog,
@@ -210,8 +211,16 @@ export function DeadlineQuickCreateDialog({
   }, [presetCaseSlug]);
 
   useEffect(() => {
-    if (!open) resetForm();
-  }, [open, resetForm]);
+    if (!open) {
+      resetForm();
+      return;
+    }
+    // The dialog is mounted once in the dashboard shell; the matter page hands
+    // its slug over together with open=true (same render). Initial state was
+    // captured at mount, so apply the preset on every open — otherwise the
+    // case selector is hidden AND the deadline is saved without a case.
+    setCaseSlug(presetCaseSlug ?? "");
+  }, [open, presetCaseSlug, resetForm]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -263,6 +272,8 @@ export function DeadlineQuickCreateDialog({
         await enqueueMutation({ type: "createPage", payload: pagePayload });
       }
       addToast({ type: "success", title: t("deadlines.created" as DashboardKey) });
+      // The matter page (header counters + Fristen tab) refetches on this.
+      emitDeadlineCreated(caseSlug || undefined);
       if (createAnother) {
         resetForm();
         setSubmitting(false);

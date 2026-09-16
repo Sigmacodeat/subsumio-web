@@ -16,6 +16,7 @@ import {
   type ReactNode,
 } from "react";
 import { useParams } from "next/navigation";
+import { DEADLINE_CREATED_EVENT, deadlineEventConcerns } from "@/lib/matter-events";
 import { api } from "@/lib/api";
 import { recordMatterVisit } from "@/lib/use-recent-matters";
 import { caseFrontmatter } from "@/lib/legal-types";
@@ -283,7 +284,36 @@ export function MatterDataProvider({ children }: { children: ReactNode }) {
         setMatter(null);
         return;
       }
-      setMatter(parseMatterData(page));
+      const parsed = parseMatterData(page);
+      setMatter(parsed);
+      // Header counters: the frontmatter only knows deadlines embedded in the
+      // case page. Standalone legal_deadline pages (quick-create dialog, AI
+      // detection, Fristenbuch) live elsewhere — the fristen read-model merges
+      // every source, so the header and the Fristen tab agree.
+      try {
+        const { fristen } = await api.legal.fristen({ case: caseSlug });
+        if (fetchId !== fetchIdRef.current) return;
+        const open = fristen.filter((f) => f.status !== "done");
+        const nextDeadlineDate = open
+          .map((f) => f.due_date)
+          .filter(Boolean)
+          .sort()[0];
+        setMatter((prev) =>
+          prev
+            ? {
+                ...prev,
+                vitals: {
+                  ...prev.vitals,
+                  deadlineCount: fristen.length,
+                  openDeadlineCount: open.length,
+                  nextDeadlineDate: nextDeadlineDate ?? prev.vitals.nextDeadlineDate,
+                },
+              }
+            : prev
+        );
+      } catch {
+        // read-model unavailable — keep the frontmatter-derived counts
+      }
     } catch (err) {
       if (fetchId !== fetchIdRef.current) return;
       setError(err instanceof Error ? err.message : "Fehler beim Laden der Akte");
@@ -296,6 +326,15 @@ export function MatterDataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetchMatter();
   }, [fetchMatter]);
+
+  useEffect(() => {
+    if (!caseSlug) return;
+    const handler = (event: Event) => {
+      if (deadlineEventConcerns(event, caseSlug)) void fetchMatter();
+    };
+    window.addEventListener(DEADLINE_CREATED_EVENT, handler);
+    return () => window.removeEventListener(DEADLINE_CREATED_EVENT, handler);
+  }, [caseSlug, fetchMatter]);
 
   // Record visit for recent matters tracking (with title for switcher display)
   useEffect(() => {

@@ -156,8 +156,13 @@ export function InvoiceQuickCreateDialog({
   }, [presetCaseSlug]);
 
   useEffect(() => {
-    if (!open) resetForm();
-  }, [open, resetForm]);
+    if (!open) {
+      resetForm();
+      return;
+    }
+    // Same as the deadline dialog: the preset arrives together with open=true.
+    setSelectedCaseSlug(presetCaseSlug ?? "");
+  }, [open, presetCaseSlug, resetForm]);
 
   useEffect(() => {
     if (!open) return;

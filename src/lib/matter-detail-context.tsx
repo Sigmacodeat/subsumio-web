@@ -10,6 +10,7 @@ import {
   useRef,
 } from "react";
 import { useForm } from "react-hook-form";
+import { DEADLINE_CREATED_EVENT, deadlineEventConcerns } from "@/lib/matter-events";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useParams, useRouter } from "next/navigation";
 import { useLang } from "@/lib/use-lang";
@@ -669,6 +670,15 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
     const result = checkInternalConflict(refs);
     setContactConflict(result.hasConflict ? result : null);
   }, [caseData?.clientName, caseData?.clientSlug, caseData?.opponentName, caseData?.opponentSlugs]);
+
+  // ── Refresh when a deadline was created from the global quick-create dialog ──
+  useEffect(() => {
+    const handler = (event: Event) => {
+      if (deadlineEventConcerns(event, slug)) void refreshCaseData();
+    };
+    window.addEventListener(DEADLINE_CREATED_EVENT, handler);
+    return () => window.removeEventListener(DEADLINE_CREATED_EVENT, handler);
+  }, [slug, refreshCaseData]);
 
   // ── Contacts refresh on focus ───────────────────────────────────────
 
