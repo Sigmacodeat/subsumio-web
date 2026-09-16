@@ -14,6 +14,9 @@
 
 import { nextWorkday, type Bundesland, type Canton } from "@/lib/legal-deadlines";
 
+/** Standard buffer between the internal control deadline and the real deadline. */
+export const DEFAULT_VORFRIST_DAYS = 7;
+
 function toISODate(d: Date): string {
   return d.toISOString().split("T")[0]!;
 }
@@ -33,7 +36,7 @@ function parseISO(dateStr: string): Date {
  */
 export function computeVorfrist(
   dueDateISO: string,
-  vorfristDays = 7,
+  vorfristDays = DEFAULT_VORFRIST_DAYS,
   state?: Bundesland | Canton,
   country?: "DE" | "AT" | "CH"
 ): string | null {

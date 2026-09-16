@@ -38,7 +38,7 @@ import { api } from "@/lib/api";
 import { isOnline, enqueueMutation } from "@/lib/offline-store";
 import { useToast } from "@/components/ui/toast";
 import { DEADLINE_RULES, computeDueDate, type DeadlineRule } from "@/lib/legal-deadlines";
-import { computeVorfrist } from "@/lib/legal/vorfrist";
+import { computeVorfrist, DEFAULT_VORFRIST_DAYS } from "@/lib/legal/vorfrist";
 import { getRechtsraumParams } from "@/lib/legal/rechtsraum";
 import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
 import type { BrainPage } from "@/lib/types";
@@ -187,9 +187,12 @@ export function DeadlineQuickCreateDialog({
       setVorfristPreview(null);
       return;
     }
+    // Every deadline gets the standard 7-day control deadline (Vorfrist).
+    // 0 days would make the Vorfrist equal to the due date, which the
+    // Fristenbuch then showed as "Vorfrist: <Fristdatum>" — no buffer at all.
     const vf = computeVorfrist(
       finalDate,
-      isNotfrist ? 7 : 0,
+      DEFAULT_VORFRIST_DAYS,
       rechtsraum.state as never,
       rechtsraum.country as never
     );

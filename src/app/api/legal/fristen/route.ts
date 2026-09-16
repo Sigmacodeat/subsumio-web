@@ -138,6 +138,7 @@ export const GET = createHandler(
       fristen.push(f);
     };
     const responsibleByCase = new Map<string, string>();
+    const titleByCase = new Map<string, string>();
 
     // ── Source 1: Engine Fristenbuch ──────────────────────────────────────
     try {
@@ -204,6 +205,7 @@ export const GET = createHandler(
       for (const casePage of casePages) {
         const lawyer = str(casePage.frontmatter?.own_lawyer_name);
         if (lawyer) responsibleByCase.set(casePage.slug, lawyer);
+        if (casePage.title) titleByCase.set(casePage.slug, casePage.title);
       }
 
       // Source 2: standalone legal_deadline pages
@@ -319,6 +321,7 @@ export const GET = createHandler(
 
     for (const f of fristen) {
       if (f.case_slug && !f.responsible) f.responsible = responsibleByCase.get(f.case_slug);
+      if (f.case_slug && !f.case_title) f.case_title = titleByCase.get(f.case_slug);
     }
 
     // ── Filter by status ──────────────────────────────────────────────────

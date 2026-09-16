@@ -281,8 +281,9 @@ export default function FristenbuchPage() {
           <button
             onClick={() => router.push(`/dashboard/cases/${encodeSlugPath(e.case_slug!)}`)}
             className="text-xs text-[color:var(--brand-primary)] hover:underline"
+            title={e.case_slug}
           >
-            {e.case_slug}
+            {e.case_title ?? e.case_slug}
           </button>
         ) : (
           <span className="text-xs text-[color:var(--ds-text-muted)]">—</span>

@@ -78,18 +78,32 @@ describe("GET /api/legal/fristen", () => {
           },
         },
       ],
-      "/api/pages?type=legal_deadline&limit=300": [],
+      "/api/pages?type=legal_deadline&limit=300": [
+        {
+          slug: "legal/deadlines/2026-10-01-tagsatzung",
+          title: "Tagsatzung",
+          frontmatter: { due_date: "2026-10-01", case_slug: "cases/mueller", status: "pending" },
+        },
+      ],
     });
 
     const res = await GET(new NextRequest("http://localhost:3000/api/legal/fristen"));
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.fristen).toHaveLength(1);
-    expect(body.fristen[0]).toMatchObject({
-      title: "Berufung",
+    expect(body.fristen).toHaveLength(2);
+    const berufung = body.fristen.find((f: { title: string }) => f.title === "Berufung");
+    expect(berufung).toMatchObject({
       responsible: "Dr. Anna Beispiel",
       status: "done",
       completed_by: "Mag. Berta Zweit",
+    });
+    // Standalone deadline pages inherit the case title (and responsible lawyer)
+    // from the case page so the Fristenbuch never has to show a raw slug.
+    const tagsatzung = body.fristen.find((f: { title: string }) => f.title === "Tagsatzung");
+    expect(tagsatzung).toMatchObject({
+      case_slug: "cases/mueller",
+      case_title: "Müller gegen Maier",
+      responsible: "Dr. Anna Beispiel",
     });
     expect(body.zusammenfassung.overdue).toBe(0);
     expect(body.zusammenfassung.done).toBe(1);
