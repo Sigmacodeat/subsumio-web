@@ -130,7 +130,7 @@ export default function PortfolioInsightsPage() {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
         <FileText className="h-12 w-12 text-[color:var(--ds-text-muted)]" />
-        <h2 className="text-xl font-semibold">{t("pi.empty_title")}</h2>
+        <h1 className="text-xl font-semibold">{t("pi.empty_title")}</h1>
         <p className="max-w-md text-center text-[color:var(--ds-text-muted)]">
           {t("pi.empty_desc")}
         </p>

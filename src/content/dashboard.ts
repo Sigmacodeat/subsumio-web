@@ -3577,7 +3577,7 @@ export const D = {
     en: "Markdown, PDF or text — Subsumio chunks, embeds and indexes automatically.",
   },
   "upload.breadcrumb": { de: "Upload", en: "Upload" },
-  "upload.source_label": { de: "Kanzleiwissen Source", en: "Brain Source" },
+  "upload.source_label": { de: "Ablagebereich", en: "Source" },
   "upload.tags_label": { de: "Tags (kommasepariert)", en: "Tags (comma-separated)" },
   "upload.tags_placeholder": {
     de: "z.B. fintech, q2-2026, alice",
@@ -3626,7 +3626,7 @@ export const D = {
     en: "Tax-relevant document (GoBD modules)",
   },
   "upload.gobd_desc": {
-    de: "— Rechnungen, Kontoauszüge, Quittungen. Beim Hochladen werden eine 10-Jahre-Aufbewahrungsfrist (§ 147 AO) und ein Inhalts-Hash zur Manipulations-Evidenz (§ 146 Abs. 4 AO) ins Frontmatter geschrieben. Spätere Verifikation deckt Änderungen auf.",
+    de: "— Rechnungen, Kontoauszüge, Quittungen. Beim Hochladen werden die Aufbewahrungsfrist (AT: 7 Jahre, § 132 BAO; DE: 10 Jahre, § 147 AO) und ein Inhalts-Hash zur Manipulationssicherung in den Metadaten des Dokuments gespeichert. Eine spätere Prüfung deckt Änderungen auf.",
     en: "— Invoices, bank statements, receipts. On upload, a 10-year retention period (§ 147 AO) and a content hash for tamper evidence (§ 146 Abs. 4 AO) are written to the frontmatter. Later verification detects changes.",
   },
   "upload.gobd_note": {
