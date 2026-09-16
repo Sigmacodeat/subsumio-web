@@ -58,6 +58,17 @@ behoben (Commit) · ⚠️ offen · ℹ️ Hinweis.
 | Rechnungen (`/dashboard/invoicing`)                         | ✅       | Lädt leer mit Kennzahlen; Erstellung folgt in Station 6.                                                                                                                                                                                                                                                                                                                  |
 | `POST /api/dashboard/briefing` 400                          | ⚠️       | Einmalig beim Seitenaufruf gesehen, direkt und im Wiederholungslauf 200 — auf dem Prod-Build nachprüfen.                                                                                                                                                                                                                                                                  |
 
+## Station 6 — Zeiterfassung → Rechnung (headless)
+
+| Prüfpunkt                             | Ergebnis | Detail                                                                                                                                                                                                 |
+| ------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `POST /api/time` Zeitbuchung auf Akte | ✅       | 201, Eintrag mit Anwalt, Satz, Tätigkeit.                                                                                                                                                              |
+| Rechnung schnell erstellen (Dialog)   | ✅       | Akte wählen → offene Buchungen, Vorschau, Nummer `R-2026-0001`; Rechnung erscheint als Entwurf in der Liste.                                                                                           |
+| USt 19 % (deutsch) auf AT-Rechnung    | 🔧       | Satz hing am Tarifmodell (RATG → 20 %, sonst 19 %); jetzt nach Land (`vatRateFor`): AT 20 %, DE 19 %, CH 8,1 %, Kleinunternehmer 0. Vorschau nutzte hart 19 %. Verifiziert: 500 € → 100 € USt → 600 €. |
+| RVG-Rechner im AT-Dialog              | 🔧       | Deutsche Gebührenordnung (API im Pilot mit 410 abgeschaltet) war weiter sichtbar; nur noch bei Tarifmodell RVG.                                                                                        |
+| Vorschau „Kunde —"                    | ⚠️       | Mandant wird in der Vorschau nicht aufgelöst, in der Liste schon.                                                                                                                                      |
+| Stundensatz-Feld im Onboarding        | ⚠️       | Vorbelegt mit 220; Tippen hängt an (QA-Kanzlei stand auf 220.250 €/h), keine Plausibilitätsgrenze. Feld beim Fokus selektieren + Obergrenze.                                                           |
+
 ## Station 5 — Fristen (aus der Akte)
 
 | Prüfpunkt                                  | Ergebnis | Detail                                                                                                |

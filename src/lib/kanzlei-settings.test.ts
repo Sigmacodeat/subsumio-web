@@ -73,3 +73,20 @@ describe("readLocalKanzleiSettings", () => {
     expect(result).toEqual(DEFAULT_KANZLEI_SETTINGS);
   });
 });
+
+describe("vatRateFor", async () => {
+  const { vatRateFor } = await import("./kanzlei-settings");
+  it("uses the country's standard rate, Austria by default", () => {
+    expect(vatRateFor({ country: "AT" })).toBe(0.2);
+    expect(vatRateFor({})).toBe(0.2);
+    expect(vatRateFor({ country: "DE" })).toBe(0.19);
+    expect(vatRateFor({ country: "CH" })).toBe(0.081);
+  });
+  it("never keys the VAT on the fee model", () => {
+    expect(vatRateFor({ country: "AT", tarifModell: "custom" })).toBe(0.2);
+    expect(vatRateFor({ country: "AT", tarifModell: "rvg" })).toBe(0.2);
+  });
+  it("issues Kleinunternehmer invoices without VAT", () => {
+    expect(vatRateFor({ country: "AT", kleinunternehmer: true })).toBe(0);
+  });
+});

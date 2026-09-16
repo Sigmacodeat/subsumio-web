@@ -120,3 +120,22 @@ export async function saveKanzleiSettings(settings: KanzleiSettings): Promise<vo
   });
   writeLocalKanzleiSettings(normalized);
 }
+
+/**
+ * Statutory VAT rate for the firm's invoices, as a fraction.
+ *
+ * Keyed on the firm's country, never on the fee model: an Austrian firm on a
+ * custom tariff was billed with the German 19 % before. Kleinunternehmer
+ * (§ 6 Abs 1 Z 27 UStG / § 19 UStG) issue invoices without VAT.
+ */
+export function vatRateFor(settings?: Partial<KanzleiSettings> | null): number {
+  if (settings?.kleinunternehmer) return 0;
+  switch ((settings?.country ?? "AT").toUpperCase()) {
+    case "DE":
+      return 0.19;
+    case "CH":
+      return 0.081;
+    default:
+      return 0.2;
+  }
+}

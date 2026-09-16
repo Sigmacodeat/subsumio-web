@@ -33,7 +33,7 @@ import {
   type TimeEntry,
 } from "@/lib/legal-types";
 import { sha256Hex, gobdFrontmatter, invoiceContentString } from "@/lib/gobd";
-import { loadKanzleiSettings, type KanzleiSettings } from "@/lib/kanzlei-settings";
+import { loadKanzleiSettings, type KanzleiSettings, vatRateFor } from "@/lib/kanzlei-settings";
 import { calculateRvg, type RvgResult } from "@/lib/rvg";
 
 interface InvoiceQuickCreateDialogProps {
@@ -252,6 +252,9 @@ export function InvoiceQuickCreateDialog({
     (totalMinutes / 60) * parseInt(kanzlei?.stundensatz || "200", 10)
   );
   const hasBillable = openTime.length > 0 || openExpenses.length > 0;
+  const previewVatRate = vatRateFor(kanzlei);
+  // The RVG calculator is German fee law; only firms on the RVG tariff see it.
+  const rvgAvailable = kanzlei?.tarifModell === "rvg";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -332,7 +335,7 @@ export function InvoiceQuickCreateDialog({
         expTotal = expenses.reduce((s, i) => s + i.amount, 0);
       }
       const parsedAdvance = Math.max(0, parseFloat(advancePayment) || 0);
-      const vatRate = settings?.tarifModell === "ratg" ? 0.2 : 0.19;
+      const vatRate = vatRateFor(settings);
       const taxableBase = subtotal + expTotal;
       const tax = Math.round(taxableBase * vatRate * 100) / 100;
       const total = Math.max(0, Math.round((taxableBase + tax - parsedAdvance) * 100) / 100);
@@ -681,17 +684,19 @@ export function InvoiceQuickCreateDialog({
               </div>
             </div>
 
-            {/* RVG Calculator (collapsible) */}
-            <button
-              type="button"
-              onClick={() => setShowRvg((v) => !v)}
-              className="flex items-center gap-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
-            >
-              <Calculator size={13} />
-              {showRvg
-                ? t("inv.quick_hide_rvg" as DashboardKey)
-                : t("inv.quick_show_rvg" as DashboardKey)}
-            </button>
+            {/* RVG Calculator (collapsible) — German fee law, RVG tariff only */}
+            {rvgAvailable && (
+              <button
+                type="button"
+                onClick={() => setShowRvg((v) => !v)}
+                className="flex items-center gap-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+              >
+                <Calculator size={13} />
+                {showRvg
+                  ? t("inv.quick_hide_rvg" as DashboardKey)
+                  : t("inv.quick_show_rvg" as DashboardKey)}
+              </button>
+            )}
 
             {showRvg && (
               <div className="space-y-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-4">
@@ -790,7 +795,11 @@ export function InvoiceQuickCreateDialog({
                 <div className="flex justify-between gap-4">
                   <dt className="text-[color:var(--ds-text-muted)]">{t("inv.preview_vat")}</dt>
                   <dd className="font-medium text-[color:var(--ds-text)]">
-                    {(((rvgResult?.summeNetto ?? estimatedFee) + expenseTotal) * 0.19).toFixed(2)} €
+                    {(
+                      ((rvgResult?.summeNetto ?? estimatedFee) + expenseTotal) *
+                      previewVatRate
+                    ).toFixed(2)}{" "}
+                    €
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4 border-t border-[color:var(--ds-border)] pt-3 text-base">
@@ -799,7 +808,8 @@ export function InvoiceQuickCreateDialog({
                   </dt>
                   <dd className="font-bold text-[color:var(--ds-success-text)]">
                     {(
-                      ((rvgResult?.summeNetto ?? estimatedFee) + expenseTotal) * 1.19 -
+                      ((rvgResult?.summeNetto ?? estimatedFee) + expenseTotal) *
+                        (1 + previewVatRate) -
                       (parseFloat(advancePayment) || 0)
                     ).toFixed(2)}{" "}
                     €

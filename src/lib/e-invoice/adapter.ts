@@ -63,7 +63,8 @@ export function invoiceToEInvoiceData(
   // Determine tax category: S = standard, E = exempt (§19 UStG Kleinunternehmer)
   const isKleinunternehmer = settings.kleinunternehmer === true;
   const taxCategory: TaxCategoryCode = isKleinunternehmer ? "E" : "S";
-  const taxRate = isKleinunternehmer ? 0 : (invoice.vat_rate ?? 19);
+  // Percent. Austrian standard rate when the invoice carries none (AT pilot).
+  const taxRate = isKleinunternehmer ? 0 : (invoice.vat_rate ?? 20);
 
   // Convert items
   const lineItems: EInvoiceLineItem[] = (invoice.items ?? []).map((item, idx) => ({
