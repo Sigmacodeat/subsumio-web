@@ -29,7 +29,10 @@ export function useDashboardForm<T extends Record<string, unknown>>({
   const form = useForm<T>({
     resolver: zodResolver(schema as never),
     defaultValues,
-    mode: "onBlur",
+    // Validate on first blur, then on every change: an error such as
+    // "Titel ist erforderlich" clears while the user types instead of on the
+    // next blur — which otherwise shifts the layout under a pressed button.
+    mode: "onTouched",
   });
 
   const [status, setStatus] = useState<SubmitStatus>("idle");

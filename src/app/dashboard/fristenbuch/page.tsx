@@ -454,7 +454,7 @@ export default function FristenbuchPage() {
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-2 print:hidden">
+      <div className="filter-strip print:hidden">
         <FilterChip
           label={t("deadlines.all")}
           active={filter === "all"}

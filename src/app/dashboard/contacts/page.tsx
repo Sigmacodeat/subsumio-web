@@ -501,7 +501,7 @@ export default function ContactsPage() {
       {/* Filter + Search row */}
       {!loading && contacts.length > 0 && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="filter-strip">
             <FilterChip
               label={t("contacts.filter_all")}
               active={roleFilter === "all"}

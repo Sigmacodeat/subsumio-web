@@ -2838,6 +2838,32 @@ pre {
 }
 
 /* ── Premium card shadows (dashboard scope) ── */
+/* Filter chips: wrapping row on tablet/desktop, one swipeable strip on phones
+   (no 3–4 chip rows above a register). */
+.filter-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+@media (max-width: 767px) {
+  .filter-strip {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-inline: -1rem;
+    padding-inline: 1rem;
+    padding-bottom: 0.25rem;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .filter-strip::-webkit-scrollbar {
+    display: none;
+  }
+  .filter-strip > * {
+    flex-shrink: 0;
+  }
+}
+
 [data-app="dashboard"] .card-shadow {
   box-shadow: var(--card-shadow);
 }

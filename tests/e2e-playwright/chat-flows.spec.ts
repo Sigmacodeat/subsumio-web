@@ -110,7 +110,9 @@ test.describe("Chat Flows", () => {
     await expect(aiArticle).not.toBeEmpty({ timeout: 30_000 });
 
     // Open sessions dropdown and create a new session
-    const sessionDropdown = page.getByRole("button", { name: /Neue|Sitzung|Session/i }).first();
+    const sessionDropdown = page
+      .getByRole("button", { name: /Neue|Sitzung|Session|Gespräch/i })
+      .first();
     await expect(sessionDropdown).toBeVisible({ timeout: 10_000 });
     await sessionDropdown.click();
     await page.waitForTimeout(300);

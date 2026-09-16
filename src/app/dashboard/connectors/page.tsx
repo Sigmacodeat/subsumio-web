@@ -195,7 +195,8 @@ export default function ConnectorsPage() {
           <code className="rounded bg-[color:var(--ds-warning-bg)] px-1.5 py-0.5 font-mono text-xs">
             subsumio connector add &lt;service&gt;
           </code>
-          . Status, Aktivierung und manuelle Syncs laufen hier direkt über die Engine.
+          . Status, Aktivierung und manuelle Synchronisierungen laufen hier direkt über den
+          Subsumio-Dienst.
         </p>
       </div>
 

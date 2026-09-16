@@ -83,7 +83,9 @@ test.describe("Chat & Research: Pages Render", () => {
   test("chat/analytics shows analytics content", async ({ page }) => {
     await page.goto("/dashboard/chat/analytics", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const heading = page.getByText(/Chat Analytics|Chat-Analytics/i).first();
+    const heading = page
+      .getByRole("heading", { name: /Gesprächsauswertung|Chat Analytics/i })
+      .first();
     await expect(heading).toBeVisible({ timeout: 10_000 });
   });
 

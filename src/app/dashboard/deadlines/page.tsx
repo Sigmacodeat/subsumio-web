@@ -1048,7 +1048,7 @@ export default function DeadlinesPage() {
       </div>
 
       {/* Status filter chips */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="filter-strip">
         {caseFilter && (
           <FilterChip
             label={`${t("deadlines.filter_case" as never)}: ${caseFilter.replace(/^cases\//, "")}`}

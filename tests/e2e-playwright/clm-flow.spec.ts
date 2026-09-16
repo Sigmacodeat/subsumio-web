@@ -34,7 +34,10 @@ async function createContract(page: Page, title: string) {
   await expect(page.getByRole("heading", { name: /contract intelligence/i })).toBeVisible({
     timeout: 15_000,
   });
-  const createButton = page.getByRole("button", { name: /vertrag anlegen|create contract/i });
+  // Header action and empty-state action share the label; the header one comes first.
+  const createButton = page
+    .getByRole("button", { name: /vertrag anlegen|create contract/i })
+    .first();
   await expect(createButton).toBeEnabled();
   await createButton.click();
 

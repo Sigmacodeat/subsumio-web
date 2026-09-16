@@ -1,6 +1,6 @@
-import { Skeleton } from "@/components/ui/skeleton";
+"use client";
 
-("use client");
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { useState, useEffect, useCallback } from "react";
 import { markdownToPlainText } from "@/lib/markdown";

@@ -7,6 +7,8 @@ import { getChatStats } from "@/components/chat/chat-session-store";
 import { AI_MODELS } from "@/lib/model-config";
 import { useLang } from "@/lib/use-lang";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { PageSkeleton } from "@/components/dashboard/page-skeleton";
 
 interface ChatStats {
   totalSessions: number;
@@ -34,21 +36,27 @@ export default function ChatAnalyticsPage() {
     };
   }, []);
 
+  const header = (
+    <PageHeader
+      title="Gesprächsauswertung"
+      description="Statistiken über alle Gespräche mit dem Assistenten und den Token-Verbrauch."
+    />
+  );
+
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[color:var(--ds-border)] border-t-[color:var(--brand-primary)]" />
-      </div>
-    );
+    return <PageSkeleton withStats rows={4} className="mx-auto max-w-[1200px]" />;
   }
 
   if (!stats || stats.totalSessions === 0) {
     return (
-      <EmptyState
-        icon={MessageSquare}
-        title="Noch keine Gesprächsdaten vorhanden"
-        description="Beginnen Sie ein Gespräch mit dem Assistenten, um Statistiken zu sehen."
-      />
+      <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+        {header}
+        <EmptyState
+          icon={MessageSquare}
+          title="Noch keine Gesprächsdaten vorhanden"
+          description="Beginnen Sie ein Gespräch mit dem Assistenten, um Statistiken zu sehen."
+        />
+      </div>
     );
   }
 
@@ -97,12 +105,7 @@ export default function ChatAnalyticsPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
-      <div>
-        <h1 className="text-xl font-bold text-[color:var(--ds-text)]">Chat Analytics</h1>
-        <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-          Statistiken über alle Chat-Konversationen und Token-Verbräuche.
-        </p>
-      </div>
+      {header}
 
       {/* Stat cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">

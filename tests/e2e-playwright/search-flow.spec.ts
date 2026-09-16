@@ -64,7 +64,9 @@ test.describe("Search Flow", () => {
     // The brain page has a search input — use a flexible selector
     await expect(
       page
-        .locator('input[placeholder*="Brain"], input[placeholder*="brain"], input[type="search"]')
+        .locator(
+          'input[placeholder*="Kanzleiwissen"], input[placeholder*="Brain"], input[placeholder*="brain"], input[type="search"]'
+        )
         .first()
     ).toBeVisible({ timeout: 15_000 });
   });

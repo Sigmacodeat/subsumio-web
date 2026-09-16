@@ -1,6 +1,6 @@
-import { Skeleton } from "@/components/ui/skeleton";
+"use client";
 
-("use client");
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";

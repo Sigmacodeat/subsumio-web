@@ -34,12 +34,24 @@ Funktionen / Integrationen (AT / DE / CH) / System"); technische Kacheln nur fü
 - Datum immer `TT.MM.JJJJ` (de-AT), Beträge über `formatEur` („1.234,50 €").
 - Primärfarbe nur für Hauptaktionen; Rechnungs-Button folgt der Brand-Farbe.
 
-## Offen (nächste Wellen)
+## Welle 3 — Zustände und Details (erledigt)
 
-- Welle 3: Leerzustände mit genau einer Aktion auf allen Listen (Rechnungen, Aufgaben,
-  Kontakte, Verträge), Kennzahlenkacheln vereinheitlichen, Badge-Doppelungen
-  („Review offen" + „Ungeprüft").
-- Welle 4: Bewegung (nur Tokens, kein Puls auf Inhalten), Mobil-Durchgang aller Kernseiten
-  im Dark Mode, Tabellen-Dichte für Fristen und Akten.
-- Marketing- und Rechtstexte (`legal-content.tsx`) bleiben in der Du-Form der Website; nicht
-  Teil des Dashboards.
+Leerzustand mit genau einer Aktion (Aufgaben, Kalender, Verträge), Kennzahlen 2×2 auf dem
+Handy, keine Badge-Doppelung bei Fristen, Akten-Kopf als Skeleton, Kennzahlen bei 0 ohne
+Signalfarbe, keine pulsierenden Icons.
+
+## Welle 4 — Farbwelt, Tiefe, Bewegung, Responsive (erledigt 17.09.)
+
+Megaplan und Nachweise: `docs/design/DESIGN_MEGAPLAN_2026-09-17.md`. Kurz: Sapphire-Brand
+(Hue 222) statt Lila-Blau, Gold-Akzent, Teal-Sekundär; Schatten/Glow/Bewegung nur über Tokens;
+Seitenwurzeln auf volle Breite (Handy-Überlauf auf 108 Seiten behoben); Aktionsstreifen,
+dichte Register für Akten und Fristen; 32 weitere Leerzustände auf `EmptyState`; Website-
+und Rechtstexte in der Sie-Form; visuelle Snapshots erneuert. Referenz-Screenshots in
+`docs/design/screenshots/`.
+
+## Offen
+
+- Filterchips auf dem Handy als Wischstreifen statt 3–4 Zeilen.
+- Mobile-Durchgang der Sekundärseiten (Sweep bisher: Übersicht, Akten, Akte, Fristen,
+  Rechnungen, Einstellungen, Website, Preise).
+- Technische Admin-Flächen (Ops, Verbindung, SCIM, Word-Add-in) behalten Fachbegriffe.

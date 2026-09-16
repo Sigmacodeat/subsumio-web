@@ -385,5 +385,11 @@ Richtlinie: `docs/design/DESIGN_STANDARD.md`; Befunde und Wellen: `docs/design/D
   Akten-Kopf lädt als Skeleton, Kennzahlen bei 0 ohne Signalfarbe, keine pulsierenden Icons.
 - **Prüfung:** automatischer Audit über alle 115 Routen (h1, Ladetexte, Spinner, Anrede,
   Jargon) plus Screenshots Desktop hell / Mobil dunkel der Kernseiten; 0 horizontaler Überlauf.
-- **Bewusst außen vor:** Website-/Marketingtexte und Rechtstexte bleiben in der Du-Form der
-  Website; technische Admin-Flächen (Ops, Verbindung, SCIM, Word-Add-in) behalten Fachbegriffe.
+- **Welle 4 Farbwelt/Tiefe/Responsive (17.09.):** Sapphire-Brand (Hue 222), Gold-Akzent,
+  Teal-Sekundär, navy-getönter Dark Mode; Schatten, Glow und Bewegung ausschließlich über
+  Tokens; Seitenwurzeln auf volle Breite (Handy-Überlauf auf 108 Seiten behoben, Sweep
+  8 Seiten × 4 Breiten × 2 Modi = 0 Überlauf); dichte Register für Akten und Fristen;
+  32 weitere Leerzustände; Website- und Rechtstexte jetzt ebenfalls in der Sie-Form;
+  visuelle Snapshots erneuert. Plan und Nachweise: `docs/design/DESIGN_MEGAPLAN_2026-09-17.md`.
+- **Bewusst außen vor:** technische Admin-Flächen (Ops, Verbindung, SCIM, Word-Add-in)
+  behalten Fachbegriffe.

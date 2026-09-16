@@ -5630,8 +5630,8 @@ export const D = {
   "brain.sort_title": { de: "Titel A–Z", en: "Title A–Z" },
   "brain.sort_words": { de: "Wortanzahl", en: "Word count" },
   "brain.search_placeholder": {
-    de: "Kanzleiwissen durchsuchen… (Hybrid: Vector + BM25 + Graph)",
-    en: "Search brain… (Hybrid: Vector + BM25 + Graph)",
+    de: "Kanzleiwissen durchsuchen…",
+    en: "Search knowledge base…",
   },
   "brain.btn_filter": { de: "Filter", en: "Filter" },
   "brain.filter_tooltip": {

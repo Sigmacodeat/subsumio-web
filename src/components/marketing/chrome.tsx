@@ -704,7 +704,7 @@ export function MarketingNav() {
                   </Link>
                 </Button>
                 <Button size="sm" variant="primary" className="group min-h-[36px]" asChild>
-                  <Link href={p("/signup")} className="max-sm:hidden">
+                  <Link href={p("/signup")} className="whitespace-nowrap max-sm:hidden">
                     {nav.cta}
                     <ChevronRight
                       size={14}

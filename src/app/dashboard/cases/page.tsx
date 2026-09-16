@@ -79,6 +79,14 @@ const STATUS_CONFIG: Record<
   archived: { labelKey: "cases.status_archived", icon: Archive, color: "gray" },
 };
 
+const PRIORITY_LABELS: Record<string, string> = {
+  critical: "Kritisch",
+  urgent: "Dringend",
+  high: "Hoch",
+  medium: "Mittel",
+  normal: "Normal",
+  low: "Niedrig",
+};
 const PRIORITY_COLORS: Record<string, string> = {
   low: "bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)] border-[color:var(--ds-neutral-border)]",
   medium:
@@ -532,7 +540,7 @@ export default function CasesPage() {
           variant="default"
           className={cn("border text-xs", PRIORITY_COLORS[c.priority] || PRIORITY_COLORS.medium)}
         >
-          {c.priority}
+          {PRIORITY_LABELS[c.priority] ?? c.priority}
         </Badge>
       ),
     },
@@ -678,7 +686,7 @@ export default function CasesPage() {
         }
       />
 
-      <div className="grid gap-px overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-border)] sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-border)] lg:grid-cols-4">
         {[
           { label: t("cases.health_active"), value: activeCases.length },
           { label: t("cases.health_critical"), value: criticalCases.length },
@@ -698,7 +706,7 @@ export default function CasesPage() {
       </div>
 
       {/* Status filter chips */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="filter-strip">
         <FilterChip
           label={t("cases.all")}
           active={statusFilter === "all"}

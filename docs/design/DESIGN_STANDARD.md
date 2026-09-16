@@ -68,6 +68,18 @@ generischen KI-Chatprodukts.
   (Assistent), und auf schmalen Viewports; keine zwei identischen Gesprächsflächen
   nebeneinander.
 - Dark Mode: jede Fläche über Tokens, keine festen Farben.
+- Farbwelt „Sapphire & Signet" (seit 17.09.2026): Brand-Blau Hue 222 (`--brand-600` hell,
+  `--brand-400` dunkel, Navy `--brand-800` für Marke/Hero), Gold `--accent-*` nur für
+  Premium-/Hinweis-Akzente, Teal `--secondary-*` nur für Website-Verläufe und Diagramme.
+  Kein Lila, keine dritte Primärfarbe.
+- Tiefe: Karten `--ds-shadow-1`, schwebende Elemente `--ds-shadow-2`, Overlays `--ds-shadow-3`,
+  Hauptaktion mit `--ds-glow-brand` beim Hover. Tailwind-`shadow-*` löst auf diese Tokens auf;
+  keine eigenen `rgba(0,0,0,…)`-Schatten.
+- Bewegung: Dauern nur `duration-[var(--ds-duration-fast|normal|slow)]`, kein
+  `transition-all`, `animate-pulse` nur in Skeletons und Live-Status-Punkten.
+- Responsive: Seitenwurzeln sind im Routen-Wrapper auf volle Breite gezwungen; Aktionen im
+  Seitenkopf sind auf dem Handy ein Wischstreifen; Kennzahlen 2×2; Register (`DataTable`) für
+  Akten und Fristen mit `density="dense"`.
 
 ## 7. Abnahme
 
