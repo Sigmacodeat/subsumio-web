@@ -1,12 +1,13 @@
 "use client";
 
+import { PageSkeleton } from "@/components/dashboard/page-skeleton";
+
 import {
   TrendingUp,
   AlertTriangle,
   FileText,
   Shield,
   Clock,
-  Loader2,
   AlertCircle,
   BarChart3,
   Target,
@@ -102,12 +103,9 @@ export default function PortfolioInsightsPage() {
 
   if (loading) {
     return (
-      <div
-        className="flex min-h-[60vh] items-center justify-center"
-        role="status"
-        aria-live="polite"
-      >
-        <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
+      <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+        <h1 className="sr-only">Portfolio-Analyse</h1>
+        <PageSkeleton withStats rows={4} className="p-0" />
       </div>
     );
   }
@@ -148,9 +146,9 @@ export default function PortfolioInsightsPage() {
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold">
+          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-[-0.01em]">
             <BarChart3 className="h-6 w-6" />
-            Contract Portfolio Insights
+            Portfolio-Analyse
           </h1>
           <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
             {data.total_contracts} {t("pi.summary")} · {data.analyzed_contracts}{" "}

@@ -201,7 +201,7 @@ export default function MobilePipelinePage() {
     <div className="mx-auto min-h-screen max-w-[1200px] space-y-6 bg-[color:var(--ds-bg)] p-4 md:p-6 lg:p-8">
       {/* Header */}
       <div className="sticky top-0 z-10 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
-        <h1 className="text-lg font-semibold text-[color:var(--ds-text)]">Pipeline</h1>
+        <h1 className="text-lg font-semibold text-[color:var(--ds-text)]">Aktenanalysen</h1>
         <p className="text-xs text-[color:var(--ds-text-muted)]">{pipelines.length} Fälle</p>
       </div>
 
@@ -324,7 +324,7 @@ export default function MobilePipelinePage() {
                       onClick={() => resumePipeline(pipeline.case_slug)}
                       className="flex w-full items-center justify-center gap-2 rounded-md bg-[color:var(--ds-info-solid)] px-3 py-2 text-sm font-medium text-white"
                     >
-                      <Play size={14} /> Pipeline fortsetzen
+                      <Play size={14} /> Analyse fortsetzen
                     </button>
                   )}
                 </div>

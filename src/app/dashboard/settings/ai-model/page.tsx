@@ -154,7 +154,7 @@ export default function AIModelSettingsPage() {
                 </h3>
               </div>
               <p className="mt-1 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
-                Die Subsumio Engine wählt automatisch das optimale Modell basierend auf
+                Der Subsumio-Dienst wählt automatisch das optimale Modell basierend auf
                 Query-Komplexität und Größe der Wissensbasis.
               </p>
             </div>
@@ -330,8 +330,8 @@ export default function AIModelSettingsPage() {
             </p>
             <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
               Die Modellauswahl gilt für das gesamte Kanzleiwissen. Im Assistenten können Sie pro
-              Anfrage einen Override setzen, ohne die globale Einstellung zu ändern. Die Engine
-              benötigt den konfigurierten API-Key des jeweiligen Providers.
+              Anfrage einen Override setzen, ohne die globale Einstellung zu ändern. Der
+              Subsumio-Dienst benötigt den konfigurierten API-Key des jeweiligen Providers.
             </p>
           </div>
         </div>
