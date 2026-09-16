@@ -193,3 +193,26 @@ Mandanten, Support-Impersonation mit Protokoll.
   für KI-Qualität OpenRouter-Key lokal setzen.
 - Staging: CPX41 oder größer. Korpus-DB in Prod hat 78 GB, lokal 76 MB.
 - Prod: bestehende Hetzner-Box; nicht antasten bis Phase 5.
+
+## 6. Stand am Abend des 16.09.2026
+
+Phase 0 ist abgeschlossen (AT-Schnitt committet, `ops-console` gemergt, alle Gates grün,
+gepusht). Phase 1 läuft: acht Stationen des Anwaltstag-Skripts sind am lokalen Vollstack
+durchgespielt, Protokoll in `docs/audit/QA_PROTOKOLL_2026-09.md`. Behoben und gepusht:
+
+- Trial-Guthaben (erste KI-Frage 402), CSP-Nonce-Hydration, Akten-Wizard (Doppelanlage,
+  Slug-404, Enter), Fristen-Dialog (Akte fehlte, kein Refresh, Vorfrist = Fristdatum),
+  Metadaten-Updates (400 „title Required" auf 34 Aufrufstellen), Vier-Augen-Modal,
+  Seiten-Typ-Gate (14 Parser, Posteingang/Workflows leer), UI-Sprache „at" (12 KI-Routen 400),
+  Kalender-403, Recherche-Standard DE→AT, USt 19 %→20 %, RVG-Rechner im AT-Dialog,
+  Portal-Link-Redirect auf Login, Audit-Log (leer, falsche Zuordnung, Polling-Rauschen),
+  Workflows-Absturz, Begrüßung mit Titel, Briefing-Markdown, Onboarding-Copy.
+
+Offen mit Priorität (siehe Protokoll):
+
+1. **P1 Portal-Dokumentsichtbarkeit** — Freigabe-Flag pro Dokument vor dem Pilot.
+2. Kontakte aus Akten-Parteien (Produktentscheidung), Dokumentansicht statt Brain-Seite.
+3. Copy-Reste beA/DE (Kommunikation, Fristen-Statkarte), englische Labels (Freigaben,
+   Sicherheit), Sidebar-Links ohne Namen (axe-Lauf), Stundensatz-Plausibilität.
+4. Phase 3: Engine lokal auf echtes Modell (OpenRouter/Anthropic) für die KI-Stationen 4/Strategie.
+5. Phase 2: Playwright-Suite (Mock + Real-Engine) auf dem Prod-Build fahren.

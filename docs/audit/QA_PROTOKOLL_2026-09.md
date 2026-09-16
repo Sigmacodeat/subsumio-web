@@ -115,6 +115,27 @@ behoben (Commit) · ⚠️ offen · ℹ️ Hinweis.
 | Einstellungen: Badge „Benachrichtigung fehlt"       | ⚠️       | Warnlabel (`settings.notification_warning_label`) auf Kanzlei/E-Rechnung; für Anwälte unklar, Tooltip erklärt es. Wording prüfen.                      |
 | Aufgaben, Portal-Vorschau, Assistent                | ✅       | Laden ohne Fehler; Assistent begrüßt mit vollem Namen.                                                                                                 |
 
+## Station 8 — Einstellungen, Team, Audit, Workflows (headless)
+
+| Prüfpunkt                                      | Ergebnis | Detail                                                                                                                                                                                     |
+| ---------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Einstellungen → Kanzlei, Account, Team         | ✅       | Laden ohne Fehler; Team-Anlage sichtbar; Plan/Nutzung korrekt.                                                                                                                             |
+| Sicherheit: `403 /api/admin/ip-allowlist`      | 🔧       | Admin-API für jede Rolle abgefragt; Karte und Request jetzt nur für Admins. Karten-Copy ist Englisch („Inactive", „No IPs configured") — ⚠️ übersetzen.                                    |
+| Audit-Log „0 Einträge" trotz 658 Aktionen      | 🔧       | Seite las Engine-Seiten vom Typ `audit_log` (schreibt niemand); Route liest jetzt die Postgres-Audit-Tabelle je Kanzlei (`8154bffcea`).                                                    |
+| Audit-Einträge ohne Kanzlei/Nutzer             | 🔧       | `createHandler` übergab weder Brain noch Nutzer → alle Zeilen unter „system", außerhalb der Kanzlei-Hash-Kette. Jetzt brainId/userId/E-Mail/IP. Altbestand bleibt „system" (auch in Prod). |
+| Audit-Rauschen durch Benachrichtigungs-Polling | 🔧       | `notifications.list` alle paar Sekunden protokolliert → entfernt.                                                                                                                          |
+| Workflows-Seite stürzt ab                      | 🔧       | Seed-Status „draft" unbekannt → `.icon` von undefined. Status „Entwurf" ergänzt, Lookup mit Fallback (`2a3e53dc98`).                                                                       |
+| Workflow-Vorlage „nach deutschem Recht"        | 🔧       | → österreichisches Recht (ABGB, UGB, KSchG).                                                                                                                                               |
+
+## P1-Produktbefund: Mandantenportal zeigt alle Aktendokumente
+
+Der Portal-Endpunkt liefert die Akte mit ihrem `documents[]`-Frontmatter. Jedes in die Akte
+hochgeladene Dokument — auch interne Vermerke, Strategie-Entwürfe, Gutachten — ist damit für den
+Mandanten sichtbar, sobald das Portal freigegeben ist. Vor dem Pilot braucht es ein
+Freigabe-Flag pro Dokument („für Mandant sichtbar") mit Standard **nicht sichtbar**, und die
+Portal-Routen (`case`, `signable-docs`) filtern danach. Bis dahin: Portal nur für Akten
+freigeben, deren Dokumente vollständig mandantentauglich sind.
+
 ## Querschnitt
 
 - **KI-Qualität lokal:** `qwen2.5:1.5b` halluziniert (Berufungsfrist → „Verfahrenszeitraumgesetz",
