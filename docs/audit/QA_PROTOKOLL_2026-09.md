@@ -165,8 +165,32 @@ Zweitprüfungs-Spur) und alle Dokumente. Jetzt:
   landete auf der falschen App. QA läuft daher gegen `127.0.0.1:3000`.
 - **Copy-Reste:** beA aus Kommunikation (Tab + Copy), Fristen-Statkarte, Sidebar-Tooltip und Eingangs-Beschreibung entfernt; Freigabe-Status und IP-Allowlist-Karte übersetzt.
 
+## Phase 2 — Playwright-Mock-Suite auf dem Prod-Build
+
+Lauf: `SUBSUMIO_E2E_PORT=3100 SUBSUMIO_E2E_DIST_DIR=.next-e2e npx playwright test --project=chromium`
+(eigener Build in `.next-e2e`, eigener Port, damit Dev-Server und Engine weiterlaufen).
+
+| Ergebnis       | Zahl        |
+| -------------- | ----------- |
+| bestanden      | 590         |
+| übersprungen   | 3           |
+| fehlgeschlagen | 1 → behoben |
+
+- **Der eine Fehler war der Spec, nicht das Produkt:** `r1-features.spec.ts` erwartete die
+  IP-Allowlist-Karte für einen frisch registrierten Anwalt. Die Karte ist seit heute
+  admin-only (ihre API verlangt `connector.read`, Nicht-Admins bekamen ein Dauer-Toast) und
+  heißt „IP-Allowlist". Spec prüft jetzt 2FA für alle und die Abwesenheit der Karte für
+  Nicht-Admins.
+- **Nebenfund beim Serial-Lauf:** jeder Benachrichtigungs-Insert (`src/lib/comments.ts`)
+  scheiterte auf Postgres, weil `ON CONFLICT (id)` nicht zum zusammengesetzten Primärschlüssel
+  `(id, user_id, brain_id)` passte — Kommentare erzeugten still keine Benachrichtigung.
+  Behoben (Commit 207e785f8c), Regressionstest gegen die echte Auth-DB.
+- Real-Engine-Modus (`SUBSUMIO_E2E_REAL_ENGINE=1`) steht noch aus, bis Provider-Guthaben da ist
+  (KI-Specs würden sonst nur die Graceful-Degradation testen).
+
 ## Noch offen im Skript
 
-Station 3 (Upload/Posteingang), 4 (Assistent mit echtem Modell), 5b (Fristenbuch, Wiedervorlagen,
-Kalender), 6 (Rechnung), 7 (Mandantenportal), 8 (Einstellungen, Demo-Cleanup), danach die
-sechs Arbeitsräume vollständig.
+Alle acht Stationen und die sechs Arbeitsräume sind durchgespielt. Offen bleiben nur die
+KI-Stationen mit echtem Modell (4, Strategie, Briefing, Fristen-Erkennung) — Blocker
+Provider-Guthaben — sowie die ⚠️-Punkte oben (Dokumentansicht, Rechnungsvorschau „Kunde —",
+Badge-Wortlaut, 404-Rauschen limitation-scan/institution-checklists, doppelte Listenabrufe).

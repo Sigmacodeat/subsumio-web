@@ -212,7 +212,11 @@ Offen mit Priorität (siehe Protokoll):
 
 1. ~~P1 Portal-Dokumentsichtbarkeit~~ — erledigt (Freigabe-Flag pro Dokument, Whitelist-View).
 2. ~~Kontakte aus Akten-Parteien~~ erledigt; offen: Dokumentansicht statt Brain-Seite.
-3. Copy-Reste beA/DE (Kommunikation, Fristen-Statkarte), englische Labels (Freigaben,
-   Sicherheit), Sidebar-Links ohne Namen (axe-Lauf), Stundensatz-Plausibilität.
+3. ~~Copy-Reste beA/DE, englische Labels, Sidebar-Links ohne Namen, Stundensatz-Plausibilität~~
+   erledigt; offen: Dokumentansicht, Rechnungsvorschau „Kunde —", 404-Rauschen, doppelte
+   Listenabrufe (siehe Protokoll ⚠️).
 4. **Blocker Phase 3:** Engine ist auf OpenRouter/Claude umgestellt, aber Anthropic- und beide OpenRouter-Konten haben kein Guthaben. Guthaben aufladen (OpenRouter reicht, ist der Prod-Provider) — vorher sind Assistent, Strategie, Briefing und Fristen-Erkennung nicht prüfbar.
-5. Phase 2: Playwright-Suite (Mock + Real-Engine) auf dem Prod-Build fahren.
+5. ~~Phase 2: Playwright-Mock-Suite auf dem Prod-Build~~ erledigt: 590 bestanden, 3 übersprungen,
+   1 Spec an die Admin-only-Regel angepasst. Dabei gefunden und behoben: kein
+   Benachrichtigungs-Insert auf Postgres (falscher Konfliktschlüssel). Real-Engine-Modus
+   wartet auf Punkt 4.

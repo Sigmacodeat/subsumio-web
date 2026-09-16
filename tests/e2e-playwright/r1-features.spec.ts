@@ -200,8 +200,12 @@ test.describe("R1: Settings Security Page", () => {
 
   test("security settings page renders with IP allowlist section", async ({ page }) => {
     await page.goto("/dashboard/settings/security", { waitUntil: "domcontentloaded" });
-    // The page should contain "IP Allowlist" text
-    await expect(page.locator("body")).toContainText(/IP Allowlist/i, { timeout: 10_000 });
+    // 2FA is offered to every role; the IP allowlist card is admin-only
+    // (its API requires connector.read), so a fresh signup must NOT see it.
+    await expect(page.locator("body")).toContainText(/Zwei-Faktor|Two-factor/i, {
+      timeout: 10_000,
+    });
+    await expect(page.locator("body")).not.toContainText(/IP-?Allowlist/i);
   });
 });
 
