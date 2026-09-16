@@ -136,7 +136,7 @@ export default function GraphPage() {
     const palette = {
       text: "hsl(225, 20%, 12%)",
       subtle: "hsl(220, 8%, 40%)",
-      accentGlow: "hsla(230, 60%, 52%, 0.15)",
+      accentGlow: "hsla(222, 74%, 52%, 0.15)",
     };
     let resolvedNodeColors = NODE_COLOR_FALLBACKS;
     const readPalette = () => {

@@ -461,10 +461,7 @@ export default function PortalPage() {
         className="flex min-h-screen items-center justify-center [background:var(--mk-bg)]"
       >
         <div className="space-y-3 text-center">
-          <Loader2
-            size={32}
-            className="mx-auto animate-spin text-[color:var(--ds-category-violet-text)]"
-          />
+          <Loader2 size={32} className="mx-auto animate-spin text-[color:var(--brand-text)]" />
           <p className="text-sm [color:var(--mk-text-muted)]">{t("portal.loading")}</p>
         </div>
       </div>
@@ -500,8 +497,8 @@ export default function PortalPage() {
       {/* Header */}
       <header className="border-b [border-color:var(--mk-border)] [background:var(--mk-surface)]">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[color:var(--ds-category-violet-border)] bg-[color:var(--ds-category-violet-bg)]">
-            <Users size={20} className="text-[color:var(--ds-category-violet-text)]" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[color:var(--brand-glow)] bg-[color:var(--brand-glow)]">
+            <Users size={20} className="text-[color:var(--brand-text)]" />
           </div>
           <div>
             <h1 className="text-lg font-bold">{t("portal.header_title")}</h1>
@@ -523,7 +520,7 @@ export default function PortalPage() {
             onClick={() => setActiveTab("info")}
             className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
               activeTab === "info"
-                ? "bg-[color:var(--ds-category-violet-bg)] text-[color:var(--ds-category-violet-text)]"
+                ? "bg-[color:var(--brand-glow)] text-[color:var(--brand-text)]"
                 : "[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)]"
             }`}
           >
@@ -534,7 +531,7 @@ export default function PortalPage() {
             onClick={() => setActiveTab("chat")}
             className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
               activeTab === "chat"
-                ? "bg-[color:var(--ds-category-violet-bg)] text-[color:var(--ds-category-violet-text)]"
+                ? "bg-[color:var(--brand-glow)] text-[color:var(--brand-text)]"
                 : "[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)]"
             }`}
           >
@@ -546,14 +543,14 @@ export default function PortalPage() {
               onClick={() => setActiveTab("sign")}
               className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
                 activeTab === "sign"
-                  ? "bg-[color:var(--ds-category-violet-bg)] text-[color:var(--ds-category-violet-text)]"
+                  ? "bg-[color:var(--brand-glow)] text-[color:var(--brand-text)]"
                   : "[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)]"
               }`}
             >
               <PenTool size={14} />
               {t("portal.tab_sign")}
               {signableDocs.length > 0 && (
-                <span className="ml-1 rounded-full bg-[color:var(--ds-category-violet-bg)] px-1.5 py-0.5 text-xs text-[color:var(--ds-category-violet-text)]">
+                <span className="ml-1 rounded-full bg-[color:var(--brand-glow)] px-1.5 py-0.5 text-xs text-[color:var(--brand-text)]">
                   {signableDocs.length}
                 </span>
               )}
@@ -563,7 +560,7 @@ export default function PortalPage() {
             onClick={() => setActiveTab("files")}
             className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
               activeTab === "files"
-                ? "bg-[color:var(--ds-category-violet-bg)] text-[color:var(--ds-category-violet-text)]"
+                ? "bg-[color:var(--brand-glow)] text-[color:var(--brand-text)]"
                 : "[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)]"
             }`}
           >
@@ -634,7 +631,7 @@ export default function PortalPage() {
                       key={i}
                       className="flex items-start gap-2 text-sm [color:var(--mk-text-muted)]"
                     >
-                      <span className="mt-0.5 text-[color:var(--ds-category-violet-text)]">•</span>
+                      <span className="mt-0.5 text-[color:var(--brand-text)]">•</span>
                       {claim}
                     </li>
                   ))}
@@ -714,7 +711,7 @@ export default function PortalPage() {
                             </div>
                           </div>
                           {!done && (
-                            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[color:var(--ds-category-violet-text)] px-3 py-1.5 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--ds-category-violet-text)] motion-reduce:transition-none">
+                            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[color:var(--brand-primary)] px-3 py-1.5 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary)] motion-reduce:transition-none">
                               <input
                                 type="file"
                                 accept={UPLOAD_ACCEPT_ATTRIBUTE}
@@ -745,7 +742,7 @@ export default function PortalPage() {
             <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-sm font-semibold">{t("portal.documents_title")}</h3>
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[color:var(--ds-category-violet-text)] px-3 py-2 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--ds-category-violet-text)] disabled:opacity-50 motion-reduce:transition-none">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[color:var(--brand-primary)] px-3 py-2 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary)] disabled:opacity-50 motion-reduce:transition-none">
                   <input
                     type="file"
                     accept={UPLOAD_ACCEPT_ATTRIBUTE}
@@ -810,7 +807,7 @@ export default function PortalPage() {
                             href={doc.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs text-[color:var(--ds-category-violet-text)] hover:underline"
+                            className="text-xs text-[color:var(--brand-text)] hover:underline"
                           >
                             {t("portal.download")}
                           </a>
@@ -835,7 +832,7 @@ export default function PortalPage() {
                       className={`flex ${msg.sender === "client" ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${msg.sender === "client" ? "border border-[color:var(--ds-category-violet-border)] bg-[color:var(--ds-category-violet-bg)] text-[color:var(--ds-category-violet-text)]" : "border [border-color:var(--mk-border)] [color:var(--mk-text-muted)] [background:var(--mk-surface-2)]"}`}
+                        className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${msg.sender === "client" ? "border border-[color:var(--brand-glow)] bg-[color:var(--brand-glow)] text-[color:var(--brand-text)]" : "border [border-color:var(--mk-border)] [color:var(--mk-text-muted)] [background:var(--mk-surface-2)]"}`}
                       >
                         <p>{msg.text}</p>
                         <p className="mt-1 text-xs [color:var(--mk-text-subtle)]">
@@ -865,12 +862,12 @@ export default function PortalPage() {
                     if (e.key === "Enter" && !sendingMessage) void sendMessage(caseData.slug);
                   }}
                   placeholder={t("portal.message_placeholder")}
-                  className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--ds-category-violet-border)] focus:outline-none"
+                  className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--brand-glow)] focus:outline-none"
                 />
                 <button
                   onClick={() => void sendMessage(caseData.slug)}
                   disabled={sendingMessage || !newMessage.trim()}
-                  className="rounded-lg bg-[color:var(--ds-category-violet-text)] px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--ds-category-violet-text)] disabled:opacity-50 motion-reduce:transition-none"
+                  className="rounded-lg bg-[color:var(--brand-primary)] px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary)] disabled:opacity-50 motion-reduce:transition-none"
                 >
                   {sendingMessage ? "…" : t("portal.send")}
                 </button>
@@ -882,7 +879,7 @@ export default function PortalPage() {
         {activeTab === "chat" && (
           <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
             <div className="flex items-center gap-2">
-              <Bot size={16} className="text-[color:var(--ds-category-violet-text)]" />
+              <Bot size={16} className="text-[color:var(--brand-text)]" />
               <h3 className="text-sm font-semibold">{t("portal.tab_chat")}</h3>
             </div>
             <p className="text-xs [color:var(--mk-text-subtle)]">{t("portal.chat_disclaimer")}</p>
@@ -894,7 +891,7 @@ export default function PortalPage() {
                     className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${msg.role === "user" ? "border border-[color:var(--ds-category-violet-border)] bg-[color:var(--ds-category-violet-bg)] text-[color:var(--ds-category-violet-text)]" : "border [border-color:var(--mk-border)] [color:var(--mk-text-muted)] [background:var(--mk-surface-2)]"}`}
+                      className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${msg.role === "user" ? "border border-[color:var(--brand-glow)] bg-[color:var(--brand-glow)] text-[color:var(--brand-text)]" : "border [border-color:var(--mk-border)] [color:var(--mk-text-muted)] [background:var(--mk-surface-2)]"}`}
                     >
                       <p className="whitespace-pre-wrap">{msg.text}</p>
                       {msg.role === "bot" && msg.grounding && (
@@ -930,12 +927,12 @@ export default function PortalPage() {
                   if (e.key === "Enter" && !chatLoading) void sendChatMessage();
                 }}
                 placeholder={t("portal.chat_placeholder")}
-                className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--ds-category-violet-border)] focus:outline-none"
+                className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--brand-glow)] focus:outline-none"
               />
               <button
                 onClick={() => void sendChatMessage()}
                 disabled={chatLoading || !chatInput.trim()}
-                className="rounded-lg bg-[color:var(--ds-category-violet-text)] px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--ds-category-violet-text)] disabled:opacity-50 motion-reduce:transition-none"
+                className="rounded-lg bg-[color:var(--brand-primary)] px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-primary)] disabled:opacity-50 motion-reduce:transition-none"
               >
                 {chatLoading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
               </button>
@@ -1015,7 +1012,7 @@ export default function PortalPage() {
                         </div>
                         <button
                           onClick={() => setSignDoc(doc)}
-                          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[color:var(--ds-category-violet-bg)] px-3 py-2 text-sm font-medium text-[color:var(--ds-category-violet-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-category-violet-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-category-violet-text)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none"
+                          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[color:var(--brand-glow)] px-3 py-2 text-sm font-medium text-[color:var(--brand-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--brand-glow)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-text)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none"
                         >
                           <PenTool size={14} />
                           {t("portal.sign_btn")}

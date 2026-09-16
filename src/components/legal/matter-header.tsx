@@ -304,12 +304,15 @@ export function MatterHeader() {
   }
 
   if (error || !matter) {
+    // Engine error strings are codes ("not_found not found"), not lawyer copy.
+    const errorCopy =
+      error && !/not[_ ]found/i.test(error)
+        ? t("matterheader.load_failed")
+        : t("matterheader.not_found");
     return (
       <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 md:px-6">
         <AlertCircle size={18} className="text-[color:var(--ds-danger-text)]" />
-        <span className="text-sm text-[color:var(--ds-danger-text)]">
-          {error || t("matterheader.not_found")}
-        </span>
+        <span className="text-sm text-[color:var(--ds-danger-text)]">{errorCopy}</span>
         <Button variant="ghost" size="sm" asChild>
           <Link href="/dashboard/cases" className="ml-auto">
             <ArrowLeft size={14} className="mr-1.5" />

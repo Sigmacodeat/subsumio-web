@@ -33,11 +33,11 @@ export const SUBSUMIO_THEME: IndustryTheme = {
   primary: "var(--brand-500)",
   primaryHover: "var(--brand-400)",
   secondary: "var(--brand-400)",
-  tertiary: "hsl(260, 60%, 65%)",
-  glow: "hsla(230, 60%, 52%, 0.12)",
+  tertiary: "var(--brand-300)",
+  glow: "color-mix(in srgb, var(--brand-primary) 14%, transparent)",
   gradientFrom: "var(--brand-700)",
   gradientVia: "var(--brand-400)",
-  gradientTo: "hsl(260, 60%, 65%)",
+  gradientTo: "var(--brand-300)",
 };
 
 export const INDUSTRY_PROFILES = {

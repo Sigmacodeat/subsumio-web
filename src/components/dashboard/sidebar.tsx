@@ -1660,7 +1660,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     : "opacity-100"
                 )}
                 role="status"
-                aria-label={`${t("sidebar.brain_status")}: ${brainStatusLabel}, ${pages} pages, ${entities} entities`}
+                aria-label={`${t("sidebar.brain_status")}: ${brainStatusLabel}, ${pages} ${t("sidebar.pages_entities")}, ${entities} ${t("sidebar.entities_label")}`}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-[color:var(--ds-text-subtle)]">
@@ -1681,7 +1681,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                   </div>
                 </div>
                 <div className="mt-1 font-mono text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
-                  {pages} pages · {entities} entities
+                  {pages} {t("sidebar.pages_entities")} · {entities} {t("sidebar.entities_label")}
                 </div>
               </div>
               <div

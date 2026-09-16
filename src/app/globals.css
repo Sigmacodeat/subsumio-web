@@ -71,27 +71,27 @@
 @property --brand-primary {
   syntax: "<color>";
   inherits: true;
-  initial-value: hsl(230, 60%, 52%);
+  initial-value: hsl(222, 60%, 52%);
 }
 @property --brand-primary-hover {
   syntax: "<color>";
   inherits: true;
-  initial-value: hsl(230, 60%, 64%);
+  initial-value: hsl(222, 60%, 64%);
 }
 @property --brand-secondary {
   syntax: "<color>";
   inherits: true;
-  initial-value: hsl(230, 60%, 64%);
+  initial-value: hsl(222, 60%, 64%);
 }
 @property --brand-text {
   syntax: "<color>";
   inherits: true;
-  initial-value: hsl(230, 60%, 52%);
+  initial-value: hsl(222, 60%, 52%);
 }
 @property --accent-premium {
   syntax: "<color>";
   inherits: true;
-  initial-value: hsl(255, 60%, 55%);
+  initial-value: hsl(42, 55%, 46%);
 }
 
 @theme inline {
@@ -114,17 +114,40 @@
   /* ── Brand scale (Legal) — perceptually tuned, HSL output from OKLCH refs ──
      Reference OKLCH: hue 260°, chroma 0.13-0.15. Light primary ~ oklch(0.55 0.15 260).
      Contrast: brand-500 on white ≈ 7.2:1 (AAA), brand-700 on white ≈ 11.5:1. */
-  --brand-50: hsl(230, 60%, 97%); /* oklch(0.97 0.01 260) */
-  --brand-100: hsl(230, 60%, 94%); /* oklch(0.94 0.02 260) */
-  --brand-200: hsl(230, 58%, 88%); /* oklch(0.87 0.04 260) */
-  --brand-300: hsl(230, 56%, 78%); /* oklch(0.77 0.07 260) */
-  --brand-350: hsl(230, 55%, 71%); /* oklch(0.71 0.09 260) */
-  --brand-400: hsl(230, 54%, 64%); /* oklch(0.64 0.11 260) */
-  --brand-500: hsl(230, 52%, 52%); /* oklch(0.54 0.14 260) */
-  --brand-600: hsl(230, 50%, 44%); /* oklch(0.46 0.13 260) */
-  --brand-700: hsl(230, 48%, 36%); /* oklch(0.37 0.11 260) */
-  --brand-800: hsl(230, 46%, 28%); /* oklch(0.29 0.09 260) */
-  --brand-900: hsl(230, 44%, 20%); /* oklch(0.20 0.06 260) */
+  --brand-50: hsl(222, 80%, 97%); /* Sapphire — #f1f5fd */
+  --brand-100: hsl(222, 78%, 94%); /* #e4ebfc */
+  --brand-200: hsl(222, 76%, 88%); /* #c9d7f8 */
+  --brand-300: hsl(222, 74%, 78%); /* #9db6f0 */
+  --brand-350: hsl(222, 73%, 70%);
+  --brand-400: hsl(222, 72%, 62%); /* #5882e4 */
+  --brand-500: hsl(222, 74%, 52%); /* #2a60df */
+  --brand-600: hsl(222, 72%, 44%); /* #1f50c1 — Hauptaktion hell */
+  --brand-700: hsl(222, 68%, 36%); /* #1d439a */
+  --brand-800: hsl(222, 62%, 27%); /* #1a3470 — Navy */
+  --brand-900: hsl(222, 56%, 18%); /* #142448 */
+  --brand-950: hsl(222, 50%, 11%);
+
+  /* Signet-Gold — Komplementär (Hue 42), nur Marke/Premium/Hervorhebung, kein Text < 700 */
+  --accent-50: hsl(42, 70%, 96%);
+  --accent-100: hsl(42, 65%, 90%);
+  --accent-200: hsl(42, 60%, 80%);
+  --accent-300: hsl(42, 58%, 68%);
+  --accent-400: hsl(42, 56%, 56%);
+  --accent-500: hsl(42, 55%, 46%); /* #b68f35 */
+  --accent-600: hsl(42, 58%, 38%);
+  --accent-700: hsl(42, 60%, 30%);
+  --accent-800: hsl(42, 58%, 22%);
+
+  /* Sekundär-Teal — Split-Komplementär (Hue 188): Diagramme, Belege, sekundäre Chips */
+  --secondary-50: hsl(188, 60%, 96%);
+  --secondary-100: hsl(188, 58%, 91%);
+  --secondary-200: hsl(188, 56%, 82%);
+  --secondary-300: hsl(188, 55%, 66%);
+  --secondary-400: hsl(188, 58%, 50%);
+  --secondary-500: hsl(188, 62%, 40%); /* #2794a5 */
+  --secondary-600: hsl(188, 64%, 33%);
+  --secondary-700: hsl(188, 64%, 26%);
+  --secondary-800: hsl(188, 60%, 19%);
 
   /* ── Teal scale — Hue 165°, perceptually tuned ──
      Reference OKLCH: hue 170°, chroma 0.11-0.13. */
@@ -626,7 +649,7 @@
   --brand-gradient-via: var(--brand-400);
   --brand-gradient-to: var(--brand-300);
   --brand-text: var(--brand-400);
-  --accent-premium: var(--brand-300);
+  --accent-premium: var(--accent-300);
   --accent-premium-soft: color-mix(in srgb, var(--accent-premium) 10%, transparent);
   --accent-premium-border: color-mix(in srgb, var(--accent-premium) 22%, transparent);
 
@@ -678,8 +701,8 @@
   --tone-light-surface: #ffffff;
   --tone-dark-bg: var(--neutral-900);
   --tone-dark-surface: var(--neutral-800);
-  --tone-slate-bg: hsl(230, 30%, 12%);
-  --tone-slate-surface: hsl(230, 25%, 18%);
+  --tone-slate-bg: hsl(222, 30%, 12%);
+  --tone-slate-surface: hsl(222, 25%, 18%);
 }
 
 /* Marketing tone scopes. All verified WCAG-AA (≥ 4.5:1) for body + muted + subtle.
@@ -702,7 +725,7 @@
   --mk-focus-ring: var(--brand-700);
   --mk-control-border: var(--neutral-400);
   --mk-card-shadow:
-    0 1px 2px hsla(230, 8%, 15%, 0.05), 0 8px 24px hsla(230, 8%, 15%, 0.07),
+    0 1px 2px hsla(222, 8%, 15%, 0.05), 0 8px 24px hsla(222, 8%, 15%, 0.07),
     0 1px 0 hsla(0, 0%, 100%, 0.7) inset;
   --brand-text: var(--brand-700);
   color-scheme: light;
@@ -721,21 +744,21 @@
 
   /* Editorial palette — additive, marketing-only. */
   --mk-parchment: hsl(38, 26%, 95%);
-  --mk-ink: hsl(230, 35%, 12%);
+  --mk-ink: hsl(222, 35%, 12%);
   --mk-accent-brass: hsl(36, 58%, 32%);
 }
 [data-tone="slate"] {
-  --mk-bg: hsl(230, 30%, 12%);
-  --mk-surface: hsl(230, 25%, 18%);
-  --mk-surface-2: hsl(230, 20%, 28%);
-  --mk-hover: hsl(230, 25%, 22%);
-  --mk-border: hsl(230, 20%, 30%);
-  --mk-border-strong: hsl(230, 15%, 42%);
-  --mk-text: hsl(230, 10%, 97%);
-  --mk-text-muted: hsl(230, 15%, 72%);
-  --mk-text-subtle: hsl(230, 15%, 58%);
+  --mk-bg: hsl(222, 30%, 12%);
+  --mk-surface: hsl(222, 25%, 18%);
+  --mk-surface-2: hsl(222, 20%, 28%);
+  --mk-hover: hsl(222, 25%, 22%);
+  --mk-border: hsl(222, 20%, 30%);
+  --mk-border-strong: hsl(222, 15%, 42%);
+  --mk-text: hsl(222, 10%, 97%);
+  --mk-text-muted: hsl(222, 15%, 72%);
+  --mk-text-subtle: hsl(222, 15%, 58%);
   --mk-focus-ring: var(--brand-300);
-  --mk-control-border: hsl(230, 12%, 58%);
+  --mk-control-border: hsl(222, 12%, 58%);
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
   --brand-text: var(--brand-300);
   --brand-tertiary: var(--brand-300);
@@ -785,18 +808,18 @@
   --mk-text-muted: hsl(220, 8%, 78%);
   --mk-text-subtle: hsl(220, 8%, 74%);
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 1px 0 hsla(0, 0%, 100%, 0.025) inset;
-  --brand-primary: hsl(230, 45%, 48%);
-  --brand-primary-hover: hsl(230, 45%, 55%);
+  --brand-primary: hsl(222, 45%, 48%);
+  --brand-primary-hover: hsl(222, 45%, 55%);
   --brand-secondary: var(--brand-300);
-  --brand-tertiary: hsl(260, 60%, 75%);
-  --brand-glow: hsla(230, 45%, 48%, 0.12);
+  --brand-tertiary: var(--brand-300);
+  --brand-glow: color-mix(in srgb, var(--brand-primary) 12%, transparent);
   --brand-gradient-from: var(--brand-400);
-  --brand-gradient-via: hsl(260, 60%, 65%);
-  --brand-gradient-to: hsl(255, 60%, 55%);
+  --brand-gradient-via: var(--brand-300);
+  --brand-gradient-to: var(--secondary-300);
   --brand-text: var(--brand-200);
-  --accent-premium: hsl(260, 60%, 75%);
-  --accent-premium-soft: hsla(260, 60%, 75%, 0.1);
-  --accent-premium-border: hsla(260, 60%, 75%, 0.22);
+  --accent-premium: var(--accent-300);
+  --accent-premium-soft: color-mix(in srgb, var(--accent-premium) 10%, transparent);
+  --accent-premium-border: color-mix(in srgb, var(--accent-premium) 22%, transparent);
   --card-shadow: 0 1px 0 hsla(0, 0%, 100%, 0.025) inset, 0 12px 34px rgba(0, 0, 0, 0.18);
   --card-shadow-hover: 0 1px 0 hsla(0, 0%, 100%, 0.035) inset, 0 18px 48px rgba(0, 0, 0, 0.24);
   --card-shadow-elevated: 0 1px 0 hsla(0, 0%, 100%, 0.04) inset, 0 24px 72px rgba(0, 0, 0, 0.34);
@@ -892,13 +915,26 @@
   --brand-gradient-via: var(--brand-400);
   --brand-gradient-to: var(--brand-300);
   --brand-text: var(--brand-primary);
-  --accent-premium: var(--brand-500);
+  --accent-premium: var(--accent-600);
   --accent-premium-soft: color-mix(in srgb, var(--accent-premium) 10%, transparent);
   --accent-premium-border: color-mix(in srgb, var(--accent-premium) 22%, transparent);
-  --card-shadow: 0 1px 1px hsla(40, 15%, 10%, 0.03), 0 8px 24px hsla(40, 15%, 10%, 0.03);
-  --card-shadow-hover: 0 1px 2px hsla(40, 15%, 10%, 0.045), 0 14px 34px hsla(40, 15%, 10%, 0.055);
-  --card-shadow-elevated: 0 1px 2px hsla(40, 15%, 10%, 0.06), 0 18px 48px hsla(40, 15%, 10%, 0.1);
+  --card-shadow: var(--ds-shadow-1);
+  --card-shadow-hover: var(--ds-shadow-2);
+  --card-shadow-elevated: var(--ds-shadow-3);
   --sidebar-shadow: 1px 0 0 var(--ds-border), 10px 0 36px hsla(40, 15%, 10%, 0.035);
+  /* Tiefe — drei Stufen, blau getönt, plus Marken-Glow für Hauptaktionen */
+  --ds-shadow-1: 0 1px 2px hsla(222, 40%, 12%, 0.06), 0 1px 1px hsla(222, 40%, 12%, 0.03);
+  --ds-shadow-2: 0 2px 6px -1px hsla(222, 40%, 12%, 0.08), 0 1px 2px hsla(222, 40%, 12%, 0.05);
+  --ds-shadow-3: 0 14px 34px -14px hsla(222, 40%, 12%, 0.22), 0 2px 6px hsla(222, 40%, 12%, 0.06);
+  --ds-glow-brand:
+    0 0 0 1px color-mix(in srgb, var(--brand-primary) 24%, transparent),
+    0 8px 22px -8px color-mix(in srgb, var(--brand-primary) 55%, transparent);
+  --brand-button-gradient: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--brand-primary) 88%, white) 0%,
+    var(--brand-primary) 100%
+  );
+  --brand-button-highlight: inset 0 1px 0 hsla(0, 0%, 100%, 0.18);
 
   /* Signal ramps — modern, accessible, with icon redundancy required. */
   --ds-success-text: var(--signal-success-700);
@@ -944,11 +980,11 @@
   --ds-category-purple-text: hsl(280, 55%, 40%);
   --ds-category-purple-bg: hsla(280, 55%, 40%, 0.1);
   --ds-category-purple-border: hsla(280, 55%, 40%, 0.22);
-  --ds-category-indigo-text: hsl(230, 55%, 42%);
-  --ds-category-indigo-bg: hsla(230, 55%, 42%, 0.1);
-  --ds-category-indigo-border: hsla(230, 55%, 42%, 0.22);
-  --ds-category-indigo-solid: hsl(230, 55%, 48%);
-  --ds-category-indigo-solid-hover: hsl(230, 55%, 42%);
+  --ds-category-indigo-text: hsl(222, 55%, 42%);
+  --ds-category-indigo-bg: hsla(222, 55%, 42%, 0.1);
+  --ds-category-indigo-border: hsla(222, 55%, 42%, 0.22);
+  --ds-category-indigo-solid: hsl(222, 55%, 48%);
+  --ds-category-indigo-solid-hover: hsl(222, 55%, 42%);
   --ds-neutral-text: var(--neutral-600);
   --ds-neutral-bg: color-mix(in srgb, var(--neutral-500) 10%, var(--ds-surface));
   --ds-neutral-border: color-mix(in srgb, var(--neutral-500) 24%, var(--ds-surface));
@@ -997,20 +1033,20 @@
 
   /* Dark dashboard canvas — deep, near-black blue-gray.
      Linear / Supabase / Vercel school: minimal chroma, elevation via lightness. */
-  --ds-bg: hsl(220, 13%, 6%);
-  --ds-surface: hsl(220, 12%, 13%);
-  --ds-surface-2: hsl(220, 12%, 17%);
-  --ds-hover: hsl(220, 12%, 22%);
+  --ds-bg: hsl(222, 30%, 7%);
+  --ds-surface: hsl(222, 26%, 11%);
+  --ds-surface-2: hsl(222, 24%, 15%);
+  --ds-hover: hsl(222, 22%, 20%);
   --ds-surface-hover: var(--ds-hover);
-  --ds-border: hsla(220, 10%, 50%, 0.14);
-  --ds-border-strong: hsla(220, 10%, 60%, 0.22);
-  --ds-border-hover: hsla(220, 10%, 70%, 0.28);
+  --ds-border: hsla(222, 30%, 62%, 0.14);
+  --ds-border-strong: hsla(222, 30%, 66%, 0.22);
+  --ds-border-hover: hsla(222, 30%, 72%, 0.28);
   --ds-control-border: hsla(220, 10%, 55%, 0.24);
   /* Text hierarchy — verified ≥4.5:1 on --ds-surface and --ds-surface-2.
      Kept intentionally brighter for comfortable small-table legibility. */
-  --ds-text: hsl(220, 10%, 94%);
-  --ds-text-muted: hsl(220, 9%, 78%);
-  --ds-text-subtle: hsl(220, 9%, 70%);
+  --ds-text: hsl(222, 15%, 94%);
+  --ds-text-muted: hsl(222, 12%, 78%);
+  --ds-text-subtle: hsl(222, 10%, 70%);
   --ds-text-secondary: var(--ds-text-muted);
   --ds-ring: var(--brand-400);
   --ds-accent: var(--brand-primary);
@@ -1023,7 +1059,19 @@
   --brand-gradient-via: var(--brand-400);
   --brand-gradient-to: var(--brand-500);
   --brand-text: var(--brand-300);
-  --accent-premium: var(--brand-300);
+  --ds-shadow-1: 0 1px 2px hsla(222, 60%, 3%, 0.5), inset 0 1px 0 hsla(0, 0%, 100%, 0.04);
+  --ds-shadow-2: 0 4px 10px -2px hsla(222, 60%, 3%, 0.55), inset 0 1px 0 hsla(0, 0%, 100%, 0.05);
+  --ds-shadow-3: 0 18px 40px -14px hsla(222, 60%, 3%, 0.75), inset 0 1px 0 hsla(0, 0%, 100%, 0.06);
+  --ds-glow-brand:
+    0 0 0 1px color-mix(in srgb, var(--brand-primary) 30%, transparent),
+    0 10px 28px -8px color-mix(in srgb, var(--brand-primary) 60%, transparent);
+  --brand-button-gradient: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--brand-primary) 90%, white) 0%,
+    var(--brand-primary) 100%
+  );
+  --brand-button-highlight: inset 0 1px 0 hsla(0, 0%, 100%, 0.14);
+  --accent-premium: var(--accent-300);
   --accent-premium-soft: color-mix(in srgb, var(--accent-premium) 12%, transparent);
   --accent-premium-border: color-mix(in srgb, var(--accent-premium) 24%, transparent);
   --card-shadow: 0 1px 0 hsla(0, 0%, 100%, 0.03) inset, 0 12px 34px rgba(0, 0, 0, 0.22);
@@ -1049,7 +1097,7 @@
   --ds-danger-border: hsla(0, 45%, 55%, 0.22);
   --ds-danger-solid: hsl(0, 55%, 58%);
   --ds-danger-solid-hover: hsl(0, 55%, 66%);
-  --ds-info-text: hsl(210, 55%, 72%);
+  --ds-info-text: var(--brand-300);
   --ds-info-bg: hsla(210, 50%, 55%, 0.12);
   --ds-info-border: hsla(210, 50%, 55%, 0.22);
   --ds-info-solid: hsl(210, 55%, 58%);
@@ -1074,11 +1122,11 @@
   --ds-category-purple-text: hsl(280, 45%, 76%);
   --ds-category-purple-bg: hsla(280, 40%, 55%, 0.11);
   --ds-category-purple-border: hsla(280, 40%, 55%, 0.22);
-  --ds-category-indigo-text: hsl(230, 45%, 76%);
-  --ds-category-indigo-bg: hsla(230, 40%, 55%, 0.11);
-  --ds-category-indigo-border: hsla(230, 40%, 55%, 0.22);
-  --ds-category-indigo-solid: hsl(230, 50%, 64%);
-  --ds-category-indigo-solid-hover: hsl(230, 50%, 70%);
+  --ds-category-indigo-text: hsl(222, 45%, 76%);
+  --ds-category-indigo-bg: hsla(222, 40%, 55%, 0.11);
+  --ds-category-indigo-border: hsla(222, 40%, 55%, 0.22);
+  --ds-category-indigo-solid: hsl(222, 50%, 64%);
+  --ds-category-indigo-solid-hover: hsl(222, 50%, 70%);
   --ds-neutral-text: hsl(220, 8%, 65%);
   --ds-neutral-bg: hsla(220, 8%, 50%, 0.12);
   --ds-neutral-border: hsla(220, 8%, 50%, 0.22);
@@ -2165,24 +2213,24 @@ body {
   background: rgba(100, 100, 120, 0.5);
 }
 [data-tone="light"] ::-webkit-scrollbar-thumb {
-  background: hsl(230, 8%, 80%);
+  background: hsl(222, 8%, 80%);
 }
 [data-tone="light"] ::-webkit-scrollbar-thumb:hover {
-  background: hsl(230, 8%, 70%);
+  background: hsl(222, 8%, 70%);
 }
 
 /* Selection — tone-aware: dark text on light, light text on dark */
 ::selection {
-  background: hsla(230, 60%, 52%, 0.18);
+  background: hsla(222, 60%, 52%, 0.18);
   color: inherit;
 }
 [data-tone="light"] ::selection {
-  background: hsla(230, 60%, 52%, 0.15);
+  background: hsla(222, 60%, 52%, 0.15);
   color: var(--neutral-900);
 }
 [data-tone="dark"] ::selection,
 [data-tone="slate"] ::selection {
-  background: hsla(230, 60%, 52%, 0.15);
+  background: hsla(222, 60%, 52%, 0.15);
   color: inherit;
 }
 
@@ -2955,7 +3003,7 @@ pre {
 .email-content h6 {
   margin: 1em 0 0.5em;
   font-weight: 600;
-  color: var(--mk-text, hsl(230, 8%, 92%));
+  color: var(--mk-text, hsl(222, 8%, 92%));
 }
 .email-content a {
   color: var(--brand-400);
@@ -2976,8 +3024,8 @@ pre {
 .email-content blockquote {
   margin: 0.75em 0;
   padding-left: 1em;
-  border-left: 2px solid var(--mk-border, hsl(230, 10%, 22%));
-  color: var(--mk-text-muted, hsl(230, 8%, 65%));
+  border-left: 2px solid var(--mk-border, hsl(222, 10%, 22%));
+  color: var(--mk-text-muted, hsl(222, 8%, 65%));
 }
 .email-content ul,
 .email-content ol {
@@ -2990,13 +3038,13 @@ pre {
 .email-content hr {
   margin: 1em 0;
   border: none;
-  border-top: 1px solid var(--mk-border, hsl(230, 10%, 22%));
+  border-top: 1px solid var(--mk-border, hsl(222, 10%, 22%));
 }
 .email-content pre {
   margin: 0.5em 0;
   padding: 0.75em;
   border-radius: 6px;
-  background: var(--mk-surface-2, hsl(230, 12%, 14%));
+  background: var(--mk-surface-2, hsl(222, 12%, 14%));
   overflow-x: auto;
   font-size: 0.85em;
 }

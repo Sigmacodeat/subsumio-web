@@ -6,12 +6,12 @@ import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 outline-none select-none focus-visible:ring-1 focus-visible:ring-[color:var(--ds-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[color:var(--ds-surface)] active:scale-[0.97] disabled:pointer-events-none disabled:opacity-40 disabled:active:scale-100 motion-reduce:transition-none",
+  "inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 outline-none select-none focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] active:scale-[0.97] disabled:pointer-events-none disabled:opacity-40 disabled:active:scale-100 motion-reduce:transition-none",
   {
     variants: {
       variant: {
         primary:
-          "bg-[color:var(--brand-primary)] text-white shadow-sm hover:bg-[color:var(--brand-primary-hover)] hover:shadow-md active:bg-[color:var(--brand-primary-hover)]",
+          "bg-[color:var(--brand-primary)] bg-[image:var(--brand-button-gradient)] text-white shadow-[var(--ds-shadow-1),var(--brand-button-highlight)] hover:bg-[color:var(--brand-primary-hover)] hover:shadow-[var(--ds-glow-brand),var(--brand-button-highlight)] active:bg-[color:var(--brand-primary-hover)] active:bg-none",
         secondary:
           "border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)]",
         ghost:
@@ -22,7 +22,7 @@ const buttonVariants = cva(
           // success-700 (solid-hover) als Basis — white auf success-600 war
           // nur 3.82:1; der Hover geht eine Stufe dunkler.
           "bg-[color:var(--ds-success-solid-hover)] text-white shadow-sm hover:bg-[color:var(--signal-success-800)]",
-        glow: "bg-[color:var(--brand-primary)] text-white shadow-md shadow-[color:var(--brand-glow)] hover:bg-[color:var(--brand-primary-hover)] hover:shadow-lg active:bg-[color:var(--brand-primary-hover)]",
+        glow: "bg-[color:var(--brand-primary)] bg-[image:var(--brand-button-gradient)] text-white shadow-[var(--ds-glow-brand),var(--brand-button-highlight)] hover:bg-[color:var(--brand-primary-hover)] hover:shadow-[var(--ds-shadow-3),var(--ds-glow-brand)] active:bg-[color:var(--brand-primary-hover)]",
         outline:
           "border border-[color:var(--ds-border-strong)] bg-transparent text-[color:var(--ds-text-muted)] hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/[0.08] hover:text-[color:var(--brand-primary)]",
       },

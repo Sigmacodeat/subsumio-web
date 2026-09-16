@@ -34,7 +34,7 @@ export default function GlobalError({
             --ge-danger: hsl(0, 60%, 65%);
             --ge-danger-border: hsla(0, 60%, 65%, 0.3);
             --ge-danger-bg: hsla(0, 60%, 65%, 0.15);
-            --ge-brand: hsl(230, 45%, 55%);
+            --ge-brand: hsl(222, 72%, 50%);
             --ge-border: hsl(225, 12%, 24%);
             --ge-radius: 0.625rem;
           }

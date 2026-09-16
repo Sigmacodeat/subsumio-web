@@ -233,7 +233,7 @@ export default function OnboardingPage() {
       className="mx-auto flex min-h-full max-w-[1200px] items-center justify-center space-y-6 p-4 md:p-6 lg:p-8"
       style={{
         background:
-          "linear-gradient(135deg, var(--brand-gradient-from, hsl(230, 60%, 36%)) 0%, var(--brand-gradient-via, hsl(230, 60%, 64%)) 50%, var(--brand-gradient-to, hsl(260, 60%, 65%)) 100%)",
+          "linear-gradient(135deg, var(--brand-gradient-from, hsl(222, 60%, 36%)) 0%, var(--brand-gradient-via, hsl(222, 60%, 64%)) 50%, var(--brand-gradient-to, hsl(260, 60%, 65%)) 100%)",
       }}
     >
       <div className="w-full max-w-2xl">

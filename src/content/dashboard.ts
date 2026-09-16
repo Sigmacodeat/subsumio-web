@@ -411,6 +411,7 @@ export const D = {
   "sidebar.brain_status": { de: "Wissensbasis", en: "Knowledge base" },
   "sidebar.active": { de: "Aktiv", en: "Active" },
   "sidebar.pages_entities": { de: "Seiten", en: "pages" },
+  "sidebar.entities_label": { de: "Einträge", en: "entries" },
   "sidebar.changes_pending": { de: "Änderung(en) ausstehend", en: "change(s) pending" },
   "sidebar.sync_now": { de: "Jetzt syncen", en: "Sync now" },
   "sidebar.syncing": { de: "Sync…", en: "Syncing…" },
@@ -8050,6 +8051,10 @@ export const D = {
   "matterheader.phase": { de: "Phase:", en: "Phase:" },
   "matterheader.loading": { de: "Lade Akte…", en: "Loading matter…" },
   "matterheader.not_found": { de: "Akte nicht gefunden", en: "Matter not found" },
+  "matterheader.load_failed": {
+    de: "Akte konnte nicht geladen werden",
+    en: "Matter could not be loaded",
+  },
   "matterheader.back_to_cases": { de: "Zurück zu Akten", en: "Back to Cases" },
   "matterheader.unpin": { de: "Loslösen", en: "Unpin" },
   "matterheader.pin": { de: "Anheften", en: "Pin" },

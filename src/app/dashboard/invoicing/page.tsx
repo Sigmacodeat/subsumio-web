@@ -287,22 +287,22 @@ export default function InvoicingPage() {
 <meta charset="UTF-8">
 <title>Rechnung ${inv.number}</title>
 <style>
-  body { font-family: Arial, sans-serif; margin: 40px; color: hsl(230, 8%, 20%); font-size: 14px; }
-  .header { border-bottom: 2px solid hsl(230, 60%, 52%); padding-bottom: 20px; margin-bottom: 30px; }
-  .header h1 { margin: 0; font-size: 28px; color: hsl(230, 60%, 52%); }
-  .header p { margin: 4px 0; color: hsl(230, 8%, 40%); }
+  body { font-family: Arial, sans-serif; margin: 40px; color: hsl(222, 8%, 20%); font-size: 14px; }
+  .header { border-bottom: 2px solid hsl(222, 60%, 52%); padding-bottom: 20px; margin-bottom: 30px; }
+  .header h1 { margin: 0; font-size: 28px; color: hsl(222, 60%, 52%); }
+  .header p { margin: 4px 0; color: hsl(222, 8%, 40%); }
   .meta { display: flex; justify-content: space-between; margin-bottom: 30px; }
-  .meta-box { background: hsl(230, 8%, 97%); padding: 15px; border-radius: 8px; }
-  .meta-box strong { display: block; margin-bottom: 8px; color: hsl(230, 8%, 20%); }
+  .meta-box { background: hsl(222, 8%, 97%); padding: 15px; border-radius: 8px; }
+  .meta-box strong { display: block; margin-bottom: 8px; color: hsl(222, 8%, 20%); }
   table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-  th { background: hsl(230, 8%, 94%); padding: 12px; text-align: left; font-weight: 600; }
-  td { padding: 12px; border-bottom: 1px solid hsl(230, 8%, 90%); }
+  th { background: hsl(222, 8%, 94%); padding: 12px; text-align: left; font-weight: 600; }
+  td { padding: 12px; border-bottom: 1px solid hsl(222, 8%, 90%); }
   .right { text-align: right; }
-  .totals { margin-top: 20px; border-top: 2px solid hsl(230, 8%, 90%); padding-top: 20px; }
+  .totals { margin-top: 20px; border-top: 2px solid hsl(222, 8%, 90%); padding-top: 20px; }
   .total-row { display: flex; justify-content: space-between; padding: 8px 0; }
-  .total-row.grand { font-size: 18px; font-weight: bold; color: hsl(230, 60%, 52%); border-top: 2px solid hsl(230, 60%, 52%); margin-top: 10px; padding-top: 15px; }
-  .footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid hsl(230, 8%, 90%); font-size: 12px; color: hsl(230, 8%, 40%); }
-  .muted { color: hsl(230, 8%, 40%); }
+  .total-row.grand { font-size: 18px; font-weight: bold; color: hsl(222, 60%, 52%); border-top: 2px solid hsl(222, 60%, 52%); margin-top: 10px; padding-top: 15px; }
+  .footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid hsl(222, 8%, 90%); font-size: 12px; color: hsl(222, 8%, 40%); }
+  .muted { color: hsl(222, 8%, 40%); }
   @media print { body { margin: 20px; } }
 </style>
 </head>
@@ -395,7 +395,7 @@ export default function InvoicingPage() {
     <div class="total-row grand"><span>Gesamtbetrag</span><span>${formatEur(inv.total, lang)}</span></div>
   </div>
 
-  ${inv.notes ? `<p style="margin-top: 30px; color: hsl(230, 8%, 40%);">${escapeHtml(inv.notes)}</p>` : ""}
+  ${inv.notes ? `<p style="margin-top: 30px; color: hsl(222, 8%, 40%);">${escapeHtml(inv.notes)}</p>` : ""}
 
   <div class="footer">
     <p>Zahlungsbedingungen: ${escapeHtml(inv.paymentTerms || "14 Tage netto")}</p>
