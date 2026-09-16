@@ -233,6 +233,10 @@ describe("middleware CSP", () => {
     const requestHeaders = (res as unknown as { requestHeaders?: Headers }).requestHeaders;
     if (requestHeaders) {
       expect(requestHeaders.get("x-nonce")).toMatch(/[A-Za-z0-9+/=]+/);
+      // Next.js derives its inline-script nonce from the request CSP header.
+      expect(requestHeaders.get("Content-Security-Policy")).toContain(
+        `nonce-${requestHeaders.get("x-nonce")}`
+      );
     }
     // Response must still have a valid CSP.
     expect(res.headers.get("Content-Security-Policy")).toMatch(/nonce-[A-Za-z0-9+/=]+/);

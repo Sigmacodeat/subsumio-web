@@ -270,6 +270,10 @@ export async function middleware(req: NextRequest) {
   const cspHeader = buildCspHeader(nonce);
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-nonce", nonce);
+  // Next.js reads the nonce for its own inline scripts (RSC payload, boot
+  // scripts) from the *request* CSP header — without it every inline script
+  // would be blocked under the strict production policy.
+  requestHeaders.set("Content-Security-Policy", cspHeader);
 
   function applyCsp(response: NextResponse): NextResponse {
     response.headers.set("Content-Security-Policy", cspHeader);

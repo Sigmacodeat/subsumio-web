@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from "react";
-import Script from "next/script";
+import { useCspNonce } from "@/components/providers/csp-nonce";
+import { THEME_INIT_SCRIPT } from "@/lib/theme-init-script";
 import { usePathname, useRouter } from "next/navigation";
 import { ensureRealtime } from "@/lib/realtime";
 import { styleForIndustry } from "@/lib/industry-theme";
@@ -243,6 +244,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   }, [cmdOpen, guideOpen, shortcutsOpen]);
 
   const [theme, toggleTheme] = useTheme();
+  const cspNonce = useCspNonce();
   const statsQuery = useBrainStats();
   const meQuery = useMe();
   const isMediumScreen = useIsMediumScreen();
@@ -655,7 +657,15 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           data attribute ensures noindex intent is documented. The actual
           meta tag is set via Next.js metadata API in the page exports. */}
       <meta name="robots" content="noindex, nofollow" />
-      <Script src="/theme-init.js" strategy="beforeInteractive" />
+      {/* Theme bootstrap runs while this element is being parsed (its parent
+          node already exists), before hydration and first paint. Browsers
+          blank the nonce attribute once a CSP is enforced, so React's dev
+          hydration diff would otherwise report nonce "" vs the real value. */}
+      <script
+        nonce={cspNonce}
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
+      />
       {/* Skip-to-content link for keyboard users */}
       <a
         href="#main-content"

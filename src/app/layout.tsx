@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
 import { headers } from "next/headers";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import ServiceWorkerRegister from "@/components/pwa/sw-register";
@@ -10,6 +9,7 @@ import LangSetter from "@/components/brand/lang-setter";
 import { ToastProvider } from "@/components/ui/toast";
 import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { CspNonceProvider } from "@/components/providers/csp-nonce";
 import LayoutShell from "@/components/marketing/layout-shell";
 import "./globals.css";
 
@@ -160,22 +160,19 @@ export default async function RootLayout({
         className="noise min-h-full [color:var(--color-light-text)] antialiased [background:var(--color-light-bg)]"
         suppressHydrationWarning
       >
-        {/* The nonce prop on Script triggers Next.js to inject the nonce into
-            ALL inline scripts (RSC payload, boot scripts, etc.) when CSP
-            strict-dynamic is used. Without this, inline scripts are blocked
-            by the CSP policy set in middleware. */}
-        <Script id="csp-nonce-bootstrap" nonce={nonce} strategy="beforeInteractive" />
         <LangSetter />
         <SubsumioTheme />
-        <QueryProvider>
-          <MonitoringProvider>
-            <ToastProvider>
-              <ConfirmProvider>
-                <LayoutShell>{children}</LayoutShell>
-              </ConfirmProvider>
-            </ToastProvider>
-          </MonitoringProvider>
-        </QueryProvider>
+        <CspNonceProvider nonce={nonce}>
+          <QueryProvider>
+            <MonitoringProvider>
+              <ToastProvider>
+                <ConfirmProvider>
+                  <LayoutShell>{children}</LayoutShell>
+                </ConfirmProvider>
+              </ToastProvider>
+            </MonitoringProvider>
+          </QueryProvider>
+        </CspNonceProvider>
         <ServiceWorkerRegister />
         <AppUpdateBanner />
         <noscript>
