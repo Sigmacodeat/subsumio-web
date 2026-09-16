@@ -19,10 +19,7 @@
  * berechnet (mit vhfZ-Hemmung, Feiertagsverschiebung, ERV-Zustellfiktion).
  */
 
-import {
-  berechneFristAuto,
-  type FristAutoErgebnis,
-} from "@/lib/legal/frist-engine";
+import { berechneFristAuto, type FristAutoErgebnis } from "@/lib/legal/frist-engine";
 
 export interface DetectedDeadline {
   type: string;
@@ -185,7 +182,8 @@ const RULES: Array<{
   // Gesetzliche Fristen mit Template-Mapping
   {
     name: "zpo_klagebeantwortung",
-    regex: /(?:Klagebeantwortung|Klageerwiderung|Erwiderung auf die Klage)[\s\S]{0,30}(?:frist|fristen|termin)/i,
+    regex:
+      /(?:Klagebeantwortung|Klageerwiderung|Erwiderung auf die Klage)[\s\S]{0,30}(?:frist|fristen|termin)/i,
     type: "legal_deadline",
     template: "klagebeantwortung",
   },
@@ -215,7 +213,8 @@ const RULES: Array<{
   },
   {
     name: "zpo_einspruch_zahlungsbefehl",
-    regex: /(?:Einspruch[\s\S]{0,10}gegen[\s\S]{0,10}Zahlungsbefehl|Einspruchsfrist[\s\S]{0,20}Zahlungsbefehl)/i,
+    regex:
+      /(?:Einspruch[\s\S]{0,10}gegen[\s\S]{0,10}Zahlungsbefehl|Einspruchsfrist[\s\S]{0,20}Zahlungsbefehl)/i,
     type: "legal_deadline",
     template: "einspruch_zahlungsbefehl",
   },
@@ -233,13 +232,15 @@ const RULES: Array<{
   },
   {
     name: "stpo_beschwerde",
-    regex: /(?:Sofortige Beschwerde|Beschwerde)[\s\S]{0,30}(?:frist|fristen|1 Woche|7 Tage|14 Tage)/i,
+    regex:
+      /(?:Sofortige Beschwerde|Beschwerde)[\s\S]{0,30}(?:frist|fristen|1 Woche|7 Tage|14 Tage)/i,
     type: "legal_deadline",
     template: "beschwerde_stpo",
   },
   {
     name: "avg_beschwerde_vwgvg",
-    regex: /(?:Bescheidbeschwerde|Beschwerde[\s\S]{0,10}gegen[\s\S]{0,10}Bescheid|Beschwerde an das Verwaltungsgericht)[\s\S]{0,30}(?:frist|fristen|termin)/i,
+    regex:
+      /(?:Bescheidbeschwerde|Beschwerde[\s\S]{0,10}gegen[\s\S]{0,10}Bescheid|Beschwerde an das Verwaltungsgericht)[\s\S]{0,30}(?:frist|fristen|termin)/i,
     type: "legal_deadline",
     template: "beschwerde_vwgvg",
   },
@@ -251,13 +252,15 @@ const RULES: Array<{
   },
   {
     name: "vwgh_revision",
-    regex: /(?:Revision an den VwGH|Verwaltungsgerichtshof-Revision|VwGH-Revision)[\s\S]{0,30}(?:frist|fristen|termin)/i,
+    regex:
+      /(?:Revision an den VwGH|Verwaltungsgerichtshof-Revision|VwGH-Revision)[\s\S]{0,30}(?:frist|fristen|termin)/i,
     type: "legal_deadline",
     template: "revision_vwgh",
   },
   {
     name: "vfg_beschwerde",
-    regex: /(?:Beschwerde an den VfGH|Verfassungsgerichtshof-Beschwerde|VfGH-Beschwerde)[\s\S]{0,30}(?:frist|fristen|termin)/i,
+    regex:
+      /(?:Beschwerde an den VfGH|Verfassungsgerichtshof-Beschwerde|VfGH-Beschwerde)[\s\S]{0,30}(?:frist|fristen|termin)/i,
     type: "legal_deadline",
     template: "beschwerde_vfgh",
   },
@@ -418,18 +421,31 @@ const ZUSTELLUNG_REGEXES: Array<{ re: RegExp; name: string }> = [
 ];
 
 const MONTH_MAP: Record<string, number> = {
-  jan: 1, januar: 1,
-  feb: 2, februar: 2,
-  mär: 3, märz: 3, mar: 3, marz: 3,
-  apr: 4, april: 4,
+  jan: 1,
+  januar: 1,
+  feb: 2,
+  februar: 2,
+  mär: 3,
+  märz: 3,
+  mar: 3,
+  marz: 3,
+  apr: 4,
+  april: 4,
   mai: 5,
-  jun: 6, juni: 6,
-  jul: 7, juli: 7,
-  aug: 8, august: 8,
-  sep: 9, september: 9,
-  okt: 10, oktober: 10,
-  nov: 11, november: 11,
-  dez: 12, dezember: 12,
+  jun: 6,
+  juni: 6,
+  jul: 7,
+  juli: 7,
+  aug: 8,
+  august: 8,
+  sep: 9,
+  september: 9,
+  okt: 10,
+  oktober: 10,
+  nov: 11,
+  november: 11,
+  dez: 12,
+  dezember: 12,
 };
 
 function parseDateParts(day: string, month: string, year: string): string | null {
@@ -504,10 +520,19 @@ export function enrichDetectedDeadline(
   fullText: string,
   opts?: { ferialsache?: boolean; vorfristTage?: number }
 ): DetectedDeadline {
-  if (!dd.suggestedTemplate) return dd;
-
-  const registryKey = TEMPLATE_TO_REGISTRY[dd.suggestedTemplate];
-  if (!registryKey) return dd;
+  const registryKey = dd.suggestedTemplate ? TEMPLATE_TO_REGISTRY[dd.suggestedTemplate] : undefined;
+  if (!registryKey) {
+    // Generic relative deadline ("binnen vier Wochen") without a registry
+    // template: anchor it on the service date when the text names one, so
+    // the lawyer gets a concrete, saveable date instead of "innerhalb 28 Tage".
+    if (dd.date || !dd.daysFromNow) return dd;
+    const zustellung = dd.zustellungsdatum ?? extractZustellungsdatum(fullText);
+    if (!zustellung) return dd;
+    const end = new Date(`${zustellung}T00:00:00Z`);
+    if (Number.isNaN(end.getTime())) return dd;
+    end.setUTCDate(end.getUTCDate() + dd.daysFromNow);
+    return { ...dd, zustellungsdatum: zustellung, date: end.toISOString().slice(0, 10) };
+  }
 
   // Zustellungsdatum aus dem Text extrahieren
   let zustellung = dd.zustellungsdatum ?? extractZustellungsdatum(fullText);
@@ -517,8 +542,7 @@ export function enrichDetectedDeadline(
   if (!zustellung && dd.date) {
     // Für Verjährung: dd.date ist das Datum der Kenntniserlangung
     // Für absolute Fristen: dd.date ist das Fristende selbst
-    const art = TEMPLATE_TO_REGISTRY[dd.suggestedTemplate];
-    if (art === "verjaehrung_kurz" || art === "verjaehrung_lang") {
+    if (registryKey === "verjaehrung_kurz" || registryKey === "verjaehrung_lang") {
       zustellung = dd.date;
     }
   }

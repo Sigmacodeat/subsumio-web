@@ -2145,7 +2145,8 @@ async function queueBilledBeaPipeline(
 // ── CORS for direct-to-engine browser uploads ──────────────────────────
 
 function parseEngineCorsAllowlist(): Set<string> | null {
-  const v = process.env.GBRAIN_HTTP_CORS_ORIGIN;
+  // SUBSUMIO_HTTP_CORS_ORIGIN is the product-facing alias (local .env files use it).
+  const v = process.env.GBRAIN_HTTP_CORS_ORIGIN || process.env.SUBSUMIO_HTTP_CORS_ORIGIN;
   if (!v) return null;
   return new Set(
     v
@@ -3141,8 +3142,14 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     // P0-SEC-001: Engine-side prompt sanitization — strip injection patterns
     // before the query enters the think pipeline. Direct callers (CLI, MCP)
     // bypass the web-app's sanitizeObjectStrings layer.
-    const { sanitizeTakeForPrompt } = await import("../core/think/sanitize.ts");
-    const { text: query } = sanitizeTakeForPrompt(rawQuery);
+    const { sanitizePromptInput } = await import("../core/think/sanitize.ts");
+    const { text: query } = sanitizePromptInput(rawQuery, 20_000);
+    // Optional caller instructions (persona / tool docs) → system prompt, not
+    // the retrieval query. Same sanitization as the question.
+    const rawInstructions = typeof body?.instructions === "string" ? body.instructions : "";
+    const instructions = rawInstructions.trim()
+      ? sanitizePromptInput(rawInstructions, 60_000).text
+      : undefined;
 
     const rawMode = String(body?.mode ?? "balanced");
     const searchMode = (["conservative", "balanced", "tokenmax"] as const).includes(
@@ -3193,6 +3200,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const thinkStartTime = Date.now();
       const result = await runThink(engine, {
         question: query,
+        ...(instructions ? { instructions } : {}),
         remote: false,
         sourceId,
         // Federate reads across the tenant's source + shared statute corpus so
@@ -6845,8 +6853,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         // sanitizes via sanitizeObjectStrings in createEngineProxy, but direct
         // callers (CLI, MCP) bypass that path. This is the engine's last line
         // of defense against prompt injection.
-        const { sanitizeTakeForPrompt } = await import("../core/think/sanitize.ts");
-        const { text: sanitizedPrompt } = sanitizeTakeForPrompt(rawPrompt);
+        const { sanitizePromptInput } = await import("../core/think/sanitize.ts");
+        const { text: sanitizedPrompt } = sanitizePromptInput(rawPrompt, 20_000);
 
         const queue = new MinionQueue(engine);
         const sourceId = requestSourceId(req);

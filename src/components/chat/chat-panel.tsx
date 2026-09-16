@@ -17,6 +17,24 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useLang } from "@/lib/use-lang";
 import { useMe } from "@/lib/queries/auth";
 import { buildSafePrompt } from "@/lib/prompt-sanitizer";
+import { localizeAnswerSections } from "@/lib/answer-sections";
+import { ApiRequestError } from "@/lib/api";
+import type { DashboardKey } from "@/content/dashboard";
+
+/** Human copy for engine/API failures; raw JSON bodies never reach the chat. */
+function describeChatError(err: unknown, t: (key: DashboardKey) => string): string {
+  if (err instanceof ApiRequestError) {
+    if (err.code === "quota_exceeded") return t("chat.error_quota");
+    if (err.code === "insufficient_credits" || err.status === 402) return t("chat.error_credits");
+    if (err.code === "rate_limited" || err.status === 429) return t("chat.error_rate_limit");
+    if (err.status >= 502 && err.status <= 504) return t("chat.error_engine");
+    if (err.message && !err.message.trim().startsWith("{")) return err.message;
+    return t("chat.error_generic");
+  }
+  if (err instanceof Error && err.message && !err.message.trim().startsWith("{"))
+    return err.message;
+  return t("chat.error_generic");
+}
 import { csrfFetch } from "@/lib/csrf";
 import {
   buildPromptContext,
@@ -1078,7 +1096,9 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           query: text,
         }).catch(() => ""),
       });
-      const prompt = buildSafePrompt(systemPrompt, userInput);
+      // Persona/tool docs travel as system-prompt instructions; only the
+      // (delimited) user input is the query the engine retrieves and routes on.
+      const prompt = buildSafePrompt("", userInput).trim();
 
       // Create abort controller
       const controller = new AbortController();
@@ -1088,6 +1108,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
 
       try {
         const result = await api.query.think(prompt, {
+          instructions: systemPrompt,
           mode: queryModeToThinkMode(queryMode),
           queryMode,
           caseSlug: selectedCaseSlug || context.caseSlug || undefined,
@@ -1099,7 +1120,10 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         });
 
         // Finalize assistant message — strip tool markers from displayed content
-        const cleanAnswer = result.answer.replace(/\[TOOL:[^\]]+\]/gi, "").trim();
+        const cleanAnswer = localizeAnswerSections(
+          result.answer.replace(/\[TOOL:[^\]]+\]/gi, "").trim(),
+          lang === "en" ? "en" : "de"
+        );
         if (!cleanAnswer) {
           // Empty response from engine — show fallback message
           const emptyMsg: ChatMessage = {
@@ -1193,7 +1217,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       } catch (err) {
         const isAborted = err instanceof DOMException && err.name === "AbortError";
         if (!isAborted) {
-          const errorMsg = err instanceof Error ? err.message : t("chat.error_generic");
+          const errorMsg = describeChatError(err, t);
           setError(errorMsg);
           let errorMsgFinal: ChatMessage | null = null;
           setMessages((m) => {
@@ -1250,6 +1274,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       userContext,
       matterVitals,
       groundAnswer,
+      lang,
     ]
   );
 
@@ -1667,7 +1692,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
             query: userMsg.content,
           }).catch(() => ""),
         });
-      const prompt = buildSafePrompt(regenSystemPrompt, regenUserInput);
+      const prompt = buildSafePrompt("", regenUserInput).trim();
 
       const controller = new AbortController();
       abortControllerRef.current = controller;
@@ -1676,6 +1701,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
 
       try {
         const result = await api.query.think(prompt, {
+          instructions: regenSystemPrompt,
           mode: queryModeToThinkMode(queryMode),
           queryMode,
           caseSlug: selectedCaseSlug || context.caseSlug || undefined,
@@ -1686,7 +1712,10 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           },
         });
 
-        const cleanRegenAnswer = result.answer.replace(/\[TOOL:[^\]]+\]/gi, "").trim();
+        const cleanRegenAnswer = localizeAnswerSections(
+          result.answer.replace(/\[TOOL:[^\]]+\]/gi, "").trim(),
+          lang === "en" ? "en" : "de"
+        );
         if (!cleanRegenAnswer) {
           const emptyMsg: ChatMessage = {
             ...assistantMsg,
@@ -1764,7 +1793,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       } catch (err) {
         const isAborted = err instanceof DOMException && err.name === "AbortError";
         if (!isAborted) {
-          const errorMsg = err instanceof Error ? err.message : t("chat.error_generic");
+          const errorMsg = describeChatError(err, t);
           setError(errorMsg);
           let errorMsgFinal: ChatMessage | null = null;
           setMessages((m) => {
@@ -1816,6 +1845,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       setMessages,
       userContext,
       groundAnswer,
+      lang,
     ]
   );
 

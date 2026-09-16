@@ -154,7 +154,8 @@ Desktop + Mobil/Dark).
 - Korpus: AT-Abdeckung ist 91,5 % (Gedächtnis); für den Piloten ausreichend, Lücken
   (AT-Judikatur-Ingest) als Post-Pilot.
 
-Gate: Kernfrage aus dem Testskript liefert belegte Antwort mit verifizierten Zitaten.
+Gate: Kernfrage aus dem Testskript liefert belegte Antwort mit verifizierten Zitaten ✅ lokal
+(Aktenfrage mit Belegen; Normzitate gegen den Korpus erst auf Staging prüfbar).
 
 ### Phase 4 — Betrieb und Staging
 
@@ -220,7 +221,9 @@ Offen mit Priorität (siehe Protokoll):
    erledigt; ~~Dokumentansicht, Rechnungsvorschau „Kunde —", 404-/Audit-Rauschen~~ erledigt
    (Protokoll „Nachtrag"); ~~doppelte Listenabrufe~~ erledigt (73→53 Requests, 0 redundant,
    Cockpit löst nur noch ein Briefing statt zwei LLM-Aufrufe aus).
-4. **Blocker Phase 3:** Engine ist auf OpenRouter/Claude umgestellt, aber Anthropic- und beide OpenRouter-Konten haben kein Guthaben. Guthaben aufladen (OpenRouter reicht, ist der Prod-Provider) — vorher sind Assistent, Strategie, Briefing und Fristen-Erkennung nicht prüfbar.
+4. ~~Blocker Phase 3: Provider-Guthaben~~ aufgeladen; KI-Stationen durchgespielt, 8 Prod-relevante
+   Defekte behoben (500-Zeichen-Kappung, Persona in Suchanfrage, Akten ohne Inhalt, Fristen-Brücke,
+   Spend-Anomalie-SQL, Fehlertexte, Sektionen) — siehe Protokoll „Station 4 & Phase 3".
 5. ~~Phase 2: Playwright-Mock-Suite auf dem Prod-Build~~ erledigt: 590 bestanden, 3 übersprungen,
    1 Spec an die Admin-only-Regel angepasst. Dabei gefunden und behoben: kein
    Benachrichtigungs-Insert auf Postgres (falscher Konfliktschlüssel). Real-Engine-Modus

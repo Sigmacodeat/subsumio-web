@@ -4,6 +4,7 @@ import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { markOnboardingProgress } from "@/lib/auth/store";
 import { ensureCaseContacts } from "@/lib/case-contacts";
+import { caseContentWithAktenblatt, isCaseSlug, isDeadlineSlug } from "@/lib/aktenblatt";
 
 const pagesQuerySchema = z.object({
   limit: z.string().optional(),
@@ -105,6 +106,80 @@ export const GET = createHandler(
   }
 );
 
+/**
+ * Re-render the Aktenblatt after a metadata merge. Best-effort: a failure here
+ * leaves the matter with a stale (but still valid) Aktenblatt.
+ */
+async function refreshAktenblatt(headers: Record<string, string>, slug: string): Promise<void> {
+  try {
+    const path = slug.split("/").map(encodeURIComponent).join("/");
+    const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
+      headers,
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return;
+    const page = (await res.json()) as {
+      title?: string;
+      content?: string;
+      frontmatter?: Record<string, unknown>;
+    };
+    // Deadlines are usually standalone pages linked by case_slug.
+    const listRes = await fetch(`${ENGINE_URL}/api/pages?type=legal_deadline&limit=300`, {
+      headers,
+      signal: AbortSignal.timeout(10_000),
+    }).catch(() => null);
+    const listJson = listRes?.ok ? await listRes.json().catch(() => null) : null;
+    const allDeadlines: Array<Record<string, unknown>> = Array.isArray(listJson)
+      ? listJson
+      : Array.isArray((listJson as { items?: unknown })?.items)
+        ? ((listJson as { items: Array<Record<string, unknown>> }).items ?? [])
+        : [];
+    const linkedDeadlines = allDeadlines.filter(
+      (d) => ((d.frontmatter ?? {}) as Record<string, unknown>).case_slug === slug
+    );
+    const next = caseContentWithAktenblatt(
+      page.content ?? "",
+      page.title ?? "",
+      page.frontmatter ?? {},
+      {
+        linkedDeadlines,
+      }
+    );
+    if (next === (page.content ?? "").trim()) return;
+    await fetch(`${ENGINE_URL}/api/pages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ slug, merge: true, content: next }),
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (e) {
+    console.warn("[pages] aktenblatt refresh skipped:", e instanceof Error ? e.message : String(e));
+  }
+}
+
+async function refreshAktenblattForDeadline(
+  headers: Record<string, string>,
+  deadlineSlug: string,
+  fm: Record<string, unknown> | undefined
+): Promise<void> {
+  try {
+    let caseSlug = typeof fm?.case_slug === "string" ? fm.case_slug : "";
+    if (!caseSlug) {
+      const path = deadlineSlug.split("/").map(encodeURIComponent).join("/");
+      const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
+        headers,
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!res.ok) return;
+      const page = (await res.json()) as { frontmatter?: Record<string, unknown> };
+      caseSlug = typeof page.frontmatter?.case_slug === "string" ? page.frontmatter.case_slug : "";
+    }
+    if (isCaseSlug(caseSlug)) await refreshAktenblatt(headers, caseSlug);
+  } catch {
+    /* best-effort */
+  }
+}
+
 export const POST = createHandler(
   {
     action: "brain.write",
@@ -197,6 +272,13 @@ export const POST = createHandler(
         if (Object.keys(links).length > 0) {
           body.frontmatter = { ...body.frontmatter, ...links };
         }
+        // Matters live in frontmatter; the engine only indexes body text.
+        // The Aktenblatt makes the matter searchable and answerable.
+        body.content = caseContentWithAktenblatt(
+          body.content ?? "",
+          body.title ?? "",
+          (body.frontmatter ?? {}) as Record<string, unknown>
+        );
       }
 
       const res = await fetch(`${ENGINE_URL}/api/pages`, {
@@ -219,6 +301,15 @@ export const POST = createHandler(
       const isMerge = body.merge === true;
       if (!isMerge) void recordQuota(ctx, "pages");
       const result = await res.json();
+
+      if (isMerge && isCaseSlug(body.slug) && body.content === undefined) {
+        // Metadata merge on a matter: refresh the Aktenblatt from the merged
+        // frontmatter so deadlines/documents/parties stay searchable.
+        void refreshAktenblatt(ctx.headers, body.slug);
+      } else if (body.type === "legal_deadline" || isDeadlineSlug(body.slug)) {
+        // A deadline was created or changed: its matter's Aktenblatt lists it.
+        void refreshAktenblattForDeadline(ctx.headers, body.slug, body.frontmatter);
+      }
 
       if (!isMerge && body.type === "legal_case") {
         void markOnboardingProgress(ctx.user.id, { firstCase: true });

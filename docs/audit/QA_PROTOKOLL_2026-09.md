@@ -288,3 +288,61 @@ Engine-Migrationen — fehlerfrei, Spalten/Indizes identisch mit der Dev-DB, Eng
 
 **Realtime-Client:** Beim Verlassen der Seite (pagehide) wird der SSE-Stream geschlossen
 statt „SSE error (will reconnect)" zu loggen und einen Reconnect zu planen.
+
+## Station 4 & Phase 3 — KI-Stationen mit echtem Modell (nach Guthaben-Aufladung)
+
+Engine-Tiers: OpenRouter `anthropic/claude-sonnet-4.6` (think/reasoning/deep) und `claude-haiku-4.5`
+(utility/subagent). Direkter Probe-Aufruf: Berufungsfrist § 464 Abs 1 ZPO, vier Wochen — korrekt.
+KI-Playwright-Specs im Real-Engine-Modus: **106/106 bestanden** (chat-flows, chat-research,
+legal-workflow, review-analytics, misc-dashboard, case-closeout, verification-policy/-receipts).
+
+**Gefunden und behoben (alle betreffen auch Prod):**
+
+- **500-Zeichen-Kappung jeder KI-Anfrage.** Der Engine-Handler von `/api/think` schickte die
+  Anfrage durch den Take-Sanitizer, der bei 500 Zeichen abschneidet. Der Copilot-Prompt (9 KB
+  Persona + Frage) verlor die Nutzerfrage, das Briefing seine Fristenliste („abgeschnitten ab
+  „Kl…"), Strategie- und Drafting-Prompts ihren Inhalt. Neuer `sanitizePromptInput`
+  (Injektionsmuster bleiben, Obergrenze 20 000/60 000 Zeichen) an allen drei Stellen.
+- **Persona in der Suchanfrage.** Der Chat schickte Persona + Tool-Doku + Frage als _eine_
+  Query; die Engine nutzte den ganzen Block für Retrieval, Intent-Routing und Injection-Scan.
+  Neues Feld `instructions` (Engine `RunThinkOpts`, HTTP, Web-Route, API-Client): Persona
+  landet im System-Prompt, nur die abgegrenzte Nutzerfrage ist die Query. Begrüßungsregel
+  umformuliert (Begrüßung nie als Ersatz für eine Antwort). Test: `think-instructions.test.ts`.
+- **Akten unsichtbar für Suche und Assistent.** Über den Wizard angelegte Akten hatten keinen
+  Seiteninhalt (alles im Frontmatter, das nicht indexiert wird) → Engine-Suche 0 Treffer,
+  Assistent: „keine Informationen zur Akte". Jetzt pflegt die Pages-Route ein **Aktenblatt**
+  (Parteien, Gericht, Status, Sachverhalt, Fristen inkl. verknüpfter Fristseiten, Dokumente,
+  Aufgaben) als markierten Block im Seiteninhalt — bei Anlage, bei jedem Metadaten-Merge und
+  bei Anlage/Änderung einer Frist der Akte. Danach: Suche Score 0,885, Assistent nennt Fristen
+  und Dokumente mit Belegen, erkennt sogar die Diskrepanz zwischen Aktenblatt (21.10.) und
+  hochgeladenem Beschluss (14.10.).
+- **Fristen-Erkennung aus Uploads erzeugte nie Vorschläge.** Die Dokumentanalyse liefert
+  `key_dates` [{date, what}], die Rückschreibung erwartete `deadlines` [{label, date,
+  urgency}]. Brücke in der Analyze-Route (nur künftige Termine, Fristen/Tagsatzungen = hoch).
+  Ergebnis am Beschluss: 2 Fristseiten `review_status: unreviewed` (14.10. Klagebeantwortung,
+  05.11. Tagsatzung) + `suggested_deadlines` an der Akte.
+- **Fristen erkennen (Text einfügen):** „binnen vier Wochen" ohne Registry-Vorlage hatte kein
+  Datum → „Speichern" deaktiviert. Relative Fristen werden jetzt am erkannten Zustellungsdatum
+  verankert (16.09. + 28 Tage = 14.10.2026).
+- **`detectSpendAnomaly` schlug bei jedem KI-Aufruf fehl** (`column "amount" does not exist`:
+  FILTER auf Spalten, die die gruppierte Unterabfrage nicht hat). SQL korrigiert.
+- **Rohes JSON als Chat-Antwort** bei Kontingent-/Guthaben-/Rate-Limit-Fehlern
+  (`{"error":"quota_exceeded",…}`). Jetzt deutsche Fehltexte mit Hinweis auf Abrechnung.
+- **Englische Sektionen** („## Answer / Gaps / Conflicts") in Chat und Briefing: Chat
+  lokalisiert („Antwort / Offene Punkte / Widersprüche"), Briefing zeigt nur Prosa.
+- **Lokal:** Engine liest jetzt auch `SUBSUMIO_HTTP_CORS_ORIGIN` (Browser-Upload direkt zur
+  Engine schlug an CORS fehl); lokale Engine-URL auf 127.0.0.1.
+
+**Ergebnisse (headless, echtes Modell):** Cockpit-Briefing mit belegten Fristen; Assistent
+Aktenfrage vollständig mit Zitaten; Prozessstrategie (SWOT, Risikobewertung) nutzt Beschluss
+und Aktenblatt; Upload → Analyse → Fristvorschläge durchgängig.
+
+**Offen / Entscheidungen:**
+
+- Kontingent: Free-Plan 100 Anfragen/Monat — beim QA-Durchlauf in einem Tag erreicht. Für den
+  Piloten Plan bzw. Limit festlegen (Pro: 1 000, Team: 4 000).
+- `copilot-memory-llm` und `llm-deadline-extract` rufen OpenRouter direkt aus der Web-App
+  (eigener Key, HTTP 429 im Log) statt über die Engine — doppelte Kostenpfade, Konsolidierung
+  nach dem Piloten.
+- Onboarding-Tour-Status liegt nur im Browser (localStorage): neues Gerät = Tour erneut.
+- Lokal kein Rechtskorpus: Zitatqualität gegen AT-Normen nur auf Staging/Prod prüfbar.

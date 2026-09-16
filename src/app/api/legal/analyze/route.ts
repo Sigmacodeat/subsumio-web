@@ -20,6 +20,43 @@ import { writeSuggestedDeadlinesAndParties } from "@/lib/legal/case-writeback";
 
 export const maxDuration = 120;
 
+/**
+ * The engine's document analysis reports dates as `key_dates` [{date, what}],
+ * while the case writeback expects `deadlines` [{label, date, urgency, source}].
+ * Without this bridge no uploaded document ever produced a deadline
+ * suggestion. Past dates (service dates, hearings held) are not deadlines.
+ */
+export function withDeadlinesFromKeyDates(
+  parsed: Record<string, unknown>
+): Record<string, unknown> {
+  if (Array.isArray(parsed.deadlines) && parsed.deadlines.length > 0) return parsed;
+  if (!Array.isArray(parsed.key_dates)) return parsed;
+  const today = new Date().toISOString().slice(0, 10);
+  const deadlines = (parsed.key_dates as Array<Record<string, unknown>>)
+    .filter(
+      (k) => typeof k?.date === "string" && /^\d{4}-\d{2}-\d{2}/.test(k.date) && k.date >= today
+    )
+    .map((k) => {
+      const what =
+        typeof k.what === "string"
+          ? k.what
+          : typeof k.label === "string"
+            ? k.label
+            : "Erkannter Termin";
+      const urgent =
+        /frist|binnen|spätestens|einzubringen|einbringen|erheben|tagsatzung|verhandlung|termin/i.test(
+          what
+        );
+      return {
+        label: what,
+        date: String(k.date).slice(0, 10),
+        urgency: urgent ? "high" : "normal",
+        source: what,
+      };
+    });
+  return deadlines.length > 0 ? { ...parsed, deadlines } : parsed;
+}
+
 const analyzeSchema = z
   .object({
     document_slug: z.string().optional(),
@@ -247,7 +284,12 @@ export const POST = createHandler(
 
     // ── 5. Fire-and-forget: case writeback + contradictions check ───────
     if (documentCaseSlug) {
-      void writeSuggestedDeadlinesAndParties(engineHeaders, documentCaseSlug, parsed, documentSlug);
+      void writeSuggestedDeadlinesAndParties(
+        engineHeaders,
+        documentCaseSlug,
+        withDeadlinesFromKeyDates(parsed),
+        documentSlug
+      );
 
       void (async () => {
         try {

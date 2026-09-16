@@ -3537,6 +3537,18 @@ export const D = {
     de: "Die Engine ist nicht erreichbar. Bitte später erneut versuchen.",
     en: "The engine is unreachable. Please try again later.",
   },
+  "chat.error_quota": {
+    de: "Das monatliche Anfragekontingent Ihres Plans ist erreicht. Unter Einstellungen → Abrechnung können Sie den Plan erweitern.",
+    en: "Your plan's monthly query quota is used up. You can upgrade under Settings → Billing.",
+  },
+  "chat.error_credits": {
+    de: "Kein KI-Guthaben mehr. Bitte unter Einstellungen → Abrechnung Guthaben aufladen.",
+    en: "No AI credits left. Please top up under Settings → Billing.",
+  },
+  "chat.error_rate_limit": {
+    de: "Zu viele Anfragen in kurzer Zeit. Bitte einen Moment warten und erneut versuchen.",
+    en: "Too many requests in a short time. Please wait a moment and try again.",
+  },
   "chat.confirm_clear": {
     de: "Alle Nachrichten löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
     en: "Delete all messages? This action cannot be undone.",

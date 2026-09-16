@@ -88,6 +88,33 @@ export const INJECTION_PATTERNS: Array<{ name: string; rx: RegExp; replacement: 
 ];
 
 /**
+ * Sanitize caller-supplied prompt text (a question, a persona, a drafting
+ * brief) before it enters the think pipeline: strip injection patterns but
+ * keep the text intact. Unlike `sanitizeTakeForPrompt` (500-char cap for one
+ * take row) a prompt legitimately runs to thousands of characters — the
+ * 500-char cap silently truncated every longer question, dropping the actual
+ * user question from copilot prompts. `maxChars` is only a hard safety bound.
+ */
+export function sanitizePromptInput(
+  input: string,
+  maxChars = 20_000
+): { text: string; matched: string[] } {
+  let text = input;
+  const matched: string[] = [];
+  for (const p of INJECTION_PATTERNS) {
+    if (p.rx.test(text)) {
+      matched.push(p.name);
+      text = text.replace(p.rx, p.replacement);
+    }
+  }
+  if (text.length > maxChars) {
+    text = text.slice(0, maxChars);
+    matched.push("length-cap");
+  }
+  return { text, matched };
+}
+
+/**
  * Sanitize a single take claim before embedding into a model prompt.
  * Returns the cleaned text + a list of patterns that matched (for telemetry).
  */

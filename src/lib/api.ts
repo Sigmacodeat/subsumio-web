@@ -81,6 +81,8 @@ if (typeof window !== "undefined") {
 
 interface ThinkOptions {
   mode?: ThinkMode;
+  /** System-prompt instructions (persona, tools); never part of the retrieval query. */
+  instructions?: string;
   queryMode?: QueryMode;
   caseSlug?: string;
   model?: string;
@@ -516,6 +518,7 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query,
+          ...(options.instructions ? { instructions: options.instructions } : {}),
           mode,
           query_mode: options.queryMode,
           case_slug: options.caseSlug,
@@ -528,7 +531,17 @@ export const api = {
 
       if (!res.ok) {
         const error = await res.text().catch(() => "");
-        throw new Error(error || `HTTP ${res.status}`);
+        // Surface the handler's code/message (quota_exceeded, insufficient_credits,
+        // rate_limited …) instead of dumping the raw JSON body into the chat.
+        try {
+          const parsed = JSON.parse(error) as { error?: unknown; message?: unknown };
+          const code = typeof parsed.error === "string" ? parsed.error : undefined;
+          const message = typeof parsed.message === "string" ? parsed.message : code;
+          if (message) throw new ApiRequestError(message, res.status, code, parsed);
+        } catch (parseErr) {
+          if (parseErr instanceof ApiRequestError) throw parseErr;
+        }
+        throw new ApiRequestError(error || `HTTP ${res.status}`, res.status);
       }
 
       const contentType = res.headers.get("Content-Type") || "";

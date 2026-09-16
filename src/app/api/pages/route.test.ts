@@ -71,7 +71,9 @@ describe("POST /api/pages", () => {
       frontmatter: { review_status: "approved", reviewed_by: "Anwalt" },
     });
     expect(res.status).toBe(200);
-    expect(engineCalls).toHaveLength(1);
+    // First call is the merge itself; a deadline merge may be followed by the
+    // best-effort Aktenblatt refresh of its matter (read + rewrite).
+    expect(engineCalls.length).toBeGreaterThanOrEqual(1);
     expect(engineCalls[0].body).toMatchObject({ slug: "legal/deadlines/x", merge: true });
     // A merge is not a new page: no page quota, audited as an update.
     expect(recordQuota).not.toHaveBeenCalled();

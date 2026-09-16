@@ -465,3 +465,15 @@ describe("detectDeadlines — matchedRule field", () => {
     expect(hearing!.matchedRule).toBe("court_date");
   });
 });
+
+describe("enrichDetectedDeadline — generic relative deadline with service date", () => {
+  it("anchors 'binnen vier Wochen' on the Zustellungsdatum found in the text", async () => {
+    const { detectDeadlines, enrichAllDeadlines } = await import("./ai-deadline-detect");
+    const text =
+      "Der beklagten Partei wird aufgetragen, binnen vier Wochen ab Zustellung dieses Beschlusses eine Klagebeantwortung einzubringen. Zugestellt am 16.09.2026.";
+    const enriched = enrichAllDeadlines(detectDeadlines(text), text);
+    const generic = enriched.find((d) => d.daysFromNow === 28);
+    expect(generic?.zustellungsdatum).toBe("2026-09-16");
+    expect(generic?.date).toBe("2026-10-14");
+  });
+});

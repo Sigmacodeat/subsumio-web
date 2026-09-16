@@ -97,6 +97,12 @@ export interface ThinkLLMClient {
 
 export interface RunThinkOpts {
   question: string;
+  /**
+   * Caller instructions (persona, tool docs, house style) that belong in the
+   * SYSTEM prompt. Kept out of `question` so retrieval, intent classification
+   * and the injection scan see only what the user actually asked.
+   */
+  instructions?: string;
   /** Anchor entity slug. Activates the graph stream + entity-focused prompt. */
   anchor?: string;
   /** v0.28: rounds=1 is the only path exercised. Round-loop scaffolding is in place. */
@@ -774,7 +780,9 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
       ...(legalMode && opts.jurisdiction ? { jurisdiction: opts.jurisdiction } : {}),
       ...(taxMode ? { taxMode: true } : {}),
       ...(taxMode && opts.jurisdiction ? { jurisdiction: opts.jurisdiction } : {}),
-    }) + (adversarialScan.flags.length > 0 ? ANTI_INJECTION_PROMPT : "");
+    }) +
+    (adversarialScan.flags.length > 0 ? ANTI_INJECTION_PROMPT : "") +
+    (opts.instructions?.trim() ? `\n\n## CALLER INSTRUCTIONS\n${opts.instructions.trim()}` : "");
   const userMessage = buildThinkUserMessage({
     question: opts.question,
     pagesBlock,

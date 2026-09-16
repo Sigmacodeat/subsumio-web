@@ -2177,9 +2177,14 @@ export async function detectSpendAnomaly(
     await ensureCreditSchema();
 
     const { rows } = await pool.query<{ hourly: number; weekly_avg: number }>(
+      // "hourly" must read the raw rows: the grouped subquery has no
+      // amount/created_at columns (the old FILTER on them failed on every call).
       `SELECT
-         COALESCE(SUM(ABS(amount)) FILTER (WHERE created_at >= NOW() - INTERVAL '1 hour' AND amount < 0), 0) as "hourly",
-         COALESCE(AVG(hourly_sum) FILTER (WHERE hour_block >= NOW() - INTERVAL '7 days'), 0) as "weekly_avg"
+         (SELECT COALESCE(SUM(ABS(amount)), 0)
+            FROM subsumio_credit_transactions
+           WHERE owner_id = $1 AND owner_type = $2 AND amount < 0
+             AND created_at >= NOW() - INTERVAL '1 hour') as "hourly",
+         COALESCE(AVG(hourly_sum), 0) as "weekly_avg"
        FROM (
          SELECT
            DATE_TRUNC('hour', created_at) as hour_block,
