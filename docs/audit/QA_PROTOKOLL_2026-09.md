@@ -38,6 +38,26 @@ behoben (Commit) · ⚠️ offen · ℹ️ Hinweis.
 | Doppelte Listen-Requests                                 | ⚠️       | `/api/pages?type=legal_case` 4–6× pro Seitenaufruf; ~100 API-Calls pro Cockpit-Load. Query-Deduplizierung (Phase 2).    |
 | 404-Rauschen `limitation-scan`, `institution-checklists` | ⚠️       | Leere Ressourcen sollten 200 + leer liefern statt Konsolenfehler.                                                       |
 
+## Station 3 — Upload → Extraktion → Akte
+
+| Prüfpunkt                                   | Ergebnis | Detail                                                                                                   |
+| ------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------- |
+| `POST /api/upload` (PDF, `case_slug`, CSRF) | ✅       | 200, `extraction_status: ready` (Textlayer), `case_reconciliation.ok`, Analyse `queued`.                 |
+| Dokumente-Tab der Akte                      | ✅       | Dokument gelistet (Hochgeladen, 1 KB), Header „Doku: 1".                                                 |
+| Analyse-Warteschlange                       | ✅ / ℹ️  | Läuft nur per Cron (`/api/cron/post-upload-drain`, Prod: alle 2 min). Lokal manuell ausgelöst: 3 done.   |
+| Dokumentansicht („Öffnen")                  | ⚠️       | Generische Brain-Seite mit Slug und `brain_…`-ID; kein Original-PDF-Viewer. Für Anwälte zu technisch.    |
+| UI-Dropzone                                 | ℹ️       | Nicht per eingebettetem Browser testbar (keine Dateiauswahl); Playwright-Spec `upload-flow` deckt es ab. |
+
+## Station 3b/6/7 — Posteingang, Kommunikation, Freigaben, Rechnungen (headless)
+
+| Prüfpunkt                                                   | Ergebnis | Detail                                                                                                                                                                                                                                                                                                                                                                    |
+| ----------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Posteingang (`/dashboard/intake`) leer, Cockpit „Eingang 1" | 🔧       | **Systemisch:** Engine hält `type` als Spalte und entfernt es aus dem Frontmatter (0 von >5.000 Seiten haben `frontmatter.type`); 14 Parser prüften `fm.type` und lieferten immer `null` — Mandatsaufnahme, Workflows, Dokumentenanfragen, Klausel-Annotationen, Copilot-Memory, Eval-Reviews, Agent-Aktionen. Zentraler Helfer `pageTypeOf()` + alle Stellen umgestellt. |
+| Kommunikation (`/dashboard/communications`)                 | ⚠️       | Lädt; Copy/Tabs nennen „beA" (AT-Pilot).                                                                                                                                                                                                                                                                                                                                  |
+| Freigaben (`/dashboard/review-queue`)                       | ✅ / ⚠️  | 4 Akten „Ausstehend" (Kollisionsprüfung offen); Labels „Awaiting Review", „Needs Human Review" sind Englisch in der deutschen UI.                                                                                                                                                                                                                                         |
+| Rechnungen (`/dashboard/invoicing`)                         | ✅       | Lädt leer mit Kennzahlen; Erstellung folgt in Station 6.                                                                                                                                                                                                                                                                                                                  |
+| `POST /api/dashboard/briefing` 400                          | ⚠️       | Einmalig beim Seitenaufruf gesehen, direkt und im Wiederholungslauf 200 — auf dem Prod-Build nachprüfen.                                                                                                                                                                                                                                                                  |
+
 ## Station 5 — Fristen (aus der Akte)
 
 | Prüfpunkt                                  | Ergebnis | Detail                                                                                                |
@@ -70,9 +90,14 @@ behoben (Commit) · ⚠️ offen · ℹ️ Hinweis.
   „§ 469 StGB") und läuft in Endlosschleifen (mehrere tausend Zeichen). Für die KI-Stationen
   (4, Strategie, Briefing) muss die Engine lokal auf ein echtes Modell (OpenRouter/Anthropic)
   umgestellt werden — Phase 3. Prüfen: Ausgabe-Token-Limit im `think`-Pfad.
-- **Dev-Tab-Hänger:** Nach HMR-Änderungen blieb ein Tab dauerhaft bei „Lade Status…" ohne
-  Hydration; frischer Tab lud sofort. Für Prod irrelevant, aber der Service Worker
-  (`ServiceWorkerRegister`) muss beim Deploy sauber aktualisieren — in Phase 4 prüfen.
+- **„Lade Status…"-Hänger im eingebetteten Browser:** kein Produktfehler. React 19.2 enthüllt
+  gestreamte Suspense-Grenzen und startet die Hydration per `requestAnimationFrame`; ist der
+  Browser-Bereich der Claude-App nicht sichtbar, feuert rAF nie (`$RB` bleibt gefüllt, kein
+  React-Fiber, keine API-Calls). Headless-Playwright (sichtbarer Viewport) lädt jede Seite
+  sofort. Kein Service-Worker beteiligt (keine Registrierung, kein Cache).
+- **Port 3000 doppelt belegt:** Während der QA startete ein fremdes Projekt (`Trustwallet`,
+  Vinxi) einen Dev-Server auf `[::1]:3000`; Chrome löst `localhost` zuerst nach IPv6 auf und
+  landete auf der falschen App. QA läuft daher gegen `127.0.0.1:3000`.
 - **Copy-Reste:** Tooltip „Unified Inbox für beA, WhatsApp, …" nennt beA (AT-Pilot).
 
 ## Noch offen im Skript

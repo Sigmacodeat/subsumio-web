@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { pageTypeOf } from "@/lib/types";
 import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
@@ -582,7 +583,7 @@ export function PipelinePanel({
         outputPages = await api.brain.getPages(allSlugs);
         for (const [slug, page] of Object.entries(outputPages)) {
           const pfm = (page.frontmatter ?? {}) as Record<string, unknown>;
-          if (pfm.type === "legal_draft") {
+          if (pageTypeOf(page) === "legal_draft") {
             drafts.push({
               slug,
               title: page.title,
@@ -934,7 +935,8 @@ export function PipelinePanel({
                         const page = outputPages[slug];
                         if (!page) return null;
                         const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
-                        const isDraft = fm.type === "legal_draft";
+                        const pageType = pageTypeOf(page);
+                        const isDraft = pageType === "legal_draft";
                         if (isDraft) return null; // Drafts are shown separately below
 
                         return (
@@ -979,14 +981,14 @@ export function PipelinePanel({
                               )}
                             </div>
                             <div className="max-h-[300px] overflow-y-auto rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] p-2">
-                              {fm.type === "legal_grounding_map" && page.content ? (
+                              {pageType === "legal_grounding_map" && page.content ? (
                                 <LegalGroundingRenderer content={page.content} />
-                              ) : fm.type === "completeness_check" && page.content ? (
+                              ) : pageType === "completeness_check" && page.content ? (
                                 <CompletenessCheckRenderer
                                   content={page.content}
                                   frontmatter={fm}
                                 />
-                              ) : fm.type === "subsumption_check" && page.content ? (
+                              ) : pageType === "subsumption_check" && page.content ? (
                                 <SubsumptionRenderer content={page.content} />
                               ) : (
                                 <pre className="font-sans text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">

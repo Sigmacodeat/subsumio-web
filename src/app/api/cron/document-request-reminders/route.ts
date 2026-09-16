@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { pageTypeOf } from "@/lib/types";
 import { engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { createCronHandler } from "@/lib/api-handler";
 import { fetchPages, getRecipientsByBrain } from "@/lib/cron-utils";
@@ -50,7 +51,7 @@ export const GET = createCronHandler(async (_req) => {
     const pendingRequests = pages.filter((page) => {
       const fm = page.frontmatter as Record<string, unknown>;
       return (
-        fm.type === "document_request" &&
+        pageTypeOf(page) === "document_request" &&
         (fm.status === "sent" || fm.status === "partially_fulfilled") &&
         fm.sent_at
       );

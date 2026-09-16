@@ -292,9 +292,11 @@ export function generateDefaultSteps(phase: LitigationPhase): LitigationStep[] {
 
 export function parseLitigationMatter(
   slug: string,
-  frontmatter: Record<string, unknown>
+  frontmatter: Record<string, unknown>,
+  /** Page type from the engine column — frontmatter.type is stripped on store. */
+  pageType?: string
 ): LitigationMatter | null {
-  if (frontmatter.type !== "litigation_matter") return null;
+  if ((pageType ?? frontmatter.type) !== "litigation_matter") return null;
   const rawSteps = (frontmatter.steps as LitigationStep[]) ?? [];
   const rawHistory = (frontmatter.phase_history as LitigationMatter["phaseHistory"]) ?? [];
   return {

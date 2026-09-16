@@ -115,9 +115,10 @@ function NormsPageInner() {
         for (const page of pages) {
           const fm = frontmatterOf<NormFrontmatter>(page);
           // Erkenne Gesetze: type=statute, legal/statutes/..., law-corpus/..., norms/...
+          const pageType = (page as { type?: string }).type ?? fm.type;
           const isStatute =
-            fm.type === "statute" ||
-            fm.type === "norm" ||
+            pageType === "statute" ||
+            pageType === "norm" ||
             page.slug.includes("/law-corpus/") ||
             page.slug.includes("/norms/") ||
             page.slug.startsWith("legal/statutes/");

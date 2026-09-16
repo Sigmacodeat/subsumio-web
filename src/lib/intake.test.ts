@@ -60,3 +60,23 @@ describe("intake requests", () => {
     ).toBeNull();
   });
 });
+
+describe("intakeFromPage — engine pages keep the type in a column", async () => {
+  const { intakeFromPage } = await import("./intake");
+  it("accepts a page whose frontmatter lost `type` (engine strips it on store)", () => {
+    const page = {
+      slug: "legal/intake/x",
+      title: "Posteingang",
+      type: "intake_request",
+      frontmatter: { status: "new", source: "email" },
+      content: "",
+      created_at: "",
+      updated_at: "",
+    };
+    expect(intakeFromPage(page as never)?.slug).toBe("legal/intake/x");
+  });
+  it("still rejects pages of another type", () => {
+    const page = { slug: "a", title: "A", type: "legal_case", frontmatter: { status: "new" } };
+    expect(intakeFromPage(page as never)).toBeNull();
+  });
+});

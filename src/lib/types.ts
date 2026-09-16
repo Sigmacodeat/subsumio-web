@@ -535,3 +535,18 @@ export interface DocumentConfidence {
   confidence_level: "high" | "medium" | "low";
   claim_confidences: ClaimConfidence[];
 }
+
+/**
+ * The engine keeps a page's type in its own column and strips `type` from the
+ * stored frontmatter, so `page.frontmatter.type` is undefined for every page
+ * that came through the engine. Parsers must gate on the column first and only
+ * fall back to frontmatter (fixtures, offline cache, markdown imports).
+ */
+export function pageTypeOf(
+  page: { type?: string | null; frontmatter?: Record<string, unknown> | null } | null | undefined
+): string | undefined {
+  if (!page) return undefined;
+  if (typeof page.type === "string" && page.type) return page.type;
+  const fmType = page.frontmatter?.type;
+  return typeof fmType === "string" && fmType ? fmType : undefined;
+}

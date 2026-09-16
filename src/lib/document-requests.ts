@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { pageTypeOf } from "@/lib/types";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { signPortalToken } from "@/lib/portal-token";
 import type { BrainPage } from "@/lib/types";
@@ -176,7 +177,7 @@ export function documentRequestFromPage(page: BrainPage): {
   content?: string;
 } | null {
   const fm = page.frontmatter as Partial<DocumentRequestFrontmatter> | undefined;
-  if (fm?.type !== "document_request") return null;
+  if (pageTypeOf(page) !== "document_request") return null;
   return {
     slug: page.slug,
     title: page.title,

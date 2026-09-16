@@ -187,9 +187,11 @@ export function exportPrivilegeLog(documents: ReviewSetDocument[]): string {
 
 export function parseReviewSet(
   slug: string,
-  frontmatter: Record<string, unknown>
+  frontmatter: Record<string, unknown>,
+  /** Page type from the engine column — frontmatter.type is stripped on store. */
+  pageType?: string
 ): ReviewSet | null {
-  if (frontmatter.type !== "review_set") return null;
+  if ((pageType ?? frontmatter.type) !== "review_set") return null;
   const docs = (frontmatter.documents as ReviewSetDocument[]) ?? [];
   return {
     slug,

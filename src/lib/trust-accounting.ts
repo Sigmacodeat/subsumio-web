@@ -204,9 +204,11 @@ export function exportTransactionsCsv(transactions: TrustTransaction[]): string 
 
 export function parseTrustAccount(
   slug: string,
-  frontmatter: Record<string, unknown>
+  frontmatter: Record<string, unknown>,
+  /** Page type from the engine column — frontmatter.type is stripped on store. */
+  pageType?: string
 ): TrustAccount | null {
-  if (frontmatter.type !== "trust_account") return null;
+  if ((pageType ?? frontmatter.type) !== "trust_account") return null;
   const transactions = (frontmatter.transactions as TrustTransaction[]) ?? [];
   const openingBalance = (frontmatter.opening_balance as number) ?? 0;
   return {

@@ -13,6 +13,7 @@
  */
 
 import type { ActionType } from "@/lib/approval";
+import { pageTypeOf } from "@/lib/types";
 import { ACTION_LABELS } from "@/lib/approval";
 
 // ── Types ─────────────────────────────────────────────────────────────
@@ -354,10 +355,11 @@ export function getActionTypeLabel(actionType: ActionType): string {
 export function fmToWorkflowInstance(page: {
   slug: string;
   title: string;
+  type?: string;
   frontmatter?: Record<string, unknown>;
 }): WorkflowInstance | null {
   const fm = (page.frontmatter ?? {}) as Partial<WorkflowFrontmatter>;
-  if (fm.type !== "workflow") return null;
+  if (pageTypeOf(page) !== "workflow") return null;
 
   return {
     slug: page.slug,

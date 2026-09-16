@@ -13,6 +13,8 @@
  * Brain-Pages via Engine API. Gleiches Muster wie clause-annotation.ts.
  */
 
+import { pageTypeOf } from "@/lib/types";
+
 export type FixtureReviewStatus = "pending" | "approved" | "rejected" | "needs_discussion";
 
 export interface EvalFixtureReviewFrontmatter {
@@ -103,10 +105,11 @@ export function buildReviewFrontmatter(params: {
 export function fmToReview(page: {
   slug: string;
   title: string;
+  type?: string;
   frontmatter?: Record<string, unknown>;
 }): EvalFixtureReview | null {
   const fm = (page.frontmatter ?? {}) as Partial<EvalFixtureReviewFrontmatter>;
-  if (fm.type !== "eval_fixture_review") return null;
+  if (pageTypeOf(page) !== "eval_fixture_review") return null;
 
   return {
     slug: page.slug,

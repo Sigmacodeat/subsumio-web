@@ -10,6 +10,8 @@ export type ExecutionStatus = "not_started" | "running" | "executed" | "failed" 
 export interface ApprovalExecutionPage {
   slug: string;
   title?: string;
+  /** Engine page type (column); frontmatter.type is stripped on store. */
+  type?: string;
   content?: string;
   frontmatter?: Record<string, unknown>;
 }
@@ -442,7 +444,7 @@ export async function executeApprovedAction(
   const page = await deps.getPage(input.actionSlug);
   const fm = fmOf(page);
 
-  if (fm.type !== "agent_action") throw new Error("not_an_agent_action");
+  if ((page.type ?? fm.type) !== "agent_action") throw new Error("not_an_agent_action");
   if (!fm.action_type) throw new Error("missing_action_type");
   if (fm.status !== "approved") throw new Error("action_not_approved");
   if (fm.execution_status === "executed" && !input.force) {

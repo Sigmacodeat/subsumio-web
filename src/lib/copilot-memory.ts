@@ -14,6 +14,7 @@
  */
 
 import { api } from "@/lib/api";
+import { pageTypeOf } from "@/lib/types";
 import type { BrainPage } from "@/lib/types";
 
 export type MemoryType = "preference" | "fact" | "topic" | "instruction" | "case_note";
@@ -49,7 +50,7 @@ function memorySlug(id: string): string {
 
 function parseMemoryPage(page: BrainPage): CopilotMemoryEntry | null {
   const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
-  if (fm.type !== "copilot_memory") return null;
+  if (pageTypeOf(page) !== "copilot_memory") return null;
   const entities = Array.isArray(fm.entities)
     ? fm.entities.filter((e): e is string => typeof e === "string")
     : undefined;

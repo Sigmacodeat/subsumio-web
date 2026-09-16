@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import { pageTypeOf } from "@/lib/types";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import type { BrainPage } from "@/lib/types";
 import {
@@ -161,7 +162,7 @@ export function intakeFromPage(
   page: BrainPage
 ): { slug: string; title: string; frontmatter: IntakeRequestFrontmatter; content?: string } | null {
   const fm = page.frontmatter as Partial<IntakeRequestFrontmatter> | undefined;
-  if (fm?.type !== "intake_request") return null;
+  if (pageTypeOf(page) !== "intake_request") return null;
   return {
     slug: page.slug,
     title: page.title,

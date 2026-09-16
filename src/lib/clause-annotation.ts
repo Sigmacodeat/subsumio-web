@@ -16,6 +16,7 @@
  */
 
 import type { PlaybookSeverity } from "@/lib/types";
+import { pageTypeOf } from "@/lib/types";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -181,10 +182,11 @@ export function buildAnnotationFrontmatter(params: {
 export function fmToAnnotation(page: {
   slug: string;
   title: string;
+  type?: string;
   frontmatter?: Record<string, unknown>;
 }): ClauseAnnotation | null {
   const fm = (page.frontmatter ?? {}) as Partial<ClauseAnnotationFrontmatter>;
-  if (fm.type !== "clause_annotation") return null;
+  if (pageTypeOf(page) !== "clause_annotation") return null;
 
   return {
     slug: page.slug,
