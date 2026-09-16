@@ -14,3 +14,15 @@ describe("caseSlugFromDashboardPath", () => {
     expect(caseSlugFromDashboardPath("/dashboard/deadlines")).toBeUndefined();
   });
 });
+
+describe("caseSlugFromDashboardPath — reserved routes", async () => {
+  const { caseSlugFromDashboardPath } = await import("./matter-route-path");
+  it("does not treat /dashboard/cases/new as a matter", () => {
+    expect(caseSlugFromDashboardPath("/dashboard/cases/new")).toBeUndefined();
+  });
+  it("still resolves a matter literally named new/<something>", () => {
+    expect(caseSlugFromDashboardPath("/dashboard/cases/legal/cases/new-matter")).toBe(
+      "legal/cases/new-matter"
+    );
+  });
+});

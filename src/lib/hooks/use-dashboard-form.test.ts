@@ -97,3 +97,30 @@ describe("useDashboardForm", () => {
     expect(result.current.error).toBeNull();
   });
 });
+
+describe("useDashboardForm — re-entrancy", () => {
+  test("a second submit while the first is in flight is ignored", async () => {
+    const onSubmit = vi.fn(async () => {});
+    const { result } = renderHook(() =>
+      useDashboardForm({
+        schema: testSchema,
+        defaultValues: { name: "Anna", email: "" },
+        onSubmit,
+      })
+    );
+
+    // Two submits in the same tick (double-click, Enter + click): the second
+    // arrives while the first is still validating and must be dropped.
+    await act(async () => {
+      await Promise.all([result.current.handleSubmit(), result.current.handleSubmit()]);
+    });
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(result.current.status).toBe("success"));
+
+    // After completion the form can be submitted again.
+    await act(async () => {
+      await result.current.handleSubmit();
+    });
+    expect(onSubmit).toHaveBeenCalledTimes(2);
+  });
+});

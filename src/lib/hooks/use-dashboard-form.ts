@@ -1,7 +1,7 @@
 "use client";
 
 import { useForm, type UseFormReturn, type DefaultValues } from "react-hook-form";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
 
@@ -35,25 +35,37 @@ export function useDashboardForm<T extends Record<string, unknown>>({
   const [status, setStatus] = useState<SubmitStatus>("idle");
   const [error, setError] = useState<string | null>(null);
 
+  // Re-entrancy guard: the submit button is disabled while status is
+  // "submitting", but that only takes effect on the next render. A second
+  // Enter/click arriving before that (double-click, keyboard + mouse) would
+  // otherwise run onSubmit twice — for "create" forms that means a duplicate
+  // record or a 409 on the second attempt.
+  const inFlight = useRef(false);
   const handleSubmit = useCallback(
     async (e?: React.BaseSyntheticEvent) => {
       e?.preventDefault?.();
+      if (inFlight.current) return;
+      inFlight.current = true;
       setStatus("submitting");
       setError(null);
 
-      const isValid = await form.trigger();
-      if (!isValid) {
-        setStatus("error");
-        setError("Bitte korrigiere die markierten Felder.");
-        return;
-      }
-
       try {
-        await onSubmit(form.getValues());
-        setStatus("success");
-      } catch (err) {
-        setStatus("error");
-        setError(err instanceof Error ? err.message : "Ein unbekannter Fehler ist aufgetreten.");
+        const isValid = await form.trigger();
+        if (!isValid) {
+          setStatus("error");
+          setError("Bitte korrigiere die markierten Felder.");
+          return;
+        }
+
+        try {
+          await onSubmit(form.getValues());
+          setStatus("success");
+        } catch (err) {
+          setStatus("error");
+          setError(err instanceof Error ? err.message : "Ein unbekannter Fehler ist aufgetreten.");
+        }
+      } finally {
+        inFlight.current = false;
       }
     },
     [form, onSubmit]

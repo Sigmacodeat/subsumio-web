@@ -52,7 +52,7 @@ export function PageHeader({
       {normalizedBreadcrumbs && normalizedBreadcrumbs.length > 0 && (
         <Breadcrumb className="mb-3 text-xs">
           {normalizedBreadcrumbs.map((item, i) => (
-            <Fragment key={item.label}>
+            <Fragment key={`${i}-${item.label}`}>
               {i > 0 && <BreadcrumbSeparator />}
               <BreadcrumbItem>
                 {item.href ? (

@@ -12,10 +12,14 @@ const MATTER_TABS = new Set([
   "emails",
 ]);
 
+/** Sibling routes under /dashboard/cases/ that are not matter slugs. */
+const RESERVED_CASE_ROUTES = new Set(["new"]);
+
 export function caseSlugFromDashboardPath(pathname: string): string | undefined {
   const prefix = "/dashboard/cases/";
   if (!pathname.startsWith(prefix)) return undefined;
   const segments = pathname.slice(prefix.length).split("/").filter(Boolean);
+  if (segments.length === 1 && RESERVED_CASE_ROUTES.has(segments[0]!)) return undefined;
   if (segments.length > 1 && MATTER_TABS.has(segments[segments.length - 1]!)) segments.pop();
   if (segments.length === 0) return undefined;
   return segments.map((segment) => decodeURIComponent(segment)).join("/");

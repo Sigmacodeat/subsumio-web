@@ -226,7 +226,15 @@ export default function NewCasePage() {
       portalEnabled: false,
     },
     onSubmit: async (data: CaseFormData) => {
-      const slug = `legal/cases/${data.caseNumber?.trim() || Date.now().toString(36)}-${data.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+      // The engine normalises slugs to lowercase; build the same form here so
+      // the redirect after creation hits the page that was actually stored.
+      const slugPart = (value: string) =>
+        value
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+      const slug = `legal/cases/${slugPart(data.caseNumber?.trim() || Date.now().toString(36))}-${slugPart(data.title)}`;
+      let createdSlug = slug;
 
       const pagePayload = {
         slug,
@@ -280,11 +288,13 @@ export default function NewCasePage() {
         }
         try {
           const result = (await api.brain.createPage(pagePayload)) as {
+            slug?: string;
             conflictWarning?: {
               checked: boolean;
               matches?: Array<{ name: string; slug: string; type: string }>;
             };
           };
+          if (typeof result.slug === "string" && result.slug) createdSlug = result.slug;
           if (result.conflictWarning?.matches?.length) {
             const names = result.conflictWarning.matches.map((m) => m.name).join(", ");
             setConflictResult({
@@ -336,7 +346,7 @@ export default function NewCasePage() {
         }
       }
       addToast({ type: "success", title: t("casesnew.toast_created") });
-      router.push(`/dashboard/cases/${encodeSlugPath(slug)}`);
+      router.push(`/dashboard/cases/${encodeSlugPath(createdSlug)}`);
     },
   });
 
@@ -479,7 +489,7 @@ export default function NewCasePage() {
       <PageHeader
         title={t("casesnew.title")}
         breadcrumbs={[
-          { label: t("casesnew.breadcrumb"), href: "/dashboard/cases" },
+          { label: t("nav.cases"), href: "/dashboard/cases" },
           { label: t("casesnew.breadcrumb") },
         ]}
       />
@@ -604,7 +614,20 @@ export default function NewCasePage() {
         </div>
       )}
 
-      <form onSubmit={form.handleSubmit} className="space-y-5">
+      <form
+        onSubmit={(e) => {
+          // Enter inside a field on step 1/2 must advance the wizard, not
+          // create the matter with half the data.
+          if (step < steps.length - 1) {
+            e.preventDefault();
+            if (step === 0 && !canAdvanceStep0) return;
+            setStep((s) => s + 1);
+            return;
+          }
+          void form.handleSubmit(e);
+        }}
+        className="space-y-5"
+      >
         {/* Step 0: Basic info */}
         {step === 0 && (
           <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
@@ -1154,7 +1177,14 @@ export default function NewCasePage() {
               {t("casesnew.step_of")} {step + 1}/{steps.length}
             </span>
             {step < steps.length - 1 ? (
+              // Distinct keys: React must mount a NEW element for the final
+              // submit button. Re-using the "Weiter" node and flipping its type
+              // to "submit" inside the click handler lets the browser's
+              // activation behaviour submit the form on the very click that
+              // advanced to the last step (the matter was created before the
+              // summary was ever shown, and "Akte erstellen" then hit a 409).
               <Button
+                key="wizard-next"
                 type="button"
                 variant="primary"
                 onClick={() => {
@@ -1169,6 +1199,7 @@ export default function NewCasePage() {
               </Button>
             ) : (
               <Button
+                key="wizard-submit"
                 type="submit"
                 variant="primary"
                 disabled={form.status === "submitting"}
