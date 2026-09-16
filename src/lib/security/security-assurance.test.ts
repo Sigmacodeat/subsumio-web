@@ -15,6 +15,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { resolve } from "node:path";
 
 const ROOT = process.cwd();
 
@@ -274,8 +275,10 @@ describe("Security Assurance: Security Headers", () => {
     expect(fileExists("next.config.ts")).toBe(true);
   });
 
-  it("vercel.json exists for header configuration", () => {
-    expect(fileExists("vercel.json")).toBe(true);
+  it("strict transport and frame headers are configured in next.config.ts", () => {
+    const source = readFileSync(resolve(process.cwd(), "next.config.ts"), "utf8");
+    expect(source).toContain("Strict-Transport-Security");
+    expect(source).toContain("X-Frame-Options");
   });
 
   it("middleware exists for security header injection", () => {

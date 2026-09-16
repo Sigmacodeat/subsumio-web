@@ -1,12 +1,28 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
+/**
+ * The Hetzner stack fires cron jobs through supercronic from
+ * server/deploy/hetzner/crontab — that file is the scheduler of record
+ * (see docs/deploy/CRON_SCHEDULE.md). These tests pin that the document
+ * ingest recovery workers stay scheduled there.
+ */
+function crontabPaths(): string[] {
+  const raw = readFileSync(resolve(process.cwd(), "server/deploy/hetzner/crontab"), "utf8");
+  const paths: string[] = [];
+  for (const line of raw.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    for (const m of trimmed.matchAll(/(\/api\/(?:cron|billing)\/[A-Za-z0-9_/-]+)/g)) {
+      paths.push(m[1]);
+    }
+  }
+  return paths;
+}
+
 describe("document ingest recovery schedules", () => {
-  const config = JSON.parse(readFileSync(resolve(process.cwd(), "vercel.json"), "utf8")) as {
-    crons?: Array<{ path?: string; schedule?: string }>;
-  };
-  const schedules = new Map((config.crons ?? []).map((entry) => [entry.path, entry.schedule]));
+  const paths = crontabPaths();
 
   it.each([
     "/api/cron/post-upload-drain",
@@ -15,11 +31,21 @@ describe("document ingest recovery schedules", () => {
     "/api/cron/queue-alert",
     "/api/cron/analysis-retry",
   ])("deploys the required recovery worker %s", (path) => {
-    expect(schedules.get(path)).toBeTruthy();
+    expect(paths).toContain(path);
   });
 
-  it("does not declare duplicate cron paths", () => {
-    const paths = (config.crons ?? []).map((entry) => entry.path);
+  it("does not schedule a cron path twice", () => {
     expect(new Set(paths).size).toBe(paths.length);
+  });
+
+  it("schedules every cron route that exists in the app", () => {
+    const dir = resolve(process.cwd(), "src/app/api/cron");
+    const routes = readdirSync(dir).filter((d) => statSync(resolve(dir, d)).isDirectory());
+    // Deliberately unscheduled (decision pending, see docs/deploy/CRON_SCHEDULE.md).
+    const allowedUnscheduled = new Set(["autonomous-engine", "time-tracking"]);
+    const missing = routes.filter(
+      (r) => !allowedUnscheduled.has(r) && !paths.some((p) => p.startsWith(`/api/cron/${r}`))
+    );
+    expect(missing).toEqual([]);
   });
 });

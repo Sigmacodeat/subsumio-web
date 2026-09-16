@@ -139,7 +139,8 @@ Gate: 0 Konsolenfehler, 0 5xx, jede Kernstation grün, Protokoll vollständig.
 - Secrets aus `playwright.config.ts` in Env; CSRF/2FA/Lockout-Specs im Real-Modus.
 - Responsiv (Mobile-Tab-Bar) und Dark-Mode für die Kernflächen.
 
-Gate: Playwright Mock-Suite grün, Real-Engine-Smoke grün, 0 Hydration-Warnungen.
+Gate: Playwright Mock-Suite grün ✅, Real-Engine-Smoke grün (wartet auf Provider-Guthaben),
+0 Hydration-Warnungen ✅ (Sweep 20 Seiten, Desktop + Mobil/Dark).
 
 ### Phase 3 — Daten und KI-Schicht
 
@@ -162,7 +163,9 @@ Gate: Kernfrage aus dem Testskript liefert belegte Antwort mit verifizierten Zit
 - `preflight.sh` muss PASSED melden; Sentry-DSN, Uptime-Check, Backup-Restore-Drill.
 - Secrets aus `SERVER_INVENTORY.md` rotieren (offen seit Juli).
 - Runbook: Deploy, Rollback, DB-Migration, Korpus außerhalb des Checkouts.
-- Cron-Wahrheit: Hetzner `crontab` gegen `vercel.json` abgleichen, `vercel.json` entfernen.
+- ~~Cron-Wahrheit: Hetzner `crontab` gegen `vercel.json` abgleichen, `vercel.json` entfernen.~~
+  Repo-seitig erledigt (`docs/deploy/CRON_SCHEDULE.md`); offen: Live-Crontab per SSH prüfen,
+  Entscheidung `autonomous-engine`.
 
 Gate: Staging besteht das komplette Testskript mit einem externen Tester.
 

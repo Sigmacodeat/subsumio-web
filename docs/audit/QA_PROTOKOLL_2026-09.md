@@ -230,3 +230,23 @@ Provider-Guthaben.
   außerdem die Kennzahlen aus der falschen Ebene der Antwort (immer 0). (3) Zwei
   Brain-Selector-Hooks holten `/api/brains` doppelt. (4) Sachverhaltsprüfungs-Hinweis:
   Cache-Bedingung war `&&` statt `||` (Aktenwechsel wurde ignoriert).
+
+## Phase 2 — Restpunkte (Konsole, Mobile/Dark, Fehlergrenzen) und Cron-Wahrheit
+
+- **Konsolen-Sweep** über 20 Kernseiten (Cockpit, Akten, Aktendetail + Dokumente + Fristen,
+  Fristen, Fristenbuch, Kontakte, Kalender, Aufgaben, Kommunikation, Rechnungen, Zeiterfassung,
+  Recherche, Assistent, Einstellungen, Sicherheit, Team, Audit, Upload), je Desktop hell und
+  Mobil (390 px) dunkel: **0 Hydration-Warnungen, 0 Seitenfehler, 0 horizontaler Überlauf,
+  keine leere Seite.** Einzige Meldung: `[realtime] SSE error (will reconnect)` — fällt nur
+  beim Verlassen der Seite (Stream wird beim Navigieren abgebrochen, `net::ERR_ABORTED`); der
+  Stream selbst antwortet 200 mit `event: connected`. Kein Produktfehler. Ein 429 auf der
+  Audit-Seite stammte vom Sweep-Tempo (Rate-Limit greift).
+- **Fehler-/Ladezustände:** 89 von 99 Dashboard-Modulen hatten `error.tsx`/`loading.tsx`; die
+  zehn ohne (u. a. Wiedervorlagen, Benachrichtigungen, Aktensuche, Aktenzuweisung) nutzen jetzt
+  die gemeinsamen Route-Grenzen.
+- **Cron-Wahrheit:** Hetzner fährt supercronic aus `server/deploy/hetzner/crontab` (35 Jobs);
+  `vercel.json` (31 Jobs, 18 abweichende oder fehlende Einträge) las kein Deploy mehr →
+  entfernt, Abgleich in `docs/deploy/CRON_SCHEDULE.md`. Der Schedule-Test prüft jetzt den
+  Crontab und dass jede Cron-Route eingeplant ist. Offen: `/api/cron/autonomous-engine` steht
+  in keinem Scheduler (Entscheidung vor dem Piloten), Live-Crontab auf dem Server per SSH
+  gegen die Repo-Datei prüfen (Phase 4).
