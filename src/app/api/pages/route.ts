@@ -14,18 +14,30 @@ const pagesQuerySchema = z.object({
   cursor: z.string().optional(),
 });
 
+// One route, two intents: `merge: true` is a partial update (the engine keeps
+// title/body/type when omitted — see enginePatchPage in src/lib/engine.ts),
+// everything else is a create and needs a title. The dashboard's
+// api.brain.updatePage() sends metadata-only merges (approve a deadline, mark
+// done, second check, status changes); requiring a title there rejected every
+// one of them with 400.
 const pagesPostSchema = z
   .object({
     slug: z
       .string()
       .min(1, "slug_required")
       .refine((s) => !s.includes("..") && !s.includes("//"), "invalid_slug"),
-    title: z.string().min(1, "title_required"),
+    title: z.string().min(1, "title_required").optional(),
     content: z.string().optional(),
     type: z.string().optional(),
     frontmatter: z.record(z.unknown()).optional(),
+    merge: z.boolean().optional(),
   })
-  .passthrough();
+  .passthrough()
+  .superRefine((body, ctx) => {
+    if (body.merge !== true && !body.title) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["title"], message: "Required" });
+    }
+  });
 
 type ConflictMatch = { name: string; slug: string; type: string };
 
@@ -99,7 +111,7 @@ export const POST = createHandler(
     quota: "pages",
     body: pagesPostSchema,
     audit: (ctx, body) => ({
-      action: "case.create" as const,
+      action: body.merge === true ? ("case.update" as const) : ("case.create" as const),
       entityType: "page",
       entityId: body.slug,
       details: {
@@ -195,12 +207,13 @@ export const POST = createHandler(
           { status: res.status }
         );
       }
-      void recordQuota(ctx, "pages");
+      const isMerge = body.merge === true;
+      if (!isMerge) void recordQuota(ctx, "pages");
       const result = await res.json();
 
-      if (body.type === "legal_case") {
+      if (!isMerge && body.type === "legal_case") {
         void markOnboardingProgress(ctx.user.id, { firstCase: true });
-      } else if (body.type === "legal_deadline") {
+      } else if (!isMerge && body.type === "legal_deadline") {
         void markOnboardingProgress(ctx.user.id, { firstDeadline: true });
       }
 
@@ -208,7 +221,7 @@ export const POST = createHandler(
         slug: body.slug,
         by: ctx.user.email,
         at: new Date().toISOString(),
-        action: "created",
+        action: isMerge ? "updated" : "created",
       });
 
       return Response.json({ ...result, conflictWarning });
