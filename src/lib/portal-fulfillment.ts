@@ -92,6 +92,8 @@ export function buildPortalDocumentEntry(input: {
     size: input.size,
     source: "portal",
     kind: input.matchedKind,
+    // The client uploaded it — they may keep seeing it in the portal.
+    portal_visible: true,
   };
 }
 

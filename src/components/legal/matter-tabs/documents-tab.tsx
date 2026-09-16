@@ -15,6 +15,8 @@ import {
   CloudUpload,
   CheckCircle2,
   XCircle as XIcon,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -618,6 +620,37 @@ export function DocumentsTab() {
                     {doc.size ? ` · ${(doc.size / 1024).toFixed(0)} KB` : ""}
                   </div>
                 </div>
+                <button
+                  type="button"
+                  disabled={caseData?.status === "archived" || doc.privileged === true}
+                  aria-pressed={doc.portal_visible === true}
+                  onClick={() => {
+                    const next = !(doc.portal_visible === true);
+                    void ctx.saveCaseUpdate({
+                      documents: caseData.documents.map((d) =>
+                        d.id === doc.id ? { ...d, portal_visible: next } : d
+                      ),
+                    });
+                  }}
+                  className={cn(
+                    "flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-xs transition-[background-color,border-color,color] disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none",
+                    doc.portal_visible === true
+                      ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+                      : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                  )}
+                  title={
+                    doc.privileged === true
+                      ? t("docstab.portal_blocked_privileged")
+                      : doc.portal_visible === true
+                        ? t("docstab.portal_visible_hint")
+                        : t("docstab.portal_hidden_hint")
+                  }
+                >
+                  {doc.portal_visible === true ? <Eye size={12} /> : <EyeOff size={12} />}
+                  {doc.portal_visible === true
+                    ? t("docstab.portal_visible")
+                    : t("docstab.portal_hidden")}
+                </button>
                 {(doc.slug || doc.url) && (
                   <Link
                     href={`/dashboard/brain/${encodeURIComponent(doc.slug || doc.url || "")}`}

@@ -105,6 +105,12 @@ export interface DocumentEntry {
   name: string;
   url?: string;
   uploadedAt: string;
+  /**
+   * Released to the client portal. Default (undefined/false): NOT visible —
+   * internal memos, strategy drafts and expert opinions must never reach the
+   * Mandant by accident. Portal uploads are visible to the uploading client.
+   */
+  portal_visible?: boolean;
   size?: number;
   slug?: string;
   source?: string;

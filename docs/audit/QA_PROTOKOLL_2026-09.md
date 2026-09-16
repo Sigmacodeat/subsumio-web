@@ -127,14 +127,18 @@ behoben (Commit) · ⚠️ offen · ℹ️ Hinweis.
 | Workflows-Seite stürzt ab                      | 🔧       | Seed-Status „draft" unbekannt → `.icon` von undefined. Status „Entwurf" ergänzt, Lookup mit Fallback (`2a3e53dc98`).                                                                       |
 | Workflow-Vorlage „nach deutschem Recht"        | 🔧       | → österreichisches Recht (ABGB, UGB, KSchG).                                                                                                                                               |
 
-## P1-Produktbefund: Mandantenportal zeigt alle Aktendokumente
+## P1 behoben: Mandantenportal zeigt nur freigegebene Dokumente
 
-Der Portal-Endpunkt liefert die Akte mit ihrem `documents[]`-Frontmatter. Jedes in die Akte
-hochgeladene Dokument — auch interne Vermerke, Strategie-Entwürfe, Gutachten — ist damit für den
-Mandanten sichtbar, sobald das Portal freigegeben ist. Vor dem Pilot braucht es ein
-Freigabe-Flag pro Dokument („für Mandant sichtbar") mit Standard **nicht sichtbar**, und die
-Portal-Routen (`case`, `signable-docs`) filtern danach. Bis dahin: Portal nur für Akten
-freigeben, deren Dokumente vollständig mandantentauglich sind.
+Vorher lieferte der Portal-Endpunkt die komplette Akten-Seite (Zeiten, Notizen, Strategie,
+Zweitprüfungs-Spur) und alle Dokumente. Jetzt:
+
+- `DocumentEntry.portal_visible` (Standard **nicht sichtbar**; privilegierte Dokumente nie);
+  Mandanten-Uploads sind automatisch sichtbar.
+- `buildPortalCaseView()` liefert nur Whitelist-Felder (Aktenzahl, Status, Parteien,
+  Rechtsgebiet, Gericht, Sachverhalt, Ansprüche, Fristen ohne Prüfspur, freigegebene Dokumente);
+  der Portal-Chat gründet nur auf freigegebenen Dokumenten.
+- Dokumente-Tab: Umschalter „Intern / Mandant" je Dokument.
+- Headless verifiziert: ohne Freigabe „Noch keine Dokumente", nach Freigabe sichtbar.
 
 ## Querschnitt
 

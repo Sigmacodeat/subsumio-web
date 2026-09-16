@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { portalVisibleDocumentSlugs } from "@/lib/portal-view";
+import type { DocumentEntry } from "@/lib/legal-types";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { verifyPortalToken } from "@/lib/portal-token";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
@@ -126,13 +128,17 @@ export const POST = createPublicHandler(
       headers,
       signal: AbortSignal.timeout(10_000),
     });
+    // The assistant may only ground on documents released to the client.
+    const released = portalVisibleDocumentSlugs(
+      (fm.documents as DocumentEntry[] | undefined) ?? undefined
+    );
     const documents: CaseDocument[] = [];
     if (docsRes.ok) {
       const docsData = await docsRes.json();
       const pages: BrainPage[] = Array.isArray(docsData) ? docsData : (docsData.pages ?? []);
       for (const p of pages) {
         const pfm = (p.frontmatter ?? {}) as Record<string, unknown>;
-        if (pfm.case_slug === payload.case_slug) {
+        if (pfm.case_slug === payload.case_slug && released.has(p.slug)) {
           documents.push({
             slug: p.slug,
             title: p.title,

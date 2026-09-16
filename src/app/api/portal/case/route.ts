@@ -4,6 +4,7 @@ import { verifyPortalToken } from "@/lib/portal-token";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { caseFrontmatter } from "@/lib/legal-types";
+import { buildPortalCaseView } from "@/lib/portal-view";
 
 const caseSchema = z.object({
   token: z.string().min(1, "token_required"),
@@ -60,6 +61,7 @@ export const GET = createPublicHandler(
       );
     }
 
-    return Response.json({ page });
+    // Never hand the raw page to the client: whitelisted fields + released documents only.
+    return Response.json({ page: buildPortalCaseView(page) });
   }
 );

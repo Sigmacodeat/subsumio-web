@@ -8084,6 +8084,20 @@ export const D = {
     en: "Field-Level Contradictions",
   },
   "strategytab.recheck": { de: "Neu prüfen", en: "Re-check" },
+  "docstab.portal_visible": { de: "Mandant", en: "Client" },
+  "docstab.portal_hidden": { de: "Intern", en: "Internal" },
+  "docstab.portal_visible_hint": {
+    de: "Für den Mandanten im Portal sichtbar — klicken, um zu verbergen.",
+    en: "Visible to the client in the portal — click to hide.",
+  },
+  "docstab.portal_hidden_hint": {
+    de: "Nur intern sichtbar — klicken, um für den Mandanten im Portal freizugeben.",
+    en: "Internal only — click to release to the client portal.",
+  },
+  "docstab.portal_blocked_privileged": {
+    de: "Privilegierte Dokumente können nicht für das Mandantenportal freigegeben werden.",
+    en: "Privileged documents cannot be released to the client portal.",
+  },
   "docstab.privileged": { de: "Privilegiert", en: "Privileged" },
   "docstab.extraction_failed": { de: "Extraktion fehlgeschlagen", en: "Extraction failed" },
   "docstab.extraction_password": {
