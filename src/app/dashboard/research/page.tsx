@@ -124,7 +124,8 @@ function ResearchPageInner() {
   const [sessions, setSessions] = useState<ResearchSession[]>([]);
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
-  const [jurisdiction, setJurisdiction] = useState("de");
+  // Austria-only pilot: Austrian law is the default, EU law stays selectable.
+  const [jurisdiction, setJurisdiction] = useState("at");
   const [currentAnswer, setCurrentAnswer] = useState("");
   const [currentCitations, setCurrentCitations] = useState<Array<{ slug: string; title: string }>>(
     []
@@ -650,9 +651,7 @@ function ResearchPageInner() {
             aria-label="Rechtsordnung"
             className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           >
-            <option value="de">🇩🇪 Deutschland</option>
             <option value="at">🇦🇹 Österreich</option>
-            <option value="ch">🇨🇭 Schweiz</option>
             <option value="eu">🇪🇺 EU-Recht</option>
           </select>
           <div className="relative flex-1">
@@ -883,7 +882,7 @@ function ResearchPageInner() {
               />
             </div>
             <div className="flex gap-1">
-              {(["all", "at", "de", "ch", "eu"] as const).map((j) => (
+              {(["all", "at", "eu"] as const).map((j) => (
                 <button
                   key={j}
                   onClick={() => setSavedJurisdiction(j)}

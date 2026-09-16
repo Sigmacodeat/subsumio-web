@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useMe } from "@/lib/queries/auth";
 import {
   CalendarClock,
   AlertTriangle,
@@ -63,11 +64,17 @@ export default function CalendarPage() {
     queryFn: () => api.cases.list({ limit: 200 }),
   });
 
+  // Outlook events come through the connector API, which only firm admins may
+  // read (connector.read). Lawyers and assistants got a 403 on every calendar
+  // visit; skip the request unless the role allows it.
+  const meQuery = useMe();
+  const canReadConnectors = meQuery.data?.user?.role === "admin";
   const { data: outlookData, isLoading: outlookLoading } = useQuery({
     queryKey: ["calendar-outlook"],
     queryFn: () => api.outlook.calendar.list({ maxResults: 100 }),
     staleTime: 60_000,
     retry: false,
+    enabled: canReadConnectors,
   });
 
   const outlookEvents = useMemo(() => {

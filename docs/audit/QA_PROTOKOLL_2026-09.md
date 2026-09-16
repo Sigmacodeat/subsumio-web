@@ -84,6 +84,17 @@ behoben (Commit) · ⚠️ offen · ℹ️ Hinweis.
 | Stat-Karte „beA" auf der Fristen-Seite           | ⚠️       | Deutscher Kanal im AT-Pilot; Karte ausblenden oder durch „ERV/webERV" ersetzen.                                  |
 | Dev-Server                                       | ℹ️       | Webpack-Dev ließ Tabs nach HMR ohne Hydration hängen; Preview läuft jetzt mit Turbopack (`.claude/launch.json`). |
 
+## Headless-Lauf über Arbeitsräume (Kalender, Aufgaben, Kontakte, Recherche, Assistent, Einstellungen, Portal)
+
+| Prüfpunkt                                           | Ergebnis | Detail                                                                                                                                                 |
+| --------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `POST /api/dashboard/briefing` 400 auf jeder Seite  | 🔧       | Ursache: `language: "at"` (useLang liefert „at" für de-AT); 12 KI-Routen akzeptierten nur de/en → `uiLanguageSchema` (`683555a682`).                   |
+| Kalender: `403 GET /api/outlook/calendar`           | 🔧       | Outlook-Abfrage nur für Admins erlaubt, lief aber für jede Rolle → jetzt rollenabhängig deaktiviert.                                                   |
+| Recherche: Standard „🇩🇪 Deutschland", DE/CH wählbar | 🔧       | AT-Pilot: Standard „at", Auswahl AT/EU; Filter gespeicherter Recherchen ebenso.                                                                        |
+| Kontakte leer trotz Parteien in drei Akten          | ⚠️       | Mandant/Gegner aus dem Akten-Wizard werden nicht als Kontakte angelegt (Detailseite: „Stammdaten — Auswählen — erstellen"). Produktentscheidung nötig. |
+| Einstellungen: Badge „Benachrichtigung fehlt"       | ⚠️       | Warnlabel (`settings.notification_warning_label`) auf Kanzlei/E-Rechnung; für Anwälte unklar, Tooltip erklärt es. Wording prüfen.                      |
+| Aufgaben, Portal-Vorschau, Assistent                | ✅       | Laden ohne Fehler; Assistent begrüßt mit vollem Namen.                                                                                                 |
+
 ## Querschnitt
 
 - **KI-Qualität lokal:** `qwen2.5:1.5b` halluziniert (Berufungsfrist → „Verfahrenszeitraumgesetz",
