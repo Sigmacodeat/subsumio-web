@@ -132,3 +132,19 @@ describe("api.brain", () => {
     await expect(api.brain.stats()).rejects.toThrow("HTTP 500");
   });
 });
+
+describe("401 handling by area", async () => {
+  const { isAuthenticatedArea, isPublicRoute } = await import("./api");
+  test("only firm areas trigger the login redirect", () => {
+    expect(isAuthenticatedArea("/dashboard/cases")).toBe(true);
+    expect(isAuthenticatedArea("/ops")).toBe(true);
+    expect(isAuthenticatedArea("/portal/abc")).toBe(false);
+    expect(isAuthenticatedArea("/at/login")).toBe(false);
+  });
+  test("public routes skip the session probe", () => {
+    expect(isPublicRoute("/portal/abc")).toBe(true);
+    expect(isPublicRoute("/at")).toBe(true);
+    expect(isPublicRoute("/join/x")).toBe(true);
+    expect(isPublicRoute("/dashboard")).toBe(false);
+  });
+});

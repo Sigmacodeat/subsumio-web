@@ -31,6 +31,22 @@ import type { WorkProductReceipt } from "./work-product-receipts";
 import { csrfFetch, getCsrfToken } from "./csrf";
 import { consumeSSEStream } from "./sse-stream";
 
+/** Areas that require a firm session; a 401 there means "log in again". */
+export function isAuthenticatedArea(pathname: string): boolean {
+  return (
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/ops") ||
+    pathname.startsWith("/admin")
+  );
+}
+
+/** Routes served to visitors without a firm session (no /api/auth/me probing). */
+export function isPublicRoute(pathname: string): boolean {
+  return (
+    pathname.startsWith("/portal") || pathname.startsWith("/at") || pathname.startsWith("/join")
+  );
+}
+
 // Browser: same-origin Next.js proxy (/api/*). Server: direct engine URL.
 import { env } from "@/lib/env";
 import {
@@ -116,9 +132,16 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
 
   if (!res.ok) {
-    // Session expired → redirect to login (browser only)
-    if (res.status === 401 && typeof window !== "undefined") {
-      const loginUrl = new URL("/login", window.location.origin);
+    // Session expired → redirect to login (browser only, authenticated areas
+    // only). Public pages — the tokenised client portal, marketing, join links —
+    // may legitimately receive a 401 from an opportunistic /api/auth/me and must
+    // never bounce the visitor to the firm login.
+    if (
+      res.status === 401 &&
+      typeof window !== "undefined" &&
+      isAuthenticatedArea(window.location.pathname)
+    ) {
+      const loginUrl = new URL("/at/login", window.location.origin);
       loginUrl.searchParams.set("next", window.location.pathname);
       window.location.href = loginUrl.toString();
       throw new ApiRequestError("Session expired — redirecting to login", 401, "session_expired");

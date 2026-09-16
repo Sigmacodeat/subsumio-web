@@ -1,9 +1,9 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { csrfFetch } from "@/lib/csrf";
-import { api } from "@/lib/api";
+import { api, isPublicRoute } from "@/lib/api";
 import { tracking, resetUser } from "@/lib/tracking";
 import type { OnboardingProgress } from "@/lib/types";
 
@@ -26,9 +26,15 @@ export interface RegisterInput {
 }
 
 export function useMe() {
+  // Public surfaces (client portal, marketing, join) have no firm session; the
+  // language hook mounts useMe everywhere, so skip the request there instead
+  // of producing a 401 on every visit.
+  const pathname = usePathname();
+  const enabled = !isPublicRoute(pathname ?? "");
   return useQuery({
     queryKey: ["auth", "me"],
     queryFn: () => api.auth.me(),
+    enabled,
     staleTime: 5 * 60 * 1000,
   });
 }

@@ -69,6 +69,15 @@ behoben (Commit) · ⚠️ offen · ℹ️ Hinweis.
 | Vorschau „Kunde —"                    | ⚠️       | Mandant wird in der Vorschau nicht aufgelöst, in der Liste schon.                                                                                                                                      |
 | Stundensatz-Feld im Onboarding        | ⚠️       | Vorbelegt mit 220; Tippen hängt an (QA-Kanzlei stand auf 220.250 €/h), keine Plausibilitätsgrenze. Feld beim Fokus selektieren + Obergrenze.                                                           |
 
+## Station 7 — Mandantenportal (headless)
+
+| Prüfpunkt                                                 | Ergebnis | Detail                                                                                                                                                                                                       |
+| --------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Portal freigeben + Link erzeugen (`/api/portal/generate`) | ✅       | Token-URL `/portal/<token>` (case_slug, brain_id, exp).                                                                                                                                                      |
+| Link ohne Login öffnen                                    | 🔧       | **Redirect auf `/at/login`**: `useLang()` → `useMe()` → 401 → globaler Redirect im API-Client. Jetzt: 401-Redirect nur in `/dashboard`, `/ops`, `/admin`; `useMe` auf `/portal`, `/at`, `/join` deaktiviert. |
+| Mandantensicht                                            | ✅       | Akte, Beteiligte, Dokumente, Upload, Nachrichten, EN-Umschalter; keine Konsolenfehler.                                                                                                                       |
+| Dokumentsichtbarkeit                                      | ⚠️       | Portal listet das hochgeladene Kündigungsschreiben ohne explizite Freigabe pro Dokument — Produktentscheidung (Freigabe-Flag je Dokument?).                                                                  |
+
 ## Station 5 — Fristen (aus der Akte)
 
 | Prüfpunkt                                  | Ergebnis | Detail                                                                                                |
