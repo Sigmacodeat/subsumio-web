@@ -89,7 +89,7 @@ function PipelinePrecedentSection({ lang }: { lang: string }) {
         <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
           {lang === "en"
             ? "Automatic precedent analyses from your case pipelines"
-            : "Automatische Präzedenzfall-Analysen aus deinen Akten"}
+            : "Automatische Präzedenzfall-Analysen aus Ihren Akten"}
         </h3>
         <Badge variant="default" className="text-[10px]">
           {pages.length}

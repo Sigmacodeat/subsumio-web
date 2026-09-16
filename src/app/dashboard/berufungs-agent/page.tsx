@@ -170,10 +170,7 @@ export default function BerufungsAgentPage() {
       <PageHeader
         title="Berufungs-Agent"
         description="Geführter Workflow für Berufung, Revision und Beschwerde — mit Quellenverifikation und Opponent-Simulator."
-        breadcrumbs={[
-          { label: "Kanzlei-Cockpit", href: "/dashboard" },
-          { label: "Berufungs-Agent" },
-        ]}
+        breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "Berufungs-Agent" }]}
         actions={
           <div className="flex items-center gap-2 text-sm text-[color:var(--ds-text-muted)]">
             <Scale className="h-4 w-4" />

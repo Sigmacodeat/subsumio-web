@@ -898,7 +898,7 @@ const ADMIN_SECTION: NavSection = {
       labelKey: "nav.memory",
       keywords: "gedaechtnis memory erinnerungen praferenzen",
       tier: "free",
-      audienceTier: "quick-start",
+      audienceTier: "erweitert",
       tooltipKey: "nav.tooltip.memory",
     },
     {

@@ -21,7 +21,7 @@ type BiString = {
 
 export const D = {
   // ── Sidebar: section titles ──
-  "nav.section.cockpit": { de: "Kanzlei-Cockpit", en: "Firm Cockpit" },
+  "nav.section.cockpit": { de: "Übersicht", en: "Overview" },
   "nav.section.cases_clients": { de: "Mandanten & Parteien", en: "Clients & Parties" },
   "nav.section.inbox_deadlines": { de: "Eingang & Fristen", en: "Inbox & Deadlines" },
   "nav.section.documents_drafting": { de: "Dokumente & Drafting", en: "Documents & Drafting" },
@@ -75,7 +75,7 @@ export const D = {
     en: "Contract analysis, clause library and playbooks",
   },
   "nav.section.desc.knowledge": {
-    de: "Kanzlei-Wissen (Brain) und Rechtsrecherche — zwei getrennte Domänen",
+    de: "Kanzlei-Wissen (Kanzleiwissen) und Rechtsrecherche — zwei getrennte Domänen",
     en: "Firm knowledge (Brain) and legal research — two separate domains",
   },
   "nav.section.desc.litigation": {
@@ -457,7 +457,7 @@ export const D = {
   "sidebar.filter_placeholder": { de: "Navigation filtern…", en: "Filter navigation…" },
   "sidebar.clear_filter": { de: "Filter löschen", en: "Clear filter" },
   "sidebar.no_results": { de: "Keine Treffer für", en: "No results for" },
-  "sidebar.dream_cycle": { de: "Dream Cycle", en: "Dream Cycle" },
+  "sidebar.dream_cycle": { de: "Nächtliche Konsolidierung", en: "Dream Cycle" },
   "sidebar.dream_last_run": { de: "Letzter Lauf:", en: "Last run:" },
   "sidebar.dream_not_scheduled": {
     de: "Nächtliche Konsolidierung — noch nicht geplant",
@@ -470,7 +470,7 @@ export const D = {
   "sidebar.dream_run_now": { de: "Jetzt ausführen", en: "Run now" },
   "sidebar.dream_running": { de: "Wird ausgeführt…", en: "Running…" },
   "sidebar.dream_error": {
-    de: "Dream Cycle konnte nicht gestartet werden.",
+    de: "Nächtliche Konsolidierung konnte nicht gestartet werden.",
     en: "Dream Cycle could not be started.",
   },
   "sidebar.collapse_all": { de: "Alle Sektionen einklappen", en: "Collapse all sections" },
@@ -548,7 +548,7 @@ export const D = {
   "topbar.quick_create": { de: "Neu", en: "New" },
   "topbar.utilities": { de: "Weitere Optionen", en: "More options" },
   "mobile.quick_create_description": {
-    de: "Was möchtest du erstellen?",
+    de: "Was möchten Sie anlegen?",
     en: "What would you like to create?",
   },
   "topbar.create_case": { de: "Neue Akte", en: "New Case" },
@@ -560,8 +560,8 @@ export const D = {
   "topbar.create_draft": { de: "Neuer Entwurf", en: "New Draft" },
 
   // ── Dashboard page ──
-  "dashboard.title": { de: "Kanzlei-Cockpit", en: "Firm Cockpit" },
-  "dashboard.desc_loading": { de: "Lade Status…", en: "Loading status…" },
+  "dashboard.title": { de: "Übersicht", en: "Overview" },
+  "dashboard.desc_loading": { de: "Status wird geladen", en: "Loading status…" },
   "dashboard.desc_online": {
     de: "Tagessteuerung für Akten, Fristen, Eingang, Reviews und Abrechnung.",
     en: "Daily control for cases, deadlines, inbox, reviews, and billing.",
@@ -618,13 +618,13 @@ export const D = {
   "dashboard.no_deadlines": { de: "Keine Fristen in nächster Zeit", en: "No upcoming deadlines" },
   "dashboard.today": { de: "Heute", en: "Today" },
   "dashboard.overdue_short": { de: "überfällig", en: "overdue" },
-  "dashboard.dream_cycle": { de: "Dream Cycle", en: "Dream Cycle" },
+  "dashboard.dream_cycle": { de: "Nächtliche Konsolidierung", en: "Dream Cycle" },
   "dashboard.dream_inactive": { de: "Inaktiv", en: "Inactive" },
   "dashboard.dream_desc": {
-    de: "Der Dream Cycle läuft nachts und konsolidiert dein Wissen, fixiert Zitate und findet Widersprüche.",
+    de: "Die nächtliche Konsolidierung fasst das Kanzleiwissen zusammen, fixiert Zitate und findet Widersprüche.",
     en: "The Dream Cycle runs at night, consolidates your knowledge, fixes citations and finds contradictions.",
   },
-  "dashboard.dream_setup": { de: "Dream Cycle einrichten", en: "Set up Dream Cycle" },
+  "dashboard.dream_setup": { de: "Nächtliche Konsolidierung einrichten", en: "Set up Dream Cycle" },
   "dashboard.welcome": { de: "Willkommen im Kanzlei-OS.", en: "Welcome to your firm OS." },
   "dashboard.welcome_desc": {
     de: "Starte mit einer Akte, importiere bestehende Kanzleidaten oder verbinde Eingangskanäle. Der Assistent arbeitet im Hintergrund, das Cockpit steuert den Arbeitstag.",
@@ -637,7 +637,7 @@ export const D = {
     en: "Failed to load knowledge base status.",
   },
   "dashboard.error_engine": {
-    de: "Engine oder Netzwerk ist nicht erreichbar.",
+    de: "Subsumio-Dienst oder Netzwerk ist nicht erreichbar.",
     en: "Engine or network is unreachable.",
   },
   "dashboard.retry": { de: "Erneut versuchen", en: "Retry" },
@@ -654,7 +654,7 @@ export const D = {
   "cockpit.ai_limited": { de: "Verbindung eingeschränkt", en: "Connection limited" },
   "cockpit.degraded_title": { de: "Wissensbasis eingeschränkt", en: "Knowledge base limited" },
   "cockpit.degraded_desc": {
-    de: "Das Kanzlei-Cockpit bleibt bedienbar. Suche, Graph und Assistenten-Antworten können bis zur Wiederverbindung eingeschränkt sein.",
+    de: "Die Übersicht bleibt bedienbar. Suche, Verknüpfungen und Assistenten-Antworten können bis zur Wiederverbindung eingeschränkt sein.",
     en: "The firm cockpit remains usable. Search, graph, and assistant answers may be limited until reconnection.",
   },
   "cockpit.stat_deadlines": { de: "Kritische Fristen", en: "Critical Deadlines" },
@@ -879,10 +879,10 @@ export const D = {
   "cases.retry": { de: "Erneut versuchen", en: "Retry" },
   "cases.empty_title": { de: "Keine Akten gefunden", en: "No cases found" },
   "cases.empty_no_cases": {
-    de: "Erstelle deine erste Akte oder importiere bestehende Fälle.",
+    de: "Legen Sie Ihre erste Akte an oder importieren Sie bestehende Fälle.",
     en: "Create your first case or import existing ones.",
   },
-  "cases.empty_filtered": { de: "Passe deine Filter an.", en: "Adjust your filters." },
+  "cases.empty_filtered": { de: "Passen Sie die Filter an.", en: "Adjust your filters." },
   "cases.empty_create": { de: "Neue Akte erstellen", en: "Create new case" },
   "cases.bulk_delete": { de: "Auswahl archivieren", en: "Archive selection" },
   "cases.col_title": { de: "Akte", en: "Case" },
@@ -1000,7 +1000,7 @@ export const D = {
   },
   "cases.toast_access_denied": { de: "Zugriff verweigert", en: "Access denied" },
   "cases.toast_access_denied_desc": {
-    de: "Du hast keine Berechtigung, diese Akte wiederherzustellen.",
+    de: "Sie haben keine Berechtigung, diese Akte wiederherzustellen.",
     en: "You don't have permission to restore this case.",
   },
   "cases.toast_conflict": { de: "Konflikt", en: "Conflict" },
@@ -1231,7 +1231,7 @@ export const D = {
     en: "Deadlines are automatically extracted from uploaded documents.",
   },
   "deadlines.empty_create": { de: "Frist manuell anlegen", en: "Create deadline manually" },
-  "deadlines.empty_filtered": { de: "Passe deine Filter an.", en: "Adjust your filters." },
+  "deadlines.empty_filtered": { de: "Passen Sie die Filter an.", en: "Adjust your filters." },
   "deadlines.col_title": { de: "Frist", en: "Deadline" },
   "deadlines.col_case": { de: "Akte", en: "Case" },
   "deadlines.col_date": { de: "Datum", en: "Date" },
@@ -1378,7 +1378,7 @@ export const D = {
   "inv.send_reminder": { de: "Mahnung senden", en: "Send reminder" },
   "inv.delete": { de: "Löschen", en: "Delete" },
   "inv.confirm_delete_title": { de: "Rechnung löschen", en: "Delete invoice" },
-  "inv.confirm_delete_msg": { de: "Möchtest du Rechnung", en: "Do you want to delete invoice" },
+  "inv.confirm_delete_msg": { de: "Möchten Sie Rechnung", en: "Do you want to delete invoice" },
   "inv.confirm_delete_confirm": { de: "Löschen", en: "Delete" },
   "inv.error_offline": {
     de: "Wissensbasis gerade nicht erreichbar. Es werden zwischengespeicherte Rechnungen angezeigt.",
@@ -1448,7 +1448,7 @@ export const D = {
   // ── Settings page ──
   "settings.title": { de: "Einstellungen", en: "Settings" },
   "settings.desc": {
-    de: "Subsumio Engine & Dashboard konfigurieren",
+    de: "Subsumio-Dienst & Dashboard konfigurieren",
     en: "Configure Subsumio engine & dashboard",
   },
   "settings.hub_desc": {
@@ -1461,7 +1461,7 @@ export const D = {
     en: "Plan, language, data export and referrals",
   },
   "settings.tile_brain_desc": {
-    de: "Engine-URL, Verbindungsstatus und Suchmodus",
+    de: "Subsumio-Dienst-URL, Verbindungsstatus und Suchmodus",
     en: "Engine URL, connection status and search mode",
   },
   "settings.tile_dream_desc": {
@@ -1509,19 +1509,19 @@ export const D = {
     en: "AI model selection and provider configuration",
   },
   "settings.tier_quick_start": {
-    de: "Schnellstart — ab Tag 1",
+    de: "Grundeinrichtung",
     en: "Quick Start — from day 1",
   },
   "settings.tier_erweitert": {
-    de: "Erweitert — ab ~10 Personen",
+    de: "Erweiterte Funktionen",
     en: "Advanced — for ~10+ users",
   },
   "settings.tier_dach_integration": {
-    de: "DACH-Integration — regional spezifisch",
+    de: "Integrationen (AT / DE / CH)",
     en: "DACH Integration — region-specific",
   },
   "settings.tier_system": {
-    de: "System — Transparenz & Audit",
+    de: "System",
     en: "System — transparency & audit",
   },
   "settings.hub_search_placeholder": {
@@ -1797,7 +1797,7 @@ export const D = {
   "crypto_forensics.summary": { de: "Zusammenfassung", en: "Summary" },
   "settings.tab_brain": { de: "Wissensbasis", en: "Knowledge Base" },
   "settings.tab_api": { de: "API Keys", en: "API Keys" },
-  "settings.tab_dream": { de: "Dream Cycle", en: "Dream Cycle" },
+  "settings.tab_dream": { de: "Nächtliche Konsolidierung", en: "Dream Cycle" },
   "settings.tab_kanzlei": { de: "Kanzlei", en: "Firm" },
   "settings.tab_e_invoice": { de: "E-Rechnung", en: "E-Invoice" },
   "settings.tab_team": { de: "Team", en: "Team" },
@@ -1838,7 +1838,7 @@ export const D = {
   },
   "settings.openai_key": { de: "OpenAI API Key", en: "OpenAI API Key" },
   "settings.openai_key_desc": {
-    de: "Für Embeddings und Synthese (text-embedding-3-small)",
+    de: "Für Suchindex und Synthese (text-embedding-3-small)",
     en: "For embeddings and synthesis (text-embedding-3-small)",
   },
   "settings.create_key": { de: "API Key erstellen", en: "Create API key" },
@@ -1858,19 +1858,19 @@ export const D = {
   },
   "settings.saved": { de: "Gespeichert", en: "Saved" },
   "settings.save_keys": { de: "Keys speichern", en: "Save keys" },
-  "settings.dream_title": { de: "Dream Cycle", en: "Dream Cycle" },
+  "settings.dream_title": { de: "Nächtliche Konsolidierung", en: "Dream Cycle" },
   "settings.dream_desc": {
     de: "Nächtliche Konsolidierung & Enrichment",
     en: "Nightly consolidation & enrichment",
   },
   "settings.active": { de: "Aktiv", en: "Active" },
   "settings.inactive": { de: "Inaktiv", en: "Inactive" },
-  "settings.dream_enable": { de: "Dream Cycle aktivieren", en: "Enable Dream Cycle" },
+  "settings.dream_enable": { de: "Nächtliche Konsolidierung aktivieren", en: "Enable Dream Cycle" },
   "settings.dream_enable_desc": { de: "Täglich um 3:00 Uhr morgens", en: "Daily at 3:00 AM" },
   "settings.dream_running": { de: "Läuft täglich um 3:00 Uhr", en: "Runs daily at 3:00 AM" },
   "settings.dream_disabled": { de: "Deaktiviert", en: "Disabled" },
   "settings.dream_what": {
-    de: "Was passiert im Dream Cycle",
+    de: "Was passiert im Nächtliche Konsolidierung",
     en: "What happens in the Dream Cycle",
   },
   "settings.dream_task_1": {
@@ -1991,12 +1991,12 @@ export const D = {
   },
   "settings.datev_consultant": { de: "DATEV Berater-Nr.", en: "DATEV consultant no." },
   "settings.datev_consultant_desc": {
-    de: "Deine Steuerberater-Nummer für DATEV",
+    de: "Ihre Steuerberater-Nummer für DATEV",
     en: "Your tax consultant number for DATEV",
   },
   "settings.datev_client": { de: "DATEV Mandanten-Nr.", en: "DATEV client no." },
   "settings.datev_client_desc": {
-    de: "Deine Mandanten-Nummer beim Steuerberater",
+    de: "Ihre Mandanten-Nummer beim Steuerberater",
     en: "Your client number at the tax consultant",
   },
   "settings.smtp_server": { de: "SMTP-Server", en: "SMTP server" },
@@ -2039,7 +2039,7 @@ export const D = {
   "settings.role_client_viewer": { de: "Client Viewer", en: "Client Viewer" },
   "settings.account_title": { de: "Account", en: "Account" },
   "settings.plan": { de: "Plan", en: "Plan" },
-  "settings.plan_desc": { de: "Dein aktuelles Abonnement", en: "Your current subscription" },
+  "settings.plan_desc": { de: "Ihr aktuelles Abonnement", en: "Your current subscription" },
   "settings.upgrade": { de: "Upgrade auf Pro →", en: "Upgrade to Pro →" },
   "settings.usage": { de: "Nutzung", en: "Usage" },
   "settings.usage_desc": { de: "Aktueller Monat", en: "Current month" },
@@ -2047,7 +2047,7 @@ export const D = {
   "settings.usage_queries": { de: "Queries", en: "Queries" },
   "settings.referral": { de: "Empfehlen & sparen", en: "Refer & save" },
   "settings.referral_desc": {
-    de: "Du bekommst 1 Monat gratis pro geworbenem Kunden — der Geworbene auch.",
+    de: "Sie erhalten einen Monat gratis pro geworbener Kanzlei — die geworbene Kanzlei ebenfalls.",
     en: "You get 1 month free per referred customer — so do they.",
   },
   "settings.referral_info": {
@@ -2065,7 +2065,7 @@ export const D = {
   },
   "settings.data_export": { de: "Datenexport (DSGVO)", en: "Data export (GDPR)" },
   "settings.data_export_desc": {
-    de: "Deine Kontodaten als JSON-Datei (Art. 15/20 DSGVO). Ohne eigene Kanzlei enthält der Export auch deine Wissensbasis; Akten einer Kanzlei exportieren deren Admins.",
+    de: "Ihre Kontodaten als JSON-Datei (Art. 15/20 DSGVO). Ohne eigene Kanzlei enthält der Export auch Ihr Kanzleiwissen; Akten einer Kanzlei exportieren deren Administratoren.",
     en: "Your account data as a JSON file (Art. 15/20 GDPR). Without a firm the export also contains your knowledge base; firm matters are exported by the firm's admins.",
   },
   "settings.export_button": { de: "Daten exportieren ↓", en: "Export data ↓" },
@@ -2084,7 +2084,7 @@ export const D = {
     en: "Enable single-key shortcuts",
   },
   "settings.single_key_shortcuts_hint": {
-    de: "Einzeltasten-Shortcuts (N, D, I, S, C) können versehentlich ausgelöst werden. Deaktiviere diese Option, wenn du nur Tastenkombinationen mit Modifikator-Tasten verwenden möchtest.",
+    de: "Einzeltasten-Kürzel (N, D, I, S, C) können versehentlich ausgelöst werden. Deaktivieren Sie diese Option, wenn Sie nur Tastenkombinationen mit Modifikatortaste verwenden möchten.",
     en: "Single-key shortcuts (N, D, I, S, C) can be triggered accidentally. Disable this option to only use keyboard shortcuts with modifier keys.",
   },
   "settings.tab_scim": { de: "SCIM", en: "SCIM" },
@@ -2204,7 +2204,10 @@ export const D = {
   "cmd.section.actions": { de: "Aktionen", en: "Actions" },
   "cmd.section.create": { de: "Erstellen", en: "Create" },
   "cmd.ask_copilot": { de: "Copilot fragen", en: "Ask Copilot" },
-  "cmd.nav.brain": { de: "Brain — Wissensbasis-Explorer", en: "Brain — Knowledge Base Explorer" },
+  "cmd.nav.brain": {
+    de: "Kanzleiwissen — Wissensbasis-Explorer",
+    en: "Brain — Knowledge Base Explorer",
+  },
   "cmd.nav.graph": { de: "Graph — Entitäts-Netzwerk", en: "Graph — Entity Network" },
   "cmd.nav.sources": { de: "Sources — Quellen-Verwaltung", en: "Sources — Source Management" },
   "cmd.recent_matters": { de: "Kürzlich bearbeitete Akten", en: "Recently edited matters" },
@@ -2249,9 +2252,9 @@ export const D = {
     de: "Kontextuelle Hilfe für Setup und Kanzlei-Workflows",
     en: "Contextual help for setup and firm workflows",
   },
-  "guide.default_title": { de: "Kanzlei-Cockpit verstehen", en: "Understand the firm cockpit" },
+  "guide.default_title": { de: "Die Übersicht verstehen", en: "Understand the overview" },
   "guide.default_desc": {
-    de: "Starte mit Akten, Fristen und Eingang. System- und Assistenten-Funktionen bleiben im Hintergrund, bis du sie brauchst.",
+    de: "Beginnen Sie mit Akten, Fristen und Posteingang. System- und Assistentenfunktionen bleiben im Hintergrund, bis Sie sie brauchen.",
     en: "Start with cases, deadlines, and inbox. System and assistant features stay in the background until needed.",
   },
   "guide.setup_title": { de: "Setup-Checkliste", en: "Setup checklist" },
@@ -2418,17 +2421,17 @@ export const D = {
   "tour.skip": { de: "Überspringen", en: "Skip tour" },
   "tour.step1.title": { de: "Navigation", en: "Navigation" },
   "tour.step1.body": {
-    de: "Hier findest du alle Hauptbereiche: Akten, Fristen, Dokumente, Kontakte und mehr. Die Sidebar lässt sich mit Cmd+B einklappen.",
+    de: "Hier finden Sie alle Hauptbereiche: Akten, Fristen, Dokumente, Kontakte und mehr. Die Seitenleiste lässt sich mit Cmd+B einklappen.",
     en: "Find every main area here: matters, deadlines, documents, contacts, and more. Collapse the sidebar with Cmd+B.",
   },
   "tour.step2.title": { de: "Top-Leiste", en: "Top bar" },
   "tour.step2.body": {
-    de: "Schnellzugriff auf Command Palette (Cmd+K), Theme-Umschaltung, Guide und deinen Account.",
+    de: "Schnellzugriff auf die Befehlspalette (Cmd+K), Darstellung, Hilfe und Ihr Konto.",
     en: "Quick access to the Command Palette (Cmd+K), theme switcher, guide, and your account.",
   },
   "tour.step3.title": { de: "KI-Copilot", en: "AI Copilot" },
   "tour.step3.body": {
-    de: "Der Copilot ist dein direkter Zugang zur KI. Stelle Fragen zu Akten, lasse Schriftsätze entwerfen oder Fristen prüfen — alles ohne das Dashboard zu verlassen.",
+    de: "Der Assistent ist Ihr direkter Zugang zur KI. Stellen Sie Fragen zu Akten, lassen Sie Schriftsätze entwerfen oder Fristen prüfen — ohne die Übersicht zu verlassen.",
     en: "Copilot is your direct access to AI. Ask about matters, draft pleadings, or check deadlines without leaving the dashboard.",
   },
   "tour.step4.title": { de: "Schnellerstellung", en: "Quick create" },
@@ -2438,7 +2441,7 @@ export const D = {
   },
   "tour.step5.title": { de: "Übersicht", en: "Overview" },
   "tour.step5.body": {
-    de: "Hier siehst du die wichtigsten Kennzahlen: Seiten im Brain, Entitäten, letzter Dream-Cycle und ob die Engine erreichbar ist.",
+    de: "Hier sehen Sie die wichtigsten Kennzahlen: Umfang des Kanzleiwissens, erkannte Beteiligte, letzte Konsolidierung und ob der Subsumio-Dienst erreichbar ist.",
     en: "See key metrics here: pages in Brain, entities, the latest Dream cycle, and engine availability.",
   },
   "tour.step6.title": { de: "Fristen-Management", en: "Deadline management" },
@@ -2448,7 +2451,7 @@ export const D = {
   },
   "tour.step7.title": { de: "Akten-Übersicht", en: "Matter overview" },
   "tour.step7.body": {
-    de: "Alle deine Akten an einem Ort. Jede Akte enthält Mandant, Gegner, Fristen, Dokumente und den Akten-Graphen.",
+    de: "Alle Ihre Akten an einem Ort. Jede Akte enthält Mandant, Gegner, Fristen, Dokumente und die Verknüpfungen.",
     en: "All matters in one place, including clients, opposing parties, deadlines, documents, and the matter graph.",
   },
   "tour.step8.title": { de: "Workflows", en: "Workflows" },
@@ -2468,12 +2471,12 @@ export const D = {
   },
   "tour.step11.title": { de: "Copilot-Panel", en: "Copilot panel" },
   "tour.step11.body": {
-    de: "Der Copilot bleibt während der Arbeit geöffnet und unterstützt dich kontextbezogen zur aktuellen Akte.",
+    de: "Der Assistent bleibt während der Arbeit geöffnet und unterstützt Sie kontextbezogen zur aktuellen Akte.",
     en: "Copilot stays open while you work and assists in the context of the current matter.",
   },
   "tour.step12.title": { de: "Command Palette", en: "Command Palette" },
   "tour.step12.body": {
-    de: "Mit Cmd+K suchst du nach Akten, Dokumenten oder Kontakten und führst Aktionen ohne Navigation aus.",
+    de: "Mit Cmd+K suchen Sie nach Akten, Dokumenten oder Kontakten und führen Aktionen ohne Navigation aus.",
     en: "Use Cmd+K to find matters, documents, or contacts and run actions without navigating.",
   },
 
@@ -2528,7 +2531,10 @@ export const D = {
     de: "Abrechnung konnte nicht geladen werden",
     en: "Billing could not be loaded",
   },
-  "error.brain_title": { de: "Brain konnte nicht geladen werden", en: "Brain could not be loaded" },
+  "error.brain_title": {
+    de: "Kanzleiwissen konnte nicht geladen werden",
+    en: "Brain could not be loaded",
+  },
   "error.calendar-export_title": {
     de: "Kalender-Export konnte nicht geladen werden",
     en: "Calendar export could not be loaded",
@@ -2753,7 +2759,7 @@ export const D = {
   "widget.hidden": { de: "Ausgeblendete Widgets", en: "Hidden widgets" },
   "widget.stats": { de: "Statistiken", en: "Statistics" },
   "widget.recent_activity": { de: "Letzte Aktivitäten", en: "Recent Activity" },
-  "widget.dream_cycle": { de: "Dream Cycle", en: "Dream Cycle" },
+  "widget.dream_cycle": { de: "Nächtliche Konsolidierung", en: "Dream Cycle" },
   "widget.getting_started": { de: "Erste Schritte", en: "Getting Started" },
   "widget.activity_feed": { de: "Aktivitäten heute", en: "Today's Activity" },
   "widget.activity_feed_desc": {
@@ -2829,12 +2835,12 @@ export const D = {
   "onboarding.finish": { de: "Fertig — Dashboard öffnen", en: "Finish — Open dashboard" },
   "onboarding.step_welcome": { de: "Willkommen", en: "Welcome" },
   "onboarding.step_welcome_desc": {
-    de: "Deine Kanzlei-Wissensbasis wird gleich einsatzbereit sein. Lass uns kurz einrichten, was du brauchst.",
+    de: "Ihr Kanzleiwissen ist gleich einsatzbereit. Richten wir kurz ein, was Sie brauchen.",
     en: "Your firm knowledge base will be ready in a moment. Let's quickly set up what you need.",
   },
   "onboarding.step_industry": { de: "Branche wählen", en: "Choose industry" },
   "onboarding.step_industry_desc": {
-    de: "Wir personalisieren dein Dashboard und Wissens-Schema basierend auf deiner Praxis.",
+    de: "Wir passen Übersicht und Wissensstruktur an Ihre Praxis an.",
     en: "We personalize your dashboard and knowledge schema based on your practice.",
   },
   "onboarding.step_profile": { de: "Kanzlei-Grunddaten", en: "Firm basics" },
@@ -2846,7 +2852,7 @@ export const D = {
   "onboarding.profile_owner": { de: "Ansprechpartner", en: "Main contact" },
   "onboarding.profile_email": { de: "Kanzlei-E-Mail", en: "Firm email" },
   "onboarding.profile_country": { de: "Land / Rechtsraum", en: "Country / jurisdiction" },
-  "onboarding.profile_role": { de: "Deine Rolle", en: "Your role" },
+  "onboarding.profile_role": { de: "Ihre Rolle", en: "Your role" },
   "onboarding.role_lawyer": { de: "Anwalt", en: "Lawyer" },
   "onboarding.role_assistant": { de: "Assistenz", en: "Assistant" },
   "onboarding.role_management": { de: "Management", en: "Management" },
@@ -2888,7 +2894,7 @@ export const D = {
   // ── Onboarding: WhatsApp setup step ──
   "onboarding.step_whatsapp": { de: "WhatsApp verbinden", en: "Connect WhatsApp" },
   "onboarding.step_whatsapp_desc": {
-    de: "Verbinde deine WhatsApp Business Number — Mandanten können direkt schreiben und der Assistent routet die Anfragen.",
+    de: "Verbinden Sie Ihre WhatsApp-Business-Nummer — Mandanten können direkt schreiben, der Assistent leitet die Anfragen weiter.",
     en: "Connect your WhatsApp Business number — clients can message directly and the assistant routes requests.",
   },
   "onboarding.whatsapp_phone": { de: "WhatsApp-Nummer", en: "WhatsApp number" },
@@ -2908,7 +2914,7 @@ export const D = {
   // ── Onboarding: Billing/rate setup step ──
   "onboarding.step_billing": { de: "Stundensatz & Abrechnung", en: "Hourly rate & billing" },
   "onboarding.step_billing_desc": {
-    de: "Lege deinen Stundensatz und Abrechnungstakt fest — wird für Zeiterfassung und Rechnungen verwendet.",
+    de: "Legen Sie Stundensatz und Abrechnungstakt fest — Grundlage für Zeiterfassung und Rechnungen.",
     en: "Set your hourly rate and billing increment — used for time tracking and invoices.",
   },
   "onboarding.billing_rate": { de: "Stundensatz (€)", en: "Hourly rate (€)" },
@@ -2956,7 +2962,7 @@ export const D = {
   "cases.detail_refresh_now": { de: "Jetzt aktualisieren", en: "Refresh now" },
   "cases.detail_breadcrumb": { de: "Akten", en: "Cases" },
   "cases.detail_conflict_other": {
-    de: "Die Akte wurde zwischenzeitlich von einem anderen Nutzer bearbeitet. Bitte lade die Seite neu, bevor du weitere Änderungen speicherst.",
+    de: "Die Akte wurde zwischenzeitlich von einer anderen Person bearbeitet. Bitte laden Sie die Seite neu, bevor Sie weitere Änderungen speichern.",
     en: "This case has been edited by another user. Please reload the page before saving further changes.",
   },
   "cases.detail_conflict_version": {
@@ -2964,7 +2970,7 @@ export const D = {
     en: "This case has just been edited by another user (version {version}). Please refresh.",
   },
   "cases.detail_conflict_409": {
-    de: "Die Akte wurde zwischenzeitlich von einem anderen Nutzer bearbeitet (Version {version}). Bitte lade die Seite neu, bevor du weitere Änderungen speicherst.",
+    de: "Die Akte wurde zwischenzeitlich von einer anderen Person bearbeitet (Version {version}). Bitte laden Sie die Seite neu, bevor Sie weitere Änderungen speichern.",
     en: "This case has been edited by another user (version {version}). Please reload the page before saving further changes.",
   },
   "cases.detail_save_failed": {
@@ -3328,7 +3334,7 @@ export const D = {
     en: "This case was just edited by another user (version",
   },
   "cases.detail_conflict_save_error": {
-    de: "Die Akte wurde zwischenzeitlich von einem anderen Nutzer bearbeitet. Bitte lade die Seite neu, bevor du weitere Änderungen speicherst.",
+    de: "Die Akte wurde zwischenzeitlich von einer anderen Person bearbeitet. Bitte laden Sie die Seite neu, bevor Sie weitere Änderungen speichern.",
     en: "The case has been edited by another user in the meantime. Please reload the page before saving further changes.",
   },
   "cases.detail_conflict_warning_v2": {
@@ -3345,7 +3351,7 @@ export const D = {
   "cases.detail_time_act_study": { de: "Aktenstudium", en: "File study" },
   "cases.detail_time_lawyer_ph": { de: "Bearbeiter / Anwalt", en: "Handler / Lawyer" },
   "cases.detail_qb_strategy": {
-    de: "Welche Strategie empfiehlst du für diese Akte?",
+    de: "Welche Strategie empfehlen Sie für diese Akte?",
     en: "What strategy do you recommend for this case?",
   },
   "cases.detail_qb_chances": {
@@ -3425,7 +3431,7 @@ export const D = {
   "agents.select_job": { de: "Wähle einen Job aus der Liste", en: "Select a job from the list" },
   "agents.seed_title": { de: "Erste Schritte mit Agents", en: "Getting started with Agents" },
   "agents.seed_desc": {
-    de: "Agents sind autonome KI-Assistenten, die komplexe juristische Aufgaben in Schritten ausführen. Wähle eine Vorlage links oder beschreibe deine eigene Aufgabe.",
+    de: "Agenten sind automatisierte Abläufe, die komplexe juristische Aufgaben in Schritten ausführen. Wählen Sie links eine Vorlage oder beschreiben Sie Ihre Aufgabe.",
     en: "Agents are autonomous AI assistants that execute complex legal tasks step by step. Pick a template on the left or describe your own task.",
   },
   "agents.seed_step_1": {
@@ -3438,7 +3444,7 @@ export const D = {
   },
   "agents.seed_step_3": { de: "Ergebnisse prüfen und freigeben", en: "Review and approve results" },
   "agents.seed_empty_dag": {
-    de: "Sobald du einen Agenten startest, erscheint hier der Workflow-Graph",
+    de: "Sobald Sie einen Agenten starten, erscheint hier der Ablaufplan.",
     en: "Once you start an agent, the workflow graph appears here",
   },
   "agents.supervisor": { de: "Supervisor", en: "Supervisor" },
@@ -3451,7 +3457,7 @@ export const D = {
   "drafting.name": { de: "Name", en: "Name" },
   "drafting.describe_case": { de: "Beschreibe den Sachverhalt", en: "Describe the case" },
   "onboarding.step_done_desc": {
-    de: "Deine Kanzlei-Wissensbasis ist einsatzbereit. Du kannst jederzeit Dokumente nachladen und Fragen stellen.",
+    de: "Ihr Kanzleiwissen ist einsatzbereit. Sie können jederzeit Dokumente nachladen und Fragen stellen.",
     en: "Your firm knowledge base is ready. You can upload more documents and ask questions anytime.",
   },
   "onboarding.industry_legal": { de: "Kanzlei / Rechtsabteilung", en: "Law firm / legal team" },
@@ -3509,7 +3515,7 @@ export const D = {
   "chat.brain_online": { de: "Verbunden", en: "Connected" },
   "chat.brain_offline": { de: "Wissensbasis offline", en: "Knowledge base offline" },
   "chat.brain_degraded": { de: "Verbindung eingeschränkt", en: "Connection limited" },
-  "chat.tokens_session": { de: "Session-Tokens", en: "Session tokens" },
+  "chat.tokens_session": { de: "Verbrauch in diesem Gespräch", en: "Session tokens" },
   "chat.queries_remaining": { de: "Anfragen verbleibend", en: "Queries remaining" },
   "chat.case_select": { de: "Akte wählen", en: "Select case" },
   "chat.no_case": { de: "Keine Akte", en: "No case" },
@@ -3534,7 +3540,7 @@ export const D = {
     en: "An error occurred. Please try again.",
   },
   "chat.error_engine": {
-    de: "Die Engine ist nicht erreichbar. Bitte später erneut versuchen.",
+    de: "Die Subsumio-Dienst ist nicht erreichbar. Bitte später erneut versuchen.",
     en: "The engine is unreachable. Please try again later.",
   },
   "chat.error_quota": {
@@ -3571,7 +3577,7 @@ export const D = {
     en: "Markdown, PDF or text — Subsumio chunks, embeds and indexes automatically.",
   },
   "upload.breadcrumb": { de: "Upload", en: "Upload" },
-  "upload.source_label": { de: "Brain Source", en: "Brain Source" },
+  "upload.source_label": { de: "Kanzleiwissen Source", en: "Brain Source" },
   "upload.tags_label": { de: "Tags (kommasepariert)", en: "Tags (comma-separated)" },
   "upload.tags_placeholder": {
     de: "z.B. fintech, q2-2026, alice",
@@ -3590,12 +3596,12 @@ export const D = {
   },
   "upload.info_title": { de: "Wie funktioniert es?", en: "How does it work?" },
   "upload.info_body": {
-    de: "Subsumio chunked das Dokument automatisch, erstellt Embeddings und indiziert es im Wissensgraph. Entitäten (Personen, Firmen, Konzepte) werden extrahiert und verknüpft. Danach kannst du das Dokument über die Query-Seite abfragen.",
+    de: "Subsumio liest das Dokument aus, indexiert es für die Suche und verknüpft erkannte Personen, Firmen und Begriffe mit dem Kanzleiwissen. Danach können Sie das Dokument im Assistenten befragen.",
     en: "Subsumio automatically chunks the document, creates embeddings and indexes it in the knowledge graph. Entities (people, companies, concepts) are extracted and linked. You can then query the document via the Query page.",
   },
   "upload.info_hint": { de: "Hinweis:", en: "Note:" },
   "upload.info_hint_body": {
-    de: "Die Subsumio Engine muss laufen",
+    de: "Die Subsumio-Dienst muss laufen",
     en: "The Subsumio engine must be running",
   },
   "upload.files_count": { de: "Datei", en: "file" },
@@ -3606,11 +3612,11 @@ export const D = {
   "upload.pending": { de: "Bereit zum Hochladen", en: "Ready to upload" },
   "upload.uploaded": { de: "hochgeladen", en: "uploaded" },
   "upload.indexing": {
-    de: "Dein Brain wird indexiert. Sobald Subsumio die Embeddings erstellt hat, kannst du die Dokumente abfragen.",
+    de: "Das Kanzleiwissen wird indexiert. Sobald der Suchindex steht, können Sie die Dokumente befragen.",
     en: "Your brain is being indexed. Once Subsumio has created the embeddings, you can query the documents.",
   },
-  "upload.ask_brain": { de: "Brain jetzt fragen", en: "Ask brain now" },
-  "upload.explore_brain": { de: "Brain erkunden", en: "Explore brain" },
+  "upload.ask_brain": { de: "Kanzleiwissen jetzt fragen", en: "Ask brain now" },
+  "upload.explore_brain": { de: "Kanzleiwissen erkunden", en: "Explore brain" },
   "upload.offline_msg": {
     de: "Offline-Modus aktiv — Datei-Upload erfordert Internetverbindung.",
     en: "Offline mode active — file upload requires internet connection.",
@@ -3718,7 +3724,7 @@ export const D = {
   "wordaddin.breadcrumb": { de: "Word Add-in", en: "Word Add-in" },
   "wordaddin.hero_title": { de: "Subsumio für Word", en: "Subsumio for Word" },
   "wordaddin.hero_desc": {
-    de: "Greife aus Microsoft Word direkt auf dein Brain zu. Füge Schriftsätze, Verträge und Dokumente ein, ohne Word zu verlassen.",
+    de: "Greifen Sie aus Microsoft Word direkt auf Ihr Kanzleiwissen zu. Fügen Sie Schriftsätze, Verträge und Dokumente ein, ohne Word zu verlassen.",
     en: "Access your brain directly from Microsoft Word. Insert briefs, contracts and documents without leaving Word.",
   },
   "wordaddin.f1_title": { de: "Dokumente einfügen", en: "Insert documents" },
@@ -3733,7 +3739,7 @@ export const D = {
   },
   "wordaddin.f3_title": { de: "API-Token-Auth", en: "API token auth" },
   "wordaddin.f3_desc": {
-    de: "Sichere Verbindung mit deinem persönlichen API-Token",
+    de: "Sichere Verbindung mit Ihrem persönlichen API-Token",
     en: "Secure connection with your personal API token",
   },
   "wordaddin.f4_title": { de: "Office 365 Ready", en: "Office 365 Ready" },
@@ -3816,7 +3822,7 @@ export const D = {
   "datev.chart": { de: "Kontenrahmen", en: "Chart of accounts" },
   "datev.consultant_nr": { de: "Berater-Nr.", en: "Consultant no." },
   "datev.info": {
-    de: "Der Export berücksichtigt nur bereits abgerechnete, abrechenbare Positionen aus Akten. Bitte Kontenrahmen, Steuerschlüssel und Importformat vor dem DATEV-Import durch deinen Steuerberater verifizieren.",
+    de: "Der Export berücksichtigt nur bereits abgerechnete, abrechenbare Positionen aus Akten. Bitte lassen Sie Kontenrahmen, Steuerschlüssel und Importformat vor dem DATEV-Import durch Ihre Steuerberatung prüfen.",
     en: "The export only includes already billed, chargeable items from cases. Please verify chart of accounts, tax keys and import format with your tax advisor before the DATEV import.",
   },
   "datev.entries": { de: "Einträge", en: "Entries" },
@@ -3847,11 +3853,11 @@ export const D = {
   },
   "billing.breadcrumb": { de: "Abrechnung", en: "Billing" },
   "billing.success": {
-    de: "Zahlung erfolgreich — dein Plan wird in Kürze aktualisiert.",
+    de: "Zahlung erfolgreich — Ihr Plan wird in Kürze aktualisiert.",
     en: "Payment successful — your plan will be updated shortly.",
   },
   "billing.cancelled": {
-    de: "Checkout abgebrochen — dein bisheriger Plan bleibt aktiv.",
+    de: "Bezahlvorgang abgebrochen — Ihr bisheriger Plan bleibt aktiv.",
     en: "Checkout cancelled — your current plan remains active.",
   },
   "billing.usage_title": { de: "Verbrauch (Fair Use)", en: "Usage (Fair Use)" },
@@ -3865,7 +3871,7 @@ export const D = {
   "billing.queries": { de: "Anfragen", en: "queries" },
   "billing.token_cost_est": { de: "Geschätzte Token-Kosten", en: "Estimated token cost" },
   "billing.token_note": {
-    de: "Token-Kosten sind Schätzwerte basierend auf veröffentlichten Provider-Preisen. Tatsächliche Abrechnung erfolgt über deinen Plan-Preis (inklusive Kontingent + Mehrverbrauch).",
+    de: "Modellkosten sind Schätzwerte auf Basis veröffentlichter Anbieterpreise. Die tatsächliche Abrechnung erfolgt über Ihren Planpreis (inklusive Kontingent und Mehrverbrauch).",
     en: "Token costs are estimates based on published provider prices. Actual billing is via your plan price (including quota + overage).",
   },
   "billing.current_plan": { de: "Aktueller Plan", en: "Current plan" },
@@ -3888,7 +3894,7 @@ export const D = {
     en: "Monthly billing — cancel monthly.",
   },
   "billing.credit_success": {
-    de: "Credits erfolgreich gekauft — dein Saldo wurde aktualisiert.",
+    de: "Guthaben erfolgreich gekauft — Ihr Saldo wurde aktualisiert.",
     en: "Credits purchased successfully — your balance has been updated.",
   },
   "billing.credit_cancelled": {
@@ -3931,7 +3937,7 @@ export const D = {
     de: "Portal konnte nicht geöffnet werden.",
     en: "Portal could not be opened.",
   },
-  "billing.pages_in_brain": { de: "Seiten im Brain", en: "Pages in brain" },
+  "billing.pages_in_brain": { de: "Seiten im Kanzleiwissen", en: "Pages in brain" },
 
   // ── Client Portal page ──
   "client_portal.title": { de: "Meine Akten", en: "My cases" },
@@ -3945,7 +3951,7 @@ export const D = {
     en: "Client Portal — Preview",
   },
   "client_portal.preview_desc": {
-    de: "So sehen deine Mandanten künftig den Stand ihrer Akte.",
+    de: "So sehen Ihre Mandanten künftig den Stand ihrer Akte.",
     en: "This is how your clients will see the status of their case in the future.",
   },
   "client_portal.preview_note": {
@@ -4072,12 +4078,12 @@ export const D = {
     en: "No monitors defined yet.",
   },
   "monitoring.empty_hint": {
-    de: "Erstelle deinen ersten Monitor, um Themen und Rechtsgebiete zu beobachten.",
+    de: "Legen Sie Ihren ersten Monitor an, um Themen und Rechtsgebiete zu beobachten.",
     en: "Create your first monitor to watch topics and practice areas.",
   },
   "monitoring.create_monitor": { de: "Monitor anlegen", en: "Create monitor" },
   "monitoring.legacy_warning": {
-    de: "Du nutzt noch die alte Watchlist ({count} Begriffe). Erstelle einen neuen Monitor für erweiterte Funktionen.",
+    de: "Sie nutzen noch die alte Beobachtungsliste ({count} Begriffe). Legen Sie einen neuen Monitor für erweiterte Funktionen an.",
     en: "You're still using the old watchlist ({count} terms). Create a new monitor for advanced features.",
   },
   "monitoring.form_edit_title": { de: "Monitor bearbeiten", en: "Edit monitor" },
@@ -4164,7 +4170,7 @@ export const D = {
   },
   "monitoring.settings_email_title": { de: "E-Mail-Benachrichtigungen", en: "Email notifications" },
   "monitoring.settings_email_desc": {
-    de: "Pro Monitor kannst du E-Mail-Benachrichtigungen aktivieren. Der Cron-Job sendet bei neuen Treffern einen Digest an alle konfigurierten Empfänger.",
+    de: "Pro Monitor können Sie E-Mail-Benachrichtigungen aktivieren. Bei neuen Treffern geht eine Zusammenfassung an alle hinterlegten Empfänger.",
     en: "You can enable email notifications per monitor. The cron job sends a digest to all configured recipients when new hits are found.",
   },
   "monitoring.settings_no_monitors": {
@@ -4297,7 +4303,7 @@ export const D = {
     de: "Betreff und Empfänger sind erforderlich.",
     en: "Subject and recipient are required.",
   },
-  "bea.draft_saved": { de: "Entwurf im Brain gespeichert.", en: "Draft saved in brain." },
+  "bea.draft_saved": { de: "Entwurf im Kanzleiwissen gespeichert.", en: "Draft saved in brain." },
   "bea.save_failed": { de: "Speichern fehlgeschlagen.", en: "Save failed." },
   "bea.compose_title": { de: "Neuer beA-Entwurf", en: "New beA draft" },
   "bea.recipient_label": {
@@ -4457,7 +4463,7 @@ export const D = {
   },
   "vault.err_no_results": { de: "Keine Ergebnisse.", en: "No results." },
   "vault.err_cloud_unreachable": {
-    de: "Cloud-Brain gerade nicht erreichbar. Es werden zwischengespeicherte Dokumente angezeigt.",
+    de: "Kanzleiwissen gerade nicht erreichbar. Es werden zwischengespeicherte Dokumente angezeigt.",
     en: "Cloud brain currently unreachable. Showing cached documents.",
   },
   "vault.err_load_failed": {
@@ -4466,7 +4472,7 @@ export const D = {
   },
   "vault.confirm_delete_title": { de: "Dokument löschen", en: "Delete document" },
   "vault.confirm_delete_msg": {
-    de: "Möchtest du dieses Dokument wirklich löschen?",
+    de: "Möchten Sie dieses Dokument wirklich löschen?",
     en: "Do you really want to delete this document?",
   },
   "vault.confirm_delete_btn": { de: "Löschen", en: "Delete" },
@@ -4494,7 +4500,7 @@ export const D = {
   },
   "vault.empty_upload_cta": { de: "Dokument hochladen", en: "Upload document" },
   "vault.empty_filter": {
-    de: "Passe deine Suche oder Filter an.",
+    de: "Passen Sie Suche oder Filter an.",
     en: "Adjust your search or filters.",
   },
   "vault.pagination_of": { de: "von", en: "of" },
@@ -4688,7 +4694,7 @@ export const D = {
   "review_queue.revise": { de: "Überarbeiten", en: "Request changes" },
   "review_queue.reject": { de: "Ablehnen", en: "Reject" },
   "review_queue.empty": {
-    de: "Keine offenen Freigaben. Vorgänge mit Frontmatter-Feld",
+    de: "Keine offenen Freigaben. Vorgänge mit Feld",
     en: "No documents in the review queue. Documents with frontmatter field",
   },
   "review_queue.empty_hint": {
@@ -4718,7 +4724,7 @@ export const D = {
   },
   "workflows.seed_welcome": { de: "Willkommen bei den Workflows", en: "Welcome to Workflows" },
   "workflows.seed_welcome_desc": {
-    de: "Starte mit einer Vorlage unten. Jeder Workflow führt mehrere Schritte automatisch aus — von der Recherche bis zum Versand. Du kannst jeden Schritt nachverfolgen und Freigaben erteilen.",
+    de: "Beginnen Sie mit einer Vorlage unten. Jeder Workflow führt mehrere Schritte automatisch aus — von der Recherche bis zum Versand. Sie können jeden Schritt nachverfolgen und Freigaben erteilen.",
     en: "Start with a template below. Each workflow executes multiple steps automatically — from research to dispatch. You can track every step and grant approvals.",
   },
   "workflows.filter_all": { de: "Alle", en: "All" },
@@ -4784,12 +4790,12 @@ export const D = {
   "upload.err_failed": { de: "Upload fehlgeschlagen", en: "Upload failed" },
   "upload.how_title": { de: "Wie funktioniert es?", en: "How does it work?" },
   "upload.how_desc": {
-    de: "Subsumio chunked das Dokument automatisch, erstellt Embeddings und indiziert es im Wissensgraph. Entitäten (Personen, Firmen, Konzepte) werden extrahiert und verknüpft. Danach kannst du das Dokument über die Query-Seite abfragen.",
+    de: "Subsumio liest das Dokument aus, indexiert es für die Suche und verknüpft erkannte Personen, Firmen und Begriffe mit dem Kanzleiwissen. Danach können Sie das Dokument im Assistenten befragen.",
     en: "Subsumio automatically chunks the document, creates embeddings and indexes it in the knowledge graph. Entities (people, companies, concepts) are extracted and linked. You can then query the document via the Query page.",
   },
   "upload.hint_label": { de: "Hinweis:", en: "Note:" },
   "upload.hint_desc": {
-    de: "Die Subsumio Engine muss laufen",
+    de: "Die Subsumio-Dienst muss laufen",
     en: "The Subsumio engine must be running",
   },
   "upload.mode_case": { de: "Dokument zu Akte", en: "Document to case" },
@@ -4863,7 +4869,7 @@ export const D = {
   "contacts.role_lawyer": { de: "Anwalt", en: "Lawyer" },
   "contacts.role_other": { de: "Sonstige", en: "Other" },
   "contacts.err_offline_cache": {
-    de: "Cloud-Brain gerade nicht erreichbar. Es werden zwischengespeicherte Kontakte angezeigt.",
+    de: "Kanzleiwissen gerade nicht erreichbar. Es werden zwischengespeicherte Kontakte angezeigt.",
     en: "Cloud brain currently unavailable. Showing cached contacts.",
   },
   "contacts.err_load_failed": {
@@ -4897,11 +4903,11 @@ export const D = {
   "contacts.btn_retry": { de: "Erneut versuchen", en: "Try again" },
   "contacts.empty_title": { de: "Keine Kontakte gefunden", en: "No contacts found" },
   "contacts.empty_hint_no_contacts": {
-    de: "Lege deinen ersten Kontakt an über das Formular oben.",
+    de: "Legen Sie Ihren ersten Kontakt über das Formular oben an.",
     en: "Create your first contact using the form above.",
   },
   "contacts.empty_hint_filtered": {
-    de: "Passe deine Suche oder Filter an.",
+    de: "Passen Sie Suche oder Filter an.",
     en: "Adjust your search or filters.",
   },
   "contacts.edit_title": { de: "Kontakt bearbeiten", en: "Edit contact" },
@@ -4935,7 +4941,7 @@ export const D = {
   "contacts.label_notes": { de: "Notizen", en: "Notes" },
   "contacts.empty_cta": { de: "Ersten Kontakt anlegen", en: "Create first contact" },
   "contacts.empty_hint_fresh": {
-    de: "Noch keine Kontakte angelegt. Starte mit deinem ersten Mandanten oder Gegner.",
+    de: "Noch keine Kontakte angelegt. Beginnen Sie mit Ihrem ersten Mandanten oder Gegner.",
     en: "No contacts yet. Start by adding your first client or opponent.",
   },
   "contacts.result_count": { de: "{{count}} Kontakte", en: "{{count}} contacts" },
@@ -4944,7 +4950,7 @@ export const D = {
   "contacts.aria_delete_action": { de: "Löschen", en: "Delete" },
   "contacts.delete_confirm_title": { de: "Kontakt löschen", en: "Delete contact" },
   "contacts.delete_confirm_msg": {
-    de: "Möchtest du diesen Kontakt wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+    de: "Möchten Sie diesen Kontakt wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
     en: "Are you sure you want to delete this contact? This action cannot be undone.",
   },
   "contacts.delete_confirm_btn": { de: "Löschen", en: "Delete" },
@@ -4954,7 +4960,7 @@ export const D = {
   },
   "contacts.no_results_title": { de: "Keine Treffer", en: "No matches" },
   "contacts.no_results_hint": {
-    de: "Passe deine Suche oder Filter an, um Kontakte zu finden.",
+    de: "Passen Sie Suche oder Filter an, um Kontakte zu finden.",
     en: "Adjust your search or filters to find contacts.",
   },
   "contacts.stats_total": { de: "Gesamt", en: "Total" },
@@ -4991,7 +4997,7 @@ export const D = {
   "playbooks.err_save_failed": { de: "Speichern fehlgeschlagen.", en: "Save failed." },
   "playbooks.confirm_delete_title": { de: "Playbook löschen", en: "Delete playbook" },
   "playbooks.confirm_delete_msg": {
-    de: "Möchtest du dieses Playbook wirklich löschen?",
+    de: "Möchten Sie dieses Playbook wirklich löschen?",
     en: "Do you really want to delete this playbook?",
   },
   "playbooks.confirm_delete_label": { de: "Löschen", en: "Delete" },
@@ -5019,7 +5025,7 @@ export const D = {
     de: 'Lege dein erstes Playbook an über den "Playbook anlegen"-Button oben.',
     en: 'Create your first playbook using the "Create playbook" button above.',
   },
-  "playbooks.empty_hint_search": { de: "Passe deine Suche an.", en: "Adjust your search." },
+  "playbooks.empty_hint_search": { de: "Passen Sie die Suche an.", en: "Adjust your search." },
   "playbooks.title_expand": { de: "Aufklappen", en: "Expand" },
   "playbooks.title_edit": { de: "Bearbeiten", en: "Edit" },
   "playbooks.title_delete": { de: "Löschen", en: "Delete" },
@@ -5060,14 +5066,14 @@ export const D = {
   "playbooks.placeholder_notes": { de: "Notizen (optional)", en: "Notes (optional)" },
 
   // ── Copilot Sidebar ──
-  "copilot.title": { de: "Brain Copilot", en: "Brain Copilot" },
-  "copilot.collapse": { de: "Brain Copilot einklappen", en: "Collapse Brain Copilot" },
-  "copilot.expand": { de: "Brain Copilot ausklappen", en: "Expand Brain Copilot" },
+  "copilot.title": { de: "Assistent", en: "Brain Copilot" },
+  "copilot.collapse": { de: "Assistent einklappen", en: "Collapse Brain Copilot" },
+  "copilot.expand": { de: "Assistent ausklappen", en: "Expand Brain Copilot" },
   "copilot.expand_hint": {
-    de: "Brain Copilot ausklappen (Cmd+J)",
+    de: "Assistent ausklappen (Cmd+J)",
     en: "Expand Brain Copilot (Cmd+J)",
   },
-  "copilot.close_esc": { de: "Brain Copilot schließen (Esc)", en: "Close Brain Copilot (Esc)" },
+  "copilot.close_esc": { de: "Assistent schließen (Esc)", en: "Close Brain Copilot (Esc)" },
   "copilot.close_panel": { de: "Panel schließen", en: "Close panel" },
   "copilot.resize": {
     de: "Panel-Größe ändern (Pfeiltasten zum Anpassen)",
@@ -5086,7 +5092,7 @@ export const D = {
   "chat.tts_play": { de: "Antwort vorlesen", en: "Read answer aloud" },
   "chat.tts_stop": { de: "Vorlesen stoppen", en: "Stop reading" },
   "copilot.dismiss_hint": { de: "Hinweis ausblenden", en: "Dismiss hint" },
-  "copilot.copilot": { de: "Copilot", en: "Copilot" },
+  "copilot.copilot": { de: "Assistent", en: "Assistant" },
   "copilot.chat": { de: "Chat", en: "Chat" },
   "copilot.more_actions": { de: "Mehr Aktionen", en: "More actions" },
   "copilot.planning_hint": {
@@ -5164,7 +5170,7 @@ export const D = {
   "chat.yesterday": { de: "Gestern", en: "Yesterday" },
   "chat.share": { de: "Chat teilen", en: "Share chat" },
   "chat.share_title": { de: "Chat teilen (Link kopieren)", en: "Share chat (copy link)" },
-  "chat.session_label": { de: "Session", en: "Session" },
+  "chat.session_label": { de: "Gespräch", en: "Session" },
   "chat.header_session_case": { de: "Konversation & Akte", en: "Session & Case" },
   "chat.header_mode_model": { de: "Modus & Modell", en: "Mode & Model" },
   "chat.header_case_section": { de: "Akte", en: "Case" },
@@ -5216,7 +5222,7 @@ export const D = {
   "chat.streaming.verify": { de: "Quellen werden geprüft…", en: "Checking sources…" },
   "chat.done": { de: "Fertig", en: "Done" },
   "chat.typing": { de: "Copilot schreibt…", en: "Copilot is typing…" },
-  "chat.follow_ups": { de: "Das könnte dich auch interessieren", en: "You might also want to ask" },
+  "chat.follow_ups": { de: "Das könnte Sie auch interessieren", en: "You might also want to ask" },
   "chat.follow_up.more_details": { de: "Mehr Details dazu", en: "More details on this" },
   "chat.follow_up.related": { de: "Verwandte Rechtsfrage", en: "Related legal question" },
   "chat.follow_up.next_steps": {
@@ -5310,7 +5316,7 @@ export const D = {
   // ── Case Scanner page ──
   "scanner.title": { de: "Akten-Scanner", en: "Case Scanner" },
   "scanner.description": {
-    de: "Nacht-Agent scannt alle Akten auf drohende Fristen, neue Issues und Evidenz-Lücken — wird asynchron als Engine-Job ausgeführt",
+    de: "Nacht-Agent scannt alle Akten auf drohende Fristen, neue Issues und Evidenz-Lücken — wird asynchron als Subsumio-Dienst-Job ausgeführt",
     en: "Night agent scans all cases for impending deadlines, new issues and evidence gaps — runs asynchronously as an engine job",
   },
   "scanner.error_start": { de: "Scanner-Start fehlgeschlagen.", en: "Failed to start scanner." },
@@ -5319,7 +5325,7 @@ export const D = {
     en: "How does the Case Scanner work?",
   },
   "scanner.description_detail": {
-    de: "Der Scanner wird als Hintergrundjob in der Engine gestartet. Er durchsucht alle Fallakten nach:",
+    de: "Der Scanner wird als Hintergrundjob in der Subsumio-Dienst gestartet. Er durchsucht alle Fallakten nach:",
     en: "The scanner runs as a background job in the engine. It searches all case files for:",
   },
   "scanner.feature_deadlines": {
@@ -5508,7 +5514,7 @@ export const D = {
   "conflict.severity_low": { de: "Geringes Risiko", en: "Low risk" },
   "conflict.severity_critical": { de: "Kritischer Konflikt", en: "Critical conflict" },
   "conflict.error_default": {
-    de: "Prüfung fehlgeschlagen — Engine nicht erreichbar.",
+    de: "Prüfung fehlgeschlagen — Subsumio-Dienst nicht erreichbar.",
     en: "Check failed — engine not reachable.",
   },
   "conflict.matches_title": {
@@ -5522,7 +5528,7 @@ export const D = {
   "conflict.role_client": { de: "Mandant", en: "Client" },
   "conflict.role_opponent": { de: "Gegner", en: "Opponent" },
   "conflict.disclaimer": {
-    de: "Hinweis: Diese Kollisionsprüfung ist ein Unterstützungstool und ersetzt nicht die anwaltliche Pflichtprüfung nach § 43a BRAO (DE) / § 10 RAO (AT) / BGFA (CH). Sie prüft ausschließlich die im Brain erfassten Akten. Bei Unsicherheit konsultiere die Berufsregeln deiner Rechtsanwaltskammer.",
+    de: "Hinweis: Diese Kollisionsprüfung ist ein Unterstützungswerkzeug und ersetzt nicht die anwaltliche Pflichtprüfung nach § 10 RAO (AT) / § 43a BRAO (DE) / BGFA (CH). Sie prüft ausschließlich die im Kanzleiwissen erfassten Akten. Bei Unsicherheit ziehen Sie die Berufsregeln Ihrer Rechtsanwaltskammer heran.",
     en: "Note: This conflict check is a support tool and does not replace the attorney's duty to check under § 43a BRAO (DE) / § 10 RAO (AT) / BGFA (CH). It only checks cases recorded in the brain. If in doubt, consult your bar association's professional rules.",
   },
 
@@ -5623,7 +5629,7 @@ export const D = {
   "brain.sort_title": { de: "Titel A–Z", en: "Title A–Z" },
   "brain.sort_words": { de: "Wortanzahl", en: "Word count" },
   "brain.search_placeholder": {
-    de: "Brain durchsuchen… (Hybrid: Vector + BM25 + Graph)",
+    de: "Kanzleiwissen durchsuchen… (Hybrid: Vector + BM25 + Graph)",
     en: "Search brain… (Hybrid: Vector + BM25 + Graph)",
   },
   "brain.btn_filter": { de: "Filter", en: "Filter" },
@@ -5634,9 +5640,9 @@ export const D = {
   "brain.stats_pages": { de: "Seiten", en: "pages" },
   "brain.stats_entities": { de: "Entitäten", en: "entities" },
   "brain.stats_edges": { de: "Kanten", en: "edges" },
-  "brain.empty_title": { de: "Brain ist leer", en: "Brain is empty" },
+  "brain.empty_title": { de: "Kanzleiwissen ist leer", en: "Brain is empty" },
   "brain.empty_hint": {
-    de: "Lade Dokumente hoch oder verbinde Subsumio mit einem bestehenden Brain-Repo.",
+    de: "Lade Dokumente hoch oder verbinde Subsumio mit einem bestehenden bestehenden Wissensbestand.",
     en: "Upload documents or connect Subsumio to an existing brain repo.",
   },
   "brain.btn_upload": { de: "Dokument hochladen", en: "Upload document" },
@@ -5648,7 +5654,7 @@ export const D = {
   "graph.error_load": { de: "Graph konnte nicht geladen werden", en: "Failed to load graph" },
   "graph.empty_title": { de: "Graph ist leer", en: "Graph is empty" },
   "graph.empty_hint": {
-    de: "Erstelle Entitäten und Beziehungen im Brain, um den Graphen zu füllen.",
+    de: "Erstelle Entitäten und Beziehungen im Kanzleiwissen, um den Graphen zu füllen.",
     en: "Create entities and relationships in the brain to populate the graph.",
   },
   "graph.title": { de: "Graph", en: "Graph" },
@@ -5751,7 +5757,7 @@ export const D = {
   "tabular.retry_all": { de: "Alle Fehler erneut versuchen", en: "Retry all errors" },
   "tabular.retry_failed": { de: "Retry fehlgeschlagen.", en: "Retry failed." },
   "tabular.partial_banner": {
-    de: "{{count}} Dokument(e) konnten nicht analysiert werden. Du kannst nur die Fehler erneut versuchen — fertige Ergebnisse bleiben erhalten.",
+    de: "{{count}} Dokument(e) konnten nicht analysiert werden. Sie können nur die fehlgeschlagenen erneut versuchen — fertige Ergebnisse bleiben erhalten.",
     en: "{{count}} document(s) could not be analyzed. You can retry only the failures — completed results are kept.",
   },
   "tabular.failed_banner": {
@@ -5825,7 +5831,7 @@ export const D = {
   "clauses.confirm_delete": { de: "Klausel löschen?", en: "Delete clause?" },
   "clauses.quick_title": { de: "Klausel schnell anlegen", en: "Quick create clause" },
   "clauses.quick_desc": {
-    de: "Klauseltext mit Kategorie und Tags im Brain speichern.",
+    de: "Klauseltext mit Kategorie und Tags im Kanzleiwissen speichern.",
     en: "Save clause text with category and tags to brain.",
   },
   "clauses.quick_category": { de: "Kategorie", en: "Category" },
@@ -5842,7 +5848,7 @@ export const D = {
   // ── Obligation Tracking page ──
   "obligations.title": { de: "Pflichten-Tracking", en: "Obligation Tracking" },
   "obligations.description": {
-    de: "Vertragliche Pflichten aus Brain-Seiten extrahieren und überwachen",
+    de: "Vertragliche Pflichten aus Kanzleiwissen-Seiten extrahieren und überwachen",
     en: "Extract and monitor contractual obligations from brain pages",
   },
   "obligations.breadcrumb": { de: "Pflichten-Tracking", en: "Obligation Tracking" },
@@ -5861,7 +5867,7 @@ export const D = {
   "obligations.error_failed": { de: "Extraktion fehlgeschlagen.", en: "Extraction failed." },
   "obligations.empty_title": { de: "Keine Pflichten", en: "No obligations" },
   "obligations.empty_hint": {
-    de: "Vertrags-Slug eingeben oder Text einfügen und extrahieren.",
+    de: "Vertragskennung eingeben oder Text einfügen und extrahieren.",
     en: "Enter a contract slug or paste text and extract.",
   },
   "obligations.col_obligation": { de: "Pflicht", en: "Obligation" },
@@ -5905,7 +5911,7 @@ export const D = {
   "verfahrensdoku.breadcrumb": { de: "Verfahrensdoku", en: "Procedure Doc" },
   "verfahrensdoku.btn_print": { de: "PDF / Drucken", en: "PDF / Print" },
   "verfahrensdoku.btn_word": { de: "Word (.doc)", en: "Word (.doc)" },
-  "verfahrensdoku.btn_save": { de: "Im Brain speichern", en: "Save to brain" },
+  "verfahrensdoku.btn_save": { de: "Im Kanzleiwissen speichern", en: "Save to brain" },
   "verfahrensdoku.btn_saved": { de: "Gespeichert", en: "Saved" },
   "verfahrensdoku.error_save": { de: "Speichern fehlgeschlagen", en: "Save failed" },
   "verfahrensdoku.disclaimer": {
@@ -5999,7 +6005,7 @@ export const D = {
   "connectors.title": { de: "Konnektoren", en: "Connectors" },
   "connectors.empty": { de: "Keine Konnektoren konfiguriert", en: "No connectors configured" },
   "connectors.description": {
-    de: "Externe Datenquellen mit dem Brain verbinden",
+    de: "Externe Datenquellen mit dem Kanzleiwissen verbinden",
     en: "Connect external data sources to the brain",
   },
   "connectors.breadcrumb": { de: "Konnektoren", en: "Connectors" },
@@ -6048,7 +6054,7 @@ export const D = {
   // ── Data Export page ──
   "dataexport.title": { de: "Daten-Export", en: "Data Export" },
   "dataexport.description": {
-    de: "Alle Brain-Daten als JSON oder Voll-Backup herunterladen",
+    de: "Alle Kanzleiwissen-Daten als JSON oder Voll-Backup herunterladen",
     en: "Download all brain data as JSON or full backup",
   },
   "dataexport.breadcrumb": { de: "Daten-Export", en: "Data Export" },
@@ -6321,7 +6327,7 @@ export const D = {
   },
   "casesnew.breadcrumb": { de: "Neue Akte", en: "New case" },
   "casesnew.section_parties": { de: "Parteien", en: "Parties" },
-  "casesnew.section_details": { de: "Aktsdetails", en: "Case details" },
+  "casesnew.section_details": { de: "Aktendetails", en: "Case details" },
   "casesnew.section_conflict": { de: "Kollisionsprüfung", en: "Conflict check" },
   "casesnew.label_client": { de: "Mandant", en: "Client" },
   "casesnew.label_opponent": { de: "Gegner", en: "Opponent" },
@@ -6352,7 +6358,7 @@ export const D = {
   // ── Quick case creation ──
   "casesnew.quick_title": { de: "Neue Akte", en: "New case" },
   "casesnew.quick_desc": {
-    de: "Schnell eine Akte anlegen. Details ergänzt du später auf der Akten-Seite.",
+    de: "Schnell eine Akte anlegen. Details ergänzen Sie später auf der Aktenseite.",
     en: "Create a case quickly. Add details later on the case page.",
   },
   "casesnew.quick_title_placeholder": {
@@ -6559,7 +6565,7 @@ export const D = {
   "contracts.error_create": { de: "Erstellen fehlgeschlagen.", en: "Creation failed." },
   "contracts.quick_title": { de: "Vertrag schnell erstellen", en: "Quick create contract" },
   "contracts.quick_desc": {
-    de: "Vertragstext mit Typ und Parteien im Brain speichern.",
+    de: "Vertragstext mit Typ und Parteien im Kanzleiwissen speichern.",
     en: "Save contract text with type and parties to brain.",
   },
   "contracts.quick_cancel": { de: "Abbrechen", en: "Cancel" },
@@ -6584,7 +6590,7 @@ export const D = {
   },
   "contracts.confirm_delete_title": { de: "Vertrag löschen", en: "Delete contract" },
   "contracts.confirm_delete_msg": {
-    de: "Möchtest du diesen Vertrag wirklich löschen?",
+    de: "Möchten Sie diesen Vertrag wirklich löschen?",
     en: "Do you really want to delete this contract?",
   },
   "contracts.error_delete": { de: "Löschen fehlgeschlagen.", en: "Deletion failed." },
@@ -6630,7 +6636,7 @@ export const D = {
   "research.btn_searching": { de: "Recherchiert…", en: "Searching…" },
   "research.btn_judgements_sync": { de: "Urteile-Sync", en: "Judgements Sync" },
   "research.result_title": { de: "Ergebnis", en: "Result" },
-  "research.btn_save_brain": { de: "Als Brain-Page speichern", en: "Save as Brain Page" },
+  "research.btn_save_brain": { de: "Als Wissensseiten speichern", en: "Save as Brain Page" },
   "research.session_history": { de: "Sitzungs-Verlauf", en: "Session History" },
   "research.saved_loading": { de: "Lade…", en: "Loading…" },
   "research.saved_empty_title": {
@@ -6647,7 +6653,7 @@ export const D = {
   },
   "research.confirm_delete_title": { de: "Recherche löschen", en: "Delete research" },
   "research.confirm_delete_msg": {
-    de: "Möchtest du diese Recherche wirklich löschen?",
+    de: "Möchten Sie diese Recherche wirklich löschen?",
     en: "Do you really want to delete this research?",
   },
   "research.label_jurisdiction": { de: "Rechtsraum", en: "Jurisdiction" },
@@ -6709,7 +6715,7 @@ export const D = {
   "drafting.btn_copied": { de: "Kopiert!", en: "Copied!" },
   "drafting.btn_docx": { de: "Als DOCX exportieren", en: "Export as DOCX" },
   "drafting.btn_doc": { de: "Als DOC exportieren", en: "Export as DOC" },
-  "drafting.btn_save": { de: "Im Brain speichern", en: "Save to brain" },
+  "drafting.btn_save": { de: "Im Kanzleiwissen speichern", en: "Save to brain" },
   "drafting.btn_submit_approval": { de: "Zur Freigabe einreichen", en: "Submit for approval" },
   "drafting.saved_default": { de: "Entwurf", en: "Draft" },
   "drafting.saved_msg": { de: "Gespeichert", en: "Saved" },
@@ -6734,7 +6740,7 @@ export const D = {
   },
   "litigation.new": { de: "Neues Verfahren", en: "New Matter" },
   "litigation.empty": {
-    de: "Noch keine Verfahren angelegt. Erstelle dein erstes Verfahren, um die prozessuale Phasenführung zu starten.",
+    de: "Noch keine Verfahren angelegt. Legen Sie Ihr erstes Verfahren an, um die prozessuale Phasenführung zu starten.",
     en: "No litigation matters yet. Create your first matter to start tracking procedural phases.",
   },
   "litigation.search": { de: "Verfahren durchsuchen…", en: "Search matters…" },
@@ -7035,7 +7041,7 @@ export const D = {
   "nav.litigation_analytics": { de: "Verfahrensanalytics", en: "Litigation Analytics" },
   "analytics.title": { de: "Verfahrensanalytics", en: "Litigation Analytics" },
   "analytics.description": {
-    de: "Gerichts-, Richter- und Outcome-Analytics für deine Kanzlei",
+    de: "Gerichts-, Richter- und Ergebnisanalysen für Ihre Kanzlei",
     en: "Court, judge and outcome analytics for your firm",
   },
   "analytics.new": { de: "Ergebnis erfassen", en: "Record outcome" },
@@ -7110,12 +7116,12 @@ export const D = {
   "drafting.btn_generate_suffix": { de: "generieren", en: "generate" },
   "drafting.btn_background": { de: "Im Hintergrund", en: "Background" },
   "drafting.btn_background_hint": {
-    de: "Entwurf asynchron vorbereiten — du wirst benachrichtigt sobald der Entwurf fertig ist.",
+    de: "Entwurf im Hintergrund vorbereiten — Sie werden benachrichtigt, sobald er fertig ist.",
     en: "Prepare draft asynchronously — you'll be notified when the draft is ready.",
   },
   "drafting.enqueued_ok": { de: "Entwurf in Warteschlange", en: "Draft queued" },
   "drafting.enqueued_desc": {
-    de: "Der Entwurf wird im Hintergrund generiert. Du findest ihn unter Aufgaben.",
+    de: "Der Entwurf wird im Hintergrund erstellt. Sie finden ihn unter Aufgaben.",
     en: "The draft is being generated in the background. Find it under Tasks.",
   },
   "drafting.enqueued_error": {
@@ -7145,7 +7151,7 @@ export const D = {
   "templates.btn_new": { de: "Neue Vorlage", en: "New Template" },
   "templates.empty_title": { de: "Keine Vorlagen gefunden", en: "No templates found" },
   "templates.empty_desc": {
-    de: "Erstelle deine erste Vorlage oder durchsuche die vorgefertigten Vorlagen.",
+    de: "Legen Sie Ihre erste Vorlage an oder durchsuchen Sie die vorgefertigten Vorlagen.",
     en: "Create your first template or browse the pre-built templates.",
   },
   "templates.err_load": {
@@ -7167,7 +7173,7 @@ export const D = {
   "templates.btn_use": { de: "Verwenden", en: "Use" },
   "templates.confirm_delete_title": { de: "Vorlage löschen", en: "Delete template" },
   "templates.confirm_delete_msg": {
-    de: "Möchtest du diese Vorlage wirklich löschen?",
+    de: "Möchten Sie diese Vorlage wirklich löschen?",
     en: "Do you really want to delete this template?",
   },
   "templates.toast_saved": { de: "Vorlage gespeichert", en: "Template saved" },
@@ -7200,7 +7206,7 @@ export const D = {
     en: "Quick create signature request",
   },
   "signature.quick_desc": {
-    de: "Dokument zur Unterschrift vorbereiten und im Brain speichern.",
+    de: "Dokument zur Unterschrift vorbereiten und im Kanzleiwissen speichern.",
     en: "Prepare document for signature and save to brain.",
   },
   "signature.quick_select_draft": {
@@ -7230,12 +7236,12 @@ export const D = {
   "judgements.no_new": { de: "Keine neuen Urteile", en: "No new judgements" },
   "judgements.sync_title": { de: "Rechtsprechungs-Sync", en: "Case Law Sync" },
   "judgements.sync_desc": {
-    de: "OGH, BGH, EuGH Urteile ins Brain laden",
+    de: "OGH, BGH, EuGH Urteile ins Kanzleiwissen laden",
     en: "Load OGH, BGH, EuGH rulings into Brain",
   },
   "judgements.sync_button": { de: "Jetzt synchronisieren", en: "Sync now" },
   "judgements.syncing": { de: "Synchronisiere…", en: "Syncing…" },
-  "judgements.stat_in_brain": { de: "Im Brain", en: "In Brain" },
+  "judgements.stat_in_brain": { de: "Im Kanzleiwissen", en: "In Brain" },
   "judgements.stat_sources": { de: "Quellen", en: "Sources" },
   "judgements.stat_courts": { de: "Gerichte", en: "Courts" },
   "judgements.cli_title": { de: "CLI-Befehle", en: "CLI Commands" },
@@ -7269,7 +7275,7 @@ export const D = {
   },
   "compliance.breadcrumb": { de: "Compliance", en: "Compliance" },
   "compliance.disclaimer": {
-    de: "Diese Checkliste ist eine Selbsteinschätzung und wird im Brain gespeichert. Sie ersetzt keine Datenschutz-Beratung und keine automatische Prüfung. Klicke auf einen Punkt, um den Status zu ändern (OK → Offen → Fehlt).",
+    de: "Diese Checkliste ist eine Selbsteinschätzung und wird im Kanzleiwissen gespeichert. Sie ersetzt keine Datenschutz-Beratung und keine automatische Prüfung. Klicke auf einen Punkt, um den Status zu ändern (OK → Offen → Fehlt).",
     en: "This checklist is a self-assessment and is stored in the brain. It does not replace privacy advice or automated auditing. Click an item to change its status (OK → Open → Missing).",
   },
   "compliance.status_ok": { de: "OK", en: "OK" },
@@ -7644,7 +7650,7 @@ export const D = {
     en: "File contains no data rows.",
   },
   "importkanz.info": {
-    de: "Exportiere die Aktenliste deiner Kanzleisoftware als CSV (RA-MICRO, Advoware und DATEV Anwalt können das) und lade sie hier hoch. Die Spalten werden automatisch zugeordnet — prüfe die Zuordnung, bevor du importierst. Umlaute falsch? Datei als UTF-8 neu speichern. Es werden nur Stammdaten übernommen, keine Dokumente.",
+    de: "Exportieren Sie die Aktenliste Ihrer Kanzleisoftware als CSV (RA-MICRO, Advoware und DATEV Anwalt können das) und laden Sie sie hier hoch. Die Spalten werden automatisch zugeordnet — prüfen Sie die Zuordnung, bevor Sie importieren. Umlaute falsch? Datei als UTF-8 neu speichern. Es werden nur Stammdaten übernommen, keine Dokumente.",
     en: "Export the case list from your practice management software as CSV (RA-MICRO, Advoware and DATEV Anwalt support this) and upload it here. Columns are auto-mapped — review the mapping before importing. Encoding issues? Re-save as UTF-8. Only master data is imported, no documents.",
   },
   "importkanz.choose_file": {
@@ -7699,12 +7705,12 @@ export const D = {
   "contracts.count_label": { de: "Verträge", en: "Contracts" },
   "contracts.empty_title": { de: "Keine Verträge gefunden", en: "No contracts found" },
   "contracts.empty_no_contracts": {
-    de: "Lege deinen ersten Vertrag an über den „Vertrag anlegen“-Button oben.",
+    de: "Legen Sie Ihren ersten Vertrag über „Vertrag anlegen“ oben an.",
     en: 'Create your first contract using the "New contract" button above.',
   },
-  "contracts.empty_adjust_search": { de: "Passe deine Suche an.", en: "Adjust your search." },
+  "contracts.empty_adjust_search": { de: "Passen Sie die Suche an.", en: "Adjust your search." },
   "contracts.error_cloud_unreachable": {
-    de: "Cloud-Brain gerade nicht erreichbar. Es werden zwischengespeicherte Verträge angezeigt.",
+    de: "Kanzleiwissen gerade nicht erreichbar. Es werden zwischengespeicherte Verträge angezeigt.",
     en: "Cloud brain currently unavailable. Showing cached contracts.",
   },
   "contracts.error_load": {
@@ -7794,7 +7800,7 @@ export const D = {
 
   // ── Team page strings ──
   "team.error_self_invite": {
-    de: "Du bist schon drin — dich selbst einzuladen geht nicht.",
+    de: "Sie sind bereits Mitglied — eine Einladung an sich selbst ist nicht möglich.",
     en: "You're already in — you can't invite yourself.",
   },
   "team.error_already_member": {
@@ -7822,7 +7828,7 @@ export const D = {
     en: "Something went wrong. Please try again.",
   },
   "team.error_already_in_org": {
-    de: "Du bist bereits in einem Team.",
+    de: "Sie sind bereits in einem Team.",
     en: "You are already in a team.",
   },
   "team.error_invalid_name": {
@@ -7844,11 +7850,11 @@ export const D = {
     en: "Team created — invite members now.",
   },
   "team.description": {
-    de: "Ein gemeinsames Brain für euer ganzes Team — Mitglieder sehen und füttern dasselbe Wissen.",
+    de: "Ein gemeinsames Kanzleiwissen für euer ganzes Team — Mitglieder sehen und füttern dasselbe Wissen.",
     en: "A shared brain for your entire team — members see and feed the same knowledge.",
   },
   "team.create_desc": {
-    de: "Erstelle ein Team-Brain und lade Kolleginnen und Kollegen ein. Die Plätze richten sich nach deinem Plan (Free/Pro: 1 · Team: 5 · Enterprise: 25). Dein persönliches Brain bleibt unangetastet — das Team bekommt ein eigenes.",
+    de: "Legen Sie ein gemeinsames Kanzleiwissen an und laden Sie Kolleginnen und Kollegen ein. Die Plätze richten sich nach Ihrem Plan (Free/Pro: 1 · Team: 5 · Enterprise: 25). Ihr persönliches Kanzleiwissen bleibt unangetastet — das Team erhält ein eigenes.",
     en: "Create a team brain and invite colleagues. Seats depend on your plan (Free/Pro: 1 · Team: 5 · Enterprise: 25). Your personal brain stays untouched — the team gets its own.",
   },
   "team.invite_sent": {
@@ -7860,7 +7866,7 @@ export const D = {
     en: "As owner: remove all members first, then leaving will dissolve the team.",
   },
   "team.leave_member_desc": {
-    de: "Du arbeitest danach wieder in deinem persönlichen Brain.",
+    de: "Sie arbeiten danach wieder in Ihrem persönlichen Kanzleiwissen.",
     en: "You will then work in your personal brain again.",
   },
 
@@ -8176,7 +8182,7 @@ export const D = {
   "nav.reports": { de: "Berichte", en: "Reports" },
   "reports.title": { de: "Agenten-Berichte", en: "Agent Reports" },
   "reports.subtitle": {
-    de: "Planung, Review und Zusammenfassungen deiner KI-Agenten",
+    de: "Planung, Prüfung und Zusammenfassungen Ihrer automatisierten Abläufe",
     en: "Planning, review and summaries from your AI agents",
   },
   "reports.tab_all": { de: "Alle Berichte", en: "All Reports" },
@@ -8420,13 +8426,16 @@ export const D = {
   },
   "cockpit.stat_signatures": { de: "Signaturen", en: "Signatures" },
   "cockpit.action_needed": { de: "Handlungsbedarf", en: "Action needed" },
-  "deadlines.at_engine_loading": { de: "AT-Engine wird befragt…", en: "Querying AT Engine…" },
+  "deadlines.at_engine_loading": { de: "Fristenrechner wird befragt…", en: "Querying AT Engine…" },
   "deadlines.at_engine_error": {
-    de: "⚠ AT-Engine nicht erreichbar — Web-Lib als Fallback genutzt",
+    de: "⚠ Fristenrechner nicht erreichbar — Web-Lib als Fallback genutzt",
     en: "⚠ AT Engine unavailable — using the web library as fallback",
   },
-  "deadlines.at_engine_hints": { de: "AT-Engine-Hinweise:", en: "AT Engine notes:" },
-  "deadlines.at_engine_vorfrist": { de: "Vorfrist (Engine)", en: "Advance deadline (engine)" },
+  "deadlines.at_engine_hints": { de: "Fristenrechner-Hinweise:", en: "AT Engine notes:" },
+  "deadlines.at_engine_vorfrist": {
+    de: "Vorfrist (Subsumio-Dienst)",
+    en: "Advance deadline (engine)",
+  },
   "deadlines.notfrist_label": {
     de: "Notfrist (Vier-Augen-Kontrolle)",
     en: "Statutory deadline (four-eyes review)",
@@ -9470,7 +9479,7 @@ export const D = {
     de: "Kein Fall verknüpft — Link kann nicht gesendet werden",
     en: "No case linked — link cannot be sent",
   },
-  "sig.aria_brain": { de: "Brain-Seite öffnen", en: "Open Brain page" },
+  "sig.aria_brain": { de: "Wissensseite öffnen", en: "Open Brain page" },
   "sig.status_draft": { de: "Entwurf", en: "Draft" },
   "sig.status_sent": { de: "Versendet", en: "Sent" },
   "sig.status_signed": { de: "Unterschrieben", en: "Signed" },
@@ -9482,7 +9491,7 @@ export const D = {
     en: "External signature provider required",
   },
   "sig.setup_hint_body": {
-    de: "Subsumio speichert Signatur-Anfragen revisionsfähig im Brain und verfolgt Status. Der rechtlich wirksame Versand erfolgt über einen Anbieter wie Docusign oder ein Kanzlei-Signaturportal. Kein Demo-Versand wird vorgetäuscht.",
+    de: "Subsumio speichert Signatur-Anfragen revisionsfähig im Kanzleiwissen und verfolgt Status. Der rechtlich wirksame Versand erfolgt über einen Anbieter wie Docusign oder ein Kanzlei-Signaturportal. Kein Demo-Versand wird vorgetäuscht.",
     en: "Subsumio stores signature requests auditably in the Brain and tracks status. Legally binding dispatch happens via a provider like Docusign or a firm signature portal. No demo dispatch is simulated.",
   },
   "sig.empty": {
@@ -9821,7 +9830,7 @@ export const D = {
     en: "Please create a draft in the previous step first.",
   },
   "berufung.opponent.intro": {
-    de: "Simuliere den Gegner zu deinem Entwurf.",
+    de: "Simulieren Sie die Gegenseite zu Ihrem Entwurf.",
     en: "Simulate the opponent on your draft.",
   },
   "berufung.opponent.start": { de: "Gegner-Simulation starten", en: "Start opponent simulation" },
@@ -9848,12 +9857,12 @@ export const D = {
   // ── Export (berufungs-agent) ──
   "export.step_title": { de: "Export", en: "Export" },
   "export.step_desc": {
-    de: "Exportiere den Entwurf als DOCX oder speichere im Brain.",
+    de: "Exportiere den Entwurf als DOCX oder speichere im Kanzleiwissen.",
     en: "Export the draft as DOCX or save to the brain.",
   },
   "export.summary": { de: "Zusammenfassung", en: "Summary" },
   "export.docx_title": { de: "Als DOCX exportieren", en: "Export as DOCX" },
-  "export.brain_page": { de: "Im Brain speichern", en: "Save to brain" },
+  "export.brain_page": { de: "Im Kanzleiwissen speichern", en: "Save to brain" },
 
   // ── Stepper (berufungs-agent) ──
   "stepper.aria_nav": { de: "Schrittnavigation", en: "Step navigation" },

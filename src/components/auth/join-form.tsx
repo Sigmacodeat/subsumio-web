@@ -13,18 +13,18 @@ import { p } from "@/content/site";
 
 const COPY = {
   title: "Dem Team beitreten",
-  sub: "Du wurdest zu einem geteilten Subsumio eingeladen — ein Brain, das Wissen des ganzen Teams.",
+  sub: "Sie wurden zu einem gemeinsamen Subsumio eingeladen — dem Kanzleiwissen des ganzen Teams.",
   invitedAs: "Einladung für:",
-  signedInAs: "Du bist angemeldet als:",
+  signedInAs: "Angemeldet als:",
   cta: "Team beitreten",
-  done: (name: string) => `Du bist drin. „${name}“ ist jetzt euer gemeinsames Brain.`,
+  done: (name: string) => `Willkommen. „${name}“ ist jetzt Ihr gemeinsames Kanzleiwissen.`,
   toDashboard: "Dashboard öffnen",
   errors: {
     wrong_account:
-      "Diese Einladung ging an eine andere E-Mail-Adresse. Melde dich mit dem eingeladenen Konto an.",
+      "Diese Einladung ging an eine andere E-Mail-Adresse. Melden Sie sich mit dem eingeladenen Konto an.",
     invalid_or_expired_invite: "Diese Einladung ist ungültig oder abgelaufen. Bitte um eine neue.",
     leave_current_org_first:
-      "Du bist bereits in einem Team. Verlasse es zuerst (Dashboard → Team).",
+      "Sie sind bereits in einem Team. Verlassen Sie es zuerst (Übersicht → Team).",
     no_seats_left:
       "Dieses Team hat keine freien Plätze mehr. Der Inhaber muss upgraden oder einen Platz freimachen.",
     generic: "Etwas ist schiefgelaufen. Bitte versuch es erneut.",

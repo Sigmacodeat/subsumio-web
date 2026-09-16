@@ -10,6 +10,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { caseSlugFromDashboardPath } from "@/lib/matter-route-path";
+import { usePage } from "@/lib/queries/brain";
 import {
   Briefcase,
   FileText,
@@ -58,15 +60,22 @@ export function MatterSidebarSection({ collapsed, onNavigate }: MatterSidebarSec
   const { t, lang } = useLang();
   const pathname = usePathname();
 
-  // Parse slug from pathname as fallback when outside MatterDataProvider
-  const pathSlug = pathname?.startsWith("/dashboard/cases/")
-    ? decodeURIComponent(pathname.replace("/dashboard/cases/", "").split("/")[0] || "")
-    : "";
-  const pathTab = pathname?.startsWith("/dashboard/cases/")
-    ? decodeURIComponent(pathname.replace("/dashboard/cases/", "").split("/")[1] || "overview")
-    : "overview";
+  // Parse slug from pathname as fallback when outside MatterDataProvider.
+  // Slugs span several segments ("legal/cases/<id>"); the helper also knows
+  // the reserved sibling routes (/cases/new) and the tab suffix.
+  const pathSlug = caseSlugFromDashboardPath(pathname ?? "") ?? "";
+  const pathTab = (() => {
+    if (!pathSlug || !pathname) return "overview";
+    const rest = pathname.slice("/dashboard/cases/".length).split("/").filter(Boolean);
+    const last = decodeURIComponent(rest[rest.length - 1] ?? "");
+    return pathSlug.endsWith(last) ? "overview" : last || "overview";
+  })();
 
   const matter = ctx?.matter ?? null;
+  // Outside the matter provider (the sidebar renders above it) show the
+  // matter's title instead of its raw slug; the page fetch is deduplicated.
+  const fallbackPage = usePage(!matter && pathSlug ? pathSlug : "");
+  const matterTitle = matter?.title ?? fallbackPage.data?.title ?? "";
   const activeTab = ctx?.activeTab ?? pathTab;
   const caseSlug = ctx?.caseSlug ?? pathSlug;
 
@@ -86,7 +95,7 @@ export function MatterSidebarSection({ collapsed, onNavigate }: MatterSidebarSec
             {t("mattersidebar.matter")}
           </div>
           <div className="mt-1 truncate text-[12px] font-medium text-[color:var(--ds-text)]">
-            {matter?.title ?? caseSlug}
+            {matterTitle || caseSlug.split("/").pop()}
           </div>
         </div>
       )}

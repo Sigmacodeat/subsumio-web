@@ -295,7 +295,7 @@ export default function InvestigationPage({
           title="Sachverhaltsprüfung"
           description="Widersprüche, Beweislücken und Fragen werden geladen…"
           breadcrumbs={[
-            { label: "Kanzlei-Cockpit", href: "/dashboard" },
+            { label: "Übersicht", href: "/dashboard" },
             { label: "Fälle", href: "/dashboard/cases" },
             { label: "Sachverhaltsprüfung" },
           ]}
@@ -328,7 +328,7 @@ export default function InvestigationPage({
         <PageHeader
           title="Sachverhaltsprüfung"
           breadcrumbs={[
-            { label: "Kanzlei-Cockpit", href: "/dashboard" },
+            { label: "Übersicht", href: "/dashboard" },
             { label: "Fälle", href: "/dashboard/cases" },
             { label: "Sachverhaltsprüfung" },
           ]}
@@ -370,7 +370,7 @@ export default function InvestigationPage({
         title="Sachverhaltsprüfung"
         description={`Fall ${caseSlugDecoded} · ${result.claims_count} Behauptungen geprüft`}
         breadcrumbs={[
-          { label: "Kanzlei-Cockpit", href: "/dashboard" },
+          { label: "Übersicht", href: "/dashboard" },
           { label: "Fälle", href: "/dashboard/cases" },
           { label: caseSlugDecoded, href: `/dashboard/cases/${slug}` },
           { label: "Sachverhaltsprüfung" },

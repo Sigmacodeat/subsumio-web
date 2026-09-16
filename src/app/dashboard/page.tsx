@@ -84,16 +84,16 @@ function useGreeting(name: string | null, lang: Lang): Greeting {
   if (hour < 12)
     return {
       greeting: isFirst ? "Guten Morgen" : `Guten Morgen, ${firstName}`,
-      sub: "Hier ist, was heute deine Aufmerksamkeit braucht.",
+      sub: "Das braucht heute Ihre Aufmerksamkeit.",
     };
   if (hour < 18)
     return {
       greeting: isFirst ? "Guten Tag" : `Guten Tag, ${firstName}`,
-      sub: "Hier ist, was heute deine Aufmerksamkeit braucht.",
+      sub: "Das braucht heute Ihre Aufmerksamkeit.",
     };
   return {
     greeting: isFirst ? "Guten Abend" : `Guten Abend, ${firstName}`,
-    sub: "Hier ist, was heute deine Aufmerksamkeit braucht.",
+    sub: "Das braucht heute Ihre Aufmerksamkeit.",
   };
 }
 

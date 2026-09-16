@@ -55,14 +55,14 @@ const TILE_GROUPS: SettingsTileGroup[] = [
         descKey: "settings.tile_brain_desc",
         icon: Database,
         href: "/dashboard/settings?tab=brain",
-        allowed: ["admin", "lawyer", "assistant"],
+        allowed: ["admin"],
       },
       {
         labelKey: "settings.tab_dream",
         descKey: "settings.tile_dream_desc",
         icon: Zap,
         href: "/dashboard/settings?tab=dream",
-        allowed: ["admin", "lawyer"],
+        allowed: ["admin"],
       },
       {
         labelKey: "settings.tab_kanzlei",
@@ -218,8 +218,13 @@ export function SettingsHub({ userRole }: { userRole: string }) {
 
   const kanzleiWarning = notifHealth && !notifHealth.all_configured;
 
+  const existingTiles = TILE_GROUPS.flatMap((g) => g.tiles).filter((tile) =>
+    tile.allowed.includes(userRole)
+  );
+  // Static tiles and navigation items overlap (e.g. Sicherheit); one tile per target.
+  const existingHrefs = new Set(TILE_GROUPS.flatMap((g) => g.tiles).map((tile) => tile.href));
   const hubItems = ALL_NAV_ITEMS.filter(
-    (item) => item.audienceTier && !DE_ONLY_HREFS.has(item.href)
+    (item) => item.audienceTier && !DE_ONLY_HREFS.has(item.href) && !existingHrefs.has(item.href)
   );
 
   const roleVisible = hubItems.filter((item) => {
@@ -241,10 +246,6 @@ export function SettingsHub({ userRole }: { userRole: string }) {
     tier,
     items: filtered.filter((item) => item.audienceTier === tier),
   })).filter((g) => g.items.length > 0);
-
-  const existingTiles = TILE_GROUPS.flatMap((g) => g.tiles).filter((tile) =>
-    tile.allowed.includes(userRole)
-  );
 
   const hasNoResults = grouped.length === 0 && searchLower;
 

@@ -902,7 +902,9 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                 size="sm"
                 title={isStreaming ? t("copilot.thinking") : "Subsumio Copilot"}
               />
-              <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">Copilot</span>
+              <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                {t("copilot.copilot")}
+              </span>
             </div>
             <div className="flex items-center gap-0.5">
               <button

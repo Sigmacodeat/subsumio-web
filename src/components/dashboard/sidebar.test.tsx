@@ -75,6 +75,7 @@ vi.mock("@/lib/queries/sidebar-badges", () => ({
   }),
 }));
 
+vi.mock("@/lib/queries/brain", () => ({ usePage: () => ({ data: undefined }) }));
 vi.mock("@/lib/queries/auth", () => ({
   useLogout: () => ({ mutate: vi.fn(), isPending: false }),
 }));

@@ -35,7 +35,7 @@ import {
 const COPY = {
   login: {
     title: "Willkommen zurück",
-    sub: "Dein Legal Workspace hat weitergearbeitet, während du weg warst.",
+    sub: "Ihre Kanzlei hat weitergearbeitet, während Sie weg waren.",
     cta: "Anmelden",
     switchText: "Noch kein Konto?",
     switchCta: "Kostenlos starten",
@@ -59,20 +59,20 @@ const COPY = {
     email_taken: "Ein Konto mit dieser E-Mail existiert bereits.",
     weak_password: "Das Passwort braucht mindestens 8 Zeichen.",
     invalid_email: "Bitte gib eine gültige E-Mail-Adresse ein.",
-    invalid_name: "Bitte gib deinen Namen ein.",
+    invalid_name: "Bitte geben Sie Ihren Namen ein.",
     sso_required: "Bitte nutze die Microsoft- oder Google-Anmeldung.",
     invalid_token: "Der Code ist ungültig. Bitte versuch es erneut.",
-    invalid_challenge: "Die Anmeldung ist abgelaufen. Bitte melde dich erneut an.",
+    invalid_challenge: "Die Anmeldung ist abgelaufen. Bitte melden Sie sich erneut an.",
     generic: "Etwas ist schiefgelaufen. Bitte versuch es erneut.",
   } as Record<string, string>,
   twoFactor: {
     title: "Zwei-Faktor-Anmeldung",
-    sub: "Gib den 6-stelligen Code aus deiner Authenticator-App oder einen Backup-Code ein.",
+    sub: "Geben Sie den sechsstelligen Code aus Ihrer Authenticator-App oder einen Backup-Code ein.",
     label: "Sicherheitscode",
     cta: "Bestätigen",
     back: "Zurück",
   },
-  referralNote: "Du wurdest empfohlen — dein erster Monat auf einem Bezahlplan ist gratis.",
+  referralNote: "Sie wurden empfohlen — Ihr erster Monat auf einem Bezahlplan ist gratis.",
   biometric: "Mit Face ID / Touch ID anmelden",
   biometricUnavailable: "Biometrie nicht verfügbar",
 } as const;

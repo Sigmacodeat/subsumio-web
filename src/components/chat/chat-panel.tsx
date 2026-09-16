@@ -677,7 +677,7 @@ function SuggestedFollowUps({
         label: t("chat.follow_up.more_details"),
         query: isEn
           ? "Can you support this with further sources?"
-          : "Kannst du das mit weiteren Quellen belegen?",
+          : "Können Sie das mit weiteren Quellen belegen?",
       });
     }
     if (chips.length < 3) {
@@ -685,7 +685,7 @@ function SuggestedFollowUps({
         label: t("chat.follow_up.more_details"),
         query: isEn
           ? "Can you explain this in more detail?"
-          : "Kannst du das detaillierter erklären?",
+          : "Können Sie das detaillierter erklären?",
       });
     }
     chips.push({

@@ -14,16 +14,16 @@ import { p } from "@/content/site";
 const COPY = {
   forgot: {
     title: "Passwort zurücksetzen",
-    sub: "Gib deine E-Mail ein — falls ein Konto existiert, senden wir einen Reset-Link.",
+    sub: "Geben Sie Ihre E-Mail-Adresse ein — falls ein Konto existiert, senden wir einen Link zum Zurücksetzen.",
     cta: "Reset-Link senden",
     done: "Falls ein Konto zu dieser Adresse existiert, ist ein Reset-Link unterwegs. Prüfe Posteingang (und Spam).",
     devNote: "Mail-Provider nicht konfiguriert — nutze diesen Direkt-Link:",
   },
   reset: {
     title: "Neues Passwort wählen",
-    sub: "Der Link aus deiner E-Mail hat dich hierher gebracht. Wähle ein neues Passwort.",
+    sub: "Sie sind über den Link aus Ihrer E-Mail hier. Wählen Sie ein neues Passwort.",
     cta: "Neues Passwort setzen",
-    done: "Passwort geändert. Du kannst dich jetzt anmelden.",
+    done: "Passwort geändert. Sie können sich jetzt anmelden.",
     confirmMismatch: "Die Passwörter stimmen nicht überein.",
     toLogin: "Zur Anmeldung",
   },
