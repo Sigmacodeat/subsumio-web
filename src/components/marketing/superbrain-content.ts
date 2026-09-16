@@ -4,9 +4,8 @@ export const copy = {
   de: {
     hero: {
       eyebrow: "Das Subsumio SuperBrain",
-      title:
-        "Nicht nur KI.\nEin künstliches Gehirn für deine Kanzlei — das jede Nacht regeneriert.",
-      sub: "Andere KI-Tools erinnern sich an Chat-Verläufe. Subsumio versteht deine Akten: Jede Nacht konsolidiert das SuperBrain sie zu einem lebendigen juristischen Gedächtnis — wie der menschliche Hippocampus im Schlaf. Fünf Qualitäts-Ebenen, Widerspruchsprüfung, Fundstellen. Ohne Halluzinationen.",
+      title: "Nicht nur KI.\nEin künstliches Gehirn für Ihre Kanzlei — das jede Nacht regeneriert.",
+      sub: "Andere KI-Tools erinnern sich an Chat-Verläufe. Subsumio versteht Ihre Akten: Jede Nacht konsolidiert das SuperBrain sie zu einem lebendigen juristischen Gedächtnis — wie der menschliche Hippocampus im Schlaf. Fünf Qualitäts-Ebenen, Widerspruchsprüfung, Fundstellen. Ohne Halluzinationen.",
       cta: "14 Tage kostenlos testen",
       ctaSecondary: "Features ansehen",
     },
@@ -34,9 +33,9 @@ export const copy = {
     // ── NARRATIVE SECTION 1: "Wie andere arbeiten" ──
     othersTitle: "Prompt-KI: fragt, antwortet, vergisst",
     othersSub:
-      "Du stellst eine Frage. Das Modell antwortet. Dann vergisst es alles. Andere Tools speichern Chat-Verläufe und nennen es 'Memory'. Subsumio baut einen Wissensgraphen — nicht Chat-Speicherung, sondern Verständnis. Jeder Prompt bei anderen ist isoliert — kein Gedächtnis, kein Lernen, kein Verstehen. Halluzinationen werden auf Prompt-Ebene bekämpft: mit Hoffnung. Das Modell ist Richter und Angeklagter zugleich.",
+      "Sie stellen eine Frage. Das Modell antwortet. Dann vergisst es alles. Andere Tools speichern Chat-Verläufe und nennen es 'Memory'. Subsumio baut einen Wissensgraphen — nicht Chat-Speicherung, sondern Verständnis. Jeder Prompt bei anderen ist isoliert — kein Gedächtnis, kein Lernen, kein Verstehen. Halluzinationen werden auf Prompt-Ebene bekämpft: mit Hoffnung. Das Modell ist Richter und Angeklagter zugleich.",
     othersSteps: [
-      { label: "Prompt", desc: "Du fragst GPT-5 oder Claude", icon: "FileSearch" },
+      { label: "Prompt", desc: "Sie fragen GPT-5 oder Claude", icon: "FileSearch" },
       { label: "Antwort", desc: "Modell generiert — ohne Gedächtnis", icon: "Sparkles" },
       {
         label: "Vergessen",
@@ -55,7 +54,7 @@ export const copy = {
     // ── NARRATIVE SECTION 2: "Wie unser Gehirn arbeitet" ──
     oursTitle: "SuperBrain: lernt, konsolidiert, versteht",
     oursSub:
-      "Subsumio baut jede Nacht einen Wissensgraphen aus deinen Dokumenten. Fakten werden extrahiert, synthetisiert, auf Widersprüche geprüft und mit einem Ensemble-Judge abgesichert — der menschliche Juristen übertrifft. Was herauskommt, ist kein Chat-Verlauf. Es ist ein juristisches Langzeitgedächtnis, das jede Nacht schärfer wird — nicht nur größer, sondern verständiger. Je länger du es nutzt, desto besser versteht das SuperBrain deine Kanzlei.",
+      "Subsumio baut jede Nacht einen Wissensgraphen aus Ihren Dokumenten. Fakten werden extrahiert, synthetisiert, auf Widersprüche geprüft und mit einem Ensemble-Judge abgesichert — der menschliche Juristen übertrifft. Was herauskommt, ist kein Chat-Verlauf. Es ist ein juristisches Langzeitgedächtnis, das jede Nacht schärfer wird — nicht nur größer, sondern verständiger. Je länger Sie es nutzt, desto besser versteht das SuperBrain Ihre Kanzlei.",
     oursSteps: [
       { label: "Sammeln", desc: "Dokumente, E-Mails, Akten, Konversationen", icon: "FileSearch" },
       {
@@ -77,7 +76,7 @@ export const copy = {
     // ── 5-LAYER ARCHITECTURE ──
     architectureTitle: "Die 5-Ebenen-Architektur",
     architectureSub:
-      "Jede Take durchläuft fünf Qualitäts-Ebenen, bevor sie in deinen Wissensgraph aufgenommen wird. Verifizierte LEXam-Scores pro Modell. Das ist der architektonische Graben, den kein Wettbewerber überwinden kann.",
+      "Jede Take durchläuft fünf Qualitäts-Ebenen, bevor sie in Ihren Wissensgraph aufgenommen wird. Verifizierte LEXam-Scores pro Modell. Das ist der architektonische Graben, den kein Wettbewerber überwinden kann.",
     layers: [
       {
         icon: "FileSearch",
@@ -121,7 +120,7 @@ export const copy = {
     // ── DREAM CYCLE ──
     cycleTitle: "Nächtliche Gehirnregeneration",
     cycleSub:
-      "Während du schläfst, durchläuft das SuperBrain 29 Phasen — wie das menschliche Gehirn im Schlaf Erinnerungen wiederholt, verstärkt und neu verknüpft. Fakten werden zu Wissen, Takes zu Verständnis, Widersprüche zu klaren Signalen. Neu: Engram-Reifung und Reconsolidation — inspiriert von der Neurowissenschaft. Alles automatisch, alles überwacht, alles protokolliert.",
+      "Während Sie schläfst, durchläuft das SuperBrain 29 Phasen — wie das menschliche Gehirn im Schlaf Erinnerungen wiederholt, verstärkt und neu verknüpft. Fakten werden zu Wissen, Takes zu Verständnis, Widersprüche zu klaren Signalen. Neu: Engram-Reifung und Reconsolidation — inspiriert von der Neurowissenschaft. Alles automatisch, alles überwacht, alles protokolliert.",
     cycleSteps: [
       {
         phase: "extract_facts",
@@ -279,9 +278,9 @@ export const copy = {
     finetuneResult:
       "Prognose: +5–10 LEXam-Punkte über Base-Qwen3-32B (40 → ~45–50). Im Ensemble mit DeepSeek V3.2: Qualität auf GPT-4.1-Niveau (57.50) — mit einem Modell, das österreichisches Recht von Grund auf versteht.",
     // ── PRIVACY ──
-    privacyTitle: "Deine Daten. Deine Keys. Deine Jurisdiktion.",
+    privacyTitle: "Ihre Daten. Ihre Schlüssel. Ihre Jurisdiktion.",
     privacySub:
-      "Das SuperBrain verarbeitet alles innerhalb deiner isolierten Umgebung. Kein Training auf deinen Daten. Keine Daten an Dritte. Vertraulichkeit per Architektur — nicht per Versprechen.",
+      "Das SuperBrain verarbeitet alles innerhalb Ihrer isolierten Umgebung. Kein Training auf Ihren Daten. Keine Daten an Dritte. Vertraulichkeit per Architektur — nicht per Versprechen.",
     privacyPoints: [
       {
         icon: "Lock",
@@ -290,13 +289,13 @@ export const copy = {
       },
       {
         icon: "ShieldCheck",
-        title: "Kein Training auf deinen Daten",
-        desc: "Modelle lernen nie aus deinen Dokumenten. Architektonisch garantiert.",
+        title: "Kein Training auf Ihren Daten",
+        desc: "Modelle lernen nie aus Ihren Dokumenten. Architektonisch garantiert.",
       },
       {
         icon: "Globe",
         title: "EU-Cloud oder Self-Hosted",
-        desc: "Hetzner Falkenstein (DE) oder komplett on-premise bei dir.",
+        desc: "Hetzner Falkenstein (DE) oder komplett On-Premise bei Ihnen.",
       },
       {
         icon: "Eye",
@@ -305,7 +304,7 @@ export const copy = {
       },
     ],
     // ── USE CASES ──
-    useCasesTitle: "Was du mit dem SuperBrain machen kannst",
+    useCasesTitle: "Was Sie mit dem SuperBrain machen können",
     useCasesSub:
       "Vom ersten Mandat bis zur komplexen Großakte — das SuperBrain arbeitet in jedem Fall. Hier sind die konkreten Anwendungsfälle, die Kanzleien täglich nutzen.",
     useCases: [
@@ -350,7 +349,7 @@ export const copy = {
       { label: "BAO", desc: "Aufbewahrungs- und Dokumentationspflichten" },
       { label: "RAO", desc: "Kanzleikonform ab dem ersten Mandat" },
     ],
-    integrationsTitle: "Integriert in deinen Kanzlei-Workflow",
+    integrationsTitle: "Integriert in Ihren Kanzlei-Ablauf",
     integrations: [
       { name: "ERV-Workflow", desc: "Strukturierte Übergabe vorbereitet" },
       { name: "FiBu", desc: "Honorar und Buchhaltung" },
@@ -363,7 +362,7 @@ export const copy = {
     faq: [
       {
         q: "Was ist das Subsumio SuperBrain?",
-        a: "Das SuperBrain ist die KI-Engine hinter Subsumio — ein künstliches juristisches Gehirn, das jede Nacht regeneriert. Es baut aus deinen Dokumenten einen Wissensgraphen mit 29 automatisierten Phasen und 5 Qualitäts-Ebenen. Jede Antwort stammt aus deinen Akten — mit Fundstellen, nicht aus einem generischen Modell.",
+        a: "Das SuperBrain ist die KI-Engine hinter Subsumio — ein künstliches juristisches Gehirn, das jede Nacht regeneriert. Es baut aus Ihren Dokumenten einen Wissensgraphen mit 29 automatisierten Phasen und 5 Qualitäts-Ebenen. Jede Antwort stammt aus Ihren Akten — mit Fundstellen, nicht aus einem generischen Modell.",
       },
       {
         q: "Was ist die nächtliche Gehirnregeneration?",
@@ -375,7 +374,7 @@ export const copy = {
       },
       {
         q: "Ist das SuperBrain DSGVO-konform?",
-        a: "Ja. Alle Daten bleiben in der EU-Cloud (Hetzner Falkenstein) oder werden komplett on-premise bei dir gehostet. Es gibt kein Training auf deinen Daten, keine Daten an Dritte. Per-Matter-Isolation gewährleistet Berufsgeheimnisschutz nach § 9 Abs. 2 RAO.",
+        a: "Ja. Alle Daten bleiben in der EU-Cloud (Hetzner Falkenstein) oder werden komplett On-Premise bei Ihnen gehostet. Es gibt kein Training auf Ihren Daten, keine Daten an Dritte. Per-Matter-Isolation gewährleistet Berufsgeheimnisschutz nach § 9 Abs. 2 RAO.",
       },
       {
         q: "Wie wird mit KI-Halluzinationen umgegangen?",
@@ -387,11 +386,11 @@ export const copy = {
       },
       {
         q: "Wie unterscheidet sich das SuperBrain von ChatGPT Memory oder Claude Memory?",
-        a: "ChatGPT und Claude speichern Chat-Verläufe und Präferenzen — sie 'erinnern' sich. Das SuperBrain 'versteht': Es baut jede Nacht einen strukturierten Wissensgraphen aus deinen Dokumenten, prüft Widersprüche, bewertet juristische Qualität mit LEXam-validierten Modellen und wird mit jeder Nacht schärfer. ChatGPT Memory ist wie ein Notizzettel. Das SuperBrain ist wie ein Associate, der jede Nacht durch deine Akten geht und am Morgen mehr versteht als am Abend davor.",
+        a: "ChatGPT und Claude speichern Chat-Verläufe und Präferenzen — sie 'erinnern' sich. Das SuperBrain 'versteht': Es baut jede Nacht einen strukturierten Wissensgraphen aus Ihren Dokumenten, prüft Widersprüche, bewertet juristische Qualität mit LEXam-validierten Modellen und wird mit jeder Nacht schärfer. ChatGPT Memory ist wie ein Notizzettel. Das SuperBrain ist wie ein Associate, der jede Nacht durch Ihre Akten geht und am Morgen mehr versteht als am Abend davor.",
       },
       {
         q: "Kann ich das SuperBrain selbst hosten?",
-        a: "Ja. Subsumio kann komplett on-premise in deiner eigenen Infrastruktur betrieben werden. Keine API-Abhängigkeit, keine Daten verlassen dein Netzwerk. Ideal für Kanzleien mit strikten Compliance-Anforderungen.",
+        a: "Ja. Subsumio kann komplett on-premise in Ihrer eigenen Infrastruktur betrieben werden. Keine API-Abhängigkeit, keine Daten verlassen Ihr Netzwerk. Ideal für Kanzleien mit strikten Compliance-Anforderungen.",
       },
       {
         q: "Welche Sprachen unterstützt das SuperBrain?",
@@ -403,7 +402,7 @@ export const copy = {
       },
       {
         q: "Was kostet das SuperBrain?",
-        a: "Das SuperBrain ist in allen Subsumio-Abos enthalten. Du zahlst pro Nutzer — ohne versteckte API-Kosten, ohne Token-Berechnung. 14 Tage kostenlos, keine Kreditkarte. Alle Preise findest du auf unserer Preisseite.",
+        a: "Das SuperBrain ist in allen Subsumio-Abos enthalten. Sie zahlen pro Nutzer — ohne versteckte API-Kosten, ohne Token-Berechnung. 14 Tage kostenlos, keine Kreditkarte. Alle Preise findest Sie auf unserer Preisseite.",
       },
     ],
     // ── STICKY CTA ──
@@ -411,7 +410,7 @@ export const copy = {
     stickyCtaHint: "Keine Kreditkarte · Lernt jede Nacht dazu",
     ctaTitle: "Erlebe das SuperBrain",
     ctaSub:
-      "Starte heute. Dein juristisches Gehirn wächst ab der ersten Akte — jede Nacht, automatisch, und gewinnt an Verständnis. 14 Tage kostenlos, keine Kreditkarte.",
+      "Starten Sie heute. Ihr juristisches Gehirn wächst ab der ersten Akte — jede Nacht, automatisch, und gewinnt an Verständnis. 14 Tage kostenlos, keine Kreditkarte.",
     ctaButton: "14 Tage kostenlos starten",
   },
 };

@@ -68,7 +68,7 @@ export default function AnalyticsConsentBanner() {
         Analytics-Cookies
       </p>
       <p className="mb-3 text-sm leading-relaxed [color:var(--mk-text-muted)]">
-        Wir nutzen PostHog, um die Website anonym zu verbessern. Du kannst jederzeit widerrufen.
+        Wir nutzen PostHog, um die Website anonym zu verbessern. Sie können jederzeit widerrufen.
       </p>
       <div className="flex gap-2">
         <button

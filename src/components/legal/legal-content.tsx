@@ -197,8 +197,8 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
 
       <H2>5. Inhalte und Mandantendaten — Auftragsverarbeitung</H2>
       <p>
-        Soweit du personenbezogene Daten deiner Mandanten/Kunden einstellst, bist{" "}
-        <strong className="[color:var(--mk-text)]">du der Verantwortliche</strong> und wir handeln
+        Soweit Sie personenbezogene Daten Ihrer Mandanten/Kunden einstellen, sind{" "}
+        <strong className="[color:var(--mk-text)]">Sie der Verantwortliche</strong> und wir handeln
         als <strong className="[color:var(--mk-text)]">Auftragsverarbeiter</strong> (Art. 28 DSGVO).
         Vor einer solchen Nutzung ist ein AVV abzuschließen (Vorlage wird bereitgestellt).
         Berufsgeheimnisträger (§ 9 Abs. 2 RAO) beachten zusätzlich die Anforderungen an mitwirkende
@@ -210,7 +210,7 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
       <p>
         Für Synthese- und Agentenfunktionen werden relevante Inhaltsausschnitte an LLM-/Embedding-
         Anbieter übermittelt, die weisungsgebunden verarbeiten und die Daten nicht zum Training
-        verwenden (Art. 6 Abs. 1 lit. b DSGVO bzw. AVV). Beim Self-Hosting wählst du Anbieter und
+        verwenden (Art. 6 Abs. 1 lit. b DSGVO bzw. AVV). Beim Self-Hosting wählen Sie Anbieter und
         Modelle frei oder betreiben ein lokales Modell.
       </p>
 
@@ -237,15 +237,16 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
       <H2>8. Speicherdauer</H2>
       <p>
         Kontodaten für die Vertragsdauer; Löschung nach Kündigung, soweit keine
-        Aufbewahrungspflichten (§ 132 BAO) entgegenstehen. Inhalte werden auf deine Weisung bzw. mit
+        Aufbewahrungspflichten (§ 132 BAO) entgegenstehen. Inhalte werden auf Ihre Weisung bzw. mit
         Vertragsende gelöscht. Server-Logs werden 14 Tage aufbewahrt.
       </p>
 
-      <H2>9. Deine Rechte</H2>
+      <H2>9. Ihre Rechte</H2>
       <p>
-        Du hast Rechte auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17),
+        Sie haben Rechte auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17),
         Einschränkung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch (Art. 21 DSGVO).
-        Einen vollständigen Export deiner Konto- und Brain-Daten als JSON kannst du selbst über{" "}
+        Einen vollständigen Export Ihrer Konto- und Kanzleiwissen-Daten als JSON können Sie selbst
+        über{" "}
         <span className="[color:var(--mk-text)]">Einstellungen → Account → Daten exportieren</span>{" "}
         auslösen. Es besteht ein Beschwerderecht bei einer Aufsichtsbehörde.
       </p>
@@ -360,7 +361,7 @@ export function DpaContent({ home, lang = "de" }: { home: string; lang?: Lang })
     <Shell home={home} lang={lang} title={t.dpaTitle} subtitle={t.dpaSubtitle}>
       <p className="text-xs [color:var(--mk-text-subtle)]">
         {t.draftNotice} Diese Vorlage implementiert Art. 28 DSGVO. Bitte fülle die Platzhalter aus,
-        unterzeichne mit dem Verantwortlichen und sende sie an help@rciid.at, bevor du
+        unterzeichnen Sie mit dem Verantwortlichen und senden Sie sie an help@rciid.at, bevor Sie
         personenbezogene Daten hochlädst.
       </p>
 

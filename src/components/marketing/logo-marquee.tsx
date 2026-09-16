@@ -40,7 +40,7 @@ const ROW_TOP: MarqueeItem[] = [
   { icon: FileCheck, label: "ISO 27001 geplant" },
   { icon: Globe, label: "EU-Cloud" },
   { icon: Server, label: "On-Premise" },
-  { icon: Lock, label: "Kein Training auf deinen Daten" },
+  { icon: Lock, label: "Kein Training auf Ihren Daten" },
 ];
 
 const ROW_BOTTOM: MarqueeItem[] = [

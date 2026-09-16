@@ -57,9 +57,9 @@ export default function RefConsentBanner() {
     >
       <p className="mb-1.5 text-sm font-semibold [color:var(--mk-text)]">Empfehlungslink erkannt</p>
       <p className="mb-4 text-sm leading-relaxed [color:var(--mk-text-muted)]">
-        Du bist über eine Empfehlung hier. Dürfen wir den Empfehlungs-Code 90 Tage als Cookie
-        speichern, damit dein Werber seine Provision bekommt und du deinen Gratismonat? Sonst
-        passiert nichts — die Seite funktioniert auch ohne.
+        Sie sind über eine Empfehlung hier. Dürfen wir den Empfehlungs-Code 90 Tage als Cookie
+        speichern, damit die empfehlende Person ihre Provision bekommt und Sie Ihren Gratismonat?
+        Sonst passiert nichts — die Seite funktioniert auch ohne.
       </p>
       <div className="flex gap-2">
         <button

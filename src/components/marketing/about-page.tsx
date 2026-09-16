@@ -14,13 +14,13 @@ const CONTENT = {
   sub: "Subsumio ist die Kanzleisoftware mit Assistent, gebaut für die Verschwiegenheit, Präzision und regulatorischen Anforderungen österreichischer Kanzleien.",
   missionTitle: "Unsere Mission",
   missionText:
-    "Jeder Kanzlei eine Wissensbasis geben, die nie vergisst — jede Akte, Frist und Schriftsatz indiziert und abfragbar, mit Zitaten, die du überprüfen kannst, bevor du dich darauf verlässt. Auf Infrastruktur, die du kontrollierst — nicht auf fremder Cloud.",
+    "Jeder Kanzlei eine Wissensbasis geben, die nie vergisst — jede Akte, Frist und Schriftsatz indiziert und abfragbar, mit Zitaten, die Sie überprüfen können, bevor du dich darauf verlässt. Auf Infrastruktur, die du kontrollierst — nicht auf fremder Cloud.",
   valuesTitle: "Woran wir glauben",
   values: [
     {
       icon: "Shield",
       title: "Vertraulichkeit per Architektur",
-      desc: "Mandantendaten sind heilig. Self-hosted oder EU-gehostet, verschlüsselt und isoliert — nie zum Training geteilter Modelle, nie außerhalb deiner Kontrolle.",
+      desc: "Mandantendaten sind heilig. Self-hosted oder EU-gehostet, verschlüsselt und isoliert — nie zum Training geteilter Modelle, nie außerhalb Ihrer Kontrolle.",
     },
     {
       icon: "Brain",
@@ -35,7 +35,7 @@ const CONTENT = {
     {
       icon: "Heart",
       title: "Für Anwälte gemacht",
-      desc: "Tools, die deine Anwälte täglich nutzen — WhatsApp-Copilot, Sprachnotizen, mobil. Nicht ein weiteres System, das sie meiden.",
+      desc: "Werkzeuge, die Ihre Anwältinnen und Anwälte täglich nutzen — WhatsApp-Copilot, Sprachnotizen, mobil. Nicht ein weiteres System, das sie meiden.",
     },
   ],
   statsTitle: "In Zahlen",
@@ -49,7 +49,7 @@ const CONTENT = {
     { value: "0", label: "Mandantendaten-Leaks — garantiert" },
   ],
   ctaTitle: "Sprich mit uns",
-  ctaSub: "Ob Einzelanwalt oder Managing Partner — wir freuen uns, von dir zu hören.",
+  ctaSub: "Ob Einzelanwalt oder Managing Partner — wir freuen uns, von Ihnen zu hören.",
   ctaButton: "Kontakt aufnehmen",
 } as const;
 

@@ -35,7 +35,7 @@ const COPY = {
   waEyebrow: "Das Büro in der Hosentasche",
   waTitle: "Immer dabei — nie eine Frist verpassen",
   waSub:
-    "Subsumio ist deine Sekretärin für unterwegs: Zeiten buchen, Belege ablegen, Fristen im Blick — alles über WhatsApp, ohne App-Wechsel.",
+    "Subsumio ist Ihr Sekretariat für unterwegs: Zeiten buchen, Belege ablegen, Fristen im Blick — alles über WhatsApp, ohne App-Wechsel.",
   waPoints: [
     {
       icon: Clock,
@@ -53,13 +53,13 @@ const COPY = {
       icon: Mic,
       color: "violet",
       t: "Sprachnotiz unterwegs",
-      d: "Diktat nach dem Termin — transkribiert und der Akte angehängt, bevor du im Büro bist.",
+      d: "Diktat nach dem Termin — transkribiert und der Akte angehängt, bevor Sie im Büro sind.",
     },
     {
       icon: CalendarClock,
       color: "rose",
-      t: "Fristen, die dich nicht vergessen",
-      d: "Täglicher Digest, Feiertagsverschiebung, Notfristen automatisch berechnet. Du schläfst ruhig — Subsumio wacht.",
+      t: "Fristen, die Sie nicht vergessen",
+      d: "Täglicher Digest, Feiertagsverschiebung, Notfristen automatisch berechnet. Sie schlafen ruhig — Subsumio wacht.",
     },
   ],
   phoneHeader: "Subsumio-Copilot",
@@ -89,7 +89,7 @@ const COPY = {
   bentoEyebrow: "Alle Funktionen",
   bentoTitle: "Alles, was die Kanzlei braucht — in einem Gehirn",
   bentoSub:
-    "Self-hosted oder EU-Cloud. Jede Antwort mit Fundstelle. Jede Funktion auf deiner Infrastruktur.",
+    "Self-hosted oder EU-Cloud. Jede Antwort mit Fundstelle. Jede Funktion auf Ihrer Infrastruktur.",
 } as const;
 
 const reveal = (i: number, reduce = false) => ({

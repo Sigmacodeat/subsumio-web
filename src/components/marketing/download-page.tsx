@@ -35,9 +35,9 @@ const PLATFORM_ICONS: Record<string, LucideIcon> = { Apple, Smartphone, Monitor 
 function NotifyMe() {
   const [email, setEmail] = useState("");
   const label = "App-Launch Benachrichtigung";
-  const placeholder = "Deine E-Mail-Adresse";
+  const placeholder = "Ihre E-Mail-Adresse";
   const button = "Benachrichtige mich";
-  const privacy = "Kein Spam. Wir schreiben dich an, sobald die Store-Apps live sind.";
+  const privacy = "Kein Spam. Wir melden uns, sobald die Store-Apps verfügbar sind.";
   return (
     <form
       className="mx-auto max-w-md"

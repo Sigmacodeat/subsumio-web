@@ -162,7 +162,7 @@ export const NAV: NavContent = {
         {
           label: "Sicherheit",
           href: "/security",
-          description: "Deine Daten, deine Keys, deine Jurisdiktion",
+          description: "Ihre Daten, Ihre Schlüssel, Ihre Jurisdiktion",
           icon: "ShieldCheck",
         },
         {
@@ -411,7 +411,7 @@ export const FOOTER: {
       ],
     },
   ],
-  note: "Deine Daten. Deine Schlüssel. On-Premise auf eigener Hardware oder EU-Cloud mit AVV — DSGVO-konform, Ende-zu-Ende verschlüsselt, kein Training mit deinen Daten.",
+  note: "Ihre Daten. Ihre Schlüssel. On-Premise auf eigener Hardware oder EU-Cloud mit AVV — DSGVO-konform, Ende-zu-Ende verschlüsselt, kein Training mit Ihren Daten.",
 };
 
 // ---------------------------------------------------------------------------
@@ -439,7 +439,7 @@ export const PRICING: {
   footnote: string;
 } = {
   title: "Kanzleisoftware Preise — pro Nutzer, kein Lock-in",
-  sub: "Pro Nutzer, jährliche Abrechnung. Dein Kanzleiwissen auf Infrastruktur, die du kontrollierst — EU-gehostet oder On-Premise.",
+  sub: "Pro Nutzer, jährliche Abrechnung. Ihr Kanzleiwissen auf Infrastruktur, die Sie kontrollieren — EU-gehostet oder On-Premise.",
   tiers: [
     {
       id: "free",
@@ -511,7 +511,7 @@ export const PRICING: {
       price: "ab 1.890 €",
       period: "/Nutzer/Mon.",
       blurb:
-        "Compliance-Klasse für regulierte Kanzleien. Ab 20 Nutzern, auf deiner Infrastruktur oder in der EU-Cloud.",
+        "Compliance-Klasse für regulierte Kanzleien. Ab 20 Nutzern, auf Ihrer Infrastruktur oder in der EU-Cloud.",
       features: [
         "15.000 KI-Anfragen/Nutzer/Mon. (Fair Use darüber)",
         "5.000 WhatsApp-Nachrichten/Nutzer/Mon.",
@@ -536,7 +536,7 @@ export const PRICING_FAQ: { title: string; items: { q: string; a: string }[] } =
   items: [
     {
       q: "Gibt es eine kostenlose Testversion?",
-      a: "Ja. Jeder gehostete Plan startet mit einem 14-Tage-Reverse-Trial — voller Zugriff, keine Kreditkarte. Wenn Subsumio nicht das Richtige für dich ist, kündigst du innerhalb von 14 Tagen für eine volle Rückerstattung.",
+      a: "Ja. Jeder gehostete Plan startet mit einem 14-Tage-Reverse-Trial — voller Zugriff, keine Kreditkarte. Wenn Subsumio nicht das Richtige für Sie ist, kündigen Sie innerhalb von 14 Tagen für eine volle Rückerstattung.",
     },
     {
       q: "Kann ich jederzeit den Plan wechseln?",
@@ -548,11 +548,11 @@ export const PRICING_FAQ: { title: string; items: { q: string; a: string }[] } =
     },
     {
       q: "Was passiert mit meinen Daten bei Kündigung?",
-      a: "Du kannst jederzeit alles exportieren. Nach Kündigung werden deine Daten 30 Tage aufbewahrt, dann dauerhaft gelöscht — oder du kannst sofortige Löschung beantragen.",
+      a: "Sie können jederzeit alles exportieren. Nach Kündigung werden Ihre Daten 30 Tage aufbewahrt, dann dauerhaft gelöscht — oder Sie können sofortige Löschung beantragen.",
     },
     {
       q: "Gibt es versteckte Gebühren?",
-      a: "Nein. Mehrverbrauch wird zu transparenten Einheitspreisen abgerechnet, die im Dashboard sichtbar sind. Du siehst den Verbrauch live und wir fragen, bevor sich etwas ändert.",
+      a: "Nein. Mehrverbrauch wird zu transparenten Einheitspreisen abgerechnet, die im Dashboard sichtbar sind. Sie sehen den Verbrauch live und wir fragen, bevor sich etwas ändert.",
     },
   ],
 };
@@ -562,12 +562,12 @@ export const LANDING = {
   heroBadges: [
     `Neu: ${PROOF.recall8.value} Recall mit 5-Layer-Verifikation`,
     "Verschwiegenheit nach § 9 Abs. 2 RAO im Systemdesign",
-    "EU-Cloud oder On-Premise — deine Wahl",
+    "EU-Cloud oder On-Premise — Ihre Wahl",
   ],
-  h1a: "Antworten aus deinen Akten.",
+  h1a: "Antworten aus Ihren Akten.",
   h1b: "Mit Quelle. In Sekunden.",
   heroTagline: "KI-Kanzleisoftware für Anwälte in Österreich — mit belegten Antworten.",
-  sub: "Du fragst in normaler Sprache — Subsumio antwortet mit seitengenauen Fundstellen aus deinen Akten. Für Anwälte in Österreich.",
+  sub: "Sie fragen in normaler Sprache — Subsumio antwortet mit seitengenauen Fundstellen aus Ihren Akten. Für Anwälte in Österreich.",
   heroTrustItems: [
     {
       icon: "CreditCard",
@@ -604,7 +604,7 @@ export const LANDING = {
       label: "On-Premise",
     },
   ],
-  painTitle: "Was kostet dich Suchen — jeden Tag?",
+  painTitle: "Was kostet Sie Suchen — jeden Tag?",
   painSub:
     "Jede Kanzlei verliert abrechenbare Zeit an Dinge, die eine Maschine besser macht — wenn sie für Anwälte gebaut ist.",
   pains: [
@@ -629,7 +629,7 @@ export const LANDING = {
   ctaSecondary: "Live-Demo ansehen",
   demo: {
     windowTitle: "subsumio — fragen",
-    you: "Du",
+    you: "Sie",
     q: "Was muss ich vor der Verhandlung Bauer morgen wissen?",
     a: "Akte Bauer ./. Hofer GmbH — Vertragsbruch, 84.000 €. Landesgericht Wien, Abt. 12. Verhandlung morgen, 09:30.\n\n**3 offene Punkte:**\n1. Replik heute fällig — entworfen, noch nicht eingebracht\n2. Gutachten von Dr. Klein fehlt noch (angefordert 3. März)\n3. Mandant hat den vorgeschlagenen Vergleichsrahmen nicht bestätigt\n\n⚠️ Frist: Die Replik ist eine Notfrist — Einbringung endet um Mitternacht. Zum Gutachten seit 3. März nichts Neues — nachfassen.",
     sourcesLabel: "Quellen:",
@@ -677,14 +677,14 @@ export const LANDING = {
   ],
   statsNote:
     "Engine-Klasse Retrieval, kein Chat-Wrapper. Jede Antwort nennt die Quelle — oder sagt ehrlich, wenn die Akte nichts hergibt.",
-  featuresTitle: "Was deine Kanzlei ab heute kann",
+  featuresTitle: "Was Ihre Kanzlei ab heute kann",
   featuresSub: "Sechs Fähigkeiten, gebaut für Anwälte — nicht nachträglich angepasst.",
   features: [
     {
       icon: "Brain",
       color: "violet",
       title: "Antworten mit Fundstellen",
-      desc: "Jede Antwort zitiert die exakte Stelle in deinen Akten. Ein Klick zur Verifikation — keine halluzinierten Quellen, keine Blackbox.",
+      desc: "Jede Antwort zitiert die exakte Stelle in Ihren Akten. Ein Klick zur Verifikation — keine halluzinierten Quellen, keine Blackbox.",
     },
     {
       icon: "CalendarClock",
@@ -713,8 +713,8 @@ export const LANDING = {
     {
       icon: "Shield",
       color: "violet",
-      title: "Deine Daten, deine Kontrolle",
-      desc: "Die Engine auf deiner Hardware mit deinen Schlüsseln — oder verwaltete EU-Cloud mit AVV. Deine Daten, deine Kontrolle.",
+      title: "Ihre Daten, Ihre Kontrolle",
+      desc: "Der Subsumio-Dienst auf Ihrer Hardware mit Ihren Schlüsseln — oder verwaltete EU-Cloud mit AVV. Ihre Daten, Ihre Kontrolle.",
     },
   ],
   howTitle: "So funktioniert KI-Kanzleisoftware: vom Dokument zur belegten Antwort",
@@ -750,7 +750,7 @@ export const LANDING = {
   scenarios: [
     {
       role: "Morgen · 07:30",
-      text: "Du trinkst Kaffee. Subsumio hat schon alle Fristen für heute geprüft — eine Notfrist läuft um Mitternacht, markiert und mit der Akte verlinkt. Der tägliche Digest liegt im Posteingang. Du weißt, was heute wichtig ist, bevor du den ersten Schriftsatz öffnest.",
+      text: "Sie trinken Kaffee. Subsumio hat schon alle Fristen für heute geprüft — eine Notfrist läuft um Mitternacht, markiert und mit der Akte verlinkt. Der tägliche Digest liegt im Posteingang. Du weißt, was heute wichtig ist, bevor du den ersten Schriftsatz öffnest.",
     },
     {
       role: "Mittag · 12:15",
@@ -758,7 +758,7 @@ export const LANDING = {
     },
     {
       role: "Abend · 18:45",
-      text: "„Entwirf die Replik dafür.“ Subsumio zieht die Argumente aus den Akten, zitiert S.3 und S.7, schlägt den Antrag vor. Du prüfst die Fundstellen in einem Klick, bestätigst, fertig. Der Schriftsatz geht raus — mit Quellen, nicht mit Bauchgefühl.",
+      text: "„Entwirf die Replik dafür.“ Subsumio zieht die Argumente aus den Akten, zitiert S.3 und S.7, schlägt den Antrag vor. Sie prüfen die Fundstellen in einem Klick, bestätigst, fertig. Der Schriftsatz geht raus — mit Quellen, nicht mit Bauchgefühl.",
     },
   ],
   comparisonTitle: "Warum nicht einfach ChatGPT, Notion AI oder eine Vektor-Datenbank?",
@@ -766,7 +766,7 @@ export const LANDING = {
   comparison: [
     {
       feature: "Fundstellen pro Antwort",
-      subsumio: "Seitengenaue Zitate aus deinen Akten",
+      subsumio: "Seitengenaue Zitate aus Ihren Akten",
       others: "Keine Fundstellen oder unüberprüfbar",
     },
     {
@@ -798,15 +798,15 @@ export const LANDING = {
     },
     {
       q: "Wo liegen meine Daten — und wie unterstützt Subsumio die Verschwiegenheit?",
-      a: "Du wählst: Self-Hosting auf eigener Hardware mit eigenen Schlüsseln, oder verwaltete EU-Cloud mit AVV. Mandantendaten verlassen nie die EU. Kein Dritter verarbeitet sie ohne ausdrückliche Freigabe. Die Architektur ist für Berufsgeheimnisträger gebaut — § 9 Abs. 2 RAO.",
+      a: "Sie wählen: Self-Hosting auf eigener Hardware mit eigenen Schlüsseln, oder verwaltete EU-Cloud mit AVV. Mandantendaten verlassen nie die EU. Kein Dritter verarbeitet sie ohne ausdrückliche Freigabe. Die Architektur ist für Berufsgeheimnisträger gebaut — § 9 Abs. 2 RAO.",
     },
     {
       q: "Brauche ich IT-Kenntnisse oder eigene Server?",
-      a: "Nein. Bei gehosteten Plänen ist alles verwaltet — keine API-Keys, keine Infrastruktur. Du lädst Dokumente hoch, stellst Fragen, bekommst Antworten. Wenn du E-Mails schreiben kannst, kannst du Subsumio bedienen. Enterprise-On-Premise läuft auf deiner Hardware mit deinen Schlüsseln.",
+      a: "Nein. Bei gehosteten Plänen ist alles verwaltet — keine API-Keys, keine Infrastruktur. Sie laden Dokumente hoch, stellen Fragen, bekommen Antworten. Wenn Sie E-Mails schreiben kannst, kannst du Subsumio bedienen. Enterprise-On-Premise läuft auf deiner Hardware mit deinen Schlüsseln.",
     },
     {
       q: "Trainiert Subsumio auf meinen Daten?",
-      a: "Niemals. Dein Kanzleiwissen gehört dir. On-Premise bleibt alles auf deiner Infrastruktur. In der EU-Cloud wird es verschlüsselt und mandantensepariert verarbeitet — keine andere Kanzlei hat Zugriff.",
+      a: "Niemals. Ihr Kanzleiwissen gehört Ihnen. On-Premise bleibt alles auf Ihrer Infrastruktur. In der EU-Cloud wird es verschlüsselt und mandantensepariert verarbeitet — keine andere Kanzlei hat Zugriff.",
     },
     {
       q: "Funktioniert das mit unserer bestehenden Software?",
@@ -814,7 +814,7 @@ export const LANDING = {
     },
     {
       q: "Was passiert, wenn eine Antwort falsch ist?",
-      a: "Jede Antwort nennt die Quelle — du prüfst in einem Klick. Wenn die Akte keine Antwort enthält, sagt Subsumio das explizit statt zu halluzinieren. Du behältst immer die letzte Entscheidung.",
+      a: "Jede Antwort nennt die Quelle — Sie prüfen in einem Klick. Wenn die Akte keine Antwort enthält, sagt Subsumio das explizit statt zu halluzinieren. Sie behalten immer die letzte Entscheidung.",
     },
     {
       q: "Wie werden Fristen berechnet?",
@@ -892,7 +892,7 @@ export const UI_STRINGS: Record<string, string> = {
   ariaCta: "Handlungsaufforderung",
   ariaComparison: "Vergleich",
   ariaRealWorkflows: "Praxis-Workflows",
-  ariaCostOfInaction: "Was es dich kostet",
+  ariaCostOfInaction: "Was es Sie kostet",
   ariaUseCases: "Anwendungsfälle",
   ariaCompliance: "Compliance & Integrationen",
   ariaFaqSuperbrain: "Häufig gestellte Fragen",
@@ -905,8 +905,8 @@ export const UI_STRINGS: Record<string, string> = {
   seePricingPlans: "Preise ansehen",
   faqSuperbrainTitle: "Häufig gestellte Fragen",
   faqSuperbrainSub:
-    "Alles, was du über das SuperBrain, den Dream Cycle und die 5-Ebenen-Architektur wissen musst.",
-  youLabel: "Du",
+    "Alles, was Sie über das SuperBrain, die nächtliche Konsolidierung und die 5-Ebenen-Architektur wissen müssen.",
+  youLabel: "Sie",
   sourcesLabel: "Quellen:",
   thinkingLabel: "Durchsuche Wissensgraph…",
   verifyingLabel: "Belege werden geprüft",
@@ -946,7 +946,7 @@ export const UI_STRINGS: Record<string, string> = {
     "14 Tage Reverse Trial · 14 Tage Geld-zurück-Garantie · Keine Kreditkarte erforderlich",
   verticalTrustNote: "Self-hosted · EU-Cloud · DSGVO-konform · § 9 Abs. 2 RAO im Blick",
   verticalFeaturesSub:
-    "Von Fristenkontrolle bis Widerspruchserkennung — alles auf deiner Infrastruktur, jede Antwort mit Fundstelle.",
+    "Von Fristenkontrolle bis Widerspruchserkennung — alles auf Ihrer Infrastruktur, jede Antwort mit Fundstelle.",
   subpagesConfirmationNote: "Alles bestätigungspflichtig — nichts landet ungesehen in der Akte.",
   typingLabel: "tippt…",
   todayLabel: "Heute",
@@ -968,10 +968,10 @@ export const UI_STRINGS: Record<string, string> = {
   scriptedLabel: "Beispiel-Antwort · Live-Brain nach Deploy",
   rateLimitLabel: "Demo-Limit erreicht — später erneut.",
   noDemoMatches: "Keine Demo-Treffer — hier die Beispiel-Antwort.",
-  demoReadOnlyNote: "Read-only Demo-Brain · deine Daten bleiben bei dir",
+  demoReadOnlyNote: "Demo im Lesemodus · Ihre Daten bleiben bei Ihnen",
   seePlatform: "Plattform ansehen",
   questionsAnswered: "Fragen, beantwortet",
-  notQuiteRight: "Nicht ganz das Richtige für dich?",
+  notQuiteRight: "Nicht ganz das Richtige für Sie?",
   seeSolution: "Lösung ansehen",
   backToOverview: "Zur Übersicht",
   timeExpenses: "Zeit & Auslagen in Sekunden",
@@ -982,7 +982,7 @@ export const UI_STRINGS: Record<string, string> = {
     "Dokument oder Foto mit Akten-Kürzel in der Caption landet revisionssicher im Vault.",
   voiceNote: "Sprachnotiz unterwegs",
   voiceNoteDesc:
-    "Diktat nach dem Termin — transkribiert und der Akte angehängt, bevor du im Büro bist.",
+    "Diktat nach dem Termin — transkribiert und der Akte angehängt, bevor Sie im Büro sind.",
   dashboardNotDatasheet: "Dashboard statt Datenblatt",
   docsTitle: "Jede Beschreibung zeigt auf einen echten Kanzlei-Workflow.",
   docsSub:
@@ -1030,7 +1030,7 @@ export const UI_STRINGS: Record<string, string> = {
   verifiableLabel: "prüfbar",
   exploreSecurity: "Sicherheit ansehen",
   exploreLabel: "Ansehen",
-  askYourBrain: "Frag dein Brain…",
+  askYourBrain: "Fragen Sie Ihr Kanzleiwissen…",
   gapWarning: "⚠ Lücke: Do 14 Uhr ohne Notiz",
   worksOffline: "Funktioniert offline",
   installNow: "Subsumio jetzt installieren",
@@ -1045,11 +1045,11 @@ export const UI_STRINGS: Record<string, string> = {
 export const VALUE_PROPS: { title: string; desc: string }[] = [
   {
     title: "Keine versteckten Kosten",
-    desc: "Was auf der Preisliste steht, das zahlst du. Keine Überraschungen bei der Rechnung.",
+    desc: "Was auf der Preisliste steht, das zahlen Sie. Keine Überraschungen bei der Rechnung.",
   },
   {
     title: "Self-hosted oder Cloud",
-    desc: "Du entscheidest, wo deine Daten liegen. EU-Cloud oder auf eigener Hardware.",
+    desc: "Sie entscheiden, wo Ihre Daten liegen. EU-Cloud oder auf eigener Hardware.",
   },
   {
     title: "Open-Source Engine",

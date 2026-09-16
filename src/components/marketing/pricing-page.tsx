@@ -53,7 +53,7 @@ export default function PricingPage() {
           <Reveal variant="up">
             <SectionHeading
               title="AI-Credits — zahle nach Verbrauch"
-              sub="Jede AI-Operation kostet eine feste Anzahl Credits. Kaufe Packs zusätzlich zu deinem Plan — keine Überraschungsrechnungen."
+              sub="Jede AI-Operation kostet eine feste Anzahl Credits. Kaufen Sie Pakete zusätzlich zu Ihrem Plan — keine Überraschungsrechnungen."
             />
           </Reveal>
 
