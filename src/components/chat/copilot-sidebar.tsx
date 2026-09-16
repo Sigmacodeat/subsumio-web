@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { csrfFetch } from "@/lib/csrf";
+import { loadBriefing, type BriefingResponse } from "@/lib/briefing-cache";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { useResizable } from "@/lib/use-resizable";
 import { useLang, type TFunc } from "@/lib/use-lang";
@@ -333,26 +334,22 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       setDashboardSnapshot(snapshotCacheRef.current.data);
       return;
     }
+    const toSnapshot = (briefing: BriefingResponse) => ({
+      criticalDeadlines: briefing.data.criticalDeadlines ?? 0,
+      overdueDeadlines: briefing.data.overdueDeadlines ?? 0,
+      inboxItems: briefing.data.inboxItems ?? 0,
+      activeCases: briefing.data.activeCases ?? 0,
+      pendingReviews: briefing.data.pendingReviews ?? 0,
+      followUpsToday: briefing.data.followUpsToday ?? 0,
+    });
+    // The briefing is an LLM call; loadBriefing serves today's cached one and
+    // shares a running request with the morning-briefing card.
     let cancelled = false;
     (async () => {
       try {
-        const res = await csrfFetch("/api/dashboard/briefing", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ language: lang }),
-        });
-        if (cancelled || !res.ok) return;
-        const json = await res.json();
-        const data = json.data ?? null;
-        if (!data) return;
-        const snapshot = {
-          criticalDeadlines: data.criticalDeadlines ?? 0,
-          overdueDeadlines: data.overdueDeadlines ?? 0,
-          inboxItems: data.inboxItems ?? 0,
-          activeCases: data.activeCases ?? 0,
-          pendingReviews: data.pendingReviews ?? 0,
-          followUpsToday: data.followUpsToday ?? 0,
-        };
+        const briefing = await loadBriefing(lang);
+        if (cancelled || !briefing) return;
+        const snapshot = toSnapshot(briefing);
         if (!cancelled) {
           setDashboardSnapshot(snapshot);
           snapshotCacheRef.current = { data: snapshot, ts: Date.now() };
@@ -605,8 +602,8 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
     if (
       currentCaseSlug &&
       (!invCacheRef.current ||
-        (invCacheRef.current.slug !== invCacheKey &&
-          Date.now() - invCacheRef.current.ts > ALERTS_TTL_MS))
+        invCacheRef.current.slug !== invCacheKey ||
+        Date.now() - invCacheRef.current.ts > ALERTS_TTL_MS)
     ) {
       (async () => {
         try {

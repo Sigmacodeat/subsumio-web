@@ -192,8 +192,7 @@ Lauf: `SUBSUMIO_E2E_PORT=3100 SUBSUMIO_E2E_DIST_DIR=.next-e2e npx playwright tes
 
 Alle acht Stationen und die sechs Arbeitsräume sind durchgespielt. Offen bleiben nur die
 KI-Stationen mit echtem Modell (4, Strategie, Briefing, Fristen-Erkennung) — Blocker
-Provider-Guthaben — sowie die doppelten Listenabrufe pro Seitenaufruf (Performance, kein
-Funktionsfehler).
+Provider-Guthaben.
 
 ## Nachtrag — ⚠️-Punkte aus den Stationen abgearbeitet (headless verifiziert)
 
@@ -213,3 +212,21 @@ Funktionsfehler).
   war nie auditiert). Beide Lese-Routen protokollieren nicht mehr.
 - **Badge in den Einstellungen:** „Benachrichtigung fehlt" → „E-Mail nicht eingerichtet"
   (der Tooltip erklärt SMTP).
+- **Doppelte Listenabrufe pro Seitenaufruf** (gemessen am Prod-Build, ohne StrictMode; vier
+  Seiten: Cockpit, Akten, Fristen, Aktendetail):
+
+  |         | API-Requests | davon redundant |
+  | ------- | ------------ | --------------- |
+  | vorher  | 73           | 12              |
+  | nachher | 53           | 0               |
+
+  Ursachen und Fixes: (1) Desktop- und Mobil-Copilot mounten je ein Chat-Panel, beide luden
+  die Aktenliste; Akten-Daten- und Akten-Detail-Kontext luden dieselbe Aktenseite → der
+  API-Client teilt jetzt identische, gleichzeitig gestartete Lese-Requests (GET sowie
+  Batch-Reads; Mutationen nie, Aufrufer mit eigenem AbortSignal nie; nur der laufende
+  Request wird geteilt, nichts wird danach gecacht). (2) Cockpit-Karte und Copilot
+  erzeugten je ein eigenes Briefing — **zwei LLM-Aufrufe pro Cockpit-Aufruf** — jetzt ein
+  gemeinsamer Lader mit Tages-Cache (4 h) und geteiltem laufenden Request. Der Copilot las
+  außerdem die Kennzahlen aus der falschen Ebene der Antwort (immer 0). (3) Zwei
+  Brain-Selector-Hooks holten `/api/brains` doppelt. (4) Sachverhaltsprüfungs-Hinweis:
+  Cache-Bedingung war `&&` statt `||` (Aktenwechsel wurde ignoriert).

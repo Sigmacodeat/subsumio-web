@@ -214,7 +214,8 @@ Offen mit Priorität (siehe Protokoll):
 2. ~~Kontakte aus Akten-Parteien~~ erledigt; offen: Dokumentansicht statt Brain-Seite.
 3. ~~Copy-Reste beA/DE, englische Labels, Sidebar-Links ohne Namen, Stundensatz-Plausibilität~~
    erledigt; ~~Dokumentansicht, Rechnungsvorschau „Kunde —", 404-/Audit-Rauschen~~ erledigt
-   (Protokoll „Nachtrag"); offen nur noch doppelte Listenabrufe (Performance).
+   (Protokoll „Nachtrag"); ~~doppelte Listenabrufe~~ erledigt (73→53 Requests, 0 redundant,
+   Cockpit löst nur noch ein Briefing statt zwei LLM-Aufrufe aus).
 4. **Blocker Phase 3:** Engine ist auf OpenRouter/Claude umgestellt, aber Anthropic- und beide OpenRouter-Konten haben kein Guthaben. Guthaben aufladen (OpenRouter reicht, ist der Prod-Provider) — vorher sind Assistent, Strategie, Briefing und Fristen-Erkennung nicht prüfbar.
 5. ~~Phase 2: Playwright-Mock-Suite auf dem Prod-Build~~ erledigt: 590 bestanden, 3 übersprungen,
    1 Spec an die Admin-only-Regel angepasst. Dabei gefunden und behoben: kein

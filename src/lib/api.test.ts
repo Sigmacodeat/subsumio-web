@@ -148,3 +148,48 @@ describe("401 handling by area", async () => {
     expect(isPublicRoute("/dashboard")).toBe(false);
   });
 });
+
+describe("request dedupe", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test("identical concurrent GETs share one fetch", async () => {
+    vi.mocked(csrfFetch).mockResolvedValue(
+      new Response(JSON.stringify({ slug: "cases/dedupe-1", title: "A" }), { status: 200 })
+    );
+    const [a, b] = await Promise.all([
+      api.brain.getPage("cases/dedupe-1"),
+      api.brain.getPage("cases/dedupe-1"),
+    ]);
+    expect(a.title).toBe("A");
+    expect(b).toBe(a);
+    expect(csrfFetch).toHaveBeenCalledTimes(1);
+  });
+
+  test("different paths and sequential reads are not shared", async () => {
+    vi.mocked(csrfFetch).mockImplementation(
+      async (url) =>
+        new Response(JSON.stringify({ slug: String(url), title: "x" }), { status: 200 })
+    );
+    await Promise.all([api.brain.getPage("cases/dedupe-2"), api.brain.getPage("cases/dedupe-3")]);
+    expect(csrfFetch).toHaveBeenCalledTimes(2);
+    await api.brain.getPage("cases/dedupe-2");
+    expect(csrfFetch).toHaveBeenCalledTimes(3);
+  });
+
+  test("identical batch reads share one fetch, mutations never do", async () => {
+    vi.mocked(csrfFetch).mockImplementation(
+      async () =>
+        new Response(JSON.stringify({ pages: {}, results: {}, slug: "s" }), { status: 200 })
+    );
+    await Promise.all([api.brain.getPages(["a", "b"]), api.brain.getPages(["a", "b"])]);
+    expect(csrfFetch).toHaveBeenCalledTimes(1);
+    vi.clearAllMocks();
+    await Promise.all([
+      api.brain.createPage({ slug: "s", title: "t", content: "c" }),
+      api.brain.createPage({ slug: "s", title: "t", content: "c" }),
+    ]);
+    expect(csrfFetch).toHaveBeenCalledTimes(2);
+  });
+});

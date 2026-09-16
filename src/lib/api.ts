@@ -107,7 +107,42 @@ export class ApiRequestError extends Error {
   }
 }
 
+/**
+ * Identical reads that start within this window share one HTTP request.
+ * Two providers mounting at the same time (matter data + matter detail, the
+ * desktop and mobile copilot) used to fetch the same page twice per load.
+ * Only the in-flight promise is shared — nothing is cached after it settles.
+ */
+const READ_DEDUPE_WINDOW_MS = 500;
+const DEDUPED_POST_PATHS = new Set(["/api/pages/batch", "/api/pages/batch-list"]);
+const inflightReads = new Map<string, { promise: Promise<unknown>; startedAt: number }>();
+
+function readDedupeKey(path: string, options?: RequestInit): string | null {
+  if (options?.signal) return null; // caller-controlled abort: keep it private
+  const method = (options?.method ?? "GET").toUpperCase();
+  if (method === "GET") return `GET ${path}`;
+  if (method === "POST" && DEDUPED_POST_PATHS.has(path) && typeof options?.body === "string") {
+    return `POST ${path} ${options.body}`;
+  }
+  return null;
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const key = readDedupeKey(path, options);
+  if (!key) return requestUncached<T>(path, options);
+  const hit = inflightReads.get(key);
+  if (hit && Date.now() - hit.startedAt < READ_DEDUPE_WINDOW_MS) return hit.promise as Promise<T>;
+  const promise = requestUncached<T>(path, options);
+  inflightReads.set(key, { promise, startedAt: Date.now() });
+  promise
+    .catch(() => {})
+    .finally(() => {
+      if (inflightReads.get(key)?.promise === promise) inflightReads.delete(key);
+    });
+  return promise;
+}
+
+async function requestUncached<T>(path: string, options?: RequestInit): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(options?.headers as Record<string, string> | undefined),

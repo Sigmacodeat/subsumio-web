@@ -12,6 +12,19 @@ export interface BrainInfo {
 
 const ACTIVE_BRAIN_KEY = "subsumio:active_brain";
 
+// Topbar and sidebar both mount this hook; share one request per page load.
+let brainsInflight: Promise<Response | null> | null = null;
+function fetchBrains(): Promise<Response | null> {
+  if (!brainsInflight) {
+    brainsInflight = fetch("/api/brains")
+      .catch(() => null)
+      .finally(() => {
+        brainsInflight = null;
+      });
+  }
+  return brainsInflight;
+}
+
 export function useBrainSelector() {
   const router = useRouter();
   const [brains, setBrains] = useState<BrainInfo[]>([]);
@@ -21,9 +34,9 @@ export function useBrainSelector() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch("/api/brains").catch(() => null);
+        const res = await fetchBrains();
         if (res?.ok) {
-          const data = await res.json();
+          const data = await res.clone().json();
           const list = (data.brains || []) as BrainInfo[];
           setBrains(list);
           const saved = localStorage.getItem(ACTIVE_BRAIN_KEY);

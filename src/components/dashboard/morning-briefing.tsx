@@ -4,61 +4,14 @@ import { useState, useEffect, useCallback } from "react";
 import { markdownToPlainText } from "@/lib/markdown";
 import { Sparkles, RefreshCw, Clock, Mail, FileCheck, ArrowRight } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
-import { csrfFetch } from "@/lib/csrf";
 import { AI_BADGE_LABEL } from "@/lib/ai-act";
 import { StaggerContainer, StaggerItem } from "@/components/marketing/motion-system";
 
-interface BriefingData {
-  criticalDeadlines: number;
-  overdueDeadlines: number;
-  inboxItems: number;
-  pendingReviews: number;
-  pendingSignatures: number;
-  openInvoices: number;
-  activeCases: number;
-  unassignedDocs: number;
-  reviewGaps: number;
-  overdueReconciliations: number;
-  followUpsToday: number;
-  topDeadlines: Array<{ title: string; due: string; daysLeft: number }>;
-  topCases: Array<{ title: string; status: string }>;
-}
-
-interface BriefingResponse {
-  narrative: string;
-  data: BriefingData;
-  generatedAt: string;
-  usedFallback: boolean;
-}
-
-const CACHE_KEY = "subsumio:morning-briefing";
-const CACHE_TTL = 4 * 60 * 60 * 1000; // 4 hours
-
-function readCache(): BriefingResponse | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as BriefingResponse & { cachedAt: string };
-    const age = Date.now() - new Date(parsed.cachedAt).getTime();
-    if (age > CACHE_TTL) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-function writeCache(briefing: BriefingResponse) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(
-      CACHE_KEY,
-      JSON.stringify({ ...briefing, cachedAt: new Date().toISOString() })
-    );
-  } catch {
-    // ignore quota errors
-  }
-}
+import {
+  loadBriefing,
+  readBriefingCache as readCache,
+  type BriefingResponse,
+} from "@/lib/briefing-cache";
 
 function isSameDay(dateStr: string): boolean {
   const d = new Date(dateStr);
@@ -90,17 +43,9 @@ export function MorningBriefing() {
       setLoading(true);
       setError(false);
       try {
-        const res = await csrfFetch("/api/dashboard/briefing", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ language: lang }),
-          signal: AbortSignal.timeout(50_000),
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = (await res.json()) as { data: BriefingResponse };
-        const result = json.data;
+        const result = await loadBriefing(lang, { force });
+        if (!result) throw new Error("empty briefing");
         setBriefing(result);
-        writeCache(result);
       } catch {
         setError(true);
       } finally {
