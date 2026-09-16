@@ -892,15 +892,7 @@ function ResearchPageInner() {
                       : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
                   }`}
                 >
-                  {j === "all"
-                    ? "Alle"
-                    : j === "at"
-                      ? "🇦🇹 AT"
-                      : j === "de"
-                        ? "🇩🇪 DE"
-                        : j === "ch"
-                          ? "🇨🇭 CH"
-                          : "🇪🇺 EU"}
+                  {j === "all" ? "Alle" : j === "at" ? "🇦🇹 AT" : "🇪🇺 EU"}
                 </button>
               ))}
             </div>
