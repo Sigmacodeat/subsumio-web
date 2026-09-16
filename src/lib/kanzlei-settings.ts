@@ -68,8 +68,21 @@ export const DEFAULT_KANZLEI_SETTINGS: KanzleiSettings = {
   },
 };
 
+/** Plausibility bound for an hourly rate in EUR (a 220 250 €/h typo once got through). */
+export const MAX_HOURLY_RATE_EUR = 5000;
+
+/** Keep the stored hourly rate a sane positive integer string; fall back to the default. */
+export function clampHourlyRate(
+  value: unknown,
+  fallback = DEFAULT_KANZLEI_SETTINGS.stundensatz
+): string {
+  const n = typeof value === "number" ? value : parseInt(String(value ?? ""), 10);
+  if (!Number.isFinite(n) || n < 1) return fallback;
+  return String(Math.min(Math.round(n), MAX_HOURLY_RATE_EUR));
+}
+
 export function normalizeKanzleiSettings(input?: Partial<KanzleiSettings> | null): KanzleiSettings {
-  return {
+  const merged = {
     ...DEFAULT_KANZLEI_SETTINGS,
     ...(input ?? {}),
     rechtsgebietSaetze: {
@@ -77,6 +90,7 @@ export function normalizeKanzleiSettings(input?: Partial<KanzleiSettings> | null
       ...(input?.rechtsgebietSaetze ?? {}),
     },
   };
+  return { ...merged, stundensatz: clampHourlyRate(merged.stundensatz) };
 }
 
 export function readLocalKanzleiSettings(): KanzleiSettings {

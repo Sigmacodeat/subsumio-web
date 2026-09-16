@@ -31,7 +31,11 @@ import { useMe } from "@/lib/queries/auth";
 import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
-import { normalizeKanzleiSettings, saveKanzleiSettings } from "@/lib/kanzlei-settings";
+import {
+  MAX_HOURLY_RATE_EUR,
+  normalizeKanzleiSettings,
+  saveKanzleiSettings,
+} from "@/lib/kanzlei-settings";
 import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/upload-formats";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
@@ -527,6 +531,11 @@ export default function OnboardingPage() {
                       type="number"
                       inputMode="numeric"
                       value={billing.stundensatz}
+                      min={1}
+                      max={MAX_HOURLY_RATE_EUR}
+                      // Prefilled with a suggestion: select it on focus so typing
+                      // replaces it (typing "250" into "220" gave 220250 €/h).
+                      onFocus={(e) => e.currentTarget.select()}
                       onChange={(e) => setBilling((b) => ({ ...b, stundensatz: e.target.value }))}
                       placeholder="220"
                     />

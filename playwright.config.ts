@@ -5,6 +5,13 @@ import { defineConfig, devices } from "@playwright/test";
 // This enables real PDF extraction, real search, and real AI analysis.
 const USE_REAL_ENGINE = process.env.SUBSUMIO_E2E_REAL_ENGINE === "1";
 const REAL_ENGINE_URL = "http://localhost:31429";
+// The web server under test. Override when :3000 is taken (a running dev
+// server, another project) — e.g. SUBSUMIO_E2E_PORT=3100. 127.0.0.1 on purpose:
+// "localhost" may resolve to ::1 where an unrelated server can be listening.
+const E2E_PORT = process.env.SUBSUMIO_E2E_PORT ?? "3000";
+const E2E_BASE_URL = `http://127.0.0.1:${E2E_PORT}`;
+// Separate build output so an e2e build never clobbers a running dev server's .next.
+const E2E_DIST_DIR = process.env.SUBSUMIO_E2E_DIST_DIR ?? ".next";
 // Real-engine credentials come from the environment (never hard-code them here):
 //   SUBSUMIO_E2E_ENGINE_KEY        — falls back to SUBSUMIO_WEB_API_KEY (the engine's key)
 //   SUBSUMIO_E2E_AUTH_DATABASE_URL — throwaway auth DB for the real-engine run
@@ -50,6 +57,9 @@ if (USE_REAL_ENGINE && !REAL_ENGINE_KEY) {
 // The Postgres URL uses sslmode=disable because local Postgres has no TLS
 // (production guard forces SSL otherwise).
 const WEB_SERVER_ENV_BASE: Record<string, string> = {
+  NEXT_DIST_DIR: E2E_DIST_DIR,
+  NEXT_PUBLIC_APP_URL: E2E_BASE_URL,
+  NEXT_PUBLIC_SITE_URL: E2E_BASE_URL,
   AUTH_SECRET: "subsumio-e2e-test-secret-32-chars-min!!",
   SUBSUMIO_ENCRYPTION_KEY: "subsumio-e2e-encryption-key-32chars!",
   SUBSUMIO_DATA_DIR: `/tmp/subsumio-e2e-${process.pid}`,
@@ -80,8 +90,8 @@ const REAL_ENGINE_WEB_ENV: Record<string, string> = {
   SUBSUMIO_WEB_API_KEY: REAL_ENGINE_KEY,
 };
 
-const BUILD_IF_NEEDED = "test -f .next/BUILD_ID || npm run build";
-const START_WEB = "bunx next start -p 3000";
+const BUILD_IF_NEEDED = `test -f ${E2E_DIST_DIR}/BUILD_ID || npm run build`;
+const START_WEB = `bunx next start -p ${E2E_PORT}`;
 
 export default defineConfig({
   testDir: "./tests/e2e-playwright",
@@ -94,7 +104,7 @@ export default defineConfig({
   timeout: 60_000,
   reporter: "list",
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: E2E_BASE_URL,
     reducedMotion: "reduce",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
@@ -115,7 +125,7 @@ export default defineConfig({
           // (must be started separately: see docs/ANWALTSTAG-TESTSCRIPT.md)
           command: `${BUILD_IF_NEEDED}; ${START_WEB}`,
           env: REAL_ENGINE_WEB_ENV,
-          url: "http://localhost:3000",
+          url: E2E_BASE_URL,
           reuseExistingServer: !process.env.CI,
           timeout: 300_000,
         },
@@ -130,7 +140,7 @@ export default defineConfig({
         {
           command: `${BUILD_IF_NEEDED}; bash scripts/e2e-pg-setup.sh || echo '[e2e-pg] setup failed — Postgres-backed specs may fail'; ${START_WEB}`,
           env: MOCK_ENGINE_WEB_ENV,
-          url: "http://localhost:3000",
+          url: E2E_BASE_URL,
           reuseExistingServer: !process.env.CI,
           timeout: 300_000,
         },

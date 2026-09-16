@@ -28,7 +28,7 @@ test.describe("Keyboard-Only Walkthrough", () => {
     // Navigate to the signup page first to establish the origin, then
     // perform the signup via API from within the page context (this ensures
     // cookies are shared and the request comes from the right origin).
-    await page.goto("http://localhost:3000/at/signup", { waitUntil: "networkidle" });
+    await page.goto("/at/signup", { waitUntil: "networkidle" });
     const email = getTestEmail();
     const signupResult = await page.evaluate(
       async ({ email, name, password }) => {
@@ -43,7 +43,7 @@ test.describe("Keyboard-Only Walkthrough", () => {
     );
     expect(signupResult.status).toBe(201);
     // Complete onboarding
-    await page.goto("http://localhost:3000/dashboard/onboarding", {
+    await page.goto("/dashboard/onboarding", {
       waitUntil: "domcontentloaded",
     });
     const csrf = (await page.context().cookies()).find((c) => c.name === "sb_csrf")?.value;
@@ -54,7 +54,7 @@ test.describe("Keyboard-Only Walkthrough", () => {
         body: JSON.stringify({ industry: null }),
       });
     }, csrf || "");
-    await page.goto("http://localhost:3000/dashboard", { waitUntil: "domcontentloaded" });
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await page.evaluate(() => {
       try {
         localStorage.setItem("subsumio-tour-completed", "true");

@@ -90,3 +90,18 @@ describe("vatRateFor", async () => {
     expect(vatRateFor({ country: "AT", kleinunternehmer: true })).toBe(0);
   });
 });
+
+describe("clampHourlyRate", async () => {
+  const { clampHourlyRate, normalizeKanzleiSettings, MAX_HOURLY_RATE_EUR } =
+    await import("./kanzlei-settings");
+  it("keeps sane rates and caps typos", () => {
+    expect(clampHourlyRate("250")).toBe("250");
+    expect(clampHourlyRate(220250)).toBe(String(MAX_HOURLY_RATE_EUR));
+    expect(clampHourlyRate("abc")).toBe("200");
+    expect(clampHourlyRate("0")).toBe("200");
+  });
+  it("is applied by normalizeKanzleiSettings", () => {
+    expect(normalizeKanzleiSettings({ stundensatz: "220250" }).stundensatz).toBe("5000");
+    expect(normalizeKanzleiSettings({ stundensatz: "180" }).stundensatz).toBe("180");
+  });
+});
