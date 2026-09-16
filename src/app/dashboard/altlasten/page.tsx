@@ -191,7 +191,7 @@ export default function AltlastenPage() {
       addToast({
         type: "info",
         title: "Keine Akten",
-        description: "Keine Akten ohne Pipeline-Status gefunden.",
+        description: "Keine ungeprüften Akten gefunden.",
         duration: 3000,
       });
       return;
@@ -216,7 +216,7 @@ export default function AltlastenPage() {
       const result = await res.json();
       addToast({
         type: "success",
-        title: "Batch-Pipeline gestartet",
+        title: "Verjährungsprüfung gestartet",
         description: `${result.succeeded}/${result.total} Akten gestartet, ${result.failed} fehlgeschlagen.`,
         duration: 5000,
       });
@@ -372,8 +372,8 @@ export default function AltlastenPage() {
                 <Zap className="h-4 w-4" />
               )}
               {selectedSlugs.size > 0
-                ? `Pipeline für ${selectedSlugs.size} starten`
-                : `Batch-Pipeline starten (${pipelineNotRan})`}
+                ? `Prüfung für ${selectedSlugs.size} Akten starten`
+                : `Alle ungeprüften Akten prüfen (${pipelineNotRan})`}
             </Button>
           </div>
         }
@@ -406,18 +406,14 @@ export default function AltlastenPage() {
         <div className="rounded-lg border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-4">
           <div className="flex items-center gap-2">
             <Layers className="h-5 w-5 text-[color:var(--ds-info-text)]" />
-            <span className="text-sm font-medium text-[color:var(--ds-info-text)]">
-              Pipeline durchgeführt
-            </span>
+            <span className="text-sm font-medium text-[color:var(--ds-info-text)]">Geprüft</span>
           </div>
           <p className="mt-2 text-2xl font-bold text-[color:var(--ds-info-text)]">{pipelineRan}</p>
         </div>
         <div className="rounded-lg border border-[color:var(--ds-neutral-border)] bg-[color:var(--ds-neutral-bg)] p-4">
           <div className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-[color:var(--ds-text-muted)]" />
-            <span className="text-sm font-medium text-[color:var(--ds-text-muted)]">
-              Ohne Pipeline
-            </span>
+            <span className="text-sm font-medium text-[color:var(--ds-text-muted)]">Ungeprüft</span>
           </div>
           <p className="mt-2 text-2xl font-bold text-[color:var(--ds-text-muted)]">
             {pipelineNotRan}
@@ -442,7 +438,7 @@ export default function AltlastenPage() {
               )}
             >
               {key === "verjaehrung" && "Verjährung"}
-              {key === "score" && "Pipeline-Score"}
+              {key === "score" && "Prüf-Score"}
               {key === "updated" && "Aktualisiert"}
               {key === "status" && "Status"}
             </button>
@@ -499,7 +495,7 @@ export default function AltlastenPage() {
               </th>
               <th className="p-3 text-left font-medium">Akte</th>
               <th className="p-3 text-left font-medium">Status</th>
-              <th className="p-3 text-left font-medium">Pipeline</th>
+              <th className="p-3 text-left font-medium">Prüfung</th>
               <th className="p-3 text-left font-medium">Verjährung</th>
               <th className="p-3 text-right font-medium">Dokumente</th>
               <th className="p-3 text-right font-medium">Aktion</th>

@@ -858,13 +858,25 @@ export default function InvoicingPage() {
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">{t("inv.outstanding")}</div>
-          <div className="text-xl font-bold text-[color:var(--ds-warning-text)]">
+          <div
+            className={cn(
+              "text-xl font-bold tabular-nums",
+              totalOutstanding > 0
+                ? "text-[color:var(--ds-warning-text)]"
+                : "text-[color:var(--ds-text)]"
+            )}
+          >
             {formatEur(totalOutstanding, lang)}
           </div>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">{t("inv.paid")}</div>
-          <div className="text-xl font-bold text-[color:var(--ds-success-text)]">
+          <div
+            className={cn(
+              "text-xl font-bold tabular-nums",
+              totalPaid > 0 ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-text)]"
+            )}
+          >
             {formatEur(totalPaid, lang)}
           </div>
         </div>

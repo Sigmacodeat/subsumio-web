@@ -38,7 +38,7 @@ export function TokenUsageCard() {
       <Card>
         <div className="space-y-4 p-6">
           <div className="flex items-center gap-2.5">
-            <Cpu size={16} className="brand-text animate-pulse" aria-hidden />
+            <Cpu size={16} className="brand-text" aria-hidden />
             <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Token-Verbrauch</h2>
           </div>
           <div className="space-y-3">

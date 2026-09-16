@@ -524,7 +524,7 @@ export default function DeadlinesPage() {
                 >
                   {t(TYPE_CONFIG[d.type] || "deadlines.type_deadline")}
                 </Badge>
-                {d.reviewStatus && (
+                {(d.reviewStatus === "approved" || d.reviewStatus === "needs_review") && (
                   <Badge
                     variant="default"
                     className={cn(
@@ -1031,7 +1031,7 @@ export default function DeadlinesPage() {
         </div>
       )}
 
-      <div className="grid gap-px overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-border)] sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-border)] lg:grid-cols-4">
         {[
           { label: t("deadlines.source_case"), value: sourceCounts.case || 0 },
           { label: t("deadlines.source_direct"), value: sourceCounts.direct || 0 },

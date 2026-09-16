@@ -13,7 +13,6 @@ import {
   PinOff,
   Globe,
   Archive,
-  Loader2,
   AlertCircle,
   Scale,
   User,
@@ -29,6 +28,7 @@ import {
 import { useMatterData, type MatterVitals } from "@/lib/matter-data-context";
 import { useRecentMatters } from "@/lib/use-recent-matters";
 import { useLang } from "@/lib/use-lang";
+import { Skeleton } from "@/components/ui/skeleton";
 import { statusBadgeClasses, type StatusColor } from "@/lib/status-colors";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -296,10 +296,9 @@ export function MatterHeader() {
         role="status"
         aria-live="polite"
       >
-        <Loader2 size={18} className="animate-spin text-[color:var(--ds-text-muted)]" />
-        <span className="text-sm text-[color:var(--ds-text-muted)]">
-          {t("matterheader.loading")}
-        </span>
+        <span className="sr-only">{t("matterheader.loading")}</span>
+        <Skeleton className="h-5 w-64 max-w-[60%]" />
+        <Skeleton className="h-4 w-24" />
       </div>
     );
   }

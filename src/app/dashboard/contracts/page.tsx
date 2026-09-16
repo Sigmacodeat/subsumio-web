@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { EmptyState } from "@/components/dashboard/empty-state";
 import Link from "next/link";
 import { useLang, type TFunc } from "@/lib/use-lang";
 import { useUnsavedChanges } from "@/lib/use-unsaved-changes";
@@ -607,19 +608,17 @@ export default function ContractsPage() {
           <Loader2 size={24} className="brand-text animate-spin" aria-hidden="true" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface)] px-6 py-16 text-center">
-          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--ds-surface-2)]">
-            <FileText size={26} className="text-[color:var(--ds-text-subtle)]" />
-          </div>
-          <h3 className="text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">
-            {t("contracts.empty_title")}
-          </h3>
-          <p className="mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-            {contracts.length === 0
+        <EmptyState
+          icon={FileText}
+          title={t("contracts.empty_title")}
+          description={
+            contracts.length === 0
               ? t("contracts.empty_no_contracts")
-              : t("contracts.empty_adjust_search")}
-          </p>
-        </div>
+              : t("contracts.empty_adjust_search")
+          }
+          actionLabel={contracts.length === 0 ? "Vertrag anlegen" : undefined}
+          onAction={contracts.length === 0 ? () => setQuickCreateOpen(true) : undefined}
+        />
       ) : (
         <div className="space-y-3">
           {filtered.map((contract) => {

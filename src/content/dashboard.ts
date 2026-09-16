@@ -3591,7 +3591,7 @@ export const D = {
   "upload.folder_scan": { de: "Ganzen Ordner einlesen", en: "Scan entire folder" },
   "upload.folder_scanning": { de: "Ordner wird gelesen…", en: "Scanning folder…" },
   "upload.folder_desc": {
-    de: 'Wählt einen lokalen Ordner wie eine IDE und liest alle unterstützten Dateien (auch in Unterordnern) in das Kanzleiwissen ein — nichts wird hochgeladen, bis du auf "Upload" klickst.',
+    de: 'Wählt einen lokalen Ordner wie eine IDE und liest alle unterstützten Dateien (auch in Unterordnern) in das Kanzleiwissen ein — nichts wird hochgeladen, bis Sie auf "Hochladen" klicken.',
     en: 'Picks a local folder like an IDE and reads all supported files (including subfolders) into the brain — nothing is uploaded until you click "Upload".',
   },
   "upload.info_title": { de: "Wie funktioniert es?", en: "How does it work?" },

@@ -178,7 +178,7 @@ export function CreditCard() {
       <Card>
         <div className="space-y-5 p-6">
           <div className="flex items-center gap-2.5">
-            <Coins size={18} className="brand-text animate-pulse" aria-hidden />
+            <Coins size={18} className="brand-text" aria-hidden />
             <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
               {t("billing.credits_title") || "Credits"}
             </h2>

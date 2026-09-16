@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useLang } from "@/lib/use-lang";
+import { EmptyState } from "@/components/dashboard/empty-state";
 import { cn, encodeSlugPath } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
@@ -94,11 +95,11 @@ export default function TasksPage() {
             <Skeleton className="h-12 w-full" />
           </div>
         ) : filteredTasks.length === 0 ? (
-          <div className="flex h-64 flex-col items-center justify-center text-center text-[color:var(--ds-text-muted)]">
-            <CheckSquare size={40} className="mb-3 opacity-40" />
-            <p className="font-medium text-[color:var(--ds-text)]">{t("tasks.empty_title")}</p>
-            <p className="text-sm">{t("tasks.empty_desc")}</p>
-          </div>
+          <EmptyState
+            icon={CheckSquare}
+            title={t("tasks.empty_title")}
+            description={t("tasks.empty_desc")}
+          />
         ) : (
           <div className="space-y-2">
             {filteredTasks.map((task) => (

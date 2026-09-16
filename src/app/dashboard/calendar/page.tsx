@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useLang } from "@/lib/use-lang";
+import { EmptyState } from "@/components/dashboard/empty-state";
 import { useToast } from "@/components/ui/toast";
 import { cn, encodeSlugPath } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -265,11 +266,11 @@ export default function CalendarPage() {
             <Skeleton className="h-12 w-full" />
           </div>
         ) : visibleEvents.length === 0 ? (
-          <div className="flex h-64 flex-col items-center justify-center text-center text-[color:var(--ds-text-muted)]">
-            <CalendarClock size={40} className="mb-3 opacity-40" />
-            <p className="font-medium text-[color:var(--ds-text)]">{t("calendar.empty_title")}</p>
-            <p className="text-sm">{t("calendar.empty_desc")}</p>
-          </div>
+          <EmptyState
+            icon={CalendarClock}
+            title={t("calendar.empty_title")}
+            description={t("calendar.empty_desc")}
+          />
         ) : (
           <div className="space-y-2">
             {groupByDate(visibleEvents).map(([date, group]) => (
