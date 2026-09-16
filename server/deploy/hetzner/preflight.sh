@@ -43,7 +43,8 @@ for key in \
   APP_DOMAIN ENGINE_DOMAIN POSTGRES_PASSWORD SUBSUMIO_WEB_API_KEY \
   AUTH_SECRET SUBSUMIO_INTERNAL_SECRET SUBSUMIO_ENCRYPTION_KEY CRON_SECRET \
   ENGINE_WEBHOOK_API_KEY OPENROUTER_API_KEY BACKUP_RESTIC_REPOSITORY \
-  BACKUP_RESTIC_PASSWORD SUBSUMIO_STORAGE_ENCRYPTION_KEY; do
+  BACKUP_RESTIC_PASSWORD SUBSUMIO_STORAGE_ENCRYPTION_KEY \
+  RESEND_API_KEY MAIL_FROM RESEND_WEBHOOK_SECRET; do
   require_value "$key"
 done
 
@@ -52,6 +53,25 @@ require_exact SUBSUMIO_AI_PROVIDER openrouter
 require_exact SUBSUMIO_EMBEDDING_MODEL openrouter:openai/text-embedding-3-small
 require_exact SUBSUMIO_EMBEDDING_DIMENSIONS 1536
 require_exact SUBSUMIO_WEB_URL http://web:3000
+
+require_value PLATFORM_OPERATOR_EMAILS
+
+corpus_dir="$(value LAW_CORPUS_HOST_DIR)"
+corpus_dir="${corpus_dir:-/opt/subsumio-data/law-corpus}"
+case "$corpus_dir" in
+  /opt/subsumio/*)
+    echo "[preflight] INVALID  LAW_CORPUS_HOST_DIR liegt im Git-Checkout ($corpus_dir). Erst move-corpus-out-of-repo.sh ausführen." >&2
+    failed=1
+    ;;
+  *)
+    if [ -d "$corpus_dir" ] && [ -n "$(ls -A "$corpus_dir" 2>/dev/null)" ]; then
+      echo "[preflight] OK       LAW_CORPUS_HOST_DIR=$corpus_dir"
+    else
+      echo "[preflight] MISSING  Korpus-Verzeichnis $corpus_dir fehlt oder ist leer." >&2
+      failed=1
+    fi
+    ;;
+esac
 
 backup_repo="$(value BACKUP_RESTIC_REPOSITORY)"
 case "$backup_repo" in

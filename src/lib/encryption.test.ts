@@ -33,6 +33,15 @@ describe("Encryption", () => {
     expect(result).toMatch(/^(sbenc:|sbplain:)/);
   });
 
+  it("decrypt strips the plaintext marker even when a key is configured", async () => {
+    vi.resetModules();
+    process.env.SUBSUMIO_ENCRYPTION_KEY = "test-key-32-chars-long-enough!!";
+    const { decrypt: decryptWithKey } = await import("./encryption");
+    expect(await decryptWithKey("sbplain:JBSWY3DPEHPK3PXP")).toBe("JBSWY3DPEHPK3PXP");
+    delete process.env.SUBSUMIO_ENCRYPTION_KEY;
+    vi.resetModules();
+  });
+
   it("decrypt returns null for corrupted encrypted data", async () => {
     // ENCRYPTION_KEY is captured at module load time, so we need to reset modules
     vi.resetModules();

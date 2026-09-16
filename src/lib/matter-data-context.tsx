@@ -35,6 +35,7 @@ export const MATTER_TABS = [
   "contacts",
   "notes",
   "phone-notes",
+  "emails",
   "investigation",
 ] as const;
 
@@ -43,11 +44,12 @@ export type MatterTab = (typeof MATTER_TABS)[number];
 export const PRIMARY_TABS: MatterTab[] = [
   "overview",
   "documents",
+  "emails",
   "deadlines",
   "strategy",
-  "evidence",
 ];
 export const SECONDARY_TABS: MatterTab[] = [
+  "evidence",
   "activity",
   "billing",
   "contacts",

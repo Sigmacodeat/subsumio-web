@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 
+import { unwrapApiBody } from "@/lib/api-body";
 export default function WebhooksPage() {
   const { addToast } = useToast();
   const { t } = useLang();
@@ -46,7 +47,7 @@ export default function WebhooksPage() {
     try {
       const res = await fetch("/api/webhooks/outgoing");
       if (!res.ok) throw new Error();
-      const data = await res.json();
+      const data = unwrapApiBody(await res.json());
       setWebhooks(data.webhooks ?? []);
     } catch {
       addToast({ type: "error", title: t("webhooks.err_load") });

@@ -1,15 +1,19 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach } from "vitest";
+import { existsSync, readFileSync } from "node:fs";
+import { parseEnv } from "node:util";
 
-// Load .env.local so corpus-path tests resolve SUBSUMIO_LAW_CORPUS_DIR —
-// the corpus lives outside the repo (see src/lib/corpus-paths.ts).
-// Node 20.12+ has loadEnvFile; guard for absence so CI without the file
-// still works (corpus-dependent tests skip on missing dir).
-try {
-  process.loadEnvFile?.(".env.local");
-} catch {
-  // no .env.local on this machine
+// Pick ONLY the corpus location from .env.local so corpus-path tests resolve
+// the external corpus (see src/lib/corpus-paths.ts). Loading the whole file
+// would leak real DB/Stripe/auth settings into unit tests and switch stores
+// from the file backend to Postgres. Missing file → corpus tests skip.
+const CORPUS_ENV_KEYS = ["SUBSUMIO_LAW_CORPUS_DIR", "LAW_CORPUS_ROOT"] as const;
+if (existsSync(".env.local")) {
+  const parsed = parseEnv(readFileSync(".env.local", "utf8"));
+  for (const key of CORPUS_ENV_KEYS) {
+    if (parsed[key] && !process.env[key]) process.env[key] = parsed[key];
+  }
 }
 
 // Unit tests must be deterministic and DB-free. When .env.local configures a

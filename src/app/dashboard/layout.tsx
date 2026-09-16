@@ -55,6 +55,7 @@ import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar, type Theme } from "@/components/dashboard/topbar";
 import { MobileTabBar } from "@/components/dashboard/mobile-tab-bar";
 import { MobileSyncBanner } from "@/components/mobile/mobile-sync-banner";
+import { SupportSessionBanner } from "@/components/dashboard/support-session-banner";
 import { TourProvider, useAutoStartTour } from "@/components/dashboard/guided-tour";
 import { AnimatePresence } from "framer-motion";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
@@ -301,6 +302,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const plan = meQuery.data?.user?.plan ?? null;
   const userName = meQuery.data?.user?.name ?? meQuery.data?.user?.email ?? null;
   const userEmail = meQuery.data?.user?.email ?? null;
+  const supportSession = meQuery.data?.supportSession ?? null;
 
   // Auto-start guided tour on first dashboard visit after onboarding
   useAutoStartTour(onboardingCompleted);
@@ -623,10 +625,18 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     setGlobalContractCreateOpen,
   ]);
 
+  // The support-session banner is `fixed` (not in flex flow) so it can't
+  // disturb the app-shell's own internal scroll regions — the shell instead
+  // gets a matching top offset while it's visible.
+  const SUPPORT_BANNER_HEIGHT = 40;
+
   return (
     <div
       className="flex h-screen overflow-hidden bg-[color:var(--ds-bg)] text-[color:var(--ds-text)]"
-      style={styleForIndustry(industry)}
+      style={{
+        ...styleForIndustry(industry),
+        ...(supportSession ? { paddingTop: SUPPORT_BANNER_HEIGHT } : null),
+      }}
       data-industry={industry ?? "core"}
       data-app="dashboard"
       data-theme={theme}
@@ -635,6 +645,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       // server(light)/client(stored) attribute mismatch warning on this node.
       suppressHydrationWarning
     >
+      {supportSession && (
+        <div className="fixed inset-x-0 top-0 z-[100]" style={{ height: SUPPORT_BANNER_HEIGHT }}>
+          <SupportSessionBanner session={supportSession} />
+        </div>
+      )}
       {/* Prevent search engines from indexing authenticated dashboard pages.
           Defense-in-depth: robots.txt already blocks /dashboard, but this
           data attribute ensures noindex intent is documented. The actual

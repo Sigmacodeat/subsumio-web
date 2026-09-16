@@ -1,6 +1,7 @@
 import { getMailMessage } from "@/lib/email/mailbox";
 import { getTrackingEvents } from "@/lib/email/tracking";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { mailboxScopeFor } from "@/lib/email/mailbox-scope";
 
 export const GET = createHandler(
   {
@@ -10,7 +11,7 @@ export const GET = createHandler(
   async (ctx, _body, _query, req) => {
     const { id } = await (req as unknown as { params: Promise<{ id: string }> }).params;
     try {
-      const message = await getMailMessage(ctx.user, id);
+      const message = await getMailMessage(mailboxScopeFor(ctx, req), id);
       if (!message) return apiError("not_found", "Nachricht nicht gefunden", 404);
 
       const events = await getTrackingEvents(id);

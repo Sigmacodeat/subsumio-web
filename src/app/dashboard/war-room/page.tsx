@@ -31,6 +31,7 @@ import {
   type PerspektivenSession,
 } from "@/lib/perspektivenraum-agent";
 
+import { unwrapApiBody } from "@/lib/api-body";
 export default function PerspektivenraumPage() {
   const { addToast } = useToast();
   const { t } = useLang();
@@ -68,7 +69,7 @@ export default function PerspektivenraumPage() {
         body: JSON.stringify({ case_slug: caseSlug, dials }),
       });
       if (!res.ok) throw new Error("API error");
-      const data = await res.json();
+      const data = unwrapApiBody(await res.json());
       setSessions((prev) => [data.session, ...prev]);
       setCaseSlug("");
       addToast({ type: "success", title: t("perspektiven.ok_analyze") });

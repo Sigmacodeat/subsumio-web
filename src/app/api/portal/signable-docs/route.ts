@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { createPublicHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { verifyPortalToken } from "@/lib/portal-token";
+import { createPublicHandler, apiSuccess } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { ENGINE_URL } from "@/lib/engine";
+import { resolvePortalAccess } from "@/lib/portal-access";
 
 const querySchema = z.object({
   token: z.string().min(1, "token_required"),
@@ -11,13 +11,30 @@ const querySchema = z.object({
 interface SignableDoc {
   slug: string;
   title: string;
-  document_type: "signature_request" | "power_of_attorney" | "legal_document";
+  document_type: "signature_request" | "power_of_attorney";
   status: string;
   recipient_name?: string;
   recipient_email?: string;
   expires_at?: string;
-  case_slug?: string;
+  case_slug: string;
 }
+
+type EnginePage = { slug: string; title: string; frontmatter?: Record<string, unknown> };
+
+const SOURCES = [
+  {
+    type: "signature_request" as const,
+    closed: new Set(["signed", "declined", "expired"]),
+    name: "recipient_name",
+    email: "recipient_email",
+  },
+  {
+    type: "power_of_attorney" as const,
+    closed: new Set(["signed", "expired", "revoked"]),
+    name: "client_name",
+    email: "client_email",
+  },
+];
 
 export const GET = createPublicHandler(
   {
@@ -27,74 +44,41 @@ export const GET = createPublicHandler(
     rateLimitMax: 30,
     rateLimitWindowMs: 60_000,
   },
-  async (req, _body, query) => {
-    const payload = await verifyPortalToken(query.token);
-    if (!payload) {
-      return apiError("invalid_or_expired_token", "Token ungültig oder abgelaufen", 403);
-    }
+  async (_req, _body, query) => {
+    const access = await resolvePortalAccess(query.token);
+    if (access instanceof Response) return access;
+    const { headers, caseSlug } = access;
 
-    const caseSlug = payload.case_slug;
-
-    // Fetch signature requests + powers of attorney for this case
-    const [sigRes, poaRes] = await Promise.all([
-      fetch(`${ENGINE_URL}/api/pages?type=signature_request&limit=100`, {
-        signal: AbortSignal.timeout(10_000),
-      }).catch(() => null),
-      fetch(`${ENGINE_URL}/api/pages?type=power_of_attorney&limit=100`, {
-        signal: AbortSignal.timeout(10_000),
-      }).catch(() => null),
-    ]);
+    const responses = await Promise.all(
+      SOURCES.map((source) =>
+        fetch(`${ENGINE_URL}/api/pages?type=${source.type}&limit=100`, {
+          headers,
+          signal: AbortSignal.timeout(10_000),
+        }).catch(() => null)
+      )
+    );
 
     const docs: SignableDoc[] = [];
-
-    if (sigRes?.ok) {
-      const sigData = await sigRes.json();
-      const sigPages: Array<{
-        slug: string;
-        title: string;
-        frontmatter: Record<string, unknown>;
-      }> = Array.isArray(sigData) ? sigData : (sigData.pages ?? []);
-      for (const p of sigPages) {
-        const fm = p.frontmatter;
-        const docCaseSlug = fm.case_slug as string | undefined;
-        if (docCaseSlug && docCaseSlug !== caseSlug) continue;
+    for (const [index, res] of responses.entries()) {
+      if (!res?.ok) continue;
+      const source = SOURCES[index];
+      const data = await res.json();
+      const pages: EnginePage[] = Array.isArray(data) ? data : (data.pages ?? []);
+      for (const page of pages) {
+        const fm = page.frontmatter ?? {};
+        // Only documents explicitly stamped with THIS matter are shown.
+        if (fm.case_slug !== caseSlug) continue;
         const status = String(fm.status ?? "draft");
-        if (status === "signed" || status === "declined" || status === "expired") continue;
+        if (source.closed.has(status)) continue;
         docs.push({
-          slug: p.slug,
-          title: p.title,
-          document_type: "signature_request",
+          slug: page.slug,
+          title: page.title,
+          document_type: source.type,
           status,
-          recipient_name: fm.recipient_name as string | undefined,
-          recipient_email: fm.recipient_email as string | undefined,
+          recipient_name: fm[source.name] as string | undefined,
+          recipient_email: fm[source.email] as string | undefined,
           expires_at: fm.expires_at as string | undefined,
-          case_slug: docCaseSlug,
-        });
-      }
-    }
-
-    if (poaRes?.ok) {
-      const poaData = await poaRes.json();
-      const poaPages: Array<{
-        slug: string;
-        title: string;
-        frontmatter: Record<string, unknown>;
-      }> = Array.isArray(poaData) ? poaData : (poaData.pages ?? []);
-      for (const p of poaPages) {
-        const fm = p.frontmatter;
-        const docCaseSlug = fm.case_slug as string | undefined;
-        if (docCaseSlug && docCaseSlug !== caseSlug) continue;
-        const status = String(fm.status ?? "draft");
-        if (status === "signed" || status === "expired" || status === "revoked") continue;
-        docs.push({
-          slug: p.slug,
-          title: p.title,
-          document_type: "power_of_attorney",
-          status,
-          recipient_name: fm.client_name as string | undefined,
-          recipient_email: fm.client_email as string | undefined,
-          expires_at: fm.expires_at as string | undefined,
-          case_slug: docCaseSlug,
+          case_slug: caseSlug,
         });
       }
     }

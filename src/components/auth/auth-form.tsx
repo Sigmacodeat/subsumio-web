@@ -1,6 +1,6 @@
 "use client";
 
-// Login + Signup — one component, two modes, two languages.
+// Login + Signup — one component, two modes, Austrian (de-AT) copy.
 // Glass card on the marketing background; full keyboard / screen-reader support.
 // v2: adds WorkOS SSO buttons (Microsoft, Google).
 
@@ -8,6 +8,7 @@ import { useState, Suspense, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { tracking } from "@/lib/tracking";
+import { safeNextPath } from "@/lib/safe-next-path";
 import {
   Mail,
   Lock,
@@ -16,6 +17,7 @@ import {
   AlertCircle,
   Building2,
   Fingerprint,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioLogo } from "@/components/brand/subsumio-logo";
@@ -59,8 +61,17 @@ const COPY = {
     invalid_email: "Bitte gib eine gültige E-Mail-Adresse ein.",
     invalid_name: "Bitte gib deinen Namen ein.",
     sso_required: "Bitte nutze die Microsoft- oder Google-Anmeldung.",
+    invalid_token: "Der Code ist ungültig. Bitte versuch es erneut.",
+    invalid_challenge: "Die Anmeldung ist abgelaufen. Bitte melde dich erneut an.",
     generic: "Etwas ist schiefgelaufen. Bitte versuch es erneut.",
   } as Record<string, string>,
+  twoFactor: {
+    title: "Zwei-Faktor-Anmeldung",
+    sub: "Gib den 6-stelligen Code aus deiner Authenticator-App oder einen Backup-Code ein.",
+    label: "Sicherheitscode",
+    cta: "Bestätigen",
+    back: "Zurück",
+  },
   referralNote: "Du wurdest empfohlen — dein erster Monat auf einem Bezahlplan ist gratis.",
   biometric: "Mit Face ID / Touch ID anmelden",
   biometricUnavailable: "Biometrie nicht verfügbar",
@@ -76,11 +87,13 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
   const planParam = params.get("plan");
   const planNext =
     planParam === "pro" || planParam === "team" ? `/dashboard/billing?checkout=${planParam}` : null;
-  const next = params.get("next") || planNext || "/dashboard";
+  const next = safeNextPath(params.get("next"), planNext ?? "/dashboard");
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [challengeToken, setChallengeToken] = useState<string | null>(null);
+  const [totpCode, setTotpCode] = useState("");
   const industry = "legal";
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -182,8 +195,14 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(t.errors[data.error] ?? t.errors.generic);
+        setError(t.errors[data.code ?? data.error] ?? t.errors.generic);
         if (mode === "login") tracking.auth.loginFailed(data.error ?? "unknown");
+        setLoading(false);
+        return;
+      }
+      // 2FA accounts get a challenge instead of a session — ask for the code.
+      if (mode === "login" && data.error === "2fa_required" && data.challengeToken) {
+        setChallengeToken(data.challengeToken);
         setLoading(false);
         return;
       }
@@ -196,6 +215,33 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
       // and leaves the browser stuck on /login. The session cookie is already
       // set by the Set-Cookie header in the API response, so a full page load
       // to the dashboard is safe and reliable.
+      window.location.href = next;
+    } catch {
+      setError(t.errors.generic);
+      setLoading(false);
+    }
+  }
+
+  async function verifyTwoFactor(e: React.FormEvent) {
+    e.preventDefault();
+    if (!challengeToken) return;
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/2fa/login-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ challengeToken, token: totpCode.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const code = data.code ?? data.error;
+        if (code === "invalid_challenge") setChallengeToken(null);
+        setError(t.errors[code] ?? t.errors.generic);
+        setLoading(false);
+        return;
+      }
+      tracking.auth.loginSuccess("password");
       window.location.href = next;
     } catch {
       setError(t.errors.generic);
@@ -227,111 +273,176 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
             <p className="mb-7 text-sm text-pretty [color:var(--mk-text-muted)]">{m.sub}</p>
           </ClipReveal>
 
-          <form onSubmit={submit} className="space-y-4" noValidate>
-            {mode === "signup" && (
+          {challengeToken ? (
+            <form onSubmit={verifyTwoFactor} className="space-y-4" noValidate>
+              <div className="flex items-center gap-2 text-sm font-medium [color:var(--mk-text)]">
+                <ShieldCheck size={16} className="text-[var(--brand-primary)]" aria-hidden />
+                {t.twoFactor.title}
+              </div>
+              <p className="text-xs [color:var(--mk-text-muted)]">{t.twoFactor.sub}</p>
               <label className="block">
                 <span className="mb-1.5 block text-xs font-medium [color:var(--mk-text-muted)]">
-                  {t.name}
+                  {t.twoFactor.label}
+                </span>
+                <input
+                  type="text"
+                  name="one-time-code"
+                  autoComplete="one-time-code"
+                  inputMode="numeric"
+                  autoFocus
+                  required
+                  maxLength={32}
+                  value={totpCode}
+                  onChange={(e) => setTotpCode(e.target.value)}
+                  className="w-full rounded-lg border [border-color:var(--mk-border)] px-3 py-2.5 text-center font-mono text-lg tracking-[0.3em] [color:var(--mk-text)] [background:var(--mk-surface-2)] focus:border-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                />
+              </label>
+              {error && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3"
+                >
+                  <AlertCircle
+                    size={14}
+                    className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]"
+                    aria-hidden
+                  />
+                  <p className="text-xs text-[color:var(--ds-danger-text)]">{error}</p>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className="flex-1"
+                  onClick={() => {
+                    setChallengeToken(null);
+                    setTotpCode("");
+                    setError(null);
+                  }}
+                >
+                  {t.twoFactor.back}
+                </Button>
+                <Button
+                  type="submit"
+                  variant="glow"
+                  size="lg"
+                  className="flex-1"
+                  loading={loading}
+                  disabled={totpCode.trim().length < 6}
+                >
+                  {t.twoFactor.cta}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={submit} className="space-y-4" noValidate>
+              {mode === "signup" && (
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-medium [color:var(--mk-text-muted)]">
+                    {t.name}
+                  </span>
+                  <div className="relative">
+                    <UserIcon
+                      size={14}
+                      className="absolute top-1/2 left-3 -translate-y-1/2 [color:var(--mk-text-subtle)]"
+                      aria-hidden
+                    />
+                    <input
+                      type="text"
+                      name="name"
+                      autoComplete="name"
+                      required
+                      placeholder={t.namePlaceholder}
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="focus:brand-border/60 w-full rounded-lg border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                    />
+                  </div>
+                </label>
+              )}
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-medium [color:var(--mk-text-muted)]">
+                  {t.email}
                 </span>
                 <div className="relative">
-                  <UserIcon
+                  <Mail
                     size={14}
                     className="absolute top-1/2 left-3 -translate-y-1/2 [color:var(--mk-text-subtle)]"
                     aria-hidden
                   />
                   <input
-                    type="text"
-                    name="name"
-                    autoComplete="name"
+                    type="email"
+                    name="email"
+                    autoComplete="email"
+                    inputMode="email"
                     required
-                    placeholder={t.namePlaceholder}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="focus:brand-border/60 w-full rounded-lg border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                    placeholder={t.emailPlaceholder}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full rounded-lg border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-base [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 sm:text-sm"
                   />
                 </div>
               </label>
-            )}
-            <label className="block">
-              <span className="mb-1.5 block text-xs font-medium [color:var(--mk-text-muted)]">
-                {t.email}
-              </span>
-              <div className="relative">
-                <Mail
-                  size={14}
-                  className="absolute top-1/2 left-3 -translate-y-1/2 [color:var(--mk-text-subtle)]"
-                  aria-hidden
-                />
-                <input
-                  type="email"
-                  name="email"
-                  autoComplete="email"
-                  inputMode="email"
-                  required
-                  placeholder={t.emailPlaceholder}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-lg border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-base [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 sm:text-sm"
-                />
-              </div>
-            </label>
-            <label className="block">
-              <span className="mb-1.5 block text-xs font-medium [color:var(--mk-text-muted)]">
-                {t.password}
-              </span>
-              <div className="relative">
-                <Lock
-                  size={14}
-                  className="absolute top-1/2 left-3 -translate-y-1/2 [color:var(--mk-text-subtle)]"
-                  aria-hidden
-                />
-                <input
-                  type="password"
-                  name="password"
-                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
-                  required
-                  minLength={8}
-                  placeholder={t.passwordPlaceholder}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-lg border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-                />
-              </div>
-              {mode === "signup" && (
-                <span className="mt-1 block text-xs [color:var(--mk-text-subtle)]">
-                  {t.passwordHint}
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-medium [color:var(--mk-text-muted)]">
+                  {t.password}
                 </span>
-              )}
-              {mode === "login" && (
-                <Link
-                  href={p("/forgot")}
-                  className="mt-1.5 inline-block text-xs text-[var(--brand-text)] hover:underline"
+                <div className="relative">
+                  <Lock
+                    size={14}
+                    className="absolute top-1/2 left-3 -translate-y-1/2 [color:var(--mk-text-subtle)]"
+                    aria-hidden
+                  />
+                  <input
+                    type="password"
+                    name="password"
+                    autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                    required
+                    minLength={8}
+                    placeholder={t.passwordPlaceholder}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full rounded-lg border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                  />
+                </div>
+                {mode === "signup" && (
+                  <span className="mt-1 block text-xs [color:var(--mk-text-subtle)]">
+                    {t.passwordHint}
+                  </span>
+                )}
+                {mode === "login" && (
+                  <Link
+                    href={p("/forgot")}
+                    className="mt-1.5 inline-block text-xs text-[var(--brand-text)] hover:underline"
+                  >
+                    Passwort vergessen?
+                  </Link>
+                )}
+              </label>
+
+              {error && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3"
                 >
-                  Passwort vergessen?
-                </Link>
+                  <AlertCircle
+                    size={14}
+                    className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]"
+                    aria-hidden
+                  />
+                  <p className="text-xs text-[color:var(--ds-danger-text)]">{error}</p>
+                </div>
               )}
-            </label>
 
-            {error && (
-              <div
-                role="alert"
-                className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3"
-              >
-                <AlertCircle
-                  size={14}
-                  className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]"
-                  aria-hidden
-                />
-                <p className="text-xs text-[color:var(--ds-danger-text)]">{error}</p>
-              </div>
-            )}
-
-            <MagneticButton strength={0.2} className="w-full">
-              <Button type="submit" variant="glow" size="lg" className="w-full" loading={loading}>
-                {m.cta} <ArrowRight size={15} />
-              </Button>
-            </MagneticButton>
-          </form>
+              <MagneticButton strength={0.2} className="w-full">
+                <Button type="submit" variant="glow" size="lg" className="w-full" loading={loading}>
+                  {m.cta} <ArrowRight size={15} />
+                </Button>
+              </MagneticButton>
+            </form>
+          )}
 
           {mode === "login" && biometricAvailable && (
             <button

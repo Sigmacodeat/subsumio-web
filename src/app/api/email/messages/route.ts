@@ -8,6 +8,9 @@ import {
   type MailFolder,
 } from "@/lib/email/mailbox";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { mailboxScopeFor } from "@/lib/email/mailbox-scope";
+import { blockedCasesForUser, caseAccessForUser } from "@/lib/email/case-link";
+import { mailboxAddressForBrain } from "@/lib/email/mailbox";
 
 const messagesQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(50),
@@ -15,6 +18,7 @@ const messagesQuerySchema = z.object({
   folder: z.enum(["inbox", "sent", "archive", "spam", "trash"]).optional(),
   search: z.string().max(200).optional(),
   unreadOnly: z.coerce.boolean().optional(),
+  case: z.string().max(500).optional(),
 });
 
 const messagePostSchema = z
@@ -26,6 +30,7 @@ const messagePostSchema = z
     cc: z.union([z.string().max(500), z.array(z.string().max(500)).max(50)]).optional(),
     bcc: z.union([z.string().max(500), z.array(z.string().max(500)).max(50)]).optional(),
     replyToMessageId: z.string().max(200).optional(),
+    case_slug: z.string().max(500).optional(),
   })
   .passthrough()
   .refine((data) => data.text || data.html, {
@@ -49,19 +54,38 @@ export const GET = createHandler(
       },
     }),
   },
-  async (ctx, _body, query, _req) => {
+  async (ctx, _body, query, req) => {
     try {
-      const [messages, unreadCounts] = await Promise.all([
-        listMailMessages(ctx.user, {
+      const scope = mailboxScopeFor(ctx, req);
+      if (query.case) {
+        const access = await caseAccessForUser(ctx.headers, query.case, ctx.user.id);
+        if (access === "not_found") return apiError("case_not_found", "Akte nicht gefunden", 404);
+        if (access === "blocked")
+          return apiError("forbidden", "Kein Zugriff auf diese Akte (Ethical Wall)", 403);
+      }
+      const [listed, unreadCounts] = await Promise.all([
+        listMailMessages(scope, {
           limit: query.limit,
           direction: query.direction as MailDirection | undefined,
           folder: query.folder as MailFolder | undefined,
           search: query.search,
           unreadOnly: query.unreadOnly,
+          caseSlug: query.case,
         }),
-        getUnreadCounts(ctx.user),
+        getUnreadCounts(scope),
       ]);
-      return Response.json({ messages, unreadCounts });
+      // Mail filed under a matter the user is walled off from is not listed.
+      const blocked = await blockedCasesForUser(
+        ctx.headers,
+        listed.map((m) => m.caseSlug ?? "").filter(Boolean),
+        ctx.user.id
+      );
+      const messages = listed.filter((m) => !m.caseSlug || !blocked.has(m.caseSlug));
+      return Response.json({
+        messages,
+        unreadCounts,
+        address: mailboxAddressForBrain(scope.brainId),
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const status = message === "mailbox_database_not_configured" ? 503 : 500;
@@ -92,10 +116,16 @@ export const POST = createHandler(
       },
     }),
   },
-  async (ctx, body, _query, _req) => {
+  async (ctx, body, _query, req) => {
     try {
-      const draft = buildMailDraft(body);
-      const message = await sendMailboxMessage(ctx.user, draft);
+      if (body.case_slug) {
+        const access = await caseAccessForUser(ctx.headers, body.case_slug, ctx.user.id);
+        if (access === "not_found") return apiError("case_not_found", "Akte nicht gefunden", 400);
+        if (access === "blocked")
+          return apiError("forbidden", "Kein Zugriff auf diese Akte (Ethical Wall)", 403);
+      }
+      const draft = { ...buildMailDraft(body), caseSlug: body.case_slug };
+      const message = await sendMailboxMessage(mailboxScopeFor(ctx, req), draft);
       return Response.json({ message }, { status: message.status === "sent" ? 201 : 202 });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

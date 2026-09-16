@@ -45,7 +45,7 @@ import {
   engineHeadersWithCaseJurisdiction,
   type EngineContext,
 } from "@/lib/engine";
-import type { RouteAction } from "@/lib/permissions";
+import { can, type RouteAction } from "@/lib/permissions";
 import type { RateTier } from "@/lib/rate-limit-api";
 import type { QuotaType } from "@/lib/plans";
 import type { CreditOperation } from "@/lib/billing/credits";
@@ -59,6 +59,7 @@ import { validateCronAuth } from "@/lib/cron-auth";
 import { timingSafeCompare } from "@/lib/crypto-utils";
 import { env } from "@/lib/env";
 import { verifyApiKey } from "@/lib/auth/api-key-auth";
+import { isOpsHost, isPlatformOperator } from "@/lib/auth/platform-operator";
 import { hit } from "@/lib/auth/rate-limit";
 import { storeReceipt, type WorkProductReceipt } from "@/lib/work-product-receipt-store";
 import type { WorkProductType } from "@/lib/work-product-receipts";
@@ -379,6 +380,15 @@ export function createHandler<
         // Session auth failed — try API key auth (Bearer token)
         const apiKeyResult = await verifyApiKey(req.headers.get("authorization"));
         if (apiKeyResult) {
+          // API keys act as their owner and get exactly the owner's role rights —
+          // the session path's RBAC must not be skippable by presenting a key.
+          if (!can(apiKeyResult.ctx.user, options.action)) {
+            return withCorsHeaders(
+              apiError("forbidden", "Insufficient role for this action", 403),
+              options.cors ?? false,
+              req
+            );
+          }
           ctx = apiKeyResult.ctx;
           isApiKeyAuth = true;
         } else {
@@ -403,6 +413,34 @@ export function createHandler<
         options.cors ?? false,
         req
       );
+    }
+
+    // 3b. Platform operator (Subsumio SaaS staff). Never granted via KanzleiRole,
+    // never via API key or custom auth. "platform.operator" is additionally
+    // locked to the ops host in production so the operator console surface is
+    // unreachable from the firm app. "platform.support_session" is the one
+    // exception: it only ends the caller's own support session (see
+    // src/lib/support-session.ts) and must be callable from the Kanzlei
+    // dashboard the operator is browsing during that session, not just from
+    // ops.subsum.eu — so it skips the host lock but keeps the identity check.
+    if (
+      (options.action === "platform.operator" || options.action === "platform.support_session") &&
+      !internalContext
+    ) {
+      if (isApiKeyAuth || customContext || !isPlatformOperator(ctx.user)) {
+        return withCorsHeaders(
+          apiError("forbidden", "Platform operator access required", 403),
+          options.cors ?? false,
+          req
+        );
+      }
+      if (
+        options.action === "platform.operator" &&
+        process.env.NODE_ENV === "production" &&
+        !isOpsHost(req.headers.get("host"))
+      ) {
+        return withCorsHeaders(apiError("not_found", "Not found", 404), options.cors ?? false, req);
+      }
     }
 
     // 4. CSRF (state-changing methods only, skip for internal, API key, and custom auth)

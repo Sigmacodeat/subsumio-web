@@ -24,19 +24,40 @@ Archived surfaces include:
 
 The active Next.js API surface dropped from 477 to 412 route handlers.
 
-## Retained in the Kanzlei deployment
+## Retained
 
-- `/api/admin/audit-export`, `/api/admin/data-export`, and
-  `/api/admin/data-delete` for tenant governance and legal compliance;
+### Operator console (ops host only)
+
+The operator console lives at `/ops` and is served exclusively on the ops host
+(`OPS_HOSTS`, production `ops.subsum.eu`) to platform operators (e-mail
+allowlist plus 2FA). The web API adapters it uses are kept and gated by the
+`platform.operator` route action, which no Kanzlei role grants and which API
+keys cannot use:
+
+- backup, disaster recovery, SLO, queue health;
+- SaaS usage and margins, token usage, spend caps, user management;
+- corpus steward (`corpus-files/*`, corpus alerts, pipeline, chunk inspector and
+  chunk quality, corpus command center) and feature flags;
+- `/api/admin/audit-export`, `/api/admin/data-export`, `/api/admin/data-delete`:
+  they address arbitrary brains or users and are therefore operator-only.
+
+### Kanzlei deployment
+
 - `/api/admin/ip-allowlist` for Kanzlei security settings;
-- `/api/admin/eval-gate` because the retained legal monitoring workspace uses
-  it directly;
-- `/api/admin/corpus-command-center` temporarily because the Hetzner corpus
-  provisioning script calls it. This is the remaining extraction seam.
+- `/api/admin/eval-gate` (firm admin) for the Kanzlei monitoring workspace;
+- firm-wide data portability export and backup under `/api/data-export/*`
+  (firm admins);
 - `/api/internal/*` for authenticated engine-to-web callbacks;
 - `/api/cron/*` because both `vercel.json` and the Hetzner `supercronic`
   deployment actively schedule these routes. Every cron route is guarded by
   the shared fail-closed `validateCronAuth` contract.
+
+### Archived
+
+The remaining evaluation, quality-trend, guardrail-statistics, RAG optimizer,
+model vetting, fine-tuning, regression mining, decision record, dissensus,
+feedback triage, SaaS invoice and settlement queue adapters stay removed, as do
+the public feature-flag check route and its client hook.
 
 ## Recovery
 

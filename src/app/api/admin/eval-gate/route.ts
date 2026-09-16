@@ -1,4 +1,4 @@
-import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
+import { createHandler, apiSuccess } from "@/lib/api-handler";
 import {
   evaluateGate,
   HARNESS_REGISTRY,
@@ -15,6 +15,8 @@ import { getFeedbackStats, getFeedbackForOrg } from "@/lib/retrieval-feedback";
  * harnesses, plus live feedback stats from the retrieval feedback store.
  * As each harness gets wired to its data source, it will produce live results.
  */
+// Tenant-scoped (the firm's own retrieval feedback) — used by the Kanzlei
+// monitoring workspace, therefore a firm-admin route, not an operator route.
 export const GET = createHandler(
   {
     action: "connector.read",
@@ -22,10 +24,6 @@ export const GET = createHandler(
     admin: true,
   },
   async (ctx) => {
-    if (ctx.user.role !== "admin") {
-      return apiError("forbidden", "Admin access required", 403);
-    }
-
     // Collect live results from available harnesses
     const results: Partial<Record<HarnessId, HarnessResult>> = {};
 

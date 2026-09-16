@@ -27,12 +27,19 @@ export const GET = createHandler(
     const apiKeyStore = getApiKeyStore();
     const apiKeys = await apiKeyStore.listByOwner(ctx.user.id);
 
+    // Art. 15/20 covers the requester's own data. A firm member's brain is the
+    // firm's shared matter store (other clients, other lawyers' matters,
+    // ethical walls) — it is not personal data of the member and must not
+    // leave through a self-service export.
     let brainPages: unknown[] = [];
-    try {
-      const brain = createServerBrainClient(ctx.headers);
-      brainPages = await brain.listPages({ limit: 10000 });
-    } catch {
-      // Brain may not be available
+    const firmBrain = Boolean(user.orgId);
+    if (!firmBrain) {
+      try {
+        const brain = createServerBrainClient(ctx.headers);
+        brainPages = await brain.listPages({ limit: 10000 });
+      } catch {
+        // Brain may not be available
+      }
     }
 
     const exportData = {
@@ -68,6 +75,12 @@ export const GET = createHandler(
         lastUsedAt: k.lastUsedAt,
       })),
       brainPages,
+      ...(firmBrain
+        ? {
+            brainPagesNote:
+              "Matter data of the firm is not part of a personal export. Requests concerning firm records are handled by the firm as controller.",
+          }
+        : {}),
     };
 
     void logAudit("data.export", "user", {

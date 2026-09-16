@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createServerBrainClient } from "@/lib/server-brain";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
-import { buildDatevImportBundle, parseDatevCsv } from "@/lib/datev-import";
+import { buildDatevImportBundle, parseDatevCsv } from "../../../lib/datev-import";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 
 export const dynamic = "force-dynamic";

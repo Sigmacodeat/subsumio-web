@@ -3,10 +3,18 @@ import { createHandler, apiError } from "@/lib/api-handler";
 
 export const maxDuration = 120;
 
+// Firm-wide portability export (Art. 20) of the firm's records: exercised by the
+// firm as controller, i.e. its admins — not by every member. Mirrors the backup route.
 export const GET = createHandler(
   {
-    action: "brain.read",
+    action: "admin.data_export",
     rateTier: "heavy",
+    audit: (ctx) => ({
+      action: "admin.data_export" as const,
+      entityType: "brain",
+      entityId: ctx.brainId,
+      details: { scope: "firm_portability_export" },
+    }),
   },
   async (ctx, _body, _query, _req) => {
     try {

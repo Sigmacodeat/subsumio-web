@@ -532,6 +532,9 @@ export const api = {
         reviewed_by?: string;
         reminder_sent_at?: string;
         calculation_note?: string;
+        responsible?: string;
+        completed_at?: string;
+        completed_by?: string;
       }>;
       zusammenfassung: {
         gesamt: number;
@@ -1730,6 +1733,70 @@ export const api = {
   dataExport: {
     gdpr(): Promise<Record<string, unknown>> {
       return request("/api/data-export/gdpr");
+    },
+  },
+
+  backup: {
+    list(): Promise<{
+      backups: Array<{
+        id: string;
+        filename: string;
+        createdAt: string;
+        createdBy: string;
+        totalPages: number;
+        totalSize: number;
+        pageTypes: Record<string, number>;
+        status: string;
+      }>;
+      stats: {
+        totalBackups: number;
+        totalSize: number;
+        lastBackupAt: string | null;
+        oldestBackupAt: string | null;
+      };
+    }> {
+      return request("/api/admin/backup");
+    },
+
+    create(): Promise<{ ok: boolean; backup: Record<string, unknown> }> {
+      return request("/api/admin/backup", {
+        method: "POST",
+        body: JSON.stringify({ confirm: true }),
+      });
+    },
+
+    preview(id: string): Promise<{
+      metadata: Record<string, unknown>;
+      preview: Array<{ slug: string; title: string; type: string }>;
+      totalPages: number;
+    }> {
+      return request(`/api/admin/backup/${encodeURIComponent(id)}?action=preview`);
+    },
+
+    download(id: string): string {
+      return `/api/admin/backup/${encodeURIComponent(id)}?action=download`;
+    },
+
+    restore(
+      id: string,
+      pageTypes?: string[]
+    ): Promise<{
+      ok: boolean;
+      restored: number;
+      skipped: number;
+      failed: number;
+      errors: string[];
+    }> {
+      return request(`/api/admin/backup/${encodeURIComponent(id)}`, {
+        method: "POST",
+        body: JSON.stringify({ confirm: true, pageTypes }),
+      });
+    },
+
+    delete(id: string): Promise<{ ok: boolean }> {
+      return request(`/api/admin/backup/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
     },
   },
 
@@ -2996,6 +3063,63 @@ export const api = {
       return request("/api/workflows/approve", {
         method: "POST",
         body: JSON.stringify(input),
+      });
+    },
+  },
+
+  featureFlags: {
+    list(): Promise<{
+      flags: Array<{
+        key: string;
+        name: string;
+        description: string;
+        enabled: boolean;
+        rolloutPercentage: number;
+        allowedPlans: string[];
+        allowedRoles: string[];
+        updatedAt: string;
+        updatedBy: string;
+      }>;
+    }> {
+      return request("/api/admin/feature-flags");
+    },
+
+    create(input: {
+      key: string;
+      name: string;
+      description?: string;
+      enabled?: boolean;
+      rolloutPercentage?: number;
+      allowedPlans?: string[];
+      allowedRoles?: string[];
+    }): Promise<{ ok: boolean; flag: Record<string, unknown> }> {
+      return request("/api/admin/feature-flags", {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+    },
+
+    update(
+      key: string,
+      input: {
+        name?: string;
+        description?: string;
+        enabled?: boolean;
+        rolloutPercentage?: number;
+        allowedPlans?: string[];
+        allowedRoles?: string[];
+      }
+    ): Promise<{ ok: boolean; flag: Record<string, unknown> }> {
+      return request("/api/admin/feature-flags", {
+        method: "PATCH",
+        body: JSON.stringify({ key, ...input }),
+      });
+    },
+
+    delete(key: string): Promise<{ ok: boolean }> {
+      return request("/api/admin/feature-flags", {
+        method: "DELETE",
+        body: JSON.stringify({ key }),
       });
     },
   },

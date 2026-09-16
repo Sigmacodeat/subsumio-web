@@ -137,6 +137,8 @@ export type AuditAction =
   | "admin.chunk_reembed"
   | "admin.chunk_flag"
   | "admin.chunk_clear_flag"
+  | "support.session_start"
+  | "support.session_end"
   | "acl.add_member"
   | "acl.remove_member"
   | "acl.delete_group"
@@ -390,6 +392,8 @@ const ACTION_LABELS: Record<string, string> = {
   "admin.chunk_reembed": "Admin: Chunk Re-Embed angestoßen",
   "admin.chunk_flag": "Admin: Chunk markiert",
   "admin.chunk_clear_flag": "Admin: Chunk-Markierung entfernt",
+  "support.session_start": "Subsumio-Support: Zugriff gestartet",
+  "support.session_end": "Subsumio-Support: Zugriff beendet",
   "dms.push": "Dokument an DMS gepusht",
   "space.update": "Shared Space aktualisiert",
   "space.delete": "Shared Space gelöscht",

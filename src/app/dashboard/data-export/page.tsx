@@ -87,11 +87,18 @@ export default function DataExportPage() {
           variant="primary"
           className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-sm text-white hover:bg-[color:var(--signal-success-800)]"
           onClick={exportData}
-          disabled={loading}
+          disabled={loading || !isAdmin}
+          title={isAdmin ? undefined : "Nur Kanzlei-Admins können den Kanzlei-Export erstellen."}
         >
           {loading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
           {loading ? t("dataexport.btn_exporting") : t("dataexport.btn_json")}
         </Button>
+        {!meQuery.isLoading && !isAdmin && (
+          <p className="text-xs text-[color:var(--ds-text-muted)]">
+            Der Export enthält alle Akten der Kanzlei und kann nur von Kanzlei-Admins erstellt
+            werden. Deine eigenen Kontodaten exportierst du unter Einstellungen → Konto.
+          </p>
+        )}
       </div>
 
       {error && (

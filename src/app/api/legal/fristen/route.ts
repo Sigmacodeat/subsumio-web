@@ -55,6 +55,11 @@ export interface Frist {
   reviewed_by?: string;
   reminder_sent_at?: string;
   calculation_note?: string;
+  /** Responsible lawyer of the matter (case frontmatter own_lawyer_name). */
+  responsible?: string;
+  /** Erledigungsvermerk: when and by whom the deadline was completed. */
+  completed_at?: string;
+  completed_by?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -91,6 +96,24 @@ function dedupKey(f: Frist): string {
   return `${f.case_slug ?? "_"}|${f.due_date}|${f.title.slice(0, 80)}`;
 }
 
+function str(value: unknown): string | undefined {
+  return typeof value === "string" && value ? value : undefined;
+}
+
+/**
+ * The same deadline often appears in several sources. Keep the first entry but
+ * fill in fields it lacks (second check, review, completion) from later ones,
+ * and let a completion always win — a completed deadline must never be shown
+ * as overdue just because another source still lists it as open.
+ */
+function mergeFrist(existing: Frist, incoming: Frist): void {
+  const target = existing as unknown as Record<string, unknown>;
+  for (const [key, value] of Object.entries(incoming)) {
+    if (value !== undefined && target[key] === undefined) target[key] = value;
+  }
+  if (incoming.status === "done") existing.status = "done";
+}
+
 export const GET = createHandler(
   {
     action: "brain.read",
@@ -103,7 +126,18 @@ export const GET = createHandler(
     const heute = query.heute;
 
     const fristen: Frist[] = [];
-    const seen = new Set<string>();
+    const byKey = new Map<string, Frist>();
+    const addFrist = (f: Frist) => {
+      const key = dedupKey(f);
+      const existing = byKey.get(key);
+      if (existing) {
+        mergeFrist(existing, f);
+        return;
+      }
+      byKey.set(key, f);
+      fristen.push(f);
+    };
+    const responsibleByCase = new Map<string, string>();
 
     // ── Source 1: Engine Fristenbuch ──────────────────────────────────────
     try {
@@ -132,11 +166,7 @@ export const GET = createHandler(
               source: "fristenbuch",
               vorfrist_date: e.vorfrist || undefined,
             };
-            const key = dedupKey(f);
-            if (!seen.has(key)) {
-              seen.add(key);
-              fristen.push(f);
-            }
+            addFrist(f);
           }
         }
       }
@@ -146,9 +176,8 @@ export const GET = createHandler(
 
     // ── Source 2+3: Brain pages (legal_deadline + legal_case) ─────────────
     try {
-      // The mock engine supports /api/pages/batch-list with multiple types,
-      // but the real engine doesn't. Use individual /api/pages?type=... calls
-      // and merge the results — works with both engines.
+      // The real engine has no /api/pages/batch-list (only the e2e mock does).
+      // Fetch each type via /api/pages?type=… and merge — works with both.
       const fetchPagesByType = async (type: string): Promise<BrainPage[]> => {
         const url = new URL(`${ENGINE_URL}/api/pages`);
         url.searchParams.set("type", type);
@@ -172,6 +201,10 @@ export const GET = createHandler(
         fetchPagesByType("legal_deadline"),
         fetchPagesByType("legal_case"),
       ]);
+      for (const casePage of casePages) {
+        const lawyer = str(casePage.frontmatter?.own_lawyer_name);
+        if (lawyer) responsibleByCase.set(casePage.slug, lawyer);
+      }
 
       // Source 2: standalone legal_deadline pages
       for (const page of deadlinePages) {
@@ -211,14 +244,12 @@ export const GET = createHandler(
             typeof fm.reminder_sent_at === "string" ? fm.reminder_sent_at : undefined,
           calculation_note:
             typeof fm.calculation_note === "string" ? fm.calculation_note : undefined,
+          completed_at: str(fm.completed_at),
+          completed_by: str(fm.completed_by),
           created_at: page.created_at,
           updated_at: page.updated_at,
         };
-        const key = dedupKey(f);
-        if (!seen.has(key)) {
-          seen.add(key);
-          fristen.push(f);
-        }
+        addFrist(f);
       }
 
       // Source 3: legal_case frontmatter.deadlines[]
@@ -253,12 +284,10 @@ export const GET = createHandler(
             reviewed_by: d.reviewed_by,
             reminder_sent_at: d.reminder_sent_at,
             calculation_note: d.calculation_note,
+            completed_at: str((d as unknown as Record<string, unknown>).completed_at),
+            completed_by: str((d as unknown as Record<string, unknown>).completed_by),
           };
-          const key = dedupKey(f);
-          if (!seen.has(key)) {
-            seen.add(key);
-            fristen.push(f);
-          }
+          addFrist(f);
         }
 
         // Also extract timeline entries that are deadlines/events
@@ -280,16 +309,16 @@ export const GET = createHandler(
               source: "timeline",
               source_slug: page.slug,
             };
-            const key = dedupKey(f);
-            if (!seen.has(key)) {
-              seen.add(key);
-              fristen.push(f);
-            }
+            addFrist(f);
           }
         }
       }
     } catch {
       // Brain pages unavailable — return what we have from fristenbuch
+    }
+
+    for (const f of fristen) {
+      if (f.case_slug && !f.responsible) f.responsible = responsibleByCase.get(f.case_slug);
     }
 
     // ── Filter by status ──────────────────────────────────────────────────

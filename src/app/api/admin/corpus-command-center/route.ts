@@ -113,7 +113,7 @@ interface RisDeltaRow {
  */
 export const GET = createHandler(
   {
-    action: "admin.*",
+    action: "platform.operator",
     cacheMaxAge: 30,
   },
   async () => {

@@ -14,6 +14,7 @@ import { CitationPanel, type CitationPanelData } from "@/components/legal/Citati
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import type { RedTeamResult, RedTeamAnnotation } from "@/lib/red-team-agent";
 
+import { unwrapApiBody } from "@/lib/api-body";
 const SEVERITY_COLORS: Record<string, string> = {
   high: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
   medium: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
@@ -74,7 +75,7 @@ export default function RedTeamPage() {
         }),
       });
       if (!res.ok) throw new Error("API error");
-      const data = await res.json();
+      const data = unwrapApiBody(await res.json());
       setResults((prev) => [data.result, ...prev]);
       setForm({ case_slug: "", draft_text: "", case_context: "", legal_area: "" });
       addToast({ type: "success", title: t("redteam.ok_analyze") });

@@ -28,20 +28,25 @@ const handler = createHandler(
       return apiError("user_not_found", "Benutzer nicht gefunden", 404);
     }
 
-    if (ctx.user.orgId) {
-      const org = await getOrgStore().getById(ctx.user.orgId);
-      if (!org || org.ownerId !== ctx.user.id) {
-        return apiError("owner_only", "Nur der Eigentümer kann Rollen ändern", 403);
-      }
-      if (targetUser.orgId !== ctx.user.orgId) {
-        return apiError("not_in_your_org", "Benutzer nicht in deiner Organisation", 403);
-      }
+    // Roles are firm-scoped: only the firm owner changes roles, and only for
+    // members of the same firm. Without a firm there is nobody to manage.
+    if (!ctx.user.orgId) {
+      return apiError(
+        "not_in_org",
+        "Rollen können nur innerhalb einer Kanzlei vergeben werden",
+        403
+      );
+    }
+    const org = await getOrgStore().getById(ctx.user.orgId);
+    if (!org || org.ownerId !== ctx.user.id) {
+      return apiError("owner_only", "Nur der Eigentümer kann Rollen ändern", 403);
+    }
+    if (targetUser.orgId !== ctx.user.orgId) {
+      return apiError("not_in_your_org", "Benutzer nicht in deiner Organisation", 403);
     }
 
     if (targetUser.id === ctx.user.id && targetUser.role === "admin" && body.role !== "admin") {
-      const orgMembers = ctx.user.orgId
-        ? await store.listByOrg(ctx.user.orgId)
-        : await store.list();
+      const orgMembers = await store.listByOrg(ctx.user.orgId);
       const adminCount = orgMembers.filter((u) => u.role === "admin").length;
       if (adminCount <= 1) {
         return apiError(

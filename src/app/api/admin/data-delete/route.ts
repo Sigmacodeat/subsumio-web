@@ -28,7 +28,7 @@ const deleteSchema = z.object({
 
 export const POST = createHandler(
   {
-    action: "admin.data_delete",
+    action: "platform.operator",
     rateTier: "heavy",
     body: deleteSchema,
     audit: (ctx, body) => ({
@@ -44,10 +44,6 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
-    if (ctx.user.role !== "admin") {
-      return apiError("forbidden", "Admin access required for data deletion", 403);
-    }
-
     const pool = getSharedPgPool();
     if (!pool) {
       return apiError(

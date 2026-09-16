@@ -31,9 +31,11 @@ auditierbar bleiben.
 - **Legal-only Provisioning:** Neue Nutzer und Brains werden ausschließlich als
   `legal` provisioniert. Alte unbekannte Industry-Metadaten fallen sicher auf
   das Subsumio-Theme zurück.
-- **Kanzlei-/Control-Plane-Grenze:** Betreiberseiten und ihre verwaisten Web-API-
-  Adapter sind nicht Teil des Kanzlei-Builds. Kanzlei-Governance-Endpunkte,
-  authentifizierte Engine-Callbacks und aktiv geplante Cron-Routen bleiben.
+- **Kanzlei-/Control-Plane-Grenze:** Die Betreiber-Konsole (`/ops`) läuft nur auf
+  dem Ops-Host (`ops.subsum.eu`) für Plattform-Betreiber (E-Mail-Allowlist + 2FA);
+  ihre APIs sind über `platform.operator` gesichert, das keine Kanzlei-Rolle
+  erhält. Nicht benötigte Eval-/Qualitäts-Adapter sind archiviert.
+  Kanzlei-Governance-Endpunkte, Engine-Callbacks und Cron-Routen bleiben.
   Grenze und Wiederherstellung:
   `docs/archive/CONTROL_PLANE_ARCHIVE_2026-09-13.md`.
 - **Pilot-Fokus:** B2C-Funnels (`/privat`, `/nischen`), die Nicht-DACH-Sprachen

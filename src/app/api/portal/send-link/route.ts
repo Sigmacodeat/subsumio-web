@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { sendMail } from "@/lib/mail";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { signPortalToken } from "@/lib/portal-token";
@@ -38,55 +38,65 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
+    // The link opens the client portal for this matter. Refuse before sending
+    // anything if the matter is not released for the portal — otherwise the
+    // client receives a link that only shows "not enabled".
+    const caseRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.case_slug)}`, {
+      headers: ctx.headers,
+      signal: AbortSignal.timeout(10_000),
+    }).catch(() => null);
+    if (!caseRes?.ok) {
+      return apiError("case_not_found", "Akte nicht gefunden", 404);
+    }
+    const caseFm = ((await caseRes.json()).frontmatter ?? {}) as Record<string, unknown>;
+    if (caseFm.status === "archived") {
+      return apiError("case_archived", "Die Akte ist archiviert.", 409);
+    }
+    if (!caseFm.portal_enabled) {
+      return apiError(
+        "portal_disabled",
+        "Das Mandantenportal ist für diese Akte nicht freigegeben. Bitte zuerst in der Akte aktivieren.",
+        409
+      );
+    }
+    const locale: "de" | "en" = caseFm.locale === "en" || caseFm.language === "en" ? "en" : "de";
+
     // Generate portal token + deep link
     const token = await signPortalToken(body.case_slug, undefined, ctx.brainId);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.subsum.io";
     const portalUrl = `${baseUrl}/portal/${token}?sign=${encodeURIComponent(body.document_slug)}&type=${body.document_type}`;
 
-    // Update document status to "sent" + record send metadata
-    await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.document_slug)}`, {
-      method: "PATCH",
-      headers: { ...ctx.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
+    // Mark the document as sent and stamp the matter — the portal only offers
+    // documents whose case_slug matches the token's matter.
+    const docUpdate = await enginePatchPage(
+      ctx.headers,
+      {
+        slug: body.document_slug,
         frontmatter: {
           status: "sent",
           sent_at: new Date().toISOString(),
           sent_via: body.channel,
           portal_url: portalUrl,
+          case_slug: body.case_slug,
         },
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
-
-    // If save_phone_to_contact, update the contact
-    if (body.save_phone_to_contact && body.contact_slug && body.recipient_phone) {
-      await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.contact_slug)}`, {
-        method: "PATCH",
-        headers: { ...ctx.headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          frontmatter: { phone: body.recipient_phone },
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
+      },
+      { timeoutMs: 10_000 }
+    );
+    if (!docUpdate.ok) {
+      return apiError("document_not_updated", "Dokument konnte nicht aktualisiert werden", 502);
     }
 
-    // Determine recipient locale from case frontmatter (default: de)
-    let locale: "de" | "en" = "de";
-    try {
-      const caseRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.case_slug)}`, {
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(5_000),
-      });
-      if (caseRes.ok) {
-        const caseData = await caseRes.json();
-        const caseFm = (caseData.frontmatter ?? {}) as Record<string, unknown>;
-        if (caseFm.locale === "en" || caseFm.language === "en") locale = "en";
-      }
-    } catch {
-      // fallback to de
+    if (body.save_phone_to_contact && body.contact_slug && body.recipient_phone) {
+      await enginePatchPage(
+        ctx.headers,
+        { slug: body.contact_slug, frontmatter: { phone: body.recipient_phone } },
+        { timeoutMs: 10_000 }
+      ).catch(() => null);
     }
 
     const recipientName = body.recipient_name || (locale === "en" ? "Client" : "Mandant");
+    const htmlName = escapeHtml(recipientName);
+    const htmlTitle = escapeHtml(body.document_title);
     const messageText =
       locale === "en"
         ? `Hello ${recipientName},\n\nYou have a document to sign:\n${body.document_title}\n\nPlease open the following link and sign directly:\n${portalUrl}\n\nBest regards`
@@ -106,8 +116,8 @@ export const POST = createHandler(
           : `Dokument zur Unterschrift: ${body.document_title}`;
       const html =
         locale === "en"
-          ? `<p>Hello ${recipientName},</p><p>You have a document to sign:</p><p><strong>${body.document_title}</strong></p><p><a href="${portalUrl}" style="display:inline-block;padding:12px 24px;background:hsl(230, 60%, 52%);color:#fff;text-decoration:none;border-radius:8px;">Sign document</a></p><p>Best regards</p>`
-          : `<p>Hallo ${recipientName},</p><p>Sie haben ein Dokument zur Unterschrift:</p><p><strong>${body.document_title}</strong></p><p><a href="${portalUrl}" style="display:inline-block;padding:12px 24px;background:hsl(230, 60%, 52%);color:#fff;text-decoration:none;border-radius:8px;">Dokument unterschreiben</a></p><p>Mit freundlichen Grüßen</p>`;
+          ? `<p>Hello ${htmlName},</p><p>You have a document to sign:</p><p><strong>${htmlTitle}</strong></p><p><a href="${portalUrl}" style="display:inline-block;padding:12px 24px;background:hsl(230, 60%, 52%);color:#fff;text-decoration:none;border-radius:8px;">Sign document</a></p><p>Best regards</p>`
+          : `<p>Hallo ${htmlName},</p><p>Sie haben ein Dokument zur Unterschrift:</p><p><strong>${htmlTitle}</strong></p><p><a href="${portalUrl}" style="display:inline-block;padding:12px 24px;background:hsl(230, 60%, 52%);color:#fff;text-decoration:none;border-radius:8px;">Dokument unterschreiben</a></p><p>Mit freundlichen Grüßen</p>`;
       const result = await sendMail({
         to: body.recipient_email,
         subject,
@@ -144,3 +154,12 @@ export const POST = createHandler(
     return apiError("validation_error", "invalid channel", 400);
   }
 );
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}

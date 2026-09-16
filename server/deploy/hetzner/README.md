@@ -62,7 +62,13 @@ curl https://api.subsum.io/health             # → 200
 
 ## Day-2
 
-- Update: `git pull && docker compose up -d --build`
+- Update: `git pull && ./preflight.sh .env && docker compose up -d --build`
+- **Einmalig vor dem ersten Update auf die Version ohne getracktes `law-corpus/`:**
+  `sh move-corpus-out-of-repo.sh` ausführen (kopiert den Korpus nach
+  `/opt/subsumio-data/law-corpus`), dann `LAW_CORPUS_HOST_DIR` in `.env` setzen und
+  erst danach `git pull`. Sonst löscht der Pull die bisher getrackten Korpusdateien.
+- Betreiber-Konsole: DNS-Eintrag für `OPS_DOMAIN` (A → Server-IP) und
+  `PLATFORM_OPERATOR_EMAILS` setzen; die Konten brauchen aktive 2FA.
 - Logs: `docker compose logs -f web engine`
 - The engine auto-applies schema migrations on every boot (idempotent).
 - ClamAV is reachable only on the private Compose network. Virus signatures persist in

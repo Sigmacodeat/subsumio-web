@@ -256,7 +256,8 @@ export default function PortalPage() {
       });
       if (!res.ok) return [];
       const data = await res.json();
-      const docs = data.docs || [];
+      // apiSuccess wraps the payload as { data: { docs } }.
+      const docs: SignableDoc[] = data.data?.docs ?? data.docs ?? [];
       setSignableDocs(docs);
       return docs;
     } catch (err) {
@@ -1121,6 +1122,7 @@ export default function PortalPage() {
           signerEmail={signDoc.recipient_email}
           legalLevel="simple"
           isClientFacing
+          portalToken={token}
           onSigned={() => {
             setSignDoc(null);
             setSignedSuccessfully(true);
