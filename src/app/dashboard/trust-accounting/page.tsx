@@ -579,7 +579,11 @@ export default function TrustAccountingPage() {
                         <span>{TRANSACTION_TYPE_LABELS_DE[tx.type]}</span>
                         <span>
                           ·{" "}
-                          {new Date(tx.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
+                          {new Date(tx.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          })}
                         </span>
                         {tx.reference && <span>· {tx.reference}</span>}
                       </div>

@@ -31,6 +31,7 @@ import { api } from "@/lib/api";
 import { BrainQualityPanel } from "@/components/legal/BrainQualityPanel";
 import type { BrainPage, Entity, SearchResult } from "@/lib/types";
 import { useLang } from "@/lib/use-lang";
+import { PageSkeleton } from "@/components/dashboard/page-skeleton";
 import type { DashboardKey } from "@/content/dashboard";
 
 type FilterType =
@@ -191,6 +192,7 @@ export default function BrainPage() {
 
   return (
     <div className="mx-auto flex h-full max-w-[1200px] min-w-0 space-y-6 overflow-hidden p-4 md:p-6 lg:p-8">
+      <h1 className="sr-only">{t("nav.brain")}</h1>
       <div className="w-52 shrink-0 space-y-1 overflow-y-auto border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <p className="mb-3 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
           {t("brain.type")}
@@ -293,9 +295,7 @@ export default function BrainPage() {
           </div>
 
           {loading ? (
-            <div className="flex justify-center py-20" role="status" aria-live="polite">
-              <Loader2 size={28} className="animate-spin text-[color:var(--ds-text-muted)]" />
-            </div>
+            <PageSkeleton rows={6} className="p-0" />
           ) : isEmpty ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--ds-surface-2)]">

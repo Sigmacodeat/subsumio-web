@@ -201,7 +201,11 @@ export default function FristenbuchPage() {
                     : "text-[color:var(--ds-text)]"
               )}
             >
-              {new Date(e.due_date).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
+              {new Date(e.due_date).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              })}
             </div>
             <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
               {days < 0
@@ -346,7 +350,11 @@ export default function FristenbuchPage() {
         e.status === "done" && (e.completed_at || e.completed_by) ? (
           <span className="text-xs text-[color:var(--ds-text-muted)]">
             {e.completed_at
-              ? new Date(e.completed_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")
+              ? new Date(e.completed_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                })
               : ""}
             {e.completed_by ? ` · ${e.completed_by}` : ""}
           </span>
@@ -566,8 +574,12 @@ export default function FristenbuchPage() {
       <div className="hidden print:block">
         <p className="mt-4 border-t border-[color:var(--ds-border)] pt-2 text-xs text-[color:var(--ds-text-muted)]">
           {t("deadlines.fristenbuch_print_footer")}:{" "}
-          {new Date().toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")} — {filtered.length}{" "}
-          {t("deadlines.count")}
+          {new Date().toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          })}{" "}
+          — {filtered.length} {t("deadlines.count")}
           {timeWindow !== "all" &&
             ` · ${t(
               timeWindow === "today"

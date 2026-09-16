@@ -110,7 +110,7 @@ export default function PricingPage() {
                     subsumption: "Subsumption",
                     agent: "Agent-Run",
                     deadline_detect: "Fristen-Erkennung",
-                    frist_engine: "Frist-Engine",
+                    frist_engine: "Fristenrechner",
                   };
                   return (
                     <div

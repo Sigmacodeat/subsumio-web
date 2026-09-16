@@ -449,7 +449,7 @@ export const PRICING: {
       blurb:
         "Für Einzelanwälte, die KI-gestützte Aktenarbeit erkunden. Kostenlos für immer, keine Kreditkarte nötig.",
       features: [
-        "Self-hosted — dein Server, deine Keys",
+        "Self-hosted — eigener Server, eigene Schlüssel",
         "100 KI-Anfragen/Mon. inklusive",
         "5 GB lokaler Speicher",
         "Akten-Q&A mit seitengenauen Zitaten",
@@ -473,7 +473,7 @@ export const PRICING: {
         "1.000 KI-Anfragen/Nutzer/Mon. inklusive",
         "75 GB Cloud-Speicher pro Nutzer",
         "300 WhatsApp-Nachrichten/Mon. inklusive",
-        "Dream Cycle: Deduplizierung, Zitate, Widersprüche",
+        "Nächtliche Konsolidierung: Duplikate, Zitate, Widersprüche",
         "Live-Verbrauchsanzeige — transparente Mehrkosten",
         "Priorisierter Support",
         "Mehrverbrauch: 0,45 €/Anfrage · 0,25 €/WA",
@@ -499,7 +499,7 @@ export const PRICING: {
         "1.000 WhatsApp-Nachrichten/Mon. inklusive",
         "Rollenbasierte Zugriffe pro Akte und Nutzer",
         "Admin- und Nutzungsanalyse",
-        "Onboarding-Session inklusive",
+        "Einrichtungstermin inklusive",
         "Mehrverbrauch: 0,40 €/Anfrage · 0,20 €/WA",
       ],
       cta: "Team starten",

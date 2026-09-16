@@ -299,7 +299,8 @@ export default function WorkflowBuilderPage() {
   const stepConfig = selected ? getStepConfig(selected.type) : null;
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8"
+    <div
+      className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8"
       style={{
         display: "flex",
         flexDirection: "column",
@@ -309,6 +310,7 @@ export default function WorkflowBuilderPage() {
         overflow: "hidden",
       }}
     >
+      <h1 className="sr-only">{t("nav.workflows")}</h1>
       {/* Top Bar */}
       <div
         style={{

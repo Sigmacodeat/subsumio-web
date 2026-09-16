@@ -150,7 +150,7 @@ export default function AIModelSettingsPage() {
                     activeId === "auto" ? "brand-text" : "text-[color:var(--ds-text)]"
                   )}
                 >
-                  Auto (Engine-Default)
+                  Automatisch (Standard)
                 </h3>
               </div>
               <p className="mt-1 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
@@ -326,12 +326,12 @@ export default function AIModelSettingsPage() {
           </div>
           <div>
             <p className="text-sm font-medium text-[color:var(--ds-text)]">
-              Brain-scoped Preference
+              Gilt für das gesamte Kanzleiwissen
             </p>
             <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-              Die Modell-Auswahl gilt für dein gesamtes Brain. Im Query-UI kannst du pro Anfrage
-              einen Override setzen, ohne die globale Einstellung zu ändern. Die Engine benötigt den
-              konfigurierten API-Key des jeweiligen Providers.
+              Die Modellauswahl gilt für das gesamte Kanzleiwissen. Im Assistenten können Sie pro
+              Anfrage einen Override setzen, ohne die globale Einstellung zu ändern. Die Engine
+              benötigt den konfigurierten API-Key des jeweiligen Providers.
             </p>
           </div>
         </div>

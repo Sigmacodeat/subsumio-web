@@ -811,12 +811,11 @@ function UploadPageInner() {
           <span className="flex items-start gap-2.5 text-sm">
             <AlertCircle size={15} className="brand-text mt-0.5 shrink-0" />
             <span className="leading-relaxed text-[color:var(--ds-text-muted)]">
-              <strong className="text-[color:var(--ds-text)]">Human-in-the-Loop</strong> Pipeline
-              nach Layer 2 (Entity-Extraktion) pausieren. Extrahierte Parteien, Gericht und
+              <strong className="text-[color:var(--ds-text)]">Prüfung vor Analyse</strong> — die
+              Verarbeitung pausiert nach der Datenextraktion. Erkannte Parteien, Gericht und
               Aktenzeichen müssen vor der Analyse freigegeben werden.
               <span className="mt-1 block text-xs text-[color:var(--ds-text-muted)]">
-                Die Pipeline wartet im Status &ldquo;awaiting_review&rdquo; — Freigabe über die
-                Review-Queue.
+                Die Freigabe erfolgt in der Freigabe-Warteschlange.
               </span>
             </span>
           </span>

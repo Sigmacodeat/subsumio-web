@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useLang } from "@/lib/use-lang";
+import { PageSkeleton } from "@/components/dashboard/page-skeleton";
 import { useApiQuery } from "@/lib/use-api-query";
 import type { TFunc } from "@/content/dashboard";
 import {
@@ -482,13 +483,7 @@ export default function SourcesPage() {
 
       {/* Content */}
       {loading ? (
-        <div
-          className="flex items-center justify-center py-20"
-          role="status"
-          aria-label={t("aria.loading")}
-        >
-          <Loader2 size={24} className="brand-text animate-spin" />
-        </div>
+        <PageSkeleton rows={5} className="p-0" />
       ) : filteredSources.length === 0 ? (
         <div className="space-y-4 py-20 text-center">
           <Database size={48} className="mx-auto text-[color:var(--ds-border)]" />

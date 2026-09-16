@@ -25,10 +25,10 @@ interface PageHeaderProps {
 
 function normalizeBreadcrumb(item: BreadcrumbItemShape): BreadcrumbItemShape {
   if (item.href === "/dashboard" && item.label === "Dashboard") {
-    return { ...item, label: "Kanzlei-Cockpit" };
+    return { ...item, label: "Übersicht" };
   }
   if (item.href === "/dashboard" && item.label === "Übersicht") {
-    return { ...item, label: "Kanzlei-Cockpit" };
+    return { ...item, label: "Übersicht" };
   }
   return item;
 }

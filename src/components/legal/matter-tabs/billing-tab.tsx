@@ -371,7 +371,11 @@ export function BillingTab() {
                         )}
                       {entry.lawyer && ` · ${entry.lawyer}`}
                       {" · "}
-                      {new Date(entry.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
+                      {new Date(entry.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      })}
                     </div>
                   </div>
                   <div className="shrink-0 text-right">
@@ -502,7 +506,10 @@ export function BillingTab() {
                       {expense.description}
                     </div>
                     <div className="text-xs text-[color:var(--ds-text-muted)]">
-                      {new Date(expense.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
+                      {new Date(expense.date).toLocaleDateString(
+                        lang === "en" ? "en-GB" : "de-AT",
+                        { day: "2-digit", month: "2-digit", year: "numeric" }
+                      )}
                     </div>
                   </div>
                   <div className="shrink-0 text-sm font-medium text-[color:var(--ds-text)]">

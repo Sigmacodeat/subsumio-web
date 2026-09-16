@@ -88,7 +88,7 @@ export default function ClientPortalPage() {
             status: fm.status || "open",
             lastUpdate: p.updated_at || p.created_at,
             nextStep: nextDl
-              ? `${nextDl.title ?? t("client_portal.deadline_label")} ${t("client_portal.deadline_until")} ${new Date(nextDl.due_date || Date.now()).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}`
+              ? `${nextDl.title ?? t("client_portal.deadline_label")} ${t("client_portal.deadline_until")} ${new Date(nextDl.due_date || Date.now()).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", { day: "2-digit", month: "2-digit", year: "numeric" })}`
               : t("client_portal.no_deadline"),
             documents: Array.isArray(docs) ? docs.length : 0,
             messages: 0,
@@ -316,7 +316,11 @@ export default function ClientPortalPage() {
                 </span>
                 <span className="flex items-center gap-1">
                   <CalendarClock size={10} />
-                  {new Date(c.lastUpdate).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
+                  {new Date(c.lastUpdate).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  })}
                 </span>
               </div>
 

@@ -154,7 +154,7 @@ export function ModelSelector({
                     activeModelId === "auto" ? "brand-text" : "text-[color:var(--ds-text)]"
                   )}
                 >
-                  Auto (Engine-Default)
+                  Automatisch (Standard)
                 </p>
                 <p
                   className={cn(

@@ -164,7 +164,7 @@ export default function TranslatePage() {
                 : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
             )}
           >
-            Aus Vault (Slug)
+            Aus der Dokumentablage
           </button>
         </div>
 

@@ -254,6 +254,7 @@ export default function GraphPage() {
 
   return (
     <div className="mx-auto flex h-full max-w-[1200px] min-w-0 flex-col space-y-6 p-4 md:p-6 lg:p-8">
+      <h1 className="sr-only">{t("graph.title")}</h1>
       <div className="flex h-full min-w-0 overflow-hidden">
         <div className="relative min-w-0 flex-1 bg-[color:var(--ds-bg)]">
           {loading ? (

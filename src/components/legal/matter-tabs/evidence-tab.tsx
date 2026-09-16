@@ -262,7 +262,10 @@ export function EvidenceTab() {
                   <div className="truncate text-sm text-[color:var(--ds-text)]">{doc.name}</div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">
                     {doc.kind ?? t("cases.detail_ev_type_document")} ·{" "}
-                    {new Date(doc.uploadedAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
+                    {new Date(doc.uploadedAt).toLocaleDateString(
+                      lang === "en" ? "en-GB" : "de-AT",
+                      { day: "2-digit", month: "2-digit", year: "numeric" }
+                    )}
                   </div>
                 </div>
                 {(doc.slug || doc.url) && (

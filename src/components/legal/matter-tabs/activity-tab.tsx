@@ -48,7 +48,10 @@ export function ActivityTab() {
             <div className="brand-soft absolute -left-4 h-2 w-2 rounded-full" />
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
               <div className="text-xs text-[color:var(--ds-text-muted)]">
-                {new Date(caseData.createdAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
+                {new Date(caseData.createdAt).toLocaleDateString(
+                  lang === "en" ? "en-GB" : "de-AT",
+                  { day: "2-digit", month: "2-digit", year: "numeric" }
+                )}
               </div>
               <div className="text-sm text-[color:var(--ds-text)]">
                 {t("cases.detail_timeline_case_created")}

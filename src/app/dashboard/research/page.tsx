@@ -1013,7 +1013,11 @@ function ResearchPageInner() {
                               ((page as unknown as Record<string, unknown>).created_at as string) ||
                               page.created_at ||
                               new Date().toISOString()
-                          ).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
+                          ).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          })}
                         </span>
                         <div className="flex items-center gap-2">
                           {Array.isArray(fm.citations) && fm.citations.length > 0 && (

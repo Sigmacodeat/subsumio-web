@@ -177,7 +177,11 @@ export default function ApiKeysPage() {
                     )}
                   </td>
                   <td className="hidden px-4 py-3 text-[color:var(--ds-text-muted)] md:table-cell">
-                    {new Date(k.createdAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
+                    {new Date(k.createdAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <button

@@ -60,6 +60,7 @@ import { SupportSessionBanner } from "@/components/dashboard/support-session-ban
 import { TourProvider, useAutoStartTour } from "@/components/dashboard/guided-tour";
 import { AnimatePresence } from "framer-motion";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
+import { PageSkeleton } from "@/components/dashboard/page-skeleton";
 import { ErrorBoundary } from "@/components/error-boundary/error-boundary";
 import { useBrainStats } from "@/lib/queries/brain";
 import { useMe } from "@/lib/queries/auth";
@@ -184,6 +185,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     clause: globalClauseCreateOpen,
     contract: globalContractCreateOpen,
   } = overlays;
+  const pathname = usePathname();
+  // The assistant page already shows a full conversation: never render the
+  // same conversation a second time in the side panel next to it.
+  const copilotVisible = copilotOpen && pathname !== "/dashboard/chat";
+
   const setMobileOpen = useCallback(
     (value: boolean | ((v: boolean) => boolean)) => setOverlay("mobile", value),
     [setOverlay]
@@ -252,7 +258,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   useKeyboardAwareScroll();
   useNativeBackButton({
     isMobileOpen: mobileOpen,
-    isCopilotOpen: copilotOpen,
+    isCopilotOpen: copilotVisible,
     isCmdOpen: cmdOpen,
     isGuideOpen: guideOpen,
     isShortcutsOpen: shortcutsOpen,
@@ -292,7 +298,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const touchStartX = useRef<number | null>(null);
   const touchCurrentX = useRef<number | null>(null);
   const { t } = useLang();
-  const pathname = usePathname();
   const router = useRouter();
   const { reduceMotion, panelTransition: overlayTransition } = useDashboardMotion();
   const [routeAnnouncement, setRouteAnnouncement] = useState("");
@@ -347,7 +352,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkOverlay = () => {
       const copilotMobileOpen =
-        copilotOpen && typeof window !== "undefined" && window.innerWidth < 768;
+        copilotVisible && typeof window !== "undefined" && window.innerWidth < 768;
       const anyOverlayOpen =
         mobileOpen ||
         cmdOpen ||
@@ -365,7 +370,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       document.body.style.overflow = "";
       document.body.dataset.overlay = "closed";
     };
-  }, [mobileOpen, cmdOpen, guideOpen, shortcutsOpen, copilotOpen, overlays]);
+  }, [mobileOpen, cmdOpen, guideOpen, shortcutsOpen, copilotOpen, copilotVisible, overlays]);
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -749,15 +754,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                   page would flash dashboard chrome + content before being torn
                   away. Fail open on error so an API hiccup never blanks the app. */}
               {meQuery.isLoading ? (
-                <div
-                  className="flex flex-1 items-center justify-center"
-                  role="status"
-                  aria-live="polite"
-                >
-                  <span className="text-xs text-[color:var(--ds-text-muted)]">
-                    {t("dashboard.desc_loading")}
-                  </span>
-                </div>
+                <PageSkeleton withStats />
               ) : (
                 <ErrorBoundary>{children}</ErrorBoundary>
               )}
@@ -787,7 +784,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           jurisdiction={meQuery.data?.user?.jurisdiction ?? null}
         />
       )}
-      <CopilotSidebar open={copilotOpen} onToggle={() => setCopilotOpen((v) => !v)} />
+      <CopilotSidebar open={copilotVisible} onToggle={() => setCopilotOpen((v) => !v)} />
 
       {/* Push notification toast (native app only) */}
       {nativeFeatures.pushNotification && (

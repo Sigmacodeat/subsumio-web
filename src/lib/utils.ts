@@ -44,3 +44,14 @@ export function slugify(str: string): string {
     .replace(/[\s_-]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
+
+/** Amount in euros as lawyers expect it: "1.234,50 €" (de-AT) / "€1,234.50" (en). */
+export function formatEur(amount: number, lang: "de" | "en" | string = "de"): string {
+  const value = Number.isFinite(amount) ? amount : 0;
+  return new Intl.NumberFormat(lang === "en" ? "en-GB" : "de-AT", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}

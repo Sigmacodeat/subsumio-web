@@ -616,7 +616,11 @@ export default function CasesPage() {
       cell: (c) => (
         <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
           <Calendar size={10} />
-          {new Date(c.updatedAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
+          {new Date(c.updatedAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          })}
         </span>
       ),
     },

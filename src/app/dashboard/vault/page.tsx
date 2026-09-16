@@ -1177,7 +1177,11 @@ export default function VaultPage() {
                 <div className="flex items-center justify-between text-xs text-[color:var(--ds-text-muted)]">
                   <span className="flex items-center gap-1">
                     <Clock size={10} />
-                    {new Date(doc.createdAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
+                    {new Date(doc.createdAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })}
                   </span>
                   <span className="flex items-center gap-2">
                     {doc.caseSlug && (

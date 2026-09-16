@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn, formatEur } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -392,7 +392,7 @@ export default function InvoicingPage() {
     ${inv.expenseTotal > 0 ? `<div class="total-row"><span>Auslagen netto</span><span>${inv.expenseTotal.toFixed(2)} €</span></div>` : ""}
     <div class="total-row"><span>Mehrwertsteuer (${(vatRate * 100).toFixed(0)}%)</span><span>${inv.tax.toFixed(2)} €</span></div>
     ${inv.advancePayment > 0 ? `<div class="total-row"><span>Vorschuss / Anzahlung</span><span>- ${inv.advancePayment.toFixed(2)} €</span></div>` : ""}
-    <div class="total-row grand"><span>Gesamtbetrag</span><span>${inv.total.toFixed(2)} €</span></div>
+    <div class="total-row grand"><span>Gesamtbetrag</span><span>${formatEur(inv.total, lang)}</span></div>
   </div>
 
   ${inv.notes ? `<p style="margin-top: 30px; color: hsl(230, 8%, 40%);">${escapeHtml(inv.notes)}</p>` : ""}
@@ -838,7 +838,7 @@ export default function InvoicingPage() {
             </Button>
             <Button
               variant="primary"
-              className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-sm text-white hover:bg-[color:var(--signal-success-800)]"
+              className="gap-2 text-sm"
               onClick={() => setQuickCreateOpen(true)}
             >
               <Plus size={14} />
@@ -859,13 +859,13 @@ export default function InvoicingPage() {
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">{t("inv.outstanding")}</div>
           <div className="text-xl font-bold text-[color:var(--ds-warning-text)]">
-            {totalOutstanding.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €
+            {formatEur(totalOutstanding, lang)}
           </div>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">{t("inv.paid")}</div>
           <div className="text-xl font-bold text-[color:var(--ds-success-text)]">
-            {totalPaid.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €
+            {formatEur(totalPaid, lang)}
           </div>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
@@ -977,13 +977,13 @@ export default function InvoicingPage() {
                     {inv.client} · {inv.items.length + inv.expenses.length} {t("inv.positions")} ·{" "}
                     {inv.date}
                     {inv.paidAt
-                      ? ` · ${t("inv.paid_on")} ${new Date(inv.paidAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}`
+                      ? ` · ${t("inv.paid_on")} ${new Date(inv.paidAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", { day: "2-digit", month: "2-digit", year: "numeric" })}`
                       : ""}
                   </div>
                 </div>
                 <div className="shrink-0 text-right">
                   <div className="text-xs font-bold text-[color:var(--ds-text)] sm:text-sm">
-                    {inv.total.toFixed(2)} €
+                    {formatEur(inv.total, lang)}
                   </div>
                   <div className="hidden text-xs text-[color:var(--ds-text-muted)] sm:block">
                     {t("inv.incl_vat")}

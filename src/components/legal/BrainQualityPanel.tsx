@@ -61,7 +61,9 @@ export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Brain size={16} className="brand-text" />
-          <span className="text-sm font-semibold text-[color:var(--ds-text)]">Brain Qualität</span>
+          <span className="text-sm font-semibold text-[color:var(--ds-text)]">
+            Qualität des Kanzleiwissens
+          </span>
         </div>
         <Button
           variant="ghost"
@@ -82,7 +84,7 @@ export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
           aria-live="polite"
         >
           <Loader2 size={16} className="animate-spin" />
-          Lade Brain-Qualität…
+          Qualität wird ermittelt…
         </div>
       )}
 

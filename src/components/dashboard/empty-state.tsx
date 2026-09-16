@@ -23,6 +23,7 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div
+      data-empty-state
       className={cn(
         "flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface)] px-6 py-16 text-center",
         className

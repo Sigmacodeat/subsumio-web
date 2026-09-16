@@ -639,7 +639,11 @@ export default function DeadlinesPage() {
                     : "text-[color:var(--ds-text)]"
               )}
             >
-              {new Date(d.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
+              {new Date(d.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              })}
             </div>
             <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
               {days < 0
@@ -975,7 +979,11 @@ export default function DeadlinesPage() {
                     <div className="text-sm text-[color:var(--ds-text)]">{r.description}</div>
                     {r.date && (
                       <div className="text-xs text-[color:var(--ds-text-muted)]">
-                        {new Date(r.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
+                        {new Date(r.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        })}
                       </div>
                     )}
                   </div>

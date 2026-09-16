@@ -72,13 +72,13 @@ export default function DataExportPage() {
           <Shield size={18} className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]" />
           <div>
             <p className="text-sm font-medium text-[color:var(--ds-text)]">
-              Deine Daten gehören dir
+              Ihre Daten gehören Ihnen
             </p>
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-              Nach Art. 20 der DSGVO hast du das Recht, deine personenbezogenen Daten in einem
+              Nach Art. 20 DSGVO haben Sie das Recht, Ihre personenbezogenen Daten in einem
               strukturierten, gängigen und maschinenlesbaren Format zu erhalten. Der Export umfasst
-              alle deine Akten, Kontakte, Rechnungen, Fristen, Zeiten, Auslagen und Dokumente aus
-              deinem Brain.
+              alle Ihre Akten, Kontakte, Rechnungen, Fristen, Zeiten, Auslagen und Dokumente aus
+              Ihrem Kanzleiwissen.
             </p>
           </div>
         </div>
@@ -96,7 +96,7 @@ export default function DataExportPage() {
         {!meQuery.isLoading && !isAdmin && (
           <p className="text-xs text-[color:var(--ds-text-muted)]">
             Der Export enthält alle Akten der Kanzlei und kann nur von Kanzlei-Admins erstellt
-            werden. Deine eigenen Kontodaten exportierst du unter Einstellungen → Konto.
+            werden. Ihre eigenen Kontodaten exportieren Sie unter Einstellungen → Konto.
           </p>
         )}
       </div>

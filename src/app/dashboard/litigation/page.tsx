@@ -125,7 +125,10 @@ function PipelineStrategyCard({ caseSlug, lang }: { caseSlug: string; lang: stri
 
   if (!page) return null;
 
-  const dateLabel = new Date(page.updated_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE");
+  const dateLabel = new Date(page.updated_at).toLocaleDateString(
+    lang === "en" ? "en-GB" : "de-AT",
+    { day: "2-digit", month: "2-digit", year: "numeric" }
+  );
   return (
     <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]">
       <button

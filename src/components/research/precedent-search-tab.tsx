@@ -122,7 +122,11 @@ function PipelinePrecedentSection({ lang }: { lang: string }) {
                   {p.title}
                 </span>
                 <span className="ml-auto shrink-0 text-xs text-[color:var(--ds-text-muted)]">
-                  {new Date(p.updated_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
+                  {new Date(p.updated_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  })}
                 </span>
               </button>
               {isOpen && (

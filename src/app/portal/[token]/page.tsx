@@ -661,7 +661,10 @@ export default function PortalPage() {
                           </div>
                           <div className="text-xs [color:var(--mk-text-subtle)]">
                             {due
-                              ? new Date(due).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")
+                              ? new Date(due).toLocaleDateString(
+                                  lang === "en" ? "en-GB" : "de-AT",
+                                  { day: "2-digit", month: "2-digit", year: "numeric" }
+                                )
                               : "—"}
                           </div>
                         </div>

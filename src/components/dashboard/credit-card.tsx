@@ -63,7 +63,7 @@ const OPERATION_LABELS: Record<string, string> = {
   subsumption: "Subsumption",
   agent: "Agent-Run",
   deadline_detect: "Fristen-Erkennung",
-  frist_engine: "Frist-Engine",
+  frist_engine: "Fristenrechner",
 };
 
 const TX_TYPE_LABELS: Record<string, string> = {

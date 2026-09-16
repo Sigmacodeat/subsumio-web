@@ -616,7 +616,10 @@ export function DocumentsTab() {
                     })()}
                   </div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">
-                    {new Date(doc.uploadedAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
+                    {new Date(doc.uploadedAt).toLocaleDateString(
+                      lang === "en" ? "en-GB" : "de-AT",
+                      { day: "2-digit", month: "2-digit", year: "numeric" }
+                    )}
                     {doc.size ? ` · ${(doc.size / 1024).toFixed(0)} KB` : ""}
                   </div>
                 </div>

@@ -266,7 +266,11 @@ export default function SignaturePage() {
                   </div>
                   <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
                     {req.recipientName} · {req.recipientEmail} · {t("sig.valid_until")}{" "}
-                    {new Date(req.expiresAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
+                    {new Date(req.expiresAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })}
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">

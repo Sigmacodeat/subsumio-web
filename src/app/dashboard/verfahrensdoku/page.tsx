@@ -140,7 +140,7 @@ export default function VerfahrensdokuPage() {
       systeme: "Subsumio, DATEV-Export, beA",
       belegEingang: "",
       erfassung: "",
-      ablageOrt: "Subsumio-Brain (steuerlich relevante Belege mit GoBD-Stempel)",
+      ablageOrt: "Subsumio-Kanzleiwissen (steuerlich relevante Belege mit GoBD-Stempel)",
       backup: "",
       zugriffsschutz: "",
       iks: "",

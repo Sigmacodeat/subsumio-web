@@ -288,8 +288,8 @@ export default function SecuritySettingsPage() {
                 Zwei-Faktor-Authentifizierung (2FA)
               </p>
               <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                Schütze deinen Account mit einem zeitbasierten Einmalcode (TOTP). Scanne den QR-Code
-                mit einer Authenticator-App (z.B. Google Authenticator, Authy).
+                Schützen Sie Ihr Konto mit einem zeitbasierten Einmalcode (TOTP). Scannen Sie den
+                QR-Code mit einer Authenticator-App (z.B. Google Authenticator, Authy).
               </p>
             </div>
           </div>

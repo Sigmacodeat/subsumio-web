@@ -287,7 +287,11 @@ Format pro Eintrag:
                     </span>
                     <span className="flex items-center gap-1">
                       <Calendar size={10} />
-                      {new Date(r.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
+                      {new Date(r.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      })}
                     </span>
                     {r.az && <span className="font-mono">{r.az}</span>}
                     {r.ecli && <span className="font-mono text-xs">{r.ecli}</span>}

@@ -90,7 +90,7 @@ export const SPECIALISTS = [
 ] as const;
 
 export const MODEL_OPTIONS = [
-  { value: "", label: "Auto (Engine-Default)" },
+  { value: "", label: "Automatisch (Standard)" },
   { value: "claude-haiku-4-5", label: "Claude Haiku 4.5 (schnell)" },
   { value: "claude-sonnet-4-5", label: "Claude Sonnet 4.5 (ausgewogen)" },
   { value: "claude-opus-4-5", label: "Claude Opus 4.5 (stark)" },
