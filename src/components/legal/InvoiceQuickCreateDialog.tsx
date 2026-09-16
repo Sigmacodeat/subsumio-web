@@ -86,7 +86,6 @@ interface InvoiceCase {
   slug: string;
   title: string;
   caseNumber: string;
-  client?: string;
   clientName?: string;
   clientSlug?: string;
   timeEntries?: TimeEntry[];
@@ -775,7 +774,7 @@ export function InvoiceQuickCreateDialog({
                 <div className="flex justify-between gap-4">
                   <dt className="text-[color:var(--ds-text-muted)]">{t("inv.preview_client")}</dt>
                   <dd className="text-right font-medium text-[color:var(--ds-text)]">
-                    {selectedCase?.client || "—"}
+                    {selectedCase?.clientName || "—"}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4">

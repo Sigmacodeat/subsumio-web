@@ -1477,8 +1477,8 @@ export const D = {
     en: "XRechnung / ZUGFeRD / small business",
   },
   "settings.notification_warning_label": {
-    de: "Benachrichtigung fehlt",
-    en: "Notifications missing",
+    de: "E-Mail nicht eingerichtet",
+    en: "Email not set up",
   },
   "settings.notification_warning_tooltip": {
     de: "E-Mail/SMTP nicht konfiguriert — Fristen-Erinnerungen werden nur im Dashboard angezeigt. Bitte in den Kanzlei-Einstellungen konfigurieren.",
@@ -6269,6 +6269,15 @@ export const D = {
   "braindetail.section_content": { de: "Inhalt", en: "Content" },
   "braindetail.section_metadata": { de: "Metadaten", en: "Metadata" },
   "braindetail.section_relations": { de: "Beziehungen", en: "Relations" },
+  "braindetail.copied": { de: "Kopiert", en: "Copied" },
+  "braindetail.crumb_case": { de: "Akte", en: "Matter" },
+  "braindetail.type_document": { de: "Dokument", en: "Document" },
+  "braindetail.doc_open_original": { de: "Original öffnen", en: "Open original" },
+  "braindetail.doc_download": { de: "Herunterladen", en: "Download" },
+  "braindetail.doc_to_case": { de: "Zur Akte", en: "To matter" },
+  "braindetail.doc_show_text": { de: "Extrahierten Text anzeigen", en: "Show extracted text" },
+  "braindetail.doc_show_preview": { de: "Vorschau anzeigen", en: "Show preview" },
+  "braindetail.doc_preview_title": { de: "Dokumentvorschau", en: "Document preview" },
 
   // ── Experience page ──
   "experience.title": { de: "Erfahrungen & Insights", en: "Experience & Insights" },

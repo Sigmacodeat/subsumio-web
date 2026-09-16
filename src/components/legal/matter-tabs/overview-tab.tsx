@@ -1195,7 +1195,8 @@ function VerjaehrungsScanCard({ caseSlug, lang }: { caseSlug: string; lang: "de"
     (async () => {
       setLoading(true);
       try {
-        const page = await api.brain.getPage(`limitation-scan/${caseSlug}`);
+        const limSlug = `limitation-scan/${caseSlug}`;
+        const page = (await api.brain.getPages([limSlug]))[limSlug] ?? null;
         if (cancelled) return;
         if (!page) {
           setData(null);
@@ -1506,7 +1507,8 @@ function InstitutionChecklistCard({ caseSlug, lang }: { caseSlug: string; lang: 
     (async () => {
       setLoading(true);
       try {
-        const page = await api.brain.getPage(`institution-checklists/${caseSlug}`);
+        const instSlug = `institution-checklists/${caseSlug}`;
+        const page = (await api.brain.getPages([instSlug]))[instSlug] ?? null;
         if (cancelled) return;
         if (page && page.content) {
           const text = page.content;

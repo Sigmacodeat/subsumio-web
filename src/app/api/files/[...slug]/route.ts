@@ -53,7 +53,11 @@ export const GET = createHandler(
       const cd = res.headers.get("content-disposition");
       const cl = res.headers.get("content-length");
       headers.set("Content-Type", ct || "application/octet-stream");
-      if (cd) headers.set("Content-Disposition", cd);
+      // `?inline=1` renders the original in the browser (PDF preview on the
+      // document page); the engine always answers `attachment`.
+      const inline = new URL(req.url).searchParams.get("inline") === "1";
+      if (cd)
+        headers.set("Content-Disposition", inline ? cd.replace(/^attachment/i, "inline") : cd);
       if (cl) headers.set("Content-Length", cl);
 
       return new Response(res.body, { status: 200, headers });

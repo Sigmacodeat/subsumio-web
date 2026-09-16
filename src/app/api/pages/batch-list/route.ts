@@ -12,14 +12,7 @@ export const POST = createHandler(
     action: "brain.read",
     rateTier: "standard",
     body: batchListSchema,
-    audit: (_ctx, body) => ({
-      action: "pages.batch_list" as const,
-      entityType: "page",
-      details: {
-        types: body.types,
-        limit: body.limit,
-      },
-    }),
+    // Plain list read (fires on almost every dashboard page load): not audited.
   },
   async (ctx, body) => {
     const results: Record<string, unknown[]> = {};

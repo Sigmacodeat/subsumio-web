@@ -192,5 +192,24 @@ Lauf: `SUBSUMIO_E2E_PORT=3100 SUBSUMIO_E2E_DIST_DIR=.next-e2e npx playwright tes
 
 Alle acht Stationen und die sechs Arbeitsräume sind durchgespielt. Offen bleiben nur die
 KI-Stationen mit echtem Modell (4, Strategie, Briefing, Fristen-Erkennung) — Blocker
-Provider-Guthaben — sowie die ⚠️-Punkte oben (Dokumentansicht, Rechnungsvorschau „Kunde —",
-Badge-Wortlaut, 404-Rauschen limitation-scan/institution-checklists, doppelte Listenabrufe).
+Provider-Guthaben — sowie die doppelten Listenabrufe pro Seitenaufruf (Performance, kein
+Funktionsfehler).
+
+## Nachtrag — ⚠️-Punkte aus den Stationen abgearbeitet (headless verifiziert)
+
+- **Dokumentansicht statt Brain-Seite:** Ein Akten-Dokument zeigt jetzt oben „Original
+  öffnen" (im Browser, `?inline=1`), „Herunterladen", „Zur Akte" und für PDFs eine
+  eingebettete Vorschau des Originals; der extrahierte Text bleibt per Umschalter erreichbar.
+  Brotkrume führt zurück in den Dokumente-Tab der Akte. Der Typ-Badge zeigte bisher die
+  interne Brain-ID (`page.source`) — jetzt den Seitentyp. Zugriffe auf das Original bleiben
+  als `document.download` im Audit.
+- **Rechnungsvorschau „Kunde —":** Der Dialog las ein nie befülltes Alt-Feld `client`
+  statt `clientName`. Vorschau zeigt jetzt den Mandanten (QA-2026-003 → „Petra Novak").
+- **404-Rauschen:** Verjährungs- und Institutionen-Karte in der Aktenübersicht holen ihre
+  Analyse-Seiten über den Batch-Read (200 mit leerem Ergebnis) statt per Einzel-GET (404 in
+  Konsole und Server-Log bei jeder Akte ohne Scan). Aktenübersicht: 0 fehlgeschlagene Requests.
+- **Audit-Log-Rauschen:** `pages.batch_read`/`pages.batch_list` wurden bei fast jedem
+  Seitenaufruf protokolliert (283 Einträge in der Auth-DB, ohne Aktionsbezug; der Einzel-GET
+  war nie auditiert). Beide Lese-Routen protokollieren nicht mehr.
+- **Badge in den Einstellungen:** „Benachrichtigung fehlt" → „E-Mail nicht eingerichtet"
+  (der Tooltip erklärt SMTP).

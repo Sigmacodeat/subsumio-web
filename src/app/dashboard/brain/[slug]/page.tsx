@@ -21,12 +21,16 @@ import {
   Check,
   ExternalLink,
   Loader2,
+  Download,
+  Briefcase,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { BrainPage, Entity } from "@/lib/types";
+import { pageTypeOf } from "@/lib/types";
+import { encodeSlugPath } from "@/lib/utils";
 import { GobdIntegrityPanel } from "@/components/gobd-integrity-panel";
 const ChatPanel = lazy(() =>
   import("@/components/chat/chat-panel").then((m) => ({ default: m.ChatPanel }))
@@ -73,6 +77,7 @@ export default function BrainDetailPage() {
   const [content, setContent] = useState("");
   const [copied, setCopied] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [showPreview, setShowPreview] = useState(true);
 
   useEffect(() => {
     if (!slug) return;
@@ -87,9 +92,20 @@ export default function BrainDetailPage() {
       .finally(() => setLoading(false));
   }, [slug]);
 
-  const pageType = page?.source || "document";
+  const pageType = (page ? pageTypeOf(page) : undefined) || "document";
   const TypeIcon = TYPE_ICON[pageType] || FileText;
   const typeStyle = TYPE_COLOR[pageType] || TYPE_COLOR.document;
+
+  // Uploaded originals (Akten-Dokumente) get a document view: preview of the
+  // original file, open/download, and the way back into the matter. The
+  // extracted text stays available below it.
+  const fm = (page?.frontmatter ?? {}) as Record<string, unknown>;
+  const isDocument = pageType === "document" || pageType === "legal_document";
+  const caseSlug = typeof fm.case_slug === "string" ? fm.case_slug : "";
+  const sourceFormat = typeof fm.source_format === "string" ? fm.source_format.toLowerCase() : "";
+  const fileHref = `/api/files/${encodeSlugPath(slug)}`;
+  const canPreview = isDocument && sourceFormat === "pdf";
+  const caseHref = caseSlug ? `/dashboard/cases/${encodeSlugPath(caseSlug)}/documents` : "";
 
   const copySlug = async () => {
     await navigator.clipboard.writeText(slug);
@@ -173,12 +189,15 @@ export default function BrainDetailPage() {
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-6 py-3">
           <div className="flex items-center gap-2">
             <Link
-              href="/dashboard/brain"
+              href={caseHref || "/dashboard/brain"}
+              aria-label={caseHref ? t("braindetail.crumb_case") : "Brain"}
               className="text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text-muted)] motion-reduce:transition-none"
             >
               <ArrowLeft size={16} />
             </Link>
-            <span className="text-xs text-[color:var(--ds-text-muted)]">Brain</span>
+            <span className="text-xs text-[color:var(--ds-text-muted)]">
+              {caseHref ? t("braindetail.crumb_case") : "Brain"}
+            </span>
             <span className="text-xs text-[color:var(--ds-border)]">/</span>
             <span className="max-w-[200px] truncate font-mono text-xs text-[color:var(--ds-text-muted)]">
               {slug}
@@ -194,7 +213,7 @@ export default function BrainDetailPage() {
               ) : (
                 <Copy size={12} />
               )}
-              {copied ? t("braindetail.btn_save") : "Slug"}
+              {copied ? t("braindetail.copied") : "Slug"}
             </button>
             <button
               onClick={() => setEditMode(!editMode)}
@@ -243,7 +262,9 @@ export default function BrainDetailPage() {
                 <div>
                   <h1 className="text-2xl font-bold text-[color:var(--ds-text)]">{page.title}</h1>
                   <div className="mt-1 flex items-center gap-2">
-                    <Badge variant="document">{page.source}</Badge>
+                    <Badge variant="document">
+                      {isDocument ? t("braindetail.type_document") : pageType}
+                    </Badge>
                     <span className="text-xs text-[color:var(--ds-text-muted)]">·</span>
                     <span className="font-mono text-xs text-[color:var(--ds-text-muted)]">
                       {page.word_count} Wörter
@@ -280,6 +301,57 @@ export default function BrainDetailPage() {
               </div>
             </div>
 
+            {/* Document toolbar: original file + matter link */}
+            {isDocument && !editMode && (
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+                <a
+                  href={`${fileHref}?inline=1`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="brand-soft brand-text brand-border inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color] motion-reduce:transition-none"
+                >
+                  <ExternalLink size={12} />
+                  {t("braindetail.doc_open_original")}
+                </a>
+                <a
+                  href={fileHref}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
+                >
+                  <Download size={12} />
+                  {t("braindetail.doc_download")}
+                </a>
+                {caseHref && (
+                  <Link
+                    href={caseHref}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
+                  >
+                    <Briefcase size={12} />
+                    {t("braindetail.doc_to_case")}
+                  </Link>
+                )}
+                {canPreview && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPreview((v) => !v)}
+                    className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
+                  >
+                    {showPreview ? <FileText size={12} /> : <Eye size={12} />}
+                    {showPreview
+                      ? t("braindetail.doc_show_text")
+                      : t("braindetail.doc_show_preview")}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {canPreview && showPreview && !editMode && (
+              <iframe
+                src={`${fileHref}?inline=1`}
+                title={t("braindetail.doc_preview_title")}
+                className="h-[70vh] w-full rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+              />
+            )}
+
             {/* Content */}
             {editMode ? (
               <div className="space-y-3">
@@ -298,7 +370,7 @@ export default function BrainDetailPage() {
                   </Button>
                 </div>
               </div>
-            ) : (
+            ) : canPreview && showPreview ? null : (
               <div className="prose-dark">{renderContent(content)}</div>
             )}
 
