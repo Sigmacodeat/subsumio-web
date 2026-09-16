@@ -66,6 +66,14 @@ import type { WorkProductType } from "@/lib/work-product-receipts";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
+/** Best-effort client IP for audit rows (first hop of x-forwarded-for, else x-real-ip). */
+export function clientIpOf(req: Request): string | undefined {
+  const real = req.headers.get("x-real-ip")?.trim();
+  if (real) return real;
+  const fwd = req.headers.get("x-forwarded-for");
+  return fwd?.split(",")[0]?.trim() || undefined;
+}
+
 export type HandlerContext = EngineContext;
 
 // Only 16 of roughly 500 API routes enable citation grounding. Keeping the
@@ -514,10 +522,17 @@ export function createHandler<
       try {
         const spec = options.audit(ctx, body, query, req);
         const specs = Array.isArray(spec) ? spec : [spec];
+        // Attribute every entry to the firm brain and the acting user — the
+        // audit page lists per brain and the hash chain is per brain. Without
+        // these, every dashboard action landed under brain "system".
         for (const s of specs) {
           void logAudit(s.action, s.entityType, {
             entityId: s.entityId,
             details: s.details,
+            brainId: ctx.brainId,
+            userId: ctx.user.id,
+            userEmail: ctx.user.email,
+            ip: clientIpOf(req),
           });
         }
       } catch {
@@ -712,6 +727,7 @@ export function createWebhookHandler<B extends z.ZodTypeAny | undefined = undefi
           void logAudit(s.action, s.entityType, {
             entityId: s.entityId,
             details: s.details,
+            ip: clientIpOf(req),
           });
         }
       } catch {

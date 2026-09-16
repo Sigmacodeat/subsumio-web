@@ -345,8 +345,10 @@ describe("createHandler Guard-Chain", () => {
     const body = await res.json();
     expect(body.ok).toBe(true);
 
-    // Audit should have been called
+    // Audit should have been called — attributed to the firm brain and user
     expect(logAudit).toHaveBeenCalledOnce();
+    const auditOpts = vi.mocked(logAudit).mock.calls[0]?.[2] as Record<string, unknown>;
+    expect(auditOpts).toMatchObject({ brainId: expect.any(String), userId: expect.any(String) });
   });
 
   it("7. Handler throws AppError → structured error response", async () => {

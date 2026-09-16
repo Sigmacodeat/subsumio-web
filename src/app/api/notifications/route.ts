@@ -17,14 +17,8 @@ export const GET = createHandler(
       unread: z.string().optional(),
       limit: z.string().optional(),
     }),
-    audit: (_ctx, _body, query) => ({
-      action: "notifications.list" as const,
-      entityType: "notification",
-      details: {
-        unread_only: query.unread === "true",
-        limit: query.limit,
-      },
-    }),
+    // No audit entry for the unread poll: the dashboard fetches it every few
+    // seconds and it carries no sensitive data — it only buried real actions.
   },
   async (ctx, _body, query, _req) => {
     const limit = query.limit ? Math.min(parseInt(query.limit, 10) || 50, 200) : 50;

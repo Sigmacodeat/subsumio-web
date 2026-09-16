@@ -130,7 +130,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     description: "Klauselmatrix, rote Flaggen und Änderungsvorschläge",
     icon: "📋",
     prompt:
-      "Analysiere alle Verträge nach deutschem Recht. Erstelle eine Klauselmatrix, identifiziere rote Flaggen, und empfehle konkrete Änderungen.",
+      "Analysiere alle Verträge nach österreichischem Recht (ABGB, UGB, KSchG). Erstelle eine Klauselmatrix, identifiziere rote Flaggen, und empfehle konkrete Änderungen.",
     steps: [
       { label: "Verträge analysieren", action_type: "document_finalize" },
       { label: "Klauselmatrix erstellen", action_type: "document_finalize" },
