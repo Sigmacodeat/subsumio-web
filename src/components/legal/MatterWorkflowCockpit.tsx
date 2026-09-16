@@ -231,7 +231,7 @@ export function MatterWorkflowCockpit() {
               id="matter-workflow-title"
               className="text-base font-semibold text-[color:var(--ds-text)]"
             >
-              Akten-Cockpit
+              Arbeitsstand der Akte
             </h2>
           </div>
           <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">

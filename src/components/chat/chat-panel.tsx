@@ -2163,7 +2163,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
               : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-surface-2)]"
           } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none`}
         >
-          Copilot
+          {t("copilot.copilot")}
         </button>
         <button
           onClick={() => setSubsumptionMode(true)}

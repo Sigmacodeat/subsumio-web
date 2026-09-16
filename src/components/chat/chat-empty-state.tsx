@@ -36,7 +36,7 @@ export function ChatEmptyState({
     >
       {/* Copilot Brain Identity — larger for empty state with soft orb */}
       <div className="mb-6">
-        <BrainAvatar size="lg" orb title="Subsumio Copilot" />
+        <BrainAvatar size="lg" orb title="Subsumio Assistent" />
       </div>
 
       {/* Large editorial greeting */}

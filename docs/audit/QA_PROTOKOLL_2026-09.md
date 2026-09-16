@@ -367,3 +367,23 @@ und Aktenblatt; Upload → Analyse → Fristvorschläge durchgängig.
 - **`autonomous-engine`** minütlich im Hetzner-Crontab eingeplant (Freigabe-Gate bleibt).
 - **Kontingent-Entscheidung:** Free-Plan bleibt bei 100 Anfragen/Monat als Testschwelle; die
   Pilotkanzlei erhält über die Ops-Konsole den Plan `team` (4 000/Monat). Kein Code nötig.
+
+## Frontend-Modernisierung (Design-Programm, Start 16.09. abends)
+
+Richtlinie: `docs/design/DESIGN_STANDARD.md`; Befunde und Wellen: `docs/design/DESIGN_AUDIT_2026-09.md`.
+
+- **Welle 1 Sprache:** Sie-Form durchgängig (86 Strings, Assistent, Auth, Cockpit); Engine-Jargon
+  aus Anwaltsflächen entfernt (Kanzleiwissen, Nächtliche Konsolidierung, Kennung, Gespräch,
+  Subsumio-Dienst, Dokumentablage, Fristenrechner); ein Name pro Ding („Übersicht",
+  „Assistent"); sichtbare Defekte (Tippfehler, doppelte Kachel, Slug-Segment in der
+  Seitenleiste, technische Kacheln nur für Admins).
+- **Welle 2 Struktur/Zustände:** Seiten-Skeleton statt Spinner auf allen Routen und in der
+  Shell; `h1` auf jeder Seite; Assistenten-Panel nicht doppelt neben dem Assistenten; Datum
+  `TT.MM.JJJJ`, Beträge `1.234,50 €`; Primärfarbe nur für Hauptaktionen.
+- **Welle 3 Zustände/Details:** gemeinsamer Leerzustand mit genau einer Aktion (Aufgaben,
+  Kalender, Verträge), Kennzahlen 2×2 auf dem Handy, keine Badge-Doppelung bei Fristen,
+  Akten-Kopf lädt als Skeleton, Kennzahlen bei 0 ohne Signalfarbe, keine pulsierenden Icons.
+- **Prüfung:** automatischer Audit über alle 115 Routen (h1, Ladetexte, Spinner, Anrede,
+  Jargon) plus Screenshots Desktop hell / Mobil dunkel der Kernseiten; 0 horizontaler Überlauf.
+- **Bewusst außen vor:** Website-/Marketingtexte und Rechtstexte bleiben in der Du-Form der
+  Website; technische Admin-Flächen (Ops, Verbindung, SCIM, Word-Add-in) behalten Fachbegriffe.

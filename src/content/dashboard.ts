@@ -2147,7 +2147,7 @@ export const D = {
   "nav.ai_model": { de: "KI-Modell", en: "AI Model" },
   "nav.memory": { de: "Gedächtnis", en: "Memory" },
   "nav.tooltip.memory": {
-    de: "Copilot-Gedächtnis verwalten — Erinnerungen, Präferenzen, Anweisungen",
+    de: "Assistenten-Gedächtnis verwalten — Erinnerungen, Präferenzen, Anweisungen",
     en: "Manage copilot memory — memories, preferences, instructions",
   },
 
@@ -2203,7 +2203,7 @@ export const D = {
   },
   "cmd.section.actions": { de: "Aktionen", en: "Actions" },
   "cmd.section.create": { de: "Erstellen", en: "Create" },
-  "cmd.ask_copilot": { de: "Copilot fragen", en: "Ask Copilot" },
+  "cmd.ask_copilot": { de: "Assistent fragen", en: "Ask assistant" },
   "cmd.nav.brain": {
     de: "Kanzleiwissen — Wissensbasis-Explorer",
     en: "Brain — Knowledge Base Explorer",

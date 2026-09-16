@@ -133,7 +133,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                     : brainOnline
                       ? t("chat.brain_online")
                       : t("chat.brain_offline")
-                  : "Subsumio Copilot"
+                  : "Subsumio Assistent"
               }
             />
             {props.features.brainStatus && (

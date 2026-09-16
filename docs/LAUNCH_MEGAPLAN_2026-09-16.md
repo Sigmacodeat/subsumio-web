@@ -138,6 +138,7 @@ Gate: 0 Konsolenfehler, 0 5xx, jede Kernstation grün, Protokoll vollständig.
 - E2E-Suite: Mock-Modus vollständig grün; Real-Engine-Modus für die 8 Kernstationen.
 - Secrets aus `playwright.config.ts` in Env; CSRF/2FA/Lockout-Specs im Real-Modus.
 - Responsiv (Mobile-Tab-Bar) und Dark-Mode für die Kernflächen.
+- Design-Programm (Sprache, Struktur, Zustände, Formatierung): `docs/design/` — Wellen 1–3 erledigt.
 
 Gate: Playwright Mock-Suite grün ✅, Real-Engine-Smoke grün ✅ für alle Stationen ohne KI
 (94/94; KI-Specs warten auf Provider-Guthaben), 0 Hydration-Warnungen ✅ (Sweep 20 Seiten,
