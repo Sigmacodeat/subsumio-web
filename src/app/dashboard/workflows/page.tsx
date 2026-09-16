@@ -91,11 +91,13 @@ const workflowStatusBadge: Record<
   WorkflowStatus,
   { variant: "default" | "success" | "danger" | "warning" | "info"; icon: typeof Clock }
 > = {
+  draft: { variant: "default", icon: Clock },
   running: { variant: "info", icon: Loader2 },
   completed: { variant: "success", icon: CheckCircle2 },
   failed: { variant: "danger", icon: XCircle },
   paused: { variant: "warning", icon: Pause },
 };
+const FALLBACK_STATUS_BADGE = workflowStatusBadge.draft;
 
 // ── Page ──────────────────────────────────────────────────────────────
 
@@ -477,7 +479,9 @@ function WorkflowCard({
   const progress = getWorkflowProgress(fm.steps);
   const pendingApprovals = getPendingApprovals(fm.steps);
   const template = getTemplate(fm.template_id);
-  const statusBadge = workflowStatusBadge[fm.status];
+  // Seeded/legacy pages may carry a status the badge map does not know;
+  // never let a data value crash the whole page.
+  const statusBadge = workflowStatusBadge[fm.status] ?? FALLBACK_STATUS_BADGE;
   const StatusIcon = statusBadge.icon;
 
   return (

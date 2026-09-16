@@ -53,7 +53,12 @@ export default function SecuritySettingsPage() {
       );
   }, []);
 
+  const isAdmin = meQuery.data?.user?.role === "admin";
   useEffect(() => {
+    if (!isAdmin) {
+      setIpAllowlistLoading(false);
+      return;
+    }
     fetch("/api/admin/ip-allowlist")
       .then((r) => r.json())
       .then((data) => {
@@ -64,7 +69,7 @@ export default function SecuritySettingsPage() {
       })
       .catch(() => {})
       .finally(() => setIpAllowlistLoading(false));
-  }, []);
+  }, [isAdmin]);
 
   async function startSetup() {
     setError(null);
@@ -336,66 +341,68 @@ export default function SecuritySettingsPage() {
         </div>
       )}
 
-      {/* IP Allowlist Section */}
-      <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
-        <div className="flex items-center gap-2">
-          <Globe size={16} className="text-[color:var(--ds-text-muted)]" />
-          <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">IP Allowlist</h3>
-          {ipAllowlistEnabled ? (
-            <Badge variant="default" className="text-xs">
-              Active
-            </Badge>
+      {/* IP Allowlist Section — admin-only (the API requires connector.read) */}
+      {isAdmin && (
+        <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
+          <div className="flex items-center gap-2">
+            <Globe size={16} className="text-[color:var(--ds-text-muted)]" />
+            <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">IP Allowlist</h3>
+            {ipAllowlistEnabled ? (
+              <Badge variant="default" className="text-xs">
+                Active
+              </Badge>
+            ) : (
+              <Badge variant="default" className="text-xs text-[color:var(--ds-text-muted)]">
+                Inactive
+              </Badge>
+            )}
+          </div>
+
+          {ipAllowlistLoading ? (
+            <div
+              className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]"
+              role="status"
+              aria-live="polite"
+            >
+              <Loader2 size={12} className="animate-spin" />
+              Loading...
+            </div>
           ) : (
-            <Badge variant="default" className="text-xs text-[color:var(--ds-text-muted)]">
-              Inactive
-            </Badge>
+            <>
+              <p className="text-xs text-[color:var(--ds-text-muted)]">{ipAllowlistNote}</p>
+
+              {ipAllowlist.length > 0 ? (
+                <div className="space-y-1.5">
+                  {ipAllowlist.map((entry) => (
+                    <div
+                      key={entry}
+                      className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-2"
+                    >
+                      <Shield size={12} className="text-[color:var(--ds-success-text)]" />
+                      <span className="font-mono text-xs text-[color:var(--ds-text)]">{entry}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-3 text-xs text-[color:var(--ds-text-muted)]">
+                  No IPs configured. Set{" "}
+                  <code className="rounded bg-[color:var(--ds-surface)] px-1 py-0.5 font-mono">
+                    SUBSUMIO_IP_ALLOWLIST
+                  </code>{" "}
+                  environment variable to enable.
+                </div>
+              )}
+
+              <div className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]">
+                Configure via environment variable:
+                <pre className="mt-1 font-mono text-xs whitespace-pre-wrap">
+                  SUBSUMIO_IP_ALLOWLIST=10.0.0.0/8,192.168.1.100\nSUBSUMIO_TRUSTED_PROXY_HOPS=1
+                </pre>
+              </div>
+            </>
           )}
         </div>
-
-        {ipAllowlistLoading ? (
-          <div
-            className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]"
-            role="status"
-            aria-live="polite"
-          >
-            <Loader2 size={12} className="animate-spin" />
-            Loading...
-          </div>
-        ) : (
-          <>
-            <p className="text-xs text-[color:var(--ds-text-muted)]">{ipAllowlistNote}</p>
-
-            {ipAllowlist.length > 0 ? (
-              <div className="space-y-1.5">
-                {ipAllowlist.map((entry) => (
-                  <div
-                    key={entry}
-                    className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-2"
-                  >
-                    <Shield size={12} className="text-[color:var(--ds-success-text)]" />
-                    <span className="font-mono text-xs text-[color:var(--ds-text)]">{entry}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-3 text-xs text-[color:var(--ds-text-muted)]">
-                No IPs configured. Set{" "}
-                <code className="rounded bg-[color:var(--ds-surface)] px-1 py-0.5 font-mono">
-                  SUBSUMIO_IP_ALLOWLIST
-                </code>{" "}
-                environment variable to enable.
-              </div>
-            )}
-
-            <div className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]">
-              Configure via environment variable:
-              <pre className="mt-1 font-mono text-xs whitespace-pre-wrap">
-                SUBSUMIO_IP_ALLOWLIST=10.0.0.0/8,192.168.1.100\nSUBSUMIO_TRUSTED_PROXY_HOPS=1
-              </pre>
-            </div>
-          </>
-        )}
-      </div>
+      )}
     </div>
   );
 }

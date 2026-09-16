@@ -711,3 +711,17 @@ describe("advanceStepIdempotent", () => {
     }
   });
 });
+
+describe("draft workflows (seeded per firm)", async () => {
+  const { fmToWorkflowInstance, getWorkflowStatusLabel } = await import("./workflow");
+  it("parses a provisioned draft that carries its type in the page column", () => {
+    const w = fmToWorkflowInstance({
+      slug: "workflows/x",
+      title: "Vertragsprüfung",
+      type: "workflow",
+      frontmatter: { status: "draft", template_id: "contract_review", steps: [] },
+    });
+    expect(w?.frontmatter.status).toBe("draft");
+    expect(getWorkflowStatusLabel("draft")).toBe("Entwurf");
+  });
+});

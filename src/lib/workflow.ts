@@ -18,7 +18,8 @@ import { ACTION_LABELS } from "@/lib/approval";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
-export type WorkflowStatus = "running" | "completed" | "failed" | "paused";
+/** "draft": provisioned from a template but not started yet (seeded per firm). */
+export type WorkflowStatus = "draft" | "running" | "completed" | "failed" | "paused";
 
 export type StepStatus = "pending" | "running" | "approved" | "rejected" | "skipped";
 
@@ -340,12 +341,13 @@ export function getStepStatusLabel(status: StepStatus): string {
 
 export function getWorkflowStatusLabel(status: WorkflowStatus): string {
   const labels: Record<WorkflowStatus, string> = {
+    draft: "Entwurf",
     running: "Läuft",
     completed: "Abgeschlossen",
     failed: "Fehlgeschlagen",
     paused: "Pausiert",
   };
-  return labels[status];
+  return labels[status] ?? status;
 }
 
 export function getActionTypeLabel(actionType: ActionType): string {
