@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { TrendingUp, DollarSign, Percent, Cpu, Loader2, AlertCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface UsageByModel {
   model_id: string;
@@ -115,13 +116,11 @@ export function SaasUsageClient() {
 
   if (!data || data.totals.total_calls === 0) {
     return (
-      <div className="flex items-center gap-2.5 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-8">
-        <Cpu size={18} className="text-[color:var(--ds-text-muted)]" />
-        <p className="text-sm text-[color:var(--ds-text-muted)]">
-          Noch keine Usage-Daten vorhanden. Die Tabelle wird beim nächsten Pipeline-Lauf automatisch
-          befüllt.
-        </p>
-      </div>
+      <EmptyState
+        icon={Cpu}
+        title="Noch keine Nutzungsdaten vorhanden"
+        description="Die Tabelle wird beim nächsten Verarbeitungslauf automatisch befüllt."
+      />
     );
   }
 

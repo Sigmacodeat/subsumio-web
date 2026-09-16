@@ -164,7 +164,7 @@ export default function ClaimAccountPage() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <p className="text-xs text-[color:var(--ds-text-muted)]">{t("claim.open_claims")}</p>
           <p className="text-2xl font-bold">{fmtEUR(totalOpen)}</p>

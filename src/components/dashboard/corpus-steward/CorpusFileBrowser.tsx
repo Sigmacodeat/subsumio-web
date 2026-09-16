@@ -65,6 +65,7 @@ import { cn } from "@/lib/utils";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useLang } from "@/lib/use-lang";
 import { csrfFetch } from "@/lib/csrf";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -964,37 +965,32 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
 
           {/* Empty */}
           {!isLoading && !isError && currentEntries.length === 0 && (
-            <div className="flex flex-col items-center gap-3 p-12 text-center">
-              <FileText className="h-8 w-8 text-[color:var(--ds-text-muted)]" aria-hidden="true" />
-              <div>
-                <p className="font-medium text-[color:var(--ds-text)]">
-                  {searchMode === "search" ? "Keine Treffer" : "Keine Dateien"}
-                </p>
-                <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-                  {searchMode === "search"
-                    ? `Keine Dateien gefunden für „${searchQuery}".`
-                    : indexMissing
-                      ? "Der Datei-Index fehlt. Bitte Index erstellen."
-                      : "Dieses Korpus ist leer oder der Filter trifft auf keine Datei zu."}
-                </p>
-              </div>
-              {searchMode === "search" && (
-                <Button variant="outline" size="sm" onClick={handleClearSearch}>
-                  Suche zurücksetzen
-                </Button>
-              )}
-              {indexMissing && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => buildIndexMut.mutate()}
-                  disabled={buildIndexMut.isPending}
-                >
-                  <Database className="h-3 w-3" aria-hidden="true" />
-                  Index erstellen
-                </Button>
-              )}
-            </div>
+            <EmptyState
+              icon={FileText}
+              title={searchMode === "search" ? "Keine Treffer" : "Keine Dateien"}
+              description={
+                searchMode === "search"
+                  ? `Keine Dateien gefunden für „${searchQuery}“.`
+                  : indexMissing
+                    ? "Der Datei-Index fehlt und muss erstellt werden."
+                    : "Dieses Korpus ist leer oder der Filter trifft auf keine Datei zu."
+              }
+              actionLabel={
+                searchMode === "search"
+                  ? "Suche zurücksetzen"
+                  : indexMissing
+                    ? "Index erstellen"
+                    : undefined
+              }
+              onAction={
+                searchMode === "search"
+                  ? handleClearSearch
+                  : () => {
+                      if (!buildIndexMut.isPending) buildIndexMut.mutate();
+                    }
+              }
+              className="border-0 bg-transparent"
+            />
           )}
 
           {/* Tabelle */}
@@ -1036,7 +1032,7 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
                         <tr
                           key={entry.path}
                           className={cn(
-                            "group cursor-pointer transition-[background-color] duration-150 hover:bg-[color:var(--ds-surface-2)]/50 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none focus-visible:ring-inset motion-reduce:transition-none",
+                            "group cursor-pointer transition-[background-color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-surface-2)]/50 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none focus-visible:ring-inset motion-reduce:transition-none",
                             isSelected && "bg-[color:var(--ds-accent)]/5"
                           )}
                           onClick={() => onSelectFile(entry.path)}
@@ -1412,7 +1408,7 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
                 <button
                   onClick={() => setExportFormat("json")}
                   className={cn(
-                    "rounded-md border p-3 text-left transition-[background-color,border-color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
+                    "rounded-md border p-3 text-left transition-[background-color,border-color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
                     exportFormat === "json"
                       ? "border-[color:var(--ds-accent)] bg-[color:var(--ds-accent)]/10"
                       : "border-[color:var(--ds-border)] hover:bg-[color:var(--ds-surface-2)]"
@@ -1427,7 +1423,7 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
                 <button
                   onClick={() => setExportFormat("csv")}
                   className={cn(
-                    "rounded-md border p-3 text-left transition-[background-color,border-color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
+                    "rounded-md border p-3 text-left transition-[background-color,border-color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
                     exportFormat === "csv"
                       ? "border-[color:var(--ds-accent)] bg-[color:var(--ds-accent)]/10"
                       : "border-[color:var(--ds-border)] hover:bg-[color:var(--ds-surface-2)]"

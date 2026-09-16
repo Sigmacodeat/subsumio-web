@@ -476,7 +476,7 @@ export default function CommunicationsPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={tr("search_placeholder", lang)}
                 aria-label={tr("search_placeholder", lang)}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-9 pl-9 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 motion-reduce:transition-none"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-9 pl-9 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 motion-reduce:transition-none"
               />
               {search && (
                 <button
@@ -571,7 +571,7 @@ export default function CommunicationsPage() {
                   <div
                     key={msg.slug}
                     className={cn(
-                      "group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[border-color,background-color,box-shadow] duration-200 hover:border-[color:var(--brand-primary)]/30 hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none",
+                      "group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[border-color,background-color,box-shadow] duration-[var(--ds-duration-normal)] hover:border-[color:var(--brand-primary)]/30 hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none",
                       !msg.read && "border-l-2 border-l-[color:var(--brand-primary)]",
                       card?.urgency === "critical" &&
                         "border-l-2 border-l-[color:var(--ds-danger-solid)]",

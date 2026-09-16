@@ -848,7 +848,7 @@ export default function InvoicingPage() {
         }
       />
 
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         <HubLink href="/dashboard/fee-agreements" icon={FileText} label={t("nav.fee_agreements")} />
         <HubLink href="/dashboard/fibu" icon={FileSpreadsheet} label={t("nav.fibu")} />
         <HubLink href="/dashboard/controlling" icon={BarChart3} label={t("nav.controlling")} />
@@ -954,7 +954,7 @@ export default function InvoicingPage() {
             return (
               <div
                 key={inv.id}
-                className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none sm:gap-4 sm:px-4"
+                className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none sm:gap-4 sm:px-4"
               >
                 <div
                   className={cn(
@@ -1005,14 +1005,14 @@ export default function InvoicingPage() {
                 <div className="hidden shrink-0 items-center gap-1 sm:flex">
                   <button
                     onClick={() => void printInvoice(inv)}
-                    className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-success-bg)] hover:text-[color:var(--ds-success-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+                    className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-success-bg)] hover:text-[color:var(--ds-success-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                     title={t("inv.print")}
                   >
                     <Printer size={14} />
                   </button>
                   <button
                     onClick={() => void downloadPdf(inv)}
-                    className="hover:brand-text brand-bg/10 rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+                    className="hover:brand-text brand-bg/10 rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                     title={t("inv.download_pdf")}
                   >
                     <FileText size={14} />
@@ -1021,7 +1021,7 @@ export default function InvoicingPage() {
                     <button
                       onClick={() => void sendInvoiceEmail(inv)}
                       disabled={busySlug === inv.id}
-                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-info-bg)] hover:text-[color:var(--ds-info-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-info-bg)] hover:text-[color:var(--ds-info-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                       title={t("inv.send_email")}
                     >
                       <Mail size={14} />
@@ -1031,7 +1031,7 @@ export default function InvoicingPage() {
                     <button
                       onClick={() => updateStatus(inv, "sent")}
                       disabled={busySlug === inv.id}
-                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-info-bg)] hover:text-[color:var(--ds-info-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-info-bg)] hover:text-[color:var(--ds-info-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                       title={t("inv.mark_sent")}
                     >
                       <Send size={14} />
@@ -1041,7 +1041,7 @@ export default function InvoicingPage() {
                     <button
                       onClick={() => updateStatus(inv, "paid")}
                       disabled={busySlug === inv.id}
-                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-success-bg)] hover:text-[color:var(--ds-success-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-success-bg)] hover:text-[color:var(--ds-success-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                       title={t("inv.mark_paid")}
                     >
                       <CheckCircle2 size={14} />
@@ -1053,7 +1053,7 @@ export default function InvoicingPage() {
                       <button
                         onClick={() => updateStatus(inv, "cancelled")}
                         disabled={busySlug === inv.id}
-                        className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+                        className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                         title={t("inv.cancel_invoice")}
                       >
                         <XCircle size={14} />
@@ -1064,7 +1064,7 @@ export default function InvoicingPage() {
                       <button
                         onClick={() => void sendReminder(inv)}
                         disabled={busySlug === inv.id}
-                        className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-warning-bg)] hover:text-[color:var(--ds-warning-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+                        className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-warning-bg)] hover:text-[color:var(--ds-warning-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                         title={`${inv.reminderCount ? `${inv.reminderCount}. ` : ""}${t("inv.send_reminder")}`}
                       >
                         <AlertTriangle size={14} />
@@ -1073,7 +1073,7 @@ export default function InvoicingPage() {
                   {(userRole === "admin" || userRole === "lawyer") && (
                     <button
                       onClick={() => deleteInvoice(inv)}
-                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                       title={t("inv.delete")}
                     >
                       <Trash2 size={14} />
@@ -1086,7 +1086,7 @@ export default function InvoicingPage() {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
-                        className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-150 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
+                        className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
                         aria-label="Aktionen"
                       >
                         <MoreVertical size={16} />

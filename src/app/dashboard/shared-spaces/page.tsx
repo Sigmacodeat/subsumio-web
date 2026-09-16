@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { csrfFetch } from "@/lib/csrf";
 import type { SharedSpace, SpaceMember, SpaceResource } from "@/lib/shared-spaces";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 const roleBadge: Record<string, string> = {
   owner:
@@ -168,7 +169,7 @@ export default function SharedSpacesPage() {
           <Share2 className="h-12 w-12 text-[color:var(--ds-text-muted)]" />
           <h2 className="text-xl font-semibold">Keine Shared Spaces vorhanden</h2>
           <p className="max-w-md text-center text-[color:var(--ds-text-muted)]">
-            Erstelle einen Shared Space, um Dokumente, Akten und Playbooks mit anderen
+            Legen Sie einen geteilten Bereich an, um Dokumente, Akten und Playbooks mit anderen
             Organisationen zu teilen.
           </p>
           <Button onClick={() => setShowCreate(true)}>
@@ -399,9 +400,12 @@ function SpaceDetailModal({ space, onClose }: { space: SharedSpace; onClose: () 
             Ressourcen ({space.resources.length})
           </h3>
           {space.resources.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-[color:var(--ds-border)] px-3 py-6 text-center text-sm text-[color:var(--ds-text-muted)]">
-              Noch keine Ressourcen geteilt. Füge Dokumente, Akten oder Playbooks hinzu.
-            </p>
+            <EmptyState
+              icon={FileText}
+              title="Noch keine Ressourcen geteilt"
+              description="Fügen Sie Dokumente, Akten oder Playbooks hinzu."
+              className="py-8"
+            />
           ) : (
             <div className="space-y-2">
               {space.resources.map((resource: SpaceResource, i) => {

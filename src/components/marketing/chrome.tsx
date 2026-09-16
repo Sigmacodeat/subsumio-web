@@ -135,7 +135,7 @@ const NAV_LINK_ACTIVE =
 
 /** Shared link class helper — used by both desktop and mobile nav. */
 function navLinkCls(isActive: boolean): string {
-  return `text-sm px-3 py-2 rounded-lg transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none duration-200 ${NAV_LINK_BORDER} ${NAV_LINK_FOCUS} ${
+  return `text-sm px-3 py-2 rounded-lg transition-[background-color,border-color,color,box-shadow,transform,opacity] motion-reduce:transition-none duration-[var(--ds-duration-normal)] ${NAV_LINK_BORDER} ${NAV_LINK_FOCUS} ${
     isActive ? NAV_LINK_ACTIVE : NAV_LINK_INACTIVE
   }`;
 }
@@ -180,7 +180,7 @@ function FeaturedSidebar({
       className="group relative flex w-[240px] shrink-0 flex-col justify-between border-l [border-color:var(--mk-border)] p-4 transition-[background-color,border-color,color] hover:[background:var(--mk-hover)] motion-reduce:transition-none"
     >
       {/* Decorative gradient orb */}
-      <div className="brand-bg pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full opacity-[0.07] blur-2xl transition-opacity duration-300 group-hover:opacity-[0.12]" />
+      <div className="brand-bg pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full opacity-[0.07] blur-2xl transition-opacity duration-[var(--ds-duration-normal)] group-hover:opacity-[0.12]" />
 
       <div className="relative">
         {/* Icon + Badge row */}
@@ -202,7 +202,7 @@ function FeaturedSidebar({
       <div className="brand-text mt-4 flex items-center gap-1 text-sm font-medium">
         <ChevronRight
           size={14}
-          className="shrink-0 transition-transform duration-200 group-hover:translate-x-0.5"
+          className="shrink-0 transition-transform duration-[var(--ds-duration-normal)] group-hover:translate-x-0.5"
         />
       </div>
     </Link>
@@ -263,7 +263,7 @@ function AnnouncementBar({ nav }: { nav: NavContent }) {
               <span>{nav.announcement.text}</span>
               <ChevronRight
                 size={12}
-                className="shrink-0 [color:var(--brand-text)] transition-transform duration-200 group-hover:translate-x-0.5"
+                className="shrink-0 [color:var(--brand-text)] transition-transform duration-[var(--ds-duration-normal)] group-hover:translate-x-0.5"
               />
             </Link>
             <button
@@ -484,13 +484,13 @@ export function MarketingNav() {
     <>
       <AnnouncementBar nav={nav} />
       <div
-        className={`sticky top-0 z-50 transition-transform duration-300 ${
+        className={`sticky top-0 z-50 transition-transform duration-[var(--ds-duration-normal)] ${
           headerVisible ? "translate-y-0" : "-translate-y-full"
         }`}
       >
         <header
           data-tone="light"
-          className={`border-b transition-[background,box-shadow,border-color] duration-300 motion-reduce:transition-none ${
+          className={`border-b transition-[background,box-shadow,border-color] duration-[var(--ds-duration-normal)] motion-reduce:transition-none ${
             scrolled
               ? "[border-color:var(--mk-border)] shadow-[0_1px_0_rgba(0,0,0,0.06),0_4px_20px_rgba(0,0,0,0.06)] backdrop-blur-xl"
               : "[border-color:transparent]"
@@ -525,7 +525,7 @@ export function MarketingNav() {
                       onMouseLeave={handleSectionLeave}
                     >
                       <button
-                        className={`relative flex items-center gap-1 rounded-lg px-3 py-2 text-sm transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 motion-reduce:transition-none ${NAV_LINK_BORDER} ${NAV_LINK_FOCUS} ${
+                        className={`relative flex items-center gap-1 rounded-lg px-3 py-2 text-sm transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] motion-reduce:transition-none ${NAV_LINK_BORDER} ${NAV_LINK_FOCUS} ${
                           sectionActive || isOpen
                             ? "font-medium [color:var(--brand-text)]"
                             : NAV_LINK_INACTIVE
@@ -539,7 +539,7 @@ export function MarketingNav() {
                         {section.label}
                         <ChevronDown
                           size={14}
-                          className={`shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                          className={`shrink-0 transition-transform duration-[var(--ds-duration-normal)] ${isOpen ? "rotate-180" : ""}`}
                         />
                         {/* Active section underline indicator */}
                         {sectionActive && (
@@ -612,7 +612,7 @@ export function MarketingNav() {
                                           href={p(item.href)}
                                           onClick={() => setOpenSection(null)}
                                           role="menuitem"
-                                          className={`group flex items-start gap-3 rounded-xl px-3 py-2.5 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-150 motion-reduce:transition-none ${NAV_LINK_FOCUS} ${
+                                          className={`group flex items-start gap-3 rounded-xl px-3 py-2.5 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-fast)] motion-reduce:transition-none ${NAV_LINK_FOCUS} ${
                                             active
                                               ? "[background:color-mix(in_srgb,var(--brand-primary)_8%,var(--mk-hover))]"
                                               : "hover:[background:var(--mk-hover)]"
@@ -661,7 +661,7 @@ export function MarketingNav() {
                                   {section.ctaBottom.label}
                                   <ChevronRight
                                     size={12}
-                                    className="shrink-0 transition-transform duration-200 group-hover:translate-x-0.5"
+                                    className="shrink-0 transition-transform duration-[var(--ds-duration-normal)] group-hover:translate-x-0.5"
                                   />
                                 </Link>
                               )}
@@ -693,7 +693,7 @@ export function MarketingNav() {
                     className="text-sm [color:var(--mk-text-muted)] hover:[color:var(--brand-text)]"
                     asChild
                   >
-                    <Link href={p(nav.ctaSecondaryHref)} className="max-lg:hidden">
+                    <Link href={p(nav.ctaSecondaryHref)} className="max-xl:hidden">
                       {nav.ctaSecondary}
                     </Link>
                   </Button>
@@ -708,7 +708,7 @@ export function MarketingNav() {
                     {nav.cta}
                     <ChevronRight
                       size={14}
-                      className="transition-transform duration-200 group-hover:translate-x-0.5"
+                      className="transition-transform duration-[var(--ds-duration-normal)] group-hover:translate-x-0.5"
                     />
                   </Link>
                 </Button>
@@ -725,7 +725,7 @@ export function MarketingNav() {
                   >
                     <ChevronRight
                       size={16}
-                      className="transition-transform duration-200 group-hover:translate-x-0.5"
+                      className="transition-transform duration-[var(--ds-duration-normal)] group-hover:translate-x-0.5"
                     />
                   </span>
                 </Link>
@@ -743,19 +743,19 @@ export function MarketingNav() {
                 >
                   <span className="relative flex h-5 w-5 items-center justify-center">
                     <span
-                      className={`absolute h-0.5 w-5 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+                      className={`absolute h-0.5 w-5 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
                         mobileOpen ? "top-1/2 -translate-y-1/2 rotate-45" : "top-[3px]"
                       }`}
                     />
                     <span
-                      className={`absolute h-0.5 w-5 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+                      className={`absolute h-0.5 w-5 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
                         mobileOpen
                           ? "top-1/2 -translate-y-1/2 opacity-0"
                           : "top-1/2 -translate-y-1/2"
                       }`}
                     />
                     <span
-                      className={`absolute h-0.5 w-5 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+                      className={`absolute h-0.5 w-5 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
                         mobileOpen ? "top-1/2 -translate-y-1/2 -rotate-45" : "bottom-[3px]"
                       }`}
                     />
@@ -805,7 +805,7 @@ export function MarketingNav() {
                   <BrandLogo />
                 </Link>
                 <button
-                  className="group flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-2 [color:var(--mk-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:outline-none active:scale-90 motion-reduce:transition-none"
+                  className="group flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-2 [color:var(--mk-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:outline-none active:scale-90 motion-reduce:transition-none"
                   onClick={() => {
                     setMobileOpen(false);
                     if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
@@ -813,8 +813,8 @@ export function MarketingNav() {
                   aria-label={UI_STRINGS.ariaCloseMenu}
                 >
                   <span className="relative flex h-5 w-5 items-center justify-center">
-                    <span className="absolute top-1/2 h-0.5 w-5 -translate-y-1/2 rotate-45 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none" />
-                    <span className="absolute top-1/2 h-0.5 w-5 -translate-y-1/2 -rotate-45 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none" />
+                    <span className="absolute top-1/2 h-0.5 w-5 -translate-y-1/2 rotate-45 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none" />
+                    <span className="absolute top-1/2 h-0.5 w-5 -translate-y-1/2 -rotate-45 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none" />
                   </span>
                 </button>
               </div>
@@ -826,7 +826,7 @@ export function MarketingNav() {
                     {nav.cta}
                     <ChevronRight
                       size={14}
-                      className="transition-transform duration-200 group-hover:translate-x-0.5"
+                      className="transition-transform duration-[var(--ds-duration-normal)] group-hover:translate-x-0.5"
                     />
                   </Link>
                 </Button>
@@ -863,7 +863,7 @@ export function MarketingNav() {
                         </span>
                         <ChevronDown
                           size={18}
-                          className={`shrink-0 transition-transform duration-200 ${expanded ? "rotate-180" : ""} [color:var(--mk-text-subtle)]`}
+                          className={`shrink-0 transition-transform duration-[var(--ds-duration-normal)] ${expanded ? "rotate-180" : ""} [color:var(--mk-text-subtle)]`}
                         />
                       </button>
                       <AnimatePresence>
@@ -906,7 +906,7 @@ export function MarketingNav() {
                                   </div>
                                   <ChevronRight
                                     size={14}
-                                    className="brand-text mt-1 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5"
+                                    className="brand-text mt-1 shrink-0 transition-transform duration-[var(--ds-duration-normal)] group-hover:translate-x-0.5"
                                   />
                                 </Link>
                               )}

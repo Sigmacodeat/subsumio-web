@@ -77,7 +77,7 @@ export function SubsumioLogo({
       >
         <SubsumioMark
           size={size}
-          className="transition-shadow duration-300 group-hover:shadow-[0_0_18px_rgba(47,107,255,0.25)]"
+          className="transition-shadow duration-[var(--ds-duration-normal)] group-hover:shadow-[var(--ds-glow-brand)]"
         />
       </motion.span>
       <motion.span

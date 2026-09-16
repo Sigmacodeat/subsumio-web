@@ -358,8 +358,8 @@ export function ChunkQuality({
                     }
                     className={
                       onSelectSource
-                        ? "cursor-pointer border-b transition-[background-color] duration-150 hover:bg-[color:var(--ds-surface-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
-                        : "border-b transition-[background-color] duration-150 hover:bg-[color:var(--ds-surface-hover)] motion-reduce:transition-none"
+                        ? "cursor-pointer border-b transition-[background-color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-surface-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
+                        : "border-b transition-[background-color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-surface-hover)] motion-reduce:transition-none"
                     }
                   >
                     <td className="py-2 pr-3 font-mono text-xs">{r.source}</td>

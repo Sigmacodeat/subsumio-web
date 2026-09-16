@@ -29,6 +29,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { api } from "@/lib/api";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import { CitationPanel } from "@/components/legal/CitationPanel";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface Commentary {
   id: string;
@@ -325,20 +326,13 @@ export default function CommentariesPage() {
 
         {/* Empty state */}
         {!loading && commentaries.length === 0 && !error && (
-          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-card)] py-16 text-center">
-            <BookOpen className="mx-auto mb-4 h-12 w-12 text-[color:var(--ds-text-muted)]" />
-            <h3 className="mb-2 text-lg font-semibold">Keine Kommentierungen gefunden</h3>
-            <p className="mb-4 text-sm text-[color:var(--ds-text-muted)]">
-              Es wurden noch keine Kommentierungen für die aktuellen Filter generiert.
-            </p>
-            <button
-              onClick={() => setShowSynthForm(true)}
-              className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--ds-accent)] px-4 py-2 text-sm font-medium text-white"
-            >
-              <Sparkles className="h-4 w-4" />
-              Erste Kommentierung synthetisieren
-            </button>
-          </div>
+          <EmptyState
+            icon={BookOpen}
+            title="Keine Kommentierungen gefunden"
+            description="Für die aktuellen Filter wurden noch keine Kommentierungen erstellt."
+            actionLabel="Erste Kommentierung synthetisieren"
+            onAction={() => setShowSynthForm(true)}
+          />
         )}
 
         {/* Commentary tree grouped by statute */}

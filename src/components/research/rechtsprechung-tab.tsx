@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import type { GroundingMetadata } from "@/lib/citation-gate-client";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface JudgementResult {
   id: string;
@@ -225,19 +226,11 @@ Format pro Eintrag:
 
       {/* Results */}
       {searched && results.length === 0 && !searching && (
-        <div className="space-y-4 py-20 text-center">
-          <Landmark size={48} className="mx-auto text-[color:var(--ds-border)]" />
-          <div>
-            <p className="text-[color:var(--ds-text-muted)]">Keine Urteile im Brain gefunden.</p>
-            <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-              Nutze den{" "}
-              <code className="rounded bg-[color:var(--ds-hover)] px-1.5 py-0.5 font-mono text-xs">
-                legal-judgements
-              </code>{" "}
-              Konnektor um Rechtsprechung zu importieren.
-            </p>
-          </div>
-        </div>
+        <EmptyState
+          icon={Landmark}
+          title="Keine Entscheidungen in der Wissensbasis gefunden"
+          description="Importieren Sie Rechtsprechung über den Konnektor „legal-judgements“."
+        />
       )}
 
       {results.length > 0 && (
@@ -248,7 +241,7 @@ Format pro Eintrag:
           {results.map((r) => (
             <div
               key={r.id}
-              className="hover:brand-border rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
+              className="hover:brand-border rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
@@ -318,7 +311,7 @@ Format pro Eintrag:
                     href={r.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="hover:brand-text hover:brand-border flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
+                    className="hover:brand-text hover:brand-border flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
                   >
                     <ExternalLink size={14} />
                   </a>

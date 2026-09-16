@@ -143,7 +143,7 @@ function MaskedInput({
         <button
           onClick={() => setShow(!show)}
           aria-label={show ? "Wert verbergen" : "Wert anzeigen"}
-          className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-150 hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+          className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
         >
           {show ? <EyeOff size={13} /> : <Eye size={13} />}
         </button>
@@ -151,7 +151,7 @@ function MaskedInput({
           <button
             onClick={copy}
             aria-label="Wert kopieren"
-            className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-150 hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+            className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
           >
             {copied ? (
               <Check size={13} className="text-[color:var(--ds-success-text)]" />
@@ -510,7 +510,7 @@ function SettingsPageInner() {
                         aria-controls={`panel-${tab.id}`}
                         onClick={() => setActiveTab(tab.id)}
                         className={cn(
-                          "-mb-px flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-[background-color,border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                          "-mb-px flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-[background-color,border-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                           activeTab === tab.id
                             ? "brand-text border-[color:var(--brand-primary)]"
                             : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -582,7 +582,7 @@ function SettingsPageInner() {
                         key={mode}
                         onClick={() => setSearchMode(mode)}
                         className={cn(
-                          "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                          "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                           searchMode === mode
                             ? "brand-soft brand-text brand-border"
                             : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
@@ -609,7 +609,7 @@ function SettingsPageInner() {
                         <button
                           onClick={() => navigator.clipboard.writeText(cmd)}
                           aria-label={t("aria.copy_command")}
-                          className="shrink-0 rounded-md p-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-150 hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+                          className="shrink-0 rounded-md p-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                         >
                           <Copy size={12} />
                         </button>
@@ -921,7 +921,7 @@ function SettingsPageInner() {
                           key={opt.key}
                           onClick={() => kanzleiForm.setValue("tarifModell", opt.key)}
                           className={cn(
-                            "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                            "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                             tarifModellWatch === opt.key
                               ? "brand-soft brand-text brand-border"
                               : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
@@ -1206,7 +1206,7 @@ function SettingsPageInner() {
                             );
                           }
                         }}
-                        className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 motion-reduce:transition-none"
+                        className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 motion-reduce:transition-none"
                       >
                         <option value="admin">{t("settings.role_admin")}</option>
                         <option value="lawyer">{t("settings.role_lawyer")}</option>
@@ -1315,7 +1315,7 @@ function SettingsPageInner() {
                         return (
                           <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
                             <div
-                              className="brand-bg h-full rounded-full transition-[width] duration-300 motion-reduce:transition-none"
+                              className="brand-bg h-full rounded-full transition-[width] duration-[var(--ds-duration-normal)] motion-reduce:transition-none"
                               style={{ width: `${pct}%` }}
                             />
                           </div>
@@ -1341,7 +1341,7 @@ function SettingsPageInner() {
                         return (
                           <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
                             <div
-                              className="brand-bg h-full rounded-full transition-[width] duration-300 motion-reduce:transition-none"
+                              className="brand-bg h-full rounded-full transition-[width] duration-[var(--ds-duration-normal)] motion-reduce:transition-none"
                               style={{ width: `${pct}%` }}
                             />
                           </div>
@@ -1378,7 +1378,7 @@ function SettingsPageInner() {
                     <button
                       onClick={() => setLang("de")}
                       className={cn(
-                        "flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
+                        "flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
                         lang === "de"
                           ? "brand-soft brand-text brand-border"
                           : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
@@ -1391,7 +1391,7 @@ function SettingsPageInner() {
                     <button
                       onClick={() => setLang("en")}
                       className={cn(
-                        "flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
+                        "flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
                         lang === "en"
                           ? "brand-soft brand-text brand-border"
                           : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"

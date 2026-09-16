@@ -815,7 +815,7 @@ export default function DeadlinesPage() {
             <button
               onClick={() => setShowCalc(false)}
               aria-label={t("cmd.close")}
-              className="rounded-md p-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-150 hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+              className="rounded-md p-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
             >
               <XCircle size={16} />
             </button>
@@ -864,7 +864,7 @@ export default function DeadlinesPage() {
                     calculateDeadline(calcTemplate, calcDate, rechtsraum.state, rechtsraum.country)
                   )
                 }
-                className="brand-bg flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white transition-[background-color,transform] duration-150 hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none"
+                className="brand-bg flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white transition-[background-color,transform] duration-[var(--ds-duration-fast)] hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none"
               >
                 <Calculator size={14} />
                 {t("deadlines.calc_button")}
@@ -918,7 +918,7 @@ export default function DeadlinesPage() {
             <button
               onClick={() => setShowAiDetect(false)}
               aria-label={t("deadlines.detect_title")}
-              className="rounded-md p-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-150 hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+              className="rounded-md p-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
             >
               <XCircle size={16} />
             </button>
@@ -956,7 +956,7 @@ export default function DeadlinesPage() {
               }
             }}
             disabled={aiLoading || !aiText.trim()}
-            className="brand-bg flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-[background-color,transform] duration-150 hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] focus-visible:outline-none active:scale-[0.98] disabled:opacity-50 motion-reduce:transition-none"
+            className="brand-bg flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-[background-color,transform] duration-[var(--ds-duration-fast)] hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] focus-visible:outline-none active:scale-[0.98] disabled:opacity-50 motion-reduce:transition-none"
           >
             {aiLoading ? <Loader2 size={14} className="animate-spin" /> : <FileSearch size={14} />}
             {aiLoading ? t("deadlines.detect_analyzing") : t("deadlines.detect_button")}
@@ -1121,6 +1121,7 @@ export default function DeadlinesPage() {
 
       {/* Data table */}
       <DataTable
+        density="dense"
         columns={columns}
         data={filtered}
         loading={loading}

@@ -153,7 +153,7 @@ export default function SignaturePage() {
           <div className="flex items-center gap-2">
             <Link
               href="/dashboard/settings"
-              className="flex min-h-11 items-center gap-2 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-warning-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transition-none sm:min-h-0"
+              className="flex min-h-11 items-center gap-2 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-warning-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transition-none sm:min-h-0"
             >
               <Settings size={14} />
               {t("sig.btn_configure")}
@@ -245,7 +245,7 @@ export default function SignaturePage() {
             return (
               <div
                 key={req.id}
-                className="flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--brand-primary)]/30 motion-reduce:transition-none"
+                className="flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--brand-primary)]/30 motion-reduce:transition-none"
               >
                 <div
                   className={cn(
@@ -278,7 +278,7 @@ export default function SignaturePage() {
                     <button
                       onClick={() => setSendReq(req)}
                       disabled={!req.caseSlug}
-                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--brand-primary)]/10 hover:text-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-40 motion-reduce:transition-none"
+                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--brand-primary)]/10 hover:text-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none active:scale-[0.97] disabled:opacity-40 motion-reduce:transition-none"
                       title={req.caseSlug ? t("sig.aria_ext_sent") : t("sig.no_case")}
                       aria-label={t("sig.aria_ext_sent")}
                     >
@@ -287,7 +287,7 @@ export default function SignaturePage() {
                   )}
                   <Link
                     href={`/dashboard/brain/${encodeURIComponent(req.id)}`}
-                    className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none motion-reduce:transition-none"
+                    className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none motion-reduce:transition-none"
                     title={t("sig.aria_brain")}
                     aria-label={t("sig.aria_brain")}
                   >

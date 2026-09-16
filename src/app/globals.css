@@ -111,6 +111,16 @@
      migration must convert and contrast-test every step atomically.
      ═══════════════════════════════════════════════════════════════ */
 
+  /* ── Depth: Tailwind shadow utilities resolve to the depth tokens ──
+     shadow-sm/md/lg/xl/2xl map onto --ds-shadow-1/2/3 so every raw utility
+     in the codebase is theme-aware (light paper vs navy dark) without a
+     per-file rewrite. Reach for the tokens directly in new code. */
+  --shadow-sm: var(--ds-shadow-1);
+  --shadow-md: var(--ds-shadow-2);
+  --shadow-lg: var(--ds-shadow-3);
+  --shadow-xl: var(--ds-shadow-3);
+  --shadow-2xl: var(--ds-shadow-3);
+
   /* ── Brand scale (Legal) — perceptually tuned, HSL output from OKLCH refs ──
      Reference OKLCH: hue 260°, chroma 0.13-0.15. Light primary ~ oklch(0.55 0.15 260).
      Contrast: brand-500 on white ≈ 7.2:1 (AAA), brand-700 on white ≈ 11.5:1. */
@@ -652,6 +662,19 @@
   --accent-premium: var(--accent-300);
   --accent-premium-soft: color-mix(in srgb, var(--accent-premium) 10%, transparent);
   --accent-premium-border: color-mix(in srgb, var(--accent-premium) 22%, transparent);
+  /* Depth (dark shell defaults; light tones override below) */
+  --ds-shadow-1: 0 1px 2px hsla(222, 60%, 3%, 0.5), inset 0 1px 0 hsla(0, 0%, 100%, 0.04);
+  --ds-shadow-2: 0 4px 10px -2px hsla(222, 60%, 3%, 0.55), inset 0 1px 0 hsla(0, 0%, 100%, 0.05);
+  --ds-shadow-3: 0 18px 40px -14px hsla(222, 60%, 3%, 0.75), inset 0 1px 0 hsla(0, 0%, 100%, 0.06);
+  --ds-glow-brand:
+    0 0 0 1px color-mix(in srgb, var(--brand-primary) 30%, transparent),
+    0 10px 28px -8px color-mix(in srgb, var(--brand-primary) 60%, transparent);
+  --brand-button-gradient: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--brand-primary) 90%, white) 0%,
+    var(--brand-primary) 100%
+  );
+  --brand-button-highlight: inset 0 1px 0 hsla(0, 0%, 100%, 0.14);
 
   /* ────────────────────────────────────────────────────────────────
      Design-system neutral scale (--ds-*) — the SINGLE source of truth
@@ -728,6 +751,18 @@
     0 1px 2px hsla(222, 8%, 15%, 0.05), 0 8px 24px hsla(222, 8%, 15%, 0.07),
     0 1px 0 hsla(0, 0%, 100%, 0.7) inset;
   --brand-text: var(--brand-700);
+  --ds-shadow-1: 0 1px 2px hsla(222, 40%, 12%, 0.06), 0 1px 1px hsla(222, 40%, 12%, 0.03);
+  --ds-shadow-2: 0 2px 6px -1px hsla(222, 40%, 12%, 0.08), 0 1px 2px hsla(222, 40%, 12%, 0.05);
+  --ds-shadow-3: 0 14px 34px -14px hsla(222, 40%, 12%, 0.22), 0 2px 6px hsla(222, 40%, 12%, 0.06);
+  --ds-glow-brand:
+    0 0 0 1px color-mix(in srgb, var(--brand-primary) 24%, transparent),
+    0 8px 22px -8px color-mix(in srgb, var(--brand-primary) 55%, transparent);
+  --brand-button-gradient: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--brand-primary) 88%, white) 0%,
+    var(--brand-primary) 100%
+  );
+  --brand-button-highlight: inset 0 1px 0 hsla(0, 0%, 100%, 0.18);
   color-scheme: light;
 
   /* Shared --ds-* components (e.g. src/components/ui/button.tsx's ghost
@@ -820,9 +855,9 @@
   --accent-premium: var(--accent-300);
   --accent-premium-soft: color-mix(in srgb, var(--accent-premium) 10%, transparent);
   --accent-premium-border: color-mix(in srgb, var(--accent-premium) 22%, transparent);
-  --card-shadow: 0 1px 0 hsla(0, 0%, 100%, 0.025) inset, 0 12px 34px rgba(0, 0, 0, 0.18);
-  --card-shadow-hover: 0 1px 0 hsla(0, 0%, 100%, 0.035) inset, 0 18px 48px rgba(0, 0, 0, 0.24);
-  --card-shadow-elevated: 0 1px 0 hsla(0, 0%, 100%, 0.04) inset, 0 24px 72px rgba(0, 0, 0, 0.34);
+  --card-shadow: var(--ds-shadow-1);
+  --card-shadow-hover: var(--ds-shadow-2);
+  --card-shadow-elevated: var(--ds-shadow-3);
   color-scheme: dark;
 }
 
@@ -1074,9 +1109,9 @@
   --accent-premium: var(--accent-300);
   --accent-premium-soft: color-mix(in srgb, var(--accent-premium) 12%, transparent);
   --accent-premium-border: color-mix(in srgb, var(--accent-premium) 24%, transparent);
-  --card-shadow: 0 1px 0 hsla(0, 0%, 100%, 0.03) inset, 0 12px 34px rgba(0, 0, 0, 0.22);
-  --card-shadow-hover: 0 1px 0 hsla(0, 0%, 100%, 0.04) inset, 0 18px 48px rgba(0, 0, 0, 0.28);
-  --card-shadow-elevated: 0 1px 0 hsla(0, 0%, 100%, 0.05) inset, 0 24px 72px rgba(0, 0, 0, 0.38);
+  --card-shadow: var(--ds-shadow-1);
+  --card-shadow-hover: var(--ds-shadow-2);
+  --card-shadow-elevated: var(--ds-shadow-3);
   --sidebar-shadow:
     1px 0 0 var(--ds-border), 14px 0 48px rgba(0, 0, 0, 0.25), 1px 0 0 hsla(0, 0%, 100%, 0.03) inset;
 

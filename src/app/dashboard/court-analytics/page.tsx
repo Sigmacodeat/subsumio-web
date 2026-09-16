@@ -78,7 +78,7 @@ export default function CourtAnalyticsPage() {
                   {item.total_decisions} {t("court_an.decisions")}
                 </Badge>
               </div>
-              <div className="grid gap-4 md:grid-cols-4">
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                 <div className="rounded-lg bg-[color:var(--ds-surface-2)] p-3">
                   <p className="text-xs text-[color:var(--ds-text-muted)]">
                     {t("court_an.duration")}

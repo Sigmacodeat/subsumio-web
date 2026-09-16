@@ -272,7 +272,7 @@ export function IconTile({
   const Icon = resolveIcon(icon);
   return (
     <div
-      className={`brand-soft brand-border mb-4 flex h-12 w-12 items-center justify-center rounded-xl border transition-transform duration-300 hover:scale-110 ${className}`}
+      className={`brand-soft brand-border mb-4 flex h-12 w-12 items-center justify-center rounded-xl border transition-transform duration-[var(--ds-duration-normal)] hover:scale-110 ${className}`}
     >
       <Icon size={size} className="brand-text" />
     </div>
@@ -296,7 +296,7 @@ export function ContentCard({
 }) {
   return (
     <GlowCard
-      className={`h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl motion-reduce:transition-none ${className}`}
+      className={`h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl motion-reduce:transition-none ${className}`}
     >
       <IconTile icon={icon} size={iconSize} />
       <h3 className={`mb-2 ${H3_CLASS}`}>{title}</h3>
@@ -451,7 +451,7 @@ export function CTASection({
               {label}
               <ArrowRight
                 size={18}
-                className="transition-transform duration-200 group-hover:translate-x-0.5"
+                className="transition-transform duration-[var(--ds-duration-normal)] group-hover:translate-x-0.5"
               />
             </Link>
           </Button>
@@ -758,7 +758,7 @@ export function PricingCard({
 }) {
   return (
     <div
-      className={`relative flex h-full flex-col rounded-2xl border p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 motion-reduce:transition-none ${
+      className={`relative flex h-full flex-col rounded-2xl border p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] motion-reduce:transition-none ${
         highlighted
           ? "border-[color:var(--brand-text)] shadow-lg [background:var(--mk-surface-2)] lg:scale-105"
           : "[border-color:var(--mk-border)] [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-md"

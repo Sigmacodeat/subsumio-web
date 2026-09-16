@@ -50,7 +50,7 @@ export default function SecurityPage() {
             return (
               <StaggerItem
                 key={pillar.title}
-                className="rounded-2xl transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 hover:-translate-y-1 hover:shadow-xl motion-reduce:transition-none"
+                className="rounded-2xl transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] hover:-translate-y-1 hover:shadow-xl motion-reduce:transition-none"
               >
                 <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)]">
                   <Icon size={22} className="brand-text mb-4" />

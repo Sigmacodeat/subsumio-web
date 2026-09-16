@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { csrfFetch } from "@/lib/csrf";
 import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface CreditBalance {
   ownerId: string;
@@ -490,10 +491,11 @@ export function CreditCard() {
           </div>
         )}
         {showHistory && transactions.length === 0 && (
-          <div className="flex flex-col items-center gap-2 py-6 text-center">
-            <History size={24} className="text-[color:var(--ds-text-muted)]" aria-hidden />
-            <p className="text-xs text-[color:var(--ds-text-muted)]">Noch keine Transaktionen.</p>
-          </div>
+          <EmptyState
+            icon={History}
+            title="Noch keine Transaktionen"
+            className="border-0 bg-transparent py-6"
+          />
         )}
 
         {error && (

@@ -30,6 +30,7 @@ import { useToast } from "@/components/ui/toast";
 import type { DashboardKey } from "@/content/dashboard";
 import { cn } from "@/lib/utils";
 import { csrfFetch } from "@/lib/csrf";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface WhatsAppTemplate {
   slug: string;
@@ -276,13 +277,13 @@ export default function WhatsAppTemplatesPage() {
 
           {/* Template list */}
           {templates.length === 0 && !creating ? (
-            <div className="py-20 text-center">
-              <FileText size={32} className="mx-auto mb-3 text-[color:var(--ds-text-muted)]" />
-              <p className="text-sm text-[color:var(--ds-text-muted)]">
-                Noch keine Templates. Klicke auf &quot;Neues Template&quot; um eine Vorlage zu
-                erstellen.
-              </p>
-            </div>
+            <EmptyState
+              icon={FileText}
+              title="Noch keine Templates"
+              description="Legen Sie eine Vorlage an, um wiederkehrende Nachrichten schneller zu versenden."
+              actionLabel={t("wamplates.btn_create")}
+              onAction={() => setCreating(true)}
+            />
           ) : (
             <div className="space-y-3">
               {templates.map((template) => {

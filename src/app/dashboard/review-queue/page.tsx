@@ -304,7 +304,7 @@ export default function ReviewQueuePage() {
               {reviewItems.map(({ page, status, assignee, reviewedAt, isPipeline }) => (
                 <div
                   key={page.slug}
-                  className="rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-[color:var(--ds-border-strong)] hover:shadow-md motion-reduce:transition-none"
+                  className="rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 shadow-sm transition-[border-color,box-shadow] duration-[var(--ds-duration-normal)] hover:border-[color:var(--ds-border-strong)] hover:shadow-md motion-reduce:transition-none"
                 >
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div className="flex min-w-0 flex-1 items-start gap-3">

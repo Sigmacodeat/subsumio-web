@@ -22,6 +22,7 @@ import { csrfFetch } from "@/lib/csrf";
 import { useLang } from "@/lib/use-lang";
 import { useMatterDetail } from "@/lib/matter-detail-context";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface MailItem {
   id: string;
@@ -59,9 +60,9 @@ const COPY = {
     address: "Mails an diese Adresse landen im Kanzlei-Posteingang:",
     newMail: "Neue E-Mail",
     filed: "Zur Akte abgelegt",
-    filedEmpty: "Noch keine E-Mails zu dieser Akte.",
+    filedEmpty: "Noch keine E-Mails zu dieser Akte",
     unassigned: "Nicht zugeordnete Eingänge",
-    unassignedEmpty: "Keine offenen Eingänge.",
+    unassignedEmpty: "Keine offenen Eingänge",
     assign: "Dieser Akte zuordnen",
     unassign: "Zuordnung entfernen",
     reply: "Antworten",
@@ -83,9 +84,9 @@ const COPY = {
     address: "Mail sent to this address arrives in the firm inbox:",
     newMail: "New e-mail",
     filed: "Filed to matter",
-    filedEmpty: "No e-mails filed to this matter yet.",
+    filedEmpty: "No e-mails filed to this matter yet",
     unassigned: "Unassigned incoming mail",
-    unassignedEmpty: "No open incoming mail.",
+    unassignedEmpty: "No open incoming mail",
     assign: "File to this matter",
     unassign: "Remove from matter",
     reply: "Reply",
@@ -474,9 +475,10 @@ export function EmailsTab() {
           {copy.filed} ({filed.length})
         </h3>
         {filed.length === 0 ? (
-          <p className="px-4 py-6 text-center text-sm text-[color:var(--ds-text-muted)]">
-            {copy.filedEmpty}
-          </p>
+          <EmptyState
+            title={copy.filedEmpty}
+            className="rounded-none border-0 bg-transparent py-8"
+          />
         ) : (
           <ul>{filed.map((mail) => renderMail(mail, "filed"))}</ul>
         )}
@@ -487,9 +489,10 @@ export function EmailsTab() {
           <Inbox size={14} aria-hidden /> {copy.unassigned} ({unassigned.length})
         </h3>
         {unassigned.length === 0 ? (
-          <p className="px-4 py-6 text-center text-sm text-[color:var(--ds-text-muted)]">
-            {copy.unassignedEmpty}
-          </p>
+          <EmptyState
+            title={copy.unassignedEmpty}
+            className="rounded-none border-0 bg-transparent py-8"
+          />
         ) : (
           <ul>{unassigned.map((mail) => renderMail(mail, "unassigned"))}</ul>
         )}

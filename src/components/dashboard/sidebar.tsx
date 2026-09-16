@@ -1163,7 +1163,7 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
         <button
           onClick={() => void syncPending()}
           disabled={syncing}
-          className="brand-text text-xs transition-[opacity,color] duration-200 disabled:opacity-50 motion-reduce:transition-none"
+          className="brand-text text-xs transition-[opacity,color] duration-[var(--ds-duration-normal)] disabled:opacity-50 motion-reduce:transition-none"
         >
           {syncing ? t("sidebar.syncing") : t("sidebar.sync_now")}
         </button>
@@ -1621,12 +1621,12 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               setMobileOpen(false);
               if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
             }}
-            className="group flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-90 motion-reduce:transition-none md:hidden"
+            className="group flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-90 motion-reduce:transition-none md:hidden"
             aria-label={t("sidebar.close_menu")}
           >
             <span className="relative flex h-4 w-4 items-center justify-center">
-              <span className="absolute top-1/2 h-0.5 w-4 -translate-y-1/2 rotate-45 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none" />
-              <span className="absolute top-1/2 h-0.5 w-4 -translate-y-1/2 -rotate-45 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none" />
+              <span className="absolute top-1/2 h-0.5 w-4 -translate-y-1/2 rotate-45 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none" />
+              <span className="absolute top-1/2 h-0.5 w-4 -translate-y-1/2 -rotate-45 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none" />
             </span>
           </button>
           <Link
@@ -1686,7 +1686,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               </div>
               <div
                 className={cn(
-                  "mt-4 hidden items-center justify-center transition-[opacity] duration-300 ease-[var(--ds-ease-smooth)] motion-reduce:transition-none md:flex",
+                  "mt-4 hidden items-center justify-center transition-[opacity] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] motion-reduce:transition-none md:flex",
                   collapsed ? "opacity-100" : "pointer-events-none h-0 overflow-hidden opacity-0"
                 )}
                 title={`${t("sidebar.brain_status")}: ${brainStatusLabel}`}
@@ -1710,7 +1710,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           {/* Search / Filter */}
           <div
             className={cn(
-              "px-3 pt-3 transition-[opacity] duration-300 ease-[var(--ds-ease-smooth)] motion-reduce:transition-none",
+              "px-3 pt-3 transition-[opacity] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] motion-reduce:transition-none",
               collapsed ? "pointer-events-none h-0 overflow-hidden pt-0 opacity-0" : "opacity-100"
             )}
           >
@@ -1757,7 +1757,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                 <ChevronRight
                   size={12}
                   className={cn(
-                    "text-[color:var(--ds-text-subtle)] transition-transform duration-200",
+                    "text-[color:var(--ds-text-subtle)] transition-transform duration-[var(--ds-duration-normal)]",
                     !coreMode && "rotate-180"
                   )}
                 />
@@ -1821,7 +1821,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     )}
                     <Icon
                       size={collapsed ? 18 : 15}
-                      className="shrink-0 transition-[color,opacity] duration-150 motion-reduce:transition-none"
+                      className="shrink-0 transition-[color,opacity] duration-[var(--ds-duration-fast)] motion-reduce:transition-none"
                       strokeWidth={active && collapsed ? 2.25 : 1.75}
                       style={{
                         color: active
@@ -1944,7 +1944,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                             )}
                             <Icon
                               size={18}
-                              className="shrink-0 transition-[color] duration-150 motion-reduce:transition-none"
+                              className="shrink-0 transition-[color] duration-[var(--ds-duration-fast)] motion-reduce:transition-none"
                               strokeWidth={active ? 2.25 : 1.75}
                               style={{
                                 color: active
@@ -1983,7 +1983,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     <div
                       key={section.titleKey}
                       className={cn(
-                        "rounded-lg border transition-[background-color,border-color,box-shadow,opacity] duration-200 ease-[var(--ds-ease-smooth)] motion-reduce:transition-none",
+                        "rounded-lg border transition-[background-color,border-color,box-shadow,opacity] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] motion-reduce:transition-none",
                         section.titleKey.startsWith("nav.section.admin")
                           ? "border-[color:var(--ds-border)] bg-transparent"
                           : "border-transparent",
@@ -2003,7 +2003,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       >
                         <SectionIcon
                           size={15}
-                          className="shrink-0 transition-[color] duration-150 group-hover:[color:var(--ds-text)] motion-reduce:transition-none"
+                          className="shrink-0 transition-[color] duration-[var(--ds-duration-fast)] group-hover:[color:var(--ds-text)] motion-reduce:transition-none"
                           style={{
                             color:
                               sectionActive || isOpen
@@ -2111,7 +2111,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                 >
                                   <Icon
                                     size={15}
-                                    className="shrink-0 transition-[color] duration-150 motion-reduce:transition-none"
+                                    className="shrink-0 transition-[color] duration-[var(--ds-duration-fast)] motion-reduce:transition-none"
                                     style={{
                                       color: active
                                         ? `var(${itemCatVar})`

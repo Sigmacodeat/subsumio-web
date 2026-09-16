@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Search, ChevronRight, UserX } from "lucide-react";
 import { PlanBadge } from "@/components/admin/admin-stat-card";
 import type { PublicUser } from "@/lib/auth/store";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface UserTableProps {
   users: PublicUser[];
@@ -121,11 +122,12 @@ export function UserTable({ users }: UserTableProps) {
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={8}
-                    className="px-5 py-10 text-center text-[color:var(--ds-text-subtle)]"
-                  >
-                    Keine Benutzer gefunden.
+                  <td colSpan={8} className="px-5 py-4">
+                    <EmptyState
+                      icon={Search}
+                      title="Keine Benutzer gefunden"
+                      className="border-0 bg-transparent py-8"
+                    />
                   </td>
                 </tr>
               )}

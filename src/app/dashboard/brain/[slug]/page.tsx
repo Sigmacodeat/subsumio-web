@@ -206,7 +206,7 @@ export default function BrainDetailPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={copySlug}
-              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text-muted)] active:scale-[0.97] motion-reduce:transition-none"
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text-muted)] active:scale-[0.97] motion-reduce:transition-none"
             >
               {copied ? (
                 <Check size={12} className="text-[color:var(--ds-success-text)]" />
@@ -218,7 +218,7 @@ export default function BrainDetailPage() {
             <button
               onClick={() => setEditMode(!editMode)}
               className={cn(
-                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
+                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
                 editMode
                   ? "brand-soft brand-text brand-border"
                   : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text-muted)]"
@@ -389,7 +389,7 @@ export default function BrainDetailPage() {
                     <Link
                       key={link.target}
                       href={`/dashboard/brain/${encodeURIComponent(link.target)}`}
-                      className="group flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
+                      className="group flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
                     >
                       <div className="flex items-center gap-2">
                         <span className="brand-text brand-soft brand-border rounded px-2 py-0.5 font-mono text-xs">

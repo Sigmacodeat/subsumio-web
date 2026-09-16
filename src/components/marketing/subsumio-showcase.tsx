@@ -693,7 +693,7 @@ export function FeatureBento() {
               key={f.title}
               {...reveal(i, reduce)}
               whileHover={reduce ? undefined : { y: -4 }}
-              className={`group relative overflow-hidden rounded-2xl border p-6 transition-[background-color,border-color,color] duration-300 [background:var(--mk-surface)] motion-reduce:transition-none ${featured ? "brand-border sm:col-span-2" : "[border-color:var(--mk-border)] hover:[border-color:var(--mk-border-strong)]"}`}
+              className={`group relative overflow-hidden rounded-2xl border p-6 transition-[background-color,border-color,color] duration-[var(--ds-duration-normal)] [background:var(--mk-surface)] motion-reduce:transition-none ${featured ? "brand-border sm:col-span-2" : "[border-color:var(--mk-border)] hover:[border-color:var(--mk-border-strong)]"}`}
             >
               {featured && (
                 <div

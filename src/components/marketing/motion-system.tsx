@@ -432,7 +432,7 @@ export function GlowCard({
     >
       {/* Radial glow that follows the cursor */}
       <div
-        className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-300"
+        className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-[var(--ds-duration-normal)]"
         style={{
           background: `radial-gradient(400px circle at var(--glow-x) var(--glow-y), ${glowColor}, transparent 70%)`,
           opacity: "var(--glow-opacity)" as unknown as number,

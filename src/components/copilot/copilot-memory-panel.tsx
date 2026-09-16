@@ -5,6 +5,7 @@ import { Brain, Plus, Pin, PinOff, Trash2, Loader2, Sparkles, Edit3, Save, X } f
 import { useLang } from "@/lib/use-lang";
 import { csrfFetch } from "@/lib/csrf";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface CopilotMemoryEntry {
   id: string;
@@ -231,14 +232,15 @@ export function CopilotMemoryPanel() {
       )}
 
       {memories.length === 0 && !showAdd ? (
-        <div className="flex items-center gap-2 rounded-lg border border-dashed border-[color:var(--ds-border)] px-3 py-3">
-          <Sparkles size={14} className="text-[color:var(--ds-text-muted)]" />
-          <span className="text-xs text-[color:var(--ds-text-muted)]">
-            {isEn
-              ? "No memories yet. The Copilot will learn your preferences over time."
-              : "Noch keine Erinnerungen. Der Copilot lernt Ihre Präferenzen mit der Zeit."}
-          </span>
-        </div>
+        <EmptyState
+          title={isEn ? "No memories yet" : "Noch keine Erinnerungen"}
+          description={
+            isEn
+              ? "The assistant will learn your preferences over time."
+              : "Der Assistent lernt Ihre Präferenzen mit der Zeit."
+          }
+          className="rounded-lg px-3 py-6"
+        />
       ) : (
         <div className="max-h-64 space-y-1 overflow-y-auto">
           {memories.map((m) => {

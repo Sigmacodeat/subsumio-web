@@ -32,6 +32,7 @@ import { Sheet } from "@/components/ui/sheet";
 import { apiGet } from "@/lib/queries/settings";
 import { getModelById } from "@/lib/model-config";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface AdminUserUsageRow {
   ownerId: string;
@@ -192,7 +193,7 @@ export function AdminTokenUsageClient() {
                 onClick={() => setDays(r.days)}
                 aria-pressed={days === r.days}
                 className={cn(
-                  "rounded-md px-3 py-1.5 text-xs font-medium transition-[background-color,color,transform] duration-200 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
+                  "rounded-md px-3 py-1.5 text-xs font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
                   days === r.days
                     ? "brand-bg text-white"
                     : "border border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -265,7 +266,7 @@ export function AdminTokenUsageClient() {
                   return (
                     <div
                       key={day.date}
-                      className="group brand-soft relative flex-1 rounded-t-sm transition-[height,opacity] duration-200 hover:opacity-80 motion-reduce:transition-none"
+                      className="group brand-soft relative flex-1 rounded-t-sm transition-[height,opacity] duration-[var(--ds-duration-normal)] hover:opacity-80 motion-reduce:transition-none"
                       style={{ height: `${Math.max(heightPct, 2)}%` }}
                       title={`${day.date}: ${formatCredits(day.totalCredits)} € · ${day.totalCalls} Calls`}
                     />
@@ -284,7 +285,7 @@ export function AdminTokenUsageClient() {
             <button
               type="button"
               onClick={() => setTrendSheetOpen(true)}
-              className="flex w-full items-center justify-between gap-3 rounded-[inherit] p-4 text-left transition-[background-color] duration-200 hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
+              className="flex w-full items-center justify-between gap-3 rounded-[inherit] p-4 text-left transition-[background-color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
               aria-label="Verbrauch über Zeit anzeigen"
             >
               <div className="flex items-center gap-2.5">
@@ -334,7 +335,7 @@ export function AdminTokenUsageClient() {
                   return (
                     <div
                       key={day.date}
-                      className="group brand-soft relative flex-1 rounded-t-sm transition-[height,opacity] duration-200 hover:opacity-80 motion-reduce:transition-none"
+                      className="group brand-soft relative flex-1 rounded-t-sm transition-[height,opacity] duration-[var(--ds-duration-normal)] hover:opacity-80 motion-reduce:transition-none"
                       style={{ height: `${Math.max(heightPct, 2)}%` }}
                       title={`${day.date}: ${formatCredits(day.totalCredits)} € · ${day.totalCalls} Calls`}
                     />
@@ -387,12 +388,11 @@ export function AdminTokenUsageClient() {
               <Badge variant="info">{overview.perUser.length} User</Badge>
             </div>
             {overview.perUser.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-8 text-center">
-                <Users size={24} className="text-[color:var(--ds-text-muted)]" aria-hidden />
-                <p className="text-xs text-[color:var(--ds-text-muted)]">
-                  Noch keine Token-Usage in diesem Zeitraum.
-                </p>
-              </div>
+              <EmptyState
+                icon={Users}
+                title="Noch keine Token-Usage in diesem Zeitraum"
+                className="border-0 bg-transparent py-8"
+              />
             ) : (
               <div className="space-y-2.5">
                 {overview.perUser.slice(0, 10).map((user, idx) => {
@@ -436,7 +436,7 @@ export function AdminTokenUsageClient() {
                         aria-label={`User ${user.ownerId} credit usage`}
                       >
                         <div
-                          className="brand-soft h-full rounded-full transition-[width] duration-300 motion-reduce:transition-none"
+                          className="brand-soft h-full rounded-full transition-[width] duration-[var(--ds-duration-normal)] motion-reduce:transition-none"
                           style={{ width: `${pct}%` }}
                         />
                       </div>
@@ -502,7 +502,7 @@ export function AdminTokenUsageClient() {
                         aria-label={`${modelName} credit usage`}
                       >
                         <div
-                          className="brand-soft h-full rounded-full transition-[width] duration-300 motion-reduce:transition-none"
+                          className="brand-soft h-full rounded-full transition-[width] duration-[var(--ds-duration-normal)] motion-reduce:transition-none"
                           style={{ width: `${pct}%` }}
                         />
                       </div>

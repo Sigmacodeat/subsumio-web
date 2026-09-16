@@ -12,6 +12,7 @@ import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface CasePage {
   slug: string;
@@ -215,18 +216,18 @@ export default function LegalHoldPage() {
           <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-[color:var(--ds-border)] p-12 text-center">
-          <ShieldOff className="mx-auto mb-3 h-12 w-12 text-[color:var(--ds-text-muted)] opacity-40" />
-          <p className="text-sm text-[color:var(--ds-text-muted)]">
-            {filter === "on_hold"
+        <EmptyState
+          icon={ShieldOff}
+          title={
+            filter === "on_hold"
               ? isEn
-                ? "No matters under legal hold."
-                : "Keine Akten unter Legal Hold."
+                ? "No matters under legal hold"
+                : "Keine Akten unter Legal Hold"
               : isEn
-                ? "No matters found."
-                : "Keine Akten gefunden."}
-          </p>
-        </div>
+                ? "No matters found"
+                : "Keine Akten gefunden"
+          }
+        />
       ) : (
         <div className="space-y-2">
           {filtered.map((c) => (

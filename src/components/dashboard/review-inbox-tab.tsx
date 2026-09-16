@@ -498,7 +498,7 @@ export function ReviewInboxTab() {
               <div
                 key={item.id}
                 className={cn(
-                  "group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[border-color,background-color,box-shadow] duration-200 hover:border-[color:var(--brand-primary)]/30 hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none",
+                  "group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[border-color,background-color,box-shadow] duration-[var(--ds-duration-normal)] hover:border-[color:var(--brand-primary)]/30 hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none",
                   PRIORITY_STYLES[item.priority]
                 )}
               >

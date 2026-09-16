@@ -51,7 +51,7 @@ export default function PartnersPage() {
                 <GlowCard
                   glowColor={tier.highlight ? "var(--brand-tertiary)" : "var(--brand-primary)"}
                   intensity={tier.highlight ? 0.22 : 0.12}
-                  className={`relative flex h-full flex-col rounded-2xl border p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 motion-reduce:transition-none ${
+                  className={`relative flex h-full flex-col rounded-2xl border p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] motion-reduce:transition-none ${
                     tier.highlight
                       ? "border-[color:var(--brand-tertiary)]/40 bg-gradient-to-b from-[color:var(--brand-tertiary)]/10 to-[var(--mk-surface)] shadow-xl shadow-[color:var(--brand-tertiary)]/10"
                       : "[border-color:var(--mk-border)] [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]"

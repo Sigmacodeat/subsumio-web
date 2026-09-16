@@ -89,13 +89,16 @@ export function AccordionTrigger({
     <button
       onClick={() => onValueChange(itemValue)}
       className={cn(
-        "flex w-full items-center justify-between px-4 py-4 text-left text-sm font-medium transition-[background-color,transform] duration-150 outline-none hover:bg-[color:var(--ds-surface-2)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] active:scale-[0.99] motion-reduce:transition-none",
+        "flex w-full items-center justify-between px-4 py-4 text-left text-sm font-medium transition-[background-color,transform] duration-[var(--ds-duration-fast)] outline-none hover:bg-[color:var(--ds-surface-2)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] active:scale-[0.99] motion-reduce:transition-none",
         className
       )}
     >
       {children}
       <ChevronDown
-        className={cn("h-4 w-4 shrink-0 transition-transform duration-200", isOpen && "rotate-180")}
+        className={cn(
+          "h-4 w-4 shrink-0 transition-transform duration-[var(--ds-duration-normal)]",
+          isOpen && "rotate-180"
+        )}
       />
     </button>
   );

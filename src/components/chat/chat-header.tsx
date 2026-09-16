@@ -158,7 +158,7 @@ export function ChatHeader(props: ChatHeaderProps) {
             <div ref={sessionsRef} className="relative">
               <button
                 onClick={() => setShowSessions((v) => !v)}
-                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-surface)] hover:text-[color:var(--ds-text)] active:scale-95 motion-reduce:transition-none"
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-surface)] hover:text-[color:var(--ds-text)] active:scale-95 motion-reduce:transition-none"
               >
                 <MessageSquareText size={12} />
                 {props.activeSessionId ? t("chat.session_label") : t("chat.new_session")}
@@ -192,7 +192,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                           props.onNewSession();
                           setShowSessions(false);
                         }}
-                        className="brand-soft brand-text flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-90 active:scale-95 motion-reduce:transition-none"
+                        className="brand-soft brand-text flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-[opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-90 active:scale-95 motion-reduce:transition-none"
                       >
                         <Plus size={13} />
                         {t("chat.new_session")}
@@ -317,7 +317,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                                     props.onTogglePin?.(s.id);
                                   }}
                                   className={cn(
-                                    "text-[color:var(--ds-text-subtle)] opacity-0 transition-[opacity,color] duration-200 group-hover:opacity-100 hover:text-[color:var(--ds-text)] motion-reduce:transition-none",
+                                    "text-[color:var(--ds-text-subtle)] opacity-0 transition-[opacity,color] duration-[var(--ds-duration-normal)] group-hover:opacity-100 hover:text-[color:var(--ds-text)] motion-reduce:transition-none",
                                     s.pinned && "brand-text opacity-100"
                                   )}
                                   aria-label={s.pinned ? t("chat.unpin") : t("chat.pin")}
@@ -332,7 +332,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                                     e.stopPropagation();
                                     props.onDeleteSession?.(s.id);
                                   }}
-                                  className="text-[color:var(--ds-text-subtle)] opacity-0 transition-[opacity,color] duration-200 group-hover:opacity-100 hover:text-[color:var(--ds-danger-text)] motion-reduce:transition-none"
+                                  className="text-[color:var(--ds-text-subtle)] opacity-0 transition-[opacity,color] duration-[var(--ds-duration-normal)] group-hover:opacity-100 hover:text-[color:var(--ds-danger-text)] motion-reduce:transition-none"
                                   aria-label={t("chat.confirm_delete_session")}
                                 >
                                   <Trash2 size={11} />
@@ -353,7 +353,7 @@ export function ChatHeader(props: ChatHeaderProps) {
               <select
                 value={props.selectedCaseSlug}
                 onChange={(e) => props.onCaseChange(e.target.value)}
-                className="appearance-none rounded-lg bg-transparent py-1.5 pr-7 pl-7 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-surface)] hover:text-[color:var(--ds-text)] focus:bg-[color:var(--ds-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 motion-reduce:transition-none"
+                className="appearance-none rounded-lg bg-transparent py-1.5 pr-7 pl-7 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-surface)] hover:text-[color:var(--ds-text)] focus:bg-[color:var(--ds-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 motion-reduce:transition-none"
                 aria-label={t("chat.case_select")}
               >
                 <option value="">{t("chat.no_case")}</option>
@@ -416,7 +416,7 @@ export function ChatHeader(props: ChatHeaderProps) {
             <>
               <button
                 onClick={() => setShowActions((v) => !v)}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 motion-reduce:transition-none"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 motion-reduce:transition-none"
                 aria-label={t("copilot.more_actions")}
                 title={t("copilot.more_actions")}
                 aria-haspopup="true"

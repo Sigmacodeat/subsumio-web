@@ -195,7 +195,7 @@ export function PipelineProgressCard({
         >
           <div
             className={cn(
-              "h-full rounded-full transition-[width] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
+              "h-full rounded-full transition-[width] duration-[var(--ds-duration-slow)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
               isCompleted
                 ? "bg-[color:var(--ds-success-solid)]"
                 : isFailed

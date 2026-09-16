@@ -12,6 +12,7 @@ import { timelineToDeadline } from "@/lib/legal-deadlines";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface CalendarEvent {
   id: string;
@@ -289,7 +290,7 @@ export default function CalendarExportPage() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
+            className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
               filter === f
                 ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
                 : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -334,13 +335,11 @@ export default function CalendarExportPage() {
       {loading ? (
         <div className="py-20 text-center text-[color:var(--ds-text-muted)]">Lade Termine…</div>
       ) : filtered.length === 0 ? (
-        <div className="space-y-4 py-20 text-center">
-          <CalendarClock size={48} className="mx-auto text-[color:var(--ds-border)]" />
-          <p className="text-[color:var(--ds-text-muted)]">Keine Termine gefunden.</p>
-          <p className="text-sm text-[color:var(--ds-text-muted)]">
-            Erstelle Fristen in Akten oder nutze den Deadline-Extractor.
-          </p>
-        </div>
+        <EmptyState
+          icon={CalendarClock}
+          title="Keine Termine gefunden"
+          description="Legen Sie Fristen in Ihren Akten an oder nutzen Sie die Fristen-Erkennung."
+        />
       ) : (
         <div className="space-y-2">
           {filtered.map((ev) => {
@@ -349,7 +348,7 @@ export default function CalendarExportPage() {
             return (
               <div
                 key={ev.id}
-                className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
+                className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
                   isOverdue
                     ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
                     : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"

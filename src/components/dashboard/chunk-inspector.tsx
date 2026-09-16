@@ -42,6 +42,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -485,15 +486,15 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
           )}
 
           {!listQuery.isLoading && !listQuery.isError && chunks.length === 0 && (
-            <div className="py-12 text-center">
-              <FileText className="mx-auto mb-3 h-12 w-12 text-[color:var(--ds-text)]" />
-              <p className="text-sm font-medium">Keine Chunks gefunden</p>
-              <p className="mt-1 text-xs text-[color:var(--ds-text)]">
-                {search
-                  ? `Keine Treffer für &quot;${search}&quot; mit diesen Filtern.`
-                  : "Diese Source hat noch keine Chunks — Import läuft?"}
-              </p>
-            </div>
+            <EmptyState
+              icon={FileText}
+              title="Keine Chunks gefunden"
+              description={
+                search
+                  ? `Keine Treffer für „${search}“ mit diesen Filtern.`
+                  : "Diese Quelle hat noch keine Chunks — möglicherweise läuft der Import noch."
+              }
+            />
           )}
 
           {!listQuery.isLoading && !listQuery.isError && chunks.length > 0 && (
@@ -611,7 +612,7 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
                       <tr
                         key={c.id}
                         onClick={() => setSelectedChunkId(c.id)}
-                        className={`cursor-pointer border-b border-[color:var(--ds-border)] transition-[background-color] duration-150 hover:bg-[color:var(--ds-surface-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none ${selectedIds.has(c.id) ? "bg-[color:var(--brand-primary-bg)]" : ""}`}
+                        className={`cursor-pointer border-b border-[color:var(--ds-border)] transition-[background-color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-surface-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none ${selectedIds.has(c.id) ? "bg-[color:var(--brand-primary-bg)]" : ""}`}
                         tabIndex={0}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") setSelectedChunkId(c.id);
@@ -692,7 +693,7 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
                 {chunks.map((c) => (
                   <div
                     key={c.id}
-                    className={`rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 transition-[background-color,border-color] duration-150 motion-reduce:transition-none ${selectedIds.has(c.id) ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary-bg)]" : ""}`}
+                    className={`rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 transition-[background-color,border-color] duration-[var(--ds-duration-fast)] motion-reduce:transition-none ${selectedIds.has(c.id) ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary-bg)]" : ""}`}
                   >
                     <div className="flex items-start gap-2">
                       <Checkbox

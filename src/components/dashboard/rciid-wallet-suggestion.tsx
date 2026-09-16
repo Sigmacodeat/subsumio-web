@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { BLOCKCHAIN_LABELS, BLOCKCHAIN_COLORS } from "@/lib/crypto-wallet-detector";
 import type { BlockchainType } from "@/lib/rciid-client";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface DetectedWalletSuggestion {
   address: string;
@@ -206,11 +207,10 @@ export function RciidWalletSuggestion({ caseSlug, onAcceptWallets }: RciidWallet
               )}
             </div>
           ) : (
-            <div className="rounded-lg border border-dashed border-[color:var(--ds-border)] p-6 text-center">
-              <p className="text-sm text-[color:var(--ds-text-muted)]">
-                Keine Krypto-Adressen in den Fall-Dokumenten gefunden.
-              </p>
-            </div>
+            <EmptyState
+              title="Keine Krypto-Adressen in den Dokumenten der Akte gefunden"
+              className="rounded-lg py-8"
+            />
           )}
         </>
       )}

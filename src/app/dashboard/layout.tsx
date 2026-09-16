@@ -743,7 +743,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={pathname}
-              className="flex min-h-0 min-w-0 flex-1 flex-col"
+              /* Page roots centre with mx-auto; as flex items that would make them
+                 content-sized (phone overflow), so every direct child is forced to full width. */
+              className="flex min-h-0 min-w-0 flex-1 flex-col [&>*]:w-full"
               initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -8 }}
@@ -810,7 +812,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           </div>
           <button
             onClick={nativeFeatures.clearPushNotification}
-            className="shrink-0 rounded-md p-0.5 text-[color:var(--ds-text-subtle)] transition-[color,transform] duration-150 hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+            className="shrink-0 rounded-md p-0.5 text-[color:var(--ds-text-subtle)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
             aria-label={t("common.close")}
           >
             <svg

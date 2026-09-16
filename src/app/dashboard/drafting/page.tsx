@@ -434,7 +434,7 @@ export default function DraftingPage() {
                 setResultGaps([]);
               }}
               className={cn(
-                "flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
+                "flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
                 selectedTemplate === t.key
                   ? "brand-soft brand-border brand-text"
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -593,7 +593,7 @@ export default function DraftingPage() {
               <button
                 onClick={() => saveDraftToBrain(result)}
                 disabled={savingDraft || submitting}
-                className="flex items-center gap-1 rounded-md text-xs text-[color:var(--ds-text-muted)] transition-[color,transform] duration-150 hover:text-[color:var(--ds-success-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] disabled:opacity-60 motion-reduce:transition-none"
+                className="flex items-center gap-1 rounded-md text-xs text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-success-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] disabled:opacity-60 motion-reduce:transition-none"
                 title={t("drafting.btn_save")}
               >
                 {savingDraft ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
@@ -602,7 +602,7 @@ export default function DraftingPage() {
               <button
                 onClick={() => submitForApproval(result)}
                 disabled={savingDraft || submitting}
-                className="hover:brand-text flex items-center gap-1 rounded-md text-xs text-[color:var(--ds-text-muted)] transition-[color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] disabled:opacity-60 motion-reduce:transition-none"
+                className="hover:brand-text flex items-center gap-1 rounded-md text-xs text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] disabled:opacity-60 motion-reduce:transition-none"
                 title={t("drafting.btn_submit_approval")}
               >
                 {submitting ? (
@@ -614,7 +614,7 @@ export default function DraftingPage() {
               </button>
               <button
                 onClick={() => downloadDocx(result)}
-                className="flex items-center gap-1 rounded-md text-xs text-[color:var(--ds-text-muted)] transition-[color,transform] duration-150 hover:text-[color:var(--ds-info-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
+                className="flex items-center gap-1 rounded-md text-xs text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-info-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
                 title={t("drafting.btn_docx")}
               >
                 {docxReady ? (
@@ -626,7 +626,7 @@ export default function DraftingPage() {
               </button>
               <button
                 onClick={() => copyToClipboard(result)}
-                className="rounded-md text-[color:var(--ds-text-muted)] transition-[color,transform] duration-150 hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
+                className="rounded-md text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
                 title={t("drafting.btn_copy")}
                 aria-label={t("drafting.btn_copy")}
               >

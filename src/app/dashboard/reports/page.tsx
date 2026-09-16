@@ -634,7 +634,7 @@ export default function ReportsPage() {
               key={tabItem.id}
               onClick={() => setTab(tabItem.id)}
               className={cn(
-                "flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-[border-color,color] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                "flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-[border-color,color] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                 tab === tabItem.id
                   ? "brand-text border-[color:var(--brand-primary)]"
                   : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"

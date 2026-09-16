@@ -425,7 +425,7 @@ export default function ExperiencePage() {
             </div>
           ) : summary ? (
             <>
-              <div className="grid gap-4 md:grid-cols-4">
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                 <StatCard label={t("experience.stat_visible")} value={summary.visible_profiles} />
                 <StatCard
                   label={t("experience.stat_active")}

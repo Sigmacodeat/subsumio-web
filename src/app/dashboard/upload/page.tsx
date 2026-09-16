@@ -611,7 +611,7 @@ function UploadPageInner() {
         <button
           onClick={() => setMode("case")}
           className={cn(
-            "flex items-start gap-3 rounded-xl border p-4 text-left transition-[border-color,background-color,box-shadow,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
+            "flex items-start gap-3 rounded-xl border p-4 text-left transition-[border-color,background-color,box-shadow,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
             mode === "case"
               ? "brand-border brand-soft ring-1 ring-[color:var(--brand-primary)]/20"
               : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
@@ -636,7 +636,7 @@ function UploadPageInner() {
         <button
           onClick={() => setMode("knowledge")}
           className={cn(
-            "flex items-start gap-3 rounded-xl border p-4 text-left transition-[border-color,background-color,box-shadow,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
+            "flex items-start gap-3 rounded-xl border p-4 text-left transition-[border-color,background-color,box-shadow,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
             mode === "knowledge"
               ? "brand-border brand-soft ring-1 ring-[color:var(--brand-primary)]/20"
               : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
@@ -877,7 +877,7 @@ function UploadPageInner() {
       <div
         {...getRootProps()}
         className={cn(
-          "relative cursor-pointer rounded-2xl border border-dashed p-12 text-center transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
+          "relative cursor-pointer rounded-2xl border border-dashed p-12 text-center transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
           isDragActive
             ? "brand-border brand-soft ring-1 ring-[color:var(--brand-primary)]/20"
             : "hover:brand-border hover:brand-soft border-[color:var(--ds-border-strong)]",
@@ -889,7 +889,7 @@ function UploadPageInner() {
         <div className="flex flex-col items-center gap-4">
           <div
             className={cn(
-              "flex h-16 w-16 items-center justify-center rounded-2xl transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
+              "flex h-16 w-16 items-center justify-center rounded-2xl transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
               isDragActive ? "brand-soft" : "bg-[color:var(--ds-surface-2)]"
             )}
           >
@@ -1198,7 +1198,7 @@ function UploadPageInner() {
                     <button
                       onClick={() => removeFile(f.id)}
                       aria-label="Datei entfernen"
-                      className="rounded-md p-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-150 hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+                      className="rounded-md p-0.5 text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                     >
                       <X size={14} />
                     </button>

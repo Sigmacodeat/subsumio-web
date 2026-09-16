@@ -811,7 +811,7 @@ export function DeadlinesTasksTab() {
               <div
                 key={task.id}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
+                  "flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
                   task.done
                     ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]"
                     : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
@@ -827,7 +827,7 @@ export function DeadlinesTasksTab() {
                     ctx.saveCaseUpdate({ tasks: updated });
                   }}
                   className={cn(
-                    "flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
+                    "flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
                     task.done
                       ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : "hover:brand-border border-[color:var(--ds-border)]"

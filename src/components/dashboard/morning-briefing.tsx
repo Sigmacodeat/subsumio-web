@@ -1,4 +1,6 @@
-"use client";
+import { Skeleton } from "@/components/ui/skeleton";
+
+("use client");
 
 import { useState, useEffect, useCallback } from "react";
 import { markdownToPlainText } from "@/lib/markdown";
@@ -80,9 +82,9 @@ export function MorningBriefing() {
                 <Sparkles size={16} className="brand-text" />
               </div>
               <div className="min-w-0 flex-1 space-y-2">
-                <div className="h-4 w-48 animate-pulse rounded bg-[color:var(--ds-border)]" />
-                <div className="h-3 w-full animate-pulse rounded bg-[color:var(--ds-border)]" />
-                <div className="h-3 w-3/4 animate-pulse rounded bg-[color:var(--ds-border)]" />
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-3/4" />
               </div>
             </div>
           </div>

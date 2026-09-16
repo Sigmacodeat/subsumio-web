@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { auditLabel } from "@/lib/audit-labels";
 import { useLang } from "@/lib/use-lang";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface AuditEntry {
   id: string;
@@ -194,15 +195,11 @@ export default function AuditTrail() {
           <Loader2 size={24} className="brand-text animate-spin" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="space-y-3 py-16 text-center">
-          <Shield size={40} className="mx-auto text-[color:var(--ds-border)]" />
-          <p className="text-sm text-[color:var(--ds-text-muted)]">
-            Keine Audit-Einträge gefunden.
-          </p>
-          <p className="text-xs text-[color:var(--ds-text-subtle)]">
-            Audit-Logs werden erstellt, sobald Benutzer Aktionen im Dashboard ausführen.
-          </p>
-        </div>
+        <EmptyState
+          icon={Shield}
+          title="Keine Audit-Einträge gefunden"
+          description="Audit-Einträge entstehen, sobald Benutzer Aktionen ausführen."
+        />
       ) : (
         <div className="overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
           <div className="overflow-x-auto">

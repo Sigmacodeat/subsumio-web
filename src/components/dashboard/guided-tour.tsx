@@ -866,10 +866,10 @@ function TourOverlay({
               aria-selected={i === currentStep}
               aria-label={t("tour.step_label").replace("{current}", String(i + 1))}
               onClick={() => onGoTo(i)}
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-transform duration-200 hover:scale-110 active:scale-[0.97] motion-reduce:transition-none"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-transform duration-[var(--ds-duration-normal)] hover:scale-110 active:scale-[0.97] motion-reduce:transition-none"
             >
               <span
-                className={`h-1.5 rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 ${
+                className={`h-1.5 rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] ${
                   i === currentStep
                     ? "w-6 bg-[color:var(--brand-primary)]"
                     : i < currentStep

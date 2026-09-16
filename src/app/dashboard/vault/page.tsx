@@ -1,4 +1,6 @@
-"use client";
+import { Skeleton } from "@/components/ui/skeleton";
+
+("use client");
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -440,7 +442,7 @@ export default function VaultPage() {
         }
       />
 
-      <div className="grid gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <HubLink href="/dashboard/analyze" icon={FileSearch} label={t("nav.analyze")} />
         <HubLink href="/dashboard/translate" icon={Languages} label={t("nav.translate")} />
         <HubLink href="/dashboard/signature" icon={FileSignature} label={t("nav.signature")} />
@@ -451,7 +453,7 @@ export default function VaultPage() {
       <div className="grid gap-3 sm:grid-cols-2">
         <Link
           href="/dashboard/upload?mode=case"
-          className="group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[border-color,background-color,transform] duration-150 hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none"
+          className="group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[border-color,background-color,transform] duration-[var(--ds-duration-fast)] hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none"
         >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[color:var(--brand-primary)]/10">
             <Briefcase size={18} className="brand-text" />
@@ -470,7 +472,7 @@ export default function VaultPage() {
         </Link>
         <Link
           href="/dashboard/upload?mode=knowledge"
-          className="group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[border-color,background-color,transform] duration-150 hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none"
+          className="group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[border-color,background-color,transform] duration-[var(--ds-duration-fast)] hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none"
         >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-success-bg)]">
             <BookOpen size={18} className="text-[color:var(--ds-success-text)]" />
@@ -884,7 +886,7 @@ export default function VaultPage() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("vault.search_placeholder")}
             aria-label={t("aria.search_docs")}
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 motion-reduce:transition-none"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 motion-reduce:transition-none"
           />
           {searching && (
             <Loader2
@@ -947,13 +949,13 @@ export default function VaultPage() {
           </span>
           <button
             onClick={selectAll}
-            className="brand-text rounded-sm text-sm transition-[color,transform] duration-150 hover:underline focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
+            className="brand-text rounded-sm text-sm transition-[color,transform] duration-[var(--ds-duration-fast)] hover:underline focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
           >
             {t("vault.select_all")}
           </button>
           <button
             onClick={deselectAll}
-            className="brand-text rounded-sm text-sm transition-[color,transform] duration-150 hover:underline focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
+            className="brand-text rounded-sm text-sm transition-[color,transform] duration-[var(--ds-duration-fast)] hover:underline focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
           >
             {t("vault.deselect_all")}
           </button>
@@ -986,15 +988,15 @@ export default function VaultPage() {
               className="space-y-2.5 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
             >
               <div className="flex items-center gap-2">
-                <div className="h-4 w-4 animate-pulse rounded bg-[color:var(--ds-surface-2)]" />
-                <div className="h-5 w-20 animate-pulse rounded bg-[color:var(--ds-surface-2)]" />
+                <Skeleton className="h-4 w-4" />
+                <Skeleton className="h-5 w-20" />
               </div>
-              <div className="h-4 w-full animate-pulse rounded bg-[color:var(--ds-surface-2)]" />
-              <div className="h-3 w-full animate-pulse rounded bg-[color:var(--ds-surface-2)]" />
-              <div className="h-3 w-2/3 animate-pulse rounded bg-[color:var(--ds-surface-2)]" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-2/3" />
               <div className="flex items-center justify-between pt-1">
-                <div className="h-3 w-24 animate-pulse rounded bg-[color:var(--ds-surface-2)]" />
-                <div className="h-3 w-12 animate-pulse rounded bg-[color:var(--ds-surface-2)]" />
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-3 w-12" />
               </div>
             </div>
           ))}
@@ -1133,7 +1135,7 @@ export default function VaultPage() {
                   </div>
                   <button
                     onClick={() => deleteDoc(doc.slug)}
-                    className="rounded-lg p-1 text-[color:var(--ds-text-muted)] opacity-60 transition-[opacity,background-color,color,transform] duration-200 group-hover:opacity-100 hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--ds-danger-border)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+                    className="rounded-lg p-1 text-[color:var(--ds-text-muted)] opacity-60 transition-[opacity,background-color,color,transform] duration-[var(--ds-duration-normal)] group-hover:opacity-100 hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--ds-danger-border)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                     title={t("vault.delete")}
                     aria-label={t("vault.delete")}
                   >
@@ -1142,7 +1144,7 @@ export default function VaultPage() {
                 </div>
                 <Link
                   href={`/dashboard/brain/${encodeURIComponent(doc.slug)}`}
-                  className="block truncate rounded-sm text-sm font-medium text-[color:var(--ds-text)] transition-[color,transform] duration-150 hover:text-[color:var(--brand-primary)] focus-visible:text-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none"
+                  className="block truncate rounded-sm text-sm font-medium text-[color:var(--ds-text)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--brand-primary)] focus-visible:text-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none"
                   title={doc.title}
                 >
                   {doc.title}

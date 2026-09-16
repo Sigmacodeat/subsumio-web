@@ -16,6 +16,7 @@ import {
   type AclGroup,
 } from "@/lib/queries/settings";
 import { useTeam } from "@/lib/queries/settings";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 export function AclSettings() {
   const [newGroupName, setNewGroupName] = useState("");
@@ -83,8 +84,8 @@ export function AclSettings() {
           </h3>
         </div>
         <p className="mb-4 text-sm text-[color:var(--ds-text-muted)]">
-          Erstelle Gruppen und weise Teammitglieder zu. Seiten ohne Berechtigung sind für alle
-          sichtbar (open-by-default).
+          Erstellen Sie Gruppen und weisen Sie Teammitglieder zu. Seiten ohne Berechtigung sind für
+          alle sichtbar (open-by-default).
         </p>
       </div>
 
@@ -115,12 +116,11 @@ export function AclSettings() {
       {groupsQuery.isLoading ? (
         <p className="text-sm text-[color:var(--ds-text-muted)]">Gruppen werden geladen…</p>
       ) : groups.length === 0 ? (
-        <Card className="border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-8 text-center">
-          <Lock className="mx-auto mb-2 h-8 w-8 text-[color:var(--ds-text-muted)]" />
-          <p className="text-sm text-[color:var(--ds-text-muted)]">
-            Noch keine Gruppen erstellt. Erstelle eine Gruppe, um Berechtigungen zu verwalten.
-          </p>
-        </Card>
+        <EmptyState
+          icon={Lock}
+          title="Noch keine Gruppen erstellt"
+          description="Erstellen Sie eine Gruppe, um Berechtigungen zu verwalten."
+        />
       ) : (
         <div className="space-y-3">
           {groups.map((group: AclGroup) => (

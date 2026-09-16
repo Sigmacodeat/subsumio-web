@@ -23,6 +23,7 @@ import { csrfFetch } from "@/lib/csrf";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface CaseRow {
   slug: string;
@@ -600,12 +601,11 @@ export default function AltlastenPage() {
       </div>
 
       {sortedCases.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <FileText className="mb-4 h-12 w-12 text-[color:var(--ds-text-muted)]" />
-          <p className="text-[color:var(--ds-text-muted)]">
-            Keine Akten gefunden. Laden Sie Akten hoch, um die Bestandsakten-Bearbeitung zu starten.
-          </p>
-        </div>
+        <EmptyState
+          icon={FileText}
+          title="Keine Akten gefunden"
+          description="Laden Sie Akten hoch, um die Bestandsakten-Bearbeitung zu starten."
+        />
       )}
     </div>
   );

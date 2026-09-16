@@ -138,7 +138,7 @@ export default function CaseDetailPage() {
             {ctx.conflictWarning}
             <button
               onClick={() => window.location.reload()}
-              className="brand-text ml-auto rounded text-xs transition-[color,transform] duration-150 hover:underline focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
+              className="brand-text ml-auto rounded text-xs transition-[color,transform] duration-[var(--ds-duration-fast)] hover:underline focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] motion-reduce:transition-none"
             >
               {t("cases.detail_refresh_now")}
             </button>
@@ -160,7 +160,7 @@ export default function CaseDetailPage() {
                 <button
                   onClick={() => ctx.handleRestore("open")}
                   disabled={ctx.restoring}
-                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-150 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] disabled:opacity-50 motion-reduce:transition-none"
+                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] disabled:opacity-50 motion-reduce:transition-none"
                 >
                   {ctx.restoring ? (
                     <Loader2 size={12} className="animate-spin" />
@@ -172,7 +172,7 @@ export default function CaseDetailPage() {
                 <button
                   onClick={() => ctx.handleRestore("dormant")}
                   disabled={ctx.restoring}
-                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-150 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] disabled:opacity-50 motion-reduce:transition-none"
+                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.95] disabled:opacity-50 motion-reduce:transition-none"
                 >
                   <PauseCircle size={12} />
                   {t("casesdetail.as_dormant")}

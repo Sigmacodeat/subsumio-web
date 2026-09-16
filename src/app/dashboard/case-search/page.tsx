@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
@@ -29,6 +28,7 @@ import { caseFrontmatter } from "@/lib/legal-types";
 import type { BrainPage } from "@/lib/types";
 import { cn, encodeSlugPath } from "@/lib/utils";
 import { STATUS_TEXT, STATUS_BG, STATUS_BORDER, type StatusColor } from "@/lib/status-colors";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface FacetItem {
   slug: string;
@@ -536,24 +536,26 @@ export default function CaseSearchPage() {
               <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
             </div>
           ) : filtered.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-[color:var(--ds-border)] p-12 text-center">
-              <Briefcase className="mx-auto mb-3 h-12 w-12 text-[color:var(--ds-text-muted)] opacity-40" />
-              <p className="text-sm text-[color:var(--ds-text-muted)]">
-                {activeFilterCount > 0 || search
+            <EmptyState
+              icon={Briefcase}
+              title={
+                activeFilterCount > 0 || search
                   ? isEn
-                    ? "No cases match your filters."
-                    : "Keine Akten entsprechen Ihren Filtern."
+                    ? "No cases match your filters"
+                    : "Keine Akten entsprechen Ihren Filtern"
                   : isEn
-                    ? "No cases found."
-                    : "Keine Akten gefunden."}
-              </p>
-              {(activeFilterCount > 0 || search) && (
-                <Button variant="secondary" className="mt-3 text-xs" onClick={clearAllFilters}>
-                  <RotateCcw size={12} className="mr-1" />
-                  {isEn ? "Clear filters" : "Filter zurücksetzen"}
-                </Button>
-              )}
-            </div>
+                    ? "No cases found"
+                    : "Keine Akten gefunden"
+              }
+              actionLabel={
+                activeFilterCount > 0 || search
+                  ? isEn
+                    ? "Clear filters"
+                    : "Filter zurücksetzen"
+                  : undefined
+              }
+              onAction={clearAllFilters}
+            />
           ) : (
             <div className="space-y-1.5">
               {filtered.map((item) => {

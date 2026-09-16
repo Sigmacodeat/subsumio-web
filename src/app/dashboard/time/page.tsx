@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Download, Edit, Trash2, Filter, FileText, Plus } from "lucide-react";
+import { Calendar, Clock, Download, Edit, Trash2, Filter, FileText, Plus } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { api } from "@/lib/api";
 import { tracking } from "@/lib/tracking";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 type TimeEntryWithMeta = {
   id: string;
@@ -310,7 +311,7 @@ export default function TimeEntriesPage() {
       />
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Gesamtzeit</CardTitle>
@@ -420,9 +421,13 @@ export default function TimeEntriesPage() {
                   ))}
                 </div>
               ) : (
-                <div className="py-8 text-center text-[color:var(--ds-text-muted)]">
-                  Keine Einträge gefunden
-                </div>
+                <EmptyState
+                  icon={Clock}
+                  title="Keine Zeiteinträge gefunden"
+                  actionLabel="Neuer Eintrag"
+                  onAction={() => setCreateOpen(true)}
+                  className="border-0 bg-transparent py-8"
+                />
               )}
             </CardContent>
           </Card>

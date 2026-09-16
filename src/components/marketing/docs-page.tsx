@@ -31,13 +31,15 @@ function FeatureCard({
       viewport={VIEWPORT.tight}
       transition={{ duration: 0.4, delay: (index % 3) * 0.06 }}
       className={
-        dimmed ? "opacity-30 transition-opacity duration-300" : "transition-opacity duration-300"
+        dimmed
+          ? "opacity-30 transition-opacity duration-[var(--ds-duration-normal)]"
+          : "transition-opacity duration-[var(--ds-duration-normal)]"
       }
     >
-      <GlowCard className="h-full rounded-2xl p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-lg hover:[background:var(--mk-surface-2)] motion-reduce:transition-none">
+      <GlowCard className="h-full rounded-2xl p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-lg hover:[background:var(--mk-surface-2)] motion-reduce:transition-none">
         <div className="flex items-start gap-3.5">
           {Icon && (
-            <div className="brand-soft mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-transform duration-300 hover:scale-110">
+            <div className="brand-soft mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-transform duration-[var(--ds-duration-normal)] hover:scale-110">
               <Icon size={17} className="brand-text" />
             </div>
           )}
@@ -65,7 +67,7 @@ function QuickStartSection({ d }: { d: ReturnType<typeof getDocs> }) {
         >
           {d.quickstart.steps.map((step) => (
             <StaggerItem key={step.num}>
-              <div className="relative h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-md motion-reduce:transition-none">
+              <div className="relative h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-md motion-reduce:transition-none">
                 <div className="brand-text mb-3 text-2xl font-bold tabular-nums">{step.num}</div>
                 <h4 className="mb-1.5 text-sm font-semibold [color:var(--mk-text)]">
                   {step.title}
@@ -107,7 +109,7 @@ function StickyCategoryNav({
               <a
                 key={cat.id}
                 href={`#cat-${cat.id}`}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 motion-reduce:transition-none ${
+                className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] motion-reduce:transition-none ${
                   activeId === cat.id
                     ? "brand-soft brand-text"
                     : "text-[var(--mk-text-muted)] hover:bg-[var(--mk-surface-2)] hover:text-[var(--mk-text)]"
@@ -387,7 +389,7 @@ export default function DocsPage() {
         <button
           onClick={scrollToTop}
           aria-label={t.backToTopAria ?? "Back to top"}
-          className="fixed right-6 bottom-6 z-40 flex h-10 w-10 items-center justify-center rounded-full border [border-color:var(--mk-border)] [color:var(--mk-text)] shadow-lg transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-xl active:scale-[0.97] motion-reduce:transition-none"
+          className="fixed right-6 bottom-6 z-40 flex h-10 w-10 items-center justify-center rounded-full border [border-color:var(--mk-border)] [color:var(--mk-text)] shadow-lg transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-xl active:scale-[0.97] motion-reduce:transition-none"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path

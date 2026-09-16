@@ -22,6 +22,7 @@ import { api } from "@/lib/api";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface MemoryEntry {
   id: string;
@@ -341,17 +342,13 @@ export default function MemoryManagementPage() {
           <Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-subtle)]" />
         </div>
       ) : filtered.length === 0 ? (
-        <Card className="p-8 text-center">
-          <Brain className="mx-auto mb-3 h-8 w-8 text-[color:var(--ds-text-subtle)]" />
-          <p className="text-sm text-[color:var(--ds-text-subtle)]">
-            {searchResults ? "Keine Suchergebnisse" : "Noch keine Erinnerungen gespeichert"}
-          </p>
-          {!searchResults && (
-            <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-              Der Copilot lernt automatisch aus Ihren Nachrichten
-            </p>
-          )}
-        </Card>
+        <EmptyState
+          icon={Brain}
+          title={searchResults ? "Keine Suchergebnisse" : "Noch keine Erinnerungen gespeichert"}
+          description={
+            searchResults ? undefined : "Der Assistent lernt automatisch aus Ihren Nachrichten."
+          }
+        />
       ) : (
         <div className="space-y-2">
           {filtered.map((memory) => (

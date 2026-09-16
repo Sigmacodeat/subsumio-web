@@ -44,7 +44,7 @@ export default function AudienceTabs() {
                 key={slug}
                 data-slug={slug}
                 onClick={() => setActive(slug)}
-                className={`relative inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 motion-reduce:transition-none ${
+                className={`relative inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] motion-reduce:transition-none ${
                   isActive
                     ? "brand-border brand-soft brand-text"
                     : "[border-color:var(--mk-border)] [color:var(--mk-text-muted)] hover:[border-color:var(--mk-border-strong)] hover:[color:var(--mk-text)]"
@@ -82,7 +82,7 @@ export default function AudienceTabs() {
               {UI_STRINGS.seeSolution}
               <ArrowRight
                 size={14}
-                className="transition-transform duration-200 group-hover:translate-x-0.5"
+                className="transition-transform duration-[var(--ds-duration-normal)] group-hover:translate-x-0.5"
               />
             </Link>
           </motion.div>

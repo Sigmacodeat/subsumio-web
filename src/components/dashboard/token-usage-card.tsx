@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTokenUsage } from "@/lib/queries/settings";
 import { useLang } from "@/lib/use-lang";
 import { getModelById } from "@/lib/model-config";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 function formatTokens(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -59,19 +60,12 @@ export function TokenUsageCard() {
             <Cpu size={16} className="brand-text" aria-hidden />
             <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Token-Verbrauch</h2>
           </div>
-          <div className="flex flex-col items-center gap-3 py-8 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--ds-border)]">
-              <Zap size={20} className="text-[color:var(--ds-text-muted)]" aria-hidden />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-[color:var(--ds-text)]">
-                Noch keine Token-Usage
-              </p>
-              <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                Starte eine Legal-Pipeline um token-genaue Abrechnung zu sehen.
-              </p>
-            </div>
-          </div>
+          <EmptyState
+            icon={Zap}
+            title="Noch kein Token-Verbrauch"
+            description="Starten Sie eine Aktenanalyse, um die token-genaue Abrechnung zu sehen."
+            className="border-0 bg-transparent py-8"
+          />
         </div>
       </Card>
     );
@@ -178,7 +172,7 @@ export function TokenUsageCard() {
                   aria-label={`${modelName} credit usage`}
                 >
                   <div
-                    className="brand-soft h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
+                    className="brand-soft h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
                     style={{ width: `${pct}%` }}
                   />
                 </div>

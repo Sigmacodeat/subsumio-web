@@ -55,6 +55,7 @@ import { ActIntelligencePanel } from "@/components/legal/ActIntelligencePanel";
 import { VerjaehrungPanel } from "@/components/legal/VerjaehrungPanel";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 export function OverviewTab() {
   const ctx = useMatterDetail();
@@ -321,7 +322,7 @@ export function OverviewTab() {
                     }
                   }}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
+                    "flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none",
                     ctx.pendingStatus === target
                       ? "brand-bg border-transparent text-white"
                       : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--brand-primary)] hover:text-[color:var(--ds-text)]"
@@ -873,10 +874,12 @@ export function OverviewTab() {
             </div>
           </>
         ) : (
-          <p className="text-sm text-[color:var(--ds-text-muted)]">
-            Noch keine Strategie generiert. Klicke auf &ldquo;Strategie generieren&rdquo; für eine
-            KI-gestützte Empfehlung.
-          </p>
+          <EmptyState
+            icon={Sparkles}
+            title="Noch keine Strategie generiert"
+            description="Wählen Sie „Strategie generieren“, um eine KI-gestützte Empfehlung zu erhalten."
+            className="border-0 bg-transparent py-6"
+          />
         )}
       </div>
 
@@ -967,7 +970,7 @@ export function OverviewTab() {
                         ctx.setExpensesList(updated);
                         ctx.saveCaseUpdate({ expenses: updated });
                       }}
-                      className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] active:scale-[0.97] motion-reduce:transition-none"
+                      className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] active:scale-[0.97] motion-reduce:transition-none"
                       title={t("cases.detail_exp_delete")}
                     >
                       <Trash2 size={13} />

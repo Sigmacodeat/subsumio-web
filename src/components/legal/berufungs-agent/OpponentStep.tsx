@@ -203,7 +203,7 @@ export function OpponentStep({
       {/* Results */}
       {hasResults && (
         <div
-          className="animate-in fade-in slide-in-from-bottom-2 space-y-4 duration-300"
+          className="animate-in fade-in slide-in-from-bottom-2 space-y-4 duration-[var(--ds-duration-normal)]"
           aria-live="polite"
         >
           <AIActConformityBanner purpose="Gegner-Simulation" compact />

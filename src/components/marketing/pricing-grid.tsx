@@ -22,7 +22,7 @@ export function PricingGrid() {
           return (
             <StaggerItem
               key={tier.id}
-              className={`relative rounded-2xl transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 hover:-translate-y-1 motion-reduce:transition-none ${
+              className={`relative rounded-2xl transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] hover:-translate-y-1 motion-reduce:transition-none ${
                 tier.highlight
                   ? "gradient-border p-[2px] shadow-[var(--brand-primary)]/20 shadow-xl hover:shadow-[var(--brand-primary)]/30 hover:shadow-2xl"
                   : "hover:shadow-lg"

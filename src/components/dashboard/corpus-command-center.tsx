@@ -37,6 +37,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 const API_BASE = "/api/admin/corpus-command-center";
 
@@ -561,34 +562,30 @@ function SyncStatusSection({
               );
             })}
             {displayRows.length === 0 && (
-              <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
-                {filterMode === "incomplete" ? (
-                  <>
-                    <CheckCircle2 className="h-8 w-8 text-[color:var(--ds-success-text)]" />
-                    <p className="text-sm font-medium text-[color:var(--ds-text)]">
-                      Alle Corpora sind vollständig!
-                    </p>
-                    <p className="text-xs text-[color:var(--ds-text-subtle)]">
-                      Keine offenen Lücken mehr. Wechsle zu &bdquo;Alle&ldquo; um die Übersicht zu
-                      sehen.
-                    </p>
-                  </>
-                ) : filterMode === "complete" ? (
-                  <>
-                    <Archive className="h-8 w-8 text-[color:var(--ds-text-subtle)]" />
-                    <p className="text-sm font-medium text-[color:var(--ds-text)]">
-                      Noch keine vollständigen Corpora
-                    </p>
-                    <p className="text-xs text-[color:var(--ds-text-subtle)]">
-                      Sobald ein Corpus 100% Coverage erreicht, erscheint er hier.
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-xs text-[color:var(--ds-text-subtle)]">
-                    Keine Corpora gefunden.
-                  </p>
-                )}
-              </div>
+              <EmptyState
+                icon={
+                  filterMode === "incomplete"
+                    ? CheckCircle2
+                    : filterMode === "complete"
+                      ? Archive
+                      : Database
+                }
+                title={
+                  filterMode === "incomplete"
+                    ? "Alle Corpora sind vollständig"
+                    : filterMode === "complete"
+                      ? "Noch keine vollständigen Corpora"
+                      : "Keine Corpora gefunden"
+                }
+                description={
+                  filterMode === "incomplete"
+                    ? "Wechseln Sie zu „Alle“, um die Übersicht zu sehen."
+                    : filterMode === "complete"
+                      ? "Sobald ein Corpus 100 % Coverage erreicht, erscheint er hier."
+                      : undefined
+                }
+                className="border-0 bg-transparent py-8"
+              />
             )}
           </div>
         </CardContent>
@@ -1412,7 +1409,7 @@ function RisDeltaSection({
                     return (
                       <tr
                         key={row.applikation}
-                        className="border-b transition-[background-color] duration-150 last:border-0 hover:bg-[color:var(--ds-surface-hover)] motion-reduce:transition-none"
+                        className="border-b transition-[background-color] duration-[var(--ds-duration-fast)] last:border-0 hover:bg-[color:var(--ds-surface-hover)] motion-reduce:transition-none"
                       >
                         <td className="px-4 py-3">
                           <div className="font-medium">{row.label}</div>

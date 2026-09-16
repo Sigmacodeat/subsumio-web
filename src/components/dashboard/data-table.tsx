@@ -71,6 +71,8 @@ interface DataTableProps<T> {
   bulkActions?: BulkAction[];
   rowKey?: (row: T, index: number) => string;
   enableVirtualization?: boolean;
+  /** "dense" tightens row padding for registers (Akten, Fristen). */
+  density?: "comfortable" | "dense";
 }
 
 export function DataTable<T>({
@@ -93,7 +95,9 @@ export function DataTable<T>({
   bulkActions,
   rowKey,
   enableVirtualization = false,
+  density = "comfortable",
 }: DataTableProps<T>) {
+  const cellPad = density === "dense" ? "px-3 py-2" : "px-4 py-3";
   const [sorting, setSorting] = useState<SortingState>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmAction, setConfirmAction] = useState<BulkAction | null>(null);
@@ -372,7 +376,7 @@ export function DataTable<T>({
             <thead className="sticky top-0 z-10">
               <tr className="border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
                 {selectable && (
-                  <th className="w-10 px-4 py-3">
+                  <th className={cn("w-10", density === "dense" ? "px-3 py-2" : "px-4 py-3")}>
                     <Checkbox
                       checked={
                         allOnPageSelected ? true : someOnPageSelected ? "indeterminate" : false
@@ -389,7 +393,8 @@ export function DataTable<T>({
                     <th
                       key={col.key}
                       className={cn(
-                        "group px-4 py-3 text-left text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase",
+                        "group text-left text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase",
+                        density === "dense" ? "px-3 py-2" : "px-4 py-3",
                         col.width,
                         isPinned &&
                           "sticky left-0 z-10 bg-[color:var(--ds-surface-2)] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]"
@@ -454,12 +459,12 @@ export function DataTable<T>({
                 Array.from({ length: Math.min(5, pageSize) }).map((_, i) => (
                   <tr key={i} className="border-b border-[color:var(--ds-border)] last:border-0">
                     {selectable && (
-                      <td className="px-4 py-4">
+                      <td className={cellPad}>
                         <Skeleton className="h-4 w-4 rounded" />
                       </td>
                     )}
                     {columns.map((col) => (
-                      <td key={col.key} className="px-4 py-4">
+                      <td key={col.key} className={cellPad}>
                         <Skeleton className="h-4 w-full max-w-[120px] rounded" />
                       </td>
                     ))}
@@ -496,7 +501,7 @@ export function DataTable<T>({
                         }
                         tabIndex={onRowClick ? 0 : undefined}
                         className={cn(
-                          "group border-b border-[color:var(--ds-border)] transition-[background-color,border-color] duration-150 ease-out last:border-0 motion-reduce:transition-none",
+                          "group border-b border-[color:var(--ds-border)] transition-[background-color,border-color] duration-[var(--ds-duration-fast)] ease-out last:border-0 motion-reduce:transition-none",
                           onRowClick &&
                             !selectable &&
                             "cursor-pointer hover:bg-[color:var(--ds-hover)] active:bg-[color:var(--ds-surface-2)]",
@@ -509,7 +514,7 @@ export function DataTable<T>({
                         )}
                       >
                         {selectable && (
-                          <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                          <td className={cellPad} onClick={(e) => e.stopPropagation()}>
                             <Checkbox
                               checked={isSelected}
                               onCheckedChange={() => toggleRow(key)}
@@ -523,7 +528,8 @@ export function DataTable<T>({
                             <td
                               key={col.key}
                               className={cn(
-                                "px-4 py-3 leading-snug text-[color:var(--ds-text)]",
+                                cellPad,
+                                "leading-snug text-[color:var(--ds-text)]",
                                 col.width,
                                 isPinned &&
                                   "sticky left-0 z-10 bg-[color:var(--ds-surface)] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]"
@@ -559,7 +565,7 @@ export function DataTable<T>({
                       }
                       tabIndex={onRowClick ? 0 : undefined}
                       className={cn(
-                        "group border-b border-[color:var(--ds-border)] transition-[background-color,border-color] duration-150 ease-out last:border-0 motion-reduce:transition-none",
+                        "group border-b border-[color:var(--ds-border)] transition-[background-color,border-color] duration-[var(--ds-duration-fast)] ease-out last:border-0 motion-reduce:transition-none",
                         onRowClick &&
                           !selectable &&
                           "cursor-pointer hover:bg-[color:var(--ds-hover)] active:bg-[color:var(--ds-surface-2)]",
@@ -572,7 +578,7 @@ export function DataTable<T>({
                       )}
                     >
                       {selectable && (
-                        <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                        <td className={cellPad} onClick={(e) => e.stopPropagation()}>
                           <Checkbox
                             checked={isSelected}
                             onCheckedChange={() => toggleRow(key)}
@@ -586,7 +592,8 @@ export function DataTable<T>({
                           <td
                             key={col.key}
                             className={cn(
-                              "px-4 py-4 leading-snug text-[color:var(--ds-text)]",
+                              cellPad,
+                              "leading-snug text-[color:var(--ds-text)]",
                               col.width,
                               isPinned &&
                                 "sticky left-0 z-10 bg-[color:var(--ds-surface)] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]"
@@ -657,7 +664,7 @@ export function DataTable<T>({
                 </>
               );
               const cardClass = cn(
-                "space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-150 duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
+                "space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-fast)] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
                 isSelected && "brand-border brand-soft/30"
               );
               if (!onRowClick) {

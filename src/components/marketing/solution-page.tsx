@@ -48,7 +48,7 @@ export function SolutionPage({ content }: { content: SolutionContent }) {
                 {content.ctaButton}
                 <ArrowRight
                   size={16}
-                  className="transition-transform duration-200 group-hover:translate-x-0.5"
+                  className="transition-transform duration-[var(--ds-duration-normal)] group-hover:translate-x-0.5"
                 />
               </Link>
             </Button>
@@ -79,7 +79,7 @@ export function SolutionPage({ content }: { content: SolutionContent }) {
                 <GlowCard
                   glowColor="var(--ds-category-rose-text)"
                   intensity={0.1}
-                  className="h-full rounded-2xl border border-[color:var(--ds-category-rose-border)] bg-[color:var(--ds-category-rose-bg)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 hover:-translate-y-1 hover:shadow-lg motion-reduce:transition-none dark:border-[color:var(--ds-category-rose-border)] dark:bg-[color:var(--ds-category-rose-bg)]"
+                  className="h-full rounded-2xl border border-[color:var(--ds-category-rose-border)] bg-[color:var(--ds-category-rose-bg)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] hover:-translate-y-1 hover:shadow-lg motion-reduce:transition-none dark:border-[color:var(--ds-category-rose-border)] dark:bg-[color:var(--ds-category-rose-bg)]"
                 >
                   <AlertCircle size={20} className="mb-3 [color:var(--ds-category-rose-text)]" />
                   <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">
@@ -104,9 +104,9 @@ export function SolutionPage({ content }: { content: SolutionContent }) {
               const Icon = ICONS[feat.icon] ?? ICONS.Layers;
               return (
                 <StaggerItem key={feat.title}>
-                  <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-lg motion-reduce:transition-none">
+                  <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-lg motion-reduce:transition-none">
                     <div
-                      className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl border transition-transform duration-300 hover:scale-110 ${accentTile("violet", "light")}`}
+                      className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl border transition-transform duration-[var(--ds-duration-normal)] hover:scale-110 ${accentTile("violet", "light")}`}
                     >
                       <Icon size={18} />
                     </div>

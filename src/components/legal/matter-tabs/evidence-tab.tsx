@@ -606,7 +606,7 @@ export function EvidenceTab() {
                         <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
                           <div
                             className={cn(
-                              "h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
+                              "h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
                               (ev.weight || 0) >= 0.7
                                 ? "bg-[color:var(--ds-success-solid)]"
                                 : (ev.weight || 0) >= 0.4

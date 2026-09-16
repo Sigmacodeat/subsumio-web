@@ -102,11 +102,11 @@ function MarqueeRow({
             <div
               key={`${item.label}-${i}`}
               aria-hidden={isDuplicate || undefined}
-              className="group flex shrink-0 items-center gap-2.5 rounded-full border [border-color:var(--mk-border)] bg-[color:var(--mk-bg)] px-4 py-2 opacity-60 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 hover:border-[color:var(--brand-text)] hover:opacity-100 hover:shadow-lg hover:shadow-[color:var(--brand-text)]/10 motion-reduce:transition-none"
+              className="group flex shrink-0 items-center gap-2.5 rounded-full border [border-color:var(--mk-border)] bg-[color:var(--mk-bg)] px-4 py-2 opacity-60 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] hover:border-[color:var(--brand-text)] hover:opacity-100 hover:shadow-lg hover:shadow-[color:var(--brand-text)]/10 motion-reduce:transition-none"
             >
               <Icon
                 size={20}
-                className="text-[color:var(--brand-text)] transition-transform duration-300 group-hover:scale-110"
+                className="text-[color:var(--brand-text)] transition-transform duration-[var(--ds-duration-normal)] group-hover:scale-110"
               />
               <span className="text-sm font-semibold whitespace-nowrap [color:var(--mk-text)]">
                 {item.label}

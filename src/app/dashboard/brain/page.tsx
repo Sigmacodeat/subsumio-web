@@ -204,7 +204,7 @@ export default function BrainPage() {
               key={f.key}
               onClick={() => setFilter(f.key)}
               className={cn(
-                "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-[background-color,border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
+                "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-[background-color,border-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
                 filter === f.key
                   ? "brand-soft brand-text brand-border border"
                   : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -229,7 +229,7 @@ export default function BrainPage() {
               key={s.key}
               onClick={() => setSort(s.key)}
               className={cn(
-                "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-[background-color,border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
+                "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-[background-color,border-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none",
                 sort === s.key
                   ? "brand-soft brand-text brand-border border"
                   : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -333,7 +333,7 @@ export default function BrainPage() {
                   <a
                     key={page.slug}
                     href={`/dashboard/brain/${encodeURIComponent(page.slug)}`}
-                    className="group card-shadow flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
+                    className="group card-shadow flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none"
                   >
                     <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border">
                       <TypeIcon size={17} className="brand-text" />

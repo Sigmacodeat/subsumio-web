@@ -27,6 +27,7 @@ import {
 import type { Chronology, ChronologyEntry } from "@/lib/legal/chronology-builder";
 import { exportChronologyMarkdown } from "@/lib/legal/chronology-builder";
 import { csrfFetch } from "@/lib/csrf";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 const CATEGORY_ICONS: Record<string, typeof Calendar> = {
   procedure: Gavel,
@@ -195,9 +196,11 @@ export function ChronologyTimeline({ chronology }: ChronologyTimelineProps) {
       {/* Timeline */}
       <div className="space-y-1">
         {filteredEntries.length === 0 && (
-          <div className="rounded-lg border border-dashed border-[color:var(--ds-border)] p-8 text-center text-sm text-[color:var(--ds-text-muted)]">
-            Keine Einträge mit den aktuellen Filtern
-          </div>
+          <EmptyState
+            icon={Calendar}
+            title="Keine Einträge mit den aktuellen Filtern"
+            className="rounded-lg py-8"
+          />
         )}
         {filteredEntries.map((entry) => (
           <ChronologyEntry

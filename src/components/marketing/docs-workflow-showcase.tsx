@@ -164,7 +164,7 @@ export default function DocsWorkflowShowcase() {
                       : { duration: 0.2 }
                   }
                   whileHover={{ y: -2 }}
-                  className={`w-full rounded-xl border p-4 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 motion-reduce:transition-none ${
+                  className={`w-full rounded-xl border p-4 text-left transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] motion-reduce:transition-none ${
                     active
                       ? "brand-border shadow-md [background:var(--mk-surface)]"
                       : "[border-color:var(--mk-border)] [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)]"
@@ -253,10 +253,10 @@ export default function DocsWorkflowShowcase() {
                 key={wf.id}
                 onClick={() => handleWorkflowClick(i)}
                 aria-label={wf.label}
-                className="group flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-transform duration-200 hover:scale-110 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+                className="group flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-transform duration-[var(--ds-duration-normal)] hover:scale-110 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
               >
                 <span
-                  className={`h-1.5 rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ${
+                  className={`h-1.5 rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] ${
                     i === activeWorkflow
                       ? "brand-bg w-6"
                       : "w-1.5 [background:var(--mk-border)] group-hover:[background:var(--mk-border-strong)]"

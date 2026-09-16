@@ -266,7 +266,7 @@ export function ProactiveAlerts({
                 }
               }}
               className={cn(
-                "group/alert flex min-h-11 w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-[background-color,border-color] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-1 focus-visible:ring-[color:var(--ds-ring)] motion-reduce:transition-none sm:min-h-0 sm:gap-2 sm:px-2.5 sm:py-1.5 sm:text-xs",
+                "group/alert flex min-h-11 w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-[background-color,border-color] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] focus-visible:ring-1 focus-visible:ring-[color:var(--ds-ring)] motion-reduce:transition-none sm:min-h-0 sm:gap-2 sm:px-2.5 sm:py-1.5 sm:text-xs",
                 alert.severity === "urgent"
                   ? "border-l-2 border-l-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg-hover)]"
                   : alert.severity === "warning"
@@ -1012,7 +1012,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           >
             <div
               className={cn(
-                "ml-auto h-full w-1.5 transition-[width,background-color] duration-150 motion-reduce:transition-none",
+                "ml-auto h-full w-1.5 transition-[width,background-color] duration-[var(--ds-duration-fast)] motion-reduce:transition-none",
                 isResizing
                   ? "w-2 bg-[var(--brand-primary)]"
                   : "bg-[color:var(--ds-border-strong)] hover:w-2 hover:bg-[var(--brand-primary)]"

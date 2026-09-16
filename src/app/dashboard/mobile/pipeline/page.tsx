@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 import { csrfFetch } from "@/lib/csrf";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface PipelineLayerState {
   status: "pending" | "running" | "completed" | "failed" | "skipped";
@@ -207,9 +208,11 @@ export default function MobilePipelinePage() {
       {/* Pipeline List */}
       <div className="divide-y divide-[color:var(--ds-border)]">
         {pipelines.length === 0 && (
-          <div className="p-8 text-center text-sm text-[color:var(--ds-text-muted)]">
-            Keine Pipeline-Runs gefunden
-          </div>
+          <EmptyState
+            icon={FileText}
+            title="Keine Aktenanalysen gefunden"
+            className="border-0 bg-transparent py-8"
+          />
         )}
         {pipelines.map((pipeline) => {
           const isExpanded = expandedPipeline === pipeline.case_slug;

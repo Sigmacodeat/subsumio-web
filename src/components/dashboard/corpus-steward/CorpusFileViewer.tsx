@@ -58,6 +58,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { csrfFetch } from "@/lib/csrf";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -461,7 +462,7 @@ export function CorpusFileViewer({ path, onClose }: Props) {
             <button
               onClick={() => setActiveTab("content")}
               className={cn(
-                "rounded-md px-3 py-1.5 text-sm font-medium transition-[background-color,color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                "rounded-md px-3 py-1.5 text-sm font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                 activeTab === "content"
                   ? "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                   : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -474,7 +475,7 @@ export function CorpusFileViewer({ path, onClose }: Props) {
             <button
               onClick={() => setActiveTab("versions")}
               className={cn(
-                "rounded-md px-3 py-1.5 text-sm font-medium transition-[background-color,color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                "rounded-md px-3 py-1.5 text-sm font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                 activeTab === "versions"
                   ? "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                   : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -492,7 +493,7 @@ export function CorpusFileViewer({ path, onClose }: Props) {
             <button
               onClick={() => setActiveTab("audit")}
               className={cn(
-                "rounded-md px-3 py-1.5 text-sm font-medium transition-[background-color,color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                "rounded-md px-3 py-1.5 text-sm font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
                 activeTab === "audit"
                   ? "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
                   : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -746,15 +747,11 @@ export function CorpusFileViewer({ path, onClose }: Props) {
               )}
 
               {versionsQuery.data && versionsQuery.data.versions.length === 0 && (
-                <div className="flex flex-col items-center gap-2 py-8 text-center">
-                  <History
-                    className="h-6 w-6 text-[color:var(--ds-text-muted)]"
-                    aria-hidden="true"
-                  />
-                  <p className="text-sm text-[color:var(--ds-text-muted)]">
-                    Keine Versionen vorhanden.
-                  </p>
-                </div>
+                <EmptyState
+                  icon={History}
+                  title="Keine Versionen vorhanden"
+                  className="border-0 bg-transparent py-8"
+                />
               )}
 
               {versionsQuery.data && versionsQuery.data.versions.length > 0 && (
@@ -768,7 +765,7 @@ export function CorpusFileViewer({ path, onClose }: Props) {
                         <div
                           key={v.version}
                           className={cn(
-                            "flex items-center gap-3 rounded-md border p-3 transition-[background-color,border-color] duration-150 motion-reduce:transition-none",
+                            "flex items-center gap-3 rounded-md border p-3 transition-[background-color,border-color] duration-[var(--ds-duration-fast)] motion-reduce:transition-none",
                             diffVersions?.v1 === v.version
                               ? "border-[color:var(--ds-accent)] bg-[color:var(--ds-accent)]/5"
                               : "border-[color:var(--ds-border)] hover:bg-[color:var(--ds-surface-2)]/50"

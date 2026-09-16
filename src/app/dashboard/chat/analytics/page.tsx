@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { getChatStats } from "@/components/chat/chat-session-store";
 import { AI_MODELS } from "@/lib/model-config";
 import { useLang } from "@/lib/use-lang";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 interface ChatStats {
   totalSessions: number;
@@ -43,14 +44,11 @@ export default function ChatAnalyticsPage() {
 
   if (!stats || stats.totalSessions === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <MessageSquare size={40} className="mb-4 text-[color:var(--ds-text-subtle)]" />
-        <h2 className="text-lg font-semibold text-[color:var(--ds-text)]">Chat Analytics</h2>
-        <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-          Noch keine Chat-Daten vorhanden. Starte eine Konversation im Brain Copilot, um Statistiken
-          zu sehen.
-        </p>
-      </div>
+      <EmptyState
+        icon={MessageSquare}
+        title="Noch keine Gesprächsdaten vorhanden"
+        description="Beginnen Sie ein Gespräch mit dem Assistenten, um Statistiken zu sehen."
+      />
     );
   }
 
@@ -144,7 +142,7 @@ export default function ChatAnalyticsPage() {
                 style={{ height: "100%" }}
               >
                 <div
-                  className="brand-bg w-full rounded-t transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-80 motion-reduce:transition-none"
+                  className="brand-bg w-full rounded-t transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-80 motion-reduce:transition-none"
                   style={{
                     height: `${(day.tokens / maxTokens) * 100}%`,
                     minHeight: day.tokens > 0 ? "4px" : "0",

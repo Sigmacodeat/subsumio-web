@@ -549,7 +549,7 @@ function CoverageDisplay({ coverage }: { coverage: MatterCoverageStatus }) {
           <div className="h-2 overflow-hidden rounded-full bg-[color:var(--ds-surface-2)]">
             <div
               className={cn(
-                "h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
+                "h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
                 score >= 80
                   ? "bg-[color:var(--ds-success-solid)]"
                   : score >= 50

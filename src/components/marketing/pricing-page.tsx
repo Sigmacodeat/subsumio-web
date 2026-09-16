@@ -167,10 +167,10 @@ export default function PricingPage() {
             {valueProps.map((prop) => (
               <StaggerItem
                 key={prop.title}
-                className="rounded-2xl transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 hover:-translate-y-1 hover:shadow-lg motion-reduce:transition-none"
+                className="rounded-2xl transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] hover:-translate-y-1 hover:shadow-lg motion-reduce:transition-none"
               >
                 <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color] [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)] motion-reduce:transition-none">
-                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border [border-color:var(--ds-success-border)] transition-transform duration-300 [background:var(--ds-success-bg)] hover:scale-110">
+                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border [border-color:var(--ds-success-border)] transition-transform duration-[var(--ds-duration-normal)] [background:var(--ds-success-bg)] hover:scale-110">
                     <Check size={18} className="[color:var(--ds-success-text)]" />
                   </div>
                   <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">

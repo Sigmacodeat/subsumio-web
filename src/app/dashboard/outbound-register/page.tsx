@@ -12,6 +12,7 @@ import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import type { OutboundEntry } from "@/lib/outbound-register";
 import { CHANNEL_LABELS, DELIVERY_STATUS_LABELS } from "@/lib/outbound-register";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 export default function OutboundRegisterPage() {
   const { addToast } = useToast();
@@ -189,13 +190,13 @@ export default function OutboundRegisterPage() {
           <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       ) : entries.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border-strong)] py-16 text-center">
-          <FileText size={32} className="mb-3 text-[color:var(--ds-text-muted)]" />
-          <p className="text-sm font-medium">Keine Einträge</p>
-          <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-            Erfassen Sie ausgehende Kommunikation für revisionssichere Dokumentation.
-          </p>
-        </div>
+        <EmptyState
+          icon={FileText}
+          title="Keine Einträge"
+          description="Erfassen Sie ausgehende Kommunikation für revisionssichere Dokumentation."
+          actionLabel="Neuer Eintrag"
+          onAction={() => setShowCreate(true)}
+        />
       ) : (
         <div className="space-y-2">
           {entries.map((entry) => {

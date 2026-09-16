@@ -45,7 +45,7 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "animate-in fade-in slide-in-from-bottom-1 mb-8 duration-300 ease-out motion-reduce:animate-none",
+        "animate-in fade-in slide-in-from-bottom-1 mb-8 duration-[var(--ds-duration-normal)] ease-out motion-reduce:animate-none",
         className
       )}
     >
@@ -76,7 +76,7 @@ export function PageHeader({
       )}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="font-display text-[1.5rem] leading-tight font-bold tracking-tight text-[color:var(--ds-text)] md:text-2xl">
+          <h1 className="font-display text-[1.5rem] leading-tight font-semibold tracking-[-0.01em] text-[color:var(--ds-text)] md:text-2xl">
             {title}
           </h1>
           {description && (
@@ -85,7 +85,14 @@ export function PageHeader({
             </p>
           )}
         </div>
-        {actions && <div className="flex min-w-0 flex-wrap items-center gap-2.5">{actions}</div>}
+        {actions && (
+          <div
+            className="flex min-w-0 items-center gap-2.5 max-md:w-full max-md:[scrollbar-width:none] max-md:overflow-x-auto max-md:pb-1 md:flex-wrap max-md:[&>*]:shrink-0"
+            data-page-actions
+          >
+            {actions}
+          </div>
+        )}
       </div>
     </div>
   );
