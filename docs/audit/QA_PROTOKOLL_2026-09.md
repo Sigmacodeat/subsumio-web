@@ -390,6 +390,9 @@ Richtlinie: `docs/design/DESIGN_STANDARD.md`; Befunde und Wellen: `docs/design/D
   Tokens; Seitenwurzeln auf volle Breite (Handy-Überlauf auf 108 Seiten behoben, Sweep
   8 Seiten × 4 Breiten × 2 Modi = 0 Überlauf); dichte Register für Akten und Fristen;
   32 weitere Leerzustände; Website- und Rechtstexte jetzt ebenfalls in der Sie-Form;
-  visuelle Snapshots erneuert. Plan und Nachweise: `docs/design/DESIGN_MEGAPLAN_2026-09-17.md`.
+  visuelle Snapshots geprüft (Marketing-Snapshots bleiben innerhalb der 1,5-%-Toleranz).
+  Gates nach Welle 4: Vitest 6792/6792, tsc/eslint sauber, Mock-E2E 590 bestanden / 3
+  übersprungen (eine Last-Flake im Adversarial-Spec, Wiederholung 40/40), Routen-Audit 115
+  Seiten ohne Befund. Plan und Nachweise: `docs/design/DESIGN_MEGAPLAN_2026-09-17.md`.
 - **Bewusst außen vor:** technische Admin-Flächen (Ops, Verbindung, SCIM, Word-Add-in)
   behalten Fachbegriffe.
