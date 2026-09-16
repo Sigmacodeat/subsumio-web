@@ -21,6 +21,17 @@ export const CREDIT_COSTS: Record<CreditOperation, number> = {
   frist_engine: 0,
 };
 
+/**
+ * Startguthaben der 14-Tage-Testphase. The marketing promise is "14 Tage voller
+ * Zugriff, keine Kreditkarte" — a fresh account must be able to ask the
+ * assistant, analyse a document and run the deadline detector without buying
+ * a pack first. 100 credits ≈ the "Standard" pack; every credit-gated
+ * operation costs 1–5 (see CREDIT_COSTS). Granted once per owner on first use
+ * (see ensureTrialCredits) and expires after TRIAL_DAYS.
+ */
+export const TRIAL_CREDITS = 100;
+export const TRIAL_DAYS = 14;
+
 export interface CreditPack {
   id: string;
   name: string;

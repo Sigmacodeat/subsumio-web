@@ -313,3 +313,36 @@ describe("Credit System", () => {
     });
   });
 });
+
+describe("ensureTrialCredits (14-Tage-Testphase)", async () => {
+  const { ensureTrialCredits, resetTrialCreditsCache, getBalance, getTransactions } =
+    await import("./credits");
+  const { TRIAL_CREDITS } = await import("./credit-constants");
+
+  it("grants the trial balance exactly once per owner", async () => {
+    resetTrialCreditsCache();
+    const ownerId = `trial-user-${Date.now()}`;
+    expect((await getBalance(ownerId, "user")).balance).toBe(0);
+
+    expect(await ensureTrialCredits(ownerId, "user")).toBe(true);
+    expect((await getBalance(ownerId, "user")).balance).toBe(TRIAL_CREDITS);
+
+    // Second call in the same process: fast-path, no second grant.
+    expect(await ensureTrialCredits(ownerId, "user")).toBe(false);
+    // After a "restart" (cache cleared) the idempotency key still blocks it.
+    resetTrialCreditsCache();
+    expect(await ensureTrialCredits(ownerId, "user")).toBe(false);
+    expect((await getBalance(ownerId, "user")).balance).toBe(TRIAL_CREDITS);
+
+    const grants = (await getTransactions(ownerId, "user")).filter((t) => t.type === "grant");
+    expect(grants).toHaveLength(1);
+  });
+
+  it("keeps user and org owners separate", async () => {
+    resetTrialCreditsCache();
+    const id = `trial-owner-${Date.now()}`;
+    expect(await ensureTrialCredits(id, "user")).toBe(true);
+    expect(await ensureTrialCredits(id, "org")).toBe(true);
+    expect((await getBalance(id, "org")).balance).toBe(TRIAL_CREDITS);
+  });
+});

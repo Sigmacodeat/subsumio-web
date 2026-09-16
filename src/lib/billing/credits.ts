@@ -27,7 +27,7 @@ export {
 } from "@/lib/billing/credit-constants";
 
 import type { CreditOperation, CreditPack } from "@/lib/billing/credit-constants";
-import { CREDIT_PACKS } from "@/lib/billing/credit-constants";
+import { CREDIT_PACKS, TRIAL_CREDITS, TRIAL_DAYS } from "@/lib/billing/credit-constants";
 
 const log = logger("credits");
 
@@ -306,6 +306,8 @@ export async function addCredits(
     stripeSessionId?: string;
     stripePaymentIntent?: string;
     description?: string;
+    /** Explicit dedup key (grants); purchases derive theirs from the Stripe session. */
+    idempotencyKey?: string;
   }
 ): Promise<CreditBalance> {
   const txType = opts?.type ?? "purchase";
@@ -314,9 +316,9 @@ export async function addCredits(
   // If isDuplicateEvent fails (DB down) and Stripe retries the webhook,
   // this prevents double-crediting. The unique index on idempotency_key
   // (subsumio_credit_tx_idempotency_idx) catches the duplicate INSERT.
-  const idempotencyKey = opts?.stripeSessionId
-    ? `credit-purchase-${opts.stripeSessionId}`
-    : undefined;
+  const idempotencyKey =
+    opts?.idempotencyKey ??
+    (opts?.stripeSessionId ? `credit-purchase-${opts.stripeSessionId}` : undefined);
 
   if (pool) {
     try {
@@ -325,8 +327,8 @@ export async function addCredits(
       if (idempotencyKey) {
         const existing = await pool.query<{ balance_after: number }>(
           `SELECT balance_after FROM subsumio_credit_transactions
-           WHERE idempotency_key = $1 AND type = 'purchase'`,
-          [idempotencyKey]
+           WHERE idempotency_key = $1 AND type = $2`,
+          [idempotencyKey, txType]
         );
         if (existing.rows[0]) {
           return getBalance(ownerId, ownerType);
@@ -425,6 +427,9 @@ export async function addCredits(
   }
 
   // File/memory fallback
+  if (idempotencyKey && memFindByIdempotencyKey(idempotencyKey)) {
+    return getBalance(ownerId, ownerType);
+  }
   const key = memKey(ownerId, ownerType);
   const current = memBalances.get(key) ?? {
     ownerId,
@@ -457,10 +462,115 @@ export async function addCredits(
     stripeSessionId: opts?.stripeSessionId,
     stripePaymentIntent: opts?.stripePaymentIntent,
     description: opts?.description,
+    idempotencyKey,
     createdAt: new Date().toISOString(),
   });
   await persistMemory();
   return updated;
+}
+
+// ── Trial credits (14-Tage-Testphase) ───────────────────────────────────
+
+/** Owners whose trial grant was already checked in this process (cheap fast path). */
+const trialEnsured = new Set<string>();
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Every credit query keys `saas_credit_balance.org_id` (uuid, FK → saas_orgs)
+ * by the owner id. Users and Kanzlei orgs are both uuids, but their billing
+ * row used to appear only at Stripe checkout (createSaasOrgForUser), so a
+ * fresh account had no row to hold a balance at all. Create it lazily with
+ * the OWNER'S OWN ID so that balance, deduction, reservation and spend-cap
+ * queries keep working unchanged. Idempotent (ON CONFLICT DO NOTHING); the
+ * slug matches what checkout looks up, so a later subscription reuses it.
+ */
+export async function ensureBillingOrg(ownerId: string, ownerType: OwnerType): Promise<boolean> {
+  const pool = getSharedPgPool();
+  if (!pool || !UUID_RE.test(ownerId)) return false;
+  const slug = ownerType === "user" ? `user-${ownerId.slice(0, 8)}` : `org-${ownerId.slice(0, 8)}`;
+  const plan = ownerType === "user" ? "solo" : "kanzlei";
+  const { rowCount } = await pool.query(
+    `INSERT INTO saas_orgs (id, name, slug, plan, seats)
+     VALUES ($1, $2, $3, $4, 1)
+     ON CONFLICT DO NOTHING`,
+    [ownerId, slug, slug, plan]
+  );
+  return (rowCount ?? 0) > 0;
+}
+
+export function trialIdempotencyKey(ownerId: string, ownerType: OwnerType): string {
+  return `trial-grant-${ownerType}-${ownerId}`;
+}
+
+/**
+ * Make sure a new owner holds the trial starting balance before the first
+ * credit-gated operation. Idempotent per owner: the grant transaction carries a
+ * fixed idempotency key, so retries, concurrent requests and process restarts
+ * never grant twice. Never throws — a failed grant must not block the request
+ * (the normal insufficient-credits path then applies).
+ *
+ * Returns true when the grant was created by this call.
+ */
+export async function ensureTrialCredits(ownerId: string, ownerType: OwnerType): Promise<boolean> {
+  const cacheKey = memKey(ownerId, ownerType);
+  if (trialEnsured.has(cacheKey)) return false;
+  const idempotencyKey = trialIdempotencyKey(ownerId, ownerType);
+  try {
+    const pool = getSharedPgPool();
+    let alreadyGranted = false;
+    if (pool) {
+      await ensureCreditSchema();
+      const { rows } = await pool.query<{ id: string }>(
+        `SELECT id FROM subsumio_credit_transactions WHERE idempotency_key = $1 LIMIT 1`,
+        [idempotencyKey]
+      );
+      alreadyGranted = rows.length > 0;
+    } else {
+      alreadyGranted = Boolean(memFindByIdempotencyKey(idempotencyKey));
+    }
+    if (alreadyGranted) {
+      trialEnsured.add(cacheKey);
+      return false;
+    }
+    if (pool) await ensureBillingOrg(ownerId, ownerType);
+    const expiresAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
+    await addCredits(ownerId, ownerType, TRIAL_CREDITS, {
+      type: "grant",
+      idempotencyKey,
+      description: `Startguthaben ${TRIAL_DAYS}-Tage-Testphase`,
+    });
+    if (pool) {
+      // addCredits logs and swallows DB errors; only treat the trial as
+      // granted when the grant transaction really landed.
+      const { rows } = await pool.query<{ id: string }>(
+        `SELECT id FROM subsumio_credit_transactions WHERE idempotency_key = $1 LIMIT 1`,
+        [idempotencyKey]
+      );
+      if (rows.length === 0) {
+        log.error("ensureTrialCredits: grant did not persist", { ownerId, ownerType });
+        return false;
+      }
+    }
+    // Expiry tracking: expireCredits() removes what is left after the trial.
+    await addCreditGrant(ownerId, ownerType, "promotional", TRIAL_CREDITS, {
+      expiresAt,
+      description: `Startguthaben ${TRIAL_DAYS}-Tage-Testphase`,
+    });
+    trialEnsured.add(cacheKey);
+    log.info("trial credits granted", { ownerId, ownerType, amount: TRIAL_CREDITS });
+    return true;
+  } catch (err) {
+    log.error("ensureTrialCredits error", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return false;
+  }
+}
+
+/** Test hook: forget the in-process "already ensured" cache. */
+export function resetTrialCreditsCache(): void {
+  trialEnsured.clear();
 }
 
 // ── Deduct Credits (atomic, prevents negative balance) ──────────────────

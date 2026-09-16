@@ -12,6 +12,7 @@ import { can, forbidden, type RouteAction } from "@/lib/permissions";
 import { checkQuota, incQuota, quotaExceeded, type QuotaType } from "@/lib/plans";
 import {
   checkCredits,
+  ensureTrialCredits,
   deductCredits,
   checkAndSendBudgetAlert,
   getBalance,
@@ -382,6 +383,8 @@ export async function requireEngineContext(
   if (creditOp && CREDIT_COSTS[creditOp] > 0 && !e2eBypass) {
     const ownerType: OwnerType = ctx.user.orgId ? "org" : "user";
     const ownerId = ctx.user.orgId ?? ctx.user.id;
+    // New accounts start with the 14-day trial balance (idempotent, one-time).
+    await ensureTrialCredits(ownerId, ownerType);
     const creditCheck = await checkCredits(ownerId, ownerType, CREDIT_COSTS[creditOp]);
     if (!creditCheck.ok) {
       return insufficientCreditsResponse(creditCheck.balance, creditCheck.required);
