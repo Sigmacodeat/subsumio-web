@@ -5,7 +5,7 @@ export const contentType = ogImageContentType;
 
 export default function Image() {
   return renderOgImage(
-    "KI-Kanzleisoftware für AT · DE · CH — belegte Antworten, Fristen, Kollisionsprüfung",
+    "KI-Kanzleisoftware für Österreich — belegte Antworten, Fristen, Kollisionsprüfung",
     "Subsumio"
   );
 }

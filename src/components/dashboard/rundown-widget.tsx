@@ -101,13 +101,13 @@ export function RundownWidget() {
             )}
             {t("reports.btn_rundown")}
           </Button>
-          <Link href="/dashboard/reports">
-            <Button size="sm" variant="ghost">
+          <Button size="sm" variant="ghost" asChild>
+            <Link href="/dashboard/reports">
               <FileText size={13} />
               {t("rundown.widget_view_all")}
               <ArrowRight size={12} />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </div>
 

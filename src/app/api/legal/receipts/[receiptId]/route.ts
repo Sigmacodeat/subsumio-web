@@ -7,8 +7,13 @@ export const GET = createHandler(
     action: "legal.receipt",
     rateTier: "standard",
   },
-  async (ctx, _body, query) => {
-    const receiptId = query.receiptId as string | undefined;
+  async (ctx, _body, _query, req) => {
+    const { receiptId } =
+      (await (
+        req as unknown as {
+          params: Promise<{ receiptId?: string }>;
+        }
+      ).params) ?? {};
     if (!receiptId) {
       return apiError("bad_request", "receiptId required", 400);
     }

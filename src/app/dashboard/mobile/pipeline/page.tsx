@@ -306,7 +306,7 @@ export default function MobilePipelinePage() {
 
                             {/* Layer Error */}
                             {isLayerExpanded && layerState.error && (
-                              <div className="mt-1 ml-6 rounded bg-[color:var(--ds-danger-solid)] px-2 py-1 text-xs text-[color:var(--ds-danger-text)]">
+                              <div className="mt-1 ml-6 rounded bg-[color:var(--ds-danger-bg)] px-2 py-1 text-xs text-[color:var(--ds-danger-text)]">
                                 {layerState.error}
                               </div>
                             )}

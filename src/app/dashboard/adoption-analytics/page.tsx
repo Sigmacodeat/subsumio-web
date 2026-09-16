@@ -157,6 +157,7 @@ export default function AdoptionAnalyticsPage() {
         actions={
           <div className="flex items-center gap-2">
             <select
+              aria-label="Zeitraum"
               value={daysBack}
               onChange={(e) => setDaysBack(Number(e.target.value))}
               className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-3 py-1.5 text-sm"
@@ -191,7 +192,7 @@ export default function AdoptionAnalyticsPage() {
             <AlertTriangle className="h-5 w-5" />
             <span className="font-medium">Fehler beim Laden</span>
           </div>
-          <p className="mt-1 text-sm text-[color:var(--ds-danger-text)]/80">{error}</p>
+          <p className="mt-1 text-sm text-[color:var(--ds-danger-text)]">{error}</p>
         </div>
       )}
 
@@ -204,7 +205,7 @@ export default function AdoptionAnalyticsPage() {
                 <AlertTriangle className="h-5 w-5" />
                 <span className="font-medium">Hinweise</span>
               </div>
-              <ul className="mt-2 space-y-1 text-sm text-[color:var(--ds-warning-text)]/80">
+              <ul className="mt-2 space-y-1 text-sm text-[color:var(--ds-warning-text)]">
                 {data.warnings.map((w, i) => (
                   <li key={i}>• {w}</li>
                 ))}

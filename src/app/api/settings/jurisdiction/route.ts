@@ -3,7 +3,7 @@ import { createHandler } from "@/lib/api-handler";
 import { getStore } from "@/lib/auth/store";
 
 const schema = z.object({
-  jurisdiction: z.enum(["DE", "AT", "CH"]),
+  jurisdiction: z.literal("AT"),
 });
 
 export const POST = createHandler(

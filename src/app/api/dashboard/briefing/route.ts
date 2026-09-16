@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
+import { DEFAULT_TYPES, fetchPagesByTypes } from "@/lib/cockpit";
+import type { BrainPage } from "@/lib/types";
 
 export const maxDuration = 60;
 
@@ -26,13 +28,10 @@ interface BriefingData {
 
 async function fetchCockpitData(headers: Record<string, string>): Promise<BriefingData | null> {
   try {
-    const res = await fetch(`${ENGINE_URL}/api/dashboard/cockpit?recent_limit=5`, {
-      headers,
-      signal: AbortSignal.timeout(10_000),
+    const pages = await fetchPagesByTypes(headers, {
+      ...DEFAULT_TYPES,
+      legal_follow_up: 50,
     });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const pages = data.pages ?? {};
 
     const cases = pages.legal_case ?? [];
     const deadlines = pages.legal_deadline ?? [];
@@ -70,7 +69,7 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
     const todayKey = now.toLocaleDateString("en-CA");
 
     const deadlineItems = deadlines
-      .map((p: Record<string, unknown>) => {
+      .map((p: BrainPage) => {
         const fm = p.frontmatter ?? {};
         const dueStr =
           (fm as Record<string, unknown>).due_date ??
@@ -91,14 +90,24 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
             daysLeft >= 0 && daysLeft <= 3 && isOpen((fm as Record<string, unknown>).status),
         };
       })
-      .filter((item: unknown): item is NonNullable<typeof item> => item !== null)
-      .sort((a: { daysLeft: number }, b: { daysLeft: number }) => a.daysLeft - b.daysLeft);
+      .filter(
+        (
+          item
+        ): item is {
+          title: string;
+          due: string;
+          daysLeft: number;
+          overdue: boolean;
+          critical: boolean;
+        } => item !== null
+      )
+      .sort((a, b) => a.daysLeft - b.daysLeft);
 
-    const activeCases = cases.filter((p: Record<string, unknown>) =>
+    const activeCases = cases.filter((p: BrainPage) =>
       isOpen((p.frontmatter as Record<string, unknown> | undefined)?.status)
     );
 
-    const unassignedDocs = docs.filter((d: Record<string, unknown>) => {
+    const unassignedDocs = docs.filter((d: BrainPage) => {
       const fm = d.frontmatter ?? {};
       return (
         !(fm as Record<string, unknown>).case_slug &&
@@ -106,7 +115,7 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
       );
     });
 
-    const reviewGaps = docs.filter((d: Record<string, unknown>) => {
+    const reviewGaps = docs.filter((d: BrainPage) => {
       const fm = d.frontmatter ?? {};
       const es = (fm as Record<string, unknown>).extraction_status;
       const as = (fm as Record<string, unknown>).analysis_status;
@@ -123,19 +132,19 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
     });
 
     const inboxItems = [...intake, ...bea, ...beaMessages];
-    const openInvoices = invoices.filter((p: Record<string, unknown>) =>
+    const openInvoices = invoices.filter((p: BrainPage) =>
       isOpen((p.frontmatter as Record<string, unknown> | undefined)?.status)
     );
-    const pendingSignatures = signatures.filter((p: Record<string, unknown>) =>
+    const pendingSignatures = signatures.filter((p: BrainPage) =>
       isOpen((p.frontmatter as Record<string, unknown> | undefined)?.status)
     );
-    const pendingReviews = [...reviews, ...agentActions].filter((p: Record<string, unknown>) =>
+    const pendingReviews = [...reviews, ...agentActions].filter((p: BrainPage) =>
       isOpen((p.frontmatter as Record<string, unknown> | undefined)?.status)
     );
 
     return {
-      criticalDeadlines: deadlineItems.filter((d: { critical: boolean }) => d.critical).length,
-      overdueDeadlines: deadlineItems.filter((d: { overdue: boolean }) => d.overdue).length,
+      criticalDeadlines: deadlineItems.filter((d) => d.critical).length,
+      overdueDeadlines: deadlineItems.filter((d) => d.overdue).length,
       inboxItems: inboxItems.length,
       pendingReviews: pendingReviews.length,
       pendingSignatures: pendingSignatures.length,
@@ -144,18 +153,16 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
       unassignedDocs: unassignedDocs.length,
       reviewGaps: reviewGaps.length,
       overdueReconciliations: 0,
-      followUpsToday: followUps.filter((page: Record<string, unknown>) => {
+      followUpsToday: followUps.filter((page: BrainPage) => {
         const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
         return String(fm.date ?? "").slice(0, 10) === todayKey && fm.completed !== true;
       }).length,
-      topDeadlines: deadlineItems
-        .slice(0, 5)
-        .map((d: { title: string; due: string; daysLeft: number }) => ({
-          title: d.title,
-          due: d.due,
-          daysLeft: d.daysLeft,
-        })),
-      topCases: activeCases.slice(0, 3).map((p: Record<string, unknown>) => ({
+      topDeadlines: deadlineItems.slice(0, 5).map((d) => ({
+        title: d.title,
+        due: d.due,
+        daysLeft: d.daysLeft,
+      })),
+      topCases: activeCases.slice(0, 3).map((p: BrainPage) => ({
         title: String(p.title ?? "Unbenannte Akte"),
         status: String((p.frontmatter as Record<string, unknown> | undefined)?.status ?? "open"),
       })),

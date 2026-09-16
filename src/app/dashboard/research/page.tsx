@@ -765,7 +765,7 @@ function ResearchPageInner() {
                 </Button>
                 <Button
                   onClick={saveResearch}
-                  className="gap-2 bg-[color:var(--ds-success-solid)] text-xs text-white hover:bg-[color:var(--ds-success-solid)]"
+                  className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-xs text-white hover:bg-[color:var(--signal-success-800)]"
                 >
                   <Save size={14} /> {t("research.btn_save_brain")}
                 </Button>

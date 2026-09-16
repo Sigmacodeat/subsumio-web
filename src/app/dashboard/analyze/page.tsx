@@ -135,7 +135,7 @@ export default function AnalyzePage() {
         <Button
           onClick={run}
           disabled={loading || !canRun}
-          className="gap-2 bg-[color:var(--ds-success-solid)] text-white hover:bg-[color:var(--ds-success-solid)]"
+          className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-white hover:bg-[color:var(--signal-success-800)]"
         >
           {loading ? <Loader2 size={15} className="animate-spin" /> : <FileSearch size={15} />}
           {t("analyze.run_btn")}
@@ -366,7 +366,7 @@ export default function AnalyzePage() {
                 {t("analyze.warnings")}
               </p>
               {result.warnings.map((w, i) => (
-                <p key={i} className="text-xs text-[color:var(--ds-warning-text)]/80">
+                <p key={i} className="text-xs text-[color:var(--ds-warning-text)]">
                   {w}
                 </p>
               ))}

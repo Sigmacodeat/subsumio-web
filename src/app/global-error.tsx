@@ -139,7 +139,6 @@ export default function GlobalError({
             >
               Erneut versuchen
             </button>
-            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- global-error renders own <html>, Link is not available */}
             <a
               href="/"
               style={{

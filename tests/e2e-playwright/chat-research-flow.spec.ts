@@ -64,7 +64,7 @@ test.describe("Chat & Research: Pages Render", () => {
     test(`${p.path} loads without 503`, async ({ page }) => {
       const response = await page.goto(p.path, { waitUntil: "domcontentloaded" });
       expect(response?.status()).not.toBe(503);
-      const errorText = page.locator("text=/Engine nicht erreichbar|Service unavailable|503/i");
+      const errorText = page.getByText(/Engine nicht erreichbar|Service unavailable|503/i);
       await expect(errorText).toHaveCount(0, { timeout: 5_000 });
     });
   }
@@ -91,9 +91,11 @@ test.describe("Chat & Research: Pages Render", () => {
     await page.goto("/dashboard/chat/compare", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
     // Should have some content — model selector, comparison panel, etc.
-    const content = page.locator(
-      "select, textarea, [role='combobox'], text=/Compare|Vergleich|Modell/i"
-    );
+    const content = page
+      .locator("select")
+      .or(page.locator("textarea"))
+      .or(page.locator("[role='combobox']"))
+      .or(page.getByText(/Compare|Vergleich|Modell/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 

@@ -12,6 +12,8 @@ export const caseStatusSchema = z.enum([
 
 export const casePrioritySchema = z.enum(["low", "medium", "high", "critical"]);
 
+// Keep historical imports parseable. Active creation surfaces constrain new
+// matters to AT/EU; this shared schema also reads pre-pilot DE/CH records.
 export const caseJurisdictionSchema = z.enum(["de", "at", "ch", "eu"]);
 
 export const additionalOpponentSchema = z.object({

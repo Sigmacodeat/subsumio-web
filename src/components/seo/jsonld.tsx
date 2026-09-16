@@ -1,7 +1,7 @@
 // Server-safe JSON-LD injection. Render inside any server page component.
 // Data objects are built per page; keep claims consistent with visible copy.
 
-import { ENGINE_REPO_URL, type Lang } from "@/content/site";
+import { ENGINE_REPO_URL } from "@/content/site";
 
 export function JsonLd({ data }: { data: object }) {
   return (
@@ -20,7 +20,7 @@ export function organizationLd() {
     url: BASE,
     logo: `${BASE}/icon-512.png`,
     description:
-      "Subsumio is AI legal software for law firms in Austria, Germany and Switzerland — cited answers with page-level sources, deadline tracking, conflict checks. Not affiliated with Sumsub (KYC provider).",
+      "Subsumio is AI legal software for law firms in Austria — cited answers with page-level sources, deadline tracking, conflict checks. Not affiliated with Sumsub (KYC provider).",
     foundingLocation: {
       "@type": "Place",
       name: "Vienna, Austria",
@@ -29,7 +29,7 @@ export function organizationLd() {
   };
 }
 
-export function softwareApplicationLd(lang: Lang) {
+export function softwareApplicationLd() {
   return {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -37,9 +37,7 @@ export function softwareApplicationLd(lang: Lang) {
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web, Self-hosted",
     description:
-      lang === "en"
-        ? "AI legal software for law firms in Austria, Germany and Switzerland: matter management, deadline tracking per ZPO/BGB/ABGB, cited AI answers with page-level sources, DATEV export, conflict check. Self-hosted or EU cloud."
-        : "KI-Kanzleisoftware für Rechtsanwälte in Österreich, Deutschland und der Schweiz: Aktenverwaltung, Fristenkontrolle nach ZPO/BGB/ABGB, belegte KI-Antworten mit Fundstellen, DATEV-Export, Kollisionsprüfung. On-Premise oder EU-Cloud.",
+      "KI-Kanzleisoftware für Rechtsanwälte in Österreich: Aktenverwaltung, Fristenkontrolle, belegte KI-Antworten mit Fundstellen, Honorarverwaltung und Kollisionsprüfung. On-Premise oder EU-Cloud.",
     offers: [
       {
         "@type": "Offer",
@@ -56,7 +54,7 @@ export function softwareApplicationLd(lang: Lang) {
           "@type": "UnitPriceSpecification",
           price: "249",
           priceCurrency: "EUR",
-          unitText: lang === "en" ? "per seat per month" : "pro Nutzer und Monat",
+          unitText: "pro Nutzer und Monat",
         },
       },
     ],
@@ -112,18 +110,12 @@ export function faqPageLd(faq: readonly { q: string; a: string }[]) {
   };
 }
 
-export function howToLd(steps: readonly { title: string; desc: string }[], lang: Lang) {
+export function howToLd(steps: readonly { title: string; desc: string }[]) {
   return {
     "@context": "https://schema.org",
     "@type": "HowTo",
-    name:
-      lang === "en"
-        ? "How Subsumio works: from document to cited answer"
-        : "So funktioniert Subsumio: vom Dokument zur belegten Antwort",
-    description:
-      lang === "en"
-        ? "Four steps from question to cited AI answer with page-level citations."
-        : "Vier Schritte von der Frage zur belegten KI-Antwort mit Fundstellen.",
+    name: "So funktioniert Subsumio: vom Dokument zur belegten Antwort",
+    description: "Vier Schritte von der Frage zur belegten KI-Antwort mit Fundstellen.",
     step: steps.map((step, i) => ({
       "@type": "HowToStep",
       position: i + 1,
@@ -137,7 +129,6 @@ export function serviceLd(opts: {
   name: string;
   description: string;
   url: string;
-  lang: Lang;
   audience?: string;
 }) {
   return {
@@ -147,33 +138,30 @@ export function serviceLd(opts: {
     description: opts.description,
     url: opts.url.startsWith("http") ? opts.url : `${BASE}${opts.url}`,
     provider: { "@type": "Organization", name: "Subsumio", url: BASE },
-    serviceType: opts.lang === "en" ? "AI legal software" : "KI-Kanzleisoftware",
-    areaServed: ["AT", "DE", "CH"],
+    serviceType: "KI-Kanzleisoftware",
+    areaServed: ["AT"],
     audience: opts.audience ? { "@type": "BusinessAudience", name: opts.audience } : undefined,
   };
 }
 
+// Structured-data address MUST match the legal imprint
+// (src/components/legal/legal-content.tsx — RCIID e.V., Hauslabgasse).
+// No invented phone/geo: only publish what the imprint publicly states.
 export function localBusinessLd() {
   return {
     "@context": "https://schema.org",
     "@type": "LegalService",
-    name: "Subsumio",
+    name: "Subsumio (RCIID)",
     image: `${BASE}/icon-512.png`,
     url: BASE,
-    telephone: "+43-1-934-6700",
     priceRange: "€€€",
     address: {
       "@type": "PostalAddress",
-      streetAddress: "Schwarzenbergplatz 7",
-      addressLocality: "Vienna",
-      addressRegion: "Vienna",
-      postalCode: "1030",
+      streetAddress: "Hauslabgasse 42/3/2",
+      addressLocality: "Wien",
+      addressRegion: "Wien",
+      postalCode: "1050",
       addressCountry: "AT",
-    },
-    geo: {
-      "@type": "GeoCoordinates",
-      latitude: 48.2028,
-      longitude: 16.3746,
     },
     sameAs: [ENGINE_REPO_URL, "https://www.linkedin.com/company/subsumio"],
   };

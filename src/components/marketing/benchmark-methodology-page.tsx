@@ -1,16 +1,16 @@
-"use client";
-
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { p, UI_STRINGS } from "@/content/site";
-import { Section, SectionHeading, CTASection, PageHero } from "./chrome";
+import { PROOF } from "@/content/proof-points";
+import { Section, SectionHeading, CTASection, PageHero } from "./primitives";
 import { Reveal, StaggerContainer, StaggerItem, GlowCard } from "./motion-system";
+import { IllusCitationWeb } from "./brand-illustrations";
 
 const METRICS = [
   {
-    title: "Recall@8 — 99,8 %",
-    desc: "Von 500 LongMemEval-Fragen enthalten die Top-8-Retrievergebnisse in 99,8 % der Fälle das korrekte Dokument. Gemessen gegen einen Gold-Standard mit Hybrid-Suche und Wissensgraph. Ein Treffer bedeutet: das relevante Dokument ist unter den ersten 8 Ergebnissen.",
+    title: `${PROOF.recall8.metric} — ${PROOF.recall8.value}`,
+    desc: `Von ${PROOF.recall8.sampleSize} ${PROOF.recall8.benchmark}-Fragen enthalten die Top-8-Retrievergebnisse in ${PROOF.recall8.value} der Fälle das korrekte Dokument. Gemessen gegen einen Gold-Standard mit Hybrid-Suche und Wissensgraph. Ein Treffer bedeutet: das relevante Dokument ist unter den ersten 8 Ergebnissen.`,
   },
   {
     title: "Hallucination-Rate — < 2 %",
@@ -23,8 +23,8 @@ const METRICS = [
 ];
 
 const CORPUS_ITEMS = [
-  "Zivilrecht (BGB, ABGB, ZGB) — 200 Fragen",
-  "Zivilprozessrecht (ZPO DE, ZPO AT, ZPO CH) — 100 Fragen",
+  "Zivilrecht (ABGB, UGB) — 200 Fragen",
+  "Zivilprozessrecht (ZPO, EO) — 100 Fragen",
   "Handels- und Gesellschaftsrecht — 80 Fragen",
   "Arbeitsrecht — 60 Fragen",
   "Verwaltungsrecht — 60 Fragen",
@@ -38,7 +38,7 @@ const REPRO_ITEMS = [
 ];
 
 const LIMITATION_ITEMS = [
-  "Der Korpus deckt DACH-Recht ab — Ergebnisse sind nicht auf andere Rechtsgebiete übertragbar.",
+  "Der Korpus deckt österreichisches Recht ab — Ergebnisse sind nicht auf andere Rechtsordnungen übertragbar.",
   "Recall@8 misst das Retrieval, nicht die Qualität der generierten Antwort.",
   "Die Hallucination-Rate ist ein Sample-basierter Schätzer (200 von ~10.000 Antworten).",
   "Latenz hängt von Netzwerk, Hardware und Auslastung ab.",
@@ -49,7 +49,7 @@ export default function BenchmarkMethodologyPage() {
     <div
       data-tone="light"
       className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
-      lang="de"
+      lang="de-AT"
     >
       <PageHero
         badge="Methodik"
@@ -58,18 +58,17 @@ export default function BenchmarkMethodologyPage() {
         sub="Transparente, reproduzierbare Benchmarks für KI-Kanzleisoftware. Keine Marketing-Zahlen — jede Metrik ist nachvollziehbar definiert."
         actions={
           <>
-            <Link href={p("de", "/signup")}>
-              <Button size="lg" variant="primary">
-                {UI_STRINGS.de.startFree} <ArrowRight size={16} />
-              </Button>
-            </Link>
-            <Link href={p("de", "/contact")}>
-              <Button size="lg" variant="outline">
-                {UI_STRINGS.de.writeUs}
-              </Button>
-            </Link>
+            <Button size="lg" variant="primary" asChild>
+              <Link href={p("/signup")}>
+                {UI_STRINGS.startFree} <ArrowRight size={16} />
+              </Link>
+            </Button>
+            <Button size="lg" variant="outline" asChild>
+              <Link href={p("/contact")}>{UI_STRINGS.writeUs}</Link>
+            </Button>
           </>
         }
+        visual={<IllusCitationWeb />}
       />
 
       <Section tone="light" className="px-4 py-12 sm:px-6 lg:px-8">
@@ -154,10 +153,10 @@ export default function BenchmarkMethodologyPage() {
       <CTASection
         title="Bereit für belegte KI-Antworten?"
         sub="Starte deine 14-tägige Testphase — keine Kreditkarte nötig."
-        href="/signup"
+        href="/at/signup"
         label="14 Tage testen"
-        secondaryHref="/contact"
-        secondaryLabel={UI_STRINGS.de.writeUs}
+        secondaryHref="/at/contact"
+        secondaryLabel={UI_STRINGS.writeUs}
       />
     </div>
   );

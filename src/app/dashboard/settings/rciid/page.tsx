@@ -83,12 +83,12 @@ export default function RciidSettingsPage() {
           { label: t("crypto_forensics.settings_title" as DashboardKey) },
         ]}
         actions={
-          <Link href="/dashboard/settings">
-            <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/dashboard/settings">
               <ArrowLeft size={14} />
               {t("crypto_forensics.close" as DashboardKey)}
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         }
       />
 

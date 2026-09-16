@@ -51,14 +51,19 @@ export function useToast() {
   return context;
 }
 
+// Toasts mount in the root layout — OUTSIDE the dashboard's [data-app]
+// scope — where only the dark :root token set exists and the translucent
+// signal *-bg tokens are undefined. Style the card from surface/text (a
+// consistent pair in EVERY scope) and express the type via a colored
+// border, so the toast stays readable (WCAG AA) wherever it renders.
 const typeStyles: Record<ToastType, string> = {
   success:
-    "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-text)]",
+    "border-[color:var(--ds-success-border,#4ade80)] bg-[color:var(--ds-surface,#26262e)] text-[color:var(--ds-text,#f1f2f4)]",
   error:
-    "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-text)]",
+    "border-[color:var(--ds-danger-border,#f87171)] bg-[color:var(--ds-surface,#26262e)] text-[color:var(--ds-text,#f1f2f4)]",
   warning:
-    "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-text)]",
-  info: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-text)]",
+    "border-[color:var(--ds-warning-border,#fbbf24)] bg-[color:var(--ds-surface,#26262e)] text-[color:var(--ds-text,#f1f2f4)]",
+  info: "border-[color:var(--ds-info-border,#60a5fa)] bg-[color:var(--ds-surface,#26262e)] text-[color:var(--ds-text,#f1f2f4)]",
 };
 
 function ToastViewport() {

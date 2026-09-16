@@ -87,7 +87,9 @@ export const signupSchema = z.object({
   password: passwordSchema,
   name: z.string().min(1).max(100).optional(),
   referralCode: z.string().optional(),
-  locale: z.enum(["de", "en"]).optional(),
+  // The Austria pilot submits `at`; auth storage keeps the existing German
+  // language code because locale and legal jurisdiction are separate fields.
+  locale: z.enum(["de", "en", "at"]).optional(),
   industry: z.literal("legal").optional(),
 });
 

@@ -142,6 +142,14 @@ type NavSection = {
   colorVar?: string;
 };
 
+// Archived Germany-only integrations. Keep route identifiers centralized while
+// the communication audit decides whether their implementations are deleted.
+export const DE_ONLY_HREFS = new Set([
+  "/dashboard/bea",
+  "/dashboard/datev-export",
+  "/dashboard/datev-direct",
+]);
+
 // Workflow-ordered sidebar with all items grouped into collapsible sections.
 // Primary items (overview, cases, deadlines, intake, chat) are always visible.
 // Section items expand on click. Search filters across all items.
@@ -198,14 +206,6 @@ const NAV_MODULE_SECTIONS: NavSection[] = [
         icon: FileClock,
         labelKey: "nav.document_requests",
         keywords: "dokumentenanforderung unterlagen documents request",
-      },
-      {
-        href: "/dashboard/bea",
-        icon: Send,
-        labelKey: "nav.bea",
-        keywords: "bea elektronischer anwaltlicher austausch e-filing court",
-        tooltipKey: "nav.tooltip.bea",
-        audienceTier: "dach-integration",
       },
       {
         href: "/dashboard/communications",
@@ -452,7 +452,7 @@ const NAV_MODULE_SECTIONS: NavSection[] = [
         href: "/dashboard/invoicing",
         icon: Receipt,
         labelKey: "nav.invoicing",
-        keywords: "rechnung invoice rvg gebühren",
+        keywords: "rechnung invoice honorar gebühren",
         tooltipKey: "nav.tooltip.invoicing",
       },
       {
@@ -460,13 +460,6 @@ const NAV_MODULE_SECTIONS: NavSection[] = [
         icon: Clock,
         labelKey: "nav.time",
         keywords: "zeiterfassung time tracking stunden leistungen timer",
-      },
-      {
-        href: "/dashboard/cost-calculator",
-        icon: Calculator,
-        labelKey: "nav.cost_calculator",
-        keywords: "kostenrechner rvg calculator streitwert",
-        audienceTier: "erweitert",
       },
       {
         href: "/dashboard/fee-agreements",
@@ -510,23 +503,6 @@ const NAV_MODULE_SECTIONS: NavSection[] = [
         keywords: "fibu finanzbuchhaltung bank opos mahnung zahlung payment",
         tooltipKey: "nav.tooltip.fibu",
       },
-      {
-        href: "/dashboard/datev-export",
-        icon: FileSpreadsheet,
-        labelKey: "nav.datev_export",
-        keywords: "datev export buhaltung steuer",
-        audienceTier: "dach-integration",
-        tooltipKey: "nav.tooltip.datev_export",
-      },
-      {
-        href: "/dashboard/datev-direct",
-        icon: FileSpreadsheet,
-        labelKey: "nav.datev_direct",
-        keywords: "datev direct api rechnungsdaten buchungsdaten geplant",
-        tooltipKey: "nav.tooltip.datev_direct",
-        comingSoon: true,
-        audienceTier: "dach-integration",
-      },
     ],
   },
   {
@@ -538,7 +514,7 @@ const NAV_MODULE_SECTIONS: NavSection[] = [
         href: "/dashboard/kanzlei-tools",
         icon: Calculator,
         labelKey: "nav.kanzlei_tools",
-        keywords: "fachrechner gericht pkh rsv fax kyc vollmacht fao rubrum tools",
+        keywords: "kanzlei rsv fax kyc vollmacht rubrum tools",
         audienceTier: "erweitert",
       },
       {
@@ -587,13 +563,6 @@ const NAV_MODULE_SECTIONS: NavSection[] = [
         keywords: "urlaub vertretung absences vacation delegation abwesenheit",
         audienceTier: "erweitert",
         tooltipKey: "nav.tooltip.absences",
-      },
-      {
-        href: "/dashboard/fao-tracking",
-        icon: GraduationCap,
-        labelKey: "nav.fao_tracking",
-        keywords: "fao fortbildung nachweise fachanwalt",
-        audienceTier: "erweitert",
       },
       {
         href: "/dashboard/team-meeting",
@@ -1157,8 +1126,6 @@ const ADMIN_GROUPS: Array<{ titleKey: DashboardKey; hrefs: string[] }> = [
     titleKey: "nav.section.admin_integrations",
     hrefs: [
       "/dashboard/import-kanzlei",
-      "/dashboard/datev-export",
-      "/dashboard/bea",
       "/dashboard/whatsapp/templates",
       "/dashboard/calendar-export",
       "/dashboard/judgements-sync",
@@ -1283,6 +1250,8 @@ interface SidebarProps {
   role?: string | null;
   /** User plan — drives tier-based visibility (free, pro, team, enterprise). */
   plan?: string | null;
+  /** Retained for caller compatibility; the active pilot always hides retired DE routes. */
+  jurisdiction?: string | null;
 }
 
 export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
@@ -1299,6 +1268,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     industry,
     role,
     plan,
+    jurisdiction: _jurisdiction,
   },
   ref
 ) {
@@ -1358,7 +1328,8 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     [isAdmin, role]
   );
   const isItemVisible = useCallback(
-    (item: NavItem) => isTierVisible(item) && isAudienceVisible(item),
+    (item: NavItem) =>
+      isTierVisible(item) && isAudienceVisible(item) && !DE_ONLY_HREFS.has(item.href),
     [isTierVisible, isAudienceVisible]
   );
   const adminSection = useMemo(

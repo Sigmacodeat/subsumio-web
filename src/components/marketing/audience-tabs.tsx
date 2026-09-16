@@ -9,23 +9,23 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { p, UI_STRINGS, type Lang } from "@/content/site";
+import { p, UI_STRINGS } from "@/content/site";
 import {
   SOLUTION_SLUGS,
   SOLUTION_CROSS_LINKS,
   SOLUTIONS,
   type SolutionSlug,
 } from "@/content/solutions";
-import { ICONS } from "./chrome";
+import { ICONS } from "./icons";
 import { EASE } from "./motion-system";
 
-export default function AudienceTabs({ lang }: { lang: Lang }) {
+export default function AudienceTabs() {
   const [active, setActive] = useState<SolutionSlug>(SOLUTION_SLUGS[0]);
   // Tab switching keeps its crossfade under reduced motion — only the
   // translate is dropped, since that is the vestibular part.
   const reduce = useReducedMotion();
-  const labels = SOLUTION_CROSS_LINKS[lang];
-  const content = SOLUTIONS[lang][active];
+  const labels = SOLUTION_CROSS_LINKS;
+  const content = SOLUTIONS[active];
 
   return (
     <section
@@ -76,10 +76,10 @@ export default function AudienceTabs({ lang }: { lang: Lang }) {
               {content.sub}
             </p>
             <Link
-              href={p(lang, `/solutions/${active}`)}
+              href={p(`/solutions/${active}`)}
               className="brand-text group inline-flex items-center gap-1.5 text-sm font-semibold"
             >
-              {UI_STRINGS[lang].seeSolution}
+              {UI_STRINGS.seeSolution}
               <ArrowRight
                 size={14}
                 className="transition-transform duration-200 group-hover:translate-x-0.5"

@@ -5,7 +5,7 @@ import { Search, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
-import { ALL_NAV_ITEMS, type AudienceTier } from "@/components/dashboard/sidebar";
+import { ALL_NAV_ITEMS, DE_ONLY_HREFS, type AudienceTier } from "@/components/dashboard/sidebar";
 import type { LucideIcon } from "lucide-react";
 import {
   Settings,
@@ -163,7 +163,6 @@ const SETTINGS_DESC_MAP: Record<string, DashboardKey> = {
   "/dashboard/version-history": "settings.tile_version_history_desc",
   "/dashboard/signature": "settings.tile_signature_desc",
   "/dashboard/vault": "settings.tile_vault_desc",
-  "/dashboard/cost-calculator": "settings.tile_cost_calculator_desc",
   "/dashboard/settings/kanzlei": "settings.tile_kanzlei_settings_desc",
   "/dashboard/datev-export": "settings.tile_datev_export_desc",
   "/dashboard/bea": "settings.tile_bea_desc",
@@ -219,7 +218,9 @@ export function SettingsHub({ userRole }: { userRole: string }) {
 
   const kanzleiWarning = notifHealth && !notifHealth.all_configured;
 
-  const hubItems = ALL_NAV_ITEMS.filter((item) => item.audienceTier);
+  const hubItems = ALL_NAV_ITEMS.filter(
+    (item) => item.audienceTier && !DE_ONLY_HREFS.has(item.href)
+  );
 
   const roleVisible = hubItems.filter((item) => {
     const allowed = ROLE_ALLOWED[item.href];

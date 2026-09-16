@@ -106,7 +106,7 @@ export default function ApprovalsPage() {
         role="note"
       >
         <Info size={16} className="brand-text mt-0.5 shrink-0" aria-hidden="true" />
-        <p className="brand-text/90 text-xs leading-relaxed">{t("approvals.notice")}</p>
+        <p className="brand-text text-xs leading-relaxed">{t("approvals.notice")}</p>
       </div>
 
       {error && (
@@ -291,12 +291,12 @@ export default function ApprovalsPage() {
                       : ""}
                   </p>
                   {item.execution_error && (
-                    <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]/80">
+                    <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
                       {t("approvals.execution_error")}: {item.execution_error}
                     </p>
                   )}
                   {item.reject_reason && (
-                    <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]/80">
+                    <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
                       {t("approvals.reason_label")}: {item.reject_reason}
                     </p>
                   )}

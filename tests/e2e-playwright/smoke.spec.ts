@@ -54,7 +54,7 @@ async function signUpViaApi(page: import("@playwright/test").Page) {
 test.describe("Smoke: Auth Flow", () => {
   test("signup → dashboard → logout", async ({ page }) => {
     const email = getTestEmail();
-    await page.goto("/signup", { waitUntil: "domcontentloaded" });
+    await page.goto("/at/signup", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(8000);
     await expect(page.locator('form button[type="submit"]')).toBeEnabled();
     await page.locator('input[name="name"]').fill(TEST_USER.name);
@@ -71,7 +71,7 @@ test.describe("Smoke: Auth Flow", () => {
   });
 
   test("login page renders", async ({ page }) => {
-    await page.goto("/de/login", { waitUntil: "domcontentloaded" });
+    await page.goto("/at/login", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("main").getByRole("button", { name: "Anmelden" })).toBeVisible();
     await expect(page.locator('input[name="email"]')).toBeVisible();
     await expect(page.locator('input[name="password"]')).toBeVisible();
@@ -194,6 +194,11 @@ test.describe("Smoke: Dashboard Pages Render", () => {
   });
 
   test("dashboard presents a Kanzlei-OS cockpit, not a brain admin console", async ({ page }) => {
+    // Guided tour auto-opens for fresh accounts and its spotlight mask
+    // intercepts clicks — suppress it for this navigation-structure check.
+    await page.addInitScript(() => {
+      window.localStorage.setItem("subsumio-tour-completed", "true");
+    });
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
 
     // Redesign: CalmGreeting replaces old Kanzlei-Cockpit heading
@@ -206,45 +211,47 @@ test.describe("Smoke: Dashboard Pages Render", () => {
     // HeutePanel and widget sections should be visible
     await expect(page.getByText(/Heute|Today/i).first()).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText(/Inbox|Eingang/i).first()).toBeVisible();
-    await expect(page.getByText(/Review approvals|Freigaben prüfen/i).first()).toBeVisible();
+    await expect(page.getByText(/Review approvals|Freigaben prüfen/i).first()).toBeVisible({
+      timeout: 30_000,
+    });
 
     const nav = page.getByRole("navigation", { name: /Main navigation|Hauptnavigation/i });
     if ((await nav.isVisible().catch(() => false)) === false) {
       await page.getByRole("button", { name: /Open menu|Menü öffnen/i }).click();
     }
-    await expect(nav.getByRole("button", { name: /Firm Cockpit|Kanzlei-Cockpit/i })).toBeVisible();
-    await expect(
-      nav.getByRole("button", { name: /Cases & Clients|Akten & Mandanten/i })
-    ).toBeVisible();
-    await expect(nav.getByRole("button", { name: /Communication|Kommunikation/i })).toBeVisible();
-    await expect(
-      nav.getByRole("button", { name: /Documents & Drafting|Dokumente & Drafting/i })
-    ).toBeVisible();
-    await expect(nav.locator('button[aria-expanded="true"]')).toHaveCount(1);
-    await expect(
-      nav.getByRole("button", { name: /Firm Cockpit|Kanzlei-Cockpit/i })
-    ).toHaveAttribute("aria-expanded", "true");
+    // Kanzlei workspaces (IA consolidation). Free-tier users see the
+    // quick-start subset; Litigation/Fees/Firm sections are tier-gated.
+    const matters = nav.getByRole("button", {
+      name: /Matters & Parties|Mandate & Beteiligte/i,
+    });
+    const schedule = nav.getByRole("button", {
+      name: /Schedule & Tasks|Termine & Aufgaben/i,
+    });
+    const docs = nav.getByRole("button", {
+      name: /Documents & Knowledge|Dokumente & Wissen/i,
+    });
+    for (const section of [matters, schedule, docs]) {
+      await expect(section).toBeVisible();
+    }
 
-    await nav.getByRole("button", { name: /Cases & Clients|Akten & Mandanten/i }).click();
-    await expect(nav.locator('button[aria-expanded="true"]')).toHaveCount(1);
-    await expect(
-      nav.getByRole("button", { name: /Cases & Clients|Akten & Mandanten/i })
-    ).toHaveAttribute("aria-expanded", "true");
-
-    await nav.getByRole("button", { name: /Cases & Clients|Akten & Mandanten/i }).click();
+    // /dashboard is a primary item — no accordion section is active-expanded
     await expect(nav.locator('button[aria-expanded="true"]')).toHaveCount(0);
 
-    await nav.getByRole("button", { name: /Communication|Kommunikation/i }).click();
+    // Single-open accordion: opening one section replaces the other
+    await matters.click();
     await expect(nav.locator('button[aria-expanded="true"]')).toHaveCount(1);
-    await expect(nav.getByRole("button", { name: /Communication|Kommunikation/i })).toHaveAttribute(
-      "aria-expanded",
-      "true"
-    );
+    await expect(matters).toHaveAttribute("aria-expanded", "true");
+
+    await docs.click();
+    await expect(nav.locator('button[aria-expanded="true"]')).toHaveCount(1);
+    await expect(docs).toHaveAttribute("aria-expanded", "true");
+    await expect(matters).toHaveAttribute("aria-expanded", "false");
+
+    await docs.click();
+    await expect(nav.locator('button[aria-expanded="true"]')).toHaveCount(0);
 
     await page.goto("/dashboard/deadlines", { waitUntil: "domcontentloaded" });
-    await expect(
-      nav.getByRole("button", { name: /Firm Cockpit|Kanzlei-Cockpit/i })
-    ).toHaveAttribute("aria-expanded", "true");
+    await expect(schedule).toHaveAttribute("aria-expanded", "true");
     await expect(
       page.getByText(/Failed to load brain status|Brain-Status konnte nicht geladen werden/i)
     ).toHaveCount(0);
@@ -276,7 +283,7 @@ test.describe("Smoke: Dashboard Pages Render", () => {
       }
       expect(response?.status()).not.toBe(503);
       // Page should not show error
-      const errorText = page.locator("text=/Engine nicht erreichbar|Service unavailable|503/i");
+      const errorText = page.getByText(/Engine nicht erreichbar|Service unavailable|503/i);
       await expect(errorText).toHaveCount(0, { timeout: 5_000 });
     });
   }

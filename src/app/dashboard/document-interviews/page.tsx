@@ -14,8 +14,8 @@ import type { InterviewDefinition } from "@/lib/document-interviews";
 
 const STATUS_COLORS: Record<string, string> = {
   unreviewed: "bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)]",
-  reviewed: "bg-[color:var(--ds-info-solid)] text-[color:var(--ds-info-text)]",
-  approved: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]",
+  reviewed: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
+  approved: "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
 };
 
 export default function DocumentInterviewsPage() {

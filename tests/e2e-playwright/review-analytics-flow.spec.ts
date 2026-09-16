@@ -74,7 +74,7 @@ test.describe("Review & Analytics: Pages Render", () => {
     test(`${p.path} loads without 503 and shows heading`, async ({ page }) => {
       const response = await page.goto(p.path, { waitUntil: "domcontentloaded" });
       expect(response?.status()).not.toBe(503);
-      const errorText = page.locator("text=/Engine nicht erreichbar|Service unavailable|503/i");
+      const errorText = page.getByText(/Engine nicht erreichbar|Service unavailable|503/i);
       await expect(errorText).toHaveCount(0, { timeout: 5_000 });
       // Check heading — some pages may show empty state instead
       const heading = page.getByRole("heading", { name: p.heading }).first();
@@ -90,41 +90,43 @@ test.describe("Review & Analytics: Pages Render", () => {
   test("review-queue shows approval items or empty state", async ({ page }) => {
     await page.goto("/dashboard/review-queue", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const content = page.locator("table, [role='list'], text=/Keine|None|Empty|No/i");
+    const content = page.locator("table, [role='list']").or(page.getByText(/Keine|None|Empty|No/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 
   test("review-sets shows review set list or create button", async ({ page }) => {
     await page.goto("/dashboard/review-sets", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const content = page.locator("table, [role='list'], button, text=/Keine|None|Empty|No/i");
+    const content = page
+      .locator("table, [role='list'], button")
+      .or(page.getByText(/Keine|None|Empty|No/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 
   test("litigation-analytics shows charts or KPIs", async ({ page }) => {
     await page.goto("/dashboard/litigation-analytics", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(3000);
-    const content = page.locator(
-      ".recharts-surface, table, .tabular-nums, text=/Keine|None|Empty|No/i"
-    );
+    const content = page
+      .locator(".recharts-surface, table, .tabular-nums")
+      .or(page.getByText(/Keine|None|Empty|No/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 
   test("adoption-analytics shows analytics content", async ({ page }) => {
     await page.goto("/dashboard/adoption-analytics", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const content = page.locator(
-      ".recharts-surface, table, .tabular-nums, text=/Keine|None|Empty|No/i"
-    );
+    const content = page
+      .locator(".recharts-surface, table, .tabular-nums")
+      .or(page.getByText(/Keine|None|Empty|No/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 
   test("portfolio-insights shows portfolio content", async ({ page }) => {
     await page.goto("/dashboard/portfolio-insights", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const content = page.locator(
-      "table, .recharts-surface, [role='list'], text=/Keine|None|Empty|No/i"
-    );
+    const content = page
+      .locator("table, .recharts-surface, [role='list']")
+      .or(page.getByText(/Keine|None|Empty|No/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 
@@ -138,7 +140,9 @@ test.describe("Review & Analytics: Pages Render", () => {
   test("reports shows report list or content", async ({ page }) => {
     await page.goto("/dashboard/reports", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const content = page.locator("table, [role='list'], button, text=/Keine|None|Empty|No/i");
+    const content = page
+      .locator("table, [role='list'], button")
+      .or(page.getByText(/Keine|None|Empty|No/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 });

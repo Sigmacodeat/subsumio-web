@@ -15,9 +15,9 @@ import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import type { RedTeamResult, RedTeamAnnotation } from "@/lib/red-team-agent";
 
 const SEVERITY_COLORS: Record<string, string> = {
-  high: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)]",
-  medium: "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)]",
-  low: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]",
+  high: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+  medium: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+  low: "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
 };
 
 const TYPE_LABELS: Record<string, string> = {

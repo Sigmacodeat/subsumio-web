@@ -1102,6 +1102,9 @@ export const D = {
   "calendar.week": { de: "Woche", en: "Week" },
   "calendar.month": { de: "Monat", en: "Month" },
   "calendar.today": { de: "Heute", en: "Today" },
+  "calendar.prev_month": { de: "Vorheriger Monat", en: "Previous month" },
+  "calendar.next_month": { de: "Nächster Monat", en: "Next month" },
+  "calendar.events_list": { de: "Terminliste", en: "Event list" },
   "calendar.empty_title": { de: "Keine Termine", en: "No events" },
   "calendar.empty_desc": {
     de: "In diesem Zeitraum sind keine Fristen oder Aufgaben geplant.",
@@ -1885,6 +1888,28 @@ export const D = {
     de: "Verrechnung, Stundensatz & Abrechnung",
     en: "Billing, hourly rate & invoicing",
   },
+  "feature.not_available_title": {
+    de: "In Ihrem Markt nicht verfügbar",
+    en: "Not available in your market",
+  },
+  "feature.not_available_desc": {
+    de: "Diese Funktion ist für Deutschland freigeschaltet. Für Österreich steht sie nicht zur Verfügung.",
+    en: "This feature is enabled for Germany. It is not available for Austria.",
+  },
+  "feature.not_available_back": { de: "Zur Übersicht", en: "Back to overview" },
+  "settings.demo_title": { de: "Demo-Daten", en: "Demo data" },
+  "settings.demo_desc": {
+    de: "Fiktive Testakte (Berger ./. Muster Werk GmbH) mit Frist, Dokument und Posteingang — zum Ausprobieren. Entfernen, sobald echte Akten angelegt sind.",
+    en: "Fictional test matter (Berger ./. Muster Werk GmbH) with deadline, document and intake — for trying things out. Remove once real cases exist.",
+  },
+  "settings.demo_remove": { de: "Demo-Daten entfernen", en: "Remove demo data" },
+  "settings.demo_confirm": {
+    de: "Demo-Akte samt Frist, Dokument und Posteingang wirklich entfernen?",
+    en: "Remove the demo matter including deadline, document and intake?",
+  },
+  "settings.demo_removed": { de: "Demo-Daten entfernt", en: "Demo data removed" },
+  "settings.demo_none": { de: "Keine Demo-Daten vorhanden", en: "No demo data present" },
+  "settings.demo_fail": { de: "Entfernen fehlgeschlagen", en: "Removal failed" },
   "settings.kanzlei_name": { de: "Kanzlei-Name", en: "Firm name" },
   "settings.kanzlei_name_desc": {
     de: "Für Rechnungskopf und Mandanten-Portal",
@@ -3718,6 +3743,7 @@ export const D = {
   "wordaddin.download_manifest": { de: "Manifest herunterladen", en: "Download manifest" },
   "wordaddin.open_taskpane": { de: "Taskpane öffnen", en: "Open taskpane" },
   "wordaddin.gen_token": { de: "API-Token generieren", en: "Generate API token" },
+  "wordaddin.copy_url": { de: "Manifest-URL kopieren", en: "Copy manifest URL" },
   "wordaddin.version_badge": {
     de: "Version 1.0.0 · Office 365 / 2021+",
     en: "Version 1.0.0 · Office 365 / 2021+",
@@ -4180,6 +4206,8 @@ export const D = {
   "sources.refresh": { de: "Aktualisieren", en: "Refresh" },
   "sources.filter": { de: "Filter:", en: "Filter:" },
   "sources.all_jurisdictions": { de: "Alle Jurisdiktionen", en: "All jurisdictions" },
+  "sources.type_filter": { de: "Quellentyp filtern", en: "Filter source type" },
+  "sources.status_filter": { de: "Status filtern", en: "Filter status" },
   "sources.all_types": { de: "Alle Typen", en: "All types" },
   "sources.all_status": { de: "Alle Status", en: "All status" },
   "sources.empty": { de: "Keine Quellen gefunden.", en: "No sources found." },
@@ -4466,6 +4494,7 @@ export const D = {
   "vault.cta_unassigned_count": { de: "unzugeordnet", en: "unassigned" },
   "vault.results_count": { de: "Ergebnisse", en: "results" },
   "vault.total_count": { de: "gesamt", en: "total" },
+  "vault.sort_label": { de: "Sortierung", en: "Sort order" },
   "vault.sort_date_desc": { de: "Neueste zuerst", en: "Newest first" },
   "vault.sort_date_asc": { de: "Älteste zuerst", en: "Oldest first" },
   "vault.sort_title_asc": { de: "Titel A–Z", en: "Title A–Z" },
@@ -4617,6 +4646,8 @@ export const D = {
   "precedent.to_case": { de: "Zur Akte", en: "Go to case" },
 
   // ── Review Queue page: additional strings ──
+  "review_queue.filter_status": { de: "Status filtern", en: "Filter status" },
+  "review_queue.filter_assignee": { de: "Bearbeiter filtern", en: "Filter assignee" },
   "review_queue.status_pending": { de: "Ausstehend", en: "Pending" },
   "review_queue.status_in_review": { de: "In Prüfung", en: "In review" },
   "review_queue.status_approved": { de: "Freigegeben", en: "Approved" },
@@ -6011,8 +6042,8 @@ export const D = {
   // ── Anonymize page ──
   "anonymize.title": { de: "Anonymisierung", en: "Anonymization" },
   "anonymize.description": {
-    de: "Identifizierende Daten entfernen vor Weitergabe oder Cloud-Verarbeitung (§ 203 StGB / § 9 RAO / Art. 321 StGB)",
-    en: "Remove identifying data before sharing or cloud processing (§ 203 StGB / § 9 RAO / Art. 321 StGB)",
+    de: "Identifizierende Daten entfernen vor Weitergabe oder Cloud-Verarbeitung (§ 203 StGB / § 9 Abs. 2 RAO / Art. 321 StGB)",
+    en: "Remove identifying data before sharing or cloud processing (§ 203 StGB / § 9 Abs. 2 RAO / Art. 321 StGB)",
   },
   "anonymize.breadcrumb": { de: "Anonymisierung", en: "Anonymization" },
   "anonymize.placeholder_input": {
@@ -8182,6 +8213,7 @@ export const D = {
   "email.sent_error": { de: "Senden fehlgeschlagen", en: "Send failed" },
   "common.cancel": { de: "Abbrechen", en: "Cancel" },
   "common.close": { de: "Schließen", en: "Close" },
+  "common.refresh": { de: "Aktualisieren", en: "Refresh" },
   "common.error": { de: "Fehler", en: "Error" },
   "common.retry": { de: "Erneut versuchen", en: "Retry" },
   "common.save": { de: "Speichern", en: "Save" },

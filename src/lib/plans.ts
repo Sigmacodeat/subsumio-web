@@ -256,6 +256,7 @@ export async function checkQuota(
     // to prevent race conditions between concurrent requests.
     const month = currentMonth();
     try {
+      await ensureQuotaSchema();
       const client = await pool.connect();
       try {
         await client.query("BEGIN");

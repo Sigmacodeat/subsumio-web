@@ -29,20 +29,20 @@ const roleBadge: Record<string, string> = {
   owner:
     "bg-[color:var(--ds-category-purple-bg)] text-[color:var(--ds-category-purple-text)] border-[color:var(--ds-category-purple-border)]",
   admin:
-    "bg-[color:var(--ds-info-solid)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
+    "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
   editor:
-    "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
+    "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
   viewer:
     "bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)] border-[color:var(--ds-neutral-border)]",
 };
 
 const statusBadge: Record<string, string> = {
   active:
-    "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
+    "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
   pending:
-    "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
+    "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
   revoked:
-    "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
+    "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
 };
 
 const resourceIcon: Record<string, typeof FileText> = {

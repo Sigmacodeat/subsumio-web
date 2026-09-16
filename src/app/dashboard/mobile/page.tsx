@@ -273,7 +273,7 @@ export default function MobilePage() {
               className="mt-0.5 shrink-0 text-[color:var(--ds-category-teal-text)]"
             />
             <div>
-              <p className="text-sm font-medium text-[color:var(--ds-category-teal-text)]">
+              <p className="text-sm font-medium text-[color:var(--ds-text)]">
                 Native App installieren
               </p>
               <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">

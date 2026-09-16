@@ -13,11 +13,10 @@ import { keywordsFor } from "@/lib/seo-keywords";
 export const metadata: Metadata = {
   title: "Subsumio — KI-Kanzleisoftware für Österreich",
   description:
-    "KI-Kanzleisoftware für Kanzleien in Österreich: Aktenverwaltung, Fristenkontrolle nach ZPO/ABGB, belegte KI-Antworten mit Fundstellen, ADATEV-Export, Kollisionsprüfung nach § 10 RAO. DSGVO-konform, EU-Cloud oder On-Premise.",
+    "KI-Kanzleisoftware für Kanzleien in Österreich: Aktenverwaltung, Fristenkontrolle, belegte KI-Antworten mit Fundstellen, Honorarverwaltung und Kollisionsprüfung nach § 10 RAO. EU-Cloud oder On-Premise.",
   keywords: keywordsFor("root"),
   alternates: {
     canonical: "/at",
-    languages: { "de-DE": "/", "de-AT": "/at", "de-CH": "/ch", en: "/en", "x-default": "/" },
   },
   openGraph: {
     title: "Subsumio — KI-Kanzleisoftware für Österreich",
@@ -38,10 +37,10 @@ export default function Page() {
   return (
     <>
       <JsonLd data={organizationLd()} />
-      <JsonLd data={softwareApplicationLd("at")} />
-      <JsonLd data={faqPageLd(LANDING.at.faq)} />
-      <JsonLd data={howToLd(LANDING.at.how, "at")} />
-      <LandingPage lang="at" />
+      <JsonLd data={softwareApplicationLd()} />
+      <JsonLd data={faqPageLd(LANDING.faq)} />
+      <JsonLd data={howToLd(LANDING.how)} />
+      <LandingPage />
     </>
   );
 }

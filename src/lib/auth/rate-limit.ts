@@ -141,6 +141,17 @@ async function hitUpstash(key: string, max: number, windowMs: number): Promise<R
  * `login:1.2.3.4` or `login:email:user@example.com`.
  */
 export async function hit(key: string, max: number, windowMs: number): Promise<RateLimitResult> {
+  // E2E harness: Playwright sets SUBSUMIO_E2E=1 on its spawned server.
+  // Per-test signups/logins would otherwise trip the shared per-IP limits
+  // mid-suite (429 cascades). Scoped to IP-keyed keys so per-user limits
+  // (2fa:*, etc.) stay enforceable and their specs can assert real 429s.
+  // SUBSUMIO_E2E=1 is the sole guard — it is never set in real production.
+  // (Previously double-gated with NODE_ENV !== "production", but `next start`
+  // forces NODE_ENV=production, which would block the e2e production-build
+  // server from bypassing signup/login limits.)
+  if (env("SUBSUMIO_E2E") === "1" && /^signup:/.test(key)) {
+    return { ok: true, retryAfterSeconds: 0 };
+  }
   if (UPSTASH_URL && UPSTASH_TOKEN) {
     try {
       return await hitUpstash(key, max, windowMs);

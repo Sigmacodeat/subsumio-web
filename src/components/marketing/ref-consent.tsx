@@ -17,7 +17,7 @@ function hasRefCookie(): boolean {
 }
 
 export default function RefConsentBanner() {
-  const [banner, setBanner] = useState<{ code: string; isGerman: boolean } | null>(null);
+  const [banner, setBanner] = useState<{ code: string } | null>(null);
 
   useEffect(() => {
     // Deferred so the state update is not synchronous inside the effect
@@ -29,16 +29,13 @@ export default function RefConsentBanner() {
       if (!ref || !CODE_RE.test(ref)) return;
       if (hasRefCookie()) return;
       if (localStorage.getItem(DECISION_KEY)) return;
-      setBanner({
-        code: ref,
-        isGerman: !window.location.pathname.startsWith("/en"),
-      });
+      setBanner({ code: ref });
     }, 0);
     return () => clearTimeout(timer);
   }, []);
 
   if (!banner) return null;
-  const { code, isGerman } = banner;
+  const { code } = banner;
 
   const accept = () => {
     const secure = window.location.protocol === "https:" ? "; Secure" : "";
@@ -58,26 +55,24 @@ export default function RefConsentBanner() {
       aria-live="polite"
       className="fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 z-[100] rounded-2xl border [border-color:var(--mk-control-border)] p-6 shadow-2xl shadow-black/60 [background:var(--mk-surface)] sm:left-auto sm:max-w-md"
     >
-      <p className="mb-1.5 text-sm font-semibold [color:var(--mk-text)]">
-        {isGerman ? "Empfehlungslink erkannt" : "Referral link detected"}
-      </p>
+      <p className="mb-1.5 text-sm font-semibold [color:var(--mk-text)]">Empfehlungslink erkannt</p>
       <p className="mb-4 text-sm leading-relaxed [color:var(--mk-text-muted)]">
-        {isGerman
-          ? "Du bist über eine Empfehlung hier. Dürfen wir den Empfehlungs-Code 90 Tage als Cookie speichern, damit dein Werber seine Provision bekommt und du deinen Gratismonat? Sonst passiert nichts — die Seite funktioniert auch ohne."
-          : "You arrived via a referral. May we store the referral code as a cookie for 90 days so your referrer gets their commission and you get your free month? Nothing else happens — the site works fine without it."}
+        Du bist über eine Empfehlung hier. Dürfen wir den Empfehlungs-Code 90 Tage als Cookie
+        speichern, damit dein Werber seine Provision bekommt und du deinen Gratismonat? Sonst
+        passiert nichts — die Seite funktioniert auch ohne.
       </p>
       <div className="flex gap-2">
         <button
           onClick={accept}
           className="min-h-10 rounded-lg bg-[var(--brand-primary)] px-4 py-2 text-sm font-semibold text-white transition-[background-color,border-color,color] hover:bg-[var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
         >
-          {isGerman ? "Einverstanden" : "Accept"}
+          Einverstanden
         </button>
         <button
           onClick={decline}
           className="min-h-10 rounded-lg border [border-color:var(--mk-control-border)] px-4 py-2 text-sm font-medium [color:var(--mk-text)] transition-[background-color,border-color,color] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
         >
-          {isGerman ? "Ablehnen" : "Decline"}
+          Ablehnen
         </button>
       </div>
     </div>

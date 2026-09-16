@@ -2,6 +2,7 @@
 
 import { cva, type VariantProps } from "class-variance-authority";
 import { forwardRef } from "react";
+import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
@@ -18,7 +19,9 @@ const buttonVariants = cva(
         danger:
           "border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] hover:border-[color:var(--ds-danger-solid)] hover:bg-[color:var(--ds-danger-solid)] hover:text-white",
         success:
-          "bg-[color:var(--ds-success-solid)] text-white shadow-sm hover:bg-[color:var(--ds-success-solid-hover)]",
+          // success-700 (solid-hover) als Basis — white auf success-600 war
+          // nur 3.82:1; der Hover geht eine Stufe dunkler.
+          "bg-[color:var(--ds-success-solid-hover)] text-white shadow-sm hover:bg-[color:var(--signal-success-800)]",
         glow: "bg-[color:var(--brand-primary)] text-white shadow-md shadow-[color:var(--brand-glow)] hover:bg-[color:var(--brand-primary-hover)] hover:shadow-lg active:bg-[color:var(--brand-primary-hover)]",
         outline:
           "border border-[color:var(--ds-border-strong)] bg-transparent text-[color:var(--ds-text-muted)] hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/[0.08] hover:text-[color:var(--brand-primary)]",
@@ -41,22 +44,35 @@ const buttonVariants = cva(
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   loading?: boolean;
+  /** Render as the child element instead of <button> — the correct way to
+   *  style links as buttons without nesting interactive elements:
+   *  <Button asChild><Link href={…}>Label</Link></Button> */
+  asChild?: boolean;
 }
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, loading, children, disabled, ...props }, ref) => {
+  ({ className, variant, size, loading, asChild, children, disabled, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button";
     return (
-      <button
+      <Comp
         ref={ref}
         className={cn(buttonVariants({ variant, size }), className)}
         disabled={disabled || loading}
         {...props}
       >
-        {loading && (
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        {asChild ? (
+          // Slot requires exactly one element child — a falsy `loading &&`
+          // expression would still count as a second child and crash Slot.
+          children
+        ) : (
+          <>
+            {loading && (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            )}
+            {children}
+          </>
         )}
-        {children}
-      </button>
+      </Comp>
     );
   }
 );

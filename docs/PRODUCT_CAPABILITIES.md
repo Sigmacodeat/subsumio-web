@@ -1,6 +1,6 @@
 # Subsumio Produktfähigkeiten
 
-Stand: 2026-09-13 (Revision 6 — kanonische Dashboard-Flächen)
+Stand: 2026-09-13 (Revision 7 — Österreich-only Pilot)
 Zweck: kompakte, produktorientierte Übersicht darüber, was Subsumio kann,
 welche Module im Repository angelegt sind und wo Produktreife noch durch
 End-to-End-Verdrahtung nachgewiesen werden muss.
@@ -47,6 +47,12 @@ auditierbar bleiben.
   Die Navigation bündelt die fachlichen Module in sechs Kanzlei-Arbeitsräume;
   Detailinventur und nächste Trennkante stehen in
   `docs/KANZLEI_OS_SURFACE_AUDIT_2026-09-13.md`.
+- **Österreich-only Go-to-Market:** Die aktive öffentliche Website unterstützt
+  ausschließlich `de-AT` unter `/at`. DE/CH/EN-Routen und ungeprefixte
+  Seitenduplikate sind archiviert; alte URLs leiten permanent auf die
+  entsprechende österreichische Seite. Das Kanzlei-Dashboard, APIs und der
+  Mandantenportal-Pfad bleiben unverändert. Grenze und Wiederherstellung:
+  `docs/archive/AUSTRIA_ONLY_MARKET_ARCHIVE_2026-09-13.md`.
 
 ### Kanzlei-Dashboard (Legal)
 

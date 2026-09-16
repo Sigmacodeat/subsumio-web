@@ -86,6 +86,23 @@ export async function provisionBrain(
         // Seeding is optional — brain still works without it
       }
 
+      // 4. Seed Kanzlei defaults (AT Rechtsraum + RATG) so invoices/deadlines
+      //    start with correct Austrian settings and the settings page doesn't
+      //    hit a 404 on first load
+      try {
+        await seedKanzleiDefaults(headers);
+      } catch {
+        // Optional — settings fall back to client-side defaults
+      }
+
+      // 5. Seed a fictional demo matter so a new tenant sees a working
+      //    Akte + Frist + Dokument + Posteingang instead of an empty app
+      try {
+        await seedDemoMatter(headers);
+      } catch {
+        // Demo data is optional — signup must never fail on it
+      }
+
       return { ok: true, brainId };
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
@@ -151,6 +168,181 @@ async function seedWorkflows(
       });
     } catch {
       // Individual workflow creation failure is non-fatal
+    }
+  }
+}
+
+const DEMO_CASE_SLUG = "legal/cases/demo-2026-001-berger-vs-muster";
+
+/**
+ * Seed the canonical Kanzlei-Settings page with Austrian defaults.
+ * loadKanzleiSettings() merges with client-side defaults, so we only set the
+ * jurisdiction-relevant keys — the rest resolves via normalizeKanzleiSettings.
+ */
+async function seedKanzleiDefaults(headers: Record<string, string>): Promise<void> {
+  await createSeedPage(headers, {
+    slug: "legal/settings/kanzlei",
+    title: "Kanzlei-Einstellungen",
+    type: "kanzlei_settings",
+    content: "Zentrale Kanzlei-Stammdaten für Rechnungen und Verfahrensdokumentation.",
+    frontmatter: {
+      type: "kanzlei_settings",
+      rechtsraumCountry: "AT",
+      tarifModell: "ratg",
+      provisioned_defaults: true,
+    },
+  });
+}
+
+/** Slugs of the fictional demo matter seeded at signup — used by the
+ *  demo-data cleanup endpoint to remove them again. */
+export const DEMO_SEED_SLUGS = [
+  DEMO_CASE_SLUG,
+  "legal/deadlines/demo-anfechtungsfrist-berger",
+  "legal/documents/demo-kuendigungsschreiben",
+  "legal/intake/demo-eingang-berger",
+] as const;
+
+async function createSeedPage(
+  headers: Record<string, string>,
+  payload: {
+    slug: string;
+    title: string;
+    type: string;
+    content?: string;
+    frontmatter?: Record<string, unknown>;
+  }
+): Promise<void> {
+  await fetch(`${ENGINE_URL}/api/pages`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(5_000),
+  });
+}
+
+async function seedDemoMatter(headers: Record<string, string>): Promise<void> {
+  // Idempotent: if the demo case already exists (re-provision or retry), skip —
+  // the lawyer may have edited the demo data and we must not overwrite it.
+  try {
+    const slugPath = DEMO_CASE_SLUG.split("/").map(encodeURIComponent).join("/");
+    const existing = await fetch(`${ENGINE_URL}/api/pages/${slugPath}`, {
+      headers,
+      signal: AbortSignal.timeout(3_000),
+    });
+    if (existing.ok) return;
+  } catch {
+    // Lookup failed — proceed with seeding anyway; per-seed errors are tolerated
+  }
+
+  const now = new Date();
+  const due = new Date(now.getTime() + 21 * 86_400_000);
+  const dueDate = due.toISOString().slice(0, 10);
+  const createdAt = now.toISOString();
+
+  const seeds = [
+    {
+      slug: DEMO_CASE_SLUG,
+      title: "Demo-Akte: Berger ./. Muster Werk GmbH",
+      type: "legal_case",
+      content: [
+        "**DEMO-AKTE — fiktives Mandat zum Testen, keine echten Mandantendaten.**",
+        "",
+        "Mag. Anna Berger wurde von der Muster Werk GmbH (Wien) am 01.09.2026",
+        "die Kündigung ausgesprochen. Sie wünscht Anfechtung wegen sozialer",
+        "Unrechtfertigung und Überprüfung offener Ansprüche (Überstunden,",
+        "Urlaubsersatzleistung).",
+        "",
+        "Nächster Schritt: Klagsbeantwortung / Anfechtungsklage beim",
+        "Arbeits- und Sozialgericht Wien einbringen.",
+      ].join("\n"),
+      frontmatter: {
+        case_number: "DEMO-2026-001",
+        legal_area: "Arbeitsrecht",
+        jurisdiction: "AT",
+        status: "open",
+        priority: "normal",
+        client_name: "Mag. Anna Berger",
+        opponent_name: "Muster Werk GmbH",
+        court_name: "Arbeits- und Sozialgericht Wien",
+        tags: ["demo"],
+        demo: true,
+        portal_enabled: false,
+        version: 0,
+      },
+    },
+    {
+      slug: "legal/deadlines/demo-anfechtungsfrist-berger",
+      title: "Anfechtungsfrist — Demo-Mandat Berger",
+      type: "legal_deadline",
+      content:
+        "Demo-Frist: Kündigungsanfechtung für das fiktive Mandat Berger ./. Muster Werk GmbH.",
+      frontmatter: {
+        type: "legal_deadline",
+        event_type: "deadline",
+        due_date: dueDate,
+        description: "Anfechtung der Kündigung beim zuständigen Gericht einbringen (Demo).",
+        status: "pending",
+        review_status: "unreviewed",
+        source: "demo_seed",
+        case_slug: DEMO_CASE_SLUG,
+        demo: true,
+        created_at: createdAt,
+      },
+    },
+    {
+      slug: "legal/documents/demo-kuendigungsschreiben",
+      title: "Kündigungsschreiben Muster Werk GmbH (Demo)",
+      type: "document",
+      content: [
+        "**DEMO-DOKUMENT — fiktives Schreiben zum Testen.**",
+        "",
+        "Muster Werk GmbH, Musterstraße 12, 1010 Wien",
+        "Wien, am 01.09.2026",
+        "",
+        "Sehr geehrte Frau Mag. Berger,",
+        "",
+        "hiermit kündigen wir das mit Ihnen bestehende Dienstverhältnis",
+        "ordentlich und zum nächstzulässigen Termin.",
+        "",
+        "Mit freundlichen Grüßen",
+        "Muster Werk GmbH",
+      ].join("\n"),
+      frontmatter: {
+        type: "document",
+        case_slug: DEMO_CASE_SLUG,
+        extraction_status: "done",
+        tags: ["demo"],
+        demo: true,
+      },
+    },
+    {
+      slug: "legal/intake/demo-eingang-berger",
+      title: "Posteingang: Kündigungsschreiben Berger (Demo)",
+      type: "intake_request",
+      content: "Demo-Eingang: fiktive Mandatsanfrage zum Testen des Posteingangs.",
+      frontmatter: {
+        type: "intake_request",
+        source: "email",
+        status: "new",
+        client_name: "Mag. Anna Berger",
+        email: "demo@beispiel.invalid",
+        legal_area: "Arbeitsrecht",
+        summary:
+          "Mandatsanfrage: Kündigung erhalten, Prüfung der Anfechtungsmöglichkeit gewünscht (Demo).",
+        conflict_check_status: "clear",
+        demo: true,
+        created_at: createdAt,
+        updated_at: createdAt,
+      },
+    },
+  ];
+
+  for (const seed of seeds) {
+    try {
+      await createSeedPage(headers, seed);
+    } catch {
+      // Individual seed failure is non-fatal
     }
   }
 }

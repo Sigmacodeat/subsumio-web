@@ -3208,6 +3208,27 @@ export const api = {
       return request(`/api/rciid/cases${q ? `?${q}` : ""}`);
     },
   },
+
+  demoData: {
+    async status(): Promise<{ present: boolean }> {
+      const res = await request<{ data?: { present?: boolean }; present?: boolean }>(
+        "/api/demo-data"
+      );
+      return { present: res?.data?.present ?? res?.present ?? false };
+    },
+    async remove(): Promise<{ removed: string[]; failed: string[] }> {
+      const res = await request<{
+        data?: { removed?: string[]; failed?: string[] };
+      }>("/api/demo-data", {
+        method: "DELETE",
+        body: JSON.stringify({ confirm: true }),
+      });
+      return {
+        removed: res?.data?.removed ?? [],
+        failed: res?.data?.failed ?? [],
+      };
+    },
+  },
 };
 
 export type {

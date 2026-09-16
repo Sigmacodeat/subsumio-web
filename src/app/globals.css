@@ -758,6 +758,17 @@
   --brand-tertiary: var(--brand-300);
   color-scheme: dark;
 }
+/* Shared --ds-* primitives embedded in slate/dark marketing sections fall
+   back to the root (light-theme) values and fail WCAG AA — e.g. ghost-button
+   text measured 2.92:1 on the slate hero. Mirror each tone's own scale the
+   same way [data-tone="light"] does. */
+[data-tone="slate"],
+[data-tone="dark"] {
+  --ds-text: var(--mk-text);
+  --ds-text-muted: var(--mk-text-muted);
+  --ds-text-subtle: var(--mk-text-subtle);
+  --ds-surface-2: var(--mk-surface-2);
+}
 
 /* DASHBOARD tone — maps --mk-* to the authenticated dashboard's --ds-* dark
    palette so marketing dashboard mockups match the real product visually.

@@ -76,6 +76,15 @@ test.describe("DocuSign-Signatur-Rückschluss", () => {
     const envelopeId = `env-${Date.now()}`;
     const sigPageSlug = `legal/signature_request_${envelopeId}`;
 
+    // Get the actual brain ID from the session — the real engine isolates
+    // pages by source/brain, so the webhook must use the same brain_id
+    // that the page was created under. The mock engine shares data across
+    // all brains, so "test-brain" worked there; the real engine requires
+    // the actual session brain.
+    const meRes = await page.context().request.get("/api/auth/me");
+    const meData = await meRes.json();
+    const brainId = meData.user?.brainId ?? "test-brain";
+
     // ── Step 1: Create a signature_request page with docusign_envelope_id ──
     const createRes = await page.context().request.post("/api/pages", {
       data: {
@@ -106,7 +115,7 @@ test.describe("DocuSign-Signatur-Rückschluss", () => {
         },
         envelope: {
           customFields: {
-            brain_id: "test-brain",
+            brain_id: brainId,
           },
         },
       },
@@ -141,6 +150,11 @@ test.describe("DocuSign-Signatur-Rückschluss", () => {
     const envelopeId = `env-declined-${Date.now()}`;
     const sigPageSlug = `legal/signature_request_${envelopeId}`;
 
+    // Get the actual brain ID from the session (see completed test for rationale)
+    const meRes = await page.context().request.get("/api/auth/me");
+    const meData = await meRes.json();
+    const brainId = meData.user?.brainId ?? "test-brain";
+
     // Create signature_request page
     const createRes = await page.context().request.post("/api/pages", {
       data: {
@@ -171,7 +185,7 @@ test.describe("DocuSign-Signatur-Rückschluss", () => {
         },
         envelope: {
           customFields: {
-            brain_id: "test-brain",
+            brain_id: brainId,
           },
         },
       },
@@ -324,7 +338,7 @@ test.describe("DocuSign-Signatur-Rückschluss", () => {
     await page.waitForTimeout(2000);
 
     // Page should load without error
-    const errorText = page.locator("text=/Engine nicht erreichbar|Service unavailable|503/i");
+    const errorText = page.getByText(/Engine nicht erreichbar|Service unavailable|503/i);
     await expect(errorText).toHaveCount(0, { timeout: 5_000 });
   });
 });

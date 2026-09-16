@@ -5,15 +5,9 @@ import { JsonLd, localBusinessLd, breadcrumbLd } from "@/components/seo/jsonld";
 export const metadata: Metadata = {
   title: "Kontakt — Subsumio KI-Kanzleisoftware",
   description:
-    "Fragen zu Subsumio, Self-Hosting, Enterprise oder Partnerschaften? Unser Team antwortet innerhalb eines Werktages — auch zu DSGVO, AVV, Berufsgeheimnis (§ 203 StGB) und technisch-organisatorischen Maßnahmen.",
+    "Fragen zu Subsumio, Self-Hosting, Enterprise oder Partnerschaften? Unser Team antwortet innerhalb eines Werktages — auch zu DSGVO, AVV, Berufsgeheimnis (§ 9 Abs. 2 RAO) und technisch-organisatorischen Maßnahmen.",
   alternates: {
     canonical: "/at/contact",
-    languages: {
-      "de-DE": "/contact",
-      "de-AT": "/at/contact",
-      "de-CH": "/ch/contact",
-      en: "/en/contact",
-    },
   },
   openGraph: {
     title: "Kontakt — Subsumio KI-Kanzleisoftware",
@@ -34,7 +28,7 @@ export default function Page() {
           { name: "Kontakt", url: "/at/contact" },
         ])}
       />
-      <ContactPage lang="at" />
+      <ContactPage />
     </>
   );
 }

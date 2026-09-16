@@ -66,7 +66,7 @@ test.describe("Platform & Integration: Pages Render", () => {
     test(`${p.path} loads without 503`, async ({ page }) => {
       const response = await page.goto(p.path, { waitUntil: "domcontentloaded" });
       expect(response?.status()).not.toBe(503);
-      const errorText = page.locator("text=/Engine nicht erreichbar|Service unavailable|503/i");
+      const errorText = page.getByText(/Engine nicht erreichbar|Service unavailable|503/i);
       await expect(errorText).toHaveCount(0, { timeout: 5_000 });
     });
   }
@@ -74,7 +74,11 @@ test.describe("Platform & Integration: Pages Render", () => {
   test("shared-spaces shows spaces list or empty state", async ({ page }) => {
     await page.goto("/dashboard/shared-spaces", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const content = page.locator("table, [role='list'], button, text=/Keine|None|Empty|No/i");
+    const content = page
+      .locator("table")
+      .or(page.locator("[role='list']"))
+      .or(page.locator("button"))
+      .or(page.getByText(/Keine|None|Empty|No/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 
@@ -109,7 +113,11 @@ test.describe("Platform & Integration: Pages Render", () => {
   test("mobile/pipeline shows pipeline content", async ({ page }) => {
     await page.goto("/dashboard/mobile/pipeline", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const content = page.locator("h1, h2, [role='list'], text=/Pipeline/i");
+    const content = page
+      .locator("h1")
+      .or(page.locator("h2"))
+      .or(page.locator("[role='list']"))
+      .or(page.getByText(/Pipeline/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 
@@ -117,9 +125,12 @@ test.describe("Platform & Integration: Pages Render", () => {
     await page.goto("/dashboard/workflows/builder", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
     // Should have some content — canvas, form, or empty state
-    const content = page.locator(
-      "canvas, [role='application'], form, button, text=/Builder|Workflow/i"
-    );
+    const content = page
+      .locator("canvas")
+      .or(page.locator("[role='application']"))
+      .or(page.locator("form"))
+      .or(page.locator("button"))
+      .or(page.getByText(/Builder|Workflow/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 });
@@ -132,9 +143,13 @@ test.describe("Platform: Functional", () => {
   test("word-addin shows installation or download info", async ({ page }) => {
     await page.goto("/dashboard/word-addin", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const content = page.locator(
-      "button, a[href*='download'], a[href*='install'], code, pre, text=/Download|Install|Add-in/i"
-    );
+    const content = page
+      .locator("button")
+      .or(page.locator("a[href*='download']"))
+      .or(page.locator("a[href*='install']"))
+      .or(page.locator("code"))
+      .or(page.locator("pre"))
+      .or(page.getByText(/Download|Install|Add-in/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 

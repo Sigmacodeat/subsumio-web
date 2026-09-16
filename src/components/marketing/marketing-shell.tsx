@@ -14,23 +14,15 @@ import { MotionConfig } from "framer-motion";
 import { MarketingBackground, MarketingNav, MarketingFooter } from "./chrome";
 import { ScrollProgress } from "./motion-system";
 import BackToTop from "./back-to-top";
-import type { Lang } from "@/content/site";
-
-export default function MarketingShell({
-  lang,
-  children,
-}: {
-  lang: Lang;
-  children: React.ReactNode;
-}) {
+export default function MarketingShell({ children }: { children: React.ReactNode }) {
   return (
     <MotionConfig reducedMotion="user">
       <ScrollProgress />
       <MarketingBackground />
-      <MarketingNav lang={lang} />
+      <MarketingNav />
       {children}
-      <MarketingFooter lang={lang} />
-      <BackToTop lang={lang} />
+      <MarketingFooter />
+      <BackToTop />
     </MotionConfig>
   );
 }

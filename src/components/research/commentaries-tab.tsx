@@ -63,10 +63,7 @@ interface CommentaryListResponse {
 }
 
 const JURISDICTIONS = [
-  { value: "", label: "Alle" },
   { value: "at", label: "Österreich" },
-  { value: "de", label: "Deutschland" },
-  { value: "ch", label: "Schweiz" },
   { value: "eu", label: "EU" },
 ];
 
@@ -85,14 +82,14 @@ export default function CommentariesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [jurisdiction, setJurisdiction] = useState("");
+  const [jurisdiction, setJurisdiction] = useState("at");
   const [commentaryType, setCommentaryType] = useState("");
   const [statuteFilter, setStatuteFilter] = useState("");
   const [selectedCommentary, setSelectedCommentary] = useState<Commentary | null>(null);
   const [synthesizing, setSynthesizing] = useState(false);
   const [synthStatute, setSynthStatute] = useState("");
   const [synthSection, setSynthSection] = useState("");
-  const [synthJurisdiction, setSynthJurisdiction] = useState("de");
+  const [synthJurisdiction, setSynthJurisdiction] = useState("at");
   const [showSynthForm, setShowSynthForm] = useState(false);
 
   const fetchCommentaries = useCallback(async () => {
@@ -212,13 +209,12 @@ export default function CommentariesPage() {
                 onChange={(e) => setSynthJurisdiction(e.target.value)}
                 className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-input-bg)] px-3 py-2 text-sm"
               >
-                <option value="de">DE</option>
                 <option value="at">AT</option>
-                <option value="ch">CH</option>
+                <option value="eu">EU</option>
               </select>
               <input
                 type="text"
-                placeholder="Gesetz (z.B. BGB)"
+                placeholder="Gesetz (z.B. ABGB)"
                 value={synthStatute}
                 onChange={(e) => setSynthStatute(e.target.value.toUpperCase())}
                 className="w-32 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-input-bg)] px-3 py-2 text-sm"
@@ -315,7 +311,7 @@ export default function CommentariesPage() {
 
         {/* Error */}
         {error && (
-          <div className="mb-4 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-solid)] p-3 text-sm text-[color:var(--ds-danger-text)]">
+          <div className="mb-4 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-sm text-[color:var(--ds-danger-text)]">
             {error}
           </div>
         )}
@@ -410,7 +406,7 @@ function CommentaryStatuteGroup({
                   Synthetisch
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--ds-info-solid)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-info-text)]">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--ds-info-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-info-text)]">
                   <FileText className="h-3 w-3" />
                   Open Access
                 </span>
@@ -475,7 +471,7 @@ function CommentaryDetail({
                     Synthetisch
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--ds-info-solid)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-info-text)]">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--ds-info-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-info-text)]">
                     <FileText className="h-3 w-3" />
                     Open Access
                   </span>
@@ -495,7 +491,7 @@ function CommentaryDetail({
             </div>
             <button
               onClick={onDelete}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-danger-border)] px-3 py-1.5 text-sm text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-solid)]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-danger-border)] px-3 py-1.5 text-sm text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-solid)] hover:text-white"
             >
               <Trash2 className="h-4 w-4" />
               Löschen
@@ -641,10 +637,10 @@ function TreatmentBadge({
 }) {
   if (count === 0) return null;
   const colors: Record<string, string> = {
-    green: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]",
-    red: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)]",
-    amber: "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)]",
-    blue: "bg-[color:var(--ds-info-solid)] text-[color:var(--ds-info-text)]",
+    green: "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
+    red: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+    amber: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+    blue: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
     gray: "bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)]",
   };
   return (

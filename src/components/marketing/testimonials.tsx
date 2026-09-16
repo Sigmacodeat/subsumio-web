@@ -1,16 +1,14 @@
-"use client";
-
 import { Star, Quote } from "lucide-react";
-import { UI_STRINGS, type Lang } from "@/content/site";
+import { UI_STRINGS } from "@/content/site";
 import { Reveal, StaggerContainer, StaggerItem } from "./motion-system";
-import { H2_CTA_CLASS } from "./chrome";
+import { H2_CTA_CLASS } from "./primitives";
 import { TESTIMONIALS } from "./testimonials-data";
 
-export function TestimonialsSection({ lang }: { lang?: Lang } = {}) {
+export function TestimonialsSection() {
   // No fabricated social proof: render nothing until real, consented
   // testimonials exist in testimonials-data.ts.
   if (TESTIMONIALS.length === 0) return null;
-  const ui = UI_STRINGS[lang ?? "de"];
+  const ui = UI_STRINGS;
   return (
     <section
       data-tone="light"

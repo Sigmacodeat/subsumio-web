@@ -144,27 +144,6 @@ function docusignSendPayload(verification?: object) {
   };
 }
 
-function beaSendPayload(verification?: object) {
-  return {
-    filing_slug: "test-filing-123",
-    draft_slug: "test-draft-123",
-    court: "LG Wien",
-    subject: "Test Schriftsatz",
-    sender_name: "Test Anwalt",
-    documents: [
-      {
-        title: "schriftsatz.pdf",
-        file_path: "/tmp/schriftsatz.pdf",
-        mime_type: "application/pdf",
-        size_bytes: 1000,
-        file_hash: VALID_HASH,
-        is_main_document: true,
-      },
-    ],
-    verification,
-  };
-}
-
 function sendEmailPayload(verification?: object) {
   return {
     to: "client@test.local",
@@ -198,7 +177,7 @@ test.describe("Verification Policy E2E — Output Boundaries", () => {
       const shouldAllow = state === "VERIFIED" || state === "VERIFIED_WITH_WARNINGS";
       test(`${state} → ${shouldAllow ? 200 : 403}`, async ({ page, request }) => {
         const csrf = await getCsrfToken(page);
-        const res = await request.post("/api/word-export", {
+        const res = await page.context().request.post("/api/word-export", {
           data: wordExportPayload(makeVerification(state)),
           headers: csrf ? { "x-csrf-token": csrf } : {},
         });
@@ -215,7 +194,7 @@ test.describe("Verification Policy E2E — Output Boundaries", () => {
 
     test("NEEDS_HUMAN_REVIEW with valid override → 200", async ({ page, request }) => {
       const csrf = await getCsrfToken(page);
-      const res = await request.post("/api/word-export", {
+      const res = await page.context().request.post("/api/word-export", {
         data: wordExportPayload(
           makeVerification("NEEDS_HUMAN_REVIEW", { override: makeOverride() })
         ),
@@ -229,7 +208,7 @@ test.describe("Verification Policy E2E — Output Boundaries", () => {
       request,
     }) => {
       const csrf = await getCsrfToken(page);
-      const res = await request.post("/api/word-export", {
+      const res = await page.context().request.post("/api/word-export", {
         data: wordExportPayload(
           makeVerification("NEEDS_HUMAN_REVIEW", {
             override: makeOverride(DIFFERENT_HASH),
@@ -242,7 +221,7 @@ test.describe("Verification Policy E2E — Output Boundaries", () => {
 
     test("VERIFIED with hash mismatch → 403", async ({ page, request }) => {
       const csrf = await getCsrfToken(page);
-      const res = await request.post("/api/word-export", {
+      const res = await page.context().request.post("/api/word-export", {
         data: wordExportPayload(
           makeVerification("VERIFIED", {
             content_hash: VALID_HASH,
@@ -258,7 +237,7 @@ test.describe("Verification Policy E2E — Output Boundaries", () => {
 
     test("No verification field → 200 (backward compatible)", async ({ page, request }) => {
       const csrf = await getCsrfToken(page);
-      const res = await request.post("/api/word-export", {
+      const res = await page.context().request.post("/api/word-export", {
         data: wordExportPayload(),
         headers: csrf ? { "x-csrf-token": csrf } : {},
       });
@@ -273,7 +252,7 @@ test.describe("Verification Policy E2E — Output Boundaries", () => {
       const shouldAllow = state === "VERIFIED" || state === "VERIFIED_WITH_WARNINGS";
       test(`${state} → ${shouldAllow ? "not 403" : 403}`, async ({ page, request }) => {
         const csrf = await getCsrfToken(page);
-        const res = await request.post("/api/docusign/send", {
+        const res = await page.context().request.post("/api/docusign/send", {
           data: docusignSendPayload(makeVerification(state)),
           headers: csrf ? { "x-csrf-token": csrf } : {},
         });
@@ -292,53 +271,13 @@ test.describe("Verification Policy E2E — Output Boundaries", () => {
 
     test("NEEDS_HUMAN_REVIEW with valid override → not 403", async ({ page, request }) => {
       const csrf = await getCsrfToken(page);
-      const res = await request.post("/api/docusign/send", {
+      const res = await page.context().request.post("/api/docusign/send", {
         data: docusignSendPayload(
           makeVerification("NEEDS_HUMAN_REVIEW", { override: makeOverride() })
         ),
         headers: csrf ? { "x-csrf-token": csrf } : {},
       });
       expect(res.status()).not.toBe(403);
-    });
-  });
-
-  // ─── beA Send (file_court) ──────────────────────────────────────────
-
-  test.describe("POST /api/bea/send (file_court)", () => {
-    for (const state of VERIFICATION_STATES) {
-      const shouldAllow = state === "VERIFIED" || state === "VERIFIED_WITH_WARNINGS";
-      test(`${state} → ${shouldAllow ? "not 403-verification" : "403 verification_denied"}`, async ({
-        page,
-        request,
-      }) => {
-        const csrf = await getCsrfToken(page);
-        const res = await request.post("/api/bea/send", {
-          data: beaSendPayload(makeVerification(state)),
-          headers: csrf ? { "x-csrf-token": csrf } : {},
-        });
-        if (shouldAllow) {
-          // May fail with 404 (filing not found) or 422, but not 403 verification_denied
-          const body = await res.json();
-          expect(body.error).not.toBe("verification_denied");
-        } else {
-          expect(res.status()).toBe(403);
-          const body = await res.json();
-          expect(body.error).toBe("verification_denied");
-        }
-      });
-    }
-
-    test("NEEDS_HUMAN_REVIEW with valid override → not verification_denied", async ({
-      page,
-      request,
-    }) => {
-      const csrf = await getCsrfToken(page);
-      const res = await request.post("/api/bea/send", {
-        data: beaSendPayload(makeVerification("NEEDS_HUMAN_REVIEW", { override: makeOverride() })),
-        headers: csrf ? { "x-csrf-token": csrf } : {},
-      });
-      const body = await res.json();
-      expect(body.error).not.toBe("verification_denied");
     });
   });
 
@@ -352,7 +291,7 @@ test.describe("Verification Policy E2E — Output Boundaries", () => {
         request,
       }) => {
         const csrf = await getCsrfToken(page);
-        const res = await request.post("/api/cases/send-email", {
+        const res = await page.context().request.post("/api/cases/send-email", {
           data: sendEmailPayload(makeVerification(state)),
           headers: csrf ? { "x-csrf-token": csrf } : {},
         });
@@ -373,7 +312,7 @@ test.describe("Verification Policy E2E — Output Boundaries", () => {
       request,
     }) => {
       const csrf = await getCsrfToken(page);
-      const res = await request.post("/api/cases/send-email", {
+      const res = await page.context().request.post("/api/cases/send-email", {
         data: sendEmailPayload(
           makeVerification("NEEDS_HUMAN_REVIEW", { override: makeOverride() })
         ),
@@ -394,7 +333,7 @@ test.describe("Verification Policy E2E — Output Boundaries", () => {
         request,
       }) => {
         const csrf = await getCsrfToken(page);
-        const res = await request.post("/api/legal/submission-review", {
+        const res = await page.context().request.post("/api/legal/submission-review", {
           data: submissionReviewPayload(makeVerification(state)),
           headers: csrf ? { "x-csrf-token": csrf } : {},
         });
@@ -415,7 +354,7 @@ test.describe("Verification Policy E2E — Output Boundaries", () => {
       request,
     }) => {
       const csrf = await getCsrfToken(page);
-      const res = await request.post("/api/legal/submission-review", {
+      const res = await page.context().request.post("/api/legal/submission-review", {
         data: submissionReviewPayload(
           makeVerification("NEEDS_HUMAN_REVIEW", { override: makeOverride() })
         ),
@@ -434,7 +373,7 @@ test.describe("Verification Policy E2E — Output Boundaries", () => {
       request,
     }) => {
       const csrf = await getCsrfToken(page);
-      const res = await request.post("/api/word-export", {
+      const res = await page.context().request.post("/api/word-export", {
         data: wordExportPayload(
           makeVerification("VERIFIED", {
             content_hash: VALID_HASH,
@@ -455,7 +394,7 @@ test.describe("Verification Policy E2E — Output Boundaries", () => {
   test.describe("BLOCKED state cannot be overridden", () => {
     test("export_docx BLOCKED with override → still 403", async ({ page, request }) => {
       const csrf = await getCsrfToken(page);
-      const res = await request.post("/api/word-export", {
+      const res = await page.context().request.post("/api/word-export", {
         data: wordExportPayload(makeVerification("BLOCKED", { override: makeOverride() })),
         headers: csrf ? { "x-csrf-token": csrf } : {},
       });

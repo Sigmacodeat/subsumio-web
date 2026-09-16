@@ -26,58 +26,34 @@ import {
   FileText,
 } from "lucide-react";
 import { EASE } from "./motion-system";
-import { UI_STRINGS, type Lang } from "@/content/site";
+import { UI_STRINGS } from "@/content/site";
 
 interface MarqueeItem {
   icon: typeof ShieldCheck;
   label: string;
 }
 
-const ROW_TOP: Record<string, MarqueeItem[]> = {
-  de: [
-    { icon: ShieldCheck, label: "DSGVO-konform" },
-    { icon: ScrollText, label: "§ 203 StGB" },
-    { icon: BadgeCheck, label: "SOC 2 Vorbereitung" },
-    { icon: FileCheck, label: "ISO 27001 geplant" },
-    { icon: Globe, label: "EU-Cloud" },
-    { icon: Server, label: "On-Premise" },
-    { icon: Lock, label: "Kein Training auf deinen Daten" },
-  ],
-  en: [
-    { icon: ShieldCheck, label: "GDPR-ready" },
-    { icon: ScrollText, label: "Professional Secrecy" },
-    { icon: BadgeCheck, label: "SOC 2 preparation" },
-    { icon: FileCheck, label: "ISO 27001 planned" },
-    { icon: Globe, label: "EU-Cloud" },
-    { icon: Server, label: "On-Premise" },
-    { icon: Lock, label: "No training on your data" },
-  ],
-};
+const ROW_TOP: MarqueeItem[] = [
+  { icon: ShieldCheck, label: "DSGVO-konform" },
+  { icon: ScrollText, label: "§ 9 Abs. 2 RAO im Blick" },
+  { icon: BadgeCheck, label: "SOC 2 Vorbereitung" },
+  { icon: FileCheck, label: "ISO 27001 geplant" },
+  { icon: Globe, label: "EU-Cloud" },
+  { icon: Server, label: "On-Premise" },
+  { icon: Lock, label: "Kein Training auf deinen Daten" },
+];
 
-const ROW_BOTTOM: Record<string, MarqueeItem[]> = {
-  de: [
-    { icon: Scale, label: "BRAO-konform" },
-    { icon: Landmark, label: "RVG-gebührenfähig" },
-    { icon: FileSignature, label: "DocuSign-Integration" },
-    { icon: MessageSquare, label: "WhatsApp Business" },
-    { icon: Gavel, label: "GoBD-audit-ready" },
-    { icon: Mail, label: "beA-Anbindung" },
-    { icon: Cloud, label: "EU-Hosting mit AVV" },
-    { icon: Database, label: "Volltext-Indexierung" },
-    { icon: FileText, label: "Office-Integration" },
-  ],
-  en: [
-    { icon: Scale, label: "Bar-compliant" },
-    { icon: Landmark, label: "RVG-billable" },
-    { icon: FileSignature, label: "DocuSign Integration" },
-    { icon: MessageSquare, label: "WhatsApp Business" },
-    { icon: Gavel, label: "GoBD audit-ready" },
-    { icon: Mail, label: "beA Integration" },
-    { icon: Cloud, label: "EU Hosting with DPA" },
-    { icon: Database, label: "Full-text Indexing" },
-    { icon: FileText, label: "Office Integration" },
-  ],
-};
+const ROW_BOTTOM: MarqueeItem[] = [
+  { icon: Scale, label: "RAO-orientiert" },
+  { icon: Landmark, label: "RATG-/AHK-Workflows" },
+  { icon: FileSignature, label: "DocuSign-Integration" },
+  { icon: MessageSquare, label: "WhatsApp Business" },
+  { icon: Gavel, label: "Nachvollziehbarer Audit-Trail" },
+  { icon: Mail, label: "webERV-Workflows" },
+  { icon: Cloud, label: "EU-Hosting mit AVV" },
+  { icon: Database, label: "Volltext-Indexierung" },
+  { icon: FileText, label: "Office-Integration" },
+];
 
 function MarqueeRow({
   items,
@@ -143,15 +119,15 @@ function MarqueeRow({
   );
 }
 
-export default function LogoMarquee({ lang }: { lang: Lang }) {
+export default function LogoMarquee() {
   const reduce = useReducedMotion();
   const [paused, setPaused] = useState(false);
 
-  const topItems = ROW_TOP[lang] ?? ROW_TOP.de;
-  const bottomItems = ROW_BOTTOM[lang] ?? ROW_BOTTOM.de;
+  const topItems = ROW_TOP;
+  const bottomItems = ROW_BOTTOM;
 
-  const eyebrow = UI_STRINGS[lang].certificationsEyebrow;
-  const heading = UI_STRINGS[lang].trustHeading;
+  const eyebrow = UI_STRINGS.certificationsEyebrow;
+  const heading = UI_STRINGS.trustHeading;
 
   return (
     // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- purely decorative hover-to-pause on an auto-scrolling marquee; not a control that needs a keyboard equivalent (motion already respects prefers-reduced-motion via useReducedMotion above).

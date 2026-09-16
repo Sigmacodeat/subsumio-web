@@ -3,11 +3,11 @@
 import { Mail, MessageSquare, FileText, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { p, UI_STRINGS, type Lang } from "@/content/site";
-import { Section, SectionHeading, PageHero, CTASection, IconTile, H3_CLASS } from "./chrome";
+import { p, UI_STRINGS } from "@/content/site";
+import { Section, SectionHeading, PageHero, CTASection, IconTile, H3_CLASS } from "./primitives";
 import { GlowCard, Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 
-const _deContact = {
+const CONTENT = {
   badge: "Kontakt",
   h1a: "Sprich mit unserem Team.",
   h1b: "Wir sprechen deine Sprache.",
@@ -48,62 +48,12 @@ const _deContact = {
   ctaButton: "Jetzt starten",
 } as const;
 
-const CONTENT = {
-  en: {
-    badge: "Contact",
-    h1a: "Talk to our team.",
-    h1b: "We speak your language.",
-    sub: "Questions about Subsumio, self-hosting, enterprise plans or partnerships? Reach us — we answer within one business day.",
-    channelsTitle: "How to reach us",
-    channels: [
-      {
-        icon: "Mail",
-        title: "Email",
-        value: "hello@subsum.eu",
-        desc: "General questions, sales, partnerships. We reply within one business day.",
-        href: "mailto:hello@subsum.eu",
-      },
-      {
-        icon: "MessageSquare",
-        title: "WhatsApp",
-        value: "+43 …",
-        desc: "Quick questions? Message us on WhatsApp — we're there during business hours.",
-        href: "https://wa.me/43",
-      },
-      {
-        icon: "FileText",
-        title: "Data Protection",
-        value: "dsb@subsum.eu",
-        desc: "For your data protection officer — DPA, AVV, technical-organisational measures.",
-        href: "mailto:dsb@subsum.eu",
-      },
-    ],
-    formTitle: "Send us a message",
-    formName: "Your name",
-    formEmail: "Your email",
-    formFirm: "Firm name",
-    formMessage: "Your message",
-    formSubmit: "Send message",
-    formNote: "We'll get back to you within one business day. No spam, ever.",
-    ctaTitle: "Prefer to try first?",
-    ctaSub: "Start a 14-day reverse trial — full access, no credit card.",
-    ctaButton: "Get started",
-  },
-  de: _deContact,
-  at: _deContact,
-  ch: _deContact,
-};
-
 const ICON_MAP = { Mail, MessageSquare, FileText };
 
-export default function ContactPage({ lang }: { lang: Lang }) {
-  const c = (CONTENT as unknown as Record<string, typeof CONTENT.de>)[lang] ?? CONTENT.de;
+export default function ContactPage() {
+  const c = CONTENT;
   return (
-    <div
-      data-tone="light"
-      className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
-      lang={lang}
-    >
+    <div data-tone="light" className="min-h-screen overflow-x-clip [background:var(--mk-bg)]">
       <PageHero
         badge={c.badge}
         h1a={c.h1a}
@@ -111,16 +61,14 @@ export default function ContactPage({ lang }: { lang: Lang }) {
         sub={c.sub}
         actions={
           <>
-            <Link href={p(lang, "/signup")}>
-              <Button size="lg" variant="primary">
-                {UI_STRINGS[lang].startFree} <ArrowRight size={16} />
-              </Button>
-            </Link>
-            <Link href={p(lang, "/superbrain")}>
-              <Button size="lg" variant="outline">
-                {UI_STRINGS[lang].watchDemo}
-              </Button>
-            </Link>
+            <Button size="lg" variant="primary" asChild>
+              <Link href={p("/signup")}>
+                {UI_STRINGS.startFree} <ArrowRight size={16} />
+              </Link>
+            </Button>
+            <Button size="lg" variant="outline" asChild>
+              <Link href={p("/superbrain")}>{UI_STRINGS.watchDemo}</Link>
+            </Button>
           </>
         }
       />
@@ -239,10 +187,10 @@ export default function ContactPage({ lang }: { lang: Lang }) {
       <CTASection
         title={c.ctaTitle}
         sub={c.ctaSub}
-        href={p(lang, "/signup")}
+        href={p("/signup")}
         label={c.ctaButton}
-        secondaryHref={p(lang, "/superbrain")}
-        secondaryLabel={UI_STRINGS[lang].watchDemo}
+        secondaryHref={p("/superbrain")}
+        secondaryLabel={UI_STRINGS.watchDemo}
       />
     </div>
   );

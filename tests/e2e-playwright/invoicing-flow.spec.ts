@@ -63,7 +63,7 @@ test.describe("Invoicing CRUD Flow", () => {
 
   test("invoicing page renders with correct elements", async ({ page }) => {
     await page.goto("/dashboard/invoicing", { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("heading", { name: /Rechnung|Invoice/i })).toBeVisible({
+    await expect(page.getByRole("heading", { name: /Rechnung|Invoice/i }).first()).toBeVisible({
       timeout: 10_000,
     });
     await expect(

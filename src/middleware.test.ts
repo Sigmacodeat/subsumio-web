@@ -12,6 +12,89 @@ async function run(pathname: string, init?: RequestInit) {
   return middleware(request(pathname, init));
 }
 
+describe("middleware Austria-only public routing", () => {
+  it.each([
+    ["/", "/at"],
+    ["/pricing", "/at/pricing"],
+    ["/de/security", "/at/security"],
+    ["/ch/solutions/solo", "/at/solutions/solo"],
+    ["/en/login", "/at/login"],
+    ["/en/subsumio", "/at"],
+  ])("redirects %s permanently to %s", async (source, destination) => {
+    const res = await run(source);
+
+    expect(res.status).toBe(308);
+    expect(new URL(res.headers.get("location") ?? "https://invalid.test").pathname).toBe(
+      destination
+    );
+  });
+
+  it("preserves reset tokens and other query parameters", async () => {
+    const res = await run("/en/reset?token=secret-token&next=%2Fdashboard");
+    const location = new URL(res.headers.get("location") ?? "https://invalid.test");
+
+    expect(location.pathname).toBe("/at/reset");
+    expect(location.searchParams.get("token")).toBe("secret-token");
+    expect(location.searchParams.get("next")).toBe("/dashboard");
+  });
+
+  it("keeps the app host root pointed at the authenticated product", async () => {
+    const res = await middleware(
+      new NextRequest("https://app.subsum.io/", { headers: { host: "app.subsum.io" } })
+    );
+
+    expect(res.status).toBe(307);
+    expect(new URL(res.headers.get("location") ?? "https://invalid.test").pathname).toBe(
+      "/dashboard"
+    );
+  });
+
+  it("does not locale-rewrite APIs or shared Austrian resources", async () => {
+    for (const path of ["/api/health", "/blog", "/cities/wien", "/at"]) {
+      const res = await run(path);
+      expect(res.headers.get("location"), path).toBeNull();
+    }
+  });
+
+  it("keeps dashboard authentication on the product flow", async () => {
+    const res = await run("/dashboard");
+    expect(new URL(res.headers.get("location") ?? "https://invalid.test").pathname).toBe(
+      "/at/login"
+    );
+  });
+});
+
+describe("middleware retired pilot product surfaces", () => {
+  it.each([
+    "/dashboard/bea",
+    "/dashboard/datev-export",
+    "/dashboard/datev-direct",
+    "/dashboard/fao-tracking",
+    "/dashboard/cost-calculator",
+  ])("redirects %s out of the active AT product", async (path) => {
+    const res = await run(path);
+    expect(res.status).toBe(308);
+    expect(new URL(res.headers.get("location") ?? "https://invalid.test").pathname).toBe(
+      "/dashboard"
+    );
+  });
+
+  it.each([
+    "/api/bea/send",
+    "/api/datev/import",
+    "/api/datev-direct",
+    "/api/legal/rvg",
+    "/api/pkh-beratungshilfe",
+    "/api/fachrechner",
+    "/api/fao-tracking",
+    "/api/court-directory",
+  ])("retires %s at the edge", async (path) => {
+    const res = await run(path, { method: "POST" });
+    expect(res.status).toBe(410);
+    await expect(res.json()).resolves.toMatchObject({ error: "market_feature_retired" });
+  });
+});
+
 describe("middleware CSRF webhook exemptions", () => {
   const providerWebhooks = [
     "/api/billing/webhook",
@@ -155,12 +238,16 @@ describe("middleware CSP", () => {
     expect(res.headers.get("Content-Security-Policy")).toMatch(/nonce-[A-Za-z0-9+/=]+/);
   });
 
-  it("uses strict-dynamic in production script-src", async () => {
+  it("scopes production script-src to self + nonce (no strict-dynamic)", async () => {
     await withEnv({ NODE_ENV: "production" }, async () => {
       const res = await run("/");
       const csp = res.headers.get("Content-Security-Policy") || "";
       const scriptSrc = csp.match(/script-src([^;]*)/)?.[1] ?? "";
-      expect(scriptSrc).toContain("strict-dynamic");
+      // strict-dynamic was removed: it blocked same-origin Turbopack chunks
+      // in production (live-verified). 'self' + nonce stays the boundary.
+      expect(scriptSrc).not.toContain("strict-dynamic");
+      expect(scriptSrc).toContain("'self'");
+      expect(scriptSrc).toMatch(/'nonce-[A-Za-z0-9+/=]+'/);
       expect(scriptSrc).not.toContain("unsafe-inline");
       expect(scriptSrc).not.toContain("unsafe-eval");
     });

@@ -11,60 +11,32 @@ import {
   Search,
   ShieldCheck,
 } from "lucide-react";
-import { type Lang, UI_STRINGS } from "@/content/site";
+import { UI_STRINGS } from "@/content/site";
 import { profileForIndustry } from "@/lib/industry-pack";
 import { styleForIndustry } from "@/lib/industry-theme";
-import { H2_CTA_CLASS } from "./chrome";
+import { H2_CTA_CLASS } from "./primitives";
 
 const copy = {
-  en: {
-    eyebrow: "Workflow view",
-    title: "From scattered work to one cited answer.",
-    sub: "Meetings, emails, PDFs and tasks flow into a permission-aware brain. {brand} links the context, keeps the source trail visible, and routes the next action to the right workspace.",
-    query: "What changed since the last meeting?",
-    answer:
-      "3 material changes found. Two are low risk, one needs review before the next deadline.",
-    sourceA: "Board notes",
-    sourceB: "Email thread",
-    sourceC: "Signed PDF",
-    graph: "Context graph",
-    risk: "Permission-aware",
-    route: "Routed to workspace",
-    steps: ["Capture", "Connect", "Answer"],
-  },
-  de: {
-    eyebrow: "Workflow-Ansicht",
-    title: "Aus verstreuter Arbeit wird eine belegte Antwort.",
-    sub: "Meetings, E-Mails, PDFs und Aufgaben laufen in eine berechtigungsbewusste Wissensbasis. {brand} verbindet den Kontext, hält die Quellen sichtbar und routet den nächsten Schritt in den richtigen Workspace.",
-    query: "Was hat sich seit dem letzten Termin geändert?",
-    answer:
-      "3 relevante Änderungen gefunden. Zwei sind unkritisch, eine sollte vor der nächsten Frist geprüft werden.",
-    sourceA: "Meeting-Notiz",
-    sourceB: "E-Mail-Verlauf",
-    sourceC: "Signiertes PDF",
-    graph: "Kontext-Graph",
-    risk: "Rechtebewusst",
-    route: "Im Workspace geroutet",
-    steps: ["Erfassen", "Verbinden", "Antworten"],
-  },
+  eyebrow: "Workflow-Ansicht",
+  title: "Aus verstreuter Arbeit wird eine belegte Antwort.",
+  sub: "Meetings, E-Mails, PDFs und Aufgaben laufen in eine berechtigungsbewusste Wissensbasis. {brand} verbindet den Kontext, hält die Quellen sichtbar und routet den nächsten Schritt in den richtigen Workspace.",
+  query: "Was hat sich seit dem letzten Termin geändert?",
+  answer:
+    "3 relevante Änderungen gefunden. Zwei sind unkritisch, eine sollte vor der nächsten Frist geprüft werden.",
+  sourceA: "Meeting-Notiz",
+  sourceB: "E-Mail-Verlauf",
+  sourceC: "Signiertes PDF",
+  graph: "Kontext-Graph",
+  risk: "Rechtebewusst",
+  route: "Im Workspace geroutet",
+  steps: ["Erfassen", "Verbinden", "Antworten"],
 } as const;
 
-function locale(lang: Lang) {
-  return lang === "en" ? "en" : "de";
-}
-
-export default function ProductWorkflowShowcase({
-  lang,
-  industry,
-}: {
-  lang: Lang;
-  industry?: string;
-}) {
-  const l = locale(lang);
-  const c = copy[l];
+export default function ProductWorkflowShowcase({ industry }: { industry?: string }) {
+  const c = copy;
   const profile = profileForIndustry(industry);
   const brand = profile?.brand ?? "Subsumio";
-  const signature = profile?.signature.title[l] ?? c.title;
+  const signature = profile?.signature.title ?? c.title;
   const sectionRef = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
   const { scrollYProgress } = useScroll({
@@ -227,11 +199,11 @@ export default function ProductWorkflowShowcase({
                   <span className="text-sm font-semibold [color:var(--mk-text)]">{brand}</span>
                 </div>
                 {[
-                  UI_STRINGS[lang].navOverview,
-                  UI_STRINGS[lang].navMatters,
-                  UI_STRINGS[lang].navDeadlines,
-                  UI_STRINGS[lang].navIntake,
-                  UI_STRINGS[lang].navChat,
+                  UI_STRINGS.navOverview,
+                  UI_STRINGS.navMatters,
+                  UI_STRINGS.navDeadlines,
+                  UI_STRINGS.navIntake,
+                  UI_STRINGS.navChat,
                 ].map((item, i) => (
                   <div
                     key={item}
@@ -315,11 +287,11 @@ export default function ProductWorkflowShowcase({
                     </div>
                     <div className="relative h-44">
                       {[
-                        ["left-4 top-8", UI_STRINGS[lang].workflowMatter],
+                        ["left-4 top-8", UI_STRINGS.workflowMatter],
                         ["left-28 top-2", "Person"],
-                        ["right-8 top-16", UI_STRINGS[lang].workflowDoc],
-                        ["left-20 bottom-4", UI_STRINGS[lang].workflowRisk],
-                        ["right-16 bottom-8", UI_STRINGS[lang].workflowTask],
+                        ["right-8 top-16", UI_STRINGS.workflowDoc],
+                        ["left-20 bottom-4", UI_STRINGS.workflowRisk],
+                        ["right-16 bottom-8", UI_STRINGS.workflowTask],
                       ].map(([pos, label], i) => (
                         <motion.div
                           key={label}

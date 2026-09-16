@@ -14,7 +14,6 @@ import {
   Mail,
   Trash2,
   Loader2,
-  Calculator,
   FileSpreadsheet,
   BarChart3,
   MoreVertical,
@@ -839,7 +838,7 @@ export default function InvoicingPage() {
             </Button>
             <Button
               variant="primary"
-              className="gap-2 bg-[color:var(--ds-success-solid)] text-sm text-white hover:bg-[color:var(--ds-success-solid)]"
+              className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-sm text-white hover:bg-[color:var(--signal-success-800)]"
               onClick={() => setQuickCreateOpen(true)}
             >
               <Plus size={14} />
@@ -850,16 +849,8 @@ export default function InvoicingPage() {
       />
 
       <div className="grid gap-2 sm:grid-cols-3">
-        <HubLink
-          href="/dashboard/cost-calculator"
-          icon={Calculator}
-          label={t("nav.cost_calculator")}
-        />
-        <HubLink
-          href="/dashboard/datev-export"
-          icon={FileSpreadsheet}
-          label={t("nav.datev_export")}
-        />
+        <HubLink href="/dashboard/fee-agreements" icon={FileText} label={t("nav.fee_agreements")} />
+        <HubLink href="/dashboard/fibu" icon={FileSpreadsheet} label={t("nav.fibu")} />
         <HubLink href="/dashboard/controlling" icon={BarChart3} label={t("nav.controlling")} />
       </div>
 

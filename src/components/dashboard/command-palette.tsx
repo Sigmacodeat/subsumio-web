@@ -40,7 +40,7 @@ import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import type { DashboardKey } from "@/content/dashboard";
-import { navForIndustry } from "@/components/dashboard/sidebar";
+import { DE_ONLY_HREFS, navForIndustry } from "@/components/dashboard/sidebar";
 import { tracking } from "@/lib/tracking";
 import { useRecentMatters } from "@/lib/use-recent-matters";
 
@@ -85,7 +85,6 @@ const CMD_LABEL_KEYS: Record<string, DashboardKey> = {
   sources: "nav.sources",
   // Schriftsätze & Abrechnung
   drafting: "nav.drafting",
-  "cost-calculator": "nav.cost_calculator",
   invoicing: "nav.invoicing",
   "datev-export": "nav.datev_export",
   signature: "nav.signature",
@@ -164,6 +163,8 @@ interface CommandPaletteProps {
   industry?: string | null;
   /** User role — non-admins don't see admin-only routes (mirrors sidebar trim). */
   role?: string | null;
+  /** Retained for caller compatibility; the active pilot always hides retired DE routes. */
+  jurisdiction?: string | null;
 }
 
 const RECENT_KEY = "subsumio:cmd_recent";
@@ -193,6 +194,7 @@ export function CommandPalette({
   onToggleSidebar,
   industry,
   role,
+  jurisdiction: _jurisdiction,
 }: CommandPaletteProps) {
   const router = useRouter();
   const { t } = useLang();
@@ -232,6 +234,7 @@ export function CommandPalette({
     for (const item of cfg.allNavItems) {
       if (item.comingSoon || seen.has(item.href)) continue;
       if (!isAdmin && adminOnlyHrefs.has(item.href)) continue;
+      if (DE_ONLY_HREFS.has(item.href)) continue;
       seen.add(item.href);
       const sectionEntry = cfg.preferredSectionByHref.find((p) => p.href === item.href);
       const section = sectionEntry?.section ?? "nav.section.admin";

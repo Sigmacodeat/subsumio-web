@@ -1,24 +1,23 @@
-"use client";
-
 // Subsumio product subpages — Produkt, WhatsApp-Copilot, Sicherheit & DSGVO.
 // These break the deep content off the (now focused) homepage funnel. Each is
 // light-dominant with dark spotlight bands, composed from the same primitives
 // the homepage uses so nothing drifts. Marketing copy is single-source here
 // (mirrors the COPY pattern in subsumio-showcase.tsx); product facts come from
-// VERTICALS[lang].legal so claims stay consistent with the engine.
+// VERTICALS.legal so claims stay consistent with the engine.
 
 import Link from "next/link";
 import { ArrowRight, MessageSquare, Clock, Paperclip, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { p, UI_STRINGS, type Lang } from "@/content/site";
+import { p, UI_STRINGS } from "@/content/site";
 import { styleForIndustry } from "@/lib/industry-theme";
-import { Section, SectionHeading, PageHero, CTASection, H3_CLASS } from "./chrome";
+import { Section, SectionHeading, PageHero, CTASection } from "./primitives";
+import { H3_CLASS } from "./typography";
 import { PhoneCopilot } from "./subsumio-showcase";
 import { StaggerContainer, StaggerItem } from "./motion-system";
 
 // --- Copy ------------------------------------------------------------------
 
-const _deSubpages = {
+const COPY = {
   whatsapp: {
     eyebrow: "Komfort-Kanal für unterwegs",
     title: "Die Kanzlei",
@@ -31,30 +30,12 @@ const _deSubpages = {
   },
 } as const;
 
-const COPY = {
-  de: _deSubpages,
-  at: _deSubpages,
-  ch: _deSubpages,
-  en: {
-    whatsapp: {
-      eyebrow: "Convenience on the go",
-      title: "The firm",
-      claim: "in your pocket.",
-      sub: "Book time, file documents, query matters — from your phone, no app switch, no training. The copilot understands the matter and files everything for confirmation.",
-      flowsTitle: "Three moves every lawyer gets instantly",
-      ctaTitle: "Productive on day one.",
-      ctaSub: "No new app, no training — save the number and start.",
-      ctaLabel: "Try the copilot",
-    },
-  },
-} as const;
-
 // --- Pages -----------------------------------------------------------------
 
-export function WhatsAppPage({ lang }: { lang: Lang }) {
-  const c = ((COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de).whatsapp;
-  const signup = p(lang, "/signup?industry=legal");
-  const ui = UI_STRINGS[lang];
+export function WhatsAppPage() {
+  const c = COPY.whatsapp;
+  const signup = p("/signup?industry=legal");
+  const ui = UI_STRINGS;
   const flows = [
     {
       icon: Clock,
@@ -76,7 +57,6 @@ export function WhatsAppPage({ lang }: { lang: Lang }) {
     <div
       data-tone="light"
       className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
-      lang={lang}
       style={styleForIndustry("legal")}
     >
       <PageHero
@@ -87,22 +67,20 @@ export function WhatsAppPage({ lang }: { lang: Lang }) {
         accentVariant="gradient"
         actions={
           <>
-            <Link href={signup}>
-              <Button size="xl" variant="primary" className="min-w-[220px]">
-                {c.ctaLabel}
-              </Button>
-            </Link>
-            <Link href={p(lang, "/")}>
-              <Button size="xl" variant="secondary" className="min-w-[180px]">
-                {UI_STRINGS[lang].backToOverview} <ArrowRight size={16} />
-              </Button>
-            </Link>
+            <Button size="xl" variant="primary" className="min-w-[220px]" asChild>
+              <Link href={signup}>{c.ctaLabel}</Link>
+            </Button>
+            <Button size="xl" variant="secondary" className="min-w-[180px]" asChild>
+              <Link href={p("/")}>
+                {UI_STRINGS.backToOverview} <ArrowRight size={16} />
+              </Link>
+            </Button>
           </>
         }
       />
       <Section tone="dark" className="px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-md">
-          <PhoneCopilot lang={lang} />
+          <PhoneCopilot />
         </div>
       </Section>
       <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
@@ -126,7 +104,7 @@ export function WhatsAppPage({ lang }: { lang: Lang }) {
           </StaggerContainer>
           <p className="mx-auto mt-8 inline-flex w-full max-w-2xl items-center justify-center gap-2 text-center text-sm [color:var(--mk-text-subtle)]">
             <MessageSquare size={14} className="brand-text shrink-0" />
-            {UI_STRINGS[lang].subpagesConfirmationNote}
+            {UI_STRINGS.subpagesConfirmationNote}
           </p>
         </div>
       </Section>
@@ -135,8 +113,8 @@ export function WhatsAppPage({ lang }: { lang: Lang }) {
         sub={c.ctaSub}
         href={signup}
         label={c.ctaLabel}
-        secondaryHref={p(lang, "/contact")}
-        secondaryLabel={UI_STRINGS[lang].writeUs}
+        secondaryHref={p("/contact")}
+        secondaryLabel={UI_STRINGS.writeUs}
       />
     </div>
   );

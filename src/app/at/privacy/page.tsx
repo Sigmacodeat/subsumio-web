@@ -8,12 +8,6 @@ export const metadata: Metadata = {
     "Wie Subsumio mit Daten umgeht: DSGVO-Konformität, Verschlüsselung, EU-Datenhoheit und eure Rechte.",
   alternates: {
     canonical: "/at/privacy",
-    languages: {
-      "de-DE": "/privacy",
-      "de-AT": "/at/privacy",
-      "de-CH": "/ch/privacy",
-      en: "/en/privacy",
-    },
   },
   openGraph: {
     title: "Datenschutz — Subsumio",
@@ -25,5 +19,5 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPage() {
-  return <PrivacyContent home="/at" lang="at" />;
+  return <PrivacyContent home="/at" />;
 }

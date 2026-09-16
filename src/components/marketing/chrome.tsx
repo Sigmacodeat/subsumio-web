@@ -1,257 +1,47 @@
 "use client";
 
-// Shared marketing chrome: Nav (with language switcher), Footer,
-// and small shared primitives used across all marketing pages.
+// Marketing chrome: site navigation, footer, and the parallax page
+// background. Page-building primitives live in ./primitives.tsx, the icon
+// registry in ./icons.ts.
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Brain,
   ChevronDown,
   ChevronRight,
   X,
-  Globe,
+  Layers,
+  Sparkles,
+  Brain,
   Database,
   GitBranch,
+  Shield,
+  Network,
   Search,
   Zap,
-  Shield,
-  Layers,
-  Network,
-  Megaphone,
-  Gift,
-  Handshake,
-  CalendarClock,
-  Clock,
-  Mail,
-  ShieldAlert,
-  Calculator,
-  Landmark,
-  FileText,
-  FolderOpen,
-  MessageSquare,
-  Users,
-  EyeOff,
-  ShieldCheck,
-  FileSignature,
-  Lock,
-  ScanSearch,
-  Download,
-  User,
-  Building2,
-  Info,
-  Sparkles,
-  ArrowRight,
-  BarChart3,
-  FileClock,
-  Gavel,
-  PenTool,
-  Languages,
-  Inbox,
-  CheckSquare,
-  Check,
-  BookOpen,
-  AlertTriangle,
-  Gauge,
-  FileArchive,
-  Cpu,
-  CreditCard,
-  RefreshCw,
-  Workflow,
-  GitCompare,
-  FileSearch,
-  Mic,
-  Server,
-  FileCheck,
-  type LucideIcon,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { EASE, ClipReveal, Reveal, GlowCard, AnimatedCounter } from "./motion-system";
-import { SubsumioLogo, SubsumioMark } from "@/components/brand/subsumio-logo";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { EASE } from "./motion-system";
+import { SubsumioLogo } from "@/components/brand/subsumio-logo";
 import {
   NAV,
   FOOTER,
   p,
   UI_STRINGS,
-  SUPPORTED_LANGS,
-  JURISDICTION_LABEL,
-  HREFLANG,
-  type Lang,
   type NavContent,
   type NavFeaturedContent,
 } from "@/content/site";
-
-/** Persist the user's explicit language choice so the browser-language redirect doesn't override it. */
-function setLangPref(lang: Lang) {
-  document.cookie = `sb_lang=${lang};path=/;max-age=${365 * 24 * 3600};samesite=lax`;
-}
+import { ICONS } from "./icons";
 
 function BrandLogo() {
   return <SubsumioLogo size={32} />;
 }
 
 // Content files store icon names as strings; resolve them here.
-export const ICONS: Record<string, LucideIcon> = {
-  Brain,
-  Database,
-  GitBranch,
-  Search,
-  Zap,
-  Shield,
-  Layers,
-  Network,
-  Megaphone,
-  Gift,
-  Handshake,
-  CalendarClock,
-  Clock,
-  Mail,
-  ShieldAlert,
-  Calculator,
-  Landmark,
-  FileText,
-  FolderOpen,
-  MessageSquare,
-  Users,
-  EyeOff,
-  ShieldCheck,
-  FileSignature,
-  Lock,
-  ScanSearch,
-  Download,
-  User,
-  Building2,
-  Info,
-  Sparkles,
-  BarChart3,
-  FileClock,
-  Gavel,
-  PenTool,
-  Languages,
-  Inbox,
-  CheckSquare,
-  Check,
-  BookOpen,
-  AlertTriangle,
-  Gauge,
-  FileArchive,
-  Cpu,
-  CreditCard,
-  RefreshCw,
-  Workflow,
-  GitCompare,
-  FileSearch,
-  Mic,
-  Server,
-  FileCheck,
-};
 
-// Tone-aware accent icon-tiles. On light surfaces the -700/-50/-200 shades
-// keep AA contrast; on dark we use the -400 text + alpha fills. accentTile()
-// is the single source — replaces the old COLOR_MAP / LIGHT_COLOR_MAP split.
-const ACCENT_TILE = {
-  light: {
-    violet: "brand-text bg-violet-50 border-violet-200",
-    blue: "text-blue-700 bg-blue-50 border-blue-200",
-    emerald: "text-emerald-700 bg-emerald-50 border-emerald-200",
-    amber: "text-amber-700 bg-amber-50 border-amber-200",
-    rose: "text-[color:var(--ds-category-rose-text)] bg-[color:var(--ds-category-rose-bg)] border-[color:var(--ds-category-rose-border)]",
-    purple: "text-purple-700 bg-purple-50 border-purple-200",
-    orange: "text-orange-700 bg-orange-50 border-orange-200",
-    gray: "text-[color:var(--ds-neutral-text)] bg-[color:var(--ds-neutral-bg)] border-[color:var(--ds-neutral-border)]",
-  },
-  slate: {
-    violet: "brand-text brand-soft brand-border",
-    blue: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-    emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
-    amber: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-    rose: "text-[color:var(--ds-category-rose-text)] bg-[color:var(--ds-category-rose-bg)] border-[color:var(--ds-category-rose-border)]",
-    purple: "text-purple-400 bg-purple-500/10 border-purple-500/20",
-  },
-  dark: {
-    violet: "brand-text brand-soft brand-border",
-    blue: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-    emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
-    amber: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-    rose: "text-[color:var(--ds-category-rose-text)] bg-[color:var(--ds-category-rose-bg)] border-[color:var(--ds-category-rose-border)]",
-    purple: "text-purple-400 bg-purple-500/10 border-purple-500/20",
-  },
-  dashboard: {
-    violet: "brand-text brand-soft brand-border",
-    blue: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-    emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
-    amber: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-    rose: "text-[color:var(--ds-category-rose-text)] bg-[color:var(--ds-category-rose-bg)] border-[color:var(--ds-category-rose-border)]",
-    purple: "text-purple-400 bg-purple-500/10 border-purple-500/20",
-  },
-} as const;
-
-export type Tone = "light" | "slate" | "dark" | "dashboard";
-
-export function accentTile(color: string, tone: Tone = "light"): string {
-  const map = ACCENT_TILE[tone];
-  return map[color as keyof typeof map] ?? map.blue;
-}
-
-// Tone-scoped section wrapper. Sets data-tone so descendants resolve the
-// --mk-* neutral tokens for that tone, and paints the section background.
-// The public site stacks these light-dominant, with data-tone="dark" for
-// the spotlight bands (live demo, copilot).
-export function Section({
-  tone = "light",
-  id,
-  className = "",
-  noTopEdge = false,
-  children,
-  ...rest
-}: {
-  tone?: Tone;
-  id?: string;
-  className?: string;
-  noTopEdge?: boolean;
-  children: React.ReactNode;
-} & React.HTMLAttributes<HTMLElement>) {
-  // `...rest` forwards native section attributes (notably `aria-label`, which
-  // callers pass for landmark labeling) onto the real <section> — previously
-  // these were silently dropped, leaving the marketing landmarks unlabeled.
-  return (
-    <section
-      id={id}
-      data-tone={tone}
-      className={`relative z-10 ${className}`}
-      style={{ background: "var(--mk-bg)" }}
-      {...rest}
-    >
-      {(tone === "dark" || tone === "slate") && !noTopEdge && (
-        <>
-          {/* Premium top edge — 1px hairline + subtle brand glow.
-              Replaces cheap gradient strips with a clean, intentional
-              boundary (Linear/Vercel pattern). */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 h-px"
-            style={{ background: "var(--mk-border-strong)" }}
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 h-40"
-            style={{
-              background:
-                "radial-gradient(ellipse 70% 100% at 50% 0%, color-mix(in srgb, var(--brand-primary) 7%, transparent), transparent)",
-            }}
-          />
-        </>
-      )}
-      {children}
-    </section>
-  );
-}
-
-/* Floating background icons for parallax depth. Large, subtle, at very
-   low opacity so they never compete with content. Each row moves at a
-   different scroll rate to create layered depth. */
 interface ParallaxIconDef {
   Icon: typeof Brain;
   x: string;
@@ -377,17 +167,15 @@ function NavBadge({ label }: { label: string }) {
 /** Featured content sidebar for mega menus — rich card with icon, title, description. */
 function FeaturedSidebar({
   content,
-  lang,
   onClick,
 }: {
   content: NavFeaturedContent;
-  lang: Lang;
   onClick: () => void;
 }) {
   const Icon = ICONS[content.icon ?? "Sparkles"] ?? Sparkles;
   return (
     <Link
-      href={p(lang, content.href)}
+      href={p(content.href)}
       onClick={onClick}
       className="group relative flex w-[240px] shrink-0 flex-col justify-between border-l [border-color:var(--mk-border)] p-4 transition-[background-color,border-color,color] hover:[background:var(--mk-hover)] motion-reduce:transition-none"
     >
@@ -422,7 +210,7 @@ function FeaturedSidebar({
 }
 
 /** Announcement bar above the header — dismissible, links to featured content. */
-function AnnouncementBar({ nav, lang }: { nav: NavContent; lang: Lang }) {
+function AnnouncementBar({ nav }: { nav: NavContent }) {
   const [dismissed, setDismissed] = useState(false);
   const reduceMotion = useReducedMotion();
 
@@ -461,9 +249,8 @@ function AnnouncementBar({ nav, lang }: { nav: NavContent; lang: Lang }) {
         >
           <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-2 text-center sm:px-6 lg:px-8">
             <Link
-              href={p(lang, nav.announcement.href)}
+              href={p(nav.announcement.href)}
               className="group flex min-h-[28px] items-center gap-2 text-sm font-medium [color:var(--mk-text)] transition-[background-color,border-color,color] hover:[color:var(--brand-text)] motion-reduce:transition-none"
-              aria-label={`${nav.announcement.badge ? nav.announcement.badge + ": " : ""}${nav.announcement.text}`}
             >
               {nav.announcement.badge && (
                 <span className="relative inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] leading-none font-bold text-white">
@@ -482,7 +269,7 @@ function AnnouncementBar({ nav, lang }: { nav: NavContent; lang: Lang }) {
             <button
               onClick={handleDismiss}
               className="absolute top-1/2 right-2 flex min-h-[36px] min-w-[36px] -translate-y-1/2 items-center justify-center rounded-lg p-2 [color:var(--mk-text-subtle)] transition-[background-color,border-color,color] hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:outline-none motion-reduce:transition-none"
-              aria-label={UI_STRINGS[lang].dismissAnnouncement}
+              aria-label={UI_STRINGS.dismissAnnouncement}
             >
               <X size={14} />
             </button>
@@ -493,28 +280,26 @@ function AnnouncementBar({ nav, lang }: { nav: NavContent; lang: Lang }) {
   );
 }
 
-export function MarketingNav({ lang }: { lang: Lang }) {
-  const nav = NAV[lang];
+export function MarketingNav() {
+  const nav = NAV;
   const pathname = usePathname() || "/";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
   const [openSection, setOpenSection] = useState<number | null>(null);
   const [mobileExpanded, setMobileExpanded] = useState<number | null>(null);
-  const [langOpen, setLangOpen] = useState(false);
   const reduceMotion = useReducedMotion();
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
   const firstMobileLinkRef = useRef<HTMLButtonElement>(null);
   const navRef = useRef<HTMLElement>(null);
-  const langRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastScrollY = useRef(0);
   const scrollYRef = useRef(0);
   const touchStartX = useRef<number | null>(null);
   const touchCurrentX = useRef<number | null>(null);
 
-  const isActive = (href: string) => pathname === p(lang, href) || pathname === href;
+  const isActive = (href: string) => pathname === p(href) || pathname === href;
 
   const isSectionActive = (sectionIdx: number) => {
     return nav.sections[sectionIdx].items.some((item) => isActive(item.href));
@@ -542,7 +327,6 @@ export function MarketingNav({ lang }: { lang: Lang }) {
   useEffect(() => {
     setMobileOpen(false);
     setOpenSection(null);
-    setLangOpen(false);
   }, [pathname]);
 
   // Body scroll lock + focus management when mobile menu is open.
@@ -676,28 +460,6 @@ export function MarketingNav({ lang }: { lang: Lang }) {
     return () => document.removeEventListener("mousedown", onMouseDown);
   }, [openSection]);
 
-  // Click-outside closes language dropdown.
-  useEffect(() => {
-    if (!langOpen) return;
-    const onMouseDown = (e: MouseEvent) => {
-      if (langRef.current && !langRef.current.contains(e.target as Node)) {
-        setLangOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", onMouseDown);
-    return () => document.removeEventListener("mousedown", onMouseDown);
-  }, [langOpen]);
-
-  // Escape closes language dropdown.
-  useEffect(() => {
-    if (!langOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setLangOpen(false);
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [langOpen]);
-
   // Cleanup hover timeout on unmount.
   useEffect(() => {
     return () => {
@@ -720,7 +482,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
 
   return (
     <>
-      <AnnouncementBar nav={nav} lang={lang} />
+      <AnnouncementBar nav={nav} />
       <div
         className={`sticky top-0 z-50 transition-transform duration-300 ${
           headerVisible ? "translate-y-0" : "-translate-y-full"
@@ -742,10 +504,10 @@ export function MarketingNav({ lang }: { lang: Lang }) {
           <nav
             ref={navRef}
             className="mx-auto max-w-7xl px-4 py-2.5 sm:px-6 lg:px-8"
-            aria-label={UI_STRINGS[lang].ariaMainNav}
+            aria-label={UI_STRINGS.ariaMainNav}
           >
             <div className="flex items-center justify-between gap-6">
-              <Link href={p(lang, "")} aria-label={UI_STRINGS[lang].ariaHome} className="shrink-0">
+              <Link href={p("")} aria-label={UI_STRINGS.ariaHome} className="shrink-0">
                 <BrandLogo />
               </Link>
 
@@ -847,7 +609,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                         }
                                       >
                                         <Link
-                                          href={p(lang, item.href)}
+                                          href={p(item.href)}
                                           onClick={() => setOpenSection(null)}
                                           role="menuitem"
                                           className={`group flex items-start gap-3 rounded-xl px-3 py-2.5 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-150 motion-reduce:transition-none ${NAV_LINK_FOCUS} ${
@@ -885,7 +647,6 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                 {section.featuredContent && (
                                   <FeaturedSidebar
                                     content={section.featuredContent}
-                                    lang={lang}
                                     onClick={() => setOpenSection(null)}
                                   />
                                 )}
@@ -893,7 +654,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                               {/* Footer CTA */}
                               {section.ctaBottom && (
                                 <Link
-                                  href={p(lang, section.ctaBottom.href)}
+                                  href={p(section.ctaBottom.href)}
                                   onClick={() => setOpenSection(null)}
                                   className="group flex items-center justify-between border-t [border-color:var(--mk-border)] px-4 py-2.5 text-sm font-medium [color:var(--mk-text-muted)] transition-[background-color,border-color,color] hover:[color:var(--brand-text)] hover:[background:var(--mk-hover)] motion-reduce:transition-none"
                                 >
@@ -914,7 +675,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
 
                 {/* Standalone pricing link */}
                 <Link
-                  href={p(lang, nav.pricingHref)}
+                  href={p(nav.pricingHref)}
                   className={navLinkCls(isActive(nav.pricingHref))}
                   aria-current={isActive(nav.pricingHref) ? "page" : undefined}
                 >
@@ -924,99 +685,49 @@ export function MarketingNav({ lang }: { lang: Lang }) {
 
               {/* Action area */}
               <div className="flex items-center gap-1.5">
-                {/* Language switcher — click-to-open with keyboard support */}
-                <div ref={langRef} className="relative hidden lg:block">
-                  <button
-                    className="flex min-h-[36px] items-center gap-1.5 rounded-full px-3 py-1.5 text-sm [color:var(--mk-text-muted)] transition-[background-color,border-color,color] duration-200 [background:var(--mk-surface)] hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:outline-none motion-reduce:transition-none"
-                    aria-label={UI_STRINGS[lang].ariaLanguage}
-                    aria-haspopup="true"
-                    aria-expanded={langOpen}
-                    onClick={() => setLangOpen(!langOpen)}
-                  >
-                    <Globe size={12} /> {JURISDICTION_LABEL[lang]}
-                    <ChevronDown
-                      size={10}
-                      className={`opacity-50 transition-transform duration-200 ${langOpen ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                  <AnimatePresence>
-                    {langOpen && (
-                      <motion.div
-                        initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 4 }}
-                        animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
-                        exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
-                        transition={
-                          reduceMotion ? { duration: 0 } : { duration: 0.15, ease: "easeOut" }
-                        }
-                        className="absolute top-full right-0 z-50 mt-1.5"
-                      >
-                        <div
-                          className="max-h-[400px] overflow-x-hidden overflow-y-auto rounded-xl border [border-color:var(--mk-border)] p-1.5 shadow-xl shadow-black/10 [background:var(--mk-surface)]"
-                          role="menu"
-                          aria-label={UI_STRINGS[lang].ariaLanguage}
-                        >
-                          {SUPPORTED_LANGS.map((l) => (
-                            <Link
-                              key={l}
-                              href={p(l, pathname.replace(/^\/(en|at|ch|it|es|pl|fr|nl)/, ""))}
-                              onClick={() => {
-                                setLangPref(l);
-                                setLangOpen(false);
-                              }}
-                              role="menuitem"
-                              className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-[background-color,border-color,color] hover:[background:var(--mk-hover)] motion-reduce:transition-none ${l === lang ? "brand-text font-medium" : "[color:var(--mk-text-muted)]"}`}
-                            >
-                              <span className="font-mono text-[10px] opacity-60">
-                                {HREFLANG[l]}
-                              </span>
-                              <span>{JURISDICTION_LABEL[l]}</span>
-                            </Link>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
                 {/* Secondary CTA — Demo ansehen / Watch demo */}
                 {nav.ctaSecondary && nav.ctaSecondaryHref && (
-                  <Link href={p(lang, nav.ctaSecondaryHref)} className="hidden lg:block">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-sm [color:var(--mk-text-muted)] hover:[color:var(--brand-text)]"
-                    >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-sm [color:var(--mk-text-muted)] hover:[color:var(--brand-text)]"
+                    asChild
+                  >
+                    <Link href={p(nav.ctaSecondaryHref)} className="max-lg:hidden">
                       {nav.ctaSecondary}
-                    </Button>
-                  </Link>
-                )}
-                <Link href={p(lang, "/login")} className="hidden lg:block">
-                  <Button variant="ghost" size="sm" className="[color:var(--mk-text)]">
-                    {nav.signIn}
+                    </Link>
                   </Button>
-                </Link>
-                <Link href={p(lang, "/signup")} className="hidden sm:block">
-                  <Button size="sm" variant="primary" className="group min-h-[36px]">
+                )}
+                <Button variant="ghost" size="sm" className="[color:var(--mk-text)]" asChild>
+                  <Link href={p("/login")} className="max-lg:hidden">
+                    {nav.signIn}
+                  </Link>
+                </Button>
+                <Button size="sm" variant="primary" className="group min-h-[36px]" asChild>
+                  <Link href={p("/signup")} className="max-sm:hidden">
                     {nav.cta}
                     <ChevronRight
                       size={14}
                       className="transition-transform duration-200 group-hover:translate-x-0.5"
                     />
-                  </Button>
-                </Link>
-                {/* Compact CTA icon for xs screens */}
-                <Link href={p(lang, "/signup")} className="sm:hidden" aria-label={nav.cta}>
-                  <Button
-                    size="sm"
-                    variant="primary"
-                    className="group min-h-[36px] px-3"
+                  </Link>
+                </Button>
+                {/* Compact CTA icon for xs screens — styled span, not a
+                    nested <button>, so the anchor stays the only
+                    interactive element (valid HTML + a11y). */}
+                <Link href={p("/signup")} className="sm:hidden" aria-label={nav.cta}>
+                  <span
                     aria-hidden
-                    tabIndex={-1}
+                    className={cn(
+                      buttonVariants({ variant: "primary", size: "sm" }),
+                      "group min-h-[36px] px-3"
+                    )}
                   >
                     <ChevronRight
                       size={16}
                       className="transition-transform duration-200 group-hover:translate-x-0.5"
                     />
-                  </Button>
+                  </span>
                 </Link>
                 <button
                   ref={hamburgerRef}
@@ -1025,7 +736,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                     setMobileOpen(!mobileOpen);
                     if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
                   }}
-                  aria-label={UI_STRINGS[lang].menuAria}
+                  aria-label={UI_STRINGS.menuAria}
                   aria-expanded={mobileOpen}
                   aria-controls="mobile-nav-menu"
                   id="mobile-nav-trigger"
@@ -1073,7 +784,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
             <motion.div
               ref={mobileMenuRef}
               id="mobile-nav-menu"
-              aria-label={UI_STRINGS[lang].ariaMobileNav}
+              aria-label={UI_STRINGS.ariaMobileNav}
               aria-labelledby="mobile-nav-trigger"
               role="dialog"
               aria-modal="true"
@@ -1090,7 +801,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
             >
               {/* Drawer header — sticky with blur backdrop */}
               <div className="sticky top-0 z-10 flex items-center justify-between border-b [border-color:var(--mk-border)] bg-[color:var(--mk-bg)]/95 px-5 py-4 backdrop-blur-xl">
-                <Link href={p(lang, "")} onClick={() => setMobileOpen(false)} className="shrink-0">
+                <Link href={p("")} onClick={() => setMobileOpen(false)} className="shrink-0">
                   <BrandLogo />
                 </Link>
                 <button
@@ -1099,7 +810,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                     setMobileOpen(false);
                     if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
                   }}
-                  aria-label={UI_STRINGS[lang].ariaCloseMenu}
+                  aria-label={UI_STRINGS.ariaCloseMenu}
                 >
                   <span className="relative flex h-5 w-5 items-center justify-center">
                     <span className="absolute top-1/2 h-0.5 w-5 -translate-y-1/2 rotate-45 rounded-full bg-current transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none" />
@@ -1110,32 +821,25 @@ export function MarketingNav({ lang }: { lang: Lang }) {
 
               {/* Quick CTA row */}
               <div className="flex gap-2.5 border-b [border-color:var(--mk-border)] px-5 py-4">
-                <Link
-                  href={p(lang, "/signup")}
-                  onClick={() => setMobileOpen(false)}
-                  className="flex-1"
-                >
-                  <Button size="sm" variant="primary" className="group min-h-[44px] w-full">
+                <Button size="sm" variant="primary" className="group min-h-[44px] w-full" asChild>
+                  <Link href={p("/signup")} onClick={() => setMobileOpen(false)} className="flex-1">
                     {nav.cta}
                     <ChevronRight
                       size={14}
                       className="transition-transform duration-200 group-hover:translate-x-0.5"
                     />
-                  </Button>
-                </Link>
-                <Link
-                  href={p(lang, "/login")}
-                  onClick={() => setMobileOpen(false)}
-                  className="flex-1"
+                  </Link>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="min-h-[44px] w-full [color:var(--mk-text)]"
+                  asChild
                 >
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="min-h-[44px] w-full [color:var(--mk-text)]"
-                  >
+                  <Link href={p("/login")} onClick={() => setMobileOpen(false)} className="flex-1">
                     {nav.signIn}
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </div>
 
               {/* Expandable sections */}
@@ -1177,7 +881,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                               {/* Featured content card */}
                               {section.featuredContent && (
                                 <Link
-                                  href={p(lang, section.featuredContent.href)}
+                                  href={p(section.featuredContent.href)}
                                   onClick={() => setMobileOpen(false)}
                                   className="group mb-1 flex items-start gap-3 rounded-xl border [border-color:color-mix(in_srgb,var(--brand-primary)_15%,var(--mk-border))] p-3 transition-[background-color,border-color,color] hover:[background:color-mix(in_srgb,var(--brand-primary)_4%,var(--mk-hover))] motion-reduce:transition-none"
                                 >
@@ -1229,7 +933,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                     }
                                   >
                                     <Link
-                                      href={p(lang, item.href)}
+                                      href={p(item.href)}
                                       className={mobileLinkCls(active)}
                                       aria-current={active ? "page" : undefined}
                                       onClick={() => setMobileOpen(false)}
@@ -1256,7 +960,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                               {/* Mobile footer CTA */}
                               {section.ctaBottom && (
                                 <Link
-                                  href={p(lang, section.ctaBottom.href)}
+                                  href={p(section.ctaBottom.href)}
                                   className={`${mobileLinkCls(false)} brand-text font-medium`}
                                   onClick={() => setMobileOpen(false)}
                                 >
@@ -1276,39 +980,13 @@ export function MarketingNav({ lang }: { lang: Lang }) {
 
                 {/* Standalone pricing link */}
                 <Link
-                  href={p(lang, nav.pricingHref)}
+                  href={p(nav.pricingHref)}
                   className={mobileLinkCls(isActive(nav.pricingHref))}
                   aria-current={isActive(nav.pricingHref) ? "page" : undefined}
                   onClick={() => setMobileOpen(false)}
                 >
                   {nav.pricingLabel}
                 </Link>
-              </div>
-
-              {/* Language switcher — bottom of drawer with safe-area padding */}
-              <div className="border-t [border-color:var(--mk-border)] px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-                <div className="mb-2 flex items-center gap-1.5 text-sm font-medium [color:var(--mk-text-subtle)]">
-                  <Globe size={12} /> {UI_STRINGS[lang].languageLabel}
-                </div>
-                <div className="grid grid-cols-3 gap-1">
-                  {SUPPORTED_LANGS.map((l) => (
-                    <Link
-                      key={l}
-                      href={p(l, pathname.replace(/^\/(en|at|ch|it|es|pl|fr|nl)/, ""))}
-                      className={`flex items-center justify-center rounded-lg px-2 py-2 text-sm transition-[background-color,border-color,color] motion-reduce:transition-none ${
-                        l === lang
-                          ? "brand-soft brand-border brand-text border font-medium"
-                          : "[color:var(--mk-text-muted)] hover:[background:var(--mk-hover)]"
-                      }`}
-                      onClick={() => {
-                        setMobileOpen(false);
-                        setLangPref(l);
-                      }}
-                    >
-                      {JURISDICTION_LABEL[l]}
-                    </Link>
-                  ))}
-                </div>
               </div>
             </motion.div>
           </>
@@ -1342,8 +1020,8 @@ function SocialX({ size = 16 }: { size?: number }) {
   );
 }
 
-export function MarketingFooter({ lang }: { lang: Lang }) {
-  const footer = FOOTER[lang];
+export function MarketingFooter() {
+  const footer = FOOTER;
   return (
     <footer
       className="relative z-10 border-t [border-color:var(--mk-border)] px-4 py-14 sm:px-6 lg:px-8"
@@ -1402,7 +1080,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
                         href={link.href}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-sm [color:var(--mk-text-subtle)] hover:[color:var(--mk-text-muted)]"
+                        className="inline-flex min-h-[28px] items-center text-sm [color:var(--mk-text-subtle)] hover:[color:var(--mk-text-muted)]"
                       >
                         {link.label}
                       </a>
@@ -1410,8 +1088,8 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
                       // App-Routen (/dashboard…) sind nicht lokalisiert —
                       // niemals den Sprachpräfix anhängen (/en/dashboard = 404).
                       <Link
-                        href={link.href.startsWith("/dashboard") ? link.href : p(lang, link.href)}
-                        className="text-sm [color:var(--mk-text-subtle)] hover:[color:var(--mk-text-muted)]"
+                        href={link.href.startsWith("/dashboard") ? link.href : p(link.href)}
+                        className="inline-flex min-h-[28px] items-center text-sm [color:var(--mk-text-subtle)] hover:[color:var(--mk-text-muted)]"
                       >
                         {link.label}
                       </Link>
@@ -1424,11 +1102,9 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
         </div>
         <div className="flex flex-col items-center justify-between gap-2 border-t [border-color:var(--mk-border)] pt-6 sm:flex-row">
           <p className="text-sm [color:var(--mk-text-subtle)]">
-            © {new Date().getFullYear()} Subsumio · {UI_STRINGS[lang].footerLegalTagline}
+            © {new Date().getFullYear()} Subsumio · {UI_STRINGS.footerLegalTagline}
           </p>
-          <p className="text-sm [color:var(--mk-text-subtle)]">
-            {UI_STRINGS[lang].footerHostingLine}
-          </p>
+          <p className="text-sm [color:var(--mk-text-subtle)]">{UI_STRINGS.footerHostingLine}</p>
         </div>
       </div>
     </footer>
@@ -1439,811 +1115,3 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
 // Renders a thin gradient strip that smoothly blends from one tone background
 // to another, eliminating hard-cut section boundaries. Agency-standard pattern
 // used by Stripe, Linear, Vercel for premium section flow.
-export function SectionTransition({
-  from = "var(--mk-bg)",
-  to = "var(--mk-surface)",
-  height = 80,
-}: {
-  from?: string;
-  to?: string;
-  height?: number;
-}) {
-  return (
-    <div
-      aria-hidden
-      className="relative z-10 w-full"
-      style={{
-        height,
-        background: `linear-gradient(to bottom, ${from}, ${to})`,
-      }}
-    />
-  );
-}
-
-// --- Shared section primitives -------------------------------------------
-
-export function SectionHeading({
-  badge,
-  title,
-  sub,
-  tone,
-}: {
-  badge?: string;
-  title: string;
-  sub?: string;
-  tone?: Tone;
-}) {
-  // `tone` is optional: when set it makes the heading self-contained (resolves
-  // its own --mk-* tokens), otherwise it inherits the surrounding section tone.
-  return (
-    <motion.div
-      data-tone={tone}
-      className="mb-14 text-center"
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.15 }}
-      transition={{ duration: 0.55, ease: EASE.out }}
-    >
-      {badge && (
-        <motion.span
-          className="brand-soft brand-text brand-border mb-5 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold"
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true, margin: "0px 0px 80px 0px" }}
-          transition={{ duration: 0.4, delay: 0.05, ease: EASE.out }}
-        >
-          <span className="brand-bg h-1.5 w-1.5 rounded-full" />
-          {badge}
-        </motion.span>
-      )}
-      <h2 className={`mx-auto mb-4 max-w-3xl ${H2_CTA_CLASS}`}>{title}</h2>
-      {sub && (
-        <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
-          {sub}
-        </p>
-      )}
-    </motion.div>
-  );
-}
-
-/** Terminal-style demo window with a typewriter answer. */
-export function DemoWindow({
-  windowTitle,
-  you,
-  q,
-  a,
-  sourcesLabel,
-  sources,
-}: {
-  windowTitle: string;
-  you: string;
-  q: string;
-  a: string;
-  sourcesLabel: string;
-  sources: readonly string[];
-}) {
-  return (
-    <div className="overflow-hidden rounded-2xl border [border-color:var(--mk-border)] text-left shadow-2xl shadow-black/20 [background:var(--mk-surface)]">
-      <div className="flex items-center gap-2 border-b [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-bg)]">
-        <div className="terminal-dots flex items-center gap-2">
-          <span className="terminal-dot-red" />
-          <span className="terminal-dot-amber" />
-          <span className="terminal-dot-green" />
-        </div>
-        <div className="ml-4 flex-1 font-mono text-sm [color:var(--mk-text)] opacity-60">
-          {windowTitle}
-        </div>
-      </div>
-      <div className="px-6 pt-6 pb-4">
-        <div className="flex items-start gap-3">
-          <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--brand-primary)]/20 bg-[var(--brand-primary)]/15">
-            <span className="brand-text text-sm font-semibold">{you}</span>
-          </div>
-          <p className="text-sm [color:var(--mk-text)]">{q}</p>
-        </div>
-      </div>
-      <div className="px-6 pb-6">
-        <div className="flex items-start gap-3">
-          <SubsumioMark size={28} className="mt-0.5 shrink-0" />
-          <div className="flex-1 text-sm leading-relaxed whitespace-pre-line [color:var(--mk-text-muted)]">
-            <TypewriterText text={a} speed={8} />
-          </div>
-        </div>
-      </div>
-      <div className="flex flex-wrap items-center gap-2 border-t [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-bg)] sm:px-6 lg:px-8">
-        <span className="text-sm [color:var(--mk-text)] opacity-60">{sourcesLabel}</span>
-        {sources.map((slug) => (
-          <span key={slug} className="brand-text brand-soft rounded px-2 py-0.5 font-mono text-sm">
-            {slug}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-export function TypewriterText({ text, speed = 12 }: { text: string; speed?: number }) {
-  const reduce = useReducedMotion();
-  const [displayed, setDisplayed] = useState("");
-  const [started, setStarted] = useState(false);
-
-  useEffect(() => {
-    if (reduce) {
-      setDisplayed(text);
-      setStarted(true);
-      return;
-    }
-    const t = setTimeout(() => setStarted(true), 800);
-    return () => clearTimeout(t);
-  }, [reduce, text]);
-
-  useEffect(() => {
-    if (reduce || !started || displayed.length >= text.length) return;
-    const t = setTimeout(() => setDisplayed(text.slice(0, displayed.length + 1)), speed);
-    return () => clearTimeout(t);
-  }, [reduce, displayed, started, text, speed]);
-
-  return (
-    <span>
-      {displayed}
-      {!reduce && displayed.length < text.length && started && (
-        <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-[var(--brand-text)] align-text-bottom" />
-      )}
-    </span>
-  );
-}
-
-// ════════════════════════════════════════════════════════════════════════
-// SHARED PAGE PRIMITIVES — canonical building blocks for all marketing pages.
-// Every sub-page MUST use these for H1, H2, hero, CTA, cards, badges, icons.
-// This enforces typography consistency without per-page custom coding.
-// ════════════════════════════════════════════════════════════════════════
-
-/** Standard H1 class — used by PageHero, but also exported for pages that
- *  compose their own hero layout (vertical.tsx, superbrain-page.tsx). */
-export const H1_CLASS =
-  "text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-bold tracking-tight text-balance [color:var(--mk-text)]";
-
-/** Standard H2 class for CTA closers and inline section headings. */
-export const H2_CTA_CLASS =
-  "text-3xl font-bold tracking-tight text-balance [color:var(--mk-text)] md:text-4xl";
-
-/** Standard H3 class for card titles and feature headings. */
-export const H3_CLASS =
-  "text-xl font-semibold tracking-tight text-balance [color:var(--mk-text)] md:text-2xl";
-
-/** Standard badge pill — brand-soft, brand-text, brand-border. */
-export function BadgePill({
-  children,
-  className = "",
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <span
-      className={`brand-soft brand-text brand-border mb-6 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold ${className}`}
-    >
-      <span className="brand-bg h-1.5 w-1.5 rounded-full" />
-      {children}
-    </span>
-  );
-}
-
-/** Standard hero subtitle paragraph. */
-export function HeroSub({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
-      {children}
-    </p>
-  );
-}
-
-/** Standard icon tile — brand-soft, brand-border, brand-text. */
-export function IconTile({
-  icon: Icon,
-  size = 22,
-  className = "",
-}: {
-  icon: LucideIcon;
-  size?: number;
-  className?: string;
-}) {
-  // Destructure `icon` → `Icon` for JSX rendering
-  return (
-    <div
-      className={`brand-soft brand-border mb-4 flex h-12 w-12 items-center justify-center rounded-xl border transition-transform duration-300 hover:scale-110 ${className}`}
-    >
-      <Icon size={size} className="brand-text" />
-    </div>
-  );
-}
-
-/** Standard content card — GlowCard wrapper with consistent surface, border,
- *  hover, and shadow.  Uses IconTile + h3 + p pattern. */
-export function ContentCard({
-  icon,
-  title,
-  desc,
-  iconSize = 22,
-  className = "",
-}: {
-  icon: LucideIcon;
-  title: string;
-  desc: string;
-  iconSize?: number;
-  className?: string;
-}) {
-  return (
-    <GlowCard
-      className={`h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl motion-reduce:transition-none ${className}`}
-    >
-      <IconTile icon={icon} size={iconSize} />
-      <h3 className={`mb-2 ${H3_CLASS}`}>{title}</h3>
-      <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{desc}</p>
-    </GlowCard>
-  );
-}
-
-/** Standard page hero — badge, two-part H1 (title + accent claim), subtitle,
- *  optional CTA actions, optional badge icon, optional visual (right column).
- *  Uses ClipReveal for the H1 and motion for badge + subtitle + actions.
- *  All sub-pages should use this instead of rolling their own hero markup.
- *
- *  When `visual` is provided, renders a two-column split (text center on mobile,
- *  text-left / visual-right on lg). When omitted, renders centered single-column. */
-export function PageHero({
-  badge,
-  h1a,
-  h1b,
-  sub,
-  tone = "light",
-  accentVariant = "brand",
-  icon: BadgeIcon,
-  actions,
-  visual,
-}: {
-  badge?: string;
-  h1a: string;
-  h1b?: string;
-  sub: string;
-  tone?: Tone;
-  accentVariant?: "brand" | "gradient" | "gradient-premium";
-  icon?: LucideIcon;
-  actions?: React.ReactNode;
-  visual?: React.ReactNode;
-}) {
-  const accentClass =
-    accentVariant === "gradient"
-      ? "gradient-text"
-      : accentVariant === "gradient-premium"
-        ? "gradient-text-premium glow-text"
-        : "brand-text";
-
-  const textCol = (
-    <div className={visual ? "text-center lg:text-left" : "text-center"}>
-      {badge && (
-        <motion.span
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4, ease: EASE.out }}
-          className={visual ? "inline-flex lg:mx-0" : "inline-flex"}
-        >
-          <BadgePill>
-            {BadgeIcon && <BadgeIcon size={14} className="brand-text" />}
-            {badge}
-          </BadgePill>
-        </motion.span>
-      )}
-      <ClipReveal delay={0.1} duration={0.7} direction="up">
-        <h1 className={H1_CLASS}>
-          {h1a}
-          {h1b && (
-            <>
-              <br />
-              <span className={accentClass}>{h1b}</span>
-            </>
-          )}
-        </h1>
-      </ClipReveal>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.55, delay: 0.1, ease: EASE.out }}
-      >
-        <HeroSub>{sub}</HeroSub>
-      </motion.div>
-      {actions && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.2, ease: EASE.out }}
-          className={`mt-8 flex flex-col items-center gap-3 sm:flex-row ${visual ? "lg:justify-start" : "justify-center"}`}
-        >
-          {actions}
-        </motion.div>
-      )}
-    </div>
-  );
-
-  if (visual) {
-    return (
-      <Section tone={tone} className="px-4 pt-20 pb-20 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[55%_45%]">
-          {textCol}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, ease: EASE.out, delay: 0.1 }}
-            className="relative order-first lg:order-last"
-          >
-            {visual}
-          </motion.div>
-        </div>
-      </Section>
-    );
-  }
-
-  return (
-    <Section tone={tone} className="px-4 pt-20 pb-20 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-4xl text-center">{textCol}</div>
-    </Section>
-  );
-}
-
-/** Standard CTA close section — dark tone, logo, H2, subtitle, primary + optional secondary button.
- *  All sub-pages should close with this instead of custom CTA markup. */
-export function CTASection({
-  title,
-  sub,
-  href,
-  label,
-  secondaryHref,
-  secondaryLabel,
-  showLogo = true,
-  tone = "dark",
-}: {
-  title: string;
-  sub: string;
-  href: string;
-  label: string;
-  secondaryHref?: string;
-  secondaryLabel?: string;
-  showLogo?: boolean;
-  tone?: "dark" | "light" | "slate";
-}) {
-  return (
-    <Section tone={tone} className="px-4 py-28 text-center sm:px-6 lg:px-8">
-      <Reveal variant="upLg" className="mx-auto max-w-3xl">
-        {showLogo && <SubsumioMark size={56} className="mx-auto mb-6" />}
-        <h2 className={H2_CTA_CLASS}>{title}</h2>
-        <p className="mx-auto mb-8 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
-          {sub}
-        </p>
-        <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link href={href}>
-            <Button size="xl" variant="primary" className="group min-h-[48px]">
-              {label}
-              <ArrowRight
-                size={18}
-                className="transition-transform duration-200 group-hover:translate-x-0.5"
-              />
-            </Button>
-          </Link>
-          {secondaryHref && secondaryLabel && (
-            <Link href={secondaryHref}>
-              <Button size="xl" variant="outline" className="min-h-[48px]">
-                {secondaryLabel}
-              </Button>
-            </Link>
-          )}
-        </div>
-      </Reveal>
-    </Section>
-  );
-}
-
-/** Renders **bold** spans inside demo answers (simple, no markdown lib). */
-export function FaqList({ items }: { items: readonly { q: string; a: string }[] }) {
-  return (
-    <div className="mx-auto max-w-3xl space-y-3">
-      {items.map((item) => (
-        <details
-          key={item.q}
-          className="group rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] open:[border-color:var(--mk-border-strong)]"
-        >
-          <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-4 text-sm font-medium [color:var(--mk-text)]">
-            {item.q}
-            <ChevronDown
-              size={15}
-              className="ml-4 shrink-0 [color:var(--mk-text-subtle)] transition-transform group-open:rotate-180"
-            />
-          </summary>
-          <p className="px-5 pb-4 text-sm leading-relaxed [color:var(--mk-text-muted)]">{item.a}</p>
-        </details>
-      ))}
-    </div>
-  );
-}
-
-// ════════════════════════════════════════════════════════════════════════
-// NEW PRIMITIVES — State-of-the-art 2026 SaaS components
-// ════════════════════════════════════════════════════════════════════════
-
-/** SplitHero — two-column hero with text left + visual right (55/45).
- *  2026 SaaS standard (Linear, Vercel, Datadog). Falls back to stack on mobile. */
-export function SplitHero({
-  badge,
-  h1a,
-  h1b,
-  tagline,
-  sub,
-  h1bClassName = "gradient-text",
-  children,
-  visual,
-  tone = "slate",
-  id,
-}: {
-  badge?: React.ReactNode;
-  h1a: string;
-  h1b?: string;
-  tagline?: string;
-  sub: string;
-  h1bClassName?: string;
-  children?: React.ReactNode;
-  visual: React.ReactNode;
-  tone?: "light" | "slate" | "dark";
-  id?: string;
-}) {
-  return (
-    <Section tone={tone} id={id} className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
-      <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[55%_45%]">
-        <div className="text-center lg:text-left">
-          {badge && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, ease: EASE.out }}
-              className="mb-6 flex justify-center lg:justify-start"
-            >
-              {badge}
-            </motion.div>
-          )}
-          <ClipReveal delay={0.1} duration={0.7} direction="up">
-            <h1 className={`${H1_CLASS} mb-2`}>
-              {h1a}
-              {h1b && (
-                <>
-                  <br />
-                  <span className={h1bClassName}>{h1b}</span>
-                </>
-              )}
-            </h1>
-          </ClipReveal>
-          {tagline && (
-            <motion.p
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2, ease: EASE.out }}
-              className="mt-3 text-lg font-semibold [color:var(--mk-text)] md:text-xl"
-            >
-              {tagline}
-            </motion.p>
-          )}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.25, ease: EASE.out }}
-          >
-            <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg lg:mx-0">
-              {sub}
-            </p>
-          </motion.div>
-          {children && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 0.35, ease: EASE.out }}
-              className="mt-8 flex flex-col items-center gap-6 sm:flex-row lg:justify-start"
-            >
-              {children}
-            </motion.div>
-          )}
-        </div>
-        <motion.div
-          initial={{ opacity: 0, x: 30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.7, delay: 0.3, ease: EASE.out }}
-          className="relative order-first lg:order-last"
-        >
-          {visual}
-        </motion.div>
-      </div>
-    </Section>
-  );
-}
-
-/** StatCard — animated counter stat with label and optional context line. */
-export function StatCard({
-  value,
-  label,
-  context,
-  prefix,
-  suffix,
-  decimals,
-}: {
-  value: string;
-  label: string;
-  context?: string;
-  prefix?: string;
-  suffix?: string;
-  decimals?: number;
-}) {
-  const num = parseFloat(value.replace(/[^0-9.]/g, ""));
-  const extractedSuffix = suffix ?? value.replace(/[0-9.,]/g, "");
-  const extractedPrefix = prefix ?? value.match(/^[^0-9]*/)?.[0] ?? "";
-  const isNumeric = !isNaN(num) && num > 0;
-  const dec = decimals ?? (value.includes(".") ? 1 : 0);
-
-  return (
-    <div className="text-center">
-      <p className="mb-1 text-4xl font-bold [color:var(--brand-text)] md:text-5xl">
-        {isNumeric ? (
-          <AnimatedCounter
-            to={num}
-            prefix={extractedPrefix}
-            suffix={extractedSuffix}
-            decimals={dec}
-          />
-        ) : (
-          value
-        )}
-      </p>
-      <p className="text-sm font-semibold [color:var(--mk-text)]">{label}</p>
-      {context && (
-        <p className="mt-0.5 text-sm leading-relaxed [color:var(--mk-text-muted)]">{context}</p>
-      )}
-    </div>
-  );
-}
-
-/** ComparisonTable — responsive comparison matrix (table on desktop, cards on mobile). */
-export function ComparisonTable({
-  columns,
-  rows,
-  highlightCol,
-}: {
-  columns: { label: string; highlight?: boolean }[];
-  rows: { feature: string; values: (string | boolean)[] }[];
-  highlightCol?: number;
-}) {
-  return (
-    <>
-      {/* Desktop: table */}
-      <div className="hidden overflow-hidden rounded-2xl border [border-color:var(--mk-border)] md:block">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="[background:var(--mk-surface)]">
-              <th className="px-5 py-4 text-left font-semibold [color:var(--mk-text)]">{""}</th>
-              {columns.map((col, i) => (
-                <th
-                  key={i}
-                  className={`px-5 py-4 text-center font-semibold [color:var(--mk-text)] ${
-                    col.highlight || highlightCol === i
-                      ? "brand-text [background:var(--mk-surface-2)]"
-                      : ""
-                  }`}
-                >
-                  {col.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, i) => (
-              <tr
-                key={i}
-                className="border-t [border-color:var(--mk-border)] hover:[background:var(--mk-hover)]"
-              >
-                <td className="px-5 py-3.5 text-left text-[color:var(--mk-text-muted)]">
-                  {row.feature}
-                </td>
-                {row.values.map((val, j) => (
-                  <td
-                    key={j}
-                    className={`px-5 py-3.5 text-center ${
-                      columns[j]?.highlight || highlightCol === j
-                        ? "[background:var(--mk-surface-2)]"
-                        : ""
-                    }`}
-                  >
-                    {typeof val === "boolean" ? (
-                      val ? (
-                        <Check size={16} className="mx-auto [color:var(--ds-success-text)]" />
-                      ) : (
-                        <X size={16} className="mx-auto [color:var(--mk-text-subtle)]" />
-                      )
-                    ) : (
-                      <span className="text-sm [color:var(--mk-text)]">{val}</span>
-                    )}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile: cards */}
-      <div className="space-y-4 md:hidden">
-        {columns.map((col, colIdx) => (
-          <div
-            key={colIdx}
-            className={`rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)] ${
-              col.highlight || highlightCol === colIdx
-                ? "ring-2 ring-[color:var(--brand-text)]"
-                : ""
-            }`}
-          >
-            <h4 className="mb-3 font-semibold [color:var(--mk-text)]">{col.label}</h4>
-            <dl className="space-y-2">
-              {rows.map((row, rowIdx) => (
-                <div key={rowIdx} className="flex items-center justify-between gap-3">
-                  <dt className="text-sm [color:var(--mk-text-muted)]">{row.feature}</dt>
-                  <dd className="text-sm">
-                    {typeof row.values[colIdx] === "boolean" ? (
-                      row.values[colIdx] ? (
-                        <Check size={14} className="[color:var(--ds-success-text)]" />
-                      ) : (
-                        <X size={14} className="[color:var(--mk-text-subtle)]" />
-                      )
-                    ) : (
-                      <span className="[color:var(--mk-text)]">{row.values[colIdx]}</span>
-                    )}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        ))}
-      </div>
-    </>
-  );
-}
-
-/** PricingCard — tier card with highlight, features list, and CTA. */
-export function PricingCard({
-  name,
-  price,
-  period,
-  description,
-  features,
-  ctaLabel,
-  ctaHref,
-  highlighted = false,
-  badge,
-}: {
-  name: string;
-  price: string;
-  period?: string;
-  description: string;
-  features: string[];
-  ctaLabel: string;
-  ctaHref: string;
-  highlighted?: boolean;
-  badge?: string;
-}) {
-  return (
-    <div
-      className={`relative flex h-full flex-col rounded-2xl border p-6 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 motion-reduce:transition-none ${
-        highlighted
-          ? "border-[color:var(--brand-text)] shadow-lg [background:var(--mk-surface-2)] lg:scale-105"
-          : "[border-color:var(--mk-border)] [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-md"
-      }`}
-    >
-      {badge && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--brand-primary)] px-4 py-1 text-sm font-semibold text-white">
-          {badge}
-        </span>
-      )}
-      <h3 className="mb-1 text-lg font-bold [color:var(--mk-text)]">{name}</h3>
-      <p className="mb-4 text-sm leading-relaxed [color:var(--mk-text-muted)]">{description}</p>
-      <div className="mb-5 flex items-baseline gap-1">
-        <span className="text-3xl font-bold [color:var(--mk-text)]">{price}</span>
-        {period && <span className="text-sm [color:var(--mk-text-muted)]">{period}</span>}
-      </div>
-      <ul className="mb-6 flex-1 space-y-2.5">
-        {features.map((f) => (
-          <li key={f} className="flex items-start gap-2 text-sm [color:var(--mk-text-muted)]">
-            <Check size={15} className="mt-0.5 shrink-0 [color:var(--ds-success-text)]" />
-            <span>{f}</span>
-          </li>
-        ))}
-      </ul>
-      <Link
-        href={ctaHref}
-        className={`block w-full rounded-lg px-4 py-2.5 text-center text-sm font-semibold transition-[background-color,border-color,color] motion-reduce:transition-none ${
-          highlighted
-            ? "bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)]"
-            : "border [border-color:var(--mk-border-strong)] [color:var(--mk-text)] hover:[background:var(--mk-hover)]"
-        }`}
-      >
-        {ctaLabel}
-      </Link>
-    </div>
-  );
-}
-
-/** TrustStrip — compact badge strip for compliance/security signals. */
-export function TrustStrip({
-  items,
-  className = "",
-}: {
-  items: { label: string; icon?: LucideIcon }[];
-  className?: string;
-}) {
-  return (
-    <div
-      className={`flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm [color:var(--mk-text-subtle)] ${className}`}
-    >
-      {items.map((item, i) => (
-        <motion.span
-          key={item.label}
-          initial={{ opacity: 0, y: 8 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.3, delay: i * 0.06 }}
-          className="inline-flex items-center gap-1.5 font-medium"
-        >
-          {item.icon && <item.icon size={14} className="opacity-70" />}
-          {item.label}
-        </motion.span>
-      ))}
-    </div>
-  );
-}
-
-/** BreadcrumbNav — visible breadcrumbs for sub-pages. */
-export function BreadcrumbNav({
-  items,
-  className = "",
-}: {
-  items: { label: string; href?: string }[];
-  className?: string;
-}) {
-  return (
-    <nav aria-label="Breadcrumb" className={`flex items-center gap-1.5 text-sm ${className}`}>
-      {items.map((item, i) => (
-        <span key={i} className="flex items-center gap-1.5">
-          {i > 0 && <ChevronRight size={14} className="[color:var(--mk-text-subtle)]" />}
-          {item.href ? (
-            <Link
-              href={item.href}
-              className="[color:var(--mk-text-muted)] hover:[color:var(--mk-text)]"
-            >
-              {item.label}
-            </Link>
-          ) : (
-            <span className="font-medium [color:var(--mk-text)]">{item.label}</span>
-          )}
-        </span>
-      ))}
-    </nav>
-  );
-}
-
-/** SectionSpacer — consistent section padding using design tokens. */
-export function SectionSpacer({
-  size = "default",
-  className = "",
-}: {
-  size?: "sm" | "default" | "lg";
-  className?: string;
-}) {
-  const heights = {
-    sm: "h-16",
-    default: "h-24",
-    lg: "h-32",
-  };
-  return <div className={`${heights[size]} ${className}`} aria-hidden />;
-}

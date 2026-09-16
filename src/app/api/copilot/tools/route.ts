@@ -2,7 +2,6 @@ import { z } from "zod";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { calculateRvg } from "@/lib/rvg";
 import { isToolAvailable, getToolList, type ToolConditionContext } from "@/lib/agent-conditionals";
 import { sendMailboxMessage, buildMailDraft } from "@/lib/email/mailbox";
 import { markOnboardingProgress } from "@/lib/auth/store";
@@ -24,7 +23,6 @@ const ALLOWED_DASHBOARD_ROUTES = new Set([
   "/dashboard/api-keys",
   "/dashboard/approvals",
   "/dashboard/audit",
-  "/dashboard/bea",
   "/dashboard/billing",
   "/dashboard/brain",
   "/dashboard/calendar-export",
@@ -42,9 +40,7 @@ const ALLOWED_DASHBOARD_ROUTES = new Set([
   "/dashboard/contacts",
   "/dashboard/contracts",
   "/dashboard/controlling",
-  "/dashboard/cost-calculator",
   "/dashboard/data-export",
-  "/dashboard/datev-export",
   "/dashboard/deadlines",
   "/dashboard/deep-analysis",
   "/dashboard/document-requests",
@@ -165,15 +161,9 @@ const meetingTasksSchema = z.object({
 const intakeCreateSchema = z.object({
   client_name: z.string().min(1).max(200),
   matter_type: z.string().min(1).max(200),
-  jurisdiction: z.enum(["de", "at", "ch"]).default("de"),
+  jurisdiction: z.literal("at").default("at"),
   urgency: z.enum(["low", "medium", "high", "critical"]).default("medium"),
   conflict_check: z.boolean().default(true),
-});
-
-const rvgCalculateSchema = z.object({
-  streitwert: z
-    .union([z.number(), z.string()])
-    .transform((v) => (typeof v === "string" ? parseFloat(v) : v)),
 });
 
 const documentRequestCreateSchema = z.object({
@@ -185,7 +175,7 @@ const documentRequestCreateSchema = z.object({
 
 const precedentSearchToolSchema = z.object({
   query: z.string().min(1).max(2000),
-  jurisdiction: z.enum(["at", "de", "ch"]).optional(),
+  jurisdiction: z.literal("at").optional(),
   legal_area: z.string().max(200).optional(),
 });
 
@@ -202,7 +192,7 @@ const obligationExtractToolSchema = z
   .object({
     document_slug: z.string().max(300).optional(),
     text: z.string().max(512_000).optional(),
-    jurisdiction: z.enum(["at", "de", "ch", "all"]).default("all"),
+    jurisdiction: z.enum(["at", "all"]).default("at"),
   })
   .refine((v) => v.document_slug || v.text, { message: "document_slug_or_text_required" });
 
@@ -215,13 +205,13 @@ const tabularReviewToolSchema = z.object({
 const deepAnalysisToolSchema = z.object({
   slugs: z.array(z.string().min(1)).min(1).max(25),
   prompt: z.string().max(2000).optional(),
-  jurisdiction: z.enum(["at", "de", "ch", "all"]).default("all"),
+  jurisdiction: z.enum(["at", "all"]).default("at"),
 });
 
 const caseInvestigationToolSchema = z.object({
   case_slug: z.string().min(1),
   pruefauftrag: z.string().max(2000).optional(),
-  jurisdiction: z.enum(["at", "de", "ch"]).default("at"),
+  jurisdiction: z.literal("at").default("at"),
   incremental: z.boolean().optional(),
 });
 
@@ -275,7 +265,6 @@ const toolSchema = z.object({
     "client_update",
     "meeting_tasks",
     "intake_create",
-    "rvg_calculate",
     "document_request_create",
     "precedent_search",
     "translate_text",
@@ -1190,25 +1179,6 @@ async function executeIntakeCreate(
   }
 }
 
-async function executeRvgCalculate(
-  params: z.infer<typeof rvgCalculateSchema>
-): Promise<ToolResponse> {
-  const result = calculateRvg(params.streitwert);
-  return {
-    success: true,
-    data: result,
-    display: {
-      kind: "summary",
-      title: `RVG-Kosten für ${params.streitwert.toLocaleString("de-DE")} €`,
-      href: "/dashboard/cost-calculator",
-      items: Object.entries(result)
-        .filter(([, value]) => typeof value === "number" || typeof value === "string")
-        .slice(0, 8)
-        .map(([label, value]) => ({ label, value: String(value) })),
-    },
-  };
-}
-
 async function executeDocumentRequestCreate(
   ctx: { headers: Record<string, string> },
   params: z.infer<typeof documentRequestCreateSchema>
@@ -2097,11 +2067,6 @@ export const POST = createHandler(
         case "intake_create": {
           const params = intakeCreateSchema.parse(body.params);
           result = await executeIntakeCreate(ctx, params);
-          break;
-        }
-        case "rvg_calculate": {
-          const params = rvgCalculateSchema.parse(body.params);
-          result = await executeRvgCalculate(params);
           break;
         }
         case "document_request_create": {

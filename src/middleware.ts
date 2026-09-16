@@ -38,7 +38,7 @@ function buildCspHeader(nonce: string): string {
     "default-src 'self'",
     isDev
       ? `script-src 'self' 'nonce-${nonce}' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com`
-      : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://js.stripe.com`,
+      : `script-src 'self' 'nonce-${nonce}' https://js.stripe.com`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data: https://fonts.gstatic.com",
@@ -180,9 +180,68 @@ function isWebhookCsrfExempt(pathname: string): boolean {
  */
 // hasValidInternalSecret is imported at the top of this file from @/lib/auth/internal.
 
-// Language preference cookie set when user explicitly switches language.
-// Prevents the browser-language redirect from overriding an explicit choice.
-const LANG_PREF_COOKIE = "sb_lang";
+const RETIRED_PUBLIC_LOCALE_PREFIXES = ["/de", "/ch", "/en"] as const;
+const AUSTRIA_PUBLIC_ALIASES = new Set([
+  "/",
+  "/about",
+  "/contact",
+  "/docs",
+  "/download",
+  "/dpa",
+  "/features",
+  "/forgot",
+  "/imprint",
+  "/join",
+  "/login",
+  "/partners",
+  "/pricing",
+  "/privacy",
+  "/reset",
+  "/security",
+  "/signup",
+  "/solutions/in-house",
+  "/solutions/law-firms",
+  "/solutions/solo",
+  "/superbrain",
+  "/terms",
+  "/whatsapp",
+]);
+
+const RETIRED_PILOT_DASHBOARD_PREFIXES = [
+  "/dashboard/bea",
+  "/dashboard/datev-export",
+  "/dashboard/datev-direct",
+  "/dashboard/fao-tracking",
+  "/dashboard/cost-calculator",
+] as const;
+const RETIRED_PILOT_API_PREFIXES = [
+  "/api/bea",
+  "/api/datev",
+  "/api/datev-direct",
+  "/api/legal/rvg",
+  "/api/pkh-beratungshilfe",
+  "/api/fachrechner",
+  "/api/fao-tracking",
+  "/api/court-directory",
+] as const;
+
+function matchesRoutePrefix(pathname: string, prefix: string): boolean {
+  return pathname === prefix || pathname.startsWith(`${prefix}/`);
+}
+
+export function austriaCanonicalPath(pathname: string): string | null {
+  for (const prefix of RETIRED_PUBLIC_LOCALE_PREFIXES) {
+    if (pathname === prefix) return "/at";
+    if (pathname.startsWith(`${prefix}/`)) {
+      const suffix = pathname.slice(prefix.length);
+      return suffix === "/subsumio" ? "/at" : `/at${suffix}`;
+    }
+  }
+  if (AUSTRIA_PUBLIC_ALIASES.has(pathname)) {
+    return pathname === "/" ? "/at" : `/at${pathname}`;
+  }
+  return null;
+}
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -203,6 +262,27 @@ export async function middleware(req: NextRequest) {
     // and overwrite any middleware-set values. Only CSP needs per-request
     // nonce generation, so it's the only header set here.
     return response;
+  }
+
+  // Austria-only pilot: retired market-specific or not yet legally validated
+  // features must not remain reachable through stale bookmarks or direct API
+  // calls. Their source stays in the private archive for later revalidation.
+  if (RETIRED_PILOT_API_PREFIXES.some((prefix) => matchesRoutePrefix(pathname, prefix))) {
+    return applyCsp(
+      NextResponse.json(
+        {
+          error: "market_feature_retired",
+          message: "Diese Integration ist im AT-Pilot deaktiviert.",
+        },
+        { status: 410 }
+      )
+    );
+  }
+  if (RETIRED_PILOT_DASHBOARD_PREFIXES.some((prefix) => matchesRoutePrefix(pathname, prefix))) {
+    const dashboardUrl = req.nextUrl.clone();
+    dashboardUrl.pathname = "/dashboard";
+    dashboardUrl.search = "";
+    return applyCsp(NextResponse.redirect(dashboardUrl, 308));
   }
 
   // --- IP Allow-listing (G8) ---
@@ -234,56 +314,13 @@ export async function middleware(req: NextRequest) {
     return applyCsp(NextResponse.redirect(canonical, { status: 308 }));
   }
 
-  // --- Canonical domain: redirect /de/ and /de to / (DE is default, no prefix) ---
-  // Prevents duplicate content between /de/* and /* for SEO.
-  if (pathname === "/de" || pathname.startsWith("/de/")) {
+  // Austria-only pilot: preserve old bookmarks while exposing one canonical
+  // public market. App-host root routing above remains /dashboard.
+  const austriaPath = austriaCanonicalPath(pathname);
+  if (austriaPath) {
     const canonical = req.nextUrl.clone();
-    canonical.pathname = pathname === "/de" ? "/" : pathname.slice(3); // strip "/de"
-    return applyCsp(NextResponse.redirect(canonical, { status: 301 }));
-  }
-
-  // --- Browser language detection: redirect non-German speakers to /en ---
-  // Only on the root path, only for GET requests.
-  // Skipped when the user has explicitly set a language preference (sb_lang cookie).
-  // Googlebot and other crawlers typically send no Accept-Language or "*",
-  // so they get DE content at root (SEO primary = DE for DACH market).
-  if (pathname === "/" && method === "GET") {
-    const langPref = req.cookies.get(LANG_PREF_COOKIE)?.value;
-    if (langPref !== "de") {
-      const acceptLang = req.headers.get("accept-language") ?? "";
-      // No Accept-Language or wildcard → serve DE (SEO primary)
-      if (!acceptLang || acceptLang.trim() === "*") {
-        // Fall through — serve DE content at root
-      } else {
-        const primaryLang = acceptLang.split(",")[0]?.split(";")[0]?.trim().toLowerCase() ?? "";
-        const isGerman =
-          primaryLang === "de" ||
-          primaryLang.startsWith("de-") ||
-          // Fallback: any de-* among top languages (handles de,en-US;q=0.9)
-          acceptLang
-            .split(",")
-            .slice(0, 3)
-            .some((s) => s.trim().toLowerCase().startsWith("de"));
-        if (!isGerman) {
-          const enUrl = req.nextUrl.clone();
-          enUrl.pathname = "/en";
-          return applyCsp(NextResponse.redirect(enUrl, { status: 302 }));
-        }
-        // Redirect Austrian and Swiss German speakers to their locale
-        if (langPref !== "at" && langPref !== "ch") {
-          if (primaryLang === "de-at" || primaryLang.startsWith("de-at")) {
-            const atUrl = req.nextUrl.clone();
-            atUrl.pathname = "/at";
-            return applyCsp(NextResponse.redirect(atUrl, { status: 302 }));
-          }
-          if (primaryLang === "de-ch" || primaryLang.startsWith("de-ch")) {
-            const chUrl = req.nextUrl.clone();
-            chUrl.pathname = "/ch";
-            return applyCsp(NextResponse.redirect(chUrl, { status: 302 }));
-          }
-        }
-      }
-    }
+    canonical.pathname = austriaPath;
+    return applyCsp(NextResponse.redirect(canonical, { status: 308 }));
   }
 
   // --- CSRF validation for state-changing API requests ---
@@ -328,7 +365,7 @@ export async function middleware(req: NextRequest) {
   if (pathname.startsWith("/dashboard")) {
     const session = await verifySessionCore(req.cookies.get(SESSION_COOKIE)?.value);
     if (!session) {
-      const login = new URL("/login", req.url);
+      const login = new URL("/at/login", req.url);
       login.searchParams.set("next", pathname);
       return applyCsp(NextResponse.redirect(login));
     }
@@ -339,7 +376,7 @@ export async function middleware(req: NextRequest) {
       res.cookies.set(CSRF_COOKIE_NAME, generateCsrfToken(), {
         httpOnly: false,
         sameSite: "lax",
-        secure: env("NODE_ENV") === "production",
+        secure: env("NODE_ENV") === "production" && env("SUBSUMIO_E2E") !== "1",
         path: "/",
         maxAge: 30 * 24 * 3600,
       });

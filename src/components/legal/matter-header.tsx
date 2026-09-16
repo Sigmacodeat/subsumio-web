@@ -311,12 +311,12 @@ export function MatterHeader() {
         <span className="text-sm text-[color:var(--ds-danger-text)]">
           {error || t("matterheader.not_found")}
         </span>
-        <Link href="/dashboard/cases" className="ml-auto">
-          <Button variant="ghost" size="sm">
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/dashboard/cases" className="ml-auto">
             <ArrowLeft size={14} className="mr-1.5" />
             {t("matterheader.back_to_cases")}
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
     );
   }
@@ -428,11 +428,11 @@ export function MatterHeader() {
             {pinned ? <PinOff size={15} /> : <Pin size={15} />}
           </Button>
           {matter.portalEnabled && (
-            <Link href={`/dashboard/client-portal`} title={t("matterheader.client_portal")}>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild>
+              <Link href={`/dashboard/client-portal`} title={t("matterheader.client_portal")}>
                 <Globe size={15} />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           )}
           {isArchived && (
             <Badge

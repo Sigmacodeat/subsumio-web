@@ -5,9 +5,18 @@ import Script from "next/script";
 import { usePathname, useRouter } from "next/navigation";
 import { ensureRealtime } from "@/lib/realtime";
 import { styleForIndustry } from "@/lib/industry-theme";
-import { CommandPalette } from "@/components/dashboard/command-palette";
-import { KeyboardShortcuts } from "@/components/dashboard/keyboard-shortcuts";
-import { DashboardGuide } from "@/components/dashboard/dashboard-guide";
+const CommandPalette = dynamic(
+  () => import("@/components/dashboard/command-palette").then((m) => m.CommandPalette),
+  { ssr: false }
+);
+const KeyboardShortcuts = dynamic(
+  () => import("@/components/dashboard/keyboard-shortcuts").then((m) => m.KeyboardShortcuts),
+  { ssr: false }
+);
+const DashboardGuide = dynamic(
+  () => import("@/components/dashboard/dashboard-guide").then((m) => m.DashboardGuide),
+  { ssr: false }
+);
 import dynamic from "next/dynamic";
 
 const CaseQuickCreateDialog = dynamic(() =>
@@ -217,6 +226,21 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     (value: boolean) => setOverlay("contract", value),
     [setOverlay]
   );
+  // Mount-once gating for lazy overlays: the chunk downloads on first open,
+  // then stays mounted so AnimatePresence exit animations keep working.
+  const [overlaysMounted, setOverlaysMounted] = useState({
+    command: false,
+    guide: false,
+    shortcuts: false,
+  });
+  useEffect(() => {
+    setOverlaysMounted((m) => ({
+      command: m.command || cmdOpen,
+      guide: m.guide || guideOpen,
+      shortcuts: m.shortcuts || shortcutsOpen,
+    }));
+  }, [cmdOpen, guideOpen, shortcutsOpen]);
+
   const [theme, toggleTheme] = useTheme();
   const statsQuery = useBrainStats();
   const meQuery = useMe();
@@ -660,6 +684,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         industry={industry}
         role={role}
         plan={plan}
+        jurisdiction={meQuery.data?.user?.jurisdiction ?? null}
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -694,22 +719,49 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -8 }}
               transition={overlayTransition}
             >
-              <ErrorBoundary>{children}</ErrorBoundary>
+              {/* Gate children on the /api/me round-trip: until it resolves we
+                  can't know whether the onboarding redirect fires, and the
+                  page would flash dashboard chrome + content before being torn
+                  away. Fail open on error so an API hiccup never blanks the app. */}
+              {meQuery.isLoading ? (
+                <div
+                  className="flex flex-1 items-center justify-center"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <span className="text-xs text-[color:var(--ds-text-muted)]">
+                    {t("dashboard.desc_loading")}
+                  </span>
+                </div>
+              ) : (
+                <ErrorBoundary>{children}</ErrorBoundary>
+              )}
             </motion.div>
           </AnimatePresence>
         </main>
       </div>
 
-      <CommandPalette
-        open={cmdOpen}
-        onClose={() => setCmdOpen(false)}
-        onToggleTheme={toggleTheme}
-        onToggleSidebar={() => setCollapsed((c) => !c)}
-        industry={industry}
-        role={role}
-      />
-      <KeyboardShortcuts open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
-      <DashboardGuide open={guideOpen} onClose={() => setGuideOpen(false)} />
+      {(cmdOpen || overlaysMounted.command) && (
+        <CommandPalette
+          open={cmdOpen}
+          onClose={() => setCmdOpen(false)}
+          onToggleTheme={toggleTheme}
+          onToggleSidebar={() => setCollapsed((c) => !c)}
+          industry={industry}
+          role={role}
+          jurisdiction={meQuery.data?.user?.jurisdiction ?? null}
+        />
+      )}
+      {(shortcutsOpen || overlaysMounted.shortcuts) && (
+        <KeyboardShortcuts open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      )}
+      {(guideOpen || overlaysMounted.guide) && (
+        <DashboardGuide
+          open={guideOpen}
+          onClose={() => setGuideOpen(false)}
+          jurisdiction={meQuery.data?.user?.jurisdiction ?? null}
+        />
+      )}
       <CopilotSidebar open={copilotOpen} onToggle={() => setCopilotOpen((v) => !v)} />
 
       {/* Push notification toast (native app only) */}
@@ -797,6 +849,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         toggleTheme={toggleTheme}
         onGuideOpen={() => setGuideOpen(true)}
         industry={industry}
+        jurisdiction={meQuery.data?.user?.jurisdiction ?? null}
       />
     </div>
   );

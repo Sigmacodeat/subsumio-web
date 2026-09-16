@@ -56,11 +56,9 @@ export const POST = createHandler(
       }
     }
 
-    // Save jurisdiction from onboarding country selection — drives law corpus scoping
-    const country = body.profile?.country?.toUpperCase();
-    if (country === "DE" || country === "AT" || country === "CH") {
-      patch.jurisdiction = country;
-    }
+    // Austria-only pilot: the tenant jurisdiction is server-enforced. Do not
+    // trust a stale or crafted country value from an older onboarding client.
+    patch.jurisdiction = "AT";
 
     const updated = await getStore().update(ctx.user.id, patch);
     if (!updated) {

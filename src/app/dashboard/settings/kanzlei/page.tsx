@@ -22,7 +22,7 @@ export default function KanzleiSettingsPage() {
   useEffect(() => {
     loadKanzleiSettings()
       .then((s) => {
-        setSettings(s);
+        setSettings({ ...s, rechtsraumCountry: "AT", rechtsraumState: "AT" });
         setLoading(false);
       })
       .catch((err) => {
@@ -222,8 +222,8 @@ export default function KanzleiSettingsPage() {
           <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Rechtsraum</h2>
         </div>
         <p className="text-xs text-[color:var(--ds-text-muted)]">
-          Bestimmt die Feiertagsverschiebung bei der Fristenberechnung (§ 222 Abs. 2 ZPO / § 193
-          BGB). Ohne Angabe werden nur Samstag/Sonntag verschoben, keine regionalen Feiertage.
+          Der österreichische Rechtsraum steuert Quellenisolation und Fristenberechnung. Gesetzliche
+          Grundlagen und Feiertage sind im konkreten Verfahren anwaltlich zu prüfen.
         </p>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-1">
@@ -235,91 +235,24 @@ export default function KanzleiSettingsPage() {
             </label>
             <select
               id="rechtsraum-country"
-              value={settings.rechtsraumCountry ?? ""}
-              onChange={(e) => {
-                update("rechtsraumCountry", e.target.value);
-                update("rechtsraumState", "");
-              }}
+              value="AT"
+              disabled
               className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             >
-              <option value="">— Bitte wählen —</option>
-              <option value="DE">Deutschland</option>
               <option value="AT">Österreich</option>
-              <option value="CH">Schweiz</option>
             </select>
           </div>
           <div className="space-y-1">
             <label htmlFor="rechtsraum-state" className="text-xs text-[color:var(--ds-text-muted)]">
-              {settings.rechtsraumCountry === "CH"
-                ? t("kanzlei.region_label")
-                : t("kanzlei.region_label_de")}
+              Geltungsbereich
             </label>
             <select
               id="rechtsraum-state"
-              value={settings.rechtsraumState ?? ""}
-              onChange={(e) => update("rechtsraumState", e.target.value)}
+              value="AT"
+              disabled
               className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             >
-              <option value="">— Bitte wählen —</option>
-              {settings.rechtsraumCountry === "AT" && (
-                <option value="AT">Österreich (bundesweit)</option>
-              )}
-              {settings.rechtsraumCountry === "DE" &&
-                [
-                  "BW",
-                  "BY",
-                  "BE",
-                  "BB",
-                  "HB",
-                  "HH",
-                  "HE",
-                  "MV",
-                  "NI",
-                  "NW",
-                  "RP",
-                  "SL",
-                  "SN",
-                  "ST",
-                  "SH",
-                  "TH",
-                ].map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              {settings.rechtsraumCountry === "CH" &&
-                [
-                  "ZH",
-                  "BE",
-                  "LU",
-                  "UR",
-                  "SZ",
-                  "OW",
-                  "NW",
-                  "GL",
-                  "ZG",
-                  "FR",
-                  "SO",
-                  "BS",
-                  "BL",
-                  "SH",
-                  "AR",
-                  "AI",
-                  "SG",
-                  "GR",
-                  "AG",
-                  "TG",
-                  "TI",
-                  "VD",
-                  "VS",
-                  "NE",
-                  "GE",
-                  "JU",
-                ].map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
+              <option value="AT">Österreich (bundesweit)</option>
             </select>
           </div>
         </div>

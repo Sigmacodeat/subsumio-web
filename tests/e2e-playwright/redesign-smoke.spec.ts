@@ -31,6 +31,13 @@ function getTestEmail() {
 }
 
 async function signUpViaApi(page: import("@playwright/test").Page) {
+  // Dismiss the guided tour before app code runs — its tooltip dialog
+  // intercepts pointer events over dashboard controls.
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem("subsumio-tour-completed", "true");
+    } catch {}
+  });
   const email = getTestEmail();
   const res = await page.context().request.post("/api/auth/signup", {
     data: {
@@ -51,6 +58,23 @@ async function signUpViaApi(page: import("@playwright/test").Page) {
     headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
   });
   expect(onboardingRes.status()).toBe(200);
+  // Widget visibility is role-preset-based; only the first-ever signup in the
+  // store is "admin", later test users are "lawyer" → associate preset, which
+  // hides secondary-stats/kanzlei-insights (POST /api/dashboard/widgets also
+  // needs settings.write scope → 403 for them). Pin the widgets via the
+  // localStorage prefs the hook reads first, so the dashboard renders them
+  // deterministically regardless of test order.
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem(
+        "subsumio:widget-prefs",
+        JSON.stringify([
+          { id: "secondary-stats", visible: true, order: 2 },
+          { id: "kanzlei-insights", visible: true, order: 6 },
+        ])
+      );
+    } catch {}
+  });
   await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
   await expect(page).toHaveURL(/\/dashboard\/?$/);
 }
@@ -86,13 +110,23 @@ test.describe("Redesign P2: Dashboard Home", () => {
 
   test("SecondaryStats are inline text, not cards", async ({ page }) => {
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1500);
 
-    // SecondaryStats should be inline with separators (·)
-    // Look for tabular-nums class which is used in SecondaryStats
-    const stats = page.locator(".tabular-nums");
-    const count = await stats.count();
-    expect(count).toBeGreaterThan(0);
+    // SecondaryStats lives in the WidgetBoard — the "dashboard" view tab.
+    // Retry once after reload to absorb lazy-chunk cold-compiles.
+    const stats = page.locator("#dashboard-view-panel-dashboard .tabular-nums");
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+      await page.waitForTimeout(1500);
+      await page.locator("#dashboard-view-tab-dashboard").click();
+      try {
+        await expect(stats.first()).toBeVisible({ timeout: 30_000 });
+        break;
+      } catch {
+        if (attempt === 1) throw new Error("secondary stats never rendered");
+      }
+    }
+    expect(await stats.count()).toBeGreaterThan(0);
   });
 
   test("QuickActions render as command-bar chips", async ({ page }) => {
@@ -109,23 +143,33 @@ test.describe("Redesign P2: Dashboard Home", () => {
 
   test("AIActivityFeed renders with status indicators", async ({ page }) => {
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(1500);
 
-    // AIActivityFeed should be present — look for activity-related text
-    // The feed shows reviews/agent actions with status icons
-    const activitySection = page.getByText(/KI-Aktivität|AI Activity|Reviews/i).first();
-    await expect(activitySection).toBeVisible({ timeout: 10_000 });
+    // Widgets (AIActivityFeed, KanzleiInsights) live on the "dashboard" view
+    // tab — the default landing view is "today".
+    await page.locator("#dashboard-view-tab-dashboard").click();
+    const activitySection = page
+      .getByText(/Qualitätskontrolle|Quality Control|AI Activity/i)
+      .first();
+    await expect(activitySection).toBeVisible({ timeout: 15_000 });
   });
 
   test("KanzleiInsights charts render", async ({ page }) => {
-    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
-
-    // Charts use recharts ResponsiveContainer which renders SVG
+    // Charts are a lazy-compiled chunk inside WidgetBoard on the "dashboard"
+    // view tab — retry once after reload to absorb dev cold-compiles.
     const charts = page.locator(".recharts-responsive-container");
-    const chartCount = await charts.count();
-    // Should have at least 2 charts (revenue + cases)
-    expect(chartCount).toBeGreaterThanOrEqual(2);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+      await page.waitForTimeout(1500);
+      await page.locator("#dashboard-view-tab-dashboard").click();
+      try {
+        await expect(charts.first()).toBeVisible({ timeout: 45_000 });
+        break;
+      } catch {
+        if (attempt === 1) throw new Error("charts never rendered");
+      }
+    }
+    expect(await charts.count()).toBeGreaterThanOrEqual(2);
   });
 
   test("no glassmorphism (backdrop-blur) in dashboard content area", async ({ page }) => {
@@ -145,19 +189,18 @@ test.describe("Redesign P1: Linear-Density Layout", () => {
     await signUpViaApi(page);
   });
 
-  test("sidebar width is 220px (not 256px)", async ({ page }) => {
+  test("sidebar width is 240px default (resizable, not 256px)", async ({ page }) => {
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1000);
 
-    // The sidebar should be 220px wide on desktop
-    // Check the sidebar element's computed width
+    // Sidebar is resizable (useResizable, initialWidth 240, persisted in
+    // localStorage) — assert the compact default, not the old 256px.
     const sidebar = page.locator("nav, [role='navigation']").first();
     if (await sidebar.isVisible()) {
       const box = await sidebar.boundingBox();
       if (box) {
-        // Allow some tolerance for border/padding
-        expect(box.width).toBeLessThanOrEqual(230);
-        expect(box.width).toBeGreaterThanOrEqual(210);
+        expect(box.width).toBeLessThanOrEqual(250);
+        expect(box.width).toBeGreaterThanOrEqual(230);
       }
     }
   });
@@ -182,32 +225,37 @@ test.describe("Redesign P3: Activity Sidebar", () => {
     await signUpViaApi(page);
   });
 
-  test("activity sidebar shows Aktivität header by default", async ({ page }) => {
+  test("copilot panel is visible by default", async ({ page }) => {
+    // The right-side panel is the Brain Copilot (replaces the old activity
+    // sidebar) and opens by default on desktop.
+    await page.addInitScript(() => {
+      try {
+        localStorage.setItem("subsumio-copilot-open", "true");
+        localStorage.setItem("subsumio-tour-completed", "true");
+      } catch {}
+    });
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(2000);
 
-    // The sidebar panel should show "Aktivität" as header text
-    const activityHeader = page.getByText(/Aktivität|Activity/i).first();
-    await expect(activityHeader).toBeVisible({ timeout: 10_000 });
+    const copilotPanel = page.locator("#brain-copilot-panel");
+    await expect(copilotPanel).toBeVisible({ timeout: 15_000 });
   });
 
-  test("⌘J keyboard shortcut toggles chat mode", async ({ page }) => {
+  test("⌘⇧C keyboard shortcut toggles chat mode", async ({ page }) => {
+    await page.addInitScript(() => {
+      try {
+        localStorage.setItem("subsumio-tour-completed", "true");
+      } catch {}
+    });
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
 
-    // Press Cmd+J (Meta+J on Mac, Control+J on Windows/Linux)
-    await page.keyboard.press("Meta+j");
-
-    // After pressing ⌘J, should see chat-related elements
-    // The chat input or chat header should become visible
-    await page.waitForTimeout(1000);
-
-    // Look for chat input or chat-related UI
-    const chatInput = page.locator(
-      "textarea, input[placeholder*='chat'], input[placeholder*='fragen'], input[placeholder*='ask']"
-    );
-    const inputCount = await chatInput.count();
-    expect(inputCount).toBeGreaterThan(0);
+    // Copilot may already be open by default — only toggle if input hidden.
+    // Two textareas exist (mobile drawer + desktop panel); target visible.
+    const chatInputEl = page.locator("textarea[data-chat-input]:visible").first();
+    if (!(await chatInputEl.isVisible().catch(() => false))) {
+      await page.keyboard.press("Meta+Shift+c");
+    }
+    await expect(chatInputEl).toBeVisible({ timeout: 15_000 });
   });
 });
 
@@ -242,21 +290,15 @@ test.describe("Redesign P4: Workspace Split-View", () => {
     expect(createRes.status()).not.toBe(403);
     expect(createRes.status()).not.toBe(503);
 
-    // Navigate to case detail page
+    // Navigate to case detail page — MatterTabBar renders tab links (not
+    // ARIA tabs); labels live in the sticky bar under the matter header.
     await page.goto(`/dashboard/cases/${slug}`, { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(2000);
-
-    // Should see workspace tabs: Übersicht, Dokumente, Fristen, etc.
-    const tabs = page.getByRole("tab");
-    const tabCount = await tabs.count();
+    const tabLink = page.getByRole("link", {
+      name: /Übersicht|Dokumente|Fristen|Verlauf|Kosten|Kontakte/i,
+    });
+    await expect(tabLink.first()).toBeVisible({ timeout: 20_000 });
+    const tabCount = await tabLink.count();
     expect(tabCount).toBeGreaterThanOrEqual(3);
-
-    // Verify at least one of the expected tab labels is present
-    const tabLabels = await tabs.allTextContents();
-    const hasExpectedTab = tabLabels.some((label) =>
-      /Übersicht|Dokumente|Fristen|Kommunikation|KI|Belege|Abrechnung|Verlauf/i.test(label)
-    );
-    expect(hasExpectedTab).toBe(true);
   });
 
   test("case detail page has compact header (no large hero)", async ({ page }) => {
@@ -295,27 +337,47 @@ test.describe("Redesign P5: DataTable & Charts", () => {
   });
 
   test("DataTable renders with TanStack sorting (clickable headers)", async ({ page }) => {
-    // Navigate to a page that uses DataTable — cases page
+    // Seed a case — the DataTable renders EmptyState (no <table>) when empty.
+    const csrfToken = (await page.context().cookies()).find((c) => c.name === "sb_csrf")?.value;
+    await page.context().request.post("/api/pages", {
+      data: {
+        slug: `dt-sort-case-${Date.now()}`,
+        title: "DataTable Sort Test",
+        type: "legal_case",
+        content: "Test",
+        frontmatter: { status: "open" },
+      },
+      headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
+    });
     await page.goto("/dashboard/cases", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(2000);
 
-    // DataTable should render a table element
     const table = page.locator("table").first();
-    if (await table.isVisible()) {
-      // Header cells should be sortable (have cursor-pointer or role=columnheader)
-      const headers = table.locator("th[role='columnheader'], th.cursor-pointer");
-      const headerCount = await headers.count();
-      expect(headerCount).toBeGreaterThan(0);
-    }
+    await expect(table).toBeVisible({ timeout: 20_000 });
+    // Sortable headers render a <button> inside <th> (TanStack toggleSorting)
+    const headers = table.locator("th button");
+    const headerCount = await headers.count();
+    expect(headerCount).toBeGreaterThan(0);
   });
 
   test("KanzleiInsights charts use design-system CSS variables", async ({ page }) => {
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(1500);
 
-    // Charts should render SVG elements with CSS variable-based colors
-    const chartSvgs = page.locator(".recharts-surface");
-    const svgCount = await chartSvgs.count();
+    // Charts render inside the "dashboard" view tab (WidgetBoard) — retry
+    // once after reload to absorb lazy-chunk cold-compiles.
+    const charts = page.locator(".recharts-responsive-container");
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+      await page.waitForTimeout(1500);
+      await page.locator("#dashboard-view-tab-dashboard").click();
+      try {
+        await expect(charts.first()).toBeVisible({ timeout: 45_000 });
+        break;
+      } catch {
+        if (attempt === 1) throw new Error("charts never rendered");
+      }
+    }
+    const svgCount = await page.locator(".recharts-surface").count();
     expect(svgCount).toBeGreaterThanOrEqual(2);
   });
 });
@@ -326,6 +388,9 @@ test.describe("Redesign Gesamt: No Regressions", () => {
   });
 
   test("all dashboard sub-pages load without 503", async ({ page }) => {
+    // 9 routes × up to 90s cold-compile each can't fit the default 60s test
+    // budget — the per-goto timeout is meaningless inside a 60s test.
+    test.setTimeout(480_000);
     const pages = [
       "/dashboard/cases",
       "/dashboard/contacts",
@@ -339,9 +404,14 @@ test.describe("Redesign Gesamt: No Regressions", () => {
     ];
 
     for (const path of pages) {
-      const response = await page.goto(path, { waitUntil: "domcontentloaded" });
+      // Cold dev compiles can exceed the default 60s nav timeout on heavy
+      // routes (e.g. /dashboard/brain) — allow more headroom per page.
+      const response = await page.goto(path, {
+        waitUntil: "domcontentloaded",
+        timeout: 90_000,
+      });
       expect(response?.status()).not.toBe(503);
-      const errorText = page.locator("text=/Engine nicht erreichbar|Service unavailable|503/i");
+      const errorText = page.getByText(/Engine nicht erreichbar|Service unavailable|503/i);
       await expect(errorText).toHaveCount(0, { timeout: 3_000 });
     }
   });

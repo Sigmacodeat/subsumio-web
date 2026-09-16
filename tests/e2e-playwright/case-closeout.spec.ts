@@ -85,7 +85,7 @@ test.describe("Case Closeout Flow", () => {
     expect(createCase.status()).toBeLessThan(300);
 
     // 2. Add a time entry
-    const timeEntry = await api.post("/api/legal/time-entries", {
+    const timeEntry = await api.post("/api/time", {
       headers: { "x-csrf-token": csrf },
       data: {
         case_slug: caseSlug,
@@ -191,7 +191,8 @@ test.describe("Case Closeout Flow", () => {
     const res = await api.get("/api/pages?type=legal_case&limit=100");
     expect(res.status()).toBe(200);
     const data = await res.json();
-    const found = data.pages?.find((p: { slug: string }) => p.slug === caseSlug);
+    const pages = Array.isArray(data) ? data : (data.items ?? data.pages ?? []);
+    const found = pages.find((p: { slug: string }) => p.slug === caseSlug);
     expect(found).toBeTruthy();
     expect(found.frontmatter?.status).toBe("closed");
   });

@@ -202,6 +202,17 @@ describe("signupSchema", () => {
     });
     expect(result.success).toBe(false);
   });
+
+  test("accepts the active Austrian signup locale", () => {
+    const result = signupSchema.safeParse({
+      email: "kanzlei@example.at",
+      password: "SicheresPasswort123",
+      name: "Kanzlei Wien",
+      locale: "at",
+    });
+
+    expect(result.success).toBe(true);
+  });
 });
 
 describe("registerSchema", () => {

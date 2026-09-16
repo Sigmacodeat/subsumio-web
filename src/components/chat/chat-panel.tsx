@@ -226,15 +226,9 @@ const TOOL_RULES: ToolDetectionRule[] = [
     extractParams: (m) => ({
       client_name: m[1],
       matter_type: m[2],
-      jurisdiction: (m[3] as "de" | "at" | "ch") || "de",
+      jurisdiction: "at",
       urgency: (m[4] as "low" | "medium" | "high" | "critical") || "medium",
     }),
-  },
-  {
-    pattern: /\[TOOL:rvg_calculate\s+streitwert="([^"]+)"\]/i,
-    tool: "rvg_calculate",
-    label: "chat.tool.rvg_calculate",
-    extractParams: (m) => ({ streitwert: parseFloat(m[1]) }),
   },
   {
     pattern:
@@ -259,7 +253,7 @@ const TOOL_RULES: ToolDetectionRule[] = [
     label: "chat.tool.precedent_search",
     extractParams: (m) => ({
       query: m[1],
-      jurisdiction: (m[2] as "at" | "de" | "ch") || undefined,
+      jurisdiction: m[2]?.toLowerCase() === "at" ? "at" : undefined,
       legal_area: m[3] || undefined,
     }),
   },
@@ -282,7 +276,7 @@ const TOOL_RULES: ToolDetectionRule[] = [
     label: "chat.tool.obligation_extract",
     extractParams: (m) => ({
       document_slug: m[1] || undefined,
-      jurisdiction: (m[2] as "at" | "de" | "ch" | "all") || "all",
+      jurisdiction: m[2]?.toLowerCase() === "all" ? "all" : "at",
       text: m[3] || undefined,
     }),
   },
@@ -552,11 +546,6 @@ const TOOL_FOLLOW_UPS_DE: Partial<Record<ToolType, Array<{ label: string; query:
     { label: "Kürzen", query: "Kürze die E-Mail auf das Wesentliche" },
     { label: "Betreff anpassen", query: "Ändere den Betreff der E-Mail" },
   ],
-  rvg_calculate: [
-    { label: "Andere Gebühr", query: "Berechne die Gebühr für einen anderen Streitwert" },
-    { label: "Rechnung erstellen", query: "Erstelle eine Honorarrechnung dafür" },
-    { label: "Zeiterfassung", query: "Erstelle einen Zeiteintrag für diese Akte" },
-  ],
   conflict_check: [
     { label: "Mandate prüfen", query: "Prüfe alle aktiven Mandate auf Konflikte" },
     { label: "Neue Akte anlegen", query: "Lege eine neue Akte an" },
@@ -599,11 +588,6 @@ const TOOL_FOLLOW_UPS_EN: Partial<Record<ToolType, Array<{ label: string; query:
     { label: "Formal tone", query: "Make the tone more formal" },
     { label: "Shorten", query: "Shorten the email to the essentials" },
     { label: "Change subject", query: "Change the subject of the email" },
-  ],
-  rvg_calculate: [
-    { label: "Different amount", query: "Calculate the fee for a different dispute value" },
-    { label: "Create invoice", query: "Create an invoice for this" },
-    { label: "Time entry", query: "Create a time entry for this case" },
   ],
   conflict_check: [
     { label: "Check mandates", query: "Check all active cases for conflicts" },
@@ -784,7 +768,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       }
     | undefined
   >(undefined);
-  const [jurisdiction, setJurisdiction] = useState<Jurisdiction>("de");
+  const [jurisdiction, setJurisdiction] = useState<Jurisdiction>("at");
   const [queryMode, setQueryMode] = useState<QueryMode>("deep_matter");
   const [modelOverride, setModelOverride] = useState<string | undefined>(undefined);
   const [sessionTokens, setSessionTokens] = useState(0);
@@ -835,7 +819,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           const casePage = pages.find((p) => p.slug === ctxSlug);
           if (casePage) {
             const fm = caseFrontmatter(casePage);
-            if (fm.jurisdiction) setJurisdiction(fm.jurisdiction as Jurisdiction);
+            setJurisdiction(fm.jurisdiction === "eu" ? "eu" : "at");
             // Extract matter vitals for copilot context
             const deadlines = fm.deadlines || [];
             const tasks = fm.tasks || [];
@@ -2112,7 +2096,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
               .getPage(slug)
               .then((page) => {
                 const fm = caseFrontmatter(page as BrainPage);
-                if (fm.jurisdiction) setJurisdiction(fm.jurisdiction as Jurisdiction);
+                setJurisdiction(fm.jurisdiction === "eu" ? "eu" : "at");
               })
               .catch((err) =>
                 console.warn(

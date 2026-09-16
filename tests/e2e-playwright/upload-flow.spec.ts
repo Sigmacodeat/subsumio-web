@@ -14,7 +14,7 @@ function getTestEmail() {
 test.describe("Upload Flow", () => {
   test.beforeEach(async ({ page }) => {
     const email = getTestEmail();
-    await page.goto("/signup", { waitUntil: "networkidle" });
+    await page.goto("/at/signup", { waitUntil: "networkidle" });
     // Wait for React hydration
     await expect(page.locator('form button[type="submit"]')).toBeEnabled();
     await page.locator('input[name="name"]').fill(TEST_USER.name);
@@ -25,6 +25,18 @@ test.describe("Upload Flow", () => {
       timeout: 45_000,
     });
     await page.waitForLoadState("domcontentloaded");
+    // Complete onboarding via API so dashboard pages don't redirect
+    const csrf = (await page.context().cookies()).find((c) => c.name === "sb_csrf")?.value;
+    await page.context().request.post("/api/onboarding", {
+      data: { industry: null },
+      headers: csrf ? { "x-csrf-token": csrf } : {},
+    });
+    // Set tour-completed to avoid guided tour overlay interfering
+    await page.evaluate(() => {
+      try {
+        localStorage.setItem("subsumio-tour-completed", "true");
+      } catch {}
+    });
   });
 
   test("navigates to upload page", async ({ page }) => {

@@ -71,9 +71,7 @@ function getPriorityOptions(t: (key: import("@/content/dashboard").DashboardKey)
 
 function getJurisdictionOptions(t: (key: import("@/content/dashboard").DashboardKey) => string) {
   return [
-    { value: "de", label: t("casesnew.juris.de") },
     { value: "at", label: t("casesnew.juris.at") },
-    { value: "ch", label: t("casesnew.juris.ch") },
     { value: "eu", label: t("casesnew.juris.eu") },
   ] as const;
 }
@@ -102,29 +100,29 @@ const LEGAL_AREA_SUGGESTIONS = [
 ] as const;
 
 const SUB_AREA_SUGGESTIONS: Record<string, string[]> = {
-  Zivilrecht: ["Vertragsrecht", "Deliktsrecht", "Sachenrecht", "Schuldrecht", "Schadensersatz"],
+  Zivilrecht: ["Vertragsrecht", "Deliktsrecht", "Sachenrecht", "Schuldrecht", "Schadenersatz"],
   Strafrecht: [
     "Wirtschaftsstrafrecht",
     "Verkehrsstrafrecht",
     "Jugendstrafrecht",
-    "Betäubungsmittelstrafrecht",
+    "Suchtmittelstrafrecht",
   ],
   "Öffentliches Recht": ["Staatsrecht", "Verwaltungsrecht", "Europarecht", "Völkerrecht"],
   Arbeitsrecht: ["Kündigungsschutz", "Arbeitsvertrag", "Tarifrecht", "Betriebsverfassungsrecht"],
-  Familienrecht: ["Scheidung", "Sorgerecht", "Unterhalt", "Ehevertrag", "Güterrecht"],
+  Familienrecht: ["Scheidung", "Obsorge", "Unterhalt", "Ehevertrag", "Güterrecht"],
   Erbrecht: ["Testament", "Erbfolge", "Erbteilung", "Pflichtteil"],
   Mietrecht: ["Wohnraummiete", "Gewerbemiete", "Mietkündigung", "Mietminderung"],
   Wettbewerbsrecht: ["UWG", "Markenverletzung", "Wettbewerbsverstoß"],
-  Datenschutzrecht: ["DSGVO", "BDSG", "Datenschutzverletzung", "Auftragsverarbeitung"],
-  Gesellschaftsrecht: ["GmbH", "AG", "KG", "Partnerschaftsgesellschaft"],
+  Datenschutzrecht: ["DSGVO", "DSG", "Datenschutzverletzung", "Auftragsverarbeitung"],
+  Gesellschaftsrecht: ["GmbH", "AG", "KG", "GesbR"],
   Insolvenzrecht: ["Insolvenzeröffnung", "Insolvenzverwaltung", "Restschuldbefreiung"],
-  Verwaltungsrecht: ["Baugenehmigung", "Umweltrecht", "Vergaberecht", "Asylrecht"],
-  Baurecht: ["Bauvertrag", "Baugenehmigung", "Nachbarrecht", "Denkmalschutz"],
+  Verwaltungsrecht: ["Baubewilligung", "Umweltrecht", "Vergaberecht", "Asylrecht"],
+  Baurecht: ["Bauvertrag", "Baubewilligung", "Nachbarrecht", "Denkmalschutz"],
   Medizinrecht: ["Behandlungsfehler", "Arzthaftung", "Apothekenrecht"],
   Urheberrecht: ["Lizenz", "Verletzung", "Verlagsrecht"],
   Markenrecht: ["Markenanmeldung", "Markenverletzung", "Markenlöschung"],
-  Steuerrecht: ["Einkommensteuer", "Umsatzsteuer", "Gewerbesteuer", "Steuerstrafrecht"],
-  Sozialrecht: ["SGB V", "SGB VIII", "SGB IX", "Rentenrecht"],
+  Steuerrecht: ["Einkommensteuer", "Umsatzsteuer", "Körperschaftsteuer", "Finanzstrafrecht"],
+  Sozialrecht: ["ASVG", "AlVG", "Pflegegeld", "Pensionsrecht"],
   Bankrecht: ["Kreditrecht", "Kapitalmarktrecht", "Zahlungsverkehr"],
   Versicherungsrecht: ["Kfz-Versicherung", "Rechtsschutzversicherung", "Lebensversicherung"],
 };
@@ -211,7 +209,7 @@ export default function NewCasePage() {
       subArea: "",
       status: "open",
       priority: "medium",
-      jurisdiction: "de",
+      jurisdiction: "at",
       clientName: "",
       clientSlug: "",
       opponentName: "",
@@ -1141,15 +1139,14 @@ export default function NewCasePage() {
                 {t("casesnew.btn_back")}
               </Button>
             )}
-            <Link href="/dashboard/cases">
-              <Button
-                type="button"
-                variant="ghost"
-                className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
-              >
-                {t("casesnew.btn_cancel")}
-              </Button>
-            </Link>
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+              asChild
+            >
+              <Link href="/dashboard/cases">{t("casesnew.btn_cancel")}</Link>
+            </Button>
           </div>
 
           <div className="flex items-center gap-3">

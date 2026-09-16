@@ -124,5 +124,6 @@ export function invoiceToEInvoiceData(
     buyerReference: options?.buyerReference,
     caseReference: invoice.case_number,
     notes: invoice.notes,
+    taxExemptionReason: isKleinunternehmer ? "Kleinunternehmer gemäß §19 (1) UStG" : undefined,
   };
 }

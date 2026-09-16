@@ -32,9 +32,9 @@ describe("fax-gateway", () => {
       expect(formatFaxNumber("+49 30 1234-567")).toBe("+49301234567");
     });
 
-    test("convertates leading 0 to +49", () => {
-      const result = formatFaxNumber("0301234567");
-      expect(result).toMatch(/^\+49/);
+    test("converts an Austrian national number to +43", () => {
+      const result = formatFaxNumber("011234567");
+      expect(result).toBe("+4311234567");
     });
   });
 

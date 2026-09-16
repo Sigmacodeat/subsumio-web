@@ -31,10 +31,10 @@ export function isExternalUrl(url: string): boolean {
   return /^https?:\/\//.test(url);
 }
 
-export function subsumioCanonical(lang: Lang): string {
+export function subsumioCanonical(_lang: Lang): string {
   if (isExternalUrl(SUBSUMIO_SITE_URL)) {
     const root = SUBSUMIO_SITE_URL.replace(/\/$/, "");
-    return lang === "en" ? `${root}/en` : root;
+    return `${root}/at`;
   }
-  return lang === "en" ? "/en" : "/";
+  return "/at";
 }

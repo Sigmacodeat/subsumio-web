@@ -273,7 +273,7 @@ export default function TemplateLibraryPage() {
         actions={
           <Button
             onClick={startCreate}
-            className="gap-2 bg-[color:var(--ds-success-solid)] text-white hover:bg-[color:var(--ds-success-solid)]"
+            className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-white hover:bg-[color:var(--signal-success-800)]"
           >
             <Plus size={15} /> {t("templates.btn_new")}
           </Button>
@@ -296,7 +296,7 @@ export default function TemplateLibraryPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px]" aria-label={t("templates.all_categories")}>
               <SelectValue placeholder={t("templates.all_categories")} />
             </SelectTrigger>
             <SelectContent>
@@ -309,7 +309,7 @@ export default function TemplateLibraryPage() {
             </SelectContent>
           </Select>
           <Select value={filterJurisdiction} onValueChange={setFilterJurisdiction}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px]" aria-label={t("templates.all_jurisdictions")}>
               <SelectValue placeholder={t("templates.all_jurisdictions")} />
             </SelectTrigger>
             <SelectContent>
@@ -487,7 +487,7 @@ export default function TemplateLibraryPage() {
                 <div className="space-y-2">
                   <Label>{t("templates.label_category")}</Label>
                   <Select value={formCategory} onValueChange={setFormCategory}>
-                    <SelectTrigger>
+                    <SelectTrigger aria-label={t("templates.label_category")}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -502,7 +502,7 @@ export default function TemplateLibraryPage() {
                 <div className="space-y-2">
                   <Label>{t("templates.label_jurisdiction")}</Label>
                   <Select value={formJurisdiction} onValueChange={setFormJurisdiction}>
-                    <SelectTrigger>
+                    <SelectTrigger aria-label={t("templates.label_jurisdiction")}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

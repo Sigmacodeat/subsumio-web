@@ -5,25 +5,19 @@ export const metadata: Metadata = {
   robots: { index: false },
   title: "Impressum",
   description:
-    "Impressum und Betreiberinformationen für Subsumio — der AI Legal Workspace für Kanzleien in DACH.",
+    "Impressum und Betreiberinformationen für Subsumio — der AI Legal Workspace für Kanzleien in Österreich.",
   alternates: {
     canonical: "/at/imprint",
-    languages: {
-      "de-DE": "/imprint",
-      "de-AT": "/at/imprint",
-      "de-CH": "/ch/imprint",
-      en: "/en/imprint",
-    },
   },
   openGraph: {
     title: "Impressum — Subsumio",
     description:
-      "Impressum und Betreiberinformationen für Subsumio — der AI Legal Workspace für Kanzleien in DACH.",
+      "Impressum und Betreiberinformationen für Subsumio — der AI Legal Workspace für Kanzleien in Österreich.",
     url: "/at/imprint",
     type: "website",
   },
 };
 
 export default function ImprintPage() {
-  return <ImprintContent home="/at" lang="at" />;
+  return <ImprintContent home="/at" />;
 }

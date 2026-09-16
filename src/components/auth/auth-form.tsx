@@ -19,8 +19,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioLogo } from "@/components/brand/subsumio-logo";
-import { MarketingBackground, H2_CTA_CLASS } from "@/components/marketing/chrome";
-import { p, type Lang } from "@/content/site";
+import { MarketingBackground } from "@/components/marketing/chrome";
+import { H2_CTA_CLASS } from "@/components/marketing/primitives";
+import { p } from "@/content/site";
 import { styleForIndustry } from "@/lib/industry-theme";
 import {
   ClipReveal,
@@ -30,80 +31,43 @@ import {
 } from "@/components/marketing/motion-system";
 
 const COPY = {
-  en: {
-    login: {
-      title: "Welcome back",
-      sub: "Your legal workspace kept working while you were gone.",
-      cta: "Sign in",
-      switchText: "No account yet?",
-      switchCta: "Start free",
-    },
-    signup: {
-      title: "Start Subsumio",
-      sub: "Legal software for matters, deadlines and cited AI.",
-      cta: "Create account",
-      switchText: "Already have an account?",
-      switchCta: "Sign in",
-    },
-    email: "Email",
-    emailPlaceholder: "kanzlei@beispiel.at",
-    password: "Password",
-    passwordHint: "At least 8 characters",
-    passwordPlaceholder: "••••••••",
-    name: "Name",
-    namePlaceholder: "Dr. Anna Müller",
-    errors: {
-      invalid_credentials: "Email or password is incorrect.",
-      email_taken: "An account with this email already exists.",
-      weak_password: "Password must be at least 8 characters.",
-      invalid_email: "Please enter a valid email address.",
-      invalid_name: "Please enter your name.",
-      sso_required: "Please use the Microsoft or Google button to sign in.",
-      generic: "Something went wrong. Please try again.",
-    } as Record<string, string>,
-    referralNote: "You were referred — your first month on a paid plan is free.",
-    biometric: "Sign in with Face ID / Touch ID",
-    biometricUnavailable: "Biometric not available",
+  login: {
+    title: "Willkommen zurück",
+    sub: "Dein Legal Workspace hat weitergearbeitet, während du weg warst.",
+    cta: "Anmelden",
+    switchText: "Noch kein Konto?",
+    switchCta: "Kostenlos starten",
   },
-  de: {
-    login: {
-      title: "Willkommen zurück",
-      sub: "Dein Legal Workspace hat weitergearbeitet, während du weg warst.",
-      cta: "Anmelden",
-      switchText: "Noch kein Konto?",
-      switchCta: "Kostenlos starten",
-    },
-    signup: {
-      title: "Subsumio starten",
-      sub: "Legal Software für Akten, Fristen und recherchierte Antworten mit Fundstellen.",
-      cta: "Konto erstellen",
-      switchText: "Schon ein Konto?",
-      switchCta: "Anmelden",
-    },
-    email: "E-Mail",
-    emailPlaceholder: "kanzlei@beispiel.at",
-    password: "Passwort",
-    passwordHint: "Mindestens 8 Zeichen",
-    passwordPlaceholder: "••••••••",
-    name: "Name",
-    namePlaceholder: "Dr. Anna Müller",
-    errors: {
-      invalid_credentials: "E-Mail oder Passwort ist falsch.",
-      email_taken: "Ein Konto mit dieser E-Mail existiert bereits.",
-      weak_password: "Das Passwort braucht mindestens 8 Zeichen.",
-      invalid_email: "Bitte gib eine gültige E-Mail-Adresse ein.",
-      invalid_name: "Bitte gib deinen Namen ein.",
-      sso_required: "Bitte nutze die Microsoft- oder Google-Anmeldung.",
-      generic: "Etwas ist schiefgelaufen. Bitte versuch es erneut.",
-    } as Record<string, string>,
-    referralNote: "Du wurdest empfohlen — dein erster Monat auf einem Bezahlplan ist gratis.",
-    biometric: "Mit Face ID / Touch ID anmelden",
-    biometricUnavailable: "Biometrie nicht verfügbar",
+  signup: {
+    title: "Subsumio starten",
+    sub: "Legal Software für Akten, Fristen und recherchierte Antworten mit Fundstellen.",
+    cta: "Konto erstellen",
+    switchText: "Schon ein Konto?",
+    switchCta: "Anmelden",
   },
+  email: "E-Mail",
+  emailPlaceholder: "kanzlei@beispiel.at",
+  password: "Passwort",
+  passwordHint: "Mindestens 8 Zeichen",
+  passwordPlaceholder: "••••••••",
+  name: "Name",
+  namePlaceholder: "Dr. Anna Müller",
+  errors: {
+    invalid_credentials: "E-Mail oder Passwort ist falsch.",
+    email_taken: "Ein Konto mit dieser E-Mail existiert bereits.",
+    weak_password: "Das Passwort braucht mindestens 8 Zeichen.",
+    invalid_email: "Bitte gib eine gültige E-Mail-Adresse ein.",
+    invalid_name: "Bitte gib deinen Namen ein.",
+    sso_required: "Bitte nutze die Microsoft- oder Google-Anmeldung.",
+    generic: "Etwas ist schiefgelaufen. Bitte versuch es erneut.",
+  } as Record<string, string>,
+  referralNote: "Du wurdest empfohlen — dein erster Monat auf einem Bezahlplan ist gratis.",
+  biometric: "Mit Face ID / Touch ID anmelden",
+  biometricUnavailable: "Biometrie nicht verfügbar",
 } as const;
 
-function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang }) {
-  const t = (COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de;
+function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
+  const t = COPY;
   const m = t[mode];
   const _router = useRouter();
   const params = useSearchParams();
@@ -212,7 +176,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           mode === "signup"
-            ? { name, email, password, locale: lang, industry }
+            ? { name, email, password, locale: "at", industry }
             : { email, password }
         ),
       });
@@ -243,18 +207,13 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
     <div
       data-tone="dark"
       className="flex min-h-screen items-center justify-center px-6 py-12 [background:var(--mk-bg)]"
-      lang={lang}
       style={styleForIndustry(industry)}
     >
       <MarketingBackground />
       <div className="relative z-10 w-full max-w-md">
         <StaggerContainer className="flex flex-col items-center">
           <StaggerItem>
-            <Link
-              href={p(lang, "")}
-              className="mb-8 flex justify-center"
-              aria-label="Subsumio home"
-            >
+            <Link href={p("")} className="mb-8 flex justify-center" aria-label="Subsumio home">
               <SubsumioLogo size={40} />
             </Link>
           </StaggerItem>
@@ -345,10 +304,10 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
               )}
               {mode === "login" && (
                 <Link
-                  href={p(lang, "/forgot")}
+                  href={p("/forgot")}
                   className="mt-1.5 inline-block text-xs text-[var(--brand-text)] hover:underline"
                 >
-                  {lang !== "en" ? "Passwort vergessen?" : "Forgot password?"}
+                  Passwort vergessen?
                 </Link>
               )}
             </label>
@@ -382,11 +341,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border [border-color:var(--mk-border)] py-2.5 text-sm [color:var(--mk-text)] transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)] hover:[background:var(--mk-surface)] active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none"
             >
               <Fingerprint size={16} className="text-[var(--brand-primary)]" />
-              {biometricLoading
-                ? lang !== "en"
-                  ? "Wird verifiziert…"
-                  : "Verifying…"
-                : t.biometric}
+              {biometricLoading ? "Wird verifiziert…" : t.biometric}
             </button>
           )}
 
@@ -398,7 +353,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
                 </div>
                 <div className="relative flex justify-center text-xs">
                   <span className="px-2 [color:var(--mk-text-subtle)] [background:var(--mk-surface-2)]">
-                    {lang !== "en" ? "oder" : "or"}
+                    oder
                   </span>
                 </div>
               </div>
@@ -441,7 +396,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
               </div>
               {ssoLoading && (
                 <p className="mt-2 text-center text-xs [color:var(--mk-text-subtle)]">
-                  {lang !== "en" ? "Weiterleitung zum Anbieter..." : "Redirecting to provider..."}
+                  Weiterleitung zum Anbieter...
                 </p>
               )}
             </div>
@@ -451,7 +406,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
             <p className="mt-6 text-center text-xs [color:var(--mk-text-muted)]">
               {m.switchText}{" "}
               <Link
-                href={`${p(lang, mode === "login" ? "/signup" : "/login")}${next !== "/dashboard" ? `?next=${encodeURIComponent(next)}` : ""}`}
+                href={`${p(mode === "login" ? "/signup" : "/login")}${next !== "/dashboard" ? `?next=${encodeURIComponent(next)}` : ""}`}
                 className="font-medium text-[var(--brand-text)] hover:underline"
               >
                 {m.switchCta}
@@ -464,7 +419,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
   );
 }
 
-export default function AuthForm(props: { mode: "login" | "signup"; lang: Lang }) {
+export default function AuthForm(props: { mode: "login" | "signup" }) {
   // useSearchParams requires a Suspense boundary during prerender.
   return (
     <Suspense

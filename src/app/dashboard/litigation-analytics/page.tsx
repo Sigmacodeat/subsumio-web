@@ -314,6 +314,7 @@ export default function LitigationAnalyticsPage() {
           />
         </div>
         <select
+          aria-label={t("analytics.filter_court")}
           value={filterCourt}
           onChange={(e) => setFilterCourt(e.target.value)}
           className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
@@ -326,6 +327,7 @@ export default function LitigationAnalyticsPage() {
           ))}
         </select>
         <select
+          aria-label={t("analytics.filter_outcome")}
           value={filterOutcome}
           onChange={(e) => setFilterOutcome(e.target.value)}
           className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
@@ -340,6 +342,7 @@ export default function LitigationAnalyticsPage() {
           )}
         </select>
         <select
+          aria-label={t("analytics.filter_procedure")}
           value={filterProcedure}
           onChange={(e) => setFilterProcedure(e.target.value)}
           className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
@@ -666,6 +669,7 @@ function CreateOutcomeModal({
                 {t("analytics.court_level")}
               </label>
               <select
+                aria-label={t("analytics.court_level")}
                 value={form.courtLevel}
                 onChange={(e) =>
                   setForm({ ...form, courtLevel: e.target.value as CourtLevel | "" })
@@ -706,6 +710,7 @@ function CreateOutcomeModal({
                 {t("analytics.procedure_type")}
               </label>
               <select
+                aria-label={t("analytics.procedure_type")}
                 value={form.procedureType}
                 onChange={(e) =>
                   setForm({ ...form, procedureType: e.target.value as ProcedureType })
@@ -734,6 +739,7 @@ function CreateOutcomeModal({
                 {t("analytics.outcome")}
               </label>
               <select
+                aria-label={t("analytics.outcome")}
                 value={form.outcome}
                 onChange={(e) => setForm({ ...form, outcome: e.target.value as OutcomeType })}
                 className={inputClass}

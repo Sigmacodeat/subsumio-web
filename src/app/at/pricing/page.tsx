@@ -9,12 +9,6 @@ export const metadata: Metadata = {
     "Getrennte Preise für Privatpersonen und professionelle Aktenarbeit. Solo 249 €/Monat, Kanzlei 1.499 €/Monat inklusive 5 Nutzern, monatlich kündbar.",
   alternates: {
     canonical: "/at/pricing",
-    languages: {
-      "de-DE": "/pricing",
-      "de-AT": "/at/pricing",
-      "de-CH": "/ch/pricing",
-      en: "/en/pricing",
-    },
   },
   openGraph: {
     title: "Subsumio Preise — Privat, Solo, Kanzlei und Enterprise",
@@ -26,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  const pricing = professionalPricing("at");
+  const pricing = professionalPricing();
   const offers = pricing.tiers
     .filter((t) => t.id !== "ent")
     .map((t) => ({
@@ -41,7 +35,7 @@ export default function Page() {
     <>
       <JsonLd
         data={{
-          ...softwareApplicationLd("at"),
+          ...softwareApplicationLd(),
           offers: [
             ...offers,
             {
@@ -62,7 +56,7 @@ export default function Page() {
           { name: "Preise", url: "/at/pricing" },
         ])}
       />
-      <PricingPage lang="at" />
+      <PricingPage />
     </>
   );
 }

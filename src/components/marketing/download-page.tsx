@@ -24,30 +24,27 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
-import { p, UI_STRINGS, type Lang } from "@/content/site";
+import { p, UI_STRINGS } from "@/content/site";
 import { DOWNLOAD } from "@/content/download";
-import { Section, SectionHeading, PageHero, CTASection, IconTile } from "./chrome";
+import { Section, SectionHeading, PageHero, CTASection, IconTile } from "./primitives";
 import { AnimatedFaqList } from "./animated-faq";
 import { GlowCard, StaggerContainer, StaggerItem } from "./motion-system";
 
 const PLATFORM_ICONS: Record<string, LucideIcon> = { Apple, Smartphone, Monitor };
 
-function NotifyMe({ lang }: { lang: Lang }) {
+function NotifyMe() {
   const [email, setEmail] = useState("");
-  const isDe = lang === "de" || lang === "at" || lang === "ch";
-  const label = isDe ? "App-Launch Benachrichtigung" : "App launch notification";
-  const placeholder = isDe ? "Deine E-Mail-Adresse" : "Your email address";
-  const button = isDe ? "Benachrichtige mich" : "Notify me";
-  const privacy = isDe
-    ? "Kein Spam. Wir schreiben dich an, sobald die Store-Apps live sind."
-    : "No spam. We will email you once store apps are available.";
+  const label = "App-Launch Benachrichtigung";
+  const placeholder = "Deine E-Mail-Adresse";
+  const button = "Benachrichtige mich";
+  const privacy = "Kein Spam. Wir schreiben dich an, sobald die Store-Apps live sind.";
   return (
     <form
       className="mx-auto max-w-md"
       onSubmit={(e) => {
         e.preventDefault();
         if (!email) return;
-        const subject = isDe ? "App-Launch Benachrichtigung" : "App launch notification";
+        const subject = "App-Launch Benachrichtigung";
         window.location.href = `mailto:hello@subsum.eu?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(email)}`;
       }}
     >
@@ -57,7 +54,7 @@ function NotifyMe({ lang }: { lang: Lang }) {
       >
         {label}
       </label>
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <input
           id="notify-email"
           type="email"
@@ -69,7 +66,7 @@ function NotifyMe({ lang }: { lang: Lang }) {
           required
           className="flex-1 rounded-xl border [border-color:var(--mk-control-border)] px-4 py-3 text-sm [color:var(--mk-text)] [background:var(--mk-surface)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--mk-focus-ring)] focus:ring-2 focus:ring-[var(--mk-focus-ring)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
         />
-        <Button type="submit" className="gap-2">
+        <Button type="submit" className="w-full gap-2 sm:w-auto">
           <Mail size={16} />
           {button}
         </Button>
@@ -85,7 +82,7 @@ interface BeforeInstallPromptEvent extends Event {
 
 // --- Animated phone mockup -----------------------------------------------
 
-function PhoneMockup({ lang }: { lang: Lang }) {
+function PhoneMockup() {
   return (
     <motion.div
       initial={{ opacity: 0, y: 24, rotate: -2 }}
@@ -128,9 +125,7 @@ function PhoneMockup({ lang }: { lang: Lang }) {
             className="mx-4 flex items-center gap-2 rounded-xl border [border-color:var(--mk-border)] px-3 py-2 [background:var(--mk-bg)]"
           >
             <Search size={12} className="brand-text" />
-            <span className="text-sm [color:var(--mk-text-muted)]">
-              {UI_STRINGS[lang].askYourBrain}
-            </span>
+            <span className="text-sm [color:var(--mk-text-muted)]">{UI_STRINGS.askYourBrain}</span>
           </motion.div>
 
           {/* answer card */}
@@ -141,7 +136,7 @@ function PhoneMockup({ lang }: { lang: Lang }) {
             className="mx-4 mt-3 rounded-xl border border-[var(--brand-primary)]/20 bg-[var(--brand-primary)]/[0.05] p-3"
           >
             <p className="mb-2 text-sm leading-relaxed [color:var(--mk-text-muted)]">
-              {UI_STRINGS[lang].downloadHint}
+              {UI_STRINGS.downloadHint}
             </p>
             {[0, 1, 2].map((i) => (
               <motion.div
@@ -164,7 +159,7 @@ function PhoneMockup({ lang }: { lang: Lang }) {
               transition={{ delay: 1.9, duration: 0.4 }}
               className="mt-2 text-sm [color:var(--ds-warning-text)]"
             >
-              {UI_STRINGS[lang].gapWarning}
+              {UI_STRINGS.gapWarning}
             </motion.p>
           </motion.div>
 
@@ -176,9 +171,7 @@ function PhoneMockup({ lang }: { lang: Lang }) {
             className="absolute bottom-4 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 [background:var(--mk-surface)]"
           >
             <WifiOff size={10} className="text-[var(--brand-secondary)]" />
-            <span className="text-sm [color:var(--mk-text-muted)]">
-              {UI_STRINGS[lang].worksOffline}
-            </span>
+            <span className="text-sm [color:var(--mk-text-muted)]">{UI_STRINGS.worksOffline}</span>
           </motion.div>
         </div>
       </motion.div>
@@ -186,8 +179,8 @@ function PhoneMockup({ lang }: { lang: Lang }) {
   );
 }
 
-export default function DownloadPage({ lang }: { lang: Lang }) {
-  const t = DOWNLOAD[lang];
+export default function DownloadPage() {
+  const t = DOWNLOAD;
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
 
   // Chrome/Edge fire beforeinstallprompt → we can offer a real one-click install.
@@ -201,11 +194,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
   }, []);
 
   return (
-    <div
-      data-tone="light"
-      className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
-      lang={lang}
-    >
+    <div data-tone="light" className="min-h-screen overflow-x-clip [background:var(--mk-bg)]">
       {/* Hero — copy left, phone mockup right */}
       <PageHero
         badge={t.badge}
@@ -223,23 +212,23 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
                 onClick={() => installEvent.prompt()}
               >
                 <DownloadIcon size={18} />
-                {UI_STRINGS[lang].installNow}
+                {UI_STRINGS.installNow}
               </Button>
             ) : (
-              <Link href={p(lang, "/signup")} className="inline-flex">
-                <Button size="xl" variant="primary">
-                  {UI_STRINGS[lang].getStarted} <ArrowRight size={18} />
-                </Button>
-              </Link>
-            )}
-            <Link href={p(lang, "/features")} className="inline-flex">
-              <Button size="xl" variant="secondary">
-                {UI_STRINGS[lang].seeFeatures}
+              <Button size="xl" variant="primary" asChild>
+                <Link href={p("/signup")} className="inline-flex">
+                  {UI_STRINGS.getStarted} <ArrowRight size={18} />
+                </Link>
               </Button>
-            </Link>
+            )}
+            <Button size="xl" variant="secondary" asChild>
+              <Link href={p("/features")} className="inline-flex">
+                {UI_STRINGS.seeFeatures}
+              </Link>
+            </Button>
           </>
         }
-        visual={<PhoneMockup lang={lang} />}
+        visual={<PhoneMockup />}
       />
 
       {/* Platform cards */}
@@ -291,15 +280,15 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
             {[
               {
                 icon: Bell,
-                label: UI_STRINGS[lang].pushNotifications,
+                label: UI_STRINGS.pushNotifications,
               },
               {
                 icon: Fingerprint,
-                label: UI_STRINGS[lang].biometricUnlock,
+                label: UI_STRINGS.biometricUnlock,
               },
               {
                 icon: Share2,
-                label: UI_STRINGS[lang].sendToSubsumio,
+                label: UI_STRINGS.sendToSubsumio,
               },
             ].map((f) => {
               const Icon = f.icon;
@@ -316,7 +305,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
 
           {/* Notify me when store apps launch */}
           <div className="mb-6">
-            <NotifyMe lang={lang} />
+            <NotifyMe />
           </div>
           <p className="mx-auto max-w-xl text-sm leading-relaxed [color:var(--mk-text-subtle)]">
             {t.storesNote}
@@ -336,10 +325,10 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
       <CTASection
         title={t.ctaTitle}
         sub={t.ctaSub}
-        href={p(lang, "/signup")}
+        href={p("/signup")}
         label={t.ctaButton}
-        secondaryHref={p(lang, "/contact")}
-        secondaryLabel={UI_STRINGS[lang].writeUs}
+        secondaryHref={p("/contact")}
+        secondaryLabel={UI_STRINGS.writeUs}
       />
     </div>
   );

@@ -649,7 +649,7 @@ export default function DraftingPage() {
             }}
             compact
           />
-          <p className="border-t border-[color:var(--ds-border)] pt-2 text-xs leading-relaxed text-[color:var(--ds-warning-text)]/70">
+          <p className="border-t border-[color:var(--ds-border)] pt-2 text-xs leading-relaxed text-[color:var(--ds-warning-text)]">
             {AI_NOTICE}
           </p>
           {draftSaved && (

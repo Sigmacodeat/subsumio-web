@@ -42,12 +42,18 @@ async function signUpViaApi(page: import("@playwright/test").Page) {
 }
 
 async function openChat(page: import("@playwright/test").Page) {
+  // Pin copilot-open before app code runs (persisted state + default are
+  // flaky under cold dev compiles).
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem("subsumio-copilot-open", "true");
+      localStorage.setItem("subsumio-tour-completed", "true");
+    } catch {}
+  });
   await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-  await page.waitForTimeout(1500);
-  await page.keyboard.press("Meta+j");
-  await page.waitForTimeout(800);
-  const chatInput = page.locator("textarea[data-chat-input]").first();
-  await expect(chatInput).toBeVisible({ timeout: 10_000 });
+  // Two textareas carry data-chat-input (mobile drawer + desktop panel).
+  const chatInput = page.locator("textarea[data-chat-input]:visible").first();
+  await expect(chatInput).toBeVisible({ timeout: 15_000 });
   return chatInput;
 }
 
@@ -72,18 +78,36 @@ test.describe("Chat Flows", () => {
     await chatInput.press("Enter");
     const stopButton = page.getByRole("button", { name: /Stop|stop|Generierung/i }).first();
     await expect(stopButton).toBeVisible({ timeout: 10_000 });
-    await stopButton.click();
+    // The stop button title is "Stoppen (Esc)" — Esc is the documented path
+    // and avoids click-stability races while the streaming UI re-renders.
+    await chatInput.press("Escape");
     await expect(page.getByRole("button", { name: /Send|send/i }).first()).toBeVisible({
       timeout: 10_000,
     });
   });
 
   test("manages chat sessions via header", async ({ page }) => {
-    await openChat(page);
-    const chatInput = page.locator("textarea[data-chat-input]").first();
+    // Session management lives in the fullscreen chat header (persistHistory);
+    // the copilot panel doesn't render the sessions dropdown.
+    await page.addInitScript(() => {
+      try {
+        localStorage.setItem("subsumio-tour-completed", "true");
+      } catch {}
+    });
+    await page.goto("/dashboard/chat", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(2000);
+    // Two chat surfaces render here (fullscreen page + copilot drawer). The
+    // drawer's textarea is DOM-visible even when closed, so scope to main —
+    // otherwise fill+Enter lands in the closed copilot and no message sends.
+    const chatInput = page.getByRole("main").locator("textarea[data-chat-input]:visible").first();
+    await expect(chatInput).toBeVisible({ timeout: 15_000 });
     await chatInput.fill("Erste Sitzung");
     await chatInput.press("Enter");
     await expect(page.getByText("Erste Sitzung")).toBeVisible({ timeout: 10_000 });
+    // Wait for the response to finish streaming — the header re-renders
+    // continuously while streaming and blocks dropdown clicks.
+    const aiArticle = page.locator("[role='article'][aria-label*='Assistenten']").last();
+    await expect(aiArticle).not.toBeEmpty({ timeout: 30_000 });
 
     // Open sessions dropdown and create a new session
     const sessionDropdown = page.getByRole("button", { name: /Neue|Sitzung|Session/i }).first();
@@ -91,7 +115,7 @@ test.describe("Chat Flows", () => {
     await sessionDropdown.click();
     await page.waitForTimeout(300);
     const newSessionButton = page
-      .getByRole("button", { name: /Neue Sitzung|New Session/i })
+      .getByRole("button", { name: /Neue (Sitzung|Konversation)|New (Session|Conversation)/i })
       .first();
     await expect(newSessionButton).toBeVisible({ timeout: 10_000 });
     await newSessionButton.click();
@@ -125,7 +149,7 @@ test.describe("Chat Flows", () => {
 
     await page.goto(`/dashboard/chat?case=${slug}`, { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const chatInput = page.locator("textarea[data-chat-input]").first();
+    const chatInput = page.locator("textarea[data-chat-input]:visible").first();
     await expect(chatInput).toBeVisible({ timeout: 10_000 });
   });
 

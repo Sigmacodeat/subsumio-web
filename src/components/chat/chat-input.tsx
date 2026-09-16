@@ -339,7 +339,7 @@ export function ChatInput({
 
             {/* Micro hint — Enter to send */}
             {text.length === 0 && !isStreaming && (
-              <span className="pointer-events-none hidden pr-1 text-[11px] text-[color:var(--ds-text-subtle)]/50 sm:block">
+              <span className="pointer-events-none hidden pr-1 text-[11px] text-[color:var(--ds-text-subtle)] sm:block">
                 ↵
               </span>
             )}

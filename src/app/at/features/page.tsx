@@ -2,39 +2,41 @@ import type { Metadata } from "next";
 import FeaturesPage from "@/components/marketing/features-page";
 import { FEATURES_PAGE } from "@/content/features";
 import { JsonLd, softwareApplicationLd, faqPageLd, breadcrumbLd } from "@/components/seo/jsonld";
+import { keywordsFor } from "@/lib/seo-keywords";
 
 export const metadata: Metadata = {
-  title: FEATURES_PAGE.at.metaTitle,
-  description: FEATURES_PAGE.at.metaDesc,
+  title: FEATURES_PAGE.metaTitle,
+  description: FEATURES_PAGE.metaDesc,
+  keywords: keywordsFor("features"),
   alternates: {
     canonical: "/at/features",
-    languages: {
-      "de-DE": "/features",
-      "de-AT": "/at/features",
-      "de-CH": "/ch/features",
-      en: "/en/features",
-    },
   },
   openGraph: {
-    title: FEATURES_PAGE.at.metaTitle,
-    description: FEATURES_PAGE.at.metaDesc,
+    title: FEATURES_PAGE.metaTitle,
+    description: FEATURES_PAGE.metaDesc,
     url: "/at/features",
     type: "website",
+    siteName: "Subsumio",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: FEATURES_PAGE.metaTitle,
+    description: FEATURES_PAGE.metaDesc,
   },
 };
 
 export default function Page() {
   return (
     <>
-      <JsonLd data={softwareApplicationLd("at")} />
-      <JsonLd data={faqPageLd(FEATURES_PAGE.at.faq)} />
+      <JsonLd data={softwareApplicationLd()} />
+      <JsonLd data={faqPageLd(FEATURES_PAGE.faq)} />
       <JsonLd
         data={breadcrumbLd([
           { name: "Subsumio", url: "/at" },
           { name: "Features", url: "/at/features" },
         ])}
       />
-      <FeaturesPage lang="at" />
+      <FeaturesPage />
     </>
   );
 }

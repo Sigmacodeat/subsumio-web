@@ -202,12 +202,12 @@ export default function WorkflowsPage() {
         ]}
         actions={
           <div className="flex items-center gap-2">
-            <Link href="/dashboard/workflows/builder">
-              <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2" asChild>
+              <Link href="/dashboard/workflows/builder">
                 <Settings2 size={16} />
                 {t("workflows.builder.open")}
-              </Button>
-            </Link>
+              </Link>
+            </Button>
             <Button onClick={() => setSelectedTemplate("due_diligence")}>
               <Plus size={16} />
               {t("workflows.new")}
@@ -223,7 +223,7 @@ export default function WorkflowsPage() {
         data-tour="workflows-intro"
       >
         <Info size={16} className="brand-text mt-0.5 shrink-0" aria-hidden="true" />
-        <p className="brand-text/90 text-xs leading-relaxed">{t("workflows.note")}</p>
+        <p className="brand-text text-xs leading-relaxed">{t("workflows.note")}</p>
       </div>
 
       {error && (
@@ -605,7 +605,7 @@ function WorkflowCard({
                   <p className="text-xs font-medium text-[color:var(--ds-danger-text)]">
                     {s.label}
                   </p>
-                  <p className="mt-0.5 text-xs text-[color:var(--ds-danger-text)]/80">{s.error}</p>
+                  <p className="mt-0.5 text-xs text-[color:var(--ds-danger-text)]">{s.error}</p>
                 </div>
               </div>
             ))}

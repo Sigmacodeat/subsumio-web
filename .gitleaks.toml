@@ -102,6 +102,8 @@ paths = [
 regexes = [
   # Placeholder values in documentation
   '''subsumio-dev-encryption-key-32chars!''',
+  # Playwright e2e placeholder (playwright.config.ts) — not a real key
+  '''subsumio-e2e-encryption-key-32chars!''',
   # Test values
   '''test-cron-secret''',
   '''sk_live_test_''',

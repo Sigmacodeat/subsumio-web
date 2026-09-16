@@ -48,10 +48,10 @@ interface DeepAnalysisReport {
 }
 
 const riskColors: Record<string, string> = {
-  low: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]",
-  medium: "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)]",
-  high: "bg-[color:var(--ds-attention-solid)] text-[color:var(--ds-attention-text)]",
-  critical: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)]",
+  low: "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
+  medium: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+  high: "bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)]",
+  critical: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
 };
 
 const riskBorder: Record<string, string> = {

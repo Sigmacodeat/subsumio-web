@@ -340,7 +340,7 @@ export default function InvestigationPage({
               <p className="text-sm font-medium text-[color:var(--ds-danger-text)]">
                 Sachverhaltsprüfung konnte nicht geladen werden
               </p>
-              <p className="text-xs text-[color:var(--ds-danger-text)]/80">{error}</p>
+              <p className="text-xs text-[color:var(--ds-danger-text)]">{error}</p>
               <Button variant="secondary" size="sm" onClick={loadResult}>
                 Erneut versuchen
               </Button>
@@ -377,11 +377,9 @@ export default function InvestigationPage({
         ]}
         actions={
           <div className="flex items-center gap-2">
-            <Link href={`/dashboard/cases/${slug}`}>
-              <Button variant="ghost" size="sm">
-                Zurück zum Fall
-              </Button>
-            </Link>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={`/dashboard/cases/${slug}`}>Zurück zum Fall</Link>
+            </Button>
           </div>
         }
       />
@@ -423,7 +421,7 @@ export default function InvestigationPage({
                 ? result.rechtlicher_rahmen.zpo_vorschriften.join(", ")
                 : "§§ 226 ff. ZPO"}
             </p>
-            <p className="text-xs text-[color:var(--ds-info-text)]/80">
+            <p className="text-xs text-[color:var(--ds-info-text)]">
               {result.rechtlicher_rahmen.verfahrensschritt} · Die KI erfindet keine Tatsachen. Sie
               identifiziert Tatsachenbehauptungen der Parteien und gegenüberstellend
               widersprüchliche Behauptungen (§ 226 ZPO). Jede Aussage ist durch eine Quelle belegt.
@@ -987,9 +985,7 @@ function QuoteBlock({
       <div className="mb-2 flex items-center justify-between">
         <span className="text-xs font-semibold text-[color:var(--ds-text-muted)]">
           {label}
-          {speaker && (
-            <span className="ml-1.5 text-[color:var(--ds-text-muted)]/70">— {speaker}</span>
-          )}
+          {speaker && <span className="ml-1.5 text-[color:var(--ds-text-muted)]">— {speaker}</span>}
         </span>
         <Badge variant="document" className="text-[10px]">
           {claimId}

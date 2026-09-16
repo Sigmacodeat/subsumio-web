@@ -170,7 +170,8 @@ test.describe("Invoice Billing Flow", () => {
     const res = await api.get("/api/pages?type=legal_invoice&limit=100");
     expect(res.status()).toBe(200);
     const data = await res.json();
-    const slugs = (data.pages ?? []).map((p: { slug: string }) => p.slug);
+    const pages = Array.isArray(data) ? data : (data.items ?? data.pages ?? []);
+    const slugs = pages.map((p: { slug: string }) => p.slug);
     for (const status of statuses) {
       expect(slugs).toContain(`${baseSlug}-${status}`);
     }
@@ -224,7 +225,7 @@ test.describe("Invoice Billing Flow", () => {
 
   test("invoicing dashboard renders with billing elements", async ({ page }) => {
     await page.goto("/dashboard/invoicing", { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("heading", { name: /Rechnung|Invoice/i })).toBeVisible({
+    await expect(page.getByRole("heading", { name: /Rechnung|Invoice/i }).first()).toBeVisible({
       timeout: 10_000,
     });
   });

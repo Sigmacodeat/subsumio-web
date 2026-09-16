@@ -42,10 +42,10 @@ interface ReviewTableProps {
 }
 
 const FLAG_COLORS: Record<string, string> = {
-  red: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)] border-red-300",
+  red: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-red-300",
   yellow:
-    "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
-  green: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)] border-green-300",
+    "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
+  green: "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-green-300",
 };
 
 const FLAG_LABELS: Record<string, string> = {

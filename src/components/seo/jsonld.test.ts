@@ -41,11 +41,10 @@ describe("JSON-LD Schema Functions", () => {
       expect(data.offers.length).toBeGreaterThan(0);
     });
 
-    it("localizes description", () => {
-      const de = softwareApplicationLd("de");
-      const en = softwareApplicationLd("en");
-      expect(de.description).toContain("KI-Kanzleisoftware");
-      expect(en.description).toContain("AI legal software");
+    it("describes the Austria-only product", () => {
+      const at = softwareApplicationLd();
+      expect(at.description).toContain("KI-Kanzleisoftware");
+      expect(at.description).toContain("Österreich");
     });
   });
 
@@ -63,7 +62,8 @@ describe("JSON-LD Schema Functions", () => {
 
     it("expands relative URLs", () => {
       const data = breadcrumbLd([{ name: "Test", url: "/test" }]);
-      expect(data.itemListElement[0].item).toContain("https://");
+      expect(data.itemListElement[0].item).toMatch(/^https?:\/\//);
+      expect(data.itemListElement[0].item).toContain("/test");
     });
   });
 
@@ -99,8 +99,9 @@ describe("JSON-LD Schema Functions", () => {
       });
       expect(data["@type"]).toBe("Service");
       expect(data.provider.name).toBe("Subsumio");
-      expect(data.areaServed).toEqual(["AT", "DE", "CH"]);
-      expect(data.url).toContain("https://");
+      expect(data.areaServed).toEqual(["AT"]);
+      expect(data.url).toMatch(/^https?:\/\//);
+      expect(data.url).toContain("/solutions/law-firms");
     });
 
     it("includes audience when provided", () => {
@@ -116,13 +117,16 @@ describe("JSON-LD Schema Functions", () => {
   });
 
   describe("localBusinessLd", () => {
-    it("returns LegalService with address and geo", () => {
+    it("returns LegalService matching the legal imprint", () => {
       const data = localBusinessLd();
       expect(data["@type"]).toBe("LegalService");
       expect(data.address.addressCountry).toBe("AT");
-      expect(data.address.addressLocality).toBe("Vienna");
-      expect(data.geo.latitude).toBe(48.2028);
-      expect(data.geo.longitude).toBe(16.3746);
+      // Structured data must match the imprint (RCIID, Hauslabgasse, 1050 Wien)
+      // and must not invent phone numbers or geo coordinates.
+      expect(data.address.streetAddress).toBe("Hauslabgasse 42/3/2");
+      expect(data.address.postalCode).toBe("1050");
+      expect(data).not.toHaveProperty("telephone");
+      expect(data).not.toHaveProperty("geo");
     });
   });
 

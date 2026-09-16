@@ -818,7 +818,7 @@ export function InvoiceQuickCreateDialog({
                 type="submit"
                 variant="primary"
                 disabled={submitting || !canSubmit}
-                className="gap-2 bg-[color:var(--ds-success-solid)] text-white hover:bg-[color:var(--ds-success-solid)]"
+                className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-white hover:bg-[color:var(--signal-success-800)]"
               >
                 {submitting ? (
                   <Loader2 size={16} className="animate-spin" />

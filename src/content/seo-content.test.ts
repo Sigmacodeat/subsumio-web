@@ -34,11 +34,15 @@ describe("Blog Content", () => {
 });
 
 describe("City Pages Content", () => {
-  it("has 3 cities: Wien, Berlin, Zürich", () => {
-    expect(Object.keys(CITIES).length).toBe(3);
-    expect(getCityBySlug("wien")).toBeDefined();
-    expect(getCityBySlug("berlin")).toBeDefined();
-    expect(getCityBySlug("zuerich")).toBeDefined();
+  it("has only Austrian cities active", () => {
+    expect(getAllCitySlugs()).toEqual(
+      expect.arrayContaining(["wien", "graz", "linz", "salzburg", "innsbruck"])
+    );
+    for (const slug of getAllCitySlugs()) {
+      expect(getCityBySlug(slug)!.countryCode).toBe("AT");
+    }
+    expect(getCityBySlug("berlin")).toBeUndefined();
+    expect(getCityBySlug("zuerich")).toBeUndefined();
   });
 
   it("every city has required fields", () => {
@@ -55,10 +59,10 @@ describe("City Pages Content", () => {
       expect(city.courts.length).toBeGreaterThan(0);
       expect(city.features.length).toBeGreaterThan(0);
       expect(city.faq.length).toBeGreaterThan(0);
-      expect(typeof city.geo.lat).toBe("number");
-      expect(typeof city.geo.lng).toBe("number");
-      expect(city.address.street).toBeTruthy();
-      expect(city.address.postalCode).toBeTruthy();
+      // No fake local-office claims — city pages describe the served
+      // market, not a physical address (honest structured data).
+      expect(city).not.toHaveProperty("geo");
+      expect(city).not.toHaveProperty("address");
     }
   });
 

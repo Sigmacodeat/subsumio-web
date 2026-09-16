@@ -181,7 +181,7 @@ function SyncLogView({ status }: { status: SyncStatus }) {
               </div>
               <ul className="max-h-40 space-y-1 overflow-y-auto">
                 {result.errors.map((err, i) => (
-                  <li key={i} className="font-mono text-xs text-[color:var(--ds-danger-text)]/80">
+                  <li key={i} className="font-mono text-xs text-[color:var(--ds-danger-text)]">
                     {err}
                   </li>
                 ))}
@@ -238,11 +238,11 @@ export default function ScimSettingsPage() {
               {t("scim.access_denied")}
             </p>
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">{t("scim.admin_only")}</p>
-            <Link href="/dashboard/settings" className="mt-4 inline-block">
-              <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/dashboard/settings" className="mt-4">
                 {t("scim.back_to_settings")}
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </Card>
       </div>

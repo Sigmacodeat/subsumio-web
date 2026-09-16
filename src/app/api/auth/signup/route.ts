@@ -61,9 +61,12 @@ export const POST = createPublicHandler(
         email,
         name,
         passwordHash,
-        locale: locale === "de" ? "de" : "en",
+        locale: locale === "en" ? "en" : "de",
         referredBy,
         industry,
+        // Austria-only pilot market — every new tenant scopes to the AT
+        // corpus and sees AT surfaces. Onboarding may refine this.
+        jurisdiction: "AT",
       })
     );
 

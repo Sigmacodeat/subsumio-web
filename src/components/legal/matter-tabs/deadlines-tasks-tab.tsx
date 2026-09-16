@@ -690,7 +690,7 @@ export function DeadlinesTasksTab() {
                     {dl.vorfrist_date && new Date(dl.vorfrist_date) > new Date() && (
                       <Badge
                         variant="default"
-                        className="flex items-center gap-0.5 border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]/80"
+                        className="flex items-center gap-0.5 border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
                       >
                         <Clock size={10} />
                         Vorfrist:{" "}

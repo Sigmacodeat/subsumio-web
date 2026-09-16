@@ -99,6 +99,7 @@ export default function WordAddinPage() {
                 <Button
                   variant="ghost"
                   size="sm"
+                  aria-label={t("wordaddin.copy_url")}
                   onClick={copyManifestUrl}
                   className="gap-1 text-xs"
                 >
@@ -146,21 +147,21 @@ export default function WordAddinPage() {
 
       {/* Links */}
       <div className="flex flex-wrap gap-3">
-        <a href={manifestUrl} download>
-          <Button variant="outline" className="gap-2">
+        <Button variant="outline" className="gap-2" asChild>
+          <a href={manifestUrl} download>
             <Download size={15} /> {t("wordaddin.download_manifest")}
-          </Button>
-        </a>
-        <a href={taskpaneUrl} target="_blank" rel="noopener noreferrer">
-          <Button variant="outline" className="gap-2">
+          </a>
+        </Button>
+        <Button variant="outline" className="gap-2" asChild>
+          <a href={taskpaneUrl} target="_blank" rel="noopener noreferrer">
             <ExternalLink size={15} /> {t("wordaddin.open_taskpane")}
-          </Button>
-        </a>
-        <Link href="/dashboard/api-keys">
-          <Button variant="outline" className="gap-2">
+          </a>
+        </Button>
+        <Button variant="outline" className="gap-2" asChild>
+          <Link href="/dashboard/api-keys">
             <FileText size={15} /> {t("wordaddin.gen_token")}
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
 
       <Badge

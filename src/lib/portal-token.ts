@@ -21,7 +21,7 @@ export interface PortalTokenPayload {
 export function getPortalSecret(): string {
   const secret = process.env.PORTAL_TOKEN_SECRET;
   if (secret) return secret;
-  if (process.env.NODE_ENV === "production") {
+  if (process.env.NODE_ENV === "production" && process.env.SUBSUMIO_E2E !== "1") {
     throw new AuthError("PORTAL_TOKEN_SECRET must be set in production.", {
       code: "PORTAL_TOKEN_SECRET_MISSING",
     });

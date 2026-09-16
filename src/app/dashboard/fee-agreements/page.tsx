@@ -14,9 +14,9 @@ import type { FeeAgreement, BudgetStatus } from "@/lib/fee-agreements";
 import { FEE_MODEL_LABELS, computeBudgetStatus } from "@/lib/fee-agreements";
 
 const ALERT_COLORS: Record<string, string> = {
-  none: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]",
-  warning: "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)]",
-  critical: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)]",
+  none: "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
+  warning: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+  critical: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
 };
 
 export default function FeeAgreementsPage() {
@@ -145,7 +145,8 @@ export default function FeeAgreementsPage() {
             <div>
               <Label>{t("fee.hourly_rate")}</Label>
               <Input
-                type="number" inputMode="numeric"
+                type="number"
+                inputMode="numeric"
                 value={form.hourly_rate}
                 onChange={(e) => setForm({ ...form, hourly_rate: e.target.value })}
                 disabled={form.model !== "hourly" && form.model !== "capped"}
@@ -154,7 +155,8 @@ export default function FeeAgreementsPage() {
             <div>
               <Label>{t("fee.flat_amount")}</Label>
               <Input
-                type="number" inputMode="numeric"
+                type="number"
+                inputMode="numeric"
                 value={form.flat_amount}
                 onChange={(e) => setForm({ ...form, flat_amount: e.target.value })}
                 disabled={form.model !== "flat"}
@@ -163,7 +165,8 @@ export default function FeeAgreementsPage() {
             <div>
               <Label>{t("fee.budget_cap")}</Label>
               <Input
-                type="number" inputMode="numeric"
+                type="number"
+                inputMode="numeric"
                 value={form.budget_cap}
                 onChange={(e) => setForm({ ...form, budget_cap: e.target.value })}
               />

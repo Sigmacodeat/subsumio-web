@@ -72,20 +72,18 @@ export const POST = createHandler(
       };
 
       try {
-        const pageRes = await fetch(
-          `${ENGINE_URL}/api/pages/${slug.split("/").map(encodeURIComponent).join("/")}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json", ...headers },
-            body: JSON.stringify({
-              type: "deadline",
-              title: frontmatter.title as string,
-              compiled_truth: `## Wiedervorlage\n\n**Akte:** ${body.case_slug}\n**Anspruch:** ${anspruch.anspruch}\n**Restzeit:** ${days} Tage\n**§:** ${anspruch.paragraph ?? ""}\n**Handlungsbedarf:** ${anspruch.handlungsbedarf ?? ""}\n\n> ⚠️ Verjährung droht — sofortige Maßnahme erforderlich!`,
-              frontmatter,
-            }),
-            signal: AbortSignal.timeout(15_000),
-          }
-        );
+        const pageRes = await fetch(`${ENGINE_URL}/api/pages`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...headers },
+          body: JSON.stringify({
+            slug,
+            type: "deadline",
+            title: frontmatter.title as string,
+            compiled_truth: `## Wiedervorlage\n\n**Akte:** ${body.case_slug}\n**Anspruch:** ${anspruch.anspruch}\n**Restzeit:** ${days} Tage\n**§:** ${anspruch.paragraph ?? ""}\n**Handlungsbedarf:** ${anspruch.handlungsbedarf ?? ""}\n\n> ⚠️ Verjährung droht — sofortige Maßnahme erforderlich!`,
+            frontmatter,
+          }),
+          signal: AbortSignal.timeout(15_000),
+        });
 
         if (pageRes.ok) {
           results.push({ slug, status: "created", due_date: dueIso });

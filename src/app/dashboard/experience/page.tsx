@@ -62,9 +62,9 @@ interface LayerSummary {
 
 const LEVEL_COLORS: Record<string, string> = {
   beginner: "bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)]",
-  intermediate: "bg-[color:var(--ds-info-solid)] text-[color:var(--ds-info-text)]",
+  intermediate: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
   advanced: "bg-[color:var(--ds-category-purple-bg)] text-[color:var(--ds-category-purple-text)]",
-  expert: "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)]",
+  expert: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
 };
 
 const PRACTICE_AREAS = [
@@ -227,7 +227,7 @@ export default function ExperiencePage() {
                     {t("experience.label_practice_area")}
                   </label>
                   <Select value={practiceArea} onValueChange={setPracticeArea}>
-                    <SelectTrigger>
+                    <SelectTrigger aria-label={t("experience.placeholder_all_areas")}>
                       <SelectValue placeholder={t("experience.placeholder_all_areas")} />
                     </SelectTrigger>
                     <SelectContent>
@@ -242,7 +242,7 @@ export default function ExperiencePage() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">{t("experience.label_min_level")}</label>
                   <Select value={minLevel} onValueChange={setMinLevel}>
-                    <SelectTrigger>
+                    <SelectTrigger aria-label={t("experience.placeholder_all_levels")}>
                       <SelectValue placeholder={t("experience.placeholder_all_levels")} />
                     </SelectTrigger>
                     <SelectContent>

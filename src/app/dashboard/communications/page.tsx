@@ -426,7 +426,7 @@ export default function CommunicationsPage() {
             role="note"
           >
             <AlertCircle size={16} className="brand-text mt-0.5 shrink-0" aria-hidden="true" />
-            <p className="brand-text/90 text-xs leading-relaxed">{tr("description", lang)}</p>
+            <p className="brand-text text-xs leading-relaxed">{tr("description", lang)}</p>
           </div>
 
           {/* Channel tabs */}

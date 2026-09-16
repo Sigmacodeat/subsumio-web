@@ -1,15 +1,16 @@
 # Kanzlei-OS surface audit
 
-Stand: 2026-09-13, nach Block 4.
+Stand: 2026-09-13, nach Block 7 (API- und Rechtsrisiko-Schnitt).
 
 ## Ergebnis
 
 Die Dateizahl ist nicht mit der Zahl der sichtbaren Produktfunktionen
-gleichzusetzen. Der aktive Build enthält 263 `page.tsx`-Dateien:
+gleichzusetzen. Der aktive Quellbaum enthält 157 routbare `page.tsx`-Dateien:
 
-- 125 Dashboard-Seiten, davon 20 verschachtelte Detail-/Unterseiten;
-- 138 öffentliche, Auth-, Portal-, Mobile- und lokalisierte Seiten;
-- 412 API-Route-Handler.
+- 120 Dashboard-Seiten, davon eine Startseite, 99 direkte Module und 20
+  verschachtelte Detail-/Unterseiten;
+- 37 österreichische öffentliche, Auth-, Portal-, Mobile- und Ressourcenseiten;
+- 401 API-Route-Dateien (einschließlich der parallel ergänzten Demo-Data-Route).
 
 Sechs Dashboard-Dateien waren keine Produktflächen, sondern reine Aliase. Sie
 wurden archiviert; die URLs bleiben über permanente serverseitige Redirects
@@ -51,14 +52,36 @@ Diese Module dürfen erst nach Pilotnutzung gelöscht werden. Ohne Nutzungsdaten
 wäre eine Entfernung fachlicher Funktionen spekulativ; die vereinfachte
 Informationsarchitektur beseitigt bereits die alltägliche Überforderung.
 
+## Block 6: interner Österreich-Schnitt
+
+Der interne Jurisdiktionsschnitt ist umgesetzt:
+
+- Onboarding erzwingt serverseitig `AT`; manipulierte oder alte DE/CH-Werte
+  können den Pilot-Rechtsraum nicht umstellen.
+- Neue Akten, Schnellanlage und Copilot starten in AT; EU bleibt für unmittelbar
+  anwendbares EU-Recht auswählbar.
+- Quellen, Normen, Rechtsprechung, Präzedenzsuche, Urteilsdatenbank und
+  Kommentierungen sind aktiv auf AT beziehungsweise AT/EU begrenzt.
+- Der deutsche RVG-Pfad ist kein Copilot-Tool mehr. Der bisherige
+  RATG/AHK-Rechner wurde ebenfalls aus dem aktiven Produkt genommen: Seine
+  pauschalen Stufen und Zuschläge bilden weder Tarifpost, Verfahrensart,
+  Einheitssatz noch den zeitlichen Rechtsstand belastbar ab.
+- beA, DATEV, RVG, PKH/Beratungshilfe, GKG-Fachrechner, FAO-Tracking und die
+  deutsche SAFE-Gerichtssuche wurden mit vier Dashboard-Seiten und zwölf
+  API-Routen nach `src/app/_archive/de/` verschoben. Der noch nicht validierte
+  Kostenrechner liegt getrennt unter `src/app/_archive/risk/`.
+- Alte Direktaufrufe werden am Edge umgeleitet beziehungsweise mit HTTP 410
+  beendet.
+- Der falsche Verweis auf § 9a RAO wurde auf die Verschwiegenheitsbestimmung in
+  § 9 Abs. 2 RAO korrigiert; pauschale Konformitätsversprechen wurden entschärft.
+
 ## Nächster sinnvoller Trennblock
 
-Der nächste strukturelle Kandidat ist nicht das Kanzlei-Dashboard, sondern die
-öffentliche Locale-Shell: Ein großer Teil der 138 Nicht-Dashboard-Seiten besteht
-aus mechanisch duplizierten DE/AT/CH/EN-Marketing-, Auth- und Rechtstext-Routen.
-Diese sollten auf eine gemeinsame locale-parametrisierte Implementierung
-konsolidiert werden. Vor der Umsetzung sind SEO-Canonical-Tags, hreflang,
-rechtlich abweichende Texte und bestehende Backlinks als harte Gates zu prüfen.
+Die Detailklassifikation der 401 aktiven API-Dateien und die nächste
+Konsolidierungsreihenfolge stehen im ergänzenden
+`KANZLEI_OS_API_AUDIT_2026-09-13.md`. Als Nächstes folgen eindeutige
+Legacy-Doppelungen, Laborflächen und das optionale RCIID/Krypto-Modul. Seltene
+Fachfunktionen werden erst nach Nutzungs- und Mandantenprüfung gelöscht.
 
-Nicht Bestandteil dieses Blocks waren E-Mail, Outlook, Inbox, Kommunikation
-und beA; diese Flächen werden parallel separat auditiert.
+Nicht Bestandteil dieses Blocks waren E-Mail, Outlook, Inbox und die allgemeine
+Kommunikationsverarbeitung; diese Flächen werden parallel separat auditiert.

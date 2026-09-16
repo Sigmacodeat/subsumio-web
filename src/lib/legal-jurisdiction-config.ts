@@ -40,10 +40,7 @@ export type ProcedureType =
 
 export interface AbbreviationCollision {
   abbreviation: string;
-  jurisdictions: Record<
-    JurisdictionCode,
-    { fullName: string; description: string }
-  >;
+  jurisdictions: Record<JurisdictionCode, { fullName: string; description: string }>;
 }
 
 export interface PracticeAreaConfig {
@@ -336,15 +333,15 @@ const CH_STATUTES = statuteLabelsForJurisdiction("ch");
 const EU_STATUTES = statuteLabelsForJurisdiction("eu");
 
 function collisionsForJurisdiction(jur: JurisdictionCode): string[] {
-  return LAW_ABBREVIATION_COLLISIONS.filter(
-    (c) => c.jurisdictions[jur].fullName !== "N/A"
-  ).map((c) => {
-    const own = c.jurisdictions[jur];
-    const others = (Object.keys(c.jurisdictions) as JurisdictionCode[])
-      .filter((j) => j !== jur && c.jurisdictions[j].fullName !== "N/A")
-      .map((j) => `${j}: ${c.jurisdictions[j].fullName}`);
-    return `${c.abbreviation} = ${own.fullName} (NICHT: ${others.join("; ")})`;
-  });
+  return LAW_ABBREVIATION_COLLISIONS.filter((c) => c.jurisdictions[jur].fullName !== "N/A").map(
+    (c) => {
+      const own = c.jurisdictions[jur];
+      const others = (Object.keys(c.jurisdictions) as JurisdictionCode[])
+        .filter((j) => j !== jur && c.jurisdictions[j].fullName !== "N/A")
+        .map((j) => `${j}: ${c.jurisdictions[j].fullName}`);
+      return `${c.abbreviation} = ${own.fullName} (NICHT: ${others.join("; ")})`;
+    }
+  );
 }
 
 // ── Labor Law Prompts (AT vs DE) ──────────────────────────────────────
@@ -573,9 +570,7 @@ export function normalizeJurisdiction(
  * Require a valid jurisdiction. Throws if missing or invalid.
  * This enforces the "no default" rule — missing jurisdiction = block.
  */
-export function requireJurisdiction(
-  jur: string | undefined | null
-): JurisdictionCode {
+export function requireJurisdiction(jur: string | undefined | null): JurisdictionCode {
   const normalized = normalizeJurisdiction(jur);
   if (!normalized) {
     throw new JurisdictionMissingError(
@@ -601,10 +596,8 @@ export class JurisdictionMissingError extends Error {
 /**
  * Get the full jurisdiction config.
  */
-export function getJurisdictionConfig(
-  jur: JurisdictionCode | string
-): JurisdictionConfig {
-  const code = normalizeJurisdiction(jur) ?? "DE";
+export function getJurisdictionConfig(jur: JurisdictionCode | string): JurisdictionConfig {
+  const code = normalizeJurisdiction(jur) ?? "AT";
   return JURISDICTION_CONFIGS[code];
 }
 
@@ -623,10 +616,7 @@ export function getPracticeAreaConfig(
 /**
  * Get all allowed statute labels for a jurisdiction (optionally scoped by practice area).
  */
-export function getAllowedStatutes(
-  jur: JurisdictionCode | string,
-  area?: PracticeArea
-): string[] {
+export function getAllowedStatutes(jur: JurisdictionCode | string, area?: PracticeArea): string[] {
   const config = getJurisdictionConfig(jur);
   if (area) {
     const paConfig = config.practiceAreas[area];
@@ -642,7 +632,7 @@ export function getForbiddenStatutes(
   jur: JurisdictionCode | string,
   area?: PracticeArea
 ): string[] {
-  const code = normalizeJurisdiction(jur) ?? "DE";
+  const code = normalizeJurisdiction(jur) ?? "AT";
   const config = getJurisdictionConfig(code);
   if (area) {
     const paConfig = config.practiceAreas[area];
@@ -674,14 +664,15 @@ export function resolveAbbreviation(
   jur: JurisdictionCode | string,
   abbr: string
 ): JurisdictionResolutionResult {
-  const code = normalizeJurisdiction(jur) ?? "DE";
+  const code = normalizeJurisdiction(jur) ?? "AT";
   const collision = COLLISION_MAP.get(abbr.toUpperCase());
   if (collision) {
     const entry = collision.jurisdictions[code];
     if (entry && entry.fullName !== "N/A") {
       // Check if other jurisdictions also have this abbreviation
-      const otherJurs = (Object.keys(collision.jurisdictions) as JurisdictionCode[])
-        .filter((j) => j !== code && collision.jurisdictions[j].fullName !== "N/A");
+      const otherJurs = (Object.keys(collision.jurisdictions) as JurisdictionCode[]).filter(
+        (j) => j !== code && collision.jurisdictions[j].fullName !== "N/A"
+      );
       return {
         resolved: entry.fullName,
         collisionWith: otherJurs.length > 0 ? otherJurs[0] : null,
@@ -692,9 +683,7 @@ export function resolveAbbreviation(
   // No collision — check if it's a valid statute for this jurisdiction
   const config = getJurisdictionConfig(code);
   const cleanAbbr = abbr.replace(/\s*\([A-Z]+\)\s*$/g, "").trim();
-  const found = config.statutes.find(
-    (s) => s.toUpperCase() === cleanAbbr.toUpperCase()
-  );
+  const found = config.statutes.find((s) => s.toUpperCase() === cleanAbbr.toUpperCase());
   return {
     resolved: found ?? null,
     collisionWith: null,
@@ -705,17 +694,12 @@ export function resolveAbbreviation(
 /**
  * Check if a law abbreviation is allowed in the given jurisdiction.
  */
-export function isLawAllowed(
-  jur: JurisdictionCode | string,
-  abbr: string
-): boolean {
-  const code = normalizeJurisdiction(jur) ?? "DE";
+export function isLawAllowed(jur: JurisdictionCode | string, abbr: string): boolean {
+  const code = normalizeJurisdiction(jur) ?? "AT";
   const config = getJurisdictionConfig(code);
   const cleanAbbr = abbr.replace(/\s*\([A-Z]+\)\s*$/g, "").trim();
   // Check own statutes
-  if (
-    config.statutes.some((s) => s.toUpperCase() === cleanAbbr.toUpperCase())
-  ) {
+  if (config.statutes.some((s) => s.toUpperCase() === cleanAbbr.toUpperCase())) {
     return true;
   }
   // EU law is always allowed
@@ -738,10 +722,7 @@ export function isLawAllowed(
  * Check if a law abbreviation is foreign (from another jurisdiction).
  * EU law is NOT foreign — it applies to all DACH jurisdictions.
  */
-export function isForeignLaw(
-  jur: JurisdictionCode | string,
-  abbr: string
-): boolean {
+export function isForeignLaw(jur: JurisdictionCode | string, abbr: string): boolean {
   return !isLawAllowed(jur, abbr);
 }
 
@@ -803,9 +784,7 @@ export function buildJurisdictionPromptSection(
 /**
  * Build collision warnings only (for contexts where full section is too verbose).
  */
-export function buildCollisionWarningSection(
-  jur: JurisdictionCode | string
-): string {
+export function buildCollisionWarningSection(jur: JurisdictionCode | string): string {
   const code = normalizeJurisdiction(jur);
   if (!code) return "";
   const config = getJurisdictionConfig(code);
@@ -820,9 +799,7 @@ export function buildCollisionWarningSection(
 /**
  * Build the labor law prompt for a specific jurisdiction.
  */
-export function buildLaborLawPrompt(
-  jur: JurisdictionCode | string
-): string {
+export function buildLaborLawPrompt(jur: JurisdictionCode | string): string {
   const code = normalizeJurisdiction(jur);
   if (!code) return "";
   return getJurisdictionConfig(code).laborLawPrompt;
@@ -831,10 +808,7 @@ export function buildLaborLawPrompt(
 /**
  * Build a concise source list for prompt injection (instead of free-text law names).
  */
-export function buildSourceListPrompt(
-  jur: JurisdictionCode | string,
-  area?: PracticeArea
-): string {
+export function buildSourceListPrompt(jur: JurisdictionCode | string, area?: PracticeArea): string {
   const code = normalizeJurisdiction(jur);
   if (!code) return "Keine Rechtsquellen verfügbar (Jurisdiktion fehlt).";
   const allowed = getAllowedStatutes(code, area);

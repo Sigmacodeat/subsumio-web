@@ -167,23 +167,21 @@ export function suggestCaseFromTitle(title: string, lang: Lang = "de"): CaseSugg
   return null;
 }
 
-export function detectJurisdictionFromTitle(title: string): "de" | "at" | "ch" | "eu" | null {
+export function detectJurisdictionFromTitle(title: string): "at" | "eu" | null {
   const normalized = title.toLowerCase();
   const words = normalized.split(/[^a-zäöüß0-9-]+/);
   if (normalized.includes("österreich") || words.some((w) => w.startsWith("at-"))) return "at";
-  if (normalized.includes("schweiz") || words.some((w) => w.startsWith("ch-"))) return "ch";
   if (
     words.some((w) => w === "eu" || w.startsWith("eu-")) ||
     normalized.includes("europäisch") ||
     normalized.includes("brüssel")
   )
     return "eu";
-  if (normalized.includes("deutschland") || normalized.includes("deutsch")) return "de";
   return null;
 }
 
 export function defaultCaseValues(): Required<
   Pick<CaseSuggestion, "jurisdiction" | "status" | "priority">
 > {
-  return { jurisdiction: "de", status: "open", priority: "medium" };
+  return { jurisdiction: "at", status: "open", priority: "medium" };
 }

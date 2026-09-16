@@ -7,7 +7,7 @@ export function register() {
     // In production a missing required var aborts boot so we never serve a
     // half-configured app; in dev we only warn.
     const env = validateEnv();
-    if (!env.ok && process.env.NODE_ENV === "production") {
+    if (!env.ok && process.env.NODE_ENV === "production" && process.env.SUBSUMIO_E2E !== "1") {
       console.error(
         "[env] Missing required environment variables in production:\n  - " +
           env.missing.join("\n  - ")

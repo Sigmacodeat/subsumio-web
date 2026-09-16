@@ -63,13 +63,15 @@ test.describe("Verification Receipts API", () => {
 
   test("receipts/latest returns 403 on brain_id mismatch", async ({ page }) => {
     const csrf = await getCsrfToken(page);
-    const res = await page.context().request.get(
-      "/api/legal/receipts/latest?product_type=draft&product_ref=doc-1&brain_id=wrong-brain",
-      { headers: csrf ? { "x-csrf-token": csrf } : {} }
-    );
+    const res = await page
+      .context()
+      .request.get(
+        "/api/legal/receipts/latest?product_type=draft&product_ref=doc-1&brain_id=wrong-brain",
+        { headers: csrf ? { "x-csrf-token": csrf } : {} }
+      );
     expect(res.status()).toBe(403);
     const body = await res.json();
-    expect(body.error?.code ?? body.error).toContain("forbidden");
+    expect(body.code ?? body.error).toContain("forbidden");
   });
 
   test("receipts/latest returns 404 when no receipt exists", async ({ page }) => {
@@ -79,22 +81,25 @@ test.describe("Verification Receipts API", () => {
     // The brain_id check passes (same session), but no receipt found
     const meRes = await page.context().request.get("/api/auth/me");
     const me = await meRes.json();
-    const brainId = me.brainId ?? me.brain_id;
+    const brainId = me.user?.brainId ?? me.user?.brain_id ?? me.brainId ?? me.brain_id;
     expect(brainId).toBeTruthy();
 
-    const res = await page.context().request.get(
-      `/api/legal/receipts/latest?product_type=draft&product_ref=nonexistent-${Date.now()}&brain_id=${brainId}`,
-      { headers: csrf ? { "x-csrf-token": csrf } : {} }
-    );
+    const res = await page
+      .context()
+      .request.get(
+        `/api/legal/receipts/latest?product_type=draft&product_ref=nonexistent-${Date.now()}&brain_id=${brainId}`,
+        { headers: csrf ? { "x-csrf-token": csrf } : {} }
+      );
     expect(res.status()).toBe(404);
   });
 
   test("receipts/[receiptId] returns 404 for non-existent receipt", async ({ page }) => {
     const csrf = await getCsrfToken(page);
-    const res = await page.context().request.get(
-      "/api/legal/receipts/rcpt-nonexistent-000",
-      { headers: csrf ? { "x-csrf-token": csrf } : {} }
-    );
+    const res = await page
+      .context()
+      .request.get("/api/legal/receipts/rcpt-nonexistent-000", {
+        headers: csrf ? { "x-csrf-token": csrf } : {},
+      });
     expect(res.status()).toBe(404);
   });
 
@@ -102,12 +107,14 @@ test.describe("Verification Receipts API", () => {
     const csrf = await getCsrfToken(page);
     const meRes = await page.context().request.get("/api/auth/me");
     const me = await meRes.json();
-    const brainId = me.brainId ?? me.brain_id;
+    const brainId = me.user?.brainId ?? me.user?.brain_id ?? me.brainId ?? me.brain_id;
 
-    const res = await page.context().request.get(
-      `/api/legal/receipts/latest?product_type=invalid_type&product_ref=doc-1&brain_id=${brainId}`,
-      { headers: csrf ? { "x-csrf-token": csrf } : {} }
-    );
+    const res = await page
+      .context()
+      .request.get(
+        `/api/legal/receipts/latest?product_type=invalid_type&product_ref=doc-1&brain_id=${brainId}`,
+        { headers: csrf ? { "x-csrf-token": csrf } : {} }
+      );
     expect(res.status()).toBe(400);
   });
 
@@ -115,14 +122,23 @@ test.describe("Verification Receipts API", () => {
     const csrf = await getCsrfToken(page);
     const meRes = await page.context().request.get("/api/auth/me");
     const me = await meRes.json();
-    const brainId = me.brainId ?? me.brain_id;
+    const brainId = me.user?.brainId ?? me.user?.brain_id ?? me.brainId ?? me.brain_id;
 
-    const productTypes = ["draft", "memo", "fristenreport", "vertragsreview", "redline", "schriftsatz"];
+    const productTypes = [
+      "draft",
+      "memo",
+      "fristenreport",
+      "vertragsreview",
+      "redline",
+      "schriftsatz",
+    ];
     for (const pt of productTypes) {
-      const res = await page.context().request.get(
-        `/api/legal/receipts/latest?product_type=${pt}&product_ref=test-${pt}&brain_id=${brainId}`,
-        { headers: csrf ? { "x-csrf-token": csrf } : {} }
-      );
+      const res = await page
+        .context()
+        .request.get(
+          `/api/legal/receipts/latest?product_type=${pt}&product_ref=test-${pt}&brain_id=${brainId}`,
+          { headers: csrf ? { "x-csrf-token": csrf } : {} }
+        );
       // 404 is expected (no receipt yet), but NOT 400 (validation passed)
       expect([404, 200]).toContain(res.status());
     }
@@ -189,10 +205,12 @@ test.describe("Receipt Scope Isolation", () => {
     const csrfB = await getCsrfToken(pageB);
 
     // User B tries to fetch User A's receipts using User A's brain_id
-    const res = await pageB.context().request.get(
-      `/api/legal/receipts/latest?product_type=draft&product_ref=doc-1&brain_id=${brainA}`,
-      { headers: csrfB ? { "x-csrf-token": csrfB } : {} }
-    );
+    const res = await pageB
+      .context()
+      .request.get(
+        `/api/legal/receipts/latest?product_type=draft&product_ref=doc-1&brain_id=${brainA}`,
+        { headers: csrfB ? { "x-csrf-token": csrfB } : {} }
+      );
     expect(res.status()).toBe(403);
 
     await ctxA.close();

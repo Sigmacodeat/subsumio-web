@@ -80,7 +80,7 @@ export default function AnonymizePage() {
           <Button
             onClick={run}
             disabled={loading || !input.trim()}
-            className="gap-2 bg-[color:var(--ds-success-solid)] text-white hover:bg-[color:var(--ds-success-solid)]"
+            className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-white hover:bg-[color:var(--signal-success-800)]"
           >
             {loading ? <Loader2 size={15} className="animate-spin" /> : <ShieldCheck size={15} />}
             {t("anonymize.btn_run")}

@@ -34,7 +34,7 @@ export default function RechtsprechungPage() {
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<JudgementResult[]>([]);
-  const [jurisdiction, setJurisdiction] = useState<"at" | "de" | "ch" | "all">("at");
+  const jurisdiction = "at" as const;
   const [searched, setSearched] = useState(false);
   const [aiGrounding, setAiGrounding] = useState<GroundingMetadata | null>(null);
   const [hasAiResults, setHasAiResults] = useState(false);
@@ -71,7 +71,7 @@ export default function RechtsprechungPage() {
         }
       }
 
-      // 2. Live-Suche: RIS-OGD (AT) + openlegaldata (DE) je nach Jurisdiktion
+      // 2. Live-Suche: österreichische RIS-OGD-Quellen
       try {
         const liveData = await api.legal.judgementsSearch({ q: query, jurisdiction, limit: 20 });
         for (const r of liveData.results ?? []) {
@@ -97,14 +97,14 @@ export default function RechtsprechungPage() {
       if (judgements.length === 0) {
         setHasAiResults(false);
         const thinkResult = await api.query.think(
-          `Suche nach Rechtsprechung zu "${query}" in ${jurisdiction === "at" ? "Österreich" : jurisdiction === "de" ? "Deutschland" : jurisdiction === "ch" ? "der Schweiz" : "Deutschland, Österreich und der Schweiz"}.
+          `Suche nach Rechtsprechung zu "${query}" in Österreich.
 
 Antworte AUSSCHLIESSLICH als JSON-Array mit maximal 10 relevanten Urteilen. Kein Markdown, kein Text vor oder nach dem JSON.
 
 Format pro Eintrag:
 {
   "title": "Kurzer Titel des Urteils",
-  "court": "Gericht (z.B. OGH, BGH, BVerfG, BGer)",
+  "court": "Gericht (z.B. OGH, VfGH, VwGH)",
   "date": "YYYY-MM-DD",
   "az": "Aktenzeichen (z.B. 6 Ob 123/24a)",
   "ecli": "ECLI falls bekannt, sonst leerer String",
@@ -193,27 +193,8 @@ Format pro Eintrag:
 
       {/* Search */}
       <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-        <div className="flex gap-2">
-          {(["at", "de", "ch", "all"] as const).map((j) => (
-            <button
-              key={j}
-              onClick={() => setJurisdiction(j)}
-              className={cn(
-                "rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
-                jurisdiction === j
-                  ? "brand-soft brand-border brand-text"
-                  : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text-muted)]"
-              )}
-            >
-              {j === "at"
-                ? "🇦🇹 Österreich"
-                : j === "de"
-                  ? "🇩🇪 Deutschland"
-                  : j === "ch"
-                    ? "🇨� Schweiz"
-                    : "🌍 Alle"}
-            </button>
-          ))}
+        <div className="brand-soft brand-text w-fit rounded-lg px-3 py-1.5 text-xs font-medium">
+          🇦🇹 Österreich
         </div>
         <div className="flex gap-2">
           <div className="relative flex-1">

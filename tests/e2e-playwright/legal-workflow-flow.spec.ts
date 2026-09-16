@@ -63,7 +63,7 @@ test.describe("Legal Workflow: Pages Render", () => {
     test(`${p.path} loads without 503 and shows heading`, async ({ page }) => {
       const response = await page.goto(p.path, { waitUntil: "domcontentloaded" });
       expect(response?.status()).not.toBe(503);
-      const errorText = page.locator("text=/Engine nicht erreichbar|Service unavailable|503/i");
+      const errorText = page.getByText(/Engine nicht erreichbar|Service unavailable|503/i);
       await expect(errorText).toHaveCount(0, { timeout: 5_000 });
       const heading = page.getByRole("heading", { name: p.heading }).first();
       await expect(heading).toBeVisible({ timeout: 15_000 });
@@ -80,16 +80,18 @@ test.describe("Legal Workflow: Pages Render", () => {
   test("clause-library shows clause list or search", async ({ page }) => {
     await page.goto("/dashboard/clause-library", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const content = page.locator(
-      "table, [role='list'], input, textarea, text=/Keine|None|Empty|No/i"
-    );
+    const content = page
+      .locator("table, [role='list'], input, textarea")
+      .or(page.getByText(/Keine|None|Empty|No/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 
   test("templates shows template list or create button", async ({ page }) => {
     await page.goto("/dashboard/templates", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const content = page.locator("table, [role='list'], button, text=/Keine|None|Empty|No/i");
+    const content = page
+      .locator("table, [role='list'], button")
+      .or(page.getByText(/Keine|None|Empty|No/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 
@@ -103,9 +105,9 @@ test.describe("Legal Workflow: Pages Render", () => {
   test("obligation-tracking shows obligation list or table", async ({ page }) => {
     await page.goto("/dashboard/obligation-tracking", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const content = page.locator(
-      "table, [role='list'], .tabular-nums, text=/Keine|None|Empty|No/i"
-    );
+    const content = page
+      .locator("table, [role='list'], .tabular-nums")
+      .or(page.getByText(/Keine|None|Empty|No/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 });
@@ -134,11 +136,14 @@ test.describe("Legal Workflow: Functional", () => {
   test("intake page has submit button", async ({ page }) => {
     await page.goto("/dashboard/intake", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    // Should have a submit or save button
+    // Intake is a triage list — the create form lives behind "Neue Anfrage".
+    const createBtn = page.getByRole("button", { name: /Neue Anfrage|New request/i }).first();
+    await expect(createBtn).toBeVisible({ timeout: 10_000 });
+    await createBtn.click();
     const submit = page.locator(
       'button[type="submit"], button:has-text("Speichern"), button:has-text("Save"), button:has-text("Anlegen")'
     );
     const form = page.locator("form");
-    expect((await submit.count()) + (await form.count())).toBeGreaterThan(0);
+    await expect(submit.first().or(form.first())).toBeVisible({ timeout: 10_000 });
   });
 });

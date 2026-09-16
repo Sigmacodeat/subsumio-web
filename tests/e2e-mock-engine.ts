@@ -104,7 +104,7 @@ function sendSse(res: ServerResponse, events: string[]) {
     "Access-Control-Allow-Origin": "*",
   });
   for (const evt of events) {
-    res.write(`data: ${JSON.stringify({ content: evt })}\n\n`);
+    res.write(`data: ${JSON.stringify({ chunk: evt })}\n\n`);
   }
   res.write("data: [DONE]\n\n");
   res.end();
@@ -235,6 +235,30 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
     if (req.method === "GET") {
       const page = pages.get(slug);
       if (!page) return sendJson(res, 404, { error: "not_found" });
+      return sendJson(res, 200, page);
+    }
+
+    // PUT = upsert (post-upload outbox, idempotent task pages). Creates the
+    // page when missing, merges frontmatter when present — mirrors the real
+    // engine's PUT /api/pages/:slug semantics.
+    if (req.method === "PUT") {
+      const raw = await readBody(req);
+      const body = JSON.parse(raw || "{}");
+      const now = new Date().toISOString();
+      const existing = pages.get(slug);
+      const page: MockPage = {
+        slug,
+        title: body.title || existing?.title || "Untitled",
+        content: body.content ?? existing?.content ?? "",
+        type: body.type || existing?.type || "note",
+        frontmatter: {
+          ...(existing?.frontmatter || {}),
+          ...(body.frontmatter || { version: 1 }),
+        },
+        created_at: existing?.created_at ?? now,
+        updated_at: now,
+      };
+      pages.set(slug, page);
       return sendJson(res, 200, page);
     }
 

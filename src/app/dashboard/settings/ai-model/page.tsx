@@ -218,7 +218,7 @@ export default function AIModelSettingsPage() {
                       {model.name}
                     </h3>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
+                      <span className="text-xs font-medium tracking-wide text-[color:var(--ds-text-muted)] uppercase">
                         {getProviderLabel(model.provider as never)}
                       </span>
                       {"dataResidency" in model && model.dataResidency === "eu" && (

@@ -159,22 +159,31 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
   let declined = false;
   try {
     const headers = engineHeadersForBrain(brainId);
-    const searchRes = await fetch(
-      `${ENGINE_URL}/api/search?q=${encodeURIComponent(`docusign_envelope_id:${envelopeId}`)}`,
-      { headers, signal: AbortSignal.timeout(15_000) }
-    );
+    // The mock engine supports search?q=frontmatter_field:value, but the real
+    // engine uses hybrid vector+BM25 search which doesn't match structured
+    // frontmatter queries. Use the type-filtered page list instead, then
+    // filter client-side by docusign_envelope_id in the frontmatter.
+    const listRes = await fetch(`${ENGINE_URL}/api/pages?type=signature_request&limit=500`, {
+      headers,
+      signal: AbortSignal.timeout(15_000),
+    });
     let pageSlug: string | undefined;
     let pageFrontmatter: Record<string, unknown> = {};
-    if (searchRes.ok) {
-      const raw = await searchRes.json();
+    if (listRes.ok) {
+      const raw = await listRes.json();
       const results = Array.isArray(raw)
         ? raw
         : Array.isArray((raw as Record<string, unknown>)?.pages)
           ? (raw as Record<string, unknown[]>).pages
-          : [];
-      const page = results[0] as
-        | { slug: string; frontmatter?: Record<string, unknown> }
-        | undefined;
+          : Array.isArray((raw as Record<string, unknown>)?.results)
+            ? (raw as Record<string, unknown[]>).results
+            : [];
+      // Find the page with matching docusign_envelope_id in frontmatter
+      const page = results.find(
+        (p) =>
+          (p as { frontmatter?: Record<string, unknown> })?.frontmatter?.docusign_envelope_id ===
+          envelopeId
+      ) as { slug: string; frontmatter?: Record<string, unknown> } | undefined;
       if (page) {
         pageSlug = page.slug;
         pageFrontmatter = page.frontmatter ?? {};

@@ -6,9 +6,9 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUp } from "lucide-react";
-import { UI_STRINGS, type Lang } from "@/content/site";
+import { UI_STRINGS } from "@/content/site";
 
-export default function BackToTop({ lang = "en" }: { lang?: Lang }) {
+export default function BackToTop() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export default function BackToTop({ lang = "en" }: { lang?: Lang }) {
           exit={{ opacity: 0, scale: 0.8, y: 10 }}
           transition={{ duration: 0.2 }}
           onClick={scrollToTop}
-          aria-label={UI_STRINGS[lang].backToTopAria}
+          aria-label={UI_STRINGS.backToTopAria}
           className="fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-50 flex h-11 w-11 items-center justify-center rounded-full border [border-color:var(--mk-control-border)] [color:var(--mk-text)] shadow-lg shadow-black/20 transition-[background-color,border-color,color,box-shadow,transform,opacity] [background:var(--mk-surface-2)] hover:[border-color:var(--mk-focus-ring)] hover:[color:var(--brand-text)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:outline-none motion-reduce:transition-none sm:right-8 sm:bottom-8"
         >
           <ArrowUp size={18} />

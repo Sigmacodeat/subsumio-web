@@ -50,7 +50,14 @@ export function BrainAvatar({
   const { wrapper, icon, glow } = SIZE_MAP[size];
 
   return (
-    <div className={cn("relative shrink-0", wrapper, className)} title={title} aria-label={title}>
+    <div
+      className={cn("relative shrink-0", wrapper, className)}
+      title={title}
+      // role="img" legalisiert aria-label auf einem div — ohne role ist das
+      // Attribut verboten (axe aria-prohibited-attr).
+      role="img"
+      aria-label={title}
+    >
       {/* Soft halo / orb background — idle + thinking */}
       {orb && (
         <span

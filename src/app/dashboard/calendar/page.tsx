@@ -187,7 +187,7 @@ export default function CalendarPage() {
         title={t("calendar.title")}
         description={t("calendar.description")}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
@@ -224,13 +224,23 @@ export default function CalendarPage() {
               </button>
             </div>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" onClick={() => navigate("prev")}>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t("calendar.prev_month")}
+                onClick={() => navigate("prev")}
+              >
                 <ChevronLeft size={16} />
               </Button>
               <Button variant="ghost" size="sm" onClick={() => navigate("today")}>
                 {t("calendar.today")}
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => navigate("next")}>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t("calendar.next_month")}
+                onClick={() => navigate("next")}
+              >
                 <ChevronRight size={16} />
               </Button>
             </div>
@@ -238,7 +248,9 @@ export default function CalendarPage() {
         }
       />
 
-      <div className="flex-1 overflow-y-auto">
+      {/* tabIndex macht die scrollbare Region tastatur-bedienbar (axe
+          scrollable-region-focusable) */}
+      <div className="flex-1 overflow-y-auto" tabIndex={0} aria-label={t("calendar.events_list")}>
         {isLoading ? (
           <div className="space-y-3">
             <Skeleton className="h-12 w-full" />

@@ -46,26 +46,38 @@ describe("provisionBrain", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     fetchSpy.mockResolvedValueOnce(new Response("{}", { status: 200 })); // stats
     fetchSpy.mockResolvedValueOnce(new Response("{}", { status: 200 })); // skillpack
-    // seedWorkflows: 3 workflow pages for legal
-    fetchSpy.mockResolvedValue(new Response("{}", { status: 200 }));
+    // seedWorkflows: 3 workflow pages for legal; demo probe GET returns 404
+    // (nothing seeded yet) so the 4 demo seeds run afterwards.
+    fetchSpy.mockImplementation((_url, init) => {
+      const method = init?.method ?? "GET";
+      return Promise.resolve(new Response("{}", { status: method === "GET" ? 404 : 200 }));
+    });
     const result = await provisionBrain("brain-1", { industry: "legal" });
     expect(result.ok).toBe(true);
     const skillpackCall = fetchSpy.mock.calls[1];
     expect(skillpackCall[0]).toContain("/api/skillpack/apply");
-    // Verify seed workflow calls were made (calls after skillpack)
-    const seedCalls = fetchSpy.mock.calls.filter((c) => String(c[0]).includes("/api/pages"));
-    expect(seedCalls.length).toBe(3);
+    // Verify seed calls were made: 3 workflow seeds + 1 Kanzlei defaults +
+    // 4 demo-matter seeds (plus one GET for the demo idempotency probe).
+    const seedCalls = fetchSpy.mock.calls.filter(
+      (c) => String(c[0]).includes("/api/pages") && c[1]?.method === "POST"
+    );
+    expect(seedCalls.length).toBe(8);
   });
 
   test("does not mount skill pack for unknown industry", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     fetchSpy.mockResolvedValueOnce(new Response("{}", { status: 200 })); // stats
-    // seedWorkflows still runs for unknown industry (defaults to legal templates)
-    fetchSpy.mockResolvedValue(new Response("{}", { status: 200 }));
+    // seedWorkflows still runs for unknown industry (defaults to legal templates);
+    // demo probe GET → 404 so demo seeds run.
+    fetchSpy.mockImplementation((_url, init) => {
+      const method = init?.method ?? "GET";
+      return Promise.resolve(new Response("{}", { status: method === "GET" ? 404 : 200 }));
+    });
     const result = await provisionBrain("brain-1", { industry: "nonexistent" });
     expect(result.ok).toBe(true);
-    // stats + 3 seed workflow calls = 4 total (no skillpack)
-    expect(fetchSpy).toHaveBeenCalledTimes(4);
+    // stats + 3 workflow seeds + 1 Kanzlei defaults + demo idempotency GET +
+    // 4 demo seeds = 10 total (no skillpack for unknown industry)
+    expect(fetchSpy).toHaveBeenCalledTimes(10);
   });
 
   test("succeeds even if skill pack mounting fails", async () => {

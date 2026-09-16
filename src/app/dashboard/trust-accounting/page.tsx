@@ -375,7 +375,12 @@ export default function TrustAccountingPage() {
             className="pl-9"
           />
         </div>
-        <Button variant="ghost" onClick={loadAccounts} className="gap-2 text-sm">
+        <Button
+          variant="ghost"
+          onClick={loadAccounts}
+          className="gap-2 text-sm"
+          aria-label={t("common.refresh" as DashboardKey)}
+        >
           <RefreshCw size={14} />
         </Button>
       </div>

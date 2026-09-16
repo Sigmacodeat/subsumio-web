@@ -26,39 +26,12 @@ import {
   useRef,
   useState,
 } from "react";
+import { VIEWPORT, EASE } from "./motion-presets";
 
-// ---------------------------------------------------------------------------
-// Viewport presets
-// ---------------------------------------------------------------------------
-
-export const VIEWPORT = {
-  gentle: { once: true, margin: "0px 0px 80px 0px", amount: 0.12 },
-  tight: { once: true, margin: "-60px" },
-  hero: { once: true, margin: "0px" },
-} as const;
-
-// ---------------------------------------------------------------------------
-// Easing curves (modern, non-linear)
-// ---------------------------------------------------------------------------
-
-export const EASE = {
-  // Smooth deceleration — the default for scroll-reveals
-  // Matches --ds-ease-out: cubic-bezier(0.22, 1, 0.36, 1)
-  out: [0.22, 1, 0.36, 1] as const,
-  // Snappy spring-like
-  spring: [0.21, 0.5, 0.27, 1] as const,
-  // Dramatic entrance
-  // Matches --ds-ease-emphasized: cubic-bezier(0.2, 0, 0, 1) (close approximation)
-  dramatic: [0.16, 1, 0.3, 1] as const,
-  // Smooth — matches --ds-ease-smooth: cubic-bezier(0.33, 1, 0.68, 1)
-  smooth: [0.33, 1, 0.68, 1] as const,
-  // Standard — matches --ds-ease-standard: cubic-bezier(0.4, 0, 0.2, 1)
-  standard: [0.4, 0, 0.2, 1] as const,
-  // Emphasized — matches --ds-ease-emphasized: cubic-bezier(0.2, 0, 0, 1)
-  emphasized: [0.2, 0, 0, 1] as const,
-  // Panel — matches --ds-ease-panel: cubic-bezier(0.22, 1, 0.36, 1)
-  panel: [0.22, 1, 0.36, 1] as const,
-} as const;
+// Viewport + easing presets live in ./motion-presets (pure module) so Server
+// Components can use them in serializable motion props. Re-exported here for
+// the existing client-side consumers.
+export { VIEWPORT, EASE };
 
 // ---------------------------------------------------------------------------
 // Base variants factory (reduced-motion aware)
@@ -102,6 +75,8 @@ export const REVEAL = {
   right: (delay = 0) => makeVariants({ x: 20, duration: 0.45, delay }),
   /** Scale-in: 0.96 -> 1, 0.5s */
   scale: (delay = 0) => makeVariants({ scale: 0.96, duration: 0.5, delay }),
+  /** Depth reveal: fade up 24px + subtle 0.98 scale, 0.5s */
+  upScale: (delay = 0) => makeVariants({ y: 24, scale: 0.98, duration: 0.5, delay }),
   /** Subtle: 8px up, 0.4s — good for dense grids */
   subtle: (delay = 0) => makeVariants({ y: 8, duration: 0.4, delay }),
 } as const;
@@ -212,7 +187,7 @@ interface RevealProps {
   delay?: number;
   className?: string;
   viewport?: { once?: boolean; margin?: string; amount?: number };
-  as?: "div" | "section" | "article";
+  as?: "div" | "section" | "article" | "p" | "span" | "tr" | "li";
   onViewportEnter?: () => void;
   id?: string;
 }
@@ -328,7 +303,7 @@ export function AnimatedCounter({
   return (
     <span ref={ref} className={className}>
       {prefix}
-      {val >= 1000 ? Math.floor(val).toLocaleString("en-US") : val.toFixed(decimals)}
+      {val >= 1000 ? Math.floor(val).toLocaleString("de-AT") : val.toFixed(decimals)}
       {suffix}
     </span>
   );
@@ -345,6 +320,10 @@ interface ClipRevealProps {
   className?: string;
   /** "up" (default) reveals upward; "right" reveals from left */
   direction?: "up" | "right";
+  /** LCP-safe: content is painted at FCP (blur resolves) instead of being
+   *  hidden behind a clip mask until hydration. Use for above-the-fold
+   *  headlines that are the Largest Contentful Paint candidate. */
+  lcp?: boolean;
 }
 
 export function ClipReveal({
@@ -353,16 +332,20 @@ export function ClipReveal({
   duration = 0.7,
   className = "",
   direction = "up",
+  lcp = false,
 }: ClipRevealProps) {
   const reduce = useReducedMotion();
 
-  const initial =
-    direction === "up"
+  // lcp: paint at FCP (no clip mask, no opacity gate) — blur resolves instead.
+  const initial = lcp
+    ? { y: 8, opacity: 1, filter: "blur(8px)" }
+    : direction === "up"
       ? { clipPath: "inset(100% 0% 0% 0%)", y: 8, opacity: 0 }
       : { clipPath: "inset(0% 100% 0% 0%)", x: 8, opacity: 0 };
 
-  const animate =
-    direction === "up"
+  const animate = lcp
+    ? { y: 0, opacity: 1, filter: "blur(0px)" }
+    : direction === "up"
       ? { clipPath: "inset(0% 0% 0% 0%)", y: 0, opacity: 1 }
       : { clipPath: "inset(0% 0% 0% 0%)", x: 0, opacity: 1 };
 
@@ -635,6 +618,11 @@ interface SplitTextRevealProps {
   as?: MotionAs;
   once?: boolean;
   useAnimate?: boolean;
+  /** LCP-safe mode for above-the-fold headlines: text is painted immediately
+   *  (blurred) instead of being hidden behind a clip mask until hydration —
+   *  so the element counts toward Largest Contentful Paint at first paint.
+   *  Visual result: words resolve from blur → sharp. */
+  lcp?: boolean;
 }
 
 export function SplitTextReveal({
@@ -646,6 +634,7 @@ export function SplitTextReveal({
   as: Tag = "span",
   once = true,
   useAnimate = false,
+  lcp = false,
 }: SplitTextRevealProps) {
   const reduce = useReducedMotion();
   const lineData = useMemo(
@@ -702,16 +691,32 @@ export function SplitTextReveal({
     },
   };
 
-  const wordVariants: Variants = {
-    hidden: { opacity: 0, y: "100%", filter: "blur(6px)" },
-    visible: {
-      opacity: 1,
-      y: 0,
-      filter: "blur(0px)",
-      transition: { duration: 0.75, ease: EASE.dramatic },
-    },
-  };
+  const wordVariants: Variants = lcp
+    ? {
+        // Painted at FCP (opacity 1, unmasked) — only blur resolves later.
+        hidden: { opacity: 1, y: 0, filter: "blur(10px)" },
+        visible: {
+          opacity: 1,
+          y: 0,
+          filter: "blur(0px)",
+          transition: { duration: 0.6, ease: EASE.dramatic },
+        },
+      }
+    : {
+        hidden: { opacity: 0, y: "100%", filter: "blur(6px)" },
+        visible: {
+          opacity: 1,
+          y: 0,
+          filter: "blur(0px)",
+          transition: { duration: 0.75, ease: EASE.dramatic },
+        },
+      };
 
+  // aria-label is only valid on nameable roles (headings etc.). For the
+  // default <span> usage we inject an sr-only copy instead — the animated
+  // word nodes are aria-hidden either way.
+  const flatText = children.replace(/\n/g, " ");
+  const isNameable = /^h[1-6]$/.test(String(Tag));
   return (
     <MotionTag
       as={Tag}
@@ -721,12 +726,12 @@ export function SplitTextReveal({
         : { whileInView: "visible" as const, viewport: { ...VIEWPORT.hero, once } })}
       variants={container}
       className={className}
-      aria-label={children.replace(/\n/g, " ")}
-      role="text"
+      {...(isNameable ? { "aria-label": flatText } : {})}
       style={{ willChange: "transform, opacity" }}
     >
+      {!isNameable && <span className="sr-only">{flatText}</span>}
       {lineData.map((line) => (
-        <span key={line.key} className="block overflow-hidden">
+        <span key={line.key} className={`block ${lcp ? "" : "overflow-hidden"}`}>
           <motion.span
             variants={lineVariants}
             className={`block ${itemClassName}`}

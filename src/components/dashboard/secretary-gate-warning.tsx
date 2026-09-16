@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useLang } from "@/lib/use-lang";
+import { useMe } from "@/lib/queries/auth";
 
 interface SecretaryMetrics {
   gatePass: boolean;
@@ -35,11 +36,14 @@ async function loadSecretaryGate(): Promise<MetricsResponse | null> {
 export function SecretaryGateWarning() {
   const { lang } = useLang();
   const isEn = lang === "en";
+  const me = useMe();
   const query = useQuery({
     queryKey: ["secretary-metrics", 7],
     queryFn: loadSecretaryGate,
     staleTime: 120_000,
     refetchInterval: 300_000,
+    // Endpoint requires admin.* — skip the 403 for lawyers/assistants.
+    enabled: me.data?.user?.role === "admin",
   });
 
   const metrics = query.data?.metrics;
@@ -60,7 +64,7 @@ export function SecretaryGateWarning() {
             ? "Secretary compliance gate FAILED"
             : "Sekretariats-Compliance-Gate FEHLGESCHLAGEN"}
         </p>
-        <p className="mt-0.5 text-xs text-[color:var(--ds-danger-text)]/80">
+        <p className="mt-0.5 text-xs text-[color:var(--ds-danger-text)]">
           {isEn
             ? `${violations} violation(s) in the last 7 days. Review required.`
             : `${violations} Verstoß/Verstöße in den letzten 7 Tagen. Überprüfung erforderlich.`}

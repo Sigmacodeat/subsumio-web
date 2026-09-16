@@ -246,6 +246,7 @@ export default function ReviewQueuePage() {
             <div className="flex min-w-0 items-center gap-2">
               <Filter size={14} className="shrink-0 text-[color:var(--ds-text-muted)]" />
               <select
+                aria-label={t("review_queue.filter_status" as DashboardKey)}
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="h-10 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 text-sm text-[color:var(--ds-text)]"
@@ -260,6 +261,7 @@ export default function ReviewQueuePage() {
             </div>
             {assignees.length > 0 && (
               <select
+                aria-label={t("review_queue.filter_assignee" as DashboardKey)}
                 value={assigneeFilter}
                 onChange={(e) => setAssigneeFilter(e.target.value)}
                 className="h-10 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 text-sm text-[color:var(--ds-text)]"

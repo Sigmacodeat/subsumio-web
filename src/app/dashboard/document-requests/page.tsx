@@ -208,7 +208,7 @@ export default function DocumentRequestsPage() {
         role="note"
       >
         <AlertCircle size={16} className="brand-text mt-0.5 shrink-0" aria-hidden="true" />
-        <p className="brand-text/90 text-xs leading-relaxed">
+        <p className="brand-text text-xs leading-relaxed">
           Dokumentenanfragen sind der Fulfillment-Teil des WhatsApp-Workflows: hier wird sichtbar,
           was angefordert, gesendet und später tatsächlich erfüllt wurde.
         </p>

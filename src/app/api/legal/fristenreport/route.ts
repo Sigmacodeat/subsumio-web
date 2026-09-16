@@ -55,6 +55,12 @@ export const POST = createHandler(
 
       if (!upstream.ok) {
         const errPayload = await upstream.json().catch(() => ({}));
+        // If the engine doesn't support this endpoint (404), return 503
+        // instead of passing through 404 — the route exists, the engine just
+        // doesn't have this feature.
+        if (upstream.status === 404) {
+          return apiError("service_unavailable", "Engine unterstützt diesen Endpunkt nicht", 503);
+        }
         return Response.json(
           errPayload.error ? errPayload : { error: `Engine returned ${upstream.status}` },
           { status: upstream.status }

@@ -29,7 +29,7 @@ import {
   FileCheck,
   ShieldCheck,
 } from "lucide-react";
-import type { Lang } from "@/content/site";
+
 import { UI_STRINGS } from "@/content/site";
 import { profileForIndustry } from "@/lib/industry-pack";
 import { GuidedCursor } from "./motion-system";
@@ -64,7 +64,7 @@ interface ViewContent {
 
 interface Branch {
   sidebar: { icon: typeof Brain; label: string }[];
-  views: Partial<Record<Lang, ViewContent>>;
+  views: ViewContent;
 }
 
 const _deBranches: ViewContent = {
@@ -193,141 +193,7 @@ const BRANCHES: Record<string, Branch> = {
       { icon: Inbox, label: "Intake" },
       { icon: MessageSquareText, label: "Chat" },
     ],
-    views: {
-      de: _deBranches,
-      at: _deBranches,
-      ch: _deBranches,
-      en: {
-        matters: [
-          {
-            id: "AZ-2026-041",
-            title: "Bauer ./. Hofer GmbH",
-            client: "Bauer M.",
-            status: "Hearing",
-            statusColor: "warning",
-          },
-          {
-            id: "AZ-2026-038",
-            title: "Schwarz Estate",
-            client: "Schwarz Fam.",
-            status: "Active",
-            statusColor: "info",
-          },
-          {
-            id: "AZ-2026-035",
-            title: "Müller Employment",
-            client: "Müller K.",
-            status: "Filing",
-            statusColor: "danger",
-          },
-          {
-            id: "AZ-2026-031",
-            title: "Reichmann Tenancy",
-            client: "Reichmann W.",
-            status: "Expert",
-            statusColor: "accent",
-          },
-          {
-            id: "AZ-2025-098",
-            title: "Klein ./. Insurance",
-            client: "Klein S.",
-            status: "Closed",
-            statusColor: "success",
-          },
-        ],
-        brain: {
-          question: "What's still open in the Bauer matter — with sources?",
-          file: "Matter_Bauer-Hofer.pdf",
-          answer:
-            "3 open items: defense-filing deadline (Jul 12), missing power of attorney, witness list incomplete.",
-          sources: ["matters/bauer-hofer", "deadlines/2026-07", "filing/defense"],
-        },
-        deadlines: [
-          { date: "Jul 12", title: "Defense filing — Bauer", matter: "AZ-2026-041", urgent: true },
-          {
-            date: "Jul 18",
-            title: "Appeal deadline — Müller",
-            matter: "AZ-2026-035",
-            urgent: true,
-          },
-          { date: "Jul 25", title: "Expert report — Klein", matter: "AZ-2026-031", urgent: false },
-          { date: "Aug 01", title: "Reply brief — Schwarz", matter: "AZ-2026-038", urgent: false },
-        ],
-        calendar: {
-          day: "12",
-          weekday: "Friday",
-          entries: [
-            { time: "09:00", title: "Hearing — Bauer", matter: "AZ-2026-041", tone: "warning" },
-            { time: "11:30", title: "Client call — Schwarz", matter: "AZ-2026-038", tone: "info" },
-            { time: "14:00", title: "Filing deadline", matter: "AZ-2026-041", tone: "danger" },
-            { time: "16:00", title: "Case note — Müller", matter: "AZ-2026-035", tone: "accent" },
-          ],
-        },
-        review: {
-          fileName: "Contract_Bauer-Hofer_v3.pdf",
-          riskAreas: [
-            {
-              line: "§ 4 para. 2",
-              text: "Liability cap missing — full liability without ceiling",
-              severity: "high",
-            },
-            {
-              line: "§ 7 para. 1",
-              text: "Notice period 6 weeks — unusually short",
-              severity: "medium",
-            },
-            {
-              line: "§ 12 para. 3",
-              text: "Written-form clause without AGB reference",
-              severity: "low",
-            },
-          ],
-          summary:
-            "3 risks detected — 1 critical, 1 moderate, 1 low. Negotiate § 4 before signing.",
-          clauses: [
-            { name: "Warranty", status: "ok" },
-            { name: "Liability cap", status: "missing" },
-            { name: "Notice period", status: "flag" },
-            { name: "Written form", status: "ok" },
-            { name: "NDA", status: "ok" },
-          ],
-        },
-        approval: {
-          items: [
-            {
-              title: "Defense brief — Bauer",
-              type: "document_finalize",
-              submittedBy: "Dr. Weber",
-              submittedAt: "12 min ago",
-              status: "Awaiting approval",
-              statusColor: "warning",
-            },
-            {
-              title: "Invoice AZ-2026-038 Schwarz",
-              type: "invoice_create",
-              submittedBy: "Fr. Klein",
-              submittedAt: "1 hr ago",
-              status: "For approval",
-              statusColor: "info",
-            },
-            {
-              title: "Contract draft — Müller",
-              type: "document_finalize",
-              submittedBy: "Hr. Schmidt",
-              submittedAt: "3 hrs ago",
-              status: "Revised",
-              statusColor: "accent",
-            },
-          ],
-          auditTrail: [
-            { action: "Draft uploaded", user: "Dr. Weber", time: "09:14" },
-            { action: "AI review completed", user: "Brain", time: "09:15" },
-            { action: "Sent for approval", user: "Dr. Weber", time: "09:22" },
-            { action: "Awaiting partner", user: "System", time: "09:22" },
-          ],
-        },
-      },
-    },
+    views: _deBranches,
   },
 };
 
@@ -355,13 +221,11 @@ const VIEW_DURATION = 3200;
 const TYPING_SPEED = 45;
 
 export default function DashboardReel({
-  lang,
   industry = "legal",
   className = "",
   controlledView,
   showCursor = true,
 }: {
-  lang: Lang;
   industry?: string;
   className?: string;
   controlledView?: number;
@@ -369,7 +233,7 @@ export default function DashboardReel({
 }) {
   const reduce = useReducedMotion();
   const branch = BRANCHES[industry] ?? BRANCHES.legal;
-  const v = branch.views[lang] ?? branch.views.de!;
+  const v = branch.views;
   const sidebar = branch.sidebar;
   const brand = (profileForIndustry(industry)?.brand ?? "Subsumio").toLowerCase();
   const [autoView, setAutoView] = useState(reduce ? 1 : 0);
@@ -404,19 +268,19 @@ export default function DashboardReel({
   }, [view, reduce, v.brain.question]);
 
   const sidebarLabels = [
-    UI_STRINGS[lang].navOverview,
-    UI_STRINGS[lang].navMatters,
-    UI_STRINGS[lang].navDeadlines,
-    UI_STRINGS[lang].navIntake,
-    UI_STRINGS[lang].navChat,
+    UI_STRINGS.navOverview,
+    UI_STRINGS.navMatters,
+    UI_STRINGS.navDeadlines,
+    UI_STRINGS.navIntake,
+    UI_STRINGS.navChat,
   ];
   const cursorTargets: Record<number, { x: string; y: string; label: string }> = {
-    0: { x: "72%", y: "42%", label: UI_STRINGS[lang].openMatter },
-    1: { x: "74%", y: "87%", label: UI_STRINGS[lang].sendQuestion },
-    2: { x: "70%", y: "52%", label: UI_STRINGS[lang].checkDeadline },
-    3: { x: "68%", y: "38%", label: lang === "en" ? "Open calendar" : "Kalender öffnen" },
-    4: { x: "72%", y: "45%", label: lang === "en" ? "Review risk" : "Risiko prüfen" },
-    5: { x: "66%", y: "58%", label: lang === "en" ? "Approve" : "Freigeben" },
+    0: { x: "72%", y: "42%", label: UI_STRINGS.openMatter },
+    1: { x: "74%", y: "87%", label: UI_STRINGS.sendQuestion },
+    2: { x: "70%", y: "52%", label: UI_STRINGS.checkDeadline },
+    3: { x: "68%", y: "38%", label: "Kalender öffnen" },
+    4: { x: "72%", y: "45%", label: "Risiko prüfen" },
+    5: { x: "66%", y: "58%", label: "Freigeben" },
   };
   const cursorTarget = cursorTargets[view] ?? cursorTargets[0];
 
@@ -436,12 +300,12 @@ export default function DashboardReel({
         <div className="flex flex-1 items-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-2.5 py-1.5 [background:var(--mk-bg)]">
           <Search size={13} className="[color:var(--mk-text-subtle)]" />
           <span className="text-sm [color:var(--mk-text-subtle)]">
-            {UI_STRINGS[lang].searchPlaceholder}
+            {UI_STRINGS.searchPlaceholder}
           </span>
         </div>
         <div className="flex items-center gap-1.5 text-sm [color:var(--mk-text-subtle)]">
           <Clock size={11} />
-          {UI_STRINGS[lang].timeLabel}
+          {UI_STRINGS.timeLabel}
         </div>
       </div>
 
@@ -456,11 +320,9 @@ export default function DashboardReel({
               </div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold [color:var(--mk-text)]">
-                  {UI_STRINGS[lang].lawFirmLabel}
+                  {UI_STRINGS.lawFirmLabel}
                 </p>
-                <p className="text-sm [color:var(--mk-text-subtle)]">
-                  {UI_STRINGS[lang].lawFirmName}
-                </p>
+                <p className="text-sm [color:var(--mk-text-subtle)]">{UI_STRINGS.lawFirmName}</p>
               </div>
             </div>
           </div>
@@ -497,7 +359,7 @@ export default function DashboardReel({
               <div className="flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full [background:var(--ds-success-text)]" />
                 <span className="text-sm font-medium [color:var(--mk-text-muted)]">
-                  {UI_STRINGS[lang].activeLabel}
+                  {UI_STRINGS.activeLabel}
                 </span>
               </div>
             </div>
@@ -525,10 +387,10 @@ export default function DashboardReel({
                 >
                   <div className="mb-3 flex items-center justify-between">
                     <h3 className="text-sm font-semibold [color:var(--mk-text)]">
-                      {UI_STRINGS[lang].mattersLabel}
+                      {UI_STRINGS.mattersLabel}
                     </h3>
                     <span className="text-sm [color:var(--mk-text-subtle)]">
-                      {v.matters.length} {UI_STRINGS[lang].mattersCount}
+                      {v.matters.length} {UI_STRINGS.mattersCount}
                     </span>
                   </div>
                   {v.matters.map((m, i) => {
@@ -657,10 +519,10 @@ export default function DashboardReel({
                 >
                   <div className="mb-3 flex items-center justify-between">
                     <h3 className="text-sm font-semibold [color:var(--mk-text)]">
-                      {UI_STRINGS[lang].deadlinesLabel}
+                      {UI_STRINGS.deadlinesLabel}
                     </h3>
                     <span className="text-sm font-medium [color:var(--ds-danger-text)]">
-                      {v.deadlines.filter((d) => d.urgent).length} {UI_STRINGS[lang].urgentLabel}
+                      {v.deadlines.filter((d) => d.urgent).length} {UI_STRINGS.urgentLabel}
                     </span>
                   </div>
                   {v.deadlines.map((d, i) => (
@@ -719,9 +581,7 @@ export default function DashboardReel({
                   <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <CalendarDays size={15} className="brand-text" />
-                      <h3 className="text-sm font-semibold [color:var(--mk-text)]">
-                        {lang === "en" ? "Calendar" : "Kalender"}
-                      </h3>
+                      <h3 className="text-sm font-semibold [color:var(--mk-text)]">Kalender</h3>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold [color:var(--mk-text)]">{v.calendar.day}</p>
@@ -800,7 +660,7 @@ export default function DashboardReel({
                     <div className="flex items-center gap-2">
                       <PenLine size={15} className="brand-text" />
                       <h3 className="text-sm font-semibold [color:var(--mk-text)]">
-                        {lang === "en" ? "Document Review" : "Dokumenten-Analyse"}
+                        Dokumenten-Analyse
                       </h3>
                     </div>
                     <span className="brand-text brand-soft rounded-full px-2 py-0.5 text-sm font-medium">
@@ -817,7 +677,7 @@ export default function DashboardReel({
                     <div className="mb-1.5 flex items-center gap-2">
                       <Brain size={13} className="brand-text" />
                       <span className="text-sm font-semibold [color:var(--mk-text)]">
-                        {lang === "en" ? "AI Summary" : "KI-Zusammenfassung"}
+                        KI-Zusammenfassung
                       </span>
                     </div>
                     <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
@@ -876,9 +736,7 @@ export default function DashboardReel({
 
                   {/* Clause checklist */}
                   <div className="mt-auto">
-                    <p className="mb-2 text-sm font-semibold [color:var(--mk-text)]">
-                      {lang === "en" ? "Clauses" : "Klauseln"}
-                    </p>
+                    <p className="mb-2 text-sm font-semibold [color:var(--mk-text)]">Klauseln</p>
                     <div className="flex flex-wrap gap-1.5">
                       {v.review.clauses.map((c) => {
                         const icon =
@@ -922,12 +780,10 @@ export default function DashboardReel({
                   <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <ShieldCheck size={15} className="brand-text" />
-                      <h3 className="text-sm font-semibold [color:var(--mk-text)]">
-                        {lang === "en" ? "Approvals" : "Freigaben"}
-                      </h3>
+                      <h3 className="text-sm font-semibold [color:var(--mk-text)]">Freigaben</h3>
                     </div>
                     <span className="text-sm font-medium [color:var(--ds-warning-text)]">
-                      {v.approval.items.length} {lang === "en" ? "pending" : "offen"}
+                      {v.approval.items.length} offen
                     </span>
                   </div>
 
@@ -962,10 +818,10 @@ export default function DashboardReel({
                           <div className="mt-2 flex items-center gap-2">
                             <button className="brand-bg flex items-center gap-1 rounded-md px-2.5 py-1 text-sm font-medium text-white">
                               <CheckCircle2 size={11} />
-                              {lang === "en" ? "Approve" : "Freigeben"}
+                              Freigeben
                             </button>
                             <button className="rounded-md border [border-color:var(--mk-border)] px-2.5 py-1 text-sm font-medium [color:var(--mk-text-muted)]">
-                              {lang === "en" ? "Review" : "Prüfen"}
+                              Prüfen
                             </button>
                           </div>
                         </motion.div>
@@ -975,9 +831,7 @@ export default function DashboardReel({
 
                   {/* Audit trail */}
                   <div className="mt-auto rounded-xl border [border-color:var(--mk-border)] p-3 [background:var(--mk-surface-2)]">
-                    <p className="mb-2 text-sm font-semibold [color:var(--mk-text)]">
-                      {lang === "en" ? "Audit Trail" : "Audit-Trail"}
-                    </p>
+                    <p className="mb-2 text-sm font-semibold [color:var(--mk-text)]">Audit-Trail</p>
                     <div className="space-y-1.5">
                       {v.approval.auditTrail.map((a, i) => (
                         <motion.div

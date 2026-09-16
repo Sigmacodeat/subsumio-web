@@ -13,17 +13,10 @@ import { keywordsFor } from "@/lib/seo-keywords";
 export const metadata: Metadata = {
   title: "SuperBrain — Die KI-Engine hinter Subsumio | Legal AI mit 5-Ebenen-Architektur",
   description:
-    "Das Subsumio SuperBrain: 29 Dream-Cycle-Phasen, 5 Korrektur-Ebenen, LEXam-validiert, 119 Sprachen. Eine lernende Wissensbasis für deine Kanzlei — mit belegten Antworten, nächtlicher Widerspruchsprüfung und DACH-Recht Fine-Tuning.",
+    "Das Subsumio SuperBrain: 29 Dream-Cycle-Phasen, 5 Korrektur-Ebenen, LEXam-validiert, 119 Sprachen. Eine lernende Wissensbasis für deine Kanzlei — mit belegten Antworten, nächtlicher Widerspruchsprüfung und Österreich-Recht Fine-Tuning.",
   keywords: keywordsFor("superbrain"),
   alternates: {
     canonical: "/at/superbrain",
-    languages: {
-      "de-DE": "/superbrain",
-      "de-AT": "/at/superbrain",
-      "de-CH": "/ch/superbrain",
-      en: "/en/superbrain",
-      "x-default": "/superbrain",
-    },
   },
   openGraph: {
     title: "SuperBrain — Die KI-Engine hinter Subsumio",
@@ -45,15 +38,15 @@ export default function Page() {
   return (
     <>
       <JsonLd data={organizationLd()} />
-      <JsonLd data={softwareApplicationLd("at")} />
-      <JsonLd data={faqPageLd(superbrainFaq("de"))} />
+      <JsonLd data={softwareApplicationLd()} />
+      <JsonLd data={faqPageLd(superbrainFaq())} />
       <JsonLd
         data={breadcrumbLd([
           { name: "Subsumio", url: "/at" },
           { name: "SuperBrain", url: "/at/superbrain" },
         ])}
       />
-      <SuperbrainPage lang="at" />
+      <SuperbrainPage />
     </>
   );
 }

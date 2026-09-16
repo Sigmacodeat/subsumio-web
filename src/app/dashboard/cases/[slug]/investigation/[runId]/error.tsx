@@ -20,7 +20,7 @@ export default function Error({
             <p className="text-sm font-medium text-[color:var(--ds-danger-text)]">
               Sachverhaltsprüfung konnte nicht geladen werden
             </p>
-            <p className="text-xs text-[color:var(--ds-danger-text)]/80">
+            <p className="text-xs text-[color:var(--ds-danger-text)]">
               {error.message || "Ein unerwarteter Fehler ist aufgetreten."}
             </p>
             <Button variant="secondary" size="sm" onClick={reset}>

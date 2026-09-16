@@ -3918,6 +3918,35 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   });
 
+  // Soft-delete a page (recoverable via restore_page within 72h). Scoped like
+  // get_page — source isolation + matter scope are enforced inside invokeOp.
+  app.delete("/api/pages/{*slug}", async (req: Request, res: Response) => {
+    try {
+      const slugParam = req.params.slug;
+      const slug = Array.isArray(slugParam) ? slugParam.join("/") : String(slugParam ?? "");
+      const result = await invokeOp(
+        engine,
+        "delete_page",
+        { slug },
+        requestSourceId(req),
+        readSourcesFor(req),
+        req.matterScope ?? "all",
+        req.aclGroups ?? "all",
+        req.userId
+      );
+      res.json(result);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      const status =
+        e instanceof EngineNotFoundError
+          ? 404
+          : msg.includes("not found") || msg.includes("page_not_found")
+            ? 404
+            : 500;
+      res.status(status).json({ error: "delete_page_failed", message: msg });
+    }
+  });
+
   // Download the ORIGINAL uploaded file (unaltered bytes) for a document page.
   // Tenant- and matter-scoped: a caller may only fetch files for cases inside
   // their matterScope, mirroring the upload-side confidentiality check.

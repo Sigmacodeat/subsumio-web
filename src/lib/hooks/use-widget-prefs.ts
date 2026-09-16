@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   getWidgetPreset,
   mergeWithDefaults,
@@ -34,7 +34,9 @@ function writeLocal(prefs: WidgetPref[]) {
 }
 
 export function useWidgetPrefs(preset: WidgetPreset = "associate") {
-  const presetPrefs = getWidgetPreset(preset);
+  // Memoized: getWidgetPreset allocates a fresh array per call — without
+  // useMemo the effect below re-fires (and re-fetches) on every render.
+  const presetPrefs = useMemo(() => getWidgetPreset(preset), [preset]);
   const [prefs, setPrefs] = useState<WidgetPref[]>(presetPrefs);
   const [loaded, setLoaded] = useState(false);
 
@@ -78,8 +80,11 @@ export function useWidgetPrefs(preset: WidgetPreset = "associate") {
           setPrefs(merged);
           writeLocal(merged);
         } else if (!local) {
+          // Apply the role preset in memory only — do NOT persist it. The
+          // caller's preset can upgrade when /api/me resolves (e.g. associate
+          // → admin); a persisted wrong preset would pin the user to that
+          // layout forever, since readLocal() would then shadow the new preset.
           setPrefs(presetPrefs);
-          writeLocal(presetPrefs);
         }
       })
       .catch((err) =>

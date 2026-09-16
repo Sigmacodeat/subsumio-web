@@ -1,20 +1,11 @@
-"use client";
-
 import Link from "next/link";
 import { ArrowRight, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { p, UI_STRINGS, type Lang } from "@/content/site";
+import { p, UI_STRINGS } from "@/content/site";
 import type { SolutionContent, SolutionSlug } from "@/content/solutions";
 import { SOLUTION_SLUGS, SOLUTION_CROSS_LINKS } from "@/content/solutions";
-import {
-  Section,
-  SectionHeading,
-  ICONS,
-  accentTile,
-  CTASection,
-  PageHero,
-  H2_CTA_CLASS,
-} from "./chrome";
+import { Section, SectionHeading, CTASection, PageHero, H2_CTA_CLASS } from "./primitives";
+import { ICONS, accentTile } from "./icons";
 import { AnimatedFaqList } from "./animated-faq";
 import { GlowCard, Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 
@@ -41,13 +32,9 @@ function HeroIconConstellation({ content }: { content: SolutionContent }) {
   );
 }
 
-export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionContent }) {
+export function SolutionPage({ content }: { content: SolutionContent }) {
   return (
-    <div
-      data-tone="light"
-      className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
-      lang={lang}
-    >
+    <div data-tone="light" className="min-h-screen overflow-x-clip [background:var(--mk-bg)]">
       {/* Hero */}
       <PageHero
         badge={content.badge}
@@ -56,20 +43,25 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
         sub={content.sub}
         actions={
           <>
-            <Link href={p(lang, "/signup")}>
-              <Button size="lg" variant="primary" className="group min-h-[48px]">
+            <Button size="lg" variant="primary" className="group min-h-[48px]" asChild>
+              <Link href={p("/signup")}>
                 {content.ctaButton}
                 <ArrowRight
                   size={16}
                   className="transition-transform duration-200 group-hover:translate-x-0.5"
                 />
-              </Button>
-            </Link>
-            <Link href={p(lang, "/superbrain")}>
-              <Button size="lg" variant="outline" className="min-h-[48px] [color:var(--mk-text)]">
-                {UI_STRINGS[lang].watchDemo} <ArrowRight size={16} />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="min-h-[48px] [color:var(--mk-text)]"
+              asChild
+            >
+              <Link href={p("/superbrain")}>
+                {UI_STRINGS.watchDemo} <ArrowRight size={16} />
+              </Link>
+            </Button>
           </>
         }
       />
@@ -152,7 +144,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
       {/* FAQ */}
       <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl">
-          <SectionHeading title={UI_STRINGS[lang].questionsAnswered} tone="light" />
+          <SectionHeading title={UI_STRINGS.questionsAnswered} tone="light" />
           <AnimatedFaqList items={content.faq} tone="light" />
         </div>
       </Section>
@@ -160,18 +152,15 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
       {/* Cross-link: not quite the right fit? */}
       <Section tone="light" className="px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
-          <SectionHeading
-            badge={UI_STRINGS[lang].notQuiteRight}
-            title={UI_STRINGS[lang].seeSolution}
-          />
+          <SectionHeading badge={UI_STRINGS.notQuiteRight} title={UI_STRINGS.seeSolution} />
           <div className="flex flex-wrap items-center justify-center gap-3">
             {SOLUTION_SLUGS.filter((slug) => slug !== content.slug).map((slug: SolutionSlug) => {
-              const link = SOLUTION_CROSS_LINKS[lang][slug];
+              const link = SOLUTION_CROSS_LINKS[slug];
               const Icon = ICONS[link.icon] ?? ICONS.Layers;
               return (
                 <Link
                   key={slug}
-                  href={p(lang, `/solutions/${slug}`)}
+                  href={p(`/solutions/${slug}`)}
                   className="inline-flex items-center gap-2 rounded-full border [border-color:var(--mk-border)] px-4 py-2 text-sm font-medium [color:var(--mk-text-muted)] transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:[border-color:var(--mk-border-strong)] hover:[color:var(--mk-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                 >
                   <Icon size={14} />
@@ -187,10 +176,10 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
       <CTASection
         title={content.ctaTitle}
         sub={content.ctaSub}
-        href={p(lang, "/signup")}
+        href={p("/signup")}
         label={content.ctaButton}
-        secondaryHref={p(lang, "/superbrain")}
-        secondaryLabel={UI_STRINGS[lang].watchDemo}
+        secondaryHref={p("/superbrain")}
+        secondaryLabel={UI_STRINGS.watchDemo}
         showLogo={false}
       />
     </div>

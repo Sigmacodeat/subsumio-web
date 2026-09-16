@@ -61,11 +61,6 @@ describe("parseIntent — simple kind routing", () => {
     ["anstehende termine", "list_appointments"],
     ["kalender", "list_appointments"],
     ["terminkalender", "list_appointments"],
-    // bea / datev
-    ["bea", "bea_status"],
-    ["posteingang", "bea_status"],
-    ["datev", "datev_status"],
-    ["datev export", "datev_status"],
     // free_text
     ["irgendein text der auf nichts passt", "free_text"],
     ["", "free_text"],

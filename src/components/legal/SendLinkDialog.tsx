@@ -277,7 +277,7 @@ export function SendLinkDialog({
             <Button
               onClick={() => send("whatsapp")}
               disabled={sending !== null || phone.trim().length < 6}
-              className="gap-2 bg-[color:var(--ds-success-solid)] text-white hover:bg-[color:var(--ds-success-solid)] active:scale-[0.98]"
+              className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-white hover:bg-[color:var(--signal-success-800)] active:scale-[0.98]"
             >
               {sending === "whatsapp" ? (
                 <Loader2 size={16} className="animate-spin" />

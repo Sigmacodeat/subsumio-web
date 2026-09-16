@@ -57,17 +57,28 @@ async function getCsrf(page: import("@playwright/test").Page): Promise<string> {
 }
 
 const SAMPLE_KANZLEI_SETTINGS = {
-  kanzlei_name: "Test Kanzlei",
-  kanzlei_street: "Teststraße 1",
-  kanzlei_zip: "10115",
-  kanzlei_city: "Berlin",
-  kanzlei_country: "DE",
-  kanzlei_tax_id: "DE123456789",
+  kanzleiName: "Test Kanzlei",
+  street: "Teststraße 1",
+  zip: "10115",
+  city: "Berlin",
+  country: "DE",
+  ustId: "DE123456789",
   kanzlei_iban: "DE89370400440532013000",
   kanzlei_bic: "COBADEFFXXX",
   kanzlei_bank: "Commerzbank",
   kleinunternehmer: false,
   eInvoiceProfile: "BASIC",
+};
+
+const SAMPLE_OPTIONS = {
+  leitwegId: "991-51097-29",
+  buyerAddress: {
+    name: "Test Mandant GmbH",
+    street: "Musterstraße 2",
+    zip: "80331",
+    city: "München",
+    country: "DE",
+  },
 };
 
 const SAMPLE_INVOICE = {
@@ -118,16 +129,7 @@ test.describe("E-Invoice Flow", () => {
         format: "xrechnung",
         invoice: SAMPLE_INVOICE,
         settings: SAMPLE_KANZLEI_SETTINGS,
-        options: {
-          leitwegId: "991-51097-29",
-          buyerAddress: {
-            name: "Test Mandant GmbH",
-            street: "Musterstraße 2",
-            zip: "80331",
-            city: "München",
-            country: "DE",
-          },
-        },
+        options: SAMPLE_OPTIONS,
       },
     });
 
@@ -152,6 +154,7 @@ test.describe("E-Invoice Flow", () => {
         format: "zugferd_scratch",
         invoice: SAMPLE_INVOICE,
         settings: SAMPLE_KANZLEI_SETTINGS,
+        options: SAMPLE_OPTIONS,
       },
     });
 
@@ -179,6 +182,7 @@ test.describe("E-Invoice Flow", () => {
         format: "xrechnung",
         invoice: SAMPLE_INVOICE,
         settings: SAMPLE_KANZLEI_SETTINGS,
+        options: SAMPLE_OPTIONS,
       },
     });
     expect(genRes.status()).toBe(200);
@@ -212,6 +216,13 @@ test.describe("E-Invoice Flow", () => {
           client: "Incoming Supplier GmbH",
         },
         settings: SAMPLE_KANZLEI_SETTINGS,
+        options: {
+          ...SAMPLE_OPTIONS,
+          buyerAddress: {
+            ...SAMPLE_OPTIONS.buyerAddress,
+            name: "Incoming Supplier GmbH",
+          },
+        },
       },
     });
     expect(genRes.status()).toBe(200);
@@ -266,6 +277,7 @@ test.describe("E-Invoice Flow", () => {
           ...SAMPLE_KANZLEI_SETTINGS,
           kleinunternehmer: true,
         },
+        options: SAMPLE_OPTIONS,
       },
     });
 
@@ -286,6 +298,7 @@ test.describe("E-Invoice Flow", () => {
         format: "xrechnung",
         invoice: SAMPLE_INVOICE,
         settings: SAMPLE_KANZLEI_SETTINGS,
+        options: SAMPLE_OPTIONS,
       },
     });
     expect(genRes.status()).toBe(200);

@@ -3,7 +3,7 @@
 // Subsumio premium showcase — the agency-level presentation of the law-firm
 // product: a WhatsApp-Copilot spotlight (an optional convenience channel) and a
 // bento-style feature grid that surfaces every capability without a flat wall of cards.
-// Content is sourced from VERTICALS[lang].legal so copy stays single-source +
+// Content is sourced from VERTICALS.legal so copy stays single-source +
 // SEO-indexable; this file owns only the presentation + motion.
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -24,13 +24,14 @@ import {
   Smile,
   Send,
 } from "lucide-react";
-import { ICONS, Section, accentTile, H2_CTA_CLASS } from "./chrome";
+import { Section, H2_CTA_CLASS } from "./primitives";
+import { ICONS, accentTile } from "./icons";
 import { VERTICALS } from "@/content/verticals";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { EASE } from "./motion-system";
-import { UI_STRINGS, type Lang } from "@/content/site";
+import { UI_STRINGS } from "@/content/site";
 
-const _deShowcase = {
+const COPY = {
   waEyebrow: "Das Büro in der Hosentasche",
   waTitle: "Immer dabei — nie eine Frist verpassen",
   waSub:
@@ -91,72 +92,6 @@ const _deShowcase = {
     "Self-hosted oder EU-Cloud. Jede Antwort mit Fundstelle. Jede Funktion auf deiner Infrastruktur.",
 } as const;
 
-const COPY = {
-  de: _deShowcase,
-  at: _deShowcase,
-  ch: _deShowcase,
-  en: {
-    waEyebrow: "The office in your pocket",
-    waTitle: "Always with you — never miss a deadline",
-    waSub:
-      "Subsumio is your secretary on the go: book time, file receipts, track deadlines — all via WhatsApp, no app switch.",
-    waPoints: [
-      {
-        icon: Clock,
-        color: "emerald",
-        t: "Time & expenses in seconds",
-        d: '"Time 0.5h matter Müller, call" → captured, linked to the matter, one tap to confirm.',
-      },
-      {
-        icon: Paperclip,
-        color: "amber",
-        t: "Receipt photo → right matter",
-        d: "A document or photo with the case reference in the caption lands in the vault, audit-ready.",
-      },
-      {
-        icon: Mic,
-        color: "violet",
-        t: "Voice note on the go",
-        d: "Dictate after the hearing — transcribed and attached to the matter before you're back at the office.",
-      },
-      {
-        icon: CalendarClock,
-        color: "rose",
-        t: "Deadlines that don't forget you",
-        d: "Daily digest, holiday roll-forward, statutory deadlines calculated automatically. You sleep — Subsumio watches.",
-      },
-    ],
-    phoneHeader: "Subsumio Copilot",
-    phoneStatus: "online",
-    chat: [
-      { from: "user", text: "Time 0.5h matter Müller, opposing-counsel call" },
-      {
-        from: "bot",
-        text: "✓ Time entry 0.5 h · matter Müller · call\nConfirm?",
-        chips: ["Confirm", "Edit"],
-      },
-      {
-        from: "user",
-        text: "Ask: where do the opposing party's statements contradict?",
-        file: "Opposing_Brief.pdf",
-      },
-      {
-        from: "bot",
-        text: "3 contradictions found — with sources (p. 14, B7, protocol K.). Answer filed in the matter.",
-      },
-      { from: "user", text: "Which deadlines expire this week?" },
-      {
-        from: "bot",
-        text: "3 deadlines: ⚠️ Reply Bauer today 24:00 (statutory), Answer Müller Thu 16:00, Appeal Schmidt Fri 12:00. All linked to matter.",
-      },
-    ],
-    bentoEyebrow: "All capabilities",
-    bentoTitle: "Everything a firm needs — in one brain",
-    bentoSub:
-      "Self-hosted or EU cloud. Every answer cited. Every feature on your own infrastructure.",
-  },
-} as const;
-
 const reveal = (i: number, reduce = false) => ({
   initial: reduce ? false : { opacity: 0, y: 24 },
   whileInView: { opacity: 1, y: 0 },
@@ -189,8 +124,8 @@ function TypingDots({ color }: { color: string }) {
   );
 }
 
-export function PhoneCopilot({ lang }: { lang: Lang }) {
-  const c = (COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de;
+export function PhoneCopilot() {
+  const c = COPY;
   const reduce = useReducedMotion() ?? false;
   const WA = {
     bg: "#0b141a",
@@ -375,7 +310,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
     }
   }, [visibleCount, isTyping]);
 
-  const typingLabel = UI_STRINGS[lang].typingLabel;
+  const typingLabel = UI_STRINGS.typingLabel;
 
   return (
     <div className="relative mx-auto w-[290px] sm:w-[330px]" aria-hidden="true">
@@ -441,7 +376,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                         className="rounded-md px-2 py-1 text-[10px] font-medium"
                         style={{ background: "#1e2a31", color: WA.meta }}
                       >
-                        {UI_STRINGS[lang].todayLabel}
+                        {UI_STRINGS.todayLabel}
                       </span>
                     </div>
                   )}
@@ -534,7 +469,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                                 {isConfirmed && idx === 0 ? (
                                   <span className="flex items-center gap-1">
                                     <Check size={11} strokeWidth={3} />
-                                    {UI_STRINGS[lang].confirmedLabel}
+                                    {UI_STRINGS.confirmedLabel}
                                   </span>
                                 ) : (
                                   ch
@@ -632,7 +567,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                 className="min-w-0 flex-1 py-1 text-[13px] leading-snug break-words whitespace-pre-wrap"
                 style={{ color: isUserTyping && inputText ? WA.text : WA.meta }}
               >
-                {isUserTyping && inputText ? inputText : UI_STRINGS[lang].messageLabel}
+                {isUserTyping && inputText ? inputText : UI_STRINGS.messageLabel}
                 {isUserTyping && inputText && (
                   <motion.span
                     animate={{ opacity: [1, 0, 1] }}
@@ -676,8 +611,8 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
 /** WhatsApp-Copilot spotlight — an optional convenience channel. Always a DARK spotlight band
  *  (pins data-tone="dark"); reused on the homepage teaser and the /whatsapp
  *  deep-dive page. */
-export function WhatsAppSpotlight({ lang, children }: { lang: Lang; children?: React.ReactNode }) {
-  const c = (COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de;
+export function WhatsAppSpotlight({ children }: { children?: React.ReactNode }) {
+  const c = COPY;
   const reduce = useReducedMotion() ?? false;
 
   return (
@@ -725,7 +660,7 @@ export function WhatsAppSpotlight({ lang, children }: { lang: Lang; children?: R
           {children && <motion.div {...reveal(6, reduce)}>{children}</motion.div>}
         </div>
         <motion.div {...reveal(2, reduce)} className="relative">
-          <PhoneCopilot lang={lang} />
+          <PhoneCopilot />
         </motion.div>
       </div>
     </Section>
@@ -734,9 +669,9 @@ export function WhatsAppSpotlight({ lang, children }: { lang: Lang; children?: R
 
 /** Bento feature grid — every capability. Tone-flexible: inherits the
  *  surrounding section tone (place inside a <Section tone=…>). */
-export function FeatureBento({ lang }: { lang: Lang }) {
-  const c = (COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de;
-  const features = VERTICALS[lang].legal.features;
+export function FeatureBento() {
+  const c = COPY;
+  const features = VERTICALS.legal.features;
   const reduce = useReducedMotion() ?? false;
   return (
     <div className="relative z-10 mx-auto max-w-6xl px-4 py-24 sm:px-6 lg:px-8">
@@ -786,11 +721,11 @@ export function FeatureBento({ lang }: { lang: Lang }) {
   );
 }
 
-export default function SubsumioShowcase({ lang }: { lang: Lang }) {
+export default function SubsumioShowcase() {
   return (
     <>
-      <WhatsAppSpotlight lang={lang} />
-      <FeatureBento lang={lang} />
+      <WhatsAppSpotlight />
+      <FeatureBento />
     </>
   );
 }

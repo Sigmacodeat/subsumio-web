@@ -111,7 +111,7 @@ export async function saveKanzleiSettings(settings: KanzleiSettings): Promise<vo
     title: "Kanzlei-Einstellungen",
     type: "kanzlei_settings",
     content:
-      "Zentrale Kanzlei-Stammdaten für Rechnungen, DATEV-Export und Verfahrensdokumentation.",
+      "Zentrale Kanzlei-Stammdaten für Rechnungen, Honorarverwaltung und Verfahrensdokumentation.",
     frontmatter: {
       type: "kanzlei_settings",
       ...normalized,

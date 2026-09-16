@@ -383,6 +383,7 @@ export default function LitigationFlowPage() {
           />
         </div>
         <select
+          aria-label={t("litigation.filter_phase" as DashboardKey)}
           value={phaseFilter}
           onChange={(e) => setPhaseFilter(e.target.value as LitigationPhase | "all")}
           className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
@@ -394,7 +395,12 @@ export default function LitigationFlowPage() {
             </option>
           ))}
         </select>
-        <Button variant="ghost" onClick={loadMatters} className="gap-2 text-sm">
+        <Button
+          variant="ghost"
+          onClick={loadMatters}
+          className="gap-2 text-sm"
+          aria-label={t("common.refresh" as DashboardKey)}
+        >
           <RefreshCw size={14} />
         </Button>
       </div>
@@ -605,6 +611,7 @@ export default function LitigationFlowPage() {
                       )}
                     </div>
                     <select
+                      aria-label={`${step.title} — Status`}
                       value={step.status}
                       onChange={(e) =>
                         handleStepStatusChange(step.id, e.target.value as StepStatus)

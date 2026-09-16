@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler } from "@/lib/api-handler";
-import { normalizeFristenbuchStatus } from "@/lib/legal-deadlines";
+import { normalizeFristenbuchStatus, computeDeadlineStatus } from "@/lib/legal-deadlines";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +20,11 @@ const querySchema = z.object({
  *   - heute: override "today" date (ISO YYYY-MM-DD)
  *
  * Returns Fristenbuch JSON with eintraege[] and zusammenfassung.
+ *
+ * FALLBACK: When the engine's fristenbuch has no entries (e.g. a fresh
+ * brain with only legal_case frontmatter.deadlines), we merge in deadlines
+ * from legal_case pages so the fristenbuch is never empty when deadlines
+ * exist.
  */
 export const GET = createHandler(
   {
@@ -49,6 +54,66 @@ export const GET = createHandler(
           status: normalizeFristenbuchStatus(String(e.status ?? "ok")),
         }));
       }
+
+      // FALLBACK: If the engine's fristenbuch is empty, merge in deadlines
+      // from legal_case pages (same source-3 logic as /api/legal/fristen).
+      const engineCount = data?.zusammenfassung?.gesamt ?? data?.eintraege?.length ?? 0;
+      if (engineCount === 0) {
+        try {
+          const caseFilter = query.case ?? undefined;
+          const caseUrl = new URL(`${ENGINE_URL}/api/pages`);
+          caseUrl.searchParams.set("type", "legal_case");
+          caseUrl.searchParams.set("limit", "300");
+          const caseRes = await fetch(caseUrl.toString(), {
+            headers: ctx.headers,
+            signal: AbortSignal.timeout(15_000),
+          });
+          if (caseRes.ok) {
+            const caseRaw = await caseRes.json();
+            const casePages = Array.isArray(caseRaw) ? caseRaw : [];
+            const eintraege: Record<string, unknown>[] = [];
+            for (const page of casePages) {
+              if (caseFilter && (page as { slug?: string }).slug !== caseFilter) continue;
+              const fm = ((page as { frontmatter?: Record<string, unknown> }).frontmatter ??
+                {}) as {
+                deadlines?: Array<{ title?: string; due_date?: string; law?: string }>;
+              };
+              for (const d of fm.deadlines ?? []) {
+                if (!d.due_date) continue;
+                const status = computeDeadlineStatus(d.due_date);
+                eintraege.push({
+                  case_slug: (page as { slug?: string }).slug,
+                  frist: d.title || "Frist",
+                  datum: d.due_date,
+                  rechtsgrundlage: d.law ?? "",
+                  status:
+                    status === "overdue"
+                      ? "ueberfaellig"
+                      : status === "critical"
+                        ? "kritisch"
+                        : "ok",
+                });
+              }
+            }
+            if (eintraege.length > 0) {
+              data.eintraege = eintraege;
+              const overdue = eintraege.filter((e) => e.status === "ueberfaellig").length;
+              const critical = eintraege.filter((e) => e.status === "kritisch").length;
+              data.zusammenfassung = {
+                gesamt: eintraege.length,
+                ueberfaellig: overdue,
+                kritisch: critical,
+                vorfrist: 0,
+                ok: eintraege.length - overdue - critical,
+                unparsebar: 0,
+              };
+            }
+          }
+        } catch {
+          // Fallback failed — return what we have from the engine
+        }
+      }
+
       if (data?.zusammenfassung && typeof data.zusammenfassung === "object") {
         const z = data.zusammenfassung as Record<string, number>;
         data.zusammenfassung = {

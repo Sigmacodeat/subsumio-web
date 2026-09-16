@@ -48,7 +48,12 @@ test.describe("Security Headers (E2E)", () => {
     expect(csp).toContain("frame-ancestors 'none'");
     expect(csp).toContain("object-src 'none'");
     expect(csp).toContain("base-uri 'self'");
-    expect(csp).toContain("upgrade-insecure-requests");
+    // upgrade-insecure-requests is intentionally omitted on the dev server
+    // (it would break plain-HTTP localhost); dev CSP carries 'unsafe-eval'
+    // for webpack HMR — use that as the dev marker.
+    if (!csp.includes("'unsafe-eval'")) {
+      expect(csp).toContain("upgrade-insecure-requests");
+    }
   });
 
   test("CSP contains nonce (not unsafe-inline for scripts)", async ({ request }) => {

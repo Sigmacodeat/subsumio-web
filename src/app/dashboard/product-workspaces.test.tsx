@@ -1,7 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import LegalInsurancePage from "@/app/dashboard/legal-insurance/page";
-import DatevDirectPage from "@/app/dashboard/datev-direct/page";
 import BulkCasesPage from "@/app/dashboard/bulk-cases/page";
 
 vi.mock("@/lib/csrf", () => ({ csrfFetch: vi.fn() }));
@@ -11,7 +10,6 @@ vi.mock("@/lib/use-lang", () => ({
     t: (key: string) =>
       ({
         "workspace.rsv.title": "Rechtsschutzversicherung",
-        "workspace.datev.title": "DATEV Direct",
         "workspace.bulk.title": "Massenakten",
       })[key] ?? key,
   }),
@@ -28,7 +26,6 @@ describe("product workspaces", () => {
 
   it.each([
     ["Rechtsschutzversicherung", LegalInsurancePage],
-    ["DATEV Direct", DatevDirectPage],
     ["Massenakten", BulkCasesPage],
   ])("renders the reachable %s workspace", (heading, Component) => {
     render(<Component />);

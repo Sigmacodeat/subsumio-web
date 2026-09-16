@@ -90,9 +90,7 @@ interface Template {
 }
 
 const JURISDICTION_OPTIONS = [
-  { value: "de", labelKey: "casesnew.juris.de" },
   { value: "at", labelKey: "casesnew.juris.at" },
-  { value: "ch", labelKey: "casesnew.juris.ch" },
   { value: "eu", labelKey: "casesnew.juris.eu" },
 ] as const;
 
@@ -118,7 +116,7 @@ export function CaseQuickCreateDialog({
   const [opponentSlug, setOpponentSlug] = useState("");
   const [legalArea, setLegalArea] = useState("");
   const [subArea, setSubArea] = useState("");
-  const [jurisdiction, setJurisdiction] = useState<"de" | "at" | "ch" | "eu">("de");
+  const [jurisdiction, setJurisdiction] = useState<"at" | "eu">("at");
   const [priority, setPriority] = useState<"low" | "medium" | "high" | "critical">("medium");
   const [caseNumber, setCaseNumber] = useState("");
 
@@ -143,7 +141,7 @@ export function CaseQuickCreateDialog({
           legalArea: "Mietrecht",
           subArea: "Wohnraummiete",
           priority: "medium",
-          jurisdiction: "de",
+          jurisdiction: "at",
         },
       },
       {
@@ -156,7 +154,7 @@ export function CaseQuickCreateDialog({
           legalArea: "Arbeitsrecht",
           subArea: "Kündigungsschutz",
           priority: "high",
-          jurisdiction: "de",
+          jurisdiction: "at",
         },
       },
       {
@@ -169,7 +167,7 @@ export function CaseQuickCreateDialog({
           legalArea: "Zivilrecht",
           subArea: "Vertragsrecht",
           priority: "medium",
-          jurisdiction: "de",
+          jurisdiction: "at",
         },
       },
       {
@@ -182,7 +180,7 @@ export function CaseQuickCreateDialog({
           legalArea: "Familienrecht",
           subArea: "Scheidung",
           priority: "high",
-          jurisdiction: "de",
+          jurisdiction: "at",
         },
       },
       {
@@ -193,9 +191,9 @@ export function CaseQuickCreateDialog({
         defaults: {
           title: "",
           legalArea: "Erbrecht",
-          subArea: "Testamentsvollstreckung",
+          subArea: "Verlassenschaftsverfahren",
           priority: "medium",
-          jurisdiction: "de",
+          jurisdiction: "at",
         },
       },
       {
@@ -208,7 +206,7 @@ export function CaseQuickCreateDialog({
           legalArea: "Insolvenzrecht",
           subArea: "Insolvenzeröffnung",
           priority: "critical",
-          jurisdiction: "de",
+          jurisdiction: "at",
         },
       },
       {
@@ -221,7 +219,7 @@ export function CaseQuickCreateDialog({
           legalArea: "Strafrecht",
           subArea: "Wirtschaftsstrafrecht",
           priority: "critical",
-          jurisdiction: "de",
+          jurisdiction: "at",
         },
       },
       {
@@ -234,7 +232,7 @@ export function CaseQuickCreateDialog({
           legalArea: "Gesellschaftsrecht",
           subArea: "Gesellschafterstreit",
           priority: "high",
-          jurisdiction: "de",
+          jurisdiction: "at",
         },
       },
     ],
@@ -263,8 +261,11 @@ export function CaseQuickCreateDialog({
     if (newSuggestion?.legalArea) setLegalArea(newSuggestion.legalArea);
     if (newSuggestion?.subArea) setSubArea(newSuggestion.subArea);
     if (newSuggestion?.priority) setPriority(newSuggestion.priority ?? "medium");
-    if (detectedJurisdiction) setJurisdiction(detectedJurisdiction);
-    else if (newSuggestion?.jurisdiction) setJurisdiction(newSuggestion.jurisdiction ?? "de");
+    if (detectedJurisdiction === "at" || detectedJurisdiction === "eu") {
+      setJurisdiction(detectedJurisdiction);
+    } else if (newSuggestion?.jurisdiction === "at" || newSuggestion?.jurisdiction === "eu") {
+      setJurisdiction(newSuggestion.jurisdiction);
+    }
   }, [title, lang]);
 
   const clients = useMemo(() => (contacts ?? []).filter((c) => c.role === "client"), [contacts]);
@@ -281,7 +282,7 @@ export function CaseQuickCreateDialog({
       setLegalArea(tpl.defaults.legalArea);
       setSubArea(tpl.defaults.subArea);
       setPriority(tpl.defaults.priority ?? "medium");
-      setJurisdiction(tpl.defaults.jurisdiction ?? "de");
+      setJurisdiction(tpl.defaults.jurisdiction === "eu" ? "eu" : "at");
     },
     [templates]
   );
@@ -292,7 +293,7 @@ export function CaseQuickCreateDialog({
     setOpponentSlug("");
     setLegalArea("");
     setSubArea("");
-    setJurisdiction(defaultCaseValues().jurisdiction);
+    setJurisdiction(defaultCaseValues().jurisdiction === "eu" ? "eu" : "at");
     setPriority(defaultCaseValues().priority);
     setCaseNumber("");
     setSuggestion(null);
@@ -558,10 +559,7 @@ export function CaseQuickCreateDialog({
               <Label htmlFor="quick-jurisdiction" className="text-xs">
                 {t("casesnew.label_jurisdiction" as DashboardKey)}
               </Label>
-              <Select
-                value={jurisdiction}
-                onValueChange={(v) => setJurisdiction(v as "de" | "at" | "ch" | "eu")}
-              >
+              <Select value={jurisdiction} onValueChange={(v) => setJurisdiction(v as "at" | "eu")}>
                 <SelectTrigger id="quick-jurisdiction">
                   <SelectValue />
                 </SelectTrigger>

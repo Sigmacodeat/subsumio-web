@@ -146,63 +146,113 @@ export const GET = createHandler(
 
     // ── Source 2+3: Brain pages (legal_deadline + legal_case) ─────────────
     try {
-      const batchUrl = new URL(`${ENGINE_URL}/api/pages/batch-list`);
-      batchUrl.searchParams.set("types", "legal_deadline,legal_case");
-      batchUrl.searchParams.set("limit", "300");
+      // The mock engine supports /api/pages/batch-list with multiple types,
+      // but the real engine doesn't. Use individual /api/pages?type=... calls
+      // and merge the results — works with both engines.
+      const fetchPagesByType = async (type: string): Promise<BrainPage[]> => {
+        const url = new URL(`${ENGINE_URL}/api/pages`);
+        url.searchParams.set("type", type);
+        url.searchParams.set("limit", "300");
+        const res = await fetch(url.toString(), {
+          headers: ctx.headers,
+          signal: AbortSignal.timeout(15_000),
+        });
+        if (!res.ok) return [];
+        const raw = await res.json();
+        return Array.isArray(raw)
+          ? raw
+          : Array.isArray((raw as Record<string, unknown>)?.pages)
+            ? ((raw as Record<string, unknown[]>).pages as BrainPage[])
+            : Array.isArray((raw as Record<string, unknown>)?.results)
+              ? ((raw as Record<string, unknown[]>).results as BrainPage[])
+              : [];
+      };
 
-      const batchRes = await fetch(batchUrl.toString(), {
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(15_000),
-      });
-      if (batchRes.ok) {
-        const batchData = (await batchRes.json()) as {
-          results?: Record<string, BrainPage[]>;
+      const [deadlinePages, casePages] = await Promise.all([
+        fetchPagesByType("legal_deadline"),
+        fetchPagesByType("legal_case"),
+      ]);
+
+      // Source 2: standalone legal_deadline pages
+      for (const page of deadlinePages) {
+        const fm = page.frontmatter ?? {};
+        const dueDate = String(fm.due_date ?? fm.date ?? "");
+        if (!dueDate) continue;
+        if (caseFilter && fm.case_slug !== caseFilter) continue;
+
+        const f: Frist = {
+          id: page.slug || `ld-${dueDate}`,
+          source_slug: page.slug,
+          case_slug: typeof fm.case_slug === "string" ? fm.case_slug : undefined,
+          case_title: typeof fm.case_title === "string" ? fm.case_title : undefined,
+          title: String(fm.description ?? fm.title ?? page.title ?? "Frist"),
+          description: typeof fm.description === "string" ? fm.description : undefined,
+          due_date: dueDate.slice(0, 10),
+          status: computeDeadlineStatus(
+            dueDate,
+            typeof fm.status === "string" ? fm.status : undefined,
+            typeof fm.vorfrist_date === "string" ? fm.vorfrist_date : undefined,
+            typeof fm.erv_zustelldatum === "string" ? fm.erv_zustelldatum : undefined
+          ),
+          type: String(fm.event_type ?? fm.type ?? "deadline"),
+          law: typeof fm.law === "string" ? fm.law : undefined,
+          court: typeof fm.court === "string" ? fm.court : undefined,
+          source: "legal_deadline",
+          vorfrist_date: typeof fm.vorfrist_date === "string" ? fm.vorfrist_date : undefined,
+          is_notfrist: fm.is_notfrist === true,
+          second_check_required: fm.second_check_required === true,
+          second_check_by: typeof fm.second_check_by === "string" ? fm.second_check_by : undefined,
+          second_check_at: typeof fm.second_check_at === "string" ? fm.second_check_at : undefined,
+          erv_zustelldatum:
+            typeof fm.erv_zustelldatum === "string" ? fm.erv_zustelldatum : undefined,
+          review_status: typeof fm.review_status === "string" ? fm.review_status : undefined,
+          reviewed_by: typeof fm.reviewed_by === "string" ? fm.reviewed_by : undefined,
+          reminder_sent_at:
+            typeof fm.reminder_sent_at === "string" ? fm.reminder_sent_at : undefined,
+          calculation_note:
+            typeof fm.calculation_note === "string" ? fm.calculation_note : undefined,
+          created_at: page.created_at,
+          updated_at: page.updated_at,
         };
-        const deadlinePages = batchData.results?.["legal_deadline"] ?? [];
-        const casePages = batchData.results?.["legal_case"] ?? [];
+        const key = dedupKey(f);
+        if (!seen.has(key)) {
+          seen.add(key);
+          fristen.push(f);
+        }
+      }
 
-        // Source 2: standalone legal_deadline pages
-        for (const page of deadlinePages) {
-          const fm = page.frontmatter ?? {};
-          const dueDate = String(fm.due_date ?? fm.date ?? "");
+      // Source 3: legal_case frontmatter.deadlines[]
+      for (const page of casePages) {
+        if (caseFilter && page.slug !== caseFilter) continue;
+        const fm = caseFrontmatter(page);
+        const rawDeadlines = fm.deadlines ?? [];
+        for (const d of rawDeadlines) {
+          const dueDate = d.due_date;
           if (!dueDate) continue;
-          if (caseFilter && fm.case_slug !== caseFilter) continue;
 
           const f: Frist = {
-            id: page.slug || `ld-${dueDate}`,
-            source_slug: page.slug,
-            case_slug: typeof fm.case_slug === "string" ? fm.case_slug : undefined,
-            case_title: typeof fm.case_title === "string" ? fm.case_title : undefined,
-            title: String(fm.description ?? fm.title ?? page.title ?? "Frist"),
-            description: typeof fm.description === "string" ? fm.description : undefined,
+            id: d.id || `${page.slug}-${dueDate}`,
+            case_slug: page.slug,
+            case_title: page.title,
+            title: d.title || d.description || "Frist",
+            description: d.description,
             due_date: dueDate.slice(0, 10),
-            status: computeDeadlineStatus(
-              dueDate,
-              typeof fm.status === "string" ? fm.status : undefined,
-              typeof fm.vorfrist_date === "string" ? fm.vorfrist_date : undefined,
-              typeof fm.erv_zustelldatum === "string" ? fm.erv_zustelldatum : undefined
-            ),
-            type: String(fm.event_type ?? fm.type ?? "deadline"),
-            law: typeof fm.law === "string" ? fm.law : undefined,
-            court: typeof fm.court === "string" ? fm.court : undefined,
-            source: "legal_deadline",
-            vorfrist_date: typeof fm.vorfrist_date === "string" ? fm.vorfrist_date : undefined,
-            is_notfrist: fm.is_notfrist === true,
-            second_check_required: fm.second_check_required === true,
-            second_check_by:
-              typeof fm.second_check_by === "string" ? fm.second_check_by : undefined,
-            second_check_at:
-              typeof fm.second_check_at === "string" ? fm.second_check_at : undefined,
-            erv_zustelldatum:
-              typeof fm.erv_zustelldatum === "string" ? fm.erv_zustelldatum : undefined,
-            review_status: typeof fm.review_status === "string" ? fm.review_status : undefined,
-            reviewed_by: typeof fm.reviewed_by === "string" ? fm.reviewed_by : undefined,
-            reminder_sent_at:
-              typeof fm.reminder_sent_at === "string" ? fm.reminder_sent_at : undefined,
-            calculation_note:
-              typeof fm.calculation_note === "string" ? fm.calculation_note : undefined,
-            created_at: page.created_at,
-            updated_at: page.updated_at,
+            status: computeDeadlineStatus(dueDate, d.status, d.vorfrist_date, d.erv_zustelldatum),
+            type: d.type || "deadline",
+            law: d.law,
+            court: d.court,
+            source: "legal_case",
+            source_slug: page.slug,
+            vorfrist_date: d.vorfrist_date,
+            is_notfrist: d.is_notfrist,
+            second_check_required: d.second_check_required,
+            second_check_by: d.second_check_by,
+            second_check_at: d.second_check_at,
+            erv_zustelldatum: d.erv_zustelldatum,
+            review_status: d.review_status,
+            reviewed_by: d.reviewed_by,
+            reminder_sent_at: d.reminder_sent_at,
+            calculation_note: d.calculation_note,
           };
           const key = dedupKey(f);
           if (!seen.has(key)) {
@@ -211,70 +261,29 @@ export const GET = createHandler(
           }
         }
 
-        // Source 3: legal_case frontmatter.deadlines[]
-        for (const page of casePages) {
-          if (caseFilter && page.slug !== caseFilter) continue;
-          const fm = caseFrontmatter(page);
-          const rawDeadlines = fm.deadlines ?? [];
-          for (const d of rawDeadlines) {
-            const dueDate = d.due_date;
-            if (!dueDate) continue;
-
+        // Also extract timeline entries that are deadlines/events
+        const timeline = [...(fm.timeline ?? []), ...(fm.timeline_events ?? [])];
+        for (const entry of timeline) {
+          if (
+            entry.date &&
+            (entry.type === "deadline" || entry.type === "event" || entry.type === "hearing")
+          ) {
+            const d = timelineToDeadline(entry, page.slug);
             const f: Frist = {
-              id: d.id || `${page.slug}-${dueDate}`,
+              id: d.id || `${page.slug}-${entry.date}`,
               case_slug: page.slug,
               case_title: page.title,
-              title: d.title || d.description || "Frist",
-              description: d.description,
-              due_date: dueDate.slice(0, 10),
-              status: computeDeadlineStatus(dueDate, d.status, d.vorfrist_date, d.erv_zustelldatum),
-              type: d.type || "deadline",
-              law: d.law,
-              court: d.court,
-              source: "legal_case",
+              title: d.description || d.title || "Termin",
+              due_date: entry.date.slice(0, 10),
+              status: computeDeadlineStatus(entry.date, d.status),
+              type: d.type || "event",
+              source: "timeline",
               source_slug: page.slug,
-              vorfrist_date: d.vorfrist_date,
-              is_notfrist: d.is_notfrist,
-              second_check_required: d.second_check_required,
-              second_check_by: d.second_check_by,
-              second_check_at: d.second_check_at,
-              erv_zustelldatum: d.erv_zustelldatum,
-              review_status: d.review_status,
-              reviewed_by: d.reviewed_by,
-              reminder_sent_at: d.reminder_sent_at,
-              calculation_note: d.calculation_note,
             };
             const key = dedupKey(f);
             if (!seen.has(key)) {
               seen.add(key);
               fristen.push(f);
-            }
-          }
-
-          // Also extract timeline entries that are deadlines/events
-          const timeline = [...(fm.timeline ?? []), ...(fm.timeline_events ?? [])];
-          for (const entry of timeline) {
-            if (
-              entry.date &&
-              (entry.type === "deadline" || entry.type === "event" || entry.type === "hearing")
-            ) {
-              const d = timelineToDeadline(entry, page.slug);
-              const f: Frist = {
-                id: d.id || `${page.slug}-${entry.date}`,
-                case_slug: page.slug,
-                case_title: page.title,
-                title: d.description || d.title || "Termin",
-                due_date: entry.date.slice(0, 10),
-                status: computeDeadlineStatus(entry.date, d.status),
-                type: d.type || "event",
-                source: "timeline",
-                source_slug: page.slug,
-              };
-              const key = dedupKey(f);
-              if (!seen.has(key)) {
-                seen.add(key);
-                fristen.push(f);
-              }
             }
           }
         }

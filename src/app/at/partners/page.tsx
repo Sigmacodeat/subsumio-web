@@ -5,15 +5,9 @@ import { JsonLd, organizationLd, breadcrumbLd } from "@/components/seo/jsonld";
 export const metadata: Metadata = {
   title: "Subsumio Partnerprogramm — 30 % lebenslange Provision",
   description:
-    "Kanzleien zu Subsumio empfehlen und 30 % wiederkehrende Provision über die Laufzeit jedes zahlenden Mandanten erhalten. Drei Tracks: Affiliate, Kunden-Referral und zertifizierter Partner. KI-Kanzleisoftware für AT, DE und CH.",
+    "Kanzleien zu Subsumio empfehlen und 30 % wiederkehrende Provision über die Laufzeit jedes zahlenden Mandanten erhalten. Drei Tracks: Affiliate, Kunden-Referral und zertifizierter Partner. KI-Kanzleisoftware für österreichische Kanzleien.",
   alternates: {
     canonical: "/at/partners",
-    languages: {
-      "de-DE": "/partners",
-      "de-AT": "/at/partners",
-      "de-CH": "/ch/partners",
-      en: "/en/partners",
-    },
   },
   openGraph: {
     title: "Subsumio Partnerprogramm — 30 % lebenslange Provision",
@@ -34,7 +28,7 @@ export default function Page() {
           { name: "Partnerprogramm", url: "/at/partners" },
         ])}
       />
-      <PartnersPage lang="at" />
+      <PartnersPage />
     </>
   );
 }

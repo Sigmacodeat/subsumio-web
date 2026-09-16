@@ -19,7 +19,7 @@ export async function GET() {
 
   const items = posts
     .map((post) => {
-      const url = `${BASE}/blog/${post.slug}`;
+      const url = `${BASE}/at/blog/${post.slug}`;
       const pubDate = new Date(post.date).toUTCString();
       const description = escapeXml(post.description);
       const title = escapeXml(post.title);
@@ -42,9 +42,9 @@ export async function GET() {
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Subsumio Blog — KI-Kanzleisoftware Praxiswissen</title>
-    <link>${BASE}/blog</link>
-    <description>Praxiswissen für Anwälte in AT, DE und CH: Berufsgeheimnis, Fristenmanagement, belegte KI-Antworten.</description>
-    <language>de-DE</language>
+    <link>${BASE}/at/blog</link>
+    <description>Praxiswissen für Anwälte in Österreich: Berufsgeheimnis, Fristenmanagement, belegte KI-Antworten.</description>
+    <language>de-AT</language>
     <lastBuildDate>${lastBuildDate}</lastBuildDate>
     <atom:link href="${BASE}/feed.xml" rel="self" type="application/rss+xml" />
     <copyright>Subsumio</copyright>

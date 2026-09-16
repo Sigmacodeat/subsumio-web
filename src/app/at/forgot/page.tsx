@@ -6,15 +6,9 @@ export const metadata: Metadata = {
   robots: { index: false },
   alternates: {
     canonical: "/at/forgot",
-    languages: {
-      "de-DE": "/forgot",
-      "de-AT": "/at/forgot",
-      "de-CH": "/ch/forgot",
-      en: "/en/forgot",
-    },
   },
 };
 
 export default function Page() {
-  return <RecoveryForm mode="forgot" lang="at" />;
+  return <RecoveryForm mode="forgot" />;
 }

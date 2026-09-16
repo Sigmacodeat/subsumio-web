@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Briefcase } from "lucide-react";
-import { type Lang, UI_STRINGS } from "@/content/site";
-import { ICONS, H2_CTA_CLASS, Section } from "./chrome";
+import { UI_STRINGS } from "@/content/site";
+import { H2_CTA_CLASS, Section } from "./primitives";
+import { ICONS } from "./icons";
 import DashboardReel from "./dashboard-reel";
 import { EASE, VIEWPORT } from "./motion-system";
 
@@ -17,7 +18,7 @@ interface DocsWorkflow {
   viewIndices: number[];
 }
 
-const WORKFLOWS_DE: DocsWorkflow[] = [
+const WORKFLOWS: DocsWorkflow[] = [
   {
     id: "matters-copilot",
     icon: "Briefcase",
@@ -47,43 +48,13 @@ const WORKFLOWS_DE: DocsWorkflow[] = [
   },
 ];
 
-const WORKFLOWS_EN: DocsWorkflow[] = [
-  {
-    id: "matters-copilot",
-    icon: "Briefcase",
-    label: "Matters & Copilot",
-    title: "Open a matter, ask the Brain, get a cited answer.",
-    description:
-      "The full matter context — documents, deadlines, parties — is one click away. Ask a question in plain language and get a sourced answer with citations.",
-    viewIndices: [0, 1],
-  },
-  {
-    id: "deadlines-control",
-    icon: "CalendarClock",
-    label: "Deadlines & Control",
-    title: "Scan deadlines, export calendar, secure audit trail.",
-    description:
-      "AI automatically scans all documents for deadlines. The calendar shows all dates at a glance — with matter links and urgency codes. Every action is logged for compliance.",
-    viewIndices: [2, 3],
-  },
-  {
-    id: "contract-review",
-    icon: "FileText",
-    label: "Contract & Review",
-    title: "Upload contract, AI analyzes, approval with audit trail.",
-    description:
-      "Contracts are automatically checked for risks — with clause checklist and severity markers. Approvals go through structured chains with full audit trail.",
-    viewIndices: [4, 5],
-  },
-];
-
 const AUTO_ADVANCE_MS = 5200;
 const REEL_STEP_MS = 3200;
 const PAUSE_AFTER_CLICK_MS = 9000;
 
-export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
+export default function DocsWorkflowShowcase() {
   const reduce = useReducedMotion();
-  const workflows = lang === "en" ? WORKFLOWS_EN : WORKFLOWS_DE;
+  const workflows = WORKFLOWS;
   const [activeWorkflow, setActiveWorkflow] = useState(0);
   const [reelStep, setReelStep] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -131,12 +102,18 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
     <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
       <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-14">
         {/* Left: Interactive workflow selector */}
-        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- hover only pauses the auto-advance so the reader can finish a step; the steps themselves are keyboard-reachable buttons below. */}
+        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- hover/focus only pauses the auto-advance so the reader can finish a step; the steps themselves are keyboard-reachable buttons below. */}
         <div
           className="order-2 lg:order-1"
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => {
             if (!pauseTimerRef.current) setPaused(false);
+          }}
+          onFocusCapture={() => setPaused(true)}
+          onBlurCapture={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget) && !pauseTimerRef.current) {
+              setPaused(false);
+            }
           }}
         >
           <motion.div
@@ -146,7 +123,7 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
             transition={{ duration: 0.5, ease: EASE.out }}
           >
             <p className="brand-text mb-3 text-sm font-semibold tracking-[0.16em] uppercase">
-              {UI_STRINGS[lang].dashboardNotDatasheet}
+              {UI_STRINGS.dashboardNotDatasheet}
             </p>
             <AnimatePresence mode="wait">
               <motion.div
@@ -208,7 +185,7 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
                         {wf.label}
                       </span>
                       <span className="block truncate text-sm [color:var(--mk-text-muted)]">
-                        {wf.viewIndices.length} {lang === "en" ? "views" : "Ansichten"}
+                        {wf.viewIndices.length} Ansichten
                       </span>
                     </div>
                     <span
@@ -250,6 +227,10 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
           className="relative order-1 lg:order-2"
         >
           <div className="brand-glow-bg absolute -inset-6 rounded-full opacity-30 blur-3xl" />
+          {/* Screenreader alternative for the aria-hidden reel below */}
+          <p aria-live="polite" className="sr-only">
+            {workflow.title}
+          </p>
           <AnimatePresence mode="wait">
             <motion.div
               key={`reel-${activeWorkflow}-${currentView}`}
@@ -260,23 +241,28 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
               className="relative"
               aria-hidden
             >
-              <DashboardReel lang={lang} controlledView={currentView} />
+              <DashboardReel controlledView={currentView} />
             </motion.div>
           </AnimatePresence>
 
-          {/* Workflow indicator dots */}
-          <div className="mt-4 flex items-center justify-center gap-2">
+          {/* Workflow indicator dots — 24px Hit-Area (WCAG target-size),
+              sichtbarer Punkt bleibt klein */}
+          <div className="mt-4 flex items-center justify-center">
             {workflows.map((wf, i) => (
               <button
                 key={wf.id}
                 onClick={() => handleWorkflowClick(i)}
                 aria-label={wf.label}
-                className={`h-1.5 rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 motion-reduce:transition-none ${
-                  i === activeWorkflow
-                    ? "brand-bg w-8"
-                    : "w-1.5 [background:var(--mk-border)] hover:[background:var(--mk-border-strong)]"
-                } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97]`}
-              />
+                className="group flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-transform duration-200 hover:scale-110 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
+              >
+                <span
+                  className={`h-1.5 rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ${
+                    i === activeWorkflow
+                      ? "brand-bg w-6"
+                      : "w-1.5 [background:var(--mk-border)] group-hover:[background:var(--mk-border-strong)]"
+                  }`}
+                />
+              </button>
             ))}
           </div>
         </motion.div>

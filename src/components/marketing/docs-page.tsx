@@ -3,9 +3,10 @@
 import { motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getDocs } from "@/content/docs";
-import { type Lang } from "@/content/site";
+
 import { p, UI_STRINGS } from "@/content/site";
-import { ICONS, PageHero, CTASection, Section, H2_CTA_CLASS, H3_CLASS } from "./chrome";
+import { PageHero, CTASection, Section, H2_CTA_CLASS, H3_CLASS } from "./primitives";
+import { ICONS } from "./icons";
 import DocsWorkflowShowcase from "./docs-workflow-showcase";
 import { GlowCard, Reveal, StaggerContainer, StaggerItem, VIEWPORT } from "./motion-system";
 
@@ -86,7 +87,6 @@ function StickyCategoryNav({
   onSearch,
   resultCount,
   total,
-  lang,
   searchRef,
 }: {
   categories: { id: string; title: string; count: number }[];
@@ -95,10 +95,9 @@ function StickyCategoryNav({
   onSearch: (v: string) => void;
   resultCount: number;
   total: number;
-  lang: Lang;
   searchRef: React.RefObject<HTMLInputElement | null>;
 }) {
-  const t = UI_STRINGS[lang];
+  const t = UI_STRINGS;
   return (
     <div className="sticky top-[var(--header-h,56px)] z-30 border-b [border-color:var(--mk-border)] backdrop-blur-md [background:var(--mk-bg)]/80">
       <div className="mx-auto max-w-7xl px-6 py-3">
@@ -168,9 +167,9 @@ function StickyCategoryNav({
   );
 }
 
-export default function DocsPage({ lang }: { lang: Lang }) {
-  const d = getDocs(lang);
-  const t = UI_STRINGS[lang];
+export default function DocsPage() {
+  const d = getDocs();
+  const t = UI_STRINGS;
   const [search, setSearch] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showTop, setShowTop] = useState(false);
@@ -225,7 +224,6 @@ export default function DocsPage({ lang }: { lang: Lang }) {
     <div
       data-tone="light"
       className="relative min-h-screen overflow-x-clip [background:var(--mk-bg)]"
-      lang={lang}
     >
       {/* Hero */}
       <PageHero
@@ -257,7 +255,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
         </div>
       </Section>
 
-      <DocsWorkflowShowcase lang={lang} />
+      <DocsWorkflowShowcase />
 
       {/* Quick Start */}
       <QuickStartSection d={d} />
@@ -274,7 +272,6 @@ export default function DocsPage({ lang }: { lang: Lang }) {
         onSearch={setSearch}
         resultCount={resultCount}
         total={totalFeatures}
-        lang={lang}
         searchRef={searchRef}
       />
 
@@ -379,10 +376,10 @@ export default function DocsPage({ lang }: { lang: Lang }) {
       <CTASection
         title={d.cta.title}
         sub={d.cta.sub}
-        href={p(lang, "/login")}
+        href={p("/login")}
         label={d.cta.button}
-        secondaryHref={p(lang, "/contact")}
-        secondaryLabel={UI_STRINGS[lang].writeUs}
+        secondaryHref={p("/contact")}
+        secondaryLabel={UI_STRINGS.writeUs}
       />
 
       {/* Scroll to top */}

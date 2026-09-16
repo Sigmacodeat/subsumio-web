@@ -1,328 +1,58 @@
-"use client";
+// Subsumio landing page — Server Component composer. The hook-driven pieces
+// (hero parallax, sticky CTA) are client islands in ./landing-hero.tsx and
+// ./sticky-cta.tsx; every other section is server-rendered JSX wrapped in
+// client motion islands (Reveal/StaggerContainer/Section) whose props stay
+// serializable. Typography constants come from ./typography (pure module) —
+// importing string exports from a client module would stringify a client
+// reference instead of the class list.
 
-// Subsumio landing page — renders localized content from src/content/site.ts.
-// Refined, law-firm-appropriate motion: subtle load-in hero, scroll-reveal
-// sections, staggered cards, interactive live demo. Decorative effects are
-// intentionally restrained to project trust and seriousness. All motion respects
-// prefers-reduced-motion.
-
-import { useState } from "react";
 import Link from "next/link";
-import {
-  motion,
-  useReducedMotion,
-  useScroll,
-  useTransform,
-  useMotionValueEvent,
-} from "framer-motion";
-import {
-  ArrowRight,
-  Check,
-  X,
-  CreditCard,
-  Scale,
-  Globe,
-  ShieldCheck,
-  BadgeCheck,
-  FileCheck,
-  Server,
-  Play,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowRight, Check, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
-import { LANDING, UI_STRINGS, p, type Lang } from "@/content/site";
+import { LANDING, UI_STRINGS, p } from "@/content/site";
 import { professionalPricing } from "@/content/audiences";
 import { PricingGrid } from "./pricing-grid";
-import ScrollPinnedDashboard from "./scroll-pinned-dashboard";
 import { TestimonialsSection } from "./testimonials";
 import AudienceTabs from "./audience-tabs";
-import {
-  Section,
-  SectionHeading,
-  ICONS,
-  accentTile,
-  H2_CTA_CLASS,
-  H3_CLASS,
-  StatCard,
-} from "./chrome";
+import LandingHero from "./landing-hero";
+import StickyCta from "./sticky-cta";
+import { Section, SectionHeading, StatCard } from "./primitives";
+import { H2_CTA_CLASS, H3_CLASS } from "./typography";
+import { ICONS, accentTile } from "./icons";
 import { AnimatedFaqList } from "./animated-faq";
 import {
+  Reveal,
   StaggerContainer,
   StaggerItem,
-  EASE,
   MagneticButton,
   ScrollProgress,
-  SplitTextReveal,
   GradientMesh,
-  VIEWPORT,
 } from "./motion-system";
-import IndustryHeroMotif from "./industry-hero-motif";
 import { WhatsAppSpotlight } from "./subsumio-showcase";
-import SuperbrainAdvantage from "./superbrain-advantage";
 import ProductWorkflowShowcase from "./product-workflow-showcase";
 import LogoMarquee from "./logo-marquee";
-import HeroQACard from "./hero-qa-card";
-import RotatingBadge from "./rotating-badge";
-
-const TRUST_ICONS: Record<string, LucideIcon> = {
-  CreditCard,
-  Scale,
-  Globe,
-  ShieldCheck,
-  BadgeCheck,
-  FileCheck,
-  Server,
-};
 
 const PAIN_ICONS = [ICONS.Search, ICONS.AlertTriangle, ICONS.FileClock, ICONS.Users];
 
-// Section/card scroll-reveal preset — subtle scale + Y for depth.
-const reveal = {
-  initial: { opacity: 0, y: 24, scale: 0.98 },
-  whileInView: { opacity: 1, y: 0, scale: 1 },
-  viewport: VIEWPORT.gentle,
-  transition: { duration: 0.5, ease: EASE.out },
-};
-
-export default function LandingPage({ lang }: { lang: Lang }) {
-  const t = (LANDING as Record<string, typeof LANDING.de>)[lang] ?? LANDING.de;
-  const pricing = professionalPricing(lang);
-  const ui = UI_STRINGS[lang];
-  const reduce = useReducedMotion();
-
-  // Subtle parallax for hero background motif (0.3x speed, transform-only)
-  const { scrollYProgress: heroScrollProgress } = useScroll({
-    offset: ["start start", "end start"],
-  });
-  const motifY = useTransform(heroScrollProgress, [0, 1], [0, reduce ? 0 : 120]);
-  const motifOpacity = useTransform(heroScrollProgress, [0, 0.8], [0.13, 0]);
-
-  // Sticky CTA visibility — appears after hero scrolls past. Driven by
-  // useMotionValueEvent (fires only on scroll change) with a threshold-crossing
-  // guard so React re-renders at most twice (show/hide), not once per frame —
-  // keeps INP healthy vs. a raw scroll listener + per-frame setState.
-  const { scrollY: globalScrollY } = useScroll();
-  const [stickyVisible, setStickyVisible] = useState(false);
-  useMotionValueEvent(globalScrollY, "change", (latest) => {
-    const shouldShow = latest > 600;
-    setStickyVisible((prev) => (prev === shouldShow ? prev : shouldShow));
-  });
+export default function LandingPage() {
+  const t = LANDING;
+  const pricing = professionalPricing();
+  const ui = UI_STRINGS;
 
   return (
     <>
       <ScrollProgress />
       {/* overflow-x-CLIP (not -hidden): `hidden` forces overflow-y to `auto`,
-          turning this wrapper into a scroll container that silently breaks every
-          `position: sticky` descendant (the scroll-pinned dashboard never pinned).
-          `clip` clips the horizontal marquee/parallax overflow without
-          establishing a scroll container, so sticky works. */}
-      <div data-tone="light" className="min-h-screen overflow-x-clip" lang={lang}>
-        {/* Hero — split layout: messaging left, animated Q→A card right.
-            Product-led storytelling: the visitor sees the product in action
-            within 3 seconds, without scrolling. */}
-        <Section
-          tone="slate"
-          noTopEdge
-          className="relative overflow-hidden px-6 pt-28 pb-20 md:pt-32 md:pb-24"
-        >
-          {/* Legal icon constellation — subtle parallax background motif */}
-          <motion.div
-            style={{ y: motifY, opacity: motifOpacity }}
-            className="absolute inset-0 z-0 hidden md:block"
-          >
-            <IndustryHeroMotif industry="legal" className="h-full w-full opacity-[1]" />
-          </motion.div>
-
-          {/* Split grid — 55/45 on lg+, stacked on mobile */}
-          <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[55fr_45fr]">
-            {/* ─── Left column: messaging + CTAs ─── */}
-            <div className="text-center lg:text-left">
-              {/* Rotating badge — crossfades through 3 differentiators */}
-              <motion.div
-                initial={reduce ? false : { opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={
-                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.05 }
-                }
-                className="flex justify-center lg:justify-start"
-              >
-                <RotatingBadge items={t.heroBadges} />
-              </motion.div>
-
-              {/* H1 — bold (not black — Space Grotesk loads max 700) */}
-              <h1
-                className="mb-5 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-bold tracking-tight text-balance [color:var(--mk-text)]"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                <SplitTextReveal
-                  as="span"
-                  delay={0.12}
-                  stagger={0.035}
-                  useAnimate
-                  className="block"
-                >
-                  {`${t.h1a}\n${t.h1b}`}
-                </SplitTextReveal>
-              </h1>
-
-              {/* Hero tagline — solid brand-text for guaranteed contrast on slate */}
-              <motion.p
-                initial={reduce ? false : { opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={
-                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.16 }
-                }
-                className="mb-3 text-lg font-semibold [color:var(--brand-text)] md:text-xl"
-              >
-                {t.heroTagline}
-              </motion.p>
-
-              {/* Sub-paragraph — 1 sentence, ≤160 chars */}
-              <motion.div
-                initial={reduce ? false : { opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={
-                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.21 }
-                }
-              >
-                <p className="mx-auto mb-8 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg lg:mx-0">
-                  {t.sub}
-                </p>
-              </motion.div>
-
-              {/* CTAs — primary dominant, secondary ghost, tertiary text link */}
-              <motion.div
-                initial={reduce ? false : { opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={
-                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.out, delay: 0.26 }
-                }
-                className="mb-6 flex flex-col items-center gap-3 sm:flex-row lg:items-start"
-              >
-                <MagneticButton strength={0.35}>
-                  <Link href={p(lang, "/signup")}>
-                    <Button size="xl" variant="primary" className="min-w-[220px]">
-                      {t.ctaPrimary} <ArrowRight size={18} />
-                    </Button>
-                  </Link>
-                </MagneticButton>
-                <Link href="#pricing" className="inline-flex">
-                  <Button size="lg" variant="ghost">
-                    {ui.seePlans} <ArrowRight size={16} />
-                  </Button>
-                </Link>
-              </motion.div>
-
-              {/* Tertiary — scroll to demo */}
-              <motion.div
-                initial={reduce ? false : { opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={
-                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.out, delay: 0.3 }
-                }
-                className="mb-8 flex justify-center lg:justify-start"
-              >
-                <a
-                  href="#features"
-                  className="inline-flex items-center gap-1.5 text-sm font-medium [color:var(--mk-text-muted)] transition-[background-color,border-color,color] hover:text-[var(--brand-text)] motion-reduce:transition-none"
-                >
-                  <Play size={14} />
-                  {ui.seeFeatures}
-                </a>
-              </motion.div>
-
-              {/* Trust pills — icon + text, staggered */}
-              <motion.div
-                initial={reduce ? false : { opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={
-                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.dramatic, delay: 0.34 }
-                }
-                className="flex flex-wrap justify-center gap-3 lg:justify-start"
-              >
-                {t.heroTrustItems.map((item, i) => {
-                  const Icon = TRUST_ICONS[item.icon] ?? Check;
-                  return (
-                    <motion.span
-                      key={item.label}
-                      initial={reduce ? false : { opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={
-                        reduce
-                          ? { duration: 0 }
-                          : { delay: 0.36 + i * 0.04, duration: 0.3, ease: EASE.out }
-                      }
-                      className="inline-flex items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 text-sm [color:var(--mk-text-muted)] [background:var(--mk-surface)]"
-                    >
-                      <Icon size={12} className="text-[var(--brand-secondary)]" />
-                      {item.label}
-                    </motion.span>
-                  );
-                })}
-              </motion.div>
-
-              {/* Social proof — jurisdiction trust line */}
-              <motion.p
-                initial={reduce ? false : { opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={
-                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.out, delay: 0.38 }
-                }
-                className="mt-6 text-sm [color:var(--mk-text-subtle)]"
-              >
-                {ui.trustedBy}
-              </motion.p>
-            </div>
-
-            {/* ─── Right column: animated Q→A card ─── */}
-            <div className="relative">
-              <HeroQACard
-                question={t.heroQACard.question}
-                answer={t.heroQACard.answer}
-                sources={t.heroQACard.sources}
-                confidenceLabel={t.heroQACard.confidenceLabel}
-                lang={lang}
-              />
-            </div>
-          </div>
-
-          {/* Trust strip — 5 badges with gradient divider, hero closing → marquee transition */}
-          <motion.div
-            initial={reduce ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.42 }}
-            className="relative z-10 mx-auto mt-12 max-w-4xl pt-8"
-          >
-            {/* gradient divider — fades from transparent to border to transparent */}
-            <div
-              aria-hidden
-              className="absolute inset-x-0 top-0 h-px"
-              style={{
-                background:
-                  "linear-gradient(90deg, transparent, var(--mk-border-strong) 20%, var(--mk-border-strong) 80%, transparent)",
-              }}
-            />
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
-              {t.trustStripItems.map((item) => {
-                const Icon = TRUST_ICONS[item.icon] ?? ShieldCheck;
-                return (
-                  <span
-                    key={item.label}
-                    className="inline-flex items-center gap-1.5 text-sm font-medium [color:var(--mk-text-muted)] transition-[background-color,border-color,color] hover:[color:var(--mk-text)] motion-reduce:transition-none"
-                  >
-                    <Icon size={14} className="text-[var(--brand-secondary)]" />
-                    {item.label}
-                  </span>
-                );
-              })}
-            </div>
-          </motion.div>
-        </Section>
+          turning this wrapper into a scroll container that would break any
+          `position: sticky` descendant. `clip` clips the horizontal
+          marquee/parallax overflow without establishing a scroll container. */}
+      <div data-tone="light" className="min-h-screen overflow-x-clip" lang="de-AT">
+        <LandingHero />
 
         {/* Logo Marquee — certifications & integrations sliding from right to left */}
-        <LogoMarquee lang={lang} />
+        <LogoMarquee />
 
         {/* Pain + Stats — merged: cost of inaction, then proof metrics in one section. */}
         {"pains" in t && t.pains && (
@@ -331,7 +61,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             className="px-4 py-24 sm:px-6 lg:px-8"
             aria-label={ui.ariaCostOfInaction}
           >
-            <motion.div {...reveal} className="mx-auto max-w-5xl">
+            <Reveal variant="upScale" className="mx-auto max-w-5xl">
               <SectionHeading
                 title={(t as { painTitle: string }).painTitle}
                 sub={(t as { painSub: string }).painSub}
@@ -340,10 +70,10 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2"
                 stagger={0.08}
               >
-                {(t as { pains: { value: string; label: string }[] }).pains.map((p, i) => {
+                {(t as { pains: { value: string; label: string }[] }).pains.map((pain, i) => {
                   const Icon = PAIN_ICONS[i];
                   return (
-                    <StaggerItem key={p.label}>
+                    <StaggerItem key={pain.label}>
                       <div className="group relative h-full overflow-hidden rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl motion-reduce:transition-none">
                         {/* Top accent — category-rose into brand-primary */}
                         <div
@@ -360,10 +90,10 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                           {Icon && <Icon size={22} />}
                         </div>
                         <p className="mb-2 text-3xl font-bold tracking-tight text-balance [color:var(--brand-text)] md:text-4xl">
-                          {p.value}
+                          {pain.value}
                         </p>
                         <p className="text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-base">
-                          {p.label}
+                          {pain.label}
                         </p>
                       </div>
                     </StaggerItem>
@@ -388,14 +118,15 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               </StaggerContainer>
 
               {(t as { statsNote?: string }).statsNote && (
-                <motion.p
-                  {...reveal}
+                <Reveal
+                  variant="upScale"
+                  as="p"
                   className="mx-auto mt-8 max-w-2xl text-center text-sm [color:var(--mk-text-subtle)]"
                 >
                   {(t as { statsNote: string }).statsNote}
-                </motion.p>
+                </Reveal>
               )}
-            </motion.div>
+            </Reveal>
           </Section>
         )}
 
@@ -407,9 +138,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           aria-label={ui.ariaFeatures}
         >
           <div className="mx-auto max-w-7xl">
-            <motion.div {...reveal}>
+            <Reveal variant="upScale">
               <SectionHeading badge="Features" title={t.featuresTitle} sub={t.featuresSub} />
-            </motion.div>
+            </Reveal>
             <StaggerContainer
               className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
               stagger={0.07}
@@ -420,7 +151,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 return (
                   <StaggerItem key={f.title}>
                     <Link
-                      href={p(lang, "/features")}
+                      href={p("/features")}
                       className="group relative flex h-full flex-col overflow-hidden rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                     >
                       <div
@@ -440,55 +171,40 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </div>
         </Section>
 
-        {/* Superbrain Advantage — three trust pillars (slate tone breaks the light run) */}
-        <SuperbrainAdvantage lang={lang} />
-
         {/* Audience segments — early relevance: "this is for my firm type" */}
-        <AudienceTabs lang={lang} />
+        <AudienceTabs />
 
-        {/* Dashboard in action — scroll-pinned zoom with guided cursor.
-            Kept on the light page: the 200vh sticky viewport is taller than the
-            reel, so a dark/slate frame would expose a large empty void below the
-            pinned dashboard. Run 1 already closes on the WhatsApp dark spotlight,
-            so no extra tone anchor is needed here. */}
-        <ScrollPinnedDashboard
-          lang={lang}
-          badge={ui.inActionBadge}
-          title={ui.dashboardTitle}
-          sub={ui.dashboardSub}
-        />
-
-        {/* How it works — animated scroll-driven workflow showcase */}
-        <ProductWorkflowShowcase lang={lang} industry="legal" />
+        {/* How it works — animated scroll-driven workflow showcase.
+            The single product visual on the page: one strong demo beats
+            three stacked showcases (scroll fatigue on a long page). */}
+        <ProductWorkflowShowcase industry="legal" />
 
         {/* WhatsApp Copilot — dark spotlight with phone mockup */}
-        <WhatsAppSpotlight lang={lang}>
-          <Link href={p(lang, "/whatsapp")}>
-            <Button size="lg" variant="primary">
-              {UI_STRINGS[lang].whatsappDetail} <ArrowRight size={16} />
-            </Button>
-          </Link>
+        <WhatsAppSpotlight>
+          <Button size="lg" variant="primary" asChild>
+            <Link href={p("/whatsapp")}>
+              {UI_STRINGS.whatsappDetail} <ArrowRight size={16} />
+            </Link>
+          </Button>
         </WhatsAppSpotlight>
 
         {/* Testimonials — social proof from real lawyers */}
-        <TestimonialsSection lang={lang} />
+        <TestimonialsSection />
 
         {/* Comparison table — Subsumio vs. other AI tools. Dark "spotlight" tone
             breaks the long light run and frames the differentiation moment; the
             dark scope carries AA-bright signal accents (green/rose/blue), unlike
             slate — so the ✓/✗ cells stay legible. */}
         <Section tone="dark" className="px-4 py-24 sm:px-6 lg:px-8" aria-label={ui.ariaComparison}>
-          <motion.div {...reveal} className="mx-auto max-w-5xl">
+          <Reveal variant="upScale" className="mx-auto max-w-5xl">
             <SectionHeading title={t.comparisonTitle} sub={t.comparisonSub} />
             {/* Mobile: stacked card layout */}
             <div className="mt-10 space-y-3 md:hidden">
               {t.comparison.map((row, i) => (
-                <motion.div
+                <Reveal
+                  variant="subtle"
+                  delay={i * 0.05}
                   key={row.feature}
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.3, delay: i * 0.05 }}
                   className="rounded-xl border border-[color:var(--mk-border)] p-4"
                 >
                   <p className="mb-3 text-sm font-semibold text-[color:var(--mk-text)]">
@@ -518,7 +234,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                       </span>
                     </div>
                   </div>
-                </motion.div>
+                </Reveal>
               ))}
             </div>
             {/* Desktop: table layout */}
@@ -542,12 +258,11 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 </thead>
                 <tbody>
                   {t.comparison.map((row, i) => (
-                    <motion.tr
+                    <Reveal
+                      as="tr"
+                      variant="subtle"
+                      delay={i * 0.05}
                       key={row.feature}
-                      initial={{ opacity: 0, y: 10 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.3, delay: i * 0.05 }}
                       className="border-b border-[color:var(--mk-border)] last:border-0"
                     >
                       <td className="py-4 pr-4 font-medium text-[color:var(--mk-text)]">
@@ -573,12 +288,12 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                           {row.others}
                         </span>
                       </td>
-                    </motion.tr>
+                    </Reveal>
                   ))}
                 </tbody>
               </table>
             </div>
-          </motion.div>
+          </Reveal>
         </Section>
 
         {/* Pricing */}
@@ -588,25 +303,25 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           className="scroll-mt-24 px-4 py-24 sm:px-6 lg:px-8"
           aria-label={ui.ariaPricing}
         >
-          <motion.div {...reveal} className="mx-auto max-w-6xl">
+          <Reveal variant="upScale" className="mx-auto max-w-6xl">
             <SectionHeading badge="Pricing" title={pricing.title} sub={pricing.sub} />
-            <PricingGrid lang={lang} />
+            <PricingGrid />
             <div className="mt-10 text-center">
-              <Link href={p(lang, "/pricing")}>
-                <Button size="lg" variant="secondary">
+              <Button size="lg" variant="secondary" asChild>
+                <Link href={p("/pricing")}>
                   {ui.seeFullPricing} <ArrowRight size={16} />
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
-          </motion.div>
+          </Reveal>
         </Section>
 
         {/* FAQ — light band, clean flow into the dark CTA close */}
         <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8" aria-label={ui.ariaFaq}>
-          <motion.div {...reveal} className="mx-auto max-w-5xl">
+          <Reveal variant="upScale" className="mx-auto max-w-5xl">
             <SectionHeading title={t.faqTitle} />
             <AnimatedFaqList items={t.faq} tone="light" />
-          </motion.div>
+          </Reveal>
         </Section>
 
         {/* Final CTA — clean, serious close with gradient depth */}
@@ -616,7 +331,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           aria-label={ui.ariaCta}
         >
           <GradientMesh className="z-0" />
-          <motion.div {...reveal} className="relative z-10 mx-auto max-w-3xl text-center">
+          <Reveal variant="upScale" className="relative z-10 mx-auto max-w-3xl text-center">
             <SubsumioMark size={48} className="mx-auto mb-6" />
             <h2 className={`${H2_CTA_CLASS} mb-4`}>{t.ctaTitle}</h2>
             <p className="mb-10 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
@@ -624,17 +339,15 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             </p>
             <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
               <MagneticButton strength={0.2}>
-                <Link href={p(lang, "/signup")}>
-                  <Button size="xl" variant="primary">
+                <Button size="xl" variant="primary" asChild>
+                  <Link href={p("/signup")}>
                     {t.ctaButton} <ArrowRight size={18} />
-                  </Button>
-                </Link>
-              </MagneticButton>
-              <Link href={p(lang, "/superbrain")}>
-                <Button size="xl" variant="secondary">
-                  {UI_STRINGS[lang].watchDemo}
+                  </Link>
                 </Button>
-              </Link>
+              </MagneticButton>
+              <Button size="xl" variant="secondary" asChild>
+                <Link href={p("/superbrain")}>{UI_STRINGS.watchDemo}</Link>
+              </Button>
             </div>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm [color:var(--mk-text-subtle)]">
               <span className="inline-flex items-center gap-1.5">
@@ -663,38 +376,10 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 ))}
               </nav>
             )}
-          </motion.div>
+          </Reveal>
         </Section>
 
-        {/* Sticky CTA bar — appears after hero scroll (legal SaaS best practice) */}
-        <motion.div
-          initial={false}
-          animate={{
-            opacity: stickyVisible ? 1 : 0,
-            y: stickyVisible ? 0 : 60,
-            pointerEvents: stickyVisible ? "auto" : "none",
-          }}
-          transition={{ duration: 0.3, ease: EASE.out }}
-          data-tone="dark"
-          className="fixed right-0 bottom-0 left-0 z-50 border-t [border-color:var(--mk-border)] pb-[env(safe-area-inset-bottom)] backdrop-blur-lg [background:color-mix(in_srgb,var(--mk-surface)_92%,transparent)]"
-          aria-hidden={!stickyVisible}
-          {...(!stickyVisible ? { inert: true } : {})}
-        >
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-            <div className="flex items-center gap-3">
-              <SubsumioMark size={24} />
-              <span className="text-sm font-semibold [color:var(--mk-text)]">{ui.trySubsumio}</span>
-              <span className="hidden text-sm [color:var(--mk-text-subtle)] sm:inline">
-                {ui.trialDaysFree}
-              </span>
-            </div>
-            <Link href={p(lang, "/signup")}>
-              <Button size="md" variant="primary">
-                {t.ctaPrimary} <ArrowRight size={16} />
-              </Button>
-            </Link>
-          </div>
-        </motion.div>
+        <StickyCta />
       </div>
     </>
   );

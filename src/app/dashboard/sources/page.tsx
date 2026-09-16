@@ -334,7 +334,6 @@ export default function SourcesPage() {
   const [refreshError, setRefreshError] = useState<string | null>(null);
 
   // Filters
-  const [jurisdictionFilter, setJurisdictionFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
@@ -344,12 +343,11 @@ export default function SourcesPage() {
     error,
     refetch: loadSources,
   } = useApiQuery<SourceRegistryResponse>(async () => {
-    const params: Record<string, string> = {};
-    if (jurisdictionFilter !== "all") params.jurisdiction = jurisdictionFilter;
+    const params: Record<string, string> = { jurisdiction: "AT" };
     if (typeFilter !== "all") params.type = typeFilter;
     if (statusFilter !== "all") params.status = statusFilter;
     return api.sources.list(params);
-  }, [jurisdictionFilter, typeFilter, statusFilter]);
+  }, [typeFilter, statusFilter]);
 
   const registry = registryData;
 
@@ -443,17 +441,11 @@ export default function SourcesPage() {
         <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
           {t("sources.filter")}
         </span>
+        <span className="brand-soft brand-text rounded-lg px-2 py-1 text-xs font-medium">
+          🇦🇹 {t("norms.jurisdiction_at")}
+        </span>
         <select
-          value={jurisdictionFilter}
-          onChange={(e) => setJurisdictionFilter(e.target.value)}
-          className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-        >
-          <option value="all">{t("sources.all_jurisdictions")}</option>
-          <option value="DE">🇩🇪 {t("norms.jurisdiction_de")}</option>
-          <option value="AT">🇦🇹 {t("norms.jurisdiction_at")}</option>
-          <option value="CH">🇨🇭 {t("norms.jurisdiction_ch")}</option>
-        </select>
-        <select
+          aria-label={t("sources.type_filter" as DashboardKey)}
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
           className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
@@ -464,6 +456,7 @@ export default function SourcesPage() {
           <option value="literature_corpus">{t("sources.type_literature")}</option>
         </select>
         <select
+          aria-label={t("sources.status_filter" as DashboardKey)}
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"

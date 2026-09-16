@@ -165,7 +165,7 @@ export default function ObligationTrackingPage() {
         <Button
           onClick={run}
           disabled={loading || !canRun}
-          className="gap-2 bg-[color:var(--ds-success-solid)] text-white hover:bg-[color:var(--ds-success-solid)]"
+          className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-white hover:bg-[color:var(--signal-success-800)]"
         >
           {loading ? <Loader2 size={15} className="animate-spin" /> : <ClipboardList size={15} />}
           {t("obligations.btn_extract")}

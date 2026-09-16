@@ -361,7 +361,7 @@ export default function IntakePage() {
         role="note"
       >
         <AlertCircle size={16} className="brand-text mt-0.5 shrink-0" aria-hidden="true" />
-        <p className="brand-text/90 text-xs leading-relaxed">{t("intake.info_banner")}</p>
+        <p className="brand-text text-xs leading-relaxed">{t("intake.info_banner")}</p>
       </div>
 
       {/* KI-Triage Panel */}
@@ -403,7 +403,6 @@ export default function IntakePage() {
               { key: "all", icon: Inbox, label: t("intake.source_all") },
               { key: "whatsapp", icon: MessageSquareText, label: "WhatsApp" },
               { key: "email", icon: Mail, label: "E-Mail" },
-              { key: "bea", icon: Landmark, label: "beA", href: "/dashboard/bea" },
               { key: "scan", icon: FileText, label: t("intake.source_scan") },
               { key: "portal", icon: User, label: "Portal" },
               { key: "web", icon: Search, label: "Web" },

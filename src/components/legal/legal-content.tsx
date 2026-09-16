@@ -1,13 +1,12 @@
 import Link from "next/link";
 import type { Lang } from "@/content/site";
-import { H1_CLASS, H3_CLASS, Section } from "@/components/marketing/chrome";
+import { H1_CLASS, H3_CLASS, Section } from "@/components/marketing/primitives";
 
-// Bilingual legal content (EN + DE) — used by /privacy, /terms, /imprint
-// AND the /en/* routes. `home` sets the back-link per language path.
-// `lang` selects the language version. Drafts: professionally complete,
-// but have a lawyer review before launch.
+// Legal content (de-AT) — used by /privacy, /terms, /imprint and /dpa.
+// `home` sets the back-link. Drafts: professionally complete, but have a
+// lawyer review before launch.
 
-const _deLegal = {
+const T = {
   backLink: "← Subsumio",
   seeAlso: "Siehe auch:",
   privacy: "Datenschutz",
@@ -26,35 +25,11 @@ const _deLegal = {
     "Stand: Juni 2026 · Art. 28 DSGVO — Vorlage für Kunden der gehosteten Subsumio-Cloud",
 } as const;
 
-const T = {
-  en: {
-    backLink: "← Subsumio",
-    seeAlso: "See also:",
-    privacy: "Privacy Policy",
-    terms: "Terms of Service",
-    imprint: "Imprint",
-    dpa: "DPA",
-    draftNotice: "Draft — professionally complete, but have a lawyer review before launch.",
-    imprintTitle: "Imprint",
-    imprintSubtitle: "Provider information per § 5 DDG (DE), § 5 ECG (AT), Art. 3 UWG (CH)",
-    privacyTitle: "Privacy Policy",
-    privacySubtitle: "As of June 2026",
-    termsTitle: "Terms of Service",
-    termsSubtitle: "As of June 2026 · applies to the hosted Subsumio service",
-    dpaTitle: "Data Processing Agreement (DPA)",
-    dpaSubtitle:
-      "As of June 2026 · Art. 28 GDPR — template for customers of the hosted Subsumio cloud",
-  },
-  de: _deLegal,
-  at: _deLegal,
-  ch: _deLegal,
-} as const;
-
 function Shell({
   home,
   title,
   subtitle,
-  lang,
+  lang: _lang,
   children,
 }: {
   home: string;
@@ -63,7 +38,7 @@ function Shell({
   lang: Lang;
   children: React.ReactNode;
 }) {
-  const t = (T as unknown as Record<string, typeof T.de>)[lang] ?? T.de;
+  const t = T;
   return (
     <div data-tone="light" className="min-h-screen [background:var(--mk-bg)]">
       <Section tone="light" className="px-6 py-16">
@@ -89,13 +64,13 @@ function H2({ children }: { children: React.ReactNode }) {
 function LegalLinks({
   home,
   exclude,
-  lang,
+  lang: _lang,
 }: {
   home: string;
   exclude: "privacy" | "terms" | "imprint" | "dpa";
   lang: Lang;
 }) {
-  const t = (T as unknown as Record<string, typeof T.de>)[lang] ?? T.de;
+  const t = T;
   const links = [
     { key: "privacy" as const, href: `${home === "/" ? "" : home}/privacy`, label: t.privacy },
     { key: "terms" as const, href: `${home === "/" ? "" : home}/terms`, label: t.terms },
@@ -118,51 +93,7 @@ function LegalLinks({
 }
 
 export function ImprintContent({ home, lang = "de" }: { home: string; lang?: Lang }) {
-  const t = (T as unknown as Record<string, typeof T.de>)[lang] ?? T.de;
-  if (lang === "en") {
-    return (
-      <Shell home={home} lang={lang} title={t.imprintTitle} subtitle={t.imprintSubtitle}>
-        <H2>Operator</H2>
-        <p>
-          RCIID — Rocket Chain Investigation &amp; Intelligence Division
-          <br />
-          Hauslabgasse 42/3/21
-          <br />
-          1050 Vienna, Austria
-        </p>
-        <H2>Contact</H2>
-        <p>
-          Email: help@rciid.at
-          <br />
-          Website: www.rciid.at
-        </p>
-        <H2>Authorized representatives</H2>
-        <p>Ismet Mesic — Founder &amp; President</p>
-        <H2>Commercial register</H2>
-        <p>
-          Registered association (Verein) — Zentralvereinsregister-Nummer: ZVR 1266935562.
-          Registergericht: Bezirkshauptmannschaft für den 1. und 5. Bezirk in Wien.
-        </p>
-        <H2>VAT identification number</H2>
-        <p>
-          ATU-Nummer gemäß § 48 UStG: wird bei Aufnahme umsatzsteuerpflichtiger Tätigkeit
-          zugewiesen.
-        </p>
-        <H2>Consumer dispute resolution</H2>
-        <p>
-          We are not willing or obliged to participate in dispute resolution proceedings before a
-          consumer arbitration board (this offering is directed at businesses / B2B).
-        </p>
-        <H2>Note on DACH jurisdictions</H2>
-        <p>
-          This imprint is provided per § 5 DDG (Germany). For Austria, provider information per § 5
-          ECG applies; for Switzerland, no statutory imprint obligation exists, but provider
-          identification per Art. 3 UWG is provided voluntarily.
-        </p>
-        <LegalLinks home={home} exclude="imprint" lang={lang} />
-      </Shell>
-    );
-  }
+  const t = T;
   return (
     <Shell home={home} lang={lang} title={t.imprintTitle} subtitle={t.imprintSubtitle}>
       <H2>Betreiber</H2>
@@ -208,126 +139,7 @@ export function ImprintContent({ home, lang = "de" }: { home: string; lang?: Lan
 }
 
 export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lang }) {
-  const t = (T as unknown as Record<string, typeof T.de>)[lang] ?? T.de;
-  if (lang === "en") {
-    return (
-      <Shell home={home} lang={lang} title={t.privacyTitle} subtitle={t.privacySubtitle}>
-        <H2>1. Controller</H2>
-        <p>
-          Responsible for data processing on this website and the hosted Subsumio service
-          (hereinafter &ldquo;Service&rdquo;) is:
-        </p>
-        <p className="mt-2">
-          RCIID — Rocket Chain Investigation &amp; Intelligence Division
-          <br />
-          Hauslabgasse 42/3/2
-          <br />
-          1050 Vienna, Austria
-          <br />
-          Email: help@rciid.at
-        </p>
-        <p className="mt-2">
-          No Data Protection Officer has been appointed at this time. Appointment is required e.g.
-          when processing special categories of personal data on a large scale (Art. 37 GDPR; DE: §
-          38 BDSG; AT: § 9 DSG; CH: n/a — DSG does not require a DPO). Privacy inquiries can be
-          directed to help@rciid.at.
-        </p>
-
-        <H2>2. Principle: data minimisation and operating models</H2>
-        <p>
-          Subsumio is designed as a data-minimising product. There are two operating models with
-          different data-protection roles:
-        </p>
-        <ul className="mt-2 list-disc space-y-1 pl-5">
-          <li>
-            <strong className="[color:var(--mk-text)]">Self-hosting:</strong> The engine runs on
-            your own infrastructure. Content is never transmitted to us; we have no access.
-          </li>
-          <li>
-            <strong className="[color:var(--mk-text)]">Hosted EU cloud:</strong> We process content
-            exclusively to provide the Service — never to train AI models.
-          </li>
-        </ul>
-
-        <H2>3. Website operation</H2>
-        <p>
-          When you visit the site, the hosting provider processes technically necessary server log
-          data (IP address, timestamp, requested resource, user agent) for delivery and security —
-          legitimate interest (Art. 6(1)(f) GDPR). No marketing/tracking cookies are set without
-          consent.
-        </p>
-
-        <H2>4. Account, authentication, billing</H2>
-        <p>
-          To use the Service, we process account data: email, name, an irreversibly hashed password
-          (scrypt), referral code — for contract performance (Art. 6(1)(b) GDPR). Login/registration
-          attempts are rate-limited for abuse prevention (Art. 6(1)(f) GDPR). Paid plans are billed
-          via a payment provider.
-        </p>
-
-        <H2>5. Content and client data — processing agreement</H2>
-        <p>
-          Where you upload personal data of your clients/customers,{" "}
-          <strong className="[color:var(--mk-text)]">you are the Controller</strong> and we act as{" "}
-          <strong className="[color:var(--mk-text)]">Processor</strong> (Art. 28 GDPR). A DPA must
-          be concluded before such use (template provided). Professionals bound by secrecy (DE: §
-          203 StGB; AT: § 9 RAO; CH: Art. 321 StGB) must additionally ensure compliant involvement
-          of supporting persons — we recommend self-hosting or the EU cloud with a separate
-          confidentiality agreement.
-        </p>
-
-        <H2>6. AI functions</H2>
-        <p>
-          For synthesis and agent functions, relevant content excerpts are transmitted to
-          LLM/embedding providers who process under instruction and do not use the data for training
-          (Art. 6(1)(b) GDPR or DPA). With self-hosting, you choose providers and models freely or
-          run a local model.
-        </p>
-
-        <H2>7. Processors and recipients</H2>
-        <p>
-          Depending on configuration, the following categories may be involved (all with DPAs;
-          third-country transfers only on the basis of EU Standard Contractual Clauses, Art. 46
-          GDPR):
-        </p>
-        <ul className="mt-2 list-disc space-y-1 pl-5">
-          <li>Hosting/infrastructure (web app and/or engine), primarily EU data centres</li>
-          <li>LLM providers (answers/agents) and embedding providers (search)</li>
-          <li>Payment provider for paid plans</li>
-          <li>
-            Email delivery service for transactional messages (deadline digest, password reset)
-          </li>
-          <li>Optional: distributed rate-limiting service</li>
-        </ul>
-        <p className="mt-2">
-          Current providers: Hosting via EU data centres (Hetzner, DE); LLM via OpenRouter (US, EU
-          Standard Contractual Clauses); Embeddings via OpenRouter (US, SCCs); Payment via Stripe
-          (US, SCCs); Email via Resend (US, SCCs). All processors are bound by DPAs.
-        </p>
-
-        <H2>8. Retention period</H2>
-        <p>
-          Account data for the duration of the contract; deletion after termination, subject to
-          retention obligations (DE: § 147 AO, § 257 HGB; AT: § 132 BAO; CH: OR 962). Content is
-          deleted on your instruction or at contract end. Server logs are retained for 14 days.
-        </p>
-
-        <H2>9. Your rights</H2>
-        <p>
-          You have rights to access (Art. 15), rectification (Art. 16), erasure (Art. 17),
-          restriction (Art. 18), data portability (Art. 20) and objection (Art. 21 GDPR). You can
-          trigger a full export of your account and brain data as JSON via{" "}
-          <span className="[color:var(--mk-text)]">Settings → Account → Export data</span>. You have
-          the right to lodge a complaint with a supervisory authority.
-        </p>
-
-        <H2>10. Changes</H2>
-        <p>The version published on this page at any given time is authoritative.</p>
-
-        <LegalLinks home={home} exclude="privacy" lang={lang} />
-      </Shell>
-    );
-  }
+  const t = T;
   return (
     <Shell home={home} lang={lang} title={t.privacyTitle} subtitle={t.privacySubtitle}>
       <H2>1. Verantwortlicher</H2>
@@ -347,8 +159,7 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
       <p className="mt-2">
         Es wurde aktuell kein Datenschutzbeauftragter bestellt. Eine Bestellpflicht besteht u. a.
         bei umfangreicher Verarbeitung besonderer Kategorien personenbezogener Daten (Art. 37 DSGVO
-        i. V. m. § 38 BDSG (DE) / § 9 DSG (AT); CH: keine DPO-Pflicht nach DSG).
-        Datenschutz-Anfragen richten Sie bitte an help@rciid.at.
+        i. V. m. § 9 DSG). Datenschutz-Anfragen richten Sie bitte an help@rciid.at.
       </p>
 
       <H2>2. Grundsatz: Datensparsamkeit und Betriebsmodelle</H2>
@@ -390,9 +201,9 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
         <strong className="[color:var(--mk-text)]">du der Verantwortliche</strong> und wir handeln
         als <strong className="[color:var(--mk-text)]">Auftragsverarbeiter</strong> (Art. 28 DSGVO).
         Vor einer solchen Nutzung ist ein AVV abzuschließen (Vorlage wird bereitgestellt).
-        Berufsgeheimnisträger (DE: § 203 StGB; AT: § 9 RAO; CH: Art. 321 StGB) beachten zusätzlich
-        die Anforderungen an mitwirkende Personen — hierfür empfehlen wir Self-Hosting oder die
-        EU-Cloud mit gesonderter Verschwiegenheitsverpflichtung.
+        Berufsgeheimnisträger (§ 9 Abs. 2 RAO) beachten zusätzlich die Anforderungen an mitwirkende
+        Personen — hierfür empfehlen wir Self-Hosting oder die EU-Cloud mit gesonderter
+        Verschwiegenheitsverpflichtung.
       </p>
 
       <H2>6. KI-Funktionen</H2>
@@ -426,9 +237,8 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
       <H2>8. Speicherdauer</H2>
       <p>
         Kontodaten für die Vertragsdauer; Löschung nach Kündigung, soweit keine
-        Aufbewahrungspflichten (DE: § 147 AO, § 257 HGB; AT: § 132 BAO; CH: OR 962) entgegenstehen.
-        Inhalte werden auf deine Weisung bzw. mit Vertragsende gelöscht. Server-Logs werden 14 Tage
-        aufbewahrt.
+        Aufbewahrungspflichten (§ 132 BAO) entgegenstehen. Inhalte werden auf deine Weisung bzw. mit
+        Vertragsende gelöscht. Server-Logs werden 14 Tage aufbewahrt.
       </p>
 
       <H2>9. Deine Rechte</H2>
@@ -449,97 +259,7 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
 }
 
 export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang }) {
-  const t = (T as unknown as Record<string, typeof T.de>)[lang] ?? T.de;
-  if (lang === "en") {
-    return (
-      <Shell home={home} lang={lang} title={t.termsTitle} subtitle={t.termsSubtitle}>
-        <H2>§ 1 Scope, contracting parties</H2>
-        <p>
-          (1) These Terms apply to the use of the hosted Subsumio service (&ldquo;Service&rdquo;)
-          between RCIID — Rocket Chain Investigation &amp; Intelligence Division
-          (&ldquo;Provider&rdquo;) and the Customer. (2) The offering is directed exclusively at
-          businesses within the meaning of § 14 BGB (DE) / § 1 UGB (AT) / OR 944 (CH), legal
-          entities under public law and public-law special funds (B2B). (3) Deviating terms of the
-          Customer apply only with express written consent.
-        </p>
-
-        <H2>§ 2 Contract formation</H2>
-        <p>
-          The contract is formed upon registration and plan selection, for paid plans upon
-          completion of the ordering process. The open-source engine is subject to its separate
-          open-source licence; these Terms govern exclusively the hosted service.
-        </p>
-
-        <H2>§ 3 Service description</H2>
-        <p>
-          (1) The Provider offers the Service according to the service description valid at contract
-          formation (plan features, fair-use limits). (2) The Service is provided with standard
-          industry availability, not uninterrupted access; maintenance and force majeure are
-          reserved. (3) Features may evolve as long as the core contractual utility is preserved.
-        </p>
-
-        <H2>§ 4 Prices, payment, term</H2>
-        <p>
-          (1) The prices shown on the{" "}
-          <Link href={`${home === "/" ? "" : home}/pricing`} className="brand-text hover:underline">
-            pricing page
-          </Link>{" "}
-          apply, plus VAT. (2) Billing via the payment provider in advance. (3) The contract renews
-          for the billing period unless terminated at its end. (4) Up/downgrades take effect at the
-          next billing period.
-        </p>
-
-        <H2>§ 5 Customer obligations</H2>
-        <p>
-          (1) Keep access credentials secret, secure accounts appropriately. (2) Upload only content
-          you are authorised to process. (3) The Service does{" "}
-          <strong className="[color:var(--mk-text)]">not provide legal, tax or other advice</strong>
-          ; it is a tool for organising and synthesising your own documents. Professional and
-          regulatory responsibility (including deadline and conflict checks) remains with the
-          Customer.
-        </p>
-
-        <H2>§ 6 Data protection and confidentiality</H2>
-        <p>
-          (1) When processing personal data of third parties, the parties conclude a DPA (Art. 28
-          GDPR), which takes precedence over these Terms in case of conflict. (2) For professionals
-          bound by secrecy (DE: § 203(4) StGB; AT: § 9 RAO; CH: Art. 321 StGB), a separate
-          confidentiality agreement applies. (3) No use of customer content for AI training. (4) At
-          contract end, the Customer can export their data; thereafter deletion per the Privacy
-          Policy.
-        </p>
-
-        <H2>§ 7 AI-specific notices</H2>
-        <p>
-          Answers, citations and agent results are machine-generated aids and may be incorrect.
-          Source references serve verification; substantive review by the Customer before use (e.g.
-          in briefs) is required.
-        </p>
-
-        <H2>§ 8 Liability</H2>
-        <p>
-          (1) Unlimited liability for intent and gross negligence and for damages from injury to
-          life, body or health. (2) For simple negligence only in case of breach of a cardinal
-          obligation, limited to the typically foreseeable damage. (3) Otherwise liability is
-          excluded. (4) The Product Liability Act remains unaffected.
-        </p>
-
-        <H2>§ 9 Partner programme</H2>
-        <p>The separate partner terms apply additionally to the referral/partner programme.</p>
-
-        <H2>§ 10 Final provisions</H2>
-        <p>
-          (1) German law applies, excluding the UN Convention on Contracts for the International
-          Sale of Goods (CISG). (2) Exclusive venue for merchants is Vienna, Austria. (3)
-          Severability clause. (4) Changes are communicated with reasonable notice and deemed
-          accepted if the Customer does not object; the significance of silence is separately
-          pointed out.
-        </p>
-
-        <LegalLinks home={home} exclude="terms" lang={lang} />
-      </Shell>
-    );
-  }
+  const t = T;
   return (
     <Shell home={home} lang={lang} title={t.termsTitle} subtitle={t.termsSubtitle}>
       <H2>§ 1 Geltungsbereich, Vertragspartner</H2>
@@ -547,9 +267,9 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
         (1) Diese AGB gelten für die Nutzung des gehosteten Subsumio-Dienstes (&bdquo;Dienst&ldquo;)
         zwischen RCIID — Rocket Chain Investigation &amp; Intelligence Division
         (&bdquo;Anbieter&ldquo;) und dem Kunden. (2) Das Angebot richtet sich ausschließlich an
-        Unternehmer i. S. d. § 14 BGB (DE) / § 1 UGB (AT) / OR 944 (CH), juristische Personen des
-        öffentlichen Rechts und öffentlich-rechtliche Sondervermögen (B2B). (3) Abweichende
-        Bedingungen des Kunden gelten nur bei ausdrücklicher schriftlicher Zustimmung.
+        Unternehmer i. S. d. UGB, juristische Personen des öffentlichen Rechts und
+        öffentlich-rechtliche Sondervermögen (B2B). (3) Abweichende Bedingungen des Kunden gelten
+        nur bei ausdrücklicher schriftlicher Zustimmung.
       </p>
 
       <H2>§ 2 Vertragsschluss</H2>
@@ -595,9 +315,9 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
       <p>
         (1) Bei Verarbeitung personenbezogener Daten Dritter schließen die Parteien einen AVV (Art.
         28 DSGVO), der diesen AGB im Konfliktfall vorgeht. (2) Für Berufsgeheimnisträger gilt eine
-        gesonderte Verschwiegenheitsverpflichtung (DE: § 203 Abs. 4 StGB; AT: § 9 RAO; CH: Art. 321
-        StGB). (3) Keine Nutzung von Kundeninhalten zum KI-Training. (4) Bei Vertragsende kann der
-        Kunde seine Daten selbst exportieren; danach Löschung nach Maßgabe der Datenschutzerklärung.
+        gesonderte Verschwiegenheitsverpflichtung (§ 9 Abs. 2 RAO). (3) Keine Nutzung von
+        Kundeninhalten zum KI-Training. (4) Bei Vertragsende kann der Kunde seine Daten selbst
+        exportieren; danach Löschung nach Maßgabe der Datenschutzerklärung.
       </p>
 
       <H2>§ 7 KI-spezifische Hinweise</H2>
@@ -623,10 +343,10 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
 
       <H2>§ 10 Schlussbestimmungen</H2>
       <p>
-        (1) Es gilt deutsches Recht unter Ausschluss des UN-Kaufrechts. (2) Ausschließlicher
-        Gerichtsstand für Kaufleute ist Wien, Österreich. (3) Salvatorische Klausel. (4) Änderungen
-        werden mit angemessener Frist mitgeteilt und gelten als angenommen, wenn der Kunde nicht
-        widerspricht; auf die Bedeutung des Schweigens wird gesondert hingewiesen.
+        (1) Es gilt österreichisches Recht unter Ausschluss des UN-Kaufrechts. (2) Ausschließlicher
+        Gerichtsstand für Unternehmer ist Wien, Österreich. (3) Salvatorische Klausel. (4)
+        Änderungen werden mit angemessener Frist mitgeteilt und gelten als angenommen, wenn der
+        Kunde nicht widerspricht; auf die Bedeutung des Schweigens wird gesondert hingewiesen.
       </p>
 
       <LegalLinks home={home} exclude="terms" lang={lang} />
@@ -635,217 +355,7 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
 }
 
 export function DpaContent({ home, lang = "de" }: { home: string; lang?: Lang }) {
-  const t = (T as unknown as Record<string, typeof T.de>)[lang] ?? T.de;
-  if (lang === "en") {
-    return (
-      <Shell home={home} lang={lang} title={t.dpaTitle} subtitle={t.dpaSubtitle}>
-        <p className="text-xs [color:var(--mk-text-subtle)]">
-          {t.draftNotice} This template implements Art. 28 GDPR. Complete the placeholders, sign
-          with the Controller, and return to help@rciid.at before uploading personal data.
-        </p>
-
-        <H2>§ 1 Parties</H2>
-        <p>
-          <strong className="[color:var(--mk-text)]">Controller</strong> (the customer using
-          Subsumio to process personal data):
-        </p>
-        <p className="mt-1">
-          [Controller name]
-          <br />
-          [Address]
-          <br />
-          [Representative]
-          <br />
-          [Email]
-        </p>
-        <p className="mt-2">
-          <strong className="[color:var(--mk-text)]">Processor</strong> (the provider of the hosted
-          Subsumio service):
-        </p>
-        <p className="mt-1">
-          RCIID — Rocket Chain Investigation &amp; Intelligence Division
-          <br />
-          Hauslabgasse 42/3/2
-          <br />
-          1050 Vienna, Austria
-          <br />
-          Email: help@rciid.at
-        </p>
-
-        <H2>§ 2 Subject matter, duration, nature and purpose</H2>
-        <p>
-          (1) <strong className="[color:var(--mk-text)]">Subject matter:</strong> Provision of the
-          hosted Subsumio cloud service for organising, searching and synthesising documents and
-          case data.
-        </p>
-        <p>
-          (2) <strong className="[color:var(--mk-text)]">Duration:</strong> For the duration of the
-          main service contract (per the Terms of Service), unless terminated earlier.
-        </p>
-        <p>
-          (3) <strong className="[color:var(--mk-text)]">Nature and purpose:</strong> Storage,
-          full-text and semantic search, AI-assisted synthesis and agent workflows on documents
-          uploaded by the Controller. No use of content for AI model training.
-        </p>
-        <p>
-          (4) <strong className="[color:var(--mk-text)]">Type of personal data:</strong> Account
-          data (email, name), and any personal data the Controller uploads within content (e. g.
-          case files, client correspondence, invoices).
-        </p>
-        <p>
-          (5) <strong className="[color:var(--mk-text)]">Categories of data subjects:</strong>{" "}
-          Clients, opposing parties, witnesses, employees and other persons whose data appears in
-          the Controller&rsquo;s documents.
-        </p>
-
-        <H2>§ 3 Processor obligations (Art. 28(3) GDPR)</H2>
-        <p>The Processor shall:</p>
-        <ul className="mt-2 list-disc space-y-1 pl-5">
-          <li>
-            Process personal data only on documented instructions from the Controller, including
-            with regard to transfers to third countries, unless required by EU or member state law.
-          </li>
-          <li>Ensure that persons authorised to process are bound by confidentiality.</li>
-          <li>Maintain appropriate technical and organisational measures (TOMs, § 5).</li>
-          <li>Respect the conditions for engaging sub-processors (§ 4).</li>
-          <li>Assist the Controller in responding to data subject rights requests.</li>
-          <li>
-            Assist the Controller in fulfilling its obligations under Arts. 32–36 GDPR (security,
-            breach notification, DPIA, prior consultation).
-          </li>
-          <li>
-            Delete or return all personal data after the end of the service, unless retention is
-            required by EU or member state law.
-          </li>
-          <li>
-            Make available all information necessary to demonstrate compliance and allow for and
-            contribute to audits.
-          </li>
-        </ul>
-
-        <H2>§ 4 Sub-processors</H2>
-        <p>
-          (1) The Controller grants general authorisation for the sub-processors listed in the
-          Privacy Policy (§ 7). The Processor shall inform the Controller of any intended changes
-          concerning the addition or replacement of sub-processors, giving the Controller the
-          opportunity to object.
-        </p>
-        <p>
-          (2) Current sub-processors: Hosting (Hetzner, DE/EU); LLM and embedding providers
-          (OpenRouter, US — EU Standard Contractual Clauses); Payment (Stripe, US — SCCs); Email
-          (Resend, US — SCCs); optional rate-limiting service (Upstash, US — SCCs).
-        </p>
-        <p>
-          (3) Where a sub-processor is outside the EEA, transfers are based on EU Standard
-          Contractual Clauses (Art. 46 GDPR) and supplementary measures where required.
-        </p>
-        <p>(4) The Processor remains fully liable for sub-processors as for its own processing.</p>
-
-        <H2>§ 5 Technical and organisational measures (Art. 32 GDPR)</H2>
-        <p>The Processor maintains the following TOMs:</p>
-        <ul className="mt-2 list-disc space-y-1 pl-5">
-          <li>
-            <strong className="[color:var(--mk-text)]">Encryption:</strong> TLS 1.2+ in transit,
-            AES-256 at rest for database and backups.
-          </li>
-          <li>
-            <strong className="[color:var(--mk-text)]">Access control:</strong> Role-based access
-            (RBAC), least-privilege, unique user accounts, MFA available.
-          </li>
-          <li>
-            <strong className="[color:var(--mk-text)]">Authentication:</strong> Scrypt-hashed
-            passwords, session tokens signed with HMAC-SHA-256.
-          </li>
-          <li>
-            <strong className="[color:var(--mk-text)]">Network security:</strong> Firewall, isolated
-            database network, no public DB access.
-          </li>
-          <li>
-            <strong className="[color:var(--mk-text)]">Logging and monitoring:</strong> Immutable
-            audit log with hash chain (tamper-evident), Sentry error monitoring.
-          </li>
-          <li>
-            <strong className="[color:var(--mk-text)]">Backup:</strong> Daily encrypted backups with
-            verify and restore procedures; retention per legal requirements.
-          </li>
-          <li>
-            <strong className="[color:var(--mk-text)]">Data isolation:</strong> Multi-tenant
-            isolation via brain_id; source-level access control prevents cross-tenant data leaks.
-          </li>
-          <li>
-            <strong className="[color:var(--mk-text)]">Availability:</strong> Health checks,
-            auto-restart, Hetzner EU data centres.
-          </li>
-          <li>
-            <strong className="[color:var(--mk-text)]">Pseudonymisation:</strong> Internal IDs where
-            feasible; no use of content for AI training.
-          </li>
-          <li>
-            <strong className="[color:var(--mk-text)]">Incident response:</strong> Documented breach
-            notification process within 72 hours to the Controller.
-          </li>
-        </ul>
-
-        <H2>§ 6 Data subject rights assistance</H2>
-        <p>
-          The Processor shall assist the Controller in fulfilling its obligation to respond to data
-          subject rights requests (access, rectification, erasure, restriction, portability,
-          objection). The Controller can export all data via Settings → Account → Export data.
-          Deletion requests can be triggered via the GDPR data-deletion endpoint.
-        </p>
-
-        <H2>§ 7 Personal data breach</H2>
-        <p>
-          (1) The Processor shall notify the Controller without undue delay, and in any case within
-          48 hours, after becoming aware of a personal data breach.
-        </p>
-        <p>
-          (2) The notification shall describe the nature of the breach, the likely consequences, and
-          the measures taken or proposed. The Processor shall assist the Controller in notifying the
-          supervisory authority (Art. 33 GDPR) and data subjects (Art. 34 GDPR) where required.
-        </p>
-
-        <H2>§ 8 Audit rights</H2>
-        <p>
-          (1) The Controller has the right to audit the Processor&rsquo;s compliance with this DPA
-          and Art. 28 GDPR, upon reasonable notice and during business hours.
-        </p>
-        <p>
-          (2) Audits shall be conducted by the Controller&rsquo;s own staff or by a third party
-          bound by confidentiality. The Processor shall provide the necessary information and
-          access.
-        </p>
-        <p>
-          (3) The Processor&rsquo;s audit reports, certifications (e. g. ISO 27001 where available),
-          and the immutable audit log are available to the Controller on request.
-        </p>
-
-        <H2>§ 9 Deletion at end of service</H2>
-        <p>
-          At the Controller&rsquo;s request, the Processor shall delete all personal data after the
-          end of the service contract, unless retention is required by EU or member state law (DE: §
-          147 AO, § 257 HGB; AT: § 132 BAO; CH: OR 962). The Controller can trigger a full export
-          before deletion. Deletion is logged in the immutable audit trail.
-        </p>
-
-        <H2>§ 10 Liability</H2>
-        <p>
-          Liability under this DPA is governed by the Terms of Service (§ 8), supplemented by Art.
-          82 GDPR. The Processor is liable for damages caused by processing in violation of the GDPR
-          only where the Processor did not comply with its specific obligations.
-        </p>
-
-        <H2>§ 11 Final provisions</H2>
-        <p>
-          (1) This DPA is part of the main service contract and takes precedence in case of conflict
-          regarding data protection. (2) German law applies, excluding the CISG. (3) Exclusive venue
-          for merchants is Vienna, Austria. (4) Changes are communicated with reasonable notice.
-        </p>
-
-        <LegalLinks home={home} exclude="dpa" lang={lang} />
-      </Shell>
-    );
-  }
+  const t = T;
   return (
     <Shell home={home} lang={lang} title={t.dpaTitle} subtitle={t.dpaSubtitle}>
       <p className="text-xs [color:var(--mk-text-subtle)]">
@@ -1047,9 +557,9 @@ export function DpaContent({ home, lang = "de" }: { home: string; lang?: Lang })
       <H2>§ 9 Löschung bei Vertragsende</H2>
       <p>
         Auf Wunsch des Verantwortlichen löscht der Auftragsverarbeiter alle personenbezogenen Daten
-        nach Ende des Dienstvertrages, sofern keine gesetzliche Aufbewahrungspflicht (DE: § 147 AO,
-        § 257 HGB; AT: § 132 BAO; CH: OR 962) besteht. Ein vollständiger Export kann vor der
-        Löschung ausgelöst werden. Die Löschung wird im unveränderlichen Audit-Trail protokolliert.
+        nach Ende des Dienstvertrages, sofern keine gesetzliche Aufbewahrungspflicht (§ 132 BAO)
+        besteht. Ein vollständiger Export kann vor der Löschung ausgelöst werden. Die Löschung wird
+        im unveränderlichen Audit-Trail protokolliert.
       </p>
 
       <H2>§ 10 Haftung</H2>
@@ -1062,9 +572,9 @@ export function DpaContent({ home, lang = "de" }: { home: string; lang?: Lang })
       <H2>§ 11 Schlussbestimmungen</H2>
       <p>
         (1) Dieser AVV ist Teil des Hauptvertrags und geht im Konfliktfall bezüglich Datenschutz
-        vor. (2) Es gilt deutsches Recht unter Ausschluss des UN-Kaufrechts. (3) Ausschließlicher
-        Gerichtsstand für Kaufleute ist Wien, Österreich. (4) Änderungen werden mit angemessener
-        Frist mitgeteilt.
+        vor. (2) Es gilt österreichisches Recht unter Ausschluss des UN-Kaufrechts. (3)
+        Ausschließlicher Gerichtsstand für Unternehmer ist Wien, Österreich. (4) Änderungen werden
+        mit angemessener Frist mitgeteilt.
       </p>
 
       <LegalLinks home={home} exclude="dpa" lang={lang} />

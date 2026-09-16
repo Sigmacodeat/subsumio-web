@@ -10,21 +10,74 @@ import {
   PauseCircle,
 } from "lucide-react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { useLang } from "@/lib/use-lang";
 import { useMatterDetail } from "@/lib/matter-detail-context";
-import {
-  OverviewTab,
-  DocumentsTab,
-  DeadlinesTasksTab,
-  ActivityTab,
-  EvidenceTab,
-  StrategyTab,
-  BillingTab,
-  ContactsTab,
-  NotesTab,
-  PhoneNotesTab,
-} from "@/components/legal/matter-tabs";
+// Direct file import — the matter-tabs barrel re-exports all 10 tabs, which
+// would keep the whole ~300KB module in the eager graph.
+import { OverviewTab } from "@/components/legal/matter-tabs/overview-tab";
+
+// Lazy-load non-default tabs: only one tab renders at a time.
+// OverviewTab stays eager (the default view).
+const tabFallback = (
+  <div className="flex h-40 items-center justify-center" role="status" aria-live="polite">
+    <Loader2 size={20} className="brand-text animate-spin" />
+  </div>
+);
+const DocumentsTab = dynamic(
+  () => import("@/components/legal/matter-tabs/documents-tab").then((m) => m.DocumentsTab),
+  {
+    loading: () => tabFallback,
+  }
+);
+const DeadlinesTasksTab = dynamic(
+  () =>
+    import("@/components/legal/matter-tabs/deadlines-tasks-tab").then((m) => m.DeadlinesTasksTab),
+  { loading: () => tabFallback }
+);
+const ActivityTab = dynamic(
+  () => import("@/components/legal/matter-tabs/activity-tab").then((m) => m.ActivityTab),
+  {
+    loading: () => tabFallback,
+  }
+);
+const EvidenceTab = dynamic(
+  () => import("@/components/legal/matter-tabs/evidence-tab").then((m) => m.EvidenceTab),
+  {
+    loading: () => tabFallback,
+  }
+);
+const StrategyTab = dynamic(
+  () => import("@/components/legal/matter-tabs/strategy-tab").then((m) => m.StrategyTab),
+  {
+    loading: () => tabFallback,
+  }
+);
+const BillingTab = dynamic(
+  () => import("@/components/legal/matter-tabs/billing-tab").then((m) => m.BillingTab),
+  {
+    loading: () => tabFallback,
+  }
+);
+const ContactsTab = dynamic(
+  () => import("@/components/legal/matter-tabs/contacts-tab").then((m) => m.ContactsTab),
+  {
+    loading: () => tabFallback,
+  }
+);
+const NotesTab = dynamic(
+  () => import("@/components/legal/matter-tabs/notes-tab").then((m) => m.NotesTab),
+  {
+    loading: () => tabFallback,
+  }
+);
+const PhoneNotesTab = dynamic(
+  () => import("@/components/legal/matter-tabs/phone-notes-tab").then((m) => m.PhoneNotesTab),
+  {
+    loading: () => tabFallback,
+  }
+);
 
 export type { CaseDetail } from "@/lib/matter-detail-types";
 
@@ -45,12 +98,12 @@ export default function CaseDetailPage() {
       <div className="flex h-full flex-col items-center justify-center space-y-4">
         <Briefcase size={48} className="text-[color:var(--ds-border)]" />
         <p className="text-[color:var(--ds-text-muted)]">{t("cases.detail_not_found")}</p>
-        <Link href="/dashboard/cases">
-          <Button variant="primary" className="brand-bg brand-bg gap-2 text-white">
+        <Button variant="primary" className="brand-bg brand-bg gap-2 text-white" asChild>
+          <Link href="/dashboard/cases">
             <ArrowLeft size={16} />
             {t("cases.detail_back")}
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
     );
   }

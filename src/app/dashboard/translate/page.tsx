@@ -86,6 +86,7 @@ export default function TranslatePage() {
               {t("translate.source_lang")}
             </label>
             <select
+              aria-label={t("translate.source_lang")}
               value={sourceLang}
               onChange={(e) => setSourceLang(e.target.value)}
               className="min-w-[140px] rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
@@ -106,6 +107,7 @@ export default function TranslatePage() {
               {t("translate.target_lang")}
             </label>
             <select
+              aria-label={t("translate.target_lang")}
               value={targetLang}
               onChange={(e) => setTargetLang(e.target.value)}
               className="min-w-[140px] rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
@@ -185,7 +187,7 @@ export default function TranslatePage() {
         <Button
           onClick={run}
           disabled={loading || !canRun}
-          className="gap-2 bg-[color:var(--ds-success-solid)] text-white hover:bg-[color:var(--ds-success-solid)]"
+          className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-white hover:bg-[color:var(--signal-success-800)]"
         >
           {loading ? <Loader2 size={15} className="animate-spin" /> : <Languages size={15} />}
           {t("translate.btn_translate")}

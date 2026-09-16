@@ -92,7 +92,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/lib/queries/auth", () => ({
-  useMe: () => ({ data: { role: "admin" } }),
+  useMe: () => ({ data: { user: { role: "admin", jurisdiction: "DE" } } }),
 }));
 
 describe("SettingsHub", () => {
@@ -112,11 +112,12 @@ describe("SettingsHub", () => {
     expect(screen.getByText("Onboarding")).toBeInTheDocument();
   });
 
-  it("shows dach-integration items like DATEV and beA", () => {
+  it("hides archived Germany-only items (DATEV, beA)", () => {
     render(<SettingsHub userRole="admin" />);
 
-    expect(screen.getByText("DATEV")).toBeInTheDocument();
-    expect(screen.getByText("beA")).toBeInTheDocument();
+    // beA/DATEV are archived DE integrations — never shown regardless of role.
+    expect(screen.queryByText("DATEV")).not.toBeInTheDocument();
+    expect(screen.queryByText("beA")).not.toBeInTheDocument();
   });
 
   it("shows system items like Audit-Log and KI-Modell", () => {
@@ -130,9 +131,9 @@ describe("SettingsHub", () => {
     render(<SettingsHub userRole="admin" />);
 
     const input = screen.getByPlaceholderText("Suchen …");
-    fireEvent.change(input, { target: { value: "DATEV" } });
+    fireEvent.change(input, { target: { value: "Abrechnung" } });
 
-    expect(screen.getByText("DATEV")).toBeInTheDocument();
+    expect(screen.getByText("Abrechnung")).toBeInTheDocument();
     expect(screen.queryByText("Audit-Log")).not.toBeInTheDocument();
   });
 

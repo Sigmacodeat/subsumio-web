@@ -9,32 +9,49 @@
 import { test, expect } from "@playwright/test";
 
 const MARKETING_PAGES = [
-  { path: "/", title: "Subsumio", checkHero: true },
-  { path: "/de", title: "Subsumio", checkHero: true },
-  { path: "/features", title: "Features", checkHero: true },
-  { path: "/de/features", title: "Features", checkHero: true },
-  { path: "/pricing", title: "Pricing", checkHero: true },
-  { path: "/de/pricing", title: "Pricing", checkHero: true },
-  { path: "/security", title: "Security", checkHero: true },
-  { path: "/de/security", title: "Security", checkHero: true },
-  { path: "/about", title: "About", checkHero: true },
-  { path: "/de/about", title: "About", checkHero: true },
-  { path: "/contact", title: "Contact", checkHero: true },
-  { path: "/de/contact", title: "Contact", checkHero: true },
-  { path: "/download", title: "Download", checkHero: true },
-  { path: "/de/download", title: "Download", checkHero: true },
-  { path: "/docs", title: "Docs", checkHero: true },
-  { path: "/de/docs", title: "Docs", checkHero: true },
-  { path: "/partners", title: "Partners", checkHero: true },
-  { path: "/de/partners", title: "Partners", checkHero: true },
-  { path: "/solutions/law-firms", title: "Law Firms", checkHero: true },
-  { path: "/de/solutions/law-firms", title: "Law Firms", checkHero: true },
-  { path: "/solutions/solo", title: "Solo", checkHero: true },
-  { path: "/de/solutions/solo", title: "Solo", checkHero: true },
-  { path: "/solutions/in-house", title: "In-House", checkHero: true },
-  { path: "/de/solutions/in-house", title: "In-House", checkHero: true },
-  { path: "/solutions/mid-sized", title: "Mid-Sized", checkHero: true },
-  { path: "/de/solutions/mid-sized", title: "Mid-Sized", checkHero: true },
+  { path: "/at", title: "Subsumio", checkHero: true },
+  { path: "/at/features", title: "Features", checkHero: true },
+  { path: "/at/pricing", title: "Pricing", checkHero: true },
+  { path: "/at/security", title: "Security", checkHero: true },
+  { path: "/at/about", title: "About", checkHero: true },
+  { path: "/at/contact", title: "Contact", checkHero: true },
+  { path: "/at/download", title: "Download", checkHero: true },
+  { path: "/at/docs", title: "Docs", checkHero: true },
+  { path: "/at/partners", title: "Partners", checkHero: true },
+  { path: "/at/solutions/law-firms", title: "Law Firms", checkHero: true },
+  { path: "/at/solutions/solo", title: "Solo", checkHero: true },
+  { path: "/at/solutions/in-house", title: "In-House", checkHero: true },
+  { path: "/at/superbrain", title: "SuperBrain", checkHero: true },
+  { path: "/at/whatsapp", title: "WhatsApp", checkHero: true },
+  { path: "/at/blog", title: "Blog", checkHero: true },
+  { path: "/at/benchmark-methodology", title: "Benchmark-Methodik", checkHero: true },
+  { path: "/at/cities", title: "Städte", checkHero: true },
+  {
+    path: "/at/blog/ki-kanzleisoftware-berufsgeheimnis-rao",
+    title: "Blog-Post",
+    checkHero: true,
+  },
+  { path: "/at/cities/wien", title: "Wien", checkHero: true },
+  { path: "/at/cities/graz", title: "Graz", checkHero: true },
+  { path: "/at/cities/linz", title: "Linz", checkHero: true },
+  { path: "/at/cities/salzburg", title: "Salzburg", checkHero: true },
+  { path: "/at/cities/innsbruck", title: "Innsbruck", checkHero: true },
+];
+
+// Consolidated legacy routes — real 308s via next.config redirects()
+const REDIRECT_ROUTES: [string, string][] = [
+  ["/at/kanzlei", "/at/solutions/law-firms"],
+  ["/kanzlei", "/at/solutions/law-firms"],
+  ["/at/solutions/mid-sized", "/at/solutions/law-firms"],
+  ["/solutions/mid-sized", "/at/solutions/law-firms"],
+  ["/blog", "/at/blog"],
+  [
+    "/blog/ki-kanzleisoftware-berufsgeheimnis-rao",
+    "/at/blog/ki-kanzleisoftware-berufsgeheimnis-rao",
+  ],
+  ["/cities", "/at/cities"],
+  ["/cities/wien", "/at/cities/wien"],
+  ["/benchmark-methodology", "/at/benchmark-methodology"],
 ];
 
 test.describe("Marketing Layout Consistency", () => {
@@ -91,8 +108,19 @@ test.describe("Marketing Layout Consistency", () => {
     });
   }
 
+  test.describe("Consolidated routes redirect with real 308", () => {
+    for (const [from, to] of REDIRECT_ROUTES) {
+      test(`${from} → ${to}`, async ({ page }) => {
+        const response = await page.goto(from, { waitUntil: "domcontentloaded" });
+        // page.goto follows redirects — final URL must be the canonical page
+        expect(page.url()).toContain(to);
+        expect(response?.status()).toBe(200);
+      });
+    }
+  });
+
   test.describe("Responsive padding on mobile", () => {
-    for (const path of ["/", "/de", "/features", "/de/features", "/pricing", "/de/pricing"]) {
+    for (const path of ["/at", "/at/features", "/at/pricing"]) {
       test(`${path} has reduced padding on mobile viewport`, async ({ page }) => {
         await page.setViewportSize({ width: 375, height: 812 });
         await page.goto(path, { waitUntil: "load" });

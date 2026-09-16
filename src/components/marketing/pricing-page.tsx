@@ -1,52 +1,37 @@
-"use client";
-
 // Dedicated pricing page — agency-grade tiers + value props + FAQ.
 // MotionConfig wraps the whole page; ScrollProgress shows reading position;
 // every section scroll-reveals; value-props use signal-colored tiles.
 
 import { Check, Shield, Clock, Globe, CreditCard, Coins, Zap } from "lucide-react";
 import { professionalPricing } from "@/content/audiences";
-import { PRICING_FAQ, VALUE_PROPS, UI_STRINGS, p, type Lang } from "@/content/site";
+import { PRICING_FAQ, VALUE_PROPS, UI_STRINGS, p } from "@/content/site";
 import { CREDIT_PACKS, CREDIT_COSTS, type CreditOperation } from "@/lib/billing/credit-constants";
-import { SectionHeading, CTASection, PageHero, Section } from "./chrome";
+import { SectionHeading, CTASection, PageHero, Section } from "./primitives";
 import { AnimatedFaqList } from "./animated-faq";
 import { PricingGrid } from "./pricing-grid";
 import { Reveal, StaggerContainer, StaggerItem, GlowCard } from "./motion-system";
 
-export default function PricingPage({ lang }: { lang: Lang }) {
-  const en = lang === "en";
-  const pricing = professionalPricing(lang);
-  const faq = PRICING_FAQ[lang].items;
-  const faqTitle = PRICING_FAQ[lang].title;
-  const valueProps = VALUE_PROPS[lang];
-  const ui = UI_STRINGS[lang];
+export default function PricingPage() {
+  const pricing = professionalPricing();
+  const faq = PRICING_FAQ.items;
+  const faqTitle = PRICING_FAQ.title;
+  const valueProps = VALUE_PROPS;
+  const ui = UI_STRINGS;
   const trustSignals = [
-    { icon: Shield, label: UI_STRINGS[lang].trustedBy },
-    { icon: Clock, label: UI_STRINGS[lang].trialDaysFree },
-    { icon: Globe, label: UI_STRINGS[lang].euHosted },
-    { icon: CreditCard, label: UI_STRINGS[lang].noGamesTitle },
+    { icon: Shield, label: UI_STRINGS.trustedBy },
+    { icon: Clock, label: UI_STRINGS.trialDaysFree },
+    { icon: Globe, label: UI_STRINGS.euHosted },
+    { icon: CreditCard, label: UI_STRINGS.noGamesTitle },
   ];
 
   return (
-    <div
-      data-tone="light"
-      className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
-      lang={lang}
-    >
+    <div data-tone="light" className="min-h-screen overflow-x-clip [background:var(--mk-bg)]">
       {/* Hero */}
       <PageHero
         badge={ui.transparentFair}
-        h1a={
-          en
-            ? "Plans for law firms. One clear scope."
-            : "Tarife für Kanzleien. Ein klarer Leistungsumfang."
-        }
-        sub={
-          en
-            ? "Solo, Firm and Enterprise — matter work, shared firm knowledge and controlled workflows."
-            : "Solo, Kanzlei und Enterprise — Aktenarbeit, geteiltes Kanzleiwissen und kontrollierte Workflows."
-        }
-        icon={Check}
+        h1a="Tarife für Kanzleien. Ein klarer Leistungsumfang."
+        sub="Solo, Kanzlei und Enterprise — Aktenarbeit, geteiltes Kanzleiwissen und kontrollierte Workflows."
+        icon="Check"
       />
 
       {/* Pricing Grid */}
@@ -57,7 +42,7 @@ export default function PricingPage({ lang }: { lang: Lang }) {
               <h2 className="text-3xl font-bold [color:var(--mk-text)]">{pricing.title}</h2>
               <p className="mx-auto mt-3 max-w-3xl [color:var(--mk-text-muted)]">{pricing.sub}</p>
             </div>
-            <PricingGrid lang={lang} />
+            <PricingGrid />
           </Reveal>
         </div>
       </Section>
@@ -67,12 +52,8 @@ export default function PricingPage({ lang }: { lang: Lang }) {
         <div className="mx-auto max-w-5xl">
           <Reveal variant="up">
             <SectionHeading
-              title={en ? "AI Credits — pay as you go" : "AI-Credits — zahle nach Verbrauch"}
-              sub={
-                en
-                  ? "Every AI operation costs a fixed number of credits. Buy packs on top of your plan — no surprise bills."
-                  : "Jede AI-Operation kostet eine feste Anzahl Credits. Kaufe Packs zusätzlich zu deinem Plan — keine Überraschungsrechnungen."
-              }
+              title="AI-Credits — zahle nach Verbrauch"
+              sub="Jede AI-Operation kostet eine feste Anzahl Credits. Kaufe Packs zusätzlich zu deinem Plan — keine Überraschungsrechnungen."
             />
           </Reveal>
 
@@ -98,16 +79,14 @@ export default function PricingPage({ lang }: { lang: Lang }) {
                   <p className="mt-1 text-3xl font-bold [color:var(--mk-text)]">
                     {pack.credits}
                     <span className="ml-1 text-sm font-normal [color:var(--mk-text-muted)]">
-                      {en ? "credits" : "Credits"}
+                      Credits
                     </span>
                   </p>
                   <p className="mt-2 text-sm [color:var(--mk-text-muted)]">
-                    {pack.priceEur} € {en ? "one-time" : "einmalig"}
+                    {pack.priceEur} € einmalig
                   </p>
                   <p className="mt-1 text-xs [color:var(--mk-text-muted)]">
-                    {en
-                      ? `${((pack.priceEur / pack.credits) * 100).toFixed(1)} ct per credit`
-                      : `${((pack.priceEur / pack.credits) * 100).toFixed(1)} ct pro Credit`}
+                    {`${((pack.priceEur / pack.credits) * 100).toFixed(1)} ct pro Credit`}
                   </p>
                 </GlowCard>
               </StaggerItem>
@@ -120,18 +99,18 @@ export default function PricingPage({ lang }: { lang: Lang }) {
               <div className="mb-4 flex items-center gap-2">
                 <Zap size={16} className="brand-text" />
                 <h3 className="text-sm font-semibold [color:var(--mk-text)]">
-                  {en ? "Cost per AI operation" : "Kosten pro AI-Operation"}
+                  Kosten pro AI-Operation
                 </h3>
               </div>
               <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
                 {(Object.entries(CREDIT_COSTS) as [CreditOperation, number][]).map(([op, cost]) => {
                   const opLabels: Record<CreditOperation, string> = {
-                    think: en ? "Think (Q&A)" : "Think (Q&A)",
-                    document_analysis: en ? "Document Analysis" : "Dokument-Analyse",
-                    subsumption: en ? "Subsumption" : "Subsumption",
-                    agent: en ? "Agent Run" : "Agent-Run",
-                    deadline_detect: en ? "Deadline Detection" : "Fristen-Erkennung",
-                    frist_engine: en ? "Frist Engine" : "Frist-Engine",
+                    think: "Think (Q&A)",
+                    document_analysis: "Dokument-Analyse",
+                    subsumption: "Subsumption",
+                    agent: "Agent-Run",
+                    deadline_detect: "Fristen-Erkennung",
+                    frist_engine: "Frist-Engine",
                   };
                   return (
                     <div
@@ -140,16 +119,15 @@ export default function PricingPage({ lang }: { lang: Lang }) {
                     >
                       <span className="text-xs [color:var(--mk-text-muted)]">{opLabels[op]}</span>
                       <span className="text-sm font-semibold [color:var(--mk-text)]">
-                        {cost === 0 ? (en ? "free" : "gratis") : `${cost}`}
+                        {cost === 0 ? "gratis" : `${cost}`}
                       </span>
                     </div>
                   );
                 })}
               </div>
               <p className="mt-4 text-xs [color:var(--mk-text-muted)]">
-                {en
-                  ? "Credits are deducted after a successful AI operation. Failed requests are not charged. Auto-reload available in dashboard settings."
-                  : "Credits werden nach erfolgreicher AI-Operation abgezogen. Fehlgeschlagene Anfragen werden nicht berechnet. Auto-Reload in den Dashboard-Einstellungen verfügbar."}
+                Credits werden nach erfolgreicher AI-Operation abgezogen. Fehlgeschlagene Anfragen
+                werden nicht berechnet. Auto-Reload in den Dashboard-Einstellungen verfügbar.
               </p>
             </div>
           </Reveal>
@@ -222,9 +200,9 @@ export default function PricingPage({ lang }: { lang: Lang }) {
       <CTASection
         title={ui.stillQuestions}
         sub={ui.writeUs}
-        href={p(lang, "/signup?plan=pro")}
-        label={en ? "Start Solo" : "Solo starten"}
-        secondaryHref={p(lang, "/contact")}
+        href={p("/signup?plan=pro")}
+        label="Solo starten"
+        secondaryHref={p("/contact")}
         secondaryLabel={ui.writeUs}
         showLogo={false}
       />

@@ -8,13 +8,6 @@ export const metadata: Metadata = {
   robots: { index: false },
   alternates: {
     canonical: "/at/join",
-    languages: {
-      "de-DE": "/join",
-      "de-AT": "/at/join",
-      "de-CH": "/ch/join",
-      en: "/en/join",
-      "x-default": "/join",
-    },
   },
 };
 
@@ -42,7 +35,6 @@ export default async function JoinPage({
       org={params.org ?? ""}
       email={params.email ?? ""}
       myEmail={me.email}
-      lang="at"
     />
   );
 }

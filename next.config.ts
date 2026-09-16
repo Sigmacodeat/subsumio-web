@@ -25,21 +25,38 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
   },
   productionBrowserSourceMaps: false,
+  // All metadata in this app resolves synchronously (static content objects),
+  // so blocking metadata is free — and guarantees description/og:/twitter:
+  // tags land inside <head> for EVERY consumer: search crawlers, link
+  // unfurlers (Slack/Telegram/WhatsApp etc.), and Lighthouse. Next 15
+  // otherwise streams metadata after </head> for non-bot user agents.
+  htmlLimitedBots: /.*/i,
   async redirects() {
     return [
-      // German is the default locale at root (/); /de/* routes are not part of
-      // the current App Router structure, so any double-locale cleanup that
-      // targets /de would point to a non-existent route. The canonical German
-      // URLs are the root paths below.
-      // Deduplicate: canonical product page is the homepage
-      { source: "/subsumio", destination: "/", permanent: true },
-      { source: "/de/subsumio", destination: "/de", permanent: true },
-      { source: "/en/subsumio", destination: "/en", permanent: true },
+      // Austria-only pilot: canonical public product and security pages.
+      { source: "/subsumio", destination: "/at", permanent: true },
       { source: "/at/subsumio", destination: "/at", permanent: true },
-      { source: "/ch/subsumio", destination: "/ch", permanent: true },
-      { source: "/produkt", destination: "/", permanent: true },
-      // Deduplicate: canonical security page is /security
-      { source: "/sicherheit", destination: "/security", permanent: true },
+      { source: "/produkt", destination: "/at", permanent: true },
+      { source: "/sicherheit", destination: "/at/security", permanent: true },
+      // Consolidated Kanzlei routes — one canonical law-firms solution page.
+      { source: "/kanzlei", destination: "/at/solutions/law-firms", permanent: true },
+      { source: "/at/kanzlei", destination: "/at/solutions/law-firms", permanent: true },
+      // Content trees canonicalised under /at — root variants are legacy.
+      { source: "/blog", destination: "/at/blog", permanent: true },
+      { source: "/blog/:path*", destination: "/at/blog/:path*", permanent: true },
+      { source: "/cities", destination: "/at/cities", permanent: true },
+      { source: "/cities/:path*", destination: "/at/cities/:path*", permanent: true },
+      {
+        source: "/benchmark-methodology",
+        destination: "/at/benchmark-methodology",
+        permanent: true,
+      },
+      { source: "/solutions/mid-sized", destination: "/at/solutions/law-firms", permanent: true },
+      {
+        source: "/at/solutions/mid-sized",
+        destination: "/at/solutions/law-firms",
+        permanent: true,
+      },
       // Removed dashboard routes (IA consolidation) — keep old bookmarks alive
       { source: "/dashboard/assistant", destination: "/dashboard/chat", permanent: true },
       { source: "/dashboard/query", destination: "/dashboard/brain", permanent: true },

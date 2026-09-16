@@ -18,6 +18,7 @@ import {
 import { useLang } from "@/lib/use-lang";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { useTour } from "@/components/dashboard/guided-tour";
+import { DE_ONLY_HREFS } from "@/components/dashboard/sidebar";
 import {
   Accordion,
   AccordionContent,
@@ -34,6 +35,8 @@ import type { DashboardKey } from "@/content/dashboard";
 interface DashboardGuideProps {
   open: boolean;
   onClose: () => void;
+  /** Retained for caller compatibility; the active pilot always hides retired DE routes. */
+  jurisdiction?: string | null;
 }
 
 const ROUTE_HELP: Array<{
@@ -157,7 +160,11 @@ const SETUP_SECTIONS: Array<{
   },
 ];
 
-export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
+export function DashboardGuide({
+  open,
+  onClose,
+  jurisdiction: _jurisdiction,
+}: DashboardGuideProps) {
   const pathname = usePathname();
   const { t } = useLang();
   const { addToast } = useToast();
@@ -201,7 +208,9 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
     ? {
         title: t(routeHelp.title),
         desc: t(routeHelp.desc),
-        links: routeHelp.links.map((link) => ({ ...link, label: t(link.label) })),
+        links: routeHelp.links
+          .filter((link) => !DE_ONLY_HREFS.has(link.href))
+          .map((link) => ({ ...link, label: t(link.label) })),
       }
     : {
         title: t("guide.default_title"),
@@ -348,15 +357,16 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
                               ))}
                             </ul>
                             <div className="flex items-center gap-2">
-                              <Link href={section.href} onClick={onClose}>
-                                <Button
-                                  variant="glow"
-                                  size="sm"
-                                  disabled={updateProgress.isPending}
-                                >
+                              <Button
+                                variant="glow"
+                                size="sm"
+                                disabled={updateProgress.isPending}
+                                asChild
+                              >
+                                <Link href={section.href} onClick={onClose}>
                                   {section.cta}
-                                </Button>
-                              </Link>
+                                </Link>
+                              </Button>
                               {editMode && (
                                 <Button
                                   variant="ghost"

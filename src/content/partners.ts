@@ -1,6 +1,4 @@
-// Partner program page — affiliate, in-product referral, vertical partners. EN + DE.
-
-import { type Lang, applyReplacements, AT_REPLACEMENTS } from "./site";
+// Partner program page — affiliate, in-product referral, vertical partners.
 
 export interface PartnersContent {
   metaTitle: string;
@@ -32,7 +30,7 @@ export interface PartnersContent {
   ctaButton: string;
 }
 
-const _dePartners: PartnersContent = {
+export const PARTNERS: PartnersContent = {
   metaTitle: "Subsumio Partnerprogramm — lebenslang wiederkehrend verdienen",
   metaDesc:
     "Subsumio empfehlen und lebenslang wiederkehrende Provision verdienen. Affiliate-, Referral- und zertifizierte Implementierungspartner-Tracks.",
@@ -46,7 +44,7 @@ const _dePartners: PartnersContent = {
       icon: "Megaphone",
       name: "Affiliates",
       headline: "25 % lebenslang wiederkehrend (bis zu 30 %)",
-      desc: "Für Legal-Tech-Blogger, Anwaltsverbands-Communities, Kanzlei-Berater und alle mit einem DACH-Rechts-Publikum.",
+      desc: "Für Legal-Tech-Blogger, Anwaltsverbands-Communities, Kanzlei-Berater und alle mit einem österreichisches Rechts-Publikum.",
       points: [
         "25 % jeder Zahlung, solange dein geworbener Kunde bleibt — kein Stichtag, keine Obergrenze",
         "+5 % Override auf Kunden von Affiliates, die du rekrutiert hast (gesamt bis zu 30 %) — passives Einkommen aufbauen",
@@ -82,7 +80,7 @@ const _dePartners: PartnersContent = {
       points: [
         "20 % Revenue-Share — lebenslang für jeden gebrachten Kunden",
         "100 % deiner Implementierungs- und Beratungshonorare bleiben bei dir",
-        "Status \u201eSubsumio Certified Partner\u201c ab 3 Live-Kunden",
+        "Status „Subsumio Certified Partner“ ab 3 Live-Kunden",
         "Direkter Draht zu unserem Engineering für Integrationen",
       ],
       cta: "Als Partner bewerben",
@@ -142,123 +140,4 @@ const _dePartners: PartnersContent = {
   ctaTitle: "Dein Publikum braucht ein Kanzlei-Brain. Du brauchst wiederkehrenden Umsatz.",
   ctaSub: "Bewerbungen werden innerhalb von 48 Stunden geprüft. Keine Exklusivität erforderlich.",
   ctaButton: "Jetzt bewerben",
-};
-
-const _enPartners: PartnersContent = {
-  metaTitle: "Subsumio Partner Program — earn lifetime recurring commission",
-  metaDesc:
-    "Recommend Subsumio and earn lifetime recurring commission. Affiliate, referral and certified implementation partner tracks.",
-  badge: "Partner program",
-  h1a: "Recommend the brain.",
-  h1b: "Keep the commission.",
-  sub: "Three ways to earn with Subsumio — from a single shared link to a certified implementation practice. All built on one principle: you keep earning as long as your referrals keep paying.",
-  tiers: [
-    {
-      id: "affiliate",
-      icon: "Megaphone",
-      name: "Affiliates",
-      headline: "25% lifetime recurring (up to 30%)",
-      desc: "For legal-tech bloggers, bar association communities, law firm consultants and anyone with a DACH legal audience.",
-      points: [
-        "25% of every payment for as long as your referred customer stays — no cutoff, no cap",
-        "+5% override on customers referred by affiliates you recruit (total up to 30%) — build passive income",
-        "90-day cookie window",
-        "Monthly payouts from €50, real-time dashboard",
-        "Ready-made assets: demos, screenshots, comparison pages",
-      ],
-      cta: "Apply as affiliate",
-      href: "mailto:partners@subsum.eu?subject=Affiliate%20application",
-      highlight: true,
-    },
-    {
-      id: "referral",
-      icon: "Gift",
-      name: "Customer referrals",
-      headline: "Give a month, get a month",
-      desc: "Already a customer? Your referral link lives in your dashboard.",
-      points: [
-        "You get 1 month free for every referral who becomes a paying customer",
-        "They get their first month free too — your link is worth taking",
-        "No caps: 12 referrals = a free year",
-        "Counts on Pro and Team plans",
-      ],
-      cta: "Find your link in Settings",
-      href: "/dashboard/settings",
-    },
-    {
-      id: "vertical",
-      icon: "Handshake",
-      name: "Certified partners",
-      headline: "20% lifetime + your services revenue",
-      desc: "For legal-tech integrators, IT firms and consultants who implement Subsumio for law firms.",
-      points: [
-        "20% revenue share for the lifetime of every client you bring",
-        "You keep 100% of your implementation and consulting fees",
-        "“Subsumio Certified Partner” status after 3 live clients",
-        "Direct line to our engineering for integrations",
-      ],
-      cta: "Apply as partner",
-      href: "mailto:partners@subsum.eu?subject=Certified%20partner%20application",
-    },
-  ],
-  calcTitle: "What lifetime recurring actually means",
-  calcSub:
-    "Refer 10 Team seats (€1,290/seat/month). At 25%, that's €3,225 every month — for as long as they stay. Year one alone is €38,700. And it keeps compounding.",
-  calcNote:
-    "We pay at the top of the industry range because early partners matter most. The more successful your referrals, the more we all grow.",
-  howTitle: "How it works",
-  how: [
-    {
-      step: "01",
-      title: "Apply & get your link",
-      desc: "We review applications within 48 hours. You get a tracked link and a partner dashboard.",
-    },
-    {
-      step: "02",
-      title: "Recommend honestly",
-      desc: "Share with audiences who actually need a company brain. We'd rather have 10 real fits than 1,000 clicks.",
-    },
-    {
-      step: "03",
-      title: "Get paid monthly",
-      desc: "Stripe-powered payouts every month, from €50. You see every referral and its status in real time.",
-    },
-  ],
-  faqTitle: "Partner FAQ",
-  faq: [
-    {
-      q: "When do commissions start?",
-      a: "From the first payment your referral makes. Affiliate commissions continue for as long as they remain a paying customer — no cutoff, no cap.",
-    },
-    {
-      q: "What if a customer upgrades?",
-      a: "Your commission follows their actual payments. Refer a Pro customer who upgrades to Team — your percentage applies to the new price, automatically.",
-    },
-    {
-      q: "Can I be both an affiliate and a certified partner?",
-      a: "Yes. Many partners start with the affiliate track and certify once they've implemented for a few clients.",
-    },
-    {
-      q: "Is there a self-referral policy?",
-      a: "Self-referrals don't pay out — we keep the program honest so it stays generous for everyone.",
-    },
-    {
-      q: "Can I recruit other affiliates?",
-      a: "Yes. When you bring in another affiliate, you earn a 5% override on the customers they refer. It's our way of rewarding you for growing the partner network.",
-    },
-    {
-      q: "Can I get territory exclusivity?",
-      a: "Apply as a Regional Launch Partner — performance-gated priority in your region and the full 5% override on every affiliate you recruit locally.",
-    },
-  ],
-  ctaTitle: "Your audience needs a legal brain. You need recurring revenue.",
-  ctaSub: "Applications reviewed within 48 hours. No exclusivity required to start.",
-  ctaButton: "Apply now",
-};
-
-export const PARTNERS: Record<Lang, PartnersContent> = {
-  en: _enPartners,
-  de: _dePartners,
-  at: applyReplacements(_dePartners, AT_REPLACEMENTS),
-  ch: _dePartners,
 };

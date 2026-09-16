@@ -73,8 +73,9 @@ export default function OnlineBookingPage() {
         </h2>
         <div className="grid gap-3 md:grid-cols-4">
           <div>
-            <Label>{t("booking.date")}</Label>
+            <Label htmlFor="booking-date">{t("booking.date")}</Label>
             <Input
+              id="booking-date"
               type="date"
               value={selectedDate.toISOString().split("T")[0]}
               onChange={(e) => {
@@ -85,24 +86,27 @@ export default function OnlineBookingPage() {
             />
           </div>
           <div>
-            <Label>{t("booking.from")}</Label>
+            <Label htmlFor="booking-from">{t("booking.from")}</Label>
             <Input
+              id="booking-from"
               type="time"
               value={workingHours.start}
               onChange={(e) => setWorkingHours({ ...workingHours, start: e.target.value })}
             />
           </div>
           <div>
-            <Label>{t("booking.to")}</Label>
+            <Label htmlFor="booking-to">{t("booking.to")}</Label>
             <Input
+              id="booking-to"
               type="time"
               value={workingHours.end}
               onChange={(e) => setWorkingHours({ ...workingHours, end: e.target.value })}
             />
           </div>
           <div>
-            <Label>{t("booking.duration")}</Label>
+            <Label htmlFor="booking-duration">{t("booking.duration")}</Label>
             <Input
+              id="booking-duration"
               type="number"
               inputMode="numeric"
               value={slotDuration}
@@ -144,7 +148,7 @@ export default function OnlineBookingPage() {
                     {t("booking.booked")}
                   </Badge>
                 ) : (
-                  <Badge className="mt-2 bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]">
+                  <Badge className="mt-2 bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]">
                     {t("booking.free")}
                   </Badge>
                 )}

@@ -165,7 +165,7 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
               <div>
                 <strong>Verändert seit Ausstellung.</strong> Der berechnete Hash weicht ab.
               </div>
-              <div className="font-mono break-all text-[color:var(--ds-danger-text)]/80">
+              <div className="font-mono break-all text-[color:var(--ds-danger-text)]">
                 Ist: {state.computed}
               </div>
             </div>

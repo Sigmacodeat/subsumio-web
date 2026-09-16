@@ -21,6 +21,12 @@ export const ollama: Recipe = {
       // OLLAMA_NUM_PARALLEL config; no static cap to declare. v0.32 (#779).
       no_batch_cap: true,
     },
+    chat: {
+      models: ["qwen2.5:7b", "qwen2.5:1.5b", "qwen2.5:0.5b", "llama3.2", "mistral"],
+      supports_tools: true,
+      supports_subagent_loop: false,
+      supports_prompt_cache: false,
+    },
   },
   setup_hint:
     "Install Ollama from https://ollama.ai, then `ollama pull nomic-embed-text` and `ollama serve`.",

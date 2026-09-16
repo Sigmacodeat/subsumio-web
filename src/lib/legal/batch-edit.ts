@@ -253,7 +253,7 @@ async function executeOnPage(
   };
 
   const updateRes = await fetch(`${ENGINE_URL}/api/pages`, {
-    method: "PUT",
+    method: "POST",
     headers: { ...authHeaders, "Content-Type": "application/json" },
     body: JSON.stringify(updateBody),
     signal: AbortSignal.timeout(10_000),

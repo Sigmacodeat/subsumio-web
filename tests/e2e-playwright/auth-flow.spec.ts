@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Auth Flow", () => {
   test("login page renders", async ({ page }) => {
-    await page.goto("/de/login", { waitUntil: "domcontentloaded" });
+    await page.goto("/at/login", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("main").getByRole("button", { name: "Anmelden" })).toBeVisible();
     await expect(page.locator('input[name="email"]')).toBeVisible();
@@ -10,7 +10,7 @@ test.describe("Auth Flow", () => {
   });
 
   test("register page renders", async ({ page }) => {
-    await page.goto("/de/signup", { waitUntil: "domcontentloaded" });
+    await page.goto("/at/signup", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle");
     await expect(page.locator('button:has-text("Konto erstellen")')).toBeVisible();
     await expect(page.locator('input[name="name"]')).toBeVisible();

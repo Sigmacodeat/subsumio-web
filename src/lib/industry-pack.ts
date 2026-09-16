@@ -16,15 +16,15 @@ export interface IndustryTheme {
 
 export interface IndustryProfile {
   key: string;
-  label: { en: string; de: string };
+  label: string;
   brand: string;
   dashboardHref: string;
   marketingHref: string;
   pack: string;
   signature: {
-    title: { en: string; de: string };
-    proof: { en: string; de: string };
-    items: { en: string; de: string }[];
+    title: string;
+    proof: string;
+    items: string[];
   };
   theme: IndustryTheme;
 }
@@ -43,25 +43,15 @@ export const SUBSUMIO_THEME: IndustryTheme = {
 export const INDUSTRY_PROFILES = {
   legal: {
     key: "legal",
-    label: { en: "Law firm / legal team", de: "Kanzlei / Rechtsabteilung" },
+    label: "Kanzlei / Rechtsabteilung",
     brand: "Subsumio",
     dashboardHref: "/dashboard",
     marketingHref: "/",
     pack: "subsumio-legal",
     signature: {
-      title: {
-        en: "Matter memory with procedural discipline",
-        de: "Aktengedächtnis mit Verfahrensdisziplin",
-      },
-      proof: {
-        en: "Cases, deadlines, actors and documents stay connected as a legal graph.",
-        de: "Akten, Fristen, Beteiligte und Dokumente bleiben als juristischer Graph verbunden.",
-      },
-      items: [
-        { en: "Case contradictions", de: "Widersprüche in Akten" },
-        { en: "Deadline-aware answers", de: "Fristenbewusste Antworten" },
-        { en: "Cited drafting context", de: "Zitierter Schriftsatzkontext" },
-      ],
+      title: "Aktengedächtnis mit Verfahrensdisziplin",
+      proof: "Akten, Fristen, Beteiligte und Dokumente bleiben als juristischer Graph verbunden.",
+      items: ["Widersprüche in Akten", "Fristenbewusste Antworten", "Zitierter Schriftsatzkontext"],
     },
     theme: SUBSUMIO_THEME,
   },

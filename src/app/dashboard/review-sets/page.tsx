@@ -304,6 +304,7 @@ export default function ReviewSetsPage() {
           />
         </div>
         <select
+          aria-label={t("review_sets.filter_status" as DashboardKey)}
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
@@ -315,7 +316,12 @@ export default function ReviewSetsPage() {
             </option>
           ))}
         </select>
-        <Button variant="ghost" onClick={loadSets} className="gap-2 text-sm">
+        <Button
+          variant="ghost"
+          onClick={loadSets}
+          className="gap-2 text-sm"
+          aria-label={t("common.refresh" as DashboardKey)}
+        >
           <RefreshCw size={14} />
         </Button>
       </div>

@@ -19,29 +19,29 @@ import "./globals.css";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
-  display: "swap",
+  display: "optional",
   preload: true,
 });
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-grotesk",
-  display: "swap",
+  display: "optional",
   preload: true,
 });
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-jetbrains",
-  display: "swap",
+  display: "optional",
   preload: true,
 });
 
 export const metadata: Metadata = {
   title: {
-    default: "Subsumio — KI-Kanzleisoftware & Anwaltssoftware für Anwälte | AT · DE · CH",
+    default: "Subsumio — KI-Kanzleisoftware für Rechtsanwälte in Österreich",
     template: "%s — Subsumio",
   },
   description:
-    "KI-Kanzleisoftware für Anwälte in AT, DE & CH: Akten, Fristen, belegte KI-Antworten mit Fundstellen. DSGVO-konform. On-Premise oder EU-Cloud.",
+    "KI-Kanzleisoftware für Rechtsanwälte in Österreich: Akten, Fristen nach ZPO und ABGB sowie belegte KI-Antworten mit Fundstellen.",
   keywords: [
     // Cluster A: Kanzleisoftware (high-volume transactional)
     "Kanzleisoftware",
@@ -53,8 +53,6 @@ export const metadata: Metadata = {
     "Kanzleisoftware Vergleich",
     "Kanzleisoftware DSGVO",
     "Kanzleisoftware Österreich",
-    "Kanzleisoftware Schweiz",
-    "Kanzleisoftware Deutschland",
     "Kanzleisoftware selbst hosten",
     "Software für Rechtsanwälte",
     "Kanzleimanagement Software",
@@ -62,7 +60,6 @@ export const metadata: Metadata = {
     "Fristenverwaltung Kanzlei",
     "Fristenmanagement Software",
     "Fristenberechnung ZPO",
-    "Fristenberechnung BGB",
     "Fristenberechnung ABGB",
     "Fristenkontrolle Anwalt",
     // Cluster C: KI Legal (informational + transactional)
@@ -77,36 +74,23 @@ export const metadata: Metadata = {
     "KI Dokumentenmanagement Kanzlei",
     "Legal Research AI",
     "AI legal research",
-    // Cluster D: DACH-spezifisch (compliance + integration)
-    "DATEV Kanzlei",
-    "ADATEV",
-    "beA Anbindung",
-    "RVG Abrechnung Software",
+    // Cluster D: Österreich-spezifisch (compliance + integration)
+    "Buchhaltung",
+    "webERV Anbindung",
+    "RATG Abrechnung Software",
     "Honorarrechnung Software",
     "AVV Kanzleisoftware",
     "On-Premise Kanzleisoftware",
-    "Kollisionsprüfung BRAO",
-    "§ 203 StGB Berufsgeheimnis",
-    // Cluster E: EN
-    "AI legal software",
-    "self-hosted legal software",
-    "GDPR legal software",
-    "cited AI answers",
-    "law firm software Europe",
-    "legal AI DACH",
-    "law firm deadline tracking",
+    "Kollisionsprüfung RAO",
+    "§ 9 Abs. 2 RAO Verschwiegenheit",
     // Brand
     "Subsumio",
   ],
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu"),
-  alternates: {
-    canonical: "/",
-    languages: { "de-DE": "/", "de-AT": "/at", "de-CH": "/ch", en: "/en", "x-default": "/" },
-  },
   openGraph: {
-    title: "Subsumio — KI-Kanzleisoftware & Anwaltssoftware für DACH-Rechtsanwälte",
+    title: "Subsumio — KI-Kanzleisoftware für Österreich",
     description:
-      "KI-Kanzleisoftware für Rechtsanwälte in AT, DE & CH: Aktenverwaltung, Fristenmanagement nach ZPO/BGB/ABGB, belegte KI-Antworten mit Fundstellen, DATEV-Export, Kollisionsprüfung. DSGVO-konform, AVV, On-Premise oder EU-Cloud.",
+      "Aktenverwaltung, österreichische Fristen und belegte KI-Antworten für Rechtsanwälte in Österreich. DSGVO-konform, EU-Cloud oder On-Premise.",
     type: "website",
     siteName: "Subsumio",
     images: [
@@ -114,15 +98,15 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Subsumio — KI-Kanzleisoftware für Rechtsanwälte in AT, DE und CH",
+        alt: "Subsumio — KI-Kanzleisoftware für Rechtsanwälte in Österreich",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Subsumio — KI-Kanzleisoftware & Anwaltssoftware für DACH-Rechtsanwälte",
+    title: "Subsumio — KI-Kanzleisoftware für Österreich",
     description:
-      "KI-Kanzleisoftware & Anwaltssoftware für AT, DE & CH: Akten, Fristen nach ZPO/BGB/ABGB, belegte KI-Antworten, DATEV-Export, Kollisionsprüfung, § 203 StGB-konform.",
+      "Akten, Fristen nach ZPO und ABGB, belegte KI-Antworten und österreichische Kanzleiabläufe.",
     images: ["/og-image.png"],
   },
   icons: {
@@ -158,13 +142,13 @@ export default async function RootLayout({
 
   return (
     <html
-      lang="de"
+      lang="de-AT"
       className={`h-full ${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
       style={{ colorScheme: "light dark" }}
       suppressHydrationWarning
     >
       <head>
-        <meta httpEquiv="content-language" content="de-DE, de-AT, de-CH, en" />
+        <meta httpEquiv="content-language" content="de-AT" />
         <link
           rel="alternate"
           type="application/rss+xml"

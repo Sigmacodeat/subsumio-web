@@ -18,8 +18,8 @@ const SEO_KEYWORDS = {
     "Fristenberechnung Software",
     "Kollisionsprüfung Kanzlei",
     "Aktenverwaltung Software",
-    "DATEV Export Kanzlei",
-    "beA Anbindung",
+    "Buchhaltungsexport Kanzlei",
+    "webERV Anbindung",
     "KI Dokumentenmanagement",
     "Vertragsanalyse KI",
     "legal AI features",
@@ -42,7 +42,7 @@ const SEO_KEYWORDS = {
     "Kanzleisoftware DSGVO",
     "Anwaltssoftware Sicherheit",
     "Berufsgeheimnis KI",
-    "§ 203 StGB Kanzleisoftware",
+    "§ 9 Abs. 2 RAO Kanzleisoftware",
     "On-Premise Kanzleisoftware",
     "EU-Cloud Kanzlei",
     "legal software GDPR",
@@ -80,7 +80,7 @@ const SEO_KEYWORDS = {
   whatsapp: [
     "WhatsApp Kanzlei",
     "WhatsApp Anwaltssoftware",
-    "beA WhatsApp",
+    "webERV WhatsApp",
     "Kanzlei Kommunikation",
     "legal WhatsApp integration",
   ],
@@ -123,14 +123,11 @@ const SEO_KEYWORDS = {
   // Cities
   cities: [
     "KI-Kanzleisoftware Wien",
-    "KI-Kanzleisoftware Berlin",
-    "KI-Kanzleisoftware Zürich",
     "Anwaltssoftware Wien",
-    "Anwaltssoftware Berlin",
-    "Anwaltssoftware Zürich",
+    "Kanzleisoftware Österreich",
+    "Anwaltssoftware Österreich",
     "law firm software Vienna",
-    "law firm software Berlin",
-    "law firm software Zurich",
+    "law firm software Austria",
   ],
 
   // SuperBrain

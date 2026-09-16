@@ -186,7 +186,7 @@ export function ClauseQuickCreateDialog({
                 type="submit"
                 variant="primary"
                 disabled={creating || !canSubmit}
-                className="gap-2 bg-[color:var(--ds-success-solid)] text-white hover:bg-[color:var(--ds-success-solid)]"
+                className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-white hover:bg-[color:var(--signal-success-800)]"
               >
                 {creating ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
                 {t("clauses.btn_create" as DashboardKey)}

@@ -120,8 +120,16 @@ test.describe("Visual Regression — Both Themes", () => {
         fullPage: false,
       });
 
-      // Open copilot
-      await page.keyboard.press("Meta+j");
+      // Open copilot (already open by default — toggle only if input hidden)
+      if (
+        !(await page
+          .locator("textarea[data-chat-input]")
+          .first()
+          .isVisible()
+          .catch(() => false))
+      ) {
+        await page.keyboard.press("Meta+Shift+c");
+      }
       await page.waitForTimeout(500);
       await page.screenshot({
         path: "tests/screenshots/copilot-open.png",

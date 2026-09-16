@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    default: "Subsumio — KI-Kanzleisoftware für Rechtsanwälte in Österreich | AT · DE · CH",
+    default: "Subsumio — KI-Kanzleisoftware für Rechtsanwälte in Österreich",
     template: "%s — Subsumio",
   },
   description:
     "KI-Kanzleisoftware für Rechtsanwälte in Österreich: Akten, Fristen nach ZPO/ABGB, belegte KI-Antworten. DSGVO-konform, EU-Cloud oder On-Premise.",
   alternates: {
     canonical: "/at",
-    languages: { "de-DE": "/", "de-AT": "/at", "de-CH": "/ch", en: "/en", "x-default": "/" },
+    languages: { "de-AT": "/at", "x-default": "/at" },
   },
 };
 

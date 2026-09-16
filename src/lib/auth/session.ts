@@ -43,7 +43,7 @@ export async function createSession(
     token,
     cookieOptions: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: process.env.NODE_ENV === "production" && process.env.SUBSUMIO_E2E !== "1",
       sameSite: "lax",
       maxAge: SESSION_TTL_SECONDS,
       path: "/",

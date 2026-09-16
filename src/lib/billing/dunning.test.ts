@@ -117,7 +117,9 @@ describe("dunning escalation logic", () => {
       const result2 = await incrementFailure(orgId, new Date("2026-07-03"));
       expect(result2.failureCount).toBe(2);
       expect(result2.status).toBe("past_due");
-      expect(result2.firstFailedAt).toBe(result.firstFailedAt);
+      // Deep equality — with a PG pool the returned rows are new Date
+      // instances, so identity (toBe) fails despite equal timestamps.
+      expect(result2.firstFailedAt).toEqual(result.firstFailedAt);
 
       const result3 = await incrementFailure(orgId, null);
       expect(result3.failureCount).toBe(3);

@@ -822,25 +822,31 @@ function TourOverlay({
 
         {/* Progress dots — clickable to jump to step */}
         <div
-          className="mb-4 flex items-center gap-1.5"
+          className="mb-4 flex items-center"
           role="tablist"
           aria-label={t("tour.progress_label")}
         >
           {steps.map((_, i) => (
+            // WCAG 2.2 target-size: der Button hat 24×24px Hit-Area, der
+            // sichtbare Punkt bleibt klein (innerer span).
             <button
               key={i}
               role="tab"
               aria-selected={i === currentStep}
               aria-label={t("tour.step_label").replace("{current}", String(i + 1))}
               onClick={() => onGoTo(i)}
-              className={`h-1.5 rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 hover:opacity-80 motion-reduce:transition-none ${
-                i === currentStep
-                  ? "w-6 bg-[color:var(--brand-primary)]"
-                  : i < currentStep
-                    ? "w-1.5 bg-[color:var(--brand-primary)]/50"
-                    : "w-1.5 bg-[color:var(--ds-border)]"
-              } active:scale-[0.97]`}
-            />
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-transform duration-200 hover:scale-110 active:scale-[0.97] motion-reduce:transition-none"
+            >
+              <span
+                className={`h-1.5 rounded-full transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 ${
+                  i === currentStep
+                    ? "w-6 bg-[color:var(--brand-primary)]"
+                    : i < currentStep
+                      ? "w-1.5 bg-[color:var(--brand-primary)]/50"
+                      : "w-1.5 bg-[color:var(--ds-border)]"
+                }`}
+              />
+            </button>
           ))}
         </div>
 

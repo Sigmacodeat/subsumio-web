@@ -84,6 +84,7 @@ export default function CaseScannerPage() {
             type="range"
             min={1}
             max={90}
+            aria-label={t("scanner.look_ahead")}
             value={lookAhead}
             onChange={(e) => setLookAhead(Number(e.target.value))}
             className="w-full accent-emerald-600"
@@ -107,6 +108,7 @@ export default function CaseScannerPage() {
             type="range"
             min={0}
             max={10}
+            aria-label={t("scanner.evidence_threshold")}
             value={evidenceThreshold}
             onChange={(e) => setEvidenceThreshold(Number(e.target.value))}
             className="w-full accent-emerald-600"
@@ -122,6 +124,7 @@ export default function CaseScannerPage() {
             {t("scanner.max_cases")}
           </label>
           <select
+            aria-label={t("scanner.max_cases")}
             value={maxCases}
             onChange={(e) => setMaxCases(Number(e.target.value))}
             className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
@@ -137,7 +140,7 @@ export default function CaseScannerPage() {
         <Button
           onClick={run}
           disabled={loading}
-          className="w-full gap-2 bg-[color:var(--ds-success-solid)] text-white hover:bg-[color:var(--ds-success-solid)]"
+          className="w-full gap-2 bg-[color:var(--ds-success-solid-hover)] text-white hover:bg-[color:var(--signal-success-800)]"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : <Radar size={16} />}
           {t("scanner.start")}

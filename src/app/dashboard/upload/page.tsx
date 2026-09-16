@@ -826,10 +826,10 @@ function UploadPageInner() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Label className="mb-1.5 block text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-              Juristiktion (optional)
+              Jurisdiktion (optional)
             </Label>
             <Select value={jurisdictionOverride} onValueChange={setJurisdictionOverride}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full" aria-label="Jurisdiktion (optional)">
                 <SelectValue placeholder={t("upload.auto_detect")} />
               </SelectTrigger>
               <SelectContent>
@@ -845,7 +845,7 @@ function UploadPageInner() {
               Dokumenttyp (optional)
             </Label>
             <Select value={docTypeOverride} onValueChange={setDocTypeOverride}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full" aria-label="Dokumenttyp (optional)">
                 <SelectValue placeholder={t("upload.auto_classify")} />
               </SelectTrigger>
               <SelectContent>

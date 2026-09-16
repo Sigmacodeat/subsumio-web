@@ -58,6 +58,12 @@ function createSignedIdentityToken(
 }
 
 export function engineConfigurationResponse(): Response | null {
+  // E2E harness: SUBSUMIO_E2E=1 uses the mock engine on :3001 (default
+  // ENGINE_URL). Skip the production config gate — the flag is never set
+  // in real production. (Previously gated on NODE_ENV !== "production",
+  // but `next start` forces NODE_ENV=production which would 503 the e2e
+  // production-build server.)
+  if (env("SUBSUMIO_E2E") === "1") return null;
   if (process.env.NODE_ENV !== "production" || CONFIGURED_ENGINE_URL) {
     // In production, also verify the API key is set
     if (process.env.NODE_ENV === "production" && CONFIGURED_ENGINE_URL) {
@@ -336,7 +342,13 @@ export async function requireEngineContext(
   if (rateCheck) return rateCheck;
 
   // 3. Credits (optional — checked before quota)
-  if (creditOp && CREDIT_COSTS[creditOp] > 0) {
+  // E2E harness: fresh signup users have zero credits and would 402 every
+  // paid op. SUBSUMIO_E2E=1 skips the gate; the flag is never set in real
+  // production (previously also gated on NODE_ENV !== "production", but
+  // `next start` forces NODE_ENV=production which would block the e2e
+  // production-build server).
+  const e2eBypass = env("SUBSUMIO_E2E") === "1";
+  if (creditOp && CREDIT_COSTS[creditOp] > 0 && !e2eBypass) {
     const ownerType: OwnerType = ctx.user.orgId ? "org" : "user";
     const ownerId = ctx.user.orgId ?? ctx.user.id;
     const creditCheck = await checkCredits(ownerId, ownerType, CREDIT_COSTS[creditOp]);

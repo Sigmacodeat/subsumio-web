@@ -152,7 +152,7 @@ function PipelinePrecedentSection({ lang }: { lang: string }) {
 export default function PrecedentSearchPage() {
   const { t, lang } = useLang();
   const [query, setQuery] = useState("");
-  const [jurisdiction, setJurisdiction] = useState<"at" | "de" | "ch" | "all">("all");
+  const jurisdiction = "at" as const;
   const [legalArea, setLegalArea] = useState("");
   const [limit, setLimit] = useState(10);
   const [result, setResult] = useState<PrecedentSearchResponse | null>(null);
@@ -177,7 +177,7 @@ export default function PrecedentSearchPage() {
     try {
       const res = await api.legal.precedentSearch({
         query: query.trim(),
-        ...(jurisdiction !== "all" ? { jurisdiction } : {}),
+        jurisdiction,
         ...(legalArea.trim() ? { legal_area: legalArea.trim() } : {}),
         limit,
       });
@@ -221,7 +221,7 @@ export default function PrecedentSearchPage() {
           <Button
             onClick={run}
             disabled={loading || !query.trim()}
-            className="gap-2 bg-[color:var(--ds-success-solid)] text-white hover:bg-[color:var(--ds-success-solid)]"
+            className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-white hover:bg-[color:var(--signal-success-800)]"
           >
             {loading ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
             {t("precedent.search_btn")}
@@ -234,22 +234,9 @@ export default function PrecedentSearchPage() {
             <label className="text-xs font-medium text-[color:var(--ds-text-muted)]">
               {t("precedent.jurisdiction")}
             </label>
-            <div className="flex gap-1">
-              {(["all", "at", "de", "ch"] as const).map((j) => (
-                <button
-                  key={j}
-                  onClick={() => setJurisdiction(j)}
-                  className={cn(
-                    "rounded-md px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
-                    jurisdiction === j
-                      ? "brand-soft brand-text brand-border border"
-                      : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
-                  )}
-                >
-                  {j === "all" ? t("precedent.jurisdiction_all") : j.toUpperCase()}
-                </button>
-              ))}
-            </div>
+            <span className="brand-soft brand-text rounded-md px-2.5 py-1 text-xs font-medium">
+              AT
+            </span>
           </div>
 
           {/* Legal area */}

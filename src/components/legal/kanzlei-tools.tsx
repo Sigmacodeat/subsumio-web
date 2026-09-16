@@ -10,9 +10,6 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
-import { calculateGkg } from "@/lib/fachrechner";
-import { computePKHMeansTest, PKH_FREIBETRAEGE_2026 } from "@/lib/pkh-beratungshilfe";
-import { searchCourts } from "@/lib/court-directory";
 import { interpretCreditScore, GDPR_NOTICE_DE } from "@/lib/credit-check";
 import { generateRubrum, type RubrumParty } from "@/lib/letterhead-rubrum";
 import { validateFaxNumber, formatFaxNumber } from "@/lib/fax-gateway";
@@ -23,13 +20,6 @@ const CAPABILITIES = [
     description: "Deckungsanfrage erstellen",
     key: "createRSVCaseData",
     href: "/dashboard/legal-insurance",
-  },
-  {
-    name: "DATEV-Direktanbindung",
-    description: "Geplant — noch keine echte DATEV-API-Anbindung, siehe DATEV-Export für CSV",
-    key: "createDatevExport",
-    href: "/dashboard/datev-direct",
-    comingSoon: true,
   },
   {
     name: "KYC",
@@ -68,12 +58,6 @@ const CAPABILITIES = [
     href: "/dashboard/dictation",
   },
   {
-    name: "FAO-Tracking",
-    description: "Fortbildungsstunden und Nachweise",
-    key: "computeAnnualStatus",
-    href: "/dashboard/fao-tracking",
-  },
-  {
     name: "Vollmachten",
     description: "Geltung und Ablauf verwalten",
     key: "createPowerOfAttorney",
@@ -105,236 +89,21 @@ const CAPABILITIES = [
   },
 ] as const;
 
-function fmtEUR(n: number) {
-  return n.toLocaleString("de-DE", { style: "currency", currency: "EUR" });
-}
-
-function GkgCard() {
-  const { addToast } = useToast();
-  const [streitwert, setStreitwert] = useState("10000");
-  const [caseSlug, setCaseSlug] = useState("");
-  const [saving, setSaving] = useState(false);
-  const result = calculateGkg(Number(streitwert) || 0);
-
-  const saveToCase = async () => {
-    if (!caseSlug) {
-      addToast({ type: "error", title: "Akten-Slug eingeben" });
-      return;
-    }
-    setSaving(true);
-    try {
-      await api.brain.createPage({
-        slug: `${caseSlug}/gkg-berechnung-${Date.now()}`,
-        title: `GKG-Berechnung — ${fmtEUR(result.streitwert)}`,
-        type: "gkg_calculation",
-        frontmatter: { ...result, calculated_at: new Date().toISOString() },
-      });
-      addToast({ type: "success", title: "In Akte übernommen" });
-    } catch {
-      addToast({ type: "error", title: "Speichern fehlgeschlagen" });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <Tool title="GKG-Rechner" subtitle="Gerichtskosten nach § 3 GKG">
-      <div className="grid gap-3">
-        <div>
-          <Label>Streitwert (€)</Label>
-          <Input
-            type="number"
-            inputMode="decimal"
-            value={streitwert}
-            onChange={(e) => setStreitwert(e.target.value)}
-          />
-        </div>
-        <div className="rounded-lg bg-[color:var(--ds-surface-2)] p-3 text-sm">
-          <Row label="Streitwert" value={fmtEUR(result.streitwert)} />
-          <Row label="Verfahrensgebühr (3,0)" value={fmtEUR(result.verfahrensgebuehr)} />
-          <Row label="Terminsgebühr (1,0)" value={fmtEUR(result.terminsgebuehr)} />
-          <Row label="Auslagenpauschale" value={fmtEUR(result.auslagenpauschale)} />
-          <div className="mt-1 flex justify-between border-t border-[color:var(--ds-border)] pt-1.5">
-            <span className="font-semibold">Gerichtskosten gesamt</span>
-            <span className="font-bold">{fmtEUR(result.summe)}</span>
-          </div>
-        </div>
-        <SaveToCase
-          caseSlug={caseSlug}
-          setCaseSlug={setCaseSlug}
-          onSave={saveToCase}
-          saving={saving}
-        />
-      </div>
-    </Tool>
-  );
-}
-
-function PkhCard() {
-  const { addToast } = useToast();
-  const [income, setIncome] = useState("2000");
-  const [deductions, setDeductions] = useState("500");
-  const [adults, setAdults] = useState("1");
-  const [children, setChildren] = useState("0");
-  const [caseSlug, setCaseSlug] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  const result = computePKHMeansTest({
-    monthly_income: Number(income) || 0,
-    monthly_deductions: Number(deductions) || 0,
-    family_size: (Number(adults) || 1) + (Number(children) || 0),
-    adults: Number(adults) || 1,
-    children: Number(children) || 0,
-  });
-
-  const saveToCase = async () => {
-    if (!caseSlug) {
-      addToast({ type: "error", title: "Akten-Slug eingeben" });
-      return;
-    }
-    setSaving(true);
-    try {
-      await api.brain.createPage({
-        slug: `${caseSlug}/pkh-pruefung-${Date.now()}`,
-        title: `PKH-Prüfung — ${result.eligible ? "berechtigt" : "nicht berechtigt"}`,
-        type: "pkh_means_test",
-        frontmatter: { ...result, calculated_at: new Date().toISOString() },
-      });
-      addToast({ type: "success", title: "In Akte übernommen" });
-    } catch {
-      addToast({ type: "error", title: "Speichern fehlgeschlagen" });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <Tool title="PKH-Schnellprüfung" subtitle="Prozesskostenhilfe §§ 114-127 ZPO">
-      <div className="grid gap-3">
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <Label>Einkommen (€)</Label>
-            <Input
-              type="number"
-              inputMode="decimal"
-              value={income}
-              onChange={(e) => setIncome(e.target.value)}
-            />
-          </div>
-          <div>
-            <Label>Abzüge (€)</Label>
-            <Input
-              type="number"
-              inputMode="numeric"
-              value={deductions}
-              onChange={(e) => setDeductions(e.target.value)}
-            />
-          </div>
-          <div>
-            <Label>Erwachsene</Label>
-            <Input
-              type="number"
-              inputMode="numeric"
-              min="1"
-              value={adults}
-              onChange={(e) => setAdults(e.target.value)}
-            />
-          </div>
-          <div>
-            <Label>Kinder</Label>
-            <Input
-              type="number"
-              inputMode="numeric"
-              min="0"
-              value={children}
-              onChange={(e) => setChildren(e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="rounded-lg bg-[color:var(--ds-surface-2)] p-3 text-sm">
-          <Row label="Nettoeinkommen" value={fmtEUR(result.net_income)} />
-          <Row label="Freibetrag gesamt" value={fmtEUR(result.total_freibetrag)} />
-          <Row label="Verfügbares Einkommen" value={fmtEUR(result.disposable_income)} />
-          <div className="mt-1 flex items-center justify-between border-t border-[color:var(--ds-border)] pt-1.5">
-            <span className="font-semibold">Ergebnis</span>
-            {result.eligible ? (
-              <Badge className="bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]">
-                Voraussichtlich berechtigt
-              </Badge>
-            ) : (
-              <Badge className="bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)]">
-                Nicht berechtigt — Raten: {fmtEUR(result.monthly_contribution)}/Mo
-              </Badge>
-            )}
-          </div>
-        </div>
-        <p className="text-xs text-[color:var(--ds-text-muted)]">
-          Freibeträge 2026: {fmtEUR(PKH_FREIBETRAEGE_2026.per_person)}/Person,{" "}
-          {fmtEUR(PKH_FREIBETRAEGE_2026.additional_adult)}/zusätzl. Erwachs.,{" "}
-          {fmtEUR(PKH_FREIBETRAEGE_2026.per_child)}/Kind
-        </p>
-        <SaveToCase
-          caseSlug={caseSlug}
-          setCaseSlug={setCaseSlug}
-          onSave={saveToCase}
-          saving={saving}
-        />
-      </div>
-    </Tool>
-  );
-}
-
-function CourtCard() {
-  const [courtQuery, setCourtQuery] = useState("");
-  const courts = useMemo(
-    () => searchCourts({ name: courtQuery, city: courtQuery }).slice(0, 8),
-    [courtQuery]
-  );
-
-  return (
-    <Tool title="Gerichtsverzeichnis" subtitle="SAFE-ID und Zuständigkeit">
-      <Input
-        value={courtQuery}
-        onChange={(e) => setCourtQuery(e.target.value)}
-        placeholder="Gericht oder Ort…"
-      />
-      <div className="mt-2 space-y-1">
-        {courtQuery && courts.length === 0 && (
-          <p className="text-xs text-[color:var(--ds-text-muted)]">Keine Treffer.</p>
-        )}
-        {courts.map((court) => (
-          <div
-            key={court.id}
-            className="flex items-center justify-between rounded-lg bg-[color:var(--ds-surface-2)] px-3 py-2 text-xs"
-          >
-            <div>
-              <span className="font-medium">{court.name}</span>
-              {court.city && (
-                <span className="text-[color:var(--ds-text-muted)]"> · {court.city}</span>
-              )}
-            </div>
-            <Badge variant="default">{court.safe_id || "keine SAFE-ID"}</Badge>
-          </div>
-        ))}
-      </div>
-    </Tool>
-  );
-}
-
 function CreditCard() {
   const [score, setScore] = useState("75");
   const credit = interpretCreditScore(Number(score) || 0);
   const RISK_COLORS: Record<string, string> = {
-    low: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]",
-    medium: "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)]",
-    high: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)]",
+    low: "bg-[color:var(--ds-success-solid-hover)] text-white",
+    medium: "bg-[color:var(--signal-warning-800)] text-white",
+    high: "bg-[color:var(--ds-danger-solid)] text-white",
   };
 
   return (
     <Tool title="Bonitäts-Einordnung" subtitle="Risiko-Klassifikation">
       <div>
-        <Label>Bonitäts-Score (0-100)</Label>
+        <Label htmlFor="credit-score">Bonitäts-Score (0-100)</Label>
         <Input
+          id="credit-score"
           type="number"
           inputMode="numeric"
           min="0"
@@ -362,19 +131,20 @@ function FaxCard() {
 
   return (
     <Tool title="Fax-Prüfung" subtitle="Format-Validierung">
-      <Input value={fax} onChange={(e) => setFax(e.target.value)} placeholder="+49 30 1234567" />
+      <Input
+        value={fax}
+        onChange={(e) => setFax(e.target.value)}
+        placeholder="+43 1 1234567"
+        aria-label="Faxnummer"
+      />
       <div className="rounded-lg bg-[color:var(--ds-surface-2)] p-3 text-sm">
         {!fax && <span className="text-[color:var(--ds-text-muted)]">Nummer eingeben…</span>}
         {fax && !valid && (
-          <Badge className="bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)]">
-            Ungültiges Format
-          </Badge>
+          <Badge className="bg-[color:var(--ds-danger-solid)] text-white">Ungültiges Format</Badge>
         )}
         {fax && valid && (
           <div className="space-y-1">
-            <Badge className="bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]">
-              Gültig
-            </Badge>
+            <Badge className="bg-[color:var(--ds-success-solid-hover)] text-white">Gültig</Badge>
             {formatted && <Row label="Formatiert:" value={formatted} mono />}
           </div>
         )}
@@ -430,19 +200,21 @@ function RubrumCard() {
       <div className="grid gap-3">
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <Label>Gericht</Label>
+            <Label htmlFor="rubrum-court">Gericht</Label>
             <Input
+              id="rubrum-court"
               value={court}
               onChange={(e) => setCourt(e.target.value)}
-              placeholder="z.B. LG Berlin"
+              placeholder="z. B. Landesgericht für ZRS Wien"
             />
           </div>
           <div>
-            <Label>Aktenzeichen</Label>
+            <Label htmlFor="rubrum-case-number">Aktenzeichen</Label>
             <Input
+              id="rubrum-case-number"
               value={caseNumber}
               onChange={(e) => setCaseNumber(e.target.value)}
-              placeholder="z.B. 2 O 123/26"
+              placeholder="z. B. 12 Cg 34/26x"
             />
           </div>
         </div>
@@ -476,6 +248,7 @@ function PartyList({
         <Button
           size="sm"
           variant="secondary"
+          aria-label={`${label} hinzufügen`}
           onClick={() =>
             setParties([...parties, { name: "", role: parties[0]?.role ?? "plaintiff" }])
           }
@@ -493,11 +266,13 @@ function PartyList({
               setParties(n);
             }}
             placeholder={`${label.slice(0, -1)} ${idx + 1}`}
+            aria-label={`${label.slice(0, -1)} ${idx + 1}`}
           />
           {parties.length > 1 && (
             <Button
               size="sm"
               variant="secondary"
+              aria-label={`${label.slice(0, -1)} ${idx + 1} entfernen`}
               onClick={() => setParties(parties.filter((_, i) => i !== idx))}
             >
               <Trash2 className="h-3 w-3" />
@@ -510,23 +285,21 @@ function PartyList({
 }
 
 export function KanzleiTools() {
+  const capabilities = CAPABILITIES;
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-8">
       <PageHeader
         title="Kanzlei-Werkzeuge"
-        description="Fachrechner, Register, Integrationen und Compliance an einem Ort"
+        description="Operative Hilfen und spezialisierte Kanzleiabläufe an einem Ort"
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Werkzeuge" }]}
       />
       <div className="grid gap-4 lg:grid-cols-2">
-        <GkgCard />
-        <PkhCard />
-        <CourtCard />
         <CreditCard />
         <FaxCard />
         <RubrumCard />
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {CAPABILITIES.map((capability) => {
+        {capabilities.map((capability) => {
           const comingSoon = "comingSoon" in capability && capability.comingSoon;
           const href = "href" in capability ? capability.href : undefined;
           const content = (
@@ -562,15 +335,12 @@ export function KanzleiTools() {
         })}
       </div>
       <div className="flex flex-wrap gap-2">
-        <Link href="/dashboard/bea">
-          <Button>beA / XJustiz öffnen</Button>
-        </Link>
-        <Link href="/dashboard/fibu">
-          <Button variant="secondary">FiBu öffnen</Button>
-        </Link>
-        <Link href="/dashboard/autonomous">
-          <Button variant="secondary">Autopilot öffnen</Button>
-        </Link>
+        <Button variant="secondary" asChild>
+          <Link href="/dashboard/fibu">FiBu öffnen</Link>
+        </Button>
+        <Button variant="secondary" asChild>
+          <Link href="/dashboard/autonomous">Autopilot öffnen</Link>
+        </Button>
       </div>
     </div>
   );
@@ -627,6 +397,7 @@ function SaveToCase({
         value={caseSlug}
         onChange={(e) => setCaseSlug(e.target.value)}
         placeholder="legal/cases/…"
+        aria-label="Akten-Slug"
         className="flex-1"
       />
       <Button onClick={onSave} disabled={saving} size="sm">

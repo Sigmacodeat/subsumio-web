@@ -6,49 +6,41 @@ description: Vollständiger Agentur-Audit aller öffentlichen Seiten — Farbkon
 
 ## Kontext
 
-Subsumio ist eine B2B SaaS Legal-Intelligence-Plattform für DACH-Kanzleien. Die Website hat **21 öffentliche Seiten** (EN + DE), erreichbar über ein Mega-Dropdown-Nav und einen Footer. Dieser Audit prüft jede Seite auf Agentur-Level-Qualität.
+Subsumio ist eine B2B SaaS Legal-Intelligence-Plattform für österreichische Kanzleien. Die Website hat **21 öffentliche Seiten** (de-AT, kanonisch unter `/at`), erreichbar über ein Mega-Dropdown-Nav und einen Footer. Dieser Audit prüft jede Seite auf Agentur-Level-Qualität. Alte `/de/*`, `/ch/*`, `/en/*` und ungeprefixte Marketing-URLs sind 308-Redirects auf `/at/*`.
 
-## Alle öffentlichen Seiten (21 Routen × 2 Sprachen = 42 URLs)
+## Alle öffentlichen Seiten (21 Routen, alle unter `/at`)
 
-### EN (Default)
-
-1. `/` — Landing/Home
-2. `/subsumio` — Platform Overview
-3. `/features` — Features
-4. `/security` — Security
-5. `/whatsapp` — WhatsApp Copilot
-6. `/download` — Download
-7. `/pricing` — Pricing
-8. `/solutions/law-firms` — Solution: Law Firms
-9. `/solutions/solo` — Solution: Solo
-10. `/solutions/in-house` — Solution: In-House
-11. `/solutions/mid-sized` — Solution: Mid-Sized
-12. `/docs` — Documentation
-13. `/partners` — Partner Program
-14. `/about` — About
-15. `/contact` — Contact
-16. `/imprint` — Imprint
-17. `/terms` — Terms
-18. `/privacy` — Privacy
-19. `/join` — Join (Signup)
-20. `/login` — Login (nicht in Marketing-Shell)
-21. `/signup` — Signup (nicht in Marketing-Shell)
-
-### DE (gespiegelt unter `/de/*`)
-
-Alle obigen Routen existieren auch unter `/de/` — außer `/de/login` und `/de/signup` (diese sind nicht lokalisiert).
+1. `/at` — Landing/Home
+2. `/at/kanzlei` — Kanzlei-Übersicht
+3. `/at/features` — Features
+4. `/at/security` — Security
+5. `/at/whatsapp` — WhatsApp Copilot
+6. `/at/download` — Download
+7. `/at/pricing` — Pricing
+8. `/at/solutions/law-firms` — Solution: Law Firms
+9. `/at/solutions/solo` — Solution: Solo
+10. `/at/solutions/in-house` — Solution: In-House
+11. `/at/solutions/mid-sized` — Solution: Mid-Sized
+12. `/at/docs` — Documentation
+13. `/at/partners` — Partner Program
+14. `/at/about` — About
+15. `/at/contact` — Contact
+16. `/at/imprint` — Imprint
+17. `/at/terms` — Terms
+18. `/at/privacy` — Privacy
+19. `/at/join` — Join (Signup)
+20. `/at/login` — Login (nicht in Marketing-Shell)
+21. `/at/signup` — Signup (nicht in Marketing-Shell)
 
 ## Nav-Struktur (Mega-Dropdown)
 
-**EN:**
+**AT (de-AT, einzige aktive Locale):**
 
-- **Platform:** Overview (/subsumio), Features (/features), Security (/security), WhatsApp Copilot (/whatsapp), Download (/download)
+- **Platform:** Overview (/at), Features (/at/features), Security (/at/security), WhatsApp Copilot (/at/whatsapp), Download (/at/download)
 - **Solutions:** For Law Firms, For Solo Lawyers, For In-House, For Mid-Sized Firms
-- **Resources:** Documentation (/docs), Partner Program (/partners), Download (/download) ← **Redundanz: Download erscheint in Platform UND Resources**
-- **Company:** About (/about), Security (/security) ← **Redundanz: Security erscheint in Platform UND Company**, Contact (/contact), Imprint (/imprint)
-- **Standalone:** Pricing (/pricing)
-
-**DE:** Identische Struktur, gleiche Redundanzen.
+- **Resources:** Documentation (/at/docs), Partner Program (/at/partners), Download (/at/download) ← **Redundanz: Download erscheint in Platform UND Resources**
+- **Company:** About (/at/about), Security (/at/security) ← **Redundanz: Security erscheint in Platform UND Company**, Contact (/at/contact), Imprint (/at/imprint)
+- **Standalone:** Pricing (/at/pricing)
 
 ## Footer-Struktur (5 Spalten)
 
@@ -66,8 +58,7 @@ Alle obigen Routen existieren auch unter `/de/` — außer `/de/login` und `/de/
 4. **Footer "Dashboard" Link:** Führt zu `/dashboard` — nicht lokalisiert (korrekt, aber UX-Check nötig)
 5. **`/join` Seite:** Im Nav nicht verlinkt — orphan page? Nur über direkte URL erreichbar
 6. **`/contact` Seite:** Im Footer verlinkt, im Nav unter "Company" — aber keine Kontakt-Info auf der Seite sichtbar im Nav
-7. **DE Footer Tagline:** "Das Gedächtnis deiner Firma." — sollte "Kanzlei" sein, nicht "Firma" (B2B Legal)
-8. **EN Footer Tagline:** "The brain your firm never had." — DE sagt "Gedächtnis" statt "Brain" — Inkonsistenz
+7. **Footer Tagline:** "Das Gedächtnis deiner Firma." — sollte "Kanzlei" sein, nicht "Firma" (B2B Legal)
 
 ---
 
@@ -75,7 +66,7 @@ Alle obigen Routen existieren auch unter `/de/` — außer `/de/login` und `/de/
 
 ### A. Farbkontraste & Farbaufteilung
 
-**A1. WCAG-Kontrast prüfen (alle Seiten, beide Sprachen):**
+**A1. WCAG-Kontrast prüfen (alle Seiten):**
 
 - [ ] Body-Text auf Background: `--mk-text` auf `--mk-bg` — mindestens 4.5:1 (AA)
 - [ ] Muted-Text auf Background: `--mk-text-muted` auf `--mk-bg` — mindestens 4.5:1 (AA)
@@ -141,7 +132,7 @@ Alle obigen Routen existieren auch unter `/de/` — außer `/de/login` und `/de/
 - [ ] About → Contact (korrekt), aber Contact → ? (was kommt nach Kontakt?)
 - [ ] Docs → Signup oder Dashboard? Logischer Next Step fehlt vielleicht
 
-**C2. Text-Qualität (pro Seite, beide Sprachen):**
+**C2. Text-Qualität (pro Seite):**
 
 - [ ] H1 ist punchy, spezifisch, kein Generic-Marketing-Speak
 - [ ] Subhead ergänzt H1, wiederholt nicht
@@ -151,8 +142,8 @@ Alle obigen Routen existieren auch unter `/de/` — außer `/de/login` und `/de/
 - [ ] FAQ-Antworten sind vollständig und hilfreich
 - [ ] Keine Copy-Paste-Texte zwischen Seiten
 - [ ] Keine TODO/Placeholder-Texte
-- [ ] DE-Übersetzungen sind idiomatisch (kein Denglisch)
-- [ ] DE nutzt "du" oder "Sie" konsistent — prüfen welche Form verwendet wird
+- [ ] Österreichische Fachsprache ist idiomatisch (kein Denglisch)
+- [ ] "du" oder "Sie" konsistent — prüfen welche Form verwendet wird
 
 **C3. Redundanzen prüfen:**
 
@@ -162,30 +153,29 @@ Alle obigen Routen existieren auch unter `/de/` — außer `/de/login` und `/de/
 - [ ] Landing-FAQ vs Pricing-FAQ: Überschneidungen?
 - [ ] Features-Seite vs Subsumio-Overview: inhaltliche Überschneidung?
 - [ ] Solutions-Seiten: 4 Seiten mit ähnlichem Aufbau — sind sie unterschiedlich genug?
-- [ ] DE Footer Tagline "Das Gedächtnis deiner Firma." → "Kanzlei" statt "Firma"
-- [ ] EN Footer Tagline "The brain your firm never had." vs DE "Das Gedächtnis..." → "Brain" vs "Gedächtnis" Inkonsistenz
+- [ ] Footer Tagline "Das Gedächtnis deiner Firma." → "Kanzlei" statt "Firma"
 
 ### D. Link-Integrität & Navigation
 
 **D1. Alle Nav-Links führen zu existierenden Seiten:**
 
-- [ ] /subsumio → Seite existiert (EN + DE)
-- [ ] /features → Seite existiert (EN + DE)
-- [ ] /security → Seite existiert (EN + DE)
-- [ ] /whatsapp → Seite existiert (EN + DE)
-- [ ] /download → Seite existiert (EN + DE)
-- [ ] /pricing → Seite existiert (EN + DE)
-- [ ] /solutions/law-firms → Seite existiert (EN + DE)
-- [ ] /solutions/solo → Seite existiert (EN + DE)
-- [ ] /solutions/in-house → Seite existiert (EN + DE)
-- [ ] /solutions/mid-sized → Seite existiert (EN + DE)
-- [ ] /docs → Seite existiert (EN + DE)
-- [ ] /partners → Seite existiert (EN + DE)
-- [ ] /about → Seite existiert (EN + DE)
-- [ ] /contact → Seite existiert (EN + DE)
-- [ ] /imprint → Seite existiert (EN + DE)
-- [ ] /terms → Seite existiert (EN + DE)
-- [ ] /privacy → Seite existiert (EN + DE)
+- [ ] /at → Seite existiert
+- [ ] /at/features → Seite existiert
+- [ ] /at/security → Seite existiert
+- [ ] /at/whatsapp → Seite existiert
+- [ ] /at/download → Seite existiert
+- [ ] /at/pricing → Seite existiert
+- [ ] /at/solutions/law-firms → Seite existiert
+- [ ] /at/solutions/solo → Seite existiert
+- [ ] /at/solutions/in-house → Seite existiert
+- [ ] /at/solutions/mid-sized → Seite existiert
+- [ ] /at/docs → Seite existiert
+- [ ] /at/partners → Seite existiert
+- [ ] /at/about → Seite existiert
+- [ ] /at/contact → Seite existiert
+- [ ] /at/imprint → Seite existiert
+- [ ] /at/terms → Seite existiert
+- [ ] /at/privacy → Seite existiert
 
 **D2. Footer-Links:**
 
@@ -210,12 +200,10 @@ Alle obigen Routen existieren auch unter `/de/` — außer `/de/login` und `/de/
 - [ ] WhatsApp verlinkt zu Signup, Features
 - [ ] Jede Seite hat mindestens 1 internen Link zu einer anderen Seite (außer Legal pages)
 
-**D4. Sprache-Switcher:**
+**D4. Redirects:**
 
-- [ ] EN → DE Switch funktioniert auf jeder Seite
-- [ ] DE → EN Switch funktioniert auf jeder Seite
-- [ ] Sprache-Switcher erhält die aktuelle URL (nicht nur zur Root)
-- [ ] `/de/login` und `/de/signup` — verhalten sich korrekt (nicht lokalisiert)
+- [ ] `/de/*`, `/ch/*`, `/en/*` und ungeprefixte Marketing-URLs liefern 308 auf `/at/*`
+- [ ] Query-Parameter (z.B. `?next=`, Reset-Token) bleiben erhalten
 
 **D5. Orphan Pages:**
 
@@ -249,8 +237,8 @@ Alle obigen Routen existieren auch unter `/de/` — außer `/de/login` und `/de/
 - [ ] Jede Seite hat ein `<title>` (über Next.js metadata)
 - [ ] Jede Seite hat eine `description`
 - [ ] OG-Image ist gesetzt (global oder pro Seite)
-- [ ] Canonical URL ist korrekt (EN + DE)
-- [ ] `lang` Attribute ist korrekt (`en` für /_, `de` für /de/_)
+- [ ] Canonical URL zeigt auf `/at/*`
+- [ ] `lang` Attribut ist `de-AT`; hreflang nur `de-AT` + `x-default`
 - [ ] JSON-LD ist auf der Landing Page vorhanden
 
 ### F. Edge Cases & Stress Test
@@ -270,9 +258,9 @@ Alle obigen Routen existieren auch unter `/de/` — außer `/de/login` und `/de/
 
 ### Schritt 1: Link-Integrität prüfen
 
-Für jede der 42 URLs:
+Für jede der 21 URLs:
 
-1. Route existiert in `src/app/` (EN) und `src/app/de/` (DE)?
+1. Route existiert in `src/app/at/`?
 2. Seite rendert ohne Error?
 3. Alle internen Links auf der Seite führen zu existierenden Seiten?
 
@@ -295,13 +283,13 @@ Für jede Seite:
 
 ### Schritt 4: Text-Audit
 
-Für jede Seite (EN + DE):
+Für jede Seite (de-AT):
 
 1. Lese alle Text-Strings aus den Content-Dateien
 2. Prüfe auf Redundanzen mit anderen Seiten
 3. Prüfe auf Konsistenz der Tone-of-Voice
-4. Prüfe DE-Übersetzung auf Idiomatik
-5. Prüfe "du" vs "Sie" Konsistenz in DE
+4. Prüfe österreichische Fachsprache auf Idiomatik
+5. Prüfe "du" vs "Sie" Konsistenz
 
 ### Schritt 5: Brand-Konsistenz
 
@@ -315,7 +303,7 @@ Für jede Seite:
 
 1. Entferne doppelte Nav-Einträge (Download, Security)
 2. Konsolidiere Footer-Links
-3. Fixe Tagline-Inkonsistenz (DE "Firma" → "Kanzlei", "Gedächtnis" → "Brain")
+3. Fixe Tagline-Inkonsistenz ("Firma" → "Kanzlei", "Gedächtnis" → "Brain")
 4. Prüfe `/join` — verlinken oder entfernen
 
 ### Schritt 7: Interne Verlinkung
@@ -337,16 +325,16 @@ Für jede Seite:
 
 ## Definition of Done
 
-- [ ] Alle 42 URLs (21 EN + 21 DE) rendern ohne Error
+- [ ] Alle 21 `/at`-URLs rendern ohne Error; alte Locale-URLs liefern 308
 - [ ] Alle WCAG-Kontraste ≥ 4.5:1 (AA)
 - [ ] Keine Redundanzen im Nav (Download, Security je 1×)
-- [ ] Footer-Taglines sind konsistent (EN/DE)
+- [ ] Footer-Tagline ist konsistent
 - [ ] Jede Seite hat mindestens 1 internen Link
 - [ ] Jede Seite hat einen klaren CTA am Ende
 - [ ] Spacing ist konsistent (keine Ausreißer)
 - [ ] Badge/Button/Card-Stil ist identisch auf allen Seiten
 - [ ] Motion-Pattern ist konsistent
-- [ ] DE-Texte sind idiomatisch und konsistent ("du" oder "Sie", nicht gemischt)
+- [ ] Österreichische Texte sind idiomatisch und konsistent ("du" oder "Sie", nicht gemischt)
 - [ ] `/join` ist verlinkt oder entfernt
 - [ ] `/partners#affiliate` Anchor existiert
 - [ ] Mobile/Tablet/Desktop sind getestet

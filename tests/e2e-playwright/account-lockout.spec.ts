@@ -78,7 +78,7 @@ test.describe("Account Lockout (E2E)", () => {
     });
     expect(loginRes.status()).toBe(200);
     const body = await loginRes.json();
-    expect(body.ok).toBe(true);
+    expect(body.user).toBeDefined();
   });
 
   test("rate limit kicks in before lockout (IP-based)", async ({ request }) => {

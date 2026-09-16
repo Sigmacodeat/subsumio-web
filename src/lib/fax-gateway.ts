@@ -77,7 +77,7 @@ export function formatFaxNumber(number: string): string {
     return "+" + cleaned.slice(2);
   }
   if (!cleaned.startsWith("+") && cleaned.startsWith("0")) {
-    return "+49" + cleaned.slice(1);
+    return "+43" + cleaned.slice(1);
   }
   return cleaned;
 }

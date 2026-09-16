@@ -1,5 +1,3 @@
-"use client";
-
 // Shared pricing grid — used by the landing page section and /pricing page.
 // Includes a monthly/annual billing toggle. Annual is default (−20%).
 
@@ -7,12 +5,12 @@ import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { professionalPricing } from "@/content/audiences";
-import { UI_STRINGS, p, type Lang } from "@/content/site";
+import { UI_STRINGS, p } from "@/content/site";
 import { StaggerContainer, StaggerItem } from "./motion-system";
 
-export function PricingGrid({ lang }: { lang: Lang }) {
-  const pricing = professionalPricing(lang);
-  const ui = UI_STRINGS[lang];
+export function PricingGrid() {
+  const pricing = professionalPricing();
+  const ui = UI_STRINGS;
 
   return (
     <>
@@ -80,29 +78,31 @@ export function PricingGrid({ lang }: { lang: Lang }) {
                   ))}
                 </ul>
                 {tier.href.startsWith("http") || tier.href.startsWith("mailto") ? (
-                  <a
-                    href={tier.href}
-                    target={tier.href.startsWith("http") ? "_blank" : undefined}
-                    rel="noreferrer"
+                  <Button
+                    variant={tier.highlight ? "glow" : "secondary"}
+                    size="md"
+                    className="w-full"
+                    asChild
                   >
-                    <Button
-                      variant={tier.highlight ? "glow" : "secondary"}
-                      size="md"
-                      className="w-full"
+                    <a
+                      href={tier.href}
+                      target={tier.href.startsWith("http") ? "_blank" : undefined}
+                      rel="noreferrer"
                     >
                       {tier.cta} <ArrowRight size={13} />
-                    </Button>
-                  </a>
+                    </a>
+                  </Button>
                 ) : (
-                  <Link href={p(lang, tier.href)}>
-                    <Button
-                      variant={tier.highlight ? "glow" : "secondary"}
-                      size="md"
-                      className="w-full"
-                    >
+                  <Button
+                    variant={tier.highlight ? "glow" : "secondary"}
+                    size="md"
+                    className="w-full"
+                    asChild
+                  >
+                    <Link href={p(tier.href)}>
                       {tier.cta} <ArrowRight size={13} />
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 )}
               </div>
             </StaggerItem>

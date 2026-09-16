@@ -145,10 +145,10 @@ const TREATMENT_ICONS: Record<string, typeof CheckCircle2> = {
 };
 
 const TREATMENT_COLORS: Record<string, string> = {
-  good_law: "text-[color:var(--ds-success-text)] bg-[color:var(--ds-success-solid)]",
-  bad_law: "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-solid)]",
-  at_risk: "text-[color:var(--ds-attention-text)] bg-[color:var(--ds-attention-solid)]",
-  mixed: "text-[color:var(--ds-warning-text)] bg-[color:var(--ds-warning-solid)] ",
+  good_law: "text-[color:var(--ds-success-text)] bg-[color:var(--ds-success-bg)]",
+  bad_law: "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-bg)]",
+  at_risk: "text-[color:var(--ds-attention-text)] bg-[color:var(--ds-attention-bg)]",
+  mixed: "text-[color:var(--ds-warning-text)] bg-[color:var(--ds-warning-bg)] ",
   unknown: "text-[color:var(--ds-neutral-text)] bg-[color:var(--ds-neutral-bg)]",
 };
 
@@ -186,7 +186,7 @@ export default function JudgementsDbPage() {
   const [reranked, setReranked] = useState(false);
   const [rerankModel, setRerankModel] = useState("");
   const [filters, setFilters] = useState({
-    jurisdiction: "de",
+    jurisdiction: "at",
     court: "",
     courtLevel: "",
     legalArea: "",
@@ -245,7 +245,7 @@ export default function JudgementsDbPage() {
           graphSearch: String(pipelineGraphSearch),
           validateCitations: String(pipelineValidation),
           maxResults: "20",
-          jurisdiction: filters.jurisdiction || "de",
+          jurisdiction: "at",
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -606,16 +606,9 @@ export default function JudgementsDbPage() {
       {/* Filters */}
       {showFilters && (
         <div className="mb-4 grid grid-cols-1 gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-4 sm:grid-cols-2 md:grid-cols-4">
-          <select
-            value={filters.jurisdiction}
-            onChange={(e) => setFilters({ ...filters, jurisdiction: e.target.value })}
-            className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
-          >
-            <option value="de">Deutschland</option>
-            <option value="at">Österreich</option>
-            <option value="ch">Schweiz</option>
-            <option value="">Alle</option>
-          </select>
+          <div className="brand-soft brand-text rounded border px-3 py-2 text-sm">
+            🇦🇹 Österreich
+          </div>
           <input
             type="text"
             placeholder="Gericht"
@@ -665,7 +658,7 @@ export default function JudgementsDbPage() {
 
       {/* Error */}
       {error && (
-        <div className="mb-4 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-solid)] p-3 text-sm text-[color:var(--ds-danger-text)]">
+        <div className="mb-4 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-sm text-[color:var(--ds-danger-text)]">
           {error}
         </div>
       )}

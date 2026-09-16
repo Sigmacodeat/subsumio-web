@@ -95,7 +95,6 @@ function NormsPageInner() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedNorm, setSelectedNorm] = useState<NormItem | null>(null);
-  const [jurisdiction, setJurisdiction] = useState<"all" | "at" | "de" | "ch">("all");
   const [copied, setCopied] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [fullContent, setFullContent] = useState<string | null>(null);
@@ -161,7 +160,7 @@ function NormsPageInner() {
           }
         }
 
-        setNorms(items);
+        setNorms(items.filter((item) => item.jurisdiction === "at" || item.jurisdiction === "eu"));
       } catch (e) {
         if (!cancelled) setLoadError(e instanceof Error ? e.message : t("norms.error_load"));
       } finally {
@@ -196,15 +195,13 @@ function NormsPageInner() {
   }, [selectedNorm]);
 
   const filtered = norms.filter((n) => {
-    const jMatch = jurisdiction === "all" || n.jurisdiction === jurisdiction;
-    if (!query) return jMatch;
+    if (!query) return true;
     const q = query.toLowerCase();
     return (
-      jMatch &&
-      (n.title.toLowerCase().includes(q) ||
-        n.code.toLowerCase().includes(q) ||
-        n.section.toLowerCase().includes(q) ||
-        n.content.toLowerCase().includes(q))
+      n.title.toLowerCase().includes(q) ||
+      n.code.toLowerCase().includes(q) ||
+      n.section.toLowerCase().includes(q) ||
+      n.content.toLowerCase().includes(q)
     );
   });
 
@@ -248,29 +245,8 @@ function NormsPageInner() {
         </div>
       </div>
 
-      {/* Jurisdiction Tabs */}
-      <div className="flex gap-2">
-        {(["all", "at", "de", "ch"] as const).map((j) => {
-          const counts = norms.filter((n) => n.jurisdiction === j).length;
-          return (
-            <button
-              key={j}
-              onClick={() => setJurisdiction(j)}
-              className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
-                jurisdiction === j
-                  ? "brand-soft brand-border brand-text"
-                  : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
-              } focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97]`}
-            >
-              {j === "all" ? t("norms.all") : j === "at" ? "🇦🇹 AT" : j === "de" ? "🇩🇪 DE" : "🇨🇭 CH"}
-              {j !== "all" && counts > 0 && (
-                <span className="ml-1.5 rounded bg-[color:var(--ds-border)] px-1 py-0.5 text-xs">
-                  {counts}
-                </span>
-              )}
-            </button>
-          );
-        })}
+      <div className="brand-soft brand-text w-fit rounded-lg px-3 py-1.5 text-xs font-medium">
+        🇦🇹 Österreich · EU-Recht
       </div>
 
       {/* Selected norm detail */}
@@ -364,12 +340,6 @@ function NormsPageInner() {
           </span>
           <span className="flex items-center gap-1">
             <Globe size={12} /> AT: {norms.filter((n) => n.jurisdiction === "at").length}
-          </span>
-          <span className="flex items-center gap-1">
-            <Globe size={12} /> DE: {norms.filter((n) => n.jurisdiction === "de").length}
-          </span>
-          <span className="flex items-center gap-1">
-            <Globe size={12} /> CH: {norms.filter((n) => n.jurisdiction === "ch").length}
           </span>
         </div>
       )}

@@ -64,9 +64,9 @@ describe("detectJurisdictionFromTitle", () => {
     expect(detectJurisdictionFromTitle("AT-Recht")).toBe("at");
   });
 
-  test("detects Switzerland", () => {
-    expect(detectJurisdictionFromTitle("Schweizer Zivilrecht")).toBe("ch");
-    expect(detectJurisdictionFromTitle("CH-Recht")).toBe("ch");
+  test("does not activate archived Swiss jurisdiction", () => {
+    expect(detectJurisdictionFromTitle("Schweizer Zivilrecht")).toBeNull();
+    expect(detectJurisdictionFromTitle("CH-Recht")).toBeNull();
   });
 
   test("detects EU", () => {
@@ -74,8 +74,8 @@ describe("detectJurisdictionFromTitle", () => {
     expect(detectJurisdictionFromTitle("Brüssel Verordnung")).toBe("eu");
   });
 
-  test("detects Germany", () => {
-    expect(detectJurisdictionFromTitle("Deutsches Vertragsrecht")).toBe("de");
+  test("does not activate archived German jurisdiction", () => {
+    expect(detectJurisdictionFromTitle("Deutsches Vertragsrecht")).toBeNull();
   });
 
   test("returns null when no jurisdiction is mentioned", () => {
@@ -84,9 +84,9 @@ describe("detectJurisdictionFromTitle", () => {
 });
 
 describe("defaultCaseValues", () => {
-  test("returns German defaults", () => {
+  test("returns Austrian pilot defaults", () => {
     expect(defaultCaseValues()).toEqual({
-      jurisdiction: "de",
+      jurisdiction: "at",
       status: "open",
       priority: "medium",
     });

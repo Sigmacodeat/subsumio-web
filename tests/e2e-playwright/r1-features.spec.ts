@@ -62,7 +62,8 @@ test.describe("R1: Experience Layer", () => {
     const res = await page.context().request.get("/api/experience?action=list");
     expect(res.status()).toBe(200);
     const data = await res.json();
-    const profiles = data.data ?? data;
+    // apiSuccess wraps: { data: { profiles: [...], total } }
+    const profiles = data.data?.profiles ?? data.profiles ?? data.data ?? data;
     expect(Array.isArray(profiles)).toBeTruthy();
   });
 
@@ -77,10 +78,13 @@ test.describe("R1: Experience Layer", () => {
     const csrf = await getCsrfToken(page);
     const res = await page.context().request.post("/api/experience", {
       data: {
-        practice_areas: ["Mietrecht", "Familienrecht"],
+        practice_areas: [
+          { area: "mietrecht", label: "Mietrecht", level: "advanced" },
+          { area: "familienrecht", label: "Familienrecht", level: "intermediate" },
+        ],
         languages: ["de", "en"],
         qualifications: ["Rechtsanwalt"],
-        visibility: "org",
+        visibility: "all_members",
       },
       headers: csrf ? { "x-csrf-token": csrf } : {},
     });
@@ -101,7 +105,7 @@ test.describe("R1: Retrieval Feedback", () => {
       data: {
         query: "test query",
         result_slug: "test/result-1",
-        rating: "positive",
+        feedback_type: "relevant",
         comment: "Good result",
       },
       headers: csrf ? { "x-csrf-token": csrf } : {},
@@ -117,7 +121,7 @@ test.describe("R1: Retrieval Feedback", () => {
       data: {
         query: "test query",
         result_slug: "test/result-1",
-        rating: "invalid_rating",
+        feedback_type: "invalid_rating",
       },
       headers: csrf ? { "x-csrf-token": csrf } : {},
     });

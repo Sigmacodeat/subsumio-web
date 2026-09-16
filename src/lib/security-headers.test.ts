@@ -78,8 +78,9 @@ describe("CSP in middleware", () => {
     expect(middlewareSource).toContain("upgrade-insecure-requests");
   });
 
-  it("uses strict-dynamic in production", () => {
-    expect(middlewareSource).toContain("strict-dynamic");
+  it("keeps production scripts on self plus a request nonce", () => {
+    expect(middlewareSource).toContain("script-src 'self' 'nonce-${nonce}' https://js.stripe.com");
+    expect(middlewareSource).not.toContain("strict-dynamic");
   });
 });
 

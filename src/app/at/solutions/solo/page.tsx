@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
 import { SolutionPage } from "@/components/marketing/solution-page";
 import { SOLUTIONS } from "@/content/solutions";
-import { JsonLd, organizationLd, breadcrumbLd } from "@/components/seo/jsonld";
+import {
+  JsonLd,
+  organizationLd,
+  softwareApplicationLd,
+  faqPageLd,
+  breadcrumbLd,
+} from "@/components/seo/jsonld";
 
-const content = SOLUTIONS.at["solo"];
+const content = SOLUTIONS["solo"];
 
 export const metadata: Metadata = {
   title: content.metaTitle,
   description: content.metaDesc,
   alternates: {
     canonical: "/at/solutions/solo",
-    languages: {
-      "de-DE": "/solutions/solo",
-      "de-AT": "/at/solutions/solo",
-      "de-CH": "/ch/solutions/solo",
-      en: "/en/solutions/solo",
-    },
   },
   openGraph: {
     title: content.metaTitle,
@@ -29,14 +29,15 @@ export default function Page() {
   return (
     <>
       <JsonLd data={organizationLd()} />
+      <JsonLd data={softwareApplicationLd()} />
+      <JsonLd data={faqPageLd(content.faq)} />
       <JsonLd
         data={breadcrumbLd([
           { name: "Subsumio", url: "/at" },
-          { name: "Lösungen", url: "/at/solutions/solo" },
           { name: "Einzelanwälte", url: "/at/solutions/solo" },
         ])}
       />
-      <SolutionPage lang="at" content={content} />
+      <SolutionPage content={content} />
     </>
   );
 }

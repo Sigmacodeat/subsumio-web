@@ -25,6 +25,7 @@ import {
   Shield,
   ArrowLeft,
   RefreshCw,
+  Trash2,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -58,6 +59,7 @@ import type { Plan } from "@/lib/auth/store";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { AclSettings } from "@/components/dashboard/acl-settings";
 import { useLang } from "@/lib/use-lang";
+import { api } from "@/lib/api";
 import type { DashboardKey } from "@/content/dashboard";
 import { SettingsHub } from "@/components/dashboard/settings-hub";
 import { csrfFetch } from "@/lib/csrf";
@@ -782,410 +784,367 @@ function SettingsPageInner() {
 
           {/* Kanzlei */}
           {activeTab === "kanzlei" && (
-            <Card role="tabpanel" id="panel-kanzlei" aria-labelledby="tab-kanzlei">
-              <div className="border-b border-[color:var(--ds-border)] p-6">
-                <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
-                  {t("settings.kanzlei_title")}
-                </h2>
-                <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-                  {t("settings.kanzlei_desc")}
-                </p>
-              </div>
-              <div className="divide-y divide-[color:var(--ds-border)] px-6">
-                <Field
-                  id="settings-kanzlei-name"
-                  label={t("settings.kanzlei_name")}
-                  desc={t("settings.kanzlei_name_desc")}
-                >
-                  <Input
+            <>
+              <Card role="tabpanel" id="panel-kanzlei" aria-labelledby="tab-kanzlei">
+                <div className="border-b border-[color:var(--ds-border)] p-6">
+                  <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
+                    {t("settings.kanzlei_title")}
+                  </h2>
+                  <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
+                    {t("settings.kanzlei_desc")}
+                  </p>
+                </div>
+                <div className="divide-y divide-[color:var(--ds-border)] px-6">
+                  <Field
                     id="settings-kanzlei-name"
-                    error={kanzleiForm.formState.errors.kanzleiName?.message}
-                    {...kanzleiForm.register("kanzleiName")}
-                    placeholder={t("settings.firm_name_placeholder")}
-                  />
-                </Field>
+                    label={t("settings.kanzlei_name")}
+                    desc={t("settings.kanzlei_name_desc")}
+                  >
+                    <Input
+                      id="settings-kanzlei-name"
+                      error={kanzleiForm.formState.errors.kanzleiName?.message}
+                      {...kanzleiForm.register("kanzleiName")}
+                      placeholder={t("settings.firm_name_placeholder")}
+                    />
+                  </Field>
 
-                <Field
-                  id="settings-anwalt-name"
-                  label={t("settings.anwalt_name")}
-                  desc={t("settings.anwalt_name_desc")}
-                >
-                  <Input
+                  <Field
                     id="settings-anwalt-name"
-                    error={kanzleiForm.formState.errors.anwaltName?.message}
-                    {...kanzleiForm.register("anwaltName")}
-                    placeholder={t("settings.signatory_placeholder")}
-                  />
-                </Field>
+                    label={t("settings.anwalt_name")}
+                    desc={t("settings.anwalt_name_desc")}
+                  >
+                    <Input
+                      id="settings-anwalt-name"
+                      error={kanzleiForm.formState.errors.anwaltName?.message}
+                      {...kanzleiForm.register("anwaltName")}
+                      placeholder={t("settings.signatory_placeholder")}
+                    />
+                  </Field>
 
-                <Field
-                  id="settings-kanzlei-adresse"
-                  label={t("settings.kanzlei_address")}
-                  desc={t("settings.kanzlei_address_desc")}
-                >
-                  <textarea
+                  <Field
                     id="settings-kanzlei-adresse"
-                    {...kanzleiForm.register("kanzleiAdresse")}
-                    placeholder={t("settings.address_placeholder")}
-                    rows={3}
-                    className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-                  />
-                </Field>
-
-                <Field label={t("settings.contact")} desc={t("settings.contact_desc")}>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                    <Input
-                      id="settings-kanzlei-email"
-                      aria-label={t("settings.aria_email")}
-                      {...kanzleiForm.register("kanzleiEmail")}
-                      placeholder="kanzlei@example.com"
+                    label={t("settings.kanzlei_address")}
+                    desc={t("settings.kanzlei_address_desc")}
+                  >
+                    <textarea
+                      id="settings-kanzlei-adresse"
+                      {...kanzleiForm.register("kanzleiAdresse")}
+                      placeholder={t("settings.address_placeholder")}
+                      rows={3}
+                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                     />
-                    <Input
-                      id="settings-kanzlei-telefon"
-                      aria-label={t("settings.aria_phone")}
-                      {...kanzleiForm.register("kanzleiTelefon")}
-                      placeholder="+43 ..."
-                    />
-                    <Input
-                      id="settings-kammer-nummer"
-                      aria-label={t("settings.aria_chamber")}
-                      {...kanzleiForm.register("kammerNummer")}
-                      placeholder={t("settings.ph_rak_register")}
-                    />
-                  </div>
-                </Field>
+                  </Field>
 
-                <Field
-                  id="settings-ust-id"
-                  label={t("settings.ust_id")}
-                  desc={t("settings.ust_id_desc")}
-                >
-                  <Input
-                    id="settings-ust-id"
-                    {...kanzleiForm.register("ustId")}
-                    placeholder="DEXXXXXXXXX"
-                  />
-                </Field>
-
-                <Field
-                  label={t("settings.small_business")}
-                  desc={t("settings.small_business_desc")}
-                >
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      {...kanzleiForm.register("kleinunternehmer")}
-                      className="h-4 w-4 rounded border-[color:var(--ds-border)]"
-                    />
-                    <span>
-                      Als Kleinunternehmer behandeln (Tax Category E in XRechnung/ZUGFeRD)
-                    </span>
-                  </label>
-                </Field>
-
-                <Field
-                  label={t("settings.einvoice_profile")}
-                  desc={t("settings.einvoice_profile_desc")}
-                >
-                  <div className="flex gap-2">
-                    {(["BASIC", "COMFORT", "EXTENDED"] as const).map((prof) => (
-                      <button
-                        key={prof}
-                        onClick={() => kanzleiForm.setValue("eInvoiceProfile", prof)}
-                        className={cn(
-                          "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
-                          kanzleiForm.watch("eInvoiceProfile") === prof
-                            ? "brand-soft brand-text brand-border"
-                            : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
-                        )}
-                      >
-                        {prof}
-                      </button>
-                    ))}
-                  </div>
-                </Field>
-
-                <Field label={t("settings.tarif_model")} desc={t("settings.tarif_model_desc")}>
-                  <div className="flex gap-2">
-                    {(
-                      [
-                        { key: "custom", label: t("settings.tarif_custom") },
-                        { key: "rvg", label: t("settings.tarif_rvg") },
-                        { key: "ratg", label: t("settings.tarif_ratg") },
-                      ] as const
-                    ).map((opt) => (
-                      <button
-                        key={opt.key}
-                        onClick={() => kanzleiForm.setValue("tarifModell", opt.key)}
-                        className={cn(
-                          "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
-                          tarifModellWatch === opt.key
-                            ? "brand-soft brand-text brand-border"
-                            : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
-                        )}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </Field>
-
-                {tarifModellWatch === "custom" && (
-                  <>
-                    <Field label={t("settings.hourly_rate")} desc={t("settings.hourly_rate_desc")}>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Euro size={14} className="text-[color:var(--ds-text-muted)]" />
-                        <Input
-                          type="number"
-                          inputMode="numeric"
-                          {...kanzleiForm.register("stundensatz")}
-                          placeholder="200"
-                          className="w-32"
-                        />
-                        <span className="text-sm text-[color:var(--ds-text-muted)]">
-                          {t("settings.per_hour")}
-                        </span>
-                        <Input
-                          type="number"
-                          inputMode="numeric"
-                          {...kanzleiForm.register("abrechnungstakt")}
-                          placeholder="15"
-                          className="ml-2 w-24"
-                        />
-                        <span className="text-sm text-[color:var(--ds-text-muted)]">
-                          {t("settings.billing_increment")}
-                        </span>
-                      </div>
-                    </Field>
-
-                    <Field
-                      label={t("settings.rates_per_area")}
-                      desc={t("settings.rates_per_area_desc")}
-                    >
-                      <div className="space-y-2">
-                        {Object.entries(rechtsgebietSaetzeWatch ?? {}).map(([gebiet, satz]) => (
-                          <div key={gebiet} className="flex items-center gap-3">
-                            <span className="w-32 text-sm text-[color:var(--ds-text-muted)] capitalize">
-                              {gebiet}
-                            </span>
-                            <Euro size={12} className="text-[color:var(--ds-text-muted)]" />
-                            <input
-                              type="number"
-                              inputMode="numeric"
-                              value={String(satz)}
-                              onChange={(e) => {
-                                const updated = {
-                                  ...(rechtsgebietSaetzeWatch ?? {}),
-                                  [gebiet]: parseInt(e.target.value, 10) || 0,
-                                };
-                                kanzleiForm.setValue("rechtsgebietSaetze", updated);
-                              }}
-                              className="w-24 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-                            />
-                            <span className="text-xs text-[color:var(--ds-text-muted)]">
-                              {t("settings.per_hour_short")}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </Field>
-                  </>
-                )}
-
-                {(tarifModellWatch === "rvg" || tarifModellWatch === "ratg") && (
-                  <div className="py-4">
-                    <div className="flex items-start gap-3 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2">
-                      <AlertTriangle
-                        size={14}
-                        className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+                  <Field label={t("settings.contact")} desc={t("settings.contact_desc")}>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                      <Input
+                        id="settings-kanzlei-email"
+                        aria-label={t("settings.aria_email")}
+                        {...kanzleiForm.register("kanzleiEmail")}
+                        placeholder="kanzlei@example.com"
                       />
-                      <p className="text-xs text-[color:var(--ds-warning-text)]">
-                        {tarifModellWatch === "rvg"
-                          ? t("settings.rvg_info")
-                          : t("settings.ratg_info")}
-                      </p>
+                      <Input
+                        id="settings-kanzlei-telefon"
+                        aria-label={t("settings.aria_phone")}
+                        {...kanzleiForm.register("kanzleiTelefon")}
+                        placeholder="+43 ..."
+                      />
+                      <Input
+                        id="settings-kammer-nummer"
+                        aria-label={t("settings.aria_chamber")}
+                        {...kanzleiForm.register("kammerNummer")}
+                        placeholder={t("settings.ph_rak_register")}
+                      />
                     </div>
-                  </div>
-                )}
+                  </Field>
 
-                <Field label={t("settings.bank_details")} desc={t("settings.bank_details_desc")}>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <Field
+                    id="settings-ust-id"
+                    label={t("settings.ust_id")}
+                    desc={t("settings.ust_id_desc")}
+                  >
                     <Input
-                      id="settings-bank-name"
-                      aria-label={t("settings.aria_bank")}
-                      {...kanzleiForm.register("bankName")}
-                      placeholder={t("settings.bank_placeholder")}
+                      id="settings-ust-id"
+                      {...kanzleiForm.register("ustId")}
+                      placeholder="DEXXXXXXXXX"
                     />
-                    <Input
-                      id="settings-iban"
-                      aria-label={t("settings.aria_iban")}
-                      {...kanzleiForm.register("iban")}
-                      placeholder="IBAN"
-                    />
-                    <Input
-                      id="settings-bic"
-                      aria-label={t("settings.aria_bic")}
-                      {...kanzleiForm.register("bic")}
-                      placeholder="BIC"
-                    />
-                  </div>
-                </Field>
+                  </Field>
 
-                <Field
-                  id="settings-zahlungsziel-tage"
-                  label={t("settings.payment_terms")}
-                  desc={t("settings.payment_terms_desc")}
-                >
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="settings-zahlungsziel-tage"
-                      type="number"
-                      inputMode="numeric"
-                      {...kanzleiForm.register("zahlungszielTage")}
-                      placeholder="14"
-                      className="w-24"
-                    />
-                    <span className="text-sm text-[color:var(--ds-text-muted)]">
-                      {t("settings.days_net")}
-                    </span>
-                  </div>
-                </Field>
-
-                <Field
-                  label={t("settings.invoice_footer")}
-                  desc={t("settings.invoice_footer_desc")}
-                >
-                  <textarea
-                    {...kanzleiForm.register("rechnungFooter")}
-                    rows={3}
-                    className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-                  />
-                </Field>
-
-                <Field label={t("settings.datev_chart")} desc={t("settings.datev_chart_desc")}>
-                  <div className="flex gap-2">
-                    {(
-                      [
-                        { key: "SKR03", label: "SKR03 (DE)" },
-                        { key: "SKR04", label: "SKR04 (DE)" },
-                        { key: "SKR49", label: "SKR49 (AT)" },
-                      ] as const
-                    ).map((opt) => (
-                      <button
-                        key={opt.key}
-                        onClick={() => kanzleiForm.setValue("datevKontenrahmen", opt.key)}
-                        className={cn(
-                          "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
-                          kanzleiForm.watch("datevKontenrahmen") === opt.key
-                            ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
-                            : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
-                        )}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </Field>
-
-                <Field
-                  id="settings-datev-berater-nr"
-                  label={t("settings.datev_consultant")}
-                  desc={t("settings.datev_consultant_desc")}
-                >
-                  <Input
-                    id="settings-datev-berater-nr"
-                    {...kanzleiForm.register("datevBeraterNr")}
-                    placeholder="12345"
-                  />
-                </Field>
-
-                <Field
-                  id="settings-datev-mandanten-nr"
-                  label={t("settings.datev_client")}
-                  desc={t("settings.datev_client_desc")}
-                >
-                  <Input
-                    id="settings-datev-mandanten-nr"
-                    {...kanzleiForm.register("datevMandantenNr")}
-                    placeholder="67890"
-                  />
-                </Field>
-
-                <Field label={t("settings.smtp_server")} desc={t("settings.smtp_server_desc")}>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
-                    <Input
-                      id="settings-smtp-host"
-                      aria-label={t("settings.aria_smtp_host")}
-                      {...kanzleiForm.register("smtpHost")}
-                      placeholder="mail.example.com"
-                      className="sm:col-span-2"
-                    />
-                    <Input
-                      id="settings-smtp-port"
-                      aria-label={t("settings.aria_smtp_port")}
-                      {...kanzleiForm.register("smtpPort")}
-                      placeholder="587"
-                      className="w-24"
-                    />
-                    <label className="flex items-center gap-2 text-sm text-[color:var(--ds-text-muted)]">
+                  <Field
+                    label={t("settings.small_business")}
+                    desc={t("settings.small_business_desc")}
+                  >
+                    <label className="flex items-center gap-2 text-sm">
                       <input
                         type="checkbox"
-                        {...kanzleiForm.register("smtpSecure")}
-                        className="accent-[var(--brand-primary)]"
+                        {...kanzleiForm.register("kleinunternehmer")}
+                        className="h-4 w-4 rounded border-[color:var(--ds-border)]"
                       />
-                      {t("settings.tls")}
+                      <span>
+                        Als Kleinunternehmer behandeln (Tax Category E in XRechnung/ZUGFeRD)
+                      </span>
                     </label>
-                  </div>
-                </Field>
+                  </Field>
 
-                <Field
-                  id="settings-smtp-user"
-                  label={t("settings.smtp_user")}
-                  desc={t("settings.smtp_user_desc")}
-                >
-                  <Input
+                  <Field
+                    label={t("settings.einvoice_profile")}
+                    desc={t("settings.einvoice_profile_desc")}
+                  >
+                    <div className="flex gap-2">
+                      {(["BASIC", "COMFORT", "EXTENDED"] as const).map((prof) => (
+                        <button
+                          key={prof}
+                          onClick={() => kanzleiForm.setValue("eInvoiceProfile", prof)}
+                          className={cn(
+                            "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none",
+                            kanzleiForm.watch("eInvoiceProfile") === prof
+                              ? "brand-soft brand-text brand-border"
+                              : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
+                          )}
+                        >
+                          {prof}
+                        </button>
+                      ))}
+                    </div>
+                  </Field>
+
+                  <Field label={t("settings.tarif_model")} desc={t("settings.tarif_model_desc")}>
+                    <div className="flex gap-2">
+                      {(
+                        [
+                          { key: "custom", label: t("settings.tarif_custom") },
+                          { key: "rvg", label: t("settings.tarif_rvg") },
+                          { key: "ratg", label: t("settings.tarif_ratg") },
+                        ] as const
+                      ).map((opt) => (
+                        <button
+                          key={opt.key}
+                          onClick={() => kanzleiForm.setValue("tarifModell", opt.key)}
+                          className={cn(
+                            "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none",
+                            tarifModellWatch === opt.key
+                              ? "brand-soft brand-text brand-border"
+                              : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
+                          )}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </Field>
+
+                  {tarifModellWatch === "custom" && (
+                    <>
+                      <Field
+                        label={t("settings.hourly_rate")}
+                        desc={t("settings.hourly_rate_desc")}
+                      >
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Euro size={14} className="text-[color:var(--ds-text-muted)]" />
+                          <Input
+                            type="number"
+                            inputMode="numeric"
+                            {...kanzleiForm.register("stundensatz")}
+                            placeholder="200"
+                            className="w-32"
+                          />
+                          <span className="text-sm text-[color:var(--ds-text-muted)]">
+                            {t("settings.per_hour")}
+                          </span>
+                          <Input
+                            type="number"
+                            inputMode="numeric"
+                            {...kanzleiForm.register("abrechnungstakt")}
+                            placeholder="15"
+                            className="ml-2 w-24"
+                          />
+                          <span className="text-sm text-[color:var(--ds-text-muted)]">
+                            {t("settings.billing_increment")}
+                          </span>
+                        </div>
+                      </Field>
+
+                      <Field
+                        label={t("settings.rates_per_area")}
+                        desc={t("settings.rates_per_area_desc")}
+                      >
+                        <div className="space-y-2">
+                          {Object.entries(rechtsgebietSaetzeWatch ?? {}).map(([gebiet, satz]) => (
+                            <div key={gebiet} className="flex items-center gap-3">
+                              <span className="w-32 text-sm text-[color:var(--ds-text-muted)] capitalize">
+                                {gebiet}
+                              </span>
+                              <Euro size={12} className="text-[color:var(--ds-text-muted)]" />
+                              <input
+                                type="number"
+                                inputMode="numeric"
+                                value={String(satz)}
+                                onChange={(e) => {
+                                  const updated = {
+                                    ...(rechtsgebietSaetzeWatch ?? {}),
+                                    [gebiet]: parseInt(e.target.value, 10) || 0,
+                                  };
+                                  kanzleiForm.setValue("rechtsgebietSaetze", updated);
+                                }}
+                                className="w-24 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                              />
+                              <span className="text-xs text-[color:var(--ds-text-muted)]">
+                                {t("settings.per_hour_short")}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </Field>
+                    </>
+                  )}
+
+                  {(tarifModellWatch === "rvg" || tarifModellWatch === "ratg") && (
+                    <div className="py-4">
+                      <div className="flex items-start gap-3 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2">
+                        <AlertTriangle
+                          size={14}
+                          className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+                        />
+                        <p className="text-xs text-[color:var(--ds-warning-text)]">
+                          {tarifModellWatch === "rvg"
+                            ? t("settings.rvg_info")
+                            : t("settings.ratg_info")}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <Field label={t("settings.bank_details")} desc={t("settings.bank_details_desc")}>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                      <Input
+                        id="settings-bank-name"
+                        aria-label={t("settings.aria_bank")}
+                        {...kanzleiForm.register("bankName")}
+                        placeholder={t("settings.bank_placeholder")}
+                      />
+                      <Input
+                        id="settings-iban"
+                        aria-label={t("settings.aria_iban")}
+                        {...kanzleiForm.register("iban")}
+                        placeholder="IBAN"
+                      />
+                      <Input
+                        id="settings-bic"
+                        aria-label={t("settings.aria_bic")}
+                        {...kanzleiForm.register("bic")}
+                        placeholder="BIC"
+                      />
+                    </div>
+                  </Field>
+
+                  <Field
+                    id="settings-zahlungsziel-tage"
+                    label={t("settings.payment_terms")}
+                    desc={t("settings.payment_terms_desc")}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="settings-zahlungsziel-tage"
+                        type="number"
+                        inputMode="numeric"
+                        {...kanzleiForm.register("zahlungszielTage")}
+                        placeholder="14"
+                        className="w-24"
+                      />
+                      <span className="text-sm text-[color:var(--ds-text-muted)]">
+                        {t("settings.days_net")}
+                      </span>
+                    </div>
+                  </Field>
+
+                  <Field
+                    label={t("settings.invoice_footer")}
+                    desc={t("settings.invoice_footer_desc")}
+                  >
+                    <textarea
+                      {...kanzleiForm.register("rechnungFooter")}
+                      rows={3}
+                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                    />
+                  </Field>
+
+                  <Field label={t("settings.smtp_server")} desc={t("settings.smtp_server_desc")}>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
+                      <Input
+                        id="settings-smtp-host"
+                        aria-label={t("settings.aria_smtp_host")}
+                        {...kanzleiForm.register("smtpHost")}
+                        placeholder="mail.example.com"
+                        className="sm:col-span-2"
+                      />
+                      <Input
+                        id="settings-smtp-port"
+                        aria-label={t("settings.aria_smtp_port")}
+                        {...kanzleiForm.register("smtpPort")}
+                        placeholder="587"
+                        className="w-24"
+                      />
+                      <label className="flex items-center gap-2 text-sm text-[color:var(--ds-text-muted)]">
+                        <input
+                          type="checkbox"
+                          {...kanzleiForm.register("smtpSecure")}
+                          className="accent-[var(--brand-primary)]"
+                        />
+                        {t("settings.tls")}
+                      </label>
+                    </div>
+                  </Field>
+
+                  <Field
                     id="settings-smtp-user"
-                    {...kanzleiForm.register("smtpUser")}
-                    placeholder="kanzlei@example.com"
-                  />
-                </Field>
+                    label={t("settings.smtp_user")}
+                    desc={t("settings.smtp_user_desc")}
+                  >
+                    <Input
+                      id="settings-smtp-user"
+                      {...kanzleiForm.register("smtpUser")}
+                      placeholder="kanzlei@example.com"
+                    />
+                  </Field>
 
-                <Field
-                  id="settings-smtp-password"
-                  label={t("settings.smtp_password")}
-                  desc={t("settings.smtp_password_desc")}
-                >
-                  <Input
+                  <Field
                     id="settings-smtp-password"
-                    type="password"
-                    {...kanzleiForm.register("smtpPassword")}
-                    placeholder="••••••"
-                  />
-                </Field>
+                    label={t("settings.smtp_password")}
+                    desc={t("settings.smtp_password_desc")}
+                  >
+                    <Input
+                      id="settings-smtp-password"
+                      type="password"
+                      {...kanzleiForm.register("smtpPassword")}
+                      placeholder="••••••"
+                    />
+                  </Field>
 
-                <Field
-                  id="settings-email-from"
-                  label={t("settings.email_from")}
-                  desc={t("settings.email_from_desc")}
-                >
-                  <Input
+                  <Field
                     id="settings-email-from"
-                    {...kanzleiForm.register("emailFrom")}
-                    placeholder="kanzlei@example.com"
-                  />
-                </Field>
-              </div>
-              <div className="border-t border-[color:var(--ds-border)] p-6">
-                {kanzleiSaveError && (
-                  <p className="mb-3 text-sm text-[color:var(--ds-danger-text)]">
-                    {t("settings.save_fail")} {kanzleiSaveError}
-                  </p>
-                )}
-                <Button variant="glow" size="md" onClick={saveKanzleiProfile}>
-                  {kanzleiSaved ? t("settings.saved") : t("settings.save")}
-                </Button>
-              </div>
-            </Card>
+                    label={t("settings.email_from")}
+                    desc={t("settings.email_from_desc")}
+                  >
+                    <Input
+                      id="settings-email-from"
+                      {...kanzleiForm.register("emailFrom")}
+                      placeholder="kanzlei@example.com"
+                    />
+                  </Field>
+                </div>
+                <div className="border-t border-[color:var(--ds-border)] p-6">
+                  {kanzleiSaveError && (
+                    <p className="mb-3 text-sm text-[color:var(--ds-danger-text)]">
+                      {t("settings.save_fail")} {kanzleiSaveError}
+                    </p>
+                  )}
+                  <Button variant="glow" size="md" onClick={saveKanzleiProfile}>
+                    {kanzleiSaved ? t("settings.saved") : t("settings.save")}
+                  </Button>
+                </div>
+              </Card>
+              <DemoDataCard />
+            </>
           )}
 
           {/* Team */}
@@ -1310,11 +1269,9 @@ function SettingsPageInner() {
                   </ul>
                 </Field>
                 <Field label={t("settings.scim_manage")} desc={t("settings.scim_manage_desc")}>
-                  <Link href="/dashboard/settings/scim">
-                    <Button variant="outline" size="sm">
-                      {t("settings.scim_manage_button")}
-                    </Button>
-                  </Link>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href="/dashboard/settings/scim">{t("settings.scim_manage_button")}</Link>
+                  </Button>
                 </Field>
               </div>
             </Card>
@@ -1334,11 +1291,9 @@ function SettingsPageInner() {
                     <Badge variant="accent" className="px-3 py-1 text-sm capitalize">
                       {meQuery.data?.user?.plan ?? "free"}
                     </Badge>
-                    <Link href="/dashboard/billing">
-                      <Button variant="outline" size="sm">
-                        {t("settings.upgrade")}
-                      </Button>
-                    </Link>
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href="/dashboard/billing">{t("settings.upgrade")}</Link>
+                    </Button>
                   </div>
                 </Field>
                 <Field label={t("settings.usage")} desc={t("settings.usage_desc")}>
@@ -1468,11 +1423,11 @@ function SettingsPageInner() {
                   </p>
                 </Field>
                 <Field label={t("settings.data_export")} desc={t("settings.data_export_desc")}>
-                  <a href="/api/export" download>
-                    <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" asChild>
+                    <a href="/api/export" download>
                       {t("settings.export_button")}
-                    </Button>
-                  </a>
+                    </a>
+                  </Button>
                 </Field>
               </div>
             </Card>
@@ -1480,5 +1435,72 @@ function SettingsPageInner() {
         </>
       )}
     </div>
+  );
+}
+
+function DemoDataCard() {
+  const { t } = useLang();
+  const [state, setState] = useState<"loading" | "present" | "absent">("loading");
+  const [removing, setRemoving] = useState(false);
+  const [result, setResult] = useState<"removed" | "error" | null>(null);
+
+  useEffect(() => {
+    api.demoData
+      .status()
+      .then((r) => setState(r.present ? "present" : "absent"))
+      .catch(() => setState("absent"));
+  }, []);
+
+  if (state !== "present" && result !== "removed") return null;
+
+  const remove = async () => {
+    if (!window.confirm(t("settings.demo_confirm"))) return;
+    setRemoving(true);
+    setResult(null);
+    try {
+      const res = await api.demoData.remove();
+      if (res.failed.length > 0) {
+        setResult("error");
+      } else {
+        setResult("removed");
+        setState("absent");
+      }
+    } catch {
+      setResult("error");
+    } finally {
+      setRemoving(false);
+    }
+  };
+
+  return (
+    <Card className="mt-4">
+      <div className="flex items-start justify-between gap-4 p-6">
+        <div>
+          <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
+            {t("settings.demo_title")}
+          </h2>
+          <p className="mt-1 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
+            {result === "removed" ? t("settings.demo_removed") : t("settings.demo_desc")}
+          </p>
+          {result === "error" && (
+            <p className="mt-2 text-sm text-[color:var(--ds-danger-text)]">
+              {t("settings.demo_fail")}
+            </p>
+          )}
+        </div>
+        {state === "present" && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={remove}
+            disabled={removing}
+            className="shrink-0"
+          >
+            {removing ? <RefreshCw size={14} className="animate-spin" /> : <Trash2 size={14} />}
+            {t("settings.demo_remove")}
+          </Button>
+        )}
+      </div>
+    </Card>
   );
 }

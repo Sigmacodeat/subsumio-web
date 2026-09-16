@@ -65,3 +65,8 @@ law-corpus/
 .next-turbo/
 *.tsbuildinfo
 SERVER_INVENTORY.md
+
+# Local verification builds + ad-hoc QA artefacts (never commit)
+.next-verify/
+tests/screenshots/
+tests/e2e-playwright/marketing-visual.spec.ts-snapshots/

@@ -309,14 +309,6 @@ export function parseIntent(text: string): ParsedIntent {
     return { kind: "document_status", caseRef: documentStatusMatch[1].trim() };
   }
 
-  if (/^(?:bea|beA|bea\s+eingang|bea\s+status|posteingang)$/i.test(trimmed)) {
-    return { kind: "bea_status" };
-  }
-
-  if (/^(?:datev|datev\s+status|datev\s+export|steuerberater)$/i.test(trimmed)) {
-    return { kind: "datev_status" };
-  }
-
   const reviewDocumentMatch = trimmed.match(
     /^(?:dokument|unterlage)\s+(?:geprüft|geprueft|freigeben|ablehnen)\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+)$/i
   );
@@ -2060,8 +2052,6 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
       "  termine — alle anstehenden Termine auflisten",
       "  dokumente status akt 2026-014 — Unterlagen-/Review-Status",
       "  dokument geprüft akt 2026-014: Klageentwurf",
-      "  bea — beA-Eingänge/Entwürfe/Filing-Status",
-      "  datev — DATEV-fähige Buchungen/Rechnungsstatus",
       "",
       "🔍 Abfragen:",
       "  heute — was steht heute an (Fristen + Aufgaben)",
@@ -2596,12 +2586,12 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
         .map(([status, count]) => `${status}: ${count}`)
         .join(", ") || "keine Rechnungen";
     return [
-      "🧾 DATEV-/Rechnungsstatus:",
-      `DATEV-fähige Buchungen: ${exportEntries}`,
+      "🧾 Buchhaltungs-/Rechnungsstatus:",
+      `Exportfähige Buchungen: ${exportEntries}`,
       `Geschätzter Netto-Betrag: ${exportAmount.toFixed(2)} EUR`,
       `Rechnungen: ${invoiceLine}`,
       "",
-      "Export im Dashboard: /dashboard/datev-export",
+      "Buchhaltung im Dashboard: /dashboard/fibu",
     ].join("\n");
   }
 

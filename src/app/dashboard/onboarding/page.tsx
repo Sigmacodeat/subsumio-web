@@ -362,8 +362,6 @@ export default function OnboardingPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="AT">Österreich</SelectItem>
-                        <SelectItem value="DE">Deutschland</SelectItem>
-                        <SelectItem value="CH">Schweiz</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

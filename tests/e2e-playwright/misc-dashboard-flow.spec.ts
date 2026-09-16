@@ -60,7 +60,10 @@ test.describe("Misc Dashboard: Pages Render", () => {
     { path: "/dashboard/litigation", heading: /Prozessführung|Litigation/i },
     { path: "/dashboard/process-strategy", heading: /Prozessstrategie|Litigation Strategy/i },
     { path: "/dashboard/experience", heading: /Erfahrungen & Insights|Experience & Insights/i },
-    { path: "/dashboard/rechtsprechung/analytics", heading: /Judikatur-Analytics/i },
+    {
+      path: "/dashboard/litigation-analytics",
+      heading: /Verfahrensanalytics|Litigation Analytics/i,
+    },
     { path: "/dashboard/whatsapp/templates", heading: /WhatsApp-Vorlagen|WhatsApp Templates/i },
     { path: "/dashboard/trust-accounting", heading: /Treuhandkonten|Trust Accounts/i },
   ];
@@ -69,7 +72,7 @@ test.describe("Misc Dashboard: Pages Render", () => {
     test(`${p.path} loads without 503 and shows heading`, async ({ page }) => {
       const response = await page.goto(p.path, { waitUntil: "domcontentloaded" });
       expect(response?.status()).not.toBe(503);
-      const errorText = page.locator("text=/Engine nicht erreichbar|Service unavailable|503/i");
+      const errorText = page.getByText(/Engine nicht erreichbar|Service unavailable|503/i);
       await expect(errorText).toHaveCount(0, { timeout: 5_000 });
       const heading = page.getByRole("heading", { name: p.heading }).first();
       await expect(heading).toBeVisible({ timeout: 15_000 });
@@ -79,50 +82,54 @@ test.describe("Misc Dashboard: Pages Render", () => {
   test("litigation shows phase or case list", async ({ page }) => {
     await page.goto("/dashboard/litigation", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const content = page.locator("table, [role='list'], button, text=/Keine|None|Empty|No/i");
+    const content = page
+      .locator("table, [role='list'], button")
+      .or(page.getByText(/Keine|None|Empty|No/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 
   test("process-strategy shows strategy content", async ({ page }) => {
     await page.goto("/dashboard/process-strategy", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const content = page.locator(
-      "table, [role='list'], textarea, button, text=/Keine|None|Empty|No/i"
-    );
+    const content = page
+      .locator("table, [role='list'], textarea, button")
+      .or(page.getByText(/Keine|None|Empty|No/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 
   test("experience shows experience content", async ({ page }) => {
     await page.goto("/dashboard/experience", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const content = page.locator(
-      "table, [role='list'], .recharts-surface, text=/Keine|None|Empty|No/i"
-    );
+    const content = page
+      .locator("table, [role='list'], .recharts-surface")
+      .or(page.getByText(/Keine|None|Empty|No/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 
   test("rechtsprechung/analytics shows analytics content", async ({ page }) => {
     await page.goto("/dashboard/rechtsprechung/analytics", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const content = page.locator(
-      ".recharts-surface, table, .tabular-nums, text=/Keine|None|Empty|No/i"
-    );
+    const content = page
+      .locator(".recharts-surface, table, .tabular-nums")
+      .or(page.getByText(/Keine|None|Empty|No/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 
   test("whatsapp/templates shows template list or create", async ({ page }) => {
     await page.goto("/dashboard/whatsapp/templates", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const content = page.locator("table, [role='list'], button, text=/Keine|None|Empty|No/i");
+    const content = page
+      .locator("table, [role='list'], button")
+      .or(page.getByText(/Keine|None|Empty|No/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 
   test("trust-accounting shows trust account list", async ({ page }) => {
     await page.goto("/dashboard/trust-accounting", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const content = page.locator(
-      "table, [role='list'], button, .tabular-nums, text=/Keine|None|Empty|No/i"
-    );
+    const content = page
+      .locator("table, [role='list'], button, .tabular-nums")
+      .or(page.getByText(/Keine|None|Empty|No/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 });

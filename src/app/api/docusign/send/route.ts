@@ -91,7 +91,10 @@ export const POST = createHandler(
         );
       } catch (err) {
         if (err instanceof VerificationPolicyError) {
-          return apiError("verification_denied", err.decision.reason, 403);
+          return Response.json(
+            { error: "verification_denied", reason: err.decision.reason },
+            { status: 403 }
+          );
         }
         throw err;
       }

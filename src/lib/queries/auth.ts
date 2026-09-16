@@ -105,7 +105,7 @@ export function useLogout() {
       resetUser();
       qc.removeQueries({ queryKey: ["auth", "me"] });
       qc.clear();
-      router.push("/login");
+      router.push("/at/login");
     },
   });
 }

@@ -502,11 +502,11 @@ export default function DashboardPage() {
                   >
                     <Briefcase size={14} /> {t("cockpit.action_case")}
                   </Button>
-                  <Link href="/dashboard/import-kanzlei">
-                    <Button size="sm" variant="outline">
+                  <Button size="sm" variant="outline" asChild>
+                    <Link href="/dashboard/import-kanzlei">
                       <Upload size={14} /> {t("dashboard.welcome_upload")}
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 </div>
               </div>
             </div>

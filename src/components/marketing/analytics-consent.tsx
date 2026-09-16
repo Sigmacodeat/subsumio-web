@@ -54,11 +54,6 @@ export function useAnalyticsConsent() {
 
 export default function AnalyticsConsentBanner() {
   const { showBanner, accept, decline } = useAnalyticsConsent();
-  const [isGerman, setIsGerman] = useState(false);
-
-  useEffect(() => {
-    setIsGerman(!window.location.pathname.startsWith("/en"));
-  }, []);
 
   if (!showBanner) return null;
 
@@ -66,29 +61,27 @@ export default function AnalyticsConsentBanner() {
     <div
       role="dialog"
       aria-live="polite"
-      aria-label={isGerman ? "Analytics-Einwilligung" : "Analytics consent"}
+      aria-label="Analytics-Einwilligung"
       className="fixed right-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 z-[99] rounded-xl border [border-color:var(--mk-control-border)] p-3 shadow-xl shadow-black/35 [background:var(--mk-surface)] sm:left-auto sm:max-w-sm sm:p-4"
     >
       <p className="mb-1 text-sm font-semibold [color:var(--mk-text)] sm:text-sm">
-        {isGerman ? "Analytics-Cookies" : "Analytics cookies"}
+        Analytics-Cookies
       </p>
       <p className="mb-3 text-sm leading-relaxed [color:var(--mk-text-muted)]">
-        {isGerman
-          ? "Wir nutzen PostHog, um die Website anonym zu verbessern. Du kannst jederzeit widerrufen."
-          : "We use PostHog to improve the site anonymously. You can revoke consent at any time."}
+        Wir nutzen PostHog, um die Website anonym zu verbessern. Du kannst jederzeit widerrufen.
       </p>
       <div className="flex gap-2">
         <button
           onClick={accept}
           className="min-h-10 rounded-lg bg-[var(--brand-primary)] px-4 py-2 text-sm font-semibold text-white transition-[background-color,border-color,color] hover:bg-[var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
         >
-          {isGerman ? "Einverstanden" : "Accept"}
+          Einverstanden
         </button>
         <button
           onClick={decline}
           className="min-h-10 rounded-lg border [border-color:var(--mk-control-border)] px-4 py-2 text-sm font-medium [color:var(--mk-text)] transition-[background-color,border-color,color] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
         >
-          {isGerman ? "Ablehnen" : "Decline"}
+          Ablehnen
         </button>
       </div>
     </div>

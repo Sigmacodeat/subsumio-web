@@ -88,7 +88,7 @@ export function ChatEmptyState({
       </div>
 
       {/* Subtle micro-text disclaimer — replaces the old banner */}
-      <p className="mt-8 text-[11px] text-[color:var(--ds-text-subtle)]/70">
+      <p className="mt-8 text-[11px] text-[color:var(--ds-text-subtle)]">
         {lang === "en"
           ? "AI draft — verify sources and deadlines before use."
           : "KI-Entwurf — Belege und Fristen vor Verwendung anwaltlich prüfen."}

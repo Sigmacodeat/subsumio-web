@@ -501,7 +501,10 @@ export default function VaultPage() {
           <div className="flex items-center gap-1.5">
             <ArrowUpDown size={12} className="text-[color:var(--ds-text-subtle)]" />
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
-              <SelectTrigger className="h-7 w-auto gap-1 rounded-md px-2 py-1 text-xs">
+              <SelectTrigger
+                className="h-7 w-auto gap-1 rounded-md px-2 py-1 text-xs"
+                aria-label={t("vault.sort_label")}
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

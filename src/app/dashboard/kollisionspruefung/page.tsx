@@ -176,14 +176,14 @@ export default function KollisionspruefungPage() {
                 </p>
                 {result.severity === "none" && searchName.trim() && (
                   <div className="mt-3">
-                    <Link
-                      href={`/dashboard/intake?new=1&name=${encodeURIComponent(searchName.trim())}`}
-                    >
-                      <Button variant="outline" size="sm" className="gap-1.5">
+                    <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                      <Link
+                        href={`/dashboard/intake?new=1&name=${encodeURIComponent(searchName.trim())}`}
+                      >
                         Mandatsannahme starten
                         <ArrowRight size={14} />
-                      </Button>
-                    </Link>
+                      </Link>
+                    </Button>
                   </div>
                 )}
               </div>

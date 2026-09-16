@@ -8,12 +8,6 @@ export const metadata: Metadata = {
     "AVV-Vorlage nach Art. 28 DSGVO für Kunden der gehosteten Subsumio-Cloud — Pflicht vor der Verarbeitung personenbezogener Daten.",
   alternates: {
     canonical: "/at/dpa",
-    languages: {
-      "de-DE": "/dpa",
-      "de-AT": "/at/dpa",
-      "de-CH": "/ch/dpa",
-      en: "/en/dpa",
-    },
   },
   openGraph: {
     title: "Auftragsverarbeitungsvertrag (AVV) — Subsumio",
@@ -24,5 +18,5 @@ export const metadata: Metadata = {
 };
 
 export default function DpaPage() {
-  return <DpaContent home="/at" lang="at" />;
+  return <DpaContent home="/at" />;
 }

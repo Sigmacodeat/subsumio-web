@@ -41,10 +41,10 @@ describe("SEO_KEYWORDS", () => {
     expect(SEO_KEYWORDS.root).toContain("Anwaltssoftware");
   });
 
-  test("cities group contains DACH cities", () => {
+  test("cities group is Austria-only", () => {
     expect(SEO_KEYWORDS.cities).toContain("KI-Kanzleisoftware Wien");
-    expect(SEO_KEYWORDS.cities).toContain("Anwaltssoftware Berlin");
-    expect(SEO_KEYWORDS.cities).toContain("law firm software Zurich");
+    expect(SEO_KEYWORDS.cities).toContain("Anwaltssoftware Wien");
+    expect(SEO_KEYWORDS.cities.join(" ")).not.toMatch(/Berlin|Zürich|Zurich/);
   });
 });
 

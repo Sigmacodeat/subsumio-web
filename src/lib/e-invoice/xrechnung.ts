@@ -351,6 +351,9 @@ export function generateXRechnungXml(
   xml.push(`        <ram:TypeCode>VAT</ram:TypeCode>`);
   xml.push(`        <ram:BasisAmount>${fmtAmt(taxBasis)}</ram:BasisAmount>`);
   xml.push(`        <ram:CategoryCode>${data.taxCategory}</ram:CategoryCode>`);
+  if (data.taxExemptionReason) {
+    xml.push(`        <ram:ExemptionReason>${esc(data.taxExemptionReason)}</ram:ExemptionReason>`);
+  }
   xml.push(`        <ram:RateApplicablePercent>${data.taxRate}</ram:RateApplicablePercent>`);
   xml.push(`      </ram:ApplicableTradeTax>`);
 

@@ -1,5 +1,3 @@
-"use client";
-
 // Partner program page — agency-grade affiliate / referral / certified tracks.
 // Full motion: MotionConfig, ScrollProgress, scroll-reveal on every section,
 // GlowCards on tiers, StaggerContainer on grids, reduced-motion safe.
@@ -7,22 +5,20 @@
 import Link from "next/link";
 import { ArrowRight, Check, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Lang } from "@/content/site";
 import { UI_STRINGS, p } from "@/content/site";
 import { PARTNERS } from "@/content/partners";
-import { SectionHeading, ICONS, CTASection, PageHero, Section, H3_CLASS } from "./chrome";
+import { SectionHeading, CTASection, PageHero, Section } from "./primitives";
+import { H3_CLASS } from "./typography";
+import { ICONS } from "./icons";
 import { AnimatedFaqList } from "./animated-faq";
 import { Reveal, StaggerContainer, StaggerItem, GlowCard } from "./motion-system";
+import { IllusHandshake } from "./brand-illustrations";
 
-export default function PartnersPage({ lang }: { lang: Lang }) {
-  const t = PARTNERS[lang];
+export default function PartnersPage() {
+  const t = PARTNERS;
 
   return (
-    <div
-      data-tone="light"
-      className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
-      lang={lang}
-    >
+    <div data-tone="light" className="min-h-screen overflow-x-clip [background:var(--mk-bg)]">
       {/* Hero */}
       <PageHero
         badge={t.badge}
@@ -32,18 +28,17 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
         accentVariant="gradient-premium"
         actions={
           <>
-            <Link href={p(lang, "/signup")}>
-              <Button size="lg" variant="primary">
-                {UI_STRINGS[lang].startFree} <ArrowRight size={16} />
-              </Button>
-            </Link>
-            <Link href={p(lang, "/contact")}>
-              <Button size="lg" variant="outline">
-                {UI_STRINGS[lang].writeUs}
-              </Button>
-            </Link>
+            <Button size="lg" variant="primary" asChild>
+              <Link href={p("/signup")}>
+                {UI_STRINGS.startFree} <ArrowRight size={16} />
+              </Link>
+            </Button>
+            <Button size="lg" variant="outline" asChild>
+              <Link href={p("/contact")}>{UI_STRINGS.writeUs}</Link>
+            </Button>
           </>
         }
+        visual={<IllusHandshake />}
       />
 
       {/* Tiers — staggered reveal + GlowCard */}
@@ -65,7 +60,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
                   {tier.highlight && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                       <span className="brand-bg rounded-full px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white">
-                        {UI_STRINGS[lang].mostPopular}
+                        {UI_STRINGS.mostPopular}
                       </span>
                     </div>
                   )}
@@ -104,25 +99,27 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
                     ))}
                   </ul>
                   {tier.href.startsWith("mailto") ? (
-                    <a href={tier.href}>
-                      <Button
-                        variant={tier.highlight ? "primary" : "secondary"}
-                        size="md"
-                        className="w-full"
-                      >
+                    <Button
+                      variant={tier.highlight ? "primary" : "secondary"}
+                      size="md"
+                      className="w-full"
+                      asChild
+                    >
+                      <a href={tier.href}>
                         {tier.cta} <ArrowRight size={13} />
-                      </Button>
-                    </a>
+                      </a>
+                    </Button>
                   ) : (
-                    <Link href={tier.href}>
-                      <Button
-                        variant={tier.highlight ? "primary" : "secondary"}
-                        size="md"
-                        className="w-full"
-                      >
+                    <Button
+                      variant={tier.highlight ? "primary" : "secondary"}
+                      size="md"
+                      className="w-full"
+                      asChild
+                    >
+                      <Link href={tier.href}>
                         {tier.cta} <ArrowRight size={13} />
-                      </Button>
-                    </Link>
+                      </Link>
+                    </Button>
                   )}
                 </GlowCard>
               </StaggerItem>
@@ -183,8 +180,8 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
         sub={t.ctaSub}
         href="mailto:partners@subsum.eu?subject=Partner%20application"
         label={t.ctaButton}
-        secondaryHref={p(lang, "/superbrain")}
-        secondaryLabel={UI_STRINGS[lang].watchDemo}
+        secondaryHref={p("/superbrain")}
+        secondaryLabel={UI_STRINGS.watchDemo}
         showLogo={false}
       />
     </div>

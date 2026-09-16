@@ -32,7 +32,7 @@ async function signUpViaApi(page: Page) {
 async function createContract(page: Page, title: string) {
   await page.goto("/dashboard/contracts", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: /contract intelligence/i })).toBeVisible({
-    timeout: 10_000,
+    timeout: 15_000,
   });
   const createButton = page.getByRole("button", { name: /vertrag anlegen|create contract/i });
   await expect(createButton).toBeEnabled();
@@ -47,7 +47,18 @@ async function createContract(page: Page, title: string) {
     .fill("Party A provides legal services to Party B. Payment is due within 30 days.");
   await dialog.getByRole("button", { name: /save|speichern/i }).click();
   await expect(dialog).toBeHidden();
-  await expect(page.getByText(title, { exact: true })).toBeVisible();
+  // Contract list refetches via onCreated callback, but may need a moment.
+  // Reload the page to force a fresh list if the refetch is slow.
+  await page.waitForTimeout(2000);
+  if (
+    !(await page
+      .getByText(title, { exact: true })
+      .isVisible()
+      .catch(() => false))
+  ) {
+    await page.reload({ waitUntil: "domcontentloaded" });
+  }
+  await expect(page.getByText(title, { exact: true })).toBeVisible({ timeout: 15_000 });
 }
 
 test.describe("CLM flow", () => {
@@ -78,7 +89,9 @@ test.describe("CLM flow", () => {
 
   test("generates a legal draft with the configured engine", async ({ page }) => {
     await page.goto("/dashboard/drafting", { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("heading", { name: /legal document generator/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /legal document generator/i })).toBeVisible({
+      timeout: 15_000,
+    });
     await page.locator('input[name="title"]').fill("Service dispute");
     await page.locator('input[name="legalBasis"]').fill("§ 611 BGB");
     await page.locator('input[name="klaeger"]').fill("Party A");
@@ -90,7 +103,7 @@ test.describe("CLM flow", () => {
     const generate = page.getByRole("button", { name: /lawsuit generate|klage generieren/i });
     await expect(generate).toBeEnabled();
     await generate.click();
-    await expect(page.getByText("KI-generiert · zu prüfen", { exact: true })).toBeVisible({
+    await expect(page.getByText("KI-generiert · zu prüfen", { exact: true }).first()).toBeVisible({
       timeout: 30_000,
     });
     await expect(page.getByRole("button", { name: /copy|kopieren/i })).toBeVisible();
@@ -123,8 +136,11 @@ test.describe("CLM flow", () => {
 
   test("exposes obligation and deadline workflow entry points", async ({ page }) => {
     await page.goto("/dashboard/contracts", { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("link", { name: /obligation tracking/i })).toBeVisible();
-    await page.getByRole("link", { name: /obligation tracking/i }).click({ force: true });
+    // Scope to main content to avoid matching the sidebar nav link
+    const mainContent = page.locator("#main-content");
+    const oblLink = mainContent.getByRole("link", { name: /obligation tracking/i }).first();
+    await expect(oblLink).toBeVisible({ timeout: 10_000 });
+    await oblLink.click();
     await expect(page).toHaveURL(/\/dashboard\/obligation-tracking/);
     await expect(page.getByRole("heading", { name: /obligation|verpflichtung/i })).toBeVisible();
 

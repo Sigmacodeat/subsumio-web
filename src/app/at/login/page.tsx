@@ -8,16 +8,9 @@ export const metadata: Metadata = {
   robots: { index: false },
   alternates: {
     canonical: "/at/login",
-    languages: {
-      "de-DE": "/login",
-      "de-AT": "/at/login",
-      "de-CH": "/ch/login",
-      en: "/en/login",
-      "x-default": "/login",
-    },
   },
 };
 
 export default function Page() {
-  return <AuthForm mode="login" lang="at" />;
+  return <AuthForm mode="login" />;
 }

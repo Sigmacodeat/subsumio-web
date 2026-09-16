@@ -85,6 +85,7 @@ export interface EInvoiceData {
   buyerReference?: string;
   caseReference?: string;
   notes?: string;
+  taxExemptionReason?: string;
 }
 
 /** Result of XRechnung XML generation */

@@ -57,12 +57,15 @@ test.describe("Compliance Sub-pages: Pages Render", () => {
       waitUntil: "domcontentloaded",
     });
     expect(response?.status()).not.toBe(503);
-    const errorText = page.locator("text=/Engine nicht erreichbar|Service unavailable|503/i");
+    const errorText = page.getByText(/Engine nicht erreichbar|Service unavailable|503/i);
     await expect(errorText).toHaveCount(0, { timeout: 5_000 });
     // Should show AI Act related content
-    const content = page.locator(
-      "h1, h2, h3, [role='tab'], text=/AI Act|KI-Verordnung|Overview|Übersicht/i"
-    );
+    const content = page
+      .locator("h1")
+      .or(page.locator("h2"))
+      .or(page.locator("h3"))
+      .or(page.locator("[role='tab']"))
+      .or(page.getByText(/AI Act|KI-Verordnung|Overview|Übersicht/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 
@@ -78,7 +81,7 @@ test.describe("Compliance Sub-pages: Pages Render", () => {
       waitUntil: "domcontentloaded",
     });
     expect(response?.status()).not.toBe(503);
-    const errorText = page.locator("text=/Engine nicht erreichbar|Service unavailable|503/i");
+    const errorText = page.getByText(/Engine nicht erreichbar|Service unavailable|503/i);
     await expect(errorText).toHaveCount(0, { timeout: 5_000 });
   });
 
@@ -92,7 +95,10 @@ test.describe("Compliance Sub-pages: Pages Render", () => {
   test("/dashboard/compliance/retention shows retention table or list", async ({ page }) => {
     await page.goto("/dashboard/compliance/retention", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const content = page.locator("table, [role='list'], text=/Keine|None|Empty|No/i");
+    const content = page
+      .locator("table")
+      .or(page.locator("[role='list']"))
+      .or(page.getByText(/Keine|None|Empty|No/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 });
@@ -107,7 +113,7 @@ test.describe("Settings Sub-pages: Pages Render", () => {
       waitUntil: "domcontentloaded",
     });
     expect(response?.status()).not.toBe(503);
-    const errorText = page.locator("text=/Engine nicht erreichbar|Service unavailable|503/i");
+    const errorText = page.getByText(/Engine nicht erreichbar|Service unavailable|503/i);
     await expect(errorText).toHaveCount(0, { timeout: 5_000 });
   });
 
@@ -121,7 +127,12 @@ test.describe("Settings Sub-pages: Pages Render", () => {
   test("/dashboard/settings/ai-model shows model selector or config", async ({ page }) => {
     await page.goto("/dashboard/settings/ai-model", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const content = page.locator("select, [role='combobox'], input, button, text=/Modell|Model/i");
+    const content = page
+      .locator("select")
+      .or(page.locator("[role='combobox']"))
+      .or(page.locator("input"))
+      .or(page.locator("button"))
+      .or(page.getByText(/Modell|Model/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 
@@ -130,7 +141,7 @@ test.describe("Settings Sub-pages: Pages Render", () => {
       waitUntil: "domcontentloaded",
     });
     expect(response?.status()).not.toBe(503);
-    const errorText = page.locator("text=/Engine nicht erreichbar|Service unavailable|503/i");
+    const errorText = page.getByText(/Engine nicht erreichbar|Service unavailable|503/i);
     await expect(errorText).toHaveCount(0, { timeout: 5_000 });
   });
 
@@ -153,7 +164,7 @@ test.describe("Settings Sub-pages: Pages Render", () => {
   test("/dashboard/settings/scim loads without 503", async ({ page }) => {
     const response = await page.goto("/dashboard/settings/scim", { waitUntil: "domcontentloaded" });
     expect(response?.status()).not.toBe(503);
-    const errorText = page.locator("text=/Engine nicht erreichbar|Service unavailable|503/i");
+    const errorText = page.getByText(/Engine nicht erreichbar|Service unavailable|503/i);
     await expect(errorText).toHaveCount(0, { timeout: 5_000 });
   });
 
@@ -167,7 +178,12 @@ test.describe("Settings Sub-pages: Pages Render", () => {
   test("/dashboard/settings/scim shows SCIM config or info", async ({ page }) => {
     await page.goto("/dashboard/settings/scim", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
-    const content = page.locator("input, button, code, pre, text=/SCIM|Endpoint|Token/i");
+    const content = page
+      .locator("input")
+      .or(page.locator("button"))
+      .or(page.locator("code"))
+      .or(page.locator("pre"))
+      .or(page.getByText(/SCIM|Endpoint|Token/i));
     expect(await content.count()).toBeGreaterThan(0);
   });
 });

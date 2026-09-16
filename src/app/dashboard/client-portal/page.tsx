@@ -238,15 +238,16 @@ export default function ClientPortalPage() {
                 )}
               </div>
               <div className="mt-3 flex gap-2">
-                <Link href={`/dashboard/shared-spaces/${space.slug}`} className="flex-1">
-                  <Button
-                    variant="secondary"
-                    className="w-full border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
-                  >
+                <Button
+                  variant="secondary"
+                  className="w-full border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+                  asChild
+                >
+                  <Link href={`/dashboard/shared-spaces/${space.slug}`} className="flex-1">
                     <Download size={12} className="mr-1.5" />
                     Dokumente
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
                 <Button
                   variant="secondary"
                   className="flex-1 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
@@ -335,15 +336,16 @@ export default function ClientPortalPage() {
               </div>
 
               <div className="flex gap-2">
-                <Link href={`/dashboard/cases/${encodeSlugPath(c.slug)}`} className="flex-1">
-                  <Button
-                    variant="secondary"
-                    className="w-full border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
-                  >
+                <Button
+                  variant="secondary"
+                  className="w-full border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+                  asChild
+                >
+                  <Link href={`/dashboard/cases/${encodeSlugPath(c.slug)}`} className="flex-1">
                     <FileText size={12} className="mr-1.5" />
                     {t("client_portal.documents")}
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
                 <div
                   className="flex flex-1 cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-dashed border-[color:var(--ds-border)] bg-transparent px-3 py-2 text-xs text-[color:var(--ds-text-muted)]"
                   title={t("client_portal.msg_disabled")}

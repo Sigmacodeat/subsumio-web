@@ -426,11 +426,17 @@ export function createHandler<
       // was silently dropped. This broke 26+ POST routes (copilot/explain,
       // copilot/plan, admin/dr, admin/feedback-triage, etc.) which accepted
       // body data but never received it.
-      try {
-        body = (await req.json()) as ValidatedBody<B>;
-      } catch {
-        // Body is not JSON (e.g. empty, form-encoded, or binary) — leave as undefined
-        // Handlers that need body data should provide a Zod schema.
+      // Never call req.json() on non-JSON payloads (multipart, octet-stream,
+      // form-urlencoded): the stream is consumed even when parsing throws,
+      // and the handler's later req.formData() fails "Body already read".
+      const contentType = req.headers.get("content-type") ?? "";
+      if (contentType === "" || contentType.includes("json")) {
+        try {
+          body = (await req.json()) as ValidatedBody<B>;
+        } catch {
+          // Malformed JSON — leave body undefined; handlers that need body
+          // data should provide a Zod schema.
+        }
       }
     }
 
@@ -902,6 +908,15 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
 
         if (!upstream.ok) {
           const errPayload = await upstream.json().catch(() => ({}));
+          // If the engine doesn't support this endpoint (404), return 503
+          // instead of passing through 404 — the route exists, the engine just
+          // doesn't have this feature.
+          if (upstream.status === 404) {
+            return Response.json(
+              { error: "service_unavailable", message: "Engine unterstützt diesen Endpunkt nicht" },
+              { status: 503 }
+            );
+          }
           return Response.json(
             errPayload.error ? errPayload : { error: `Engine returned ${upstream.status}` },
             { status: upstream.status }

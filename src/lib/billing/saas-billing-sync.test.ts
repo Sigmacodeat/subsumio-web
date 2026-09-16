@@ -8,8 +8,15 @@
  *   - billMonthlyOverage (mit PGLite mock)
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { toSaasPlan, fromSaasPlan, saasPlanForUser } from "@/lib/billing/plans";
+
+// Deterministic PGLite mode: force "no shared PG pool" regardless of whether
+// a DATABASE_URL is configured in the environment.
+vi.mock("@/lib/auth/store", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/auth/store")>();
+  return { ...actual, getSharedPgPool: () => null };
+});
 
 describe("saas-billing-sync: Plan Mapping", () => {
   describe("toSaasPlan", () => {

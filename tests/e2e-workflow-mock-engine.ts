@@ -1080,16 +1080,6 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
     });
   }
 
-  // ── Legal: rvg ──────────────────────────────────────────────────────
-  if (path === "/api/legal/rvg" && req.method === "POST") {
-    return sendJson(res, 200, {
-      gebuehr: 1.3,
-      streitwert: 45000,
-      kosten: { anwalt: 1785.5, gericht: 1080.0, total: 2865.5 },
-      vv: ["3100", "3103", "3202"],
-    });
-  }
-
   // ── Legal: statute-search ───────────────────────────────────────────
   if (path === "/api/legal/statute-search" && req.method === "GET") {
     return sendJson(res, 200, {

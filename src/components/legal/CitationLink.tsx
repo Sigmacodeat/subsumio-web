@@ -265,7 +265,7 @@ export function AttorneyReviewWarning({
             Keine Corpus-Prüfung durchgeführt — anwaltliche Prüfung erforderlich.
           </p>
         )}
-        <p className="mt-0.5 text-[color:var(--ds-warning-text)]/80">
+        <p className="mt-0.5 text-[color:var(--ds-warning-text)]">
           KI-generierte Antworten können halluzinieren, auch mit Quellenangaben. Misst Belegung,
           nicht inhaltliche Richtigkeit.
         </p>

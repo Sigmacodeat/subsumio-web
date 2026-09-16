@@ -1,50 +1,45 @@
-"use client";
-
 // /security — agency-grade trust & data-protection page.
 // MotionConfig wraps the page; ScrollProgress shows reading position;
 // every section scroll-reveals with reduced-motion safety.
 
 import { Check, Shield, Layers, Lock, Eye, ArrowRight, type LucideIcon } from "lucide-react";
 import Link from "next/link";
-import { p, UI_STRINGS, type Lang } from "@/content/site";
+import { p, UI_STRINGS } from "@/content/site";
 import { Button } from "@/components/ui/button";
 import { SECURITY } from "@/content/security";
-import { SectionHeading, CTASection, PageHero, Section, ICONS } from "./chrome";
+import { SectionHeading, CTASection, PageHero, Section } from "./primitives";
+import { ICONS } from "./icons";
 import { AnimatedFaqList } from "./animated-faq";
 import { Reveal, StaggerContainer, StaggerItem, GlowCard } from "./motion-system";
+import { IllusVaultShield } from "./brand-illustrations";
 
 const PILLAR_ICONS: Record<string, LucideIcon> = { Shield, Layers, Lock, Eye };
 
-export default function SecurityPage({ lang }: { lang: Lang }) {
-  const t = SECURITY[lang];
+export default function SecurityPage() {
+  const t = SECURITY;
 
   return (
-    <div
-      data-tone="light"
-      className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
-      lang={lang}
-    >
+    <div data-tone="light" className="min-h-screen overflow-x-clip [background:var(--mk-bg)]">
       {/* Hero */}
       <PageHero
         badge={t.badge}
         h1a={t.h1a}
         h1b={t.h1b}
         sub={t.sub}
-        icon={Shield}
+        icon="Shield"
         actions={
           <>
-            <Link href={p(lang, "/signup")}>
-              <Button size="lg" variant="primary">
-                {UI_STRINGS[lang].startFree} <ArrowRight size={16} />
-              </Button>
-            </Link>
-            <Link href={p(lang, "/contact")}>
-              <Button size="lg" variant="outline">
-                {UI_STRINGS[lang].writeUs}
-              </Button>
-            </Link>
+            <Button size="lg" variant="primary" asChild>
+              <Link href={p("/signup")}>
+                {UI_STRINGS.startFree} <ArrowRight size={16} />
+              </Link>
+            </Button>
+            <Button size="lg" variant="outline" asChild>
+              <Link href={p("/contact")}>{UI_STRINGS.writeUs}</Link>
+            </Button>
           </>
         }
+        visual={<IllusVaultShield />}
       />
 
       {/* Pillars */}
@@ -210,10 +205,10 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       <CTASection
         title={t.ctaTitle}
         sub={t.ctaSub}
-        href={p(lang, "/signup")}
+        href={p("/signup")}
         label={t.ctaButton}
-        secondaryHref={p(lang, "/contact")}
-        secondaryLabel={UI_STRINGS[lang].writeUs}
+        secondaryHref={p("/contact")}
+        secondaryLabel={UI_STRINGS.writeUs}
         showLogo={false}
       />
     </div>

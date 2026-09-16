@@ -23,14 +23,14 @@ describe("Subsumio brand configuration", () => {
   });
 
   test("builds the default Subsumio canonical URLs", () => {
-    expect(subsumioCanonical("de")).toBe("https://subsum.eu");
-    expect(subsumioCanonical("en")).toBe("https://subsum.eu/en");
+    expect(subsumioCanonical("at")).toBe("https://subsum.eu/at");
+    expect(subsumioCanonical("en")).toBe("https://subsum.eu/at");
   });
 
   test("supports a relative local Subsumio URL", async () => {
     process.env.NEXT_PUBLIC_SUBSUMIO_URL = "/";
     const { subsumioCanonical: freshCanonical } = await import("./brand");
-    expect(freshCanonical("de")).toBe("/");
-    expect(freshCanonical("en")).toBe("/en");
+    expect(freshCanonical("at")).toBe("/at");
+    expect(freshCanonical("en")).toBe("/at");
   });
 });

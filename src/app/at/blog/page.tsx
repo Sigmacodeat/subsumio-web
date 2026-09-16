@@ -1,0 +1,112 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { JsonLd, breadcrumbLd, organizationLd, blogLd } from "@/components/seo/jsonld";
+import { getAllPosts } from "@/content/blog";
+import { keywordsFor } from "@/lib/seo-keywords";
+import { Section, BadgePill, CTASection } from "@/components/marketing/primitives";
+import { H1_CLASS, H3_CLASS } from "@/components/marketing/typography";
+import { UI_STRINGS } from "@/content/site";
+
+export const metadata: Metadata = {
+  title: "Subsumio Blog — KI-Kanzleisoftware Praxiswissen",
+  description:
+    "Praxiswissen für österreichische Rechtsanwälte: KI-Kanzleisoftware, Verschwiegenheit, Fristenmanagement und belegte KI-Antworten.",
+  keywords: keywordsFor("blog"),
+  alternates: {
+    canonical: "/at/blog",
+    languages: { "de-AT": "/at/blog" },
+    types: { "application/rss+xml": "/feed.xml" },
+  },
+  openGraph: {
+    title: "Subsumio Blog — KI-Kanzleisoftware Praxiswissen",
+    description:
+      "Praxiswissen für Anwälte: KI-Kanzleisoftware und Berufsgeheimnis, Fristenmanagement, belegte KI-Antworten.",
+    url: "/at/blog",
+    type: "website",
+  },
+};
+
+export default function BlogPage() {
+  const posts = getAllPosts();
+
+  return (
+    <>
+      <JsonLd data={organizationLd()} />
+      <JsonLd
+        data={blogLd({
+          name: "Subsumio Blog — KI-Kanzleisoftware Praxiswissen",
+          description:
+            "Praxiswissen für Rechtsanwälte in Österreich: Verschwiegenheit, Fristenmanagement und belegte KI-Antworten.",
+          url: "/at/blog",
+          posts: posts.map((p) => ({
+            title: p.title,
+            url: `/at/blog/${p.slug}`,
+            date: p.date,
+          })),
+        })}
+      />
+      <JsonLd
+        data={breadcrumbLd([
+          { name: "Subsumio", url: "/at" },
+          { name: "Blog", url: "/at/blog" },
+        ])}
+      />
+      <div data-tone="light" className="min-h-screen [background:var(--mk-bg)]">
+        <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl">
+            <div className="mb-12">
+              <BadgePill>Blog</BadgePill>
+              <h1 className={`${H1_CLASS} mb-4`}>KI-Kanzleisoftware in der Praxis</h1>
+              <p className="text-lg text-pretty [color:var(--mk-text-muted)]">
+                Praxiswissen für Rechtsanwälte in Österreich: Verschwiegenheit, Fristenmanagement
+                und belegte KI-Antworten.
+              </p>
+            </div>
+
+            <div className="space-y-8">
+              {posts.map((post) => (
+                <article
+                  key={post.slug}
+                  className="border-b border-[color:var(--mk-border)] pb-8 last:border-0"
+                >
+                  <Link href={`/at/blog/${post.slug}`} className="group block">
+                    <time className="text-sm text-[color:var(--mk-text-subtle)]">
+                      {new Date(post.date).toLocaleDateString("de-DE", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}{" "}
+                      · {post.readMinutes} Min. Lesezeit
+                    </time>
+                    <h2 className={`mt-2 ${H3_CLASS} group-hover:text-[color:var(--brand-text)]`}>
+                      {post.title}
+                    </h2>
+                    <p className="mt-3 text-[color:var(--mk-text-muted)]">{post.description}</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {post.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-full border border-[color:var(--mk-border)] px-3 py-1 text-xs text-[color:var(--mk-text-subtle)]"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </Link>
+                </article>
+              ))}
+            </div>
+          </div>
+        </Section>
+        <CTASection
+          title="Bereit für belegte KI-Antworten?"
+          sub="Starte deine 14-tägige Testphase — keine Kreditkarte nötig."
+          href="/at/signup"
+          label="14 Tage testen"
+          secondaryHref="/at/contact"
+          secondaryLabel={UI_STRINGS.writeUs}
+        />
+      </div>
+    </>
+  );
+}

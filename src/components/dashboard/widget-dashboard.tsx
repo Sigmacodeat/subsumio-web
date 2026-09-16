@@ -438,12 +438,12 @@ export function InboxList({ items }: { items: DashboardPageLike[] }) {
           </div>
         ) : (
           items.slice(0, 5).map((item) => {
-            const source = item.type === "bea_draft" ? "beA" : t("nav.intake");
+            const source = item.type === "bea_draft" ? "Archivimport" : t("nav.intake");
             return (
               <QueueRow
                 key={item.slug}
                 icon={Mail}
-                href={item.type === "bea_draft" ? "/dashboard/bea" : "/dashboard/intake"}
+                href="/dashboard/intake"
                 title={text(item.title, t("cockpit.untitled_inbox"))}
                 meta={`${source} · ${formatDate(new Date(item.created_at), lang)}`}
                 badge={source}

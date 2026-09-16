@@ -592,6 +592,7 @@ export function CalendarInUiEditor() {
           <Button
             variant="ghost"
             size="sm"
+            aria-label={t("calendar.prev_month" as DashboardKey)}
             onClick={() => setCurrentDate(new Date(year, month - 1, 1))}
           >
             <ChevronLeft size={16} />
@@ -602,6 +603,7 @@ export function CalendarInUiEditor() {
           <Button
             variant="ghost"
             size="sm"
+            aria-label={t("calendar.next_month" as DashboardKey)}
             onClick={() => setCurrentDate(new Date(year, month + 1, 1))}
           >
             <ChevronRight size={16} />

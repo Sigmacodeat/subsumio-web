@@ -4,14 +4,7 @@ import { usePathname } from "next/navigation";
 import MarketingShell from "./marketing-shell";
 import RefConsentBanner from "./ref-consent";
 import AnalyticsConsentBanner from "./analytics-consent";
-import { UI_STRINGS, type Lang } from "@/content/site";
-
-function detectLang(pathname: string): Lang {
-  if (pathname.startsWith("/en")) return "en";
-  if (pathname.startsWith("/at")) return "at";
-  if (pathname.startsWith("/ch")) return "ch";
-  return "de";
-}
+import { UI_STRINGS } from "@/content/site";
 
 function isAuthedOrApi(pathname: string): boolean {
   return (
@@ -29,7 +22,6 @@ function isAuthedOrApi(pathname: string): boolean {
 
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const lang = detectLang(pathname);
   const hasOwnMain = pathname.startsWith("/dashboard") || pathname.startsWith("/portal");
   const isMarketingPage = !isAuthedOrApi(pathname);
 
@@ -51,9 +43,9 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:rounded-lg focus:bg-[color:var(--brand-primary)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white focus:shadow-lg"
       >
-        {UI_STRINGS[lang].skipToContent}
+        {UI_STRINGS.skipToContent}
       </a>
-      <MarketingShell lang={lang}>{pageContent}</MarketingShell>
+      <MarketingShell>{pageContent}</MarketingShell>
       <RefConsentBanner />
       <AnalyticsConsentBanner />
     </>

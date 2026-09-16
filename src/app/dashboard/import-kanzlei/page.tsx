@@ -376,7 +376,7 @@ export default function ImportKanzleiPage() {
           className="mt-0.5 shrink-0 text-[color:var(--ds-info-text)]"
           aria-hidden="true"
         />
-        <p className="text-xs leading-relaxed text-[color:var(--ds-info-text)]/90">
+        <p className="text-xs leading-relaxed text-[color:var(--ds-info-text)]">
           {t("importkanz.info")}
         </p>
       </div>

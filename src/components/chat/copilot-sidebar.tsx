@@ -51,7 +51,6 @@ const PAGE_CONTEXT_MAP: Record<string, { de: string; en: string }> = {
   "/dashboard/review-sets": { de: "Review Sets", en: "Review Sets" },
   "/dashboard/trust-accounting": { de: "Fremdgeld", en: "Trust Accounting" },
   "/dashboard/compliance": { de: "Compliance", en: "Compliance" },
-  "/dashboard/bea": { de: "beA-Postfach", en: "beA Inbox" },
   "/dashboard/email": { de: "E-Mail", en: "Email" },
   "/dashboard/chat": { de: "KI-Assistent", en: "AI Assistant" },
   "/dashboard/knowledge": { de: "Wissensbasis", en: "Knowledge Base" },
@@ -126,20 +125,6 @@ const PAGE_EXAMPLE_QUERIES: Record<string, { de: string[]; en: string[] }> = {
       "Check conflict of interest for new client",
       "Which matters have critical deadlines?",
       "Create a new client intake",
-    ],
-  },
-  "/dashboard/bea": {
-    de: [
-      "Fasse die neuesten beA-Nachrichten zusammen",
-      "Welche beA-Eingaben erfordern sofortiges Handeln?",
-      "Erstelle eine Antwort auf die letzte beA-Nachricht",
-      "Extrahiere Fristen aus der letzten beA-Nachricht",
-    ],
-    en: [
-      "Summarize the latest beA messages",
-      "Which beA messages require immediate action?",
-      "Draft a reply to the last beA message",
-      "Extract deadlines from the last beA message",
     ],
   },
   "/dashboard/litigation": {

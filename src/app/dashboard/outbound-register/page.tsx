@@ -97,11 +97,11 @@ export default function OutboundRegisterPage() {
         ]}
         actions={
           <div className="flex gap-2">
-            <a href="/api/outbound-register?format=csv" download>
-              <Button variant="secondary" className="gap-2">
+            <Button variant="secondary" className="gap-2" asChild>
+              <a href="/api/outbound-register?format=csv" download>
                 <Download size={14} /> CSV
-              </Button>
-            </a>
+              </a>
+            </Button>
             <Button
               onClick={() => setShowCreate(!showCreate)}
               className="brand-bg gap-2 text-white"

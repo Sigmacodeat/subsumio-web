@@ -361,8 +361,8 @@ test.describe("Case Management: Soft-Delete + Tombstone Cascade", () => {
     // Wait for page to load
     await page.waitForSelector('text="UI Disabled Test"', { timeout: 15000 });
 
-    // Verify archive banner is visible
-    await expect(page.locator("text=/Archiviert|Archived/")).toBeVisible();
+    // Verify archive banner is visible (badge + banner + hint all match — take first)
+    await expect(page.getByText(/Archiviert|Archived/).first()).toBeVisible();
 
     // Verify query input is disabled
     const queryInput = page.locator('input[aria-label*="Frage"], input[aria-label*="ask"]');
