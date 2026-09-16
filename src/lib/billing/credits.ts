@@ -14,6 +14,7 @@ import path from "node:path";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { env } from "@/lib/env";
 import { createSchemaInit } from "@/lib/schema-init";
+import { SAAS_SCHEMA_DDL } from "@/lib/billing/saas-schema";
 import { logger } from "@/lib/logger";
 
 // Re-export client-safe constants (no Node.js deps) for backward compatibility.
@@ -90,7 +91,9 @@ export interface CaseUsageRow {
 
 // ── DB Schema ───────────────────────────────────────────────────────────
 
-const ensureCreditSchema = createSchemaInit(`
+const ensureCreditSchema = createSchemaInit([
+  SAAS_SCHEMA_DDL,
+  `
   -- subsumio_credit_transactions: kept for historical audit trail.
   -- The balance table (subsumio_credit_balance) was consolidated into
   -- saas_credit_balance in migration v136. Transactions are still written
@@ -166,7 +169,8 @@ const ensureCreditSchema = createSchemaInit(`
   CREATE INDEX IF NOT EXISTS subsumio_credit_grants_owner_idx
     ON subsumio_credit_grants (owner_id, burn_priority ASC, created_at ASC)
     WHERE remaining > 0;
-`);
+`,
+]);
 
 // ── In-Memory Fallback (dev only) ───────────────────────────────────────
 

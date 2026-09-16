@@ -139,8 +139,9 @@ Gate: 0 Konsolenfehler, 0 5xx, jede Kernstation grün, Protokoll vollständig.
 - Secrets aus `playwright.config.ts` in Env; CSRF/2FA/Lockout-Specs im Real-Modus.
 - Responsiv (Mobile-Tab-Bar) und Dark-Mode für die Kernflächen.
 
-Gate: Playwright Mock-Suite grün ✅, Real-Engine-Smoke grün (wartet auf Provider-Guthaben),
-0 Hydration-Warnungen ✅ (Sweep 20 Seiten, Desktop + Mobil/Dark).
+Gate: Playwright Mock-Suite grün ✅, Real-Engine-Smoke grün ✅ für alle Stationen ohne KI
+(94/94; KI-Specs warten auf Provider-Guthaben), 0 Hydration-Warnungen ✅ (Sweep 20 Seiten,
+Desktop + Mobil/Dark).
 
 ### Phase 3 — Daten und KI-Schicht
 
@@ -149,7 +150,7 @@ Gate: Playwright Mock-Suite grün ✅, Real-Engine-Smoke grün (wartet auf Provi
   realistisch geprüft ist.
 - Grounding-Invariante auf allen KI-Flächen automatisiert prüfen (Test existiert:
   `chat-grounding.test.tsx`); Stichprobe mit echten AT-Normen (ABGB, ZPO, RAO).
-- Demo-Akte „Berger ./. Muster Werk GmbH" als Seed für jede neue Kanzlei verifizieren.
+- ~~Demo-Akte „Berger ./. Muster Werk GmbH" als Seed für jede neue Kanzlei verifizieren.~~ ✅
 - Korpus: AT-Abdeckung ist 91,5 % (Gedächtnis); für den Piloten ausreichend, Lücken
   (AT-Judikatur-Ingest) als Post-Pilot.
 

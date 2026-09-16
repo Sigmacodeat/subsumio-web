@@ -4,7 +4,8 @@ import { defineConfig, devices } from "@playwright/test";
 // on :31429 (with Ollama embeddings) instead of the mock engine on :3001.
 // This enables real PDF extraction, real search, and real AI analysis.
 const USE_REAL_ENGINE = process.env.SUBSUMIO_E2E_REAL_ENGINE === "1";
-const REAL_ENGINE_URL = "http://localhost:31429";
+// 127.0.0.1, not localhost: the engine listens on IPv4 only and Node may try ::1 first.
+const REAL_ENGINE_URL = process.env.SUBSUMIO_E2E_ENGINE_URL ?? "http://127.0.0.1:31429";
 // The web server under test. Override when :3000 is taken (a running dev
 // server, another project) — e.g. SUBSUMIO_E2E_PORT=3100. 127.0.0.1 on purpose:
 // "localhost" may resolve to ::1 where an unrelated server can be listening.

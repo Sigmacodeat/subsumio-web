@@ -38,8 +38,23 @@ class RealtimeClient {
   private pending: string[] = [];
   public status: "connecting" | "open" | "closed" | "error" = "closed";
   private mode: "ws" | "sse" | "none" = "none";
+  // Set on pagehide: the browser aborts the stream while the page unloads,
+  // which is not an error worth logging or reconnecting from.
+  private unloading = false;
+  private unloadHooked = false;
 
   connect(token?: string) {
+    if (!this.unloadHooked && typeof window !== "undefined") {
+      this.unloadHooked = true;
+      window.addEventListener("pagehide", () => {
+        this.unloading = true;
+        this.disconnect();
+      });
+      window.addEventListener("pageshow", () => {
+        // bfcache restore: allow reconnects again
+        this.unloading = false;
+      });
+    }
     if (WS_URL) {
       this.connectWs(token);
     } else if (typeof window !== "undefined" && "EventSource" in window) {
@@ -105,6 +120,7 @@ class RealtimeClient {
         }, 10_000);
       };
       this.es.onerror = (e) => {
+        if (this.unloading) return;
         if (this.stableTimer) {
           clearTimeout(this.stableTimer);
           this.stableTimer = null;

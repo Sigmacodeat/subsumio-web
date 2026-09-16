@@ -250,3 +250,41 @@ Provider-Guthaben.
   Crontab und dass jede Cron-Route eingeplant ist. Offen: `/api/cron/autonomous-engine` steht
   in keinem Scheduler (Entscheidung vor dem Piloten), Live-Crontab auf dem Server per SSH
   gegen die Repo-Datei prüfen (Phase 4).
+
+## Phase 3 — Demo-Akte als Seed (verifiziert)
+
+Die Registrierung ruft `provisionBrainAsync`; für die QA-Kanzlei liegen alle vier Seed-Seiten
+im Brain: Akte „Demo-Akte: Berger ./. Muster Werk GmbH", eine Frist
+(`demo-anfechtungsfrist-berger`), ein Dokument (`demo-kuendigungsschreiben`) und ein
+Posteingangs-Element (`demo-eingang-berger`). Neue Kanzleien starten damit nicht leer.
+
+## Phase 2 — Real-Engine-Smoke (Playwright gegen die echte Engine)
+
+Lauf: `SUBSUMIO_E2E_REAL_ENGINE=1` (Engine 127.0.0.1:31429, Wegwerf-Auth-DB `subsumio_e2e`,
+Prod-Build auf Port 3100), 15 Spec-Dateien der Kernstationen ohne KI-Aufruf: Smoke, Auth,
+Onboarding, Aktenverwaltung, Fristen-Sync (3 UIs + ICS), Rechnungen (2), Portal (2), Upload,
+Einstellungen, Kanzlei-Flow, Security-Header, API-Guard-Chain, Suche.
+
+| Ergebnis       | Zahl    |
+| -------------- | ------- |
+| bestanden      | 94      |
+| fehlgeschlagen | 0       |
+| Dauer          | 2,3 min |
+
+Die KI-Specs (Assistent, Strategie, Briefing) folgen, sobald Provider-Guthaben da ist.
+Engine-URL im Config jetzt `127.0.0.1` statt `localhost` (Engine lauscht nur IPv4;
+`SUBSUMIO_E2E_ENGINE_URL` überschreibt).
+
+**Fund aus dem Lauf — versteckte Kopplung an Engine-Migrationen:** Die Web-App fragt die
+SaaS-Billing-Tabellen (`saas_orgs`, `saas_credit_balance`, …) über die Auth-DB ab, angelegt
+wurden sie aber nur von den Engine-Migrationen (v134–v138) in der Engine-DB. Auf Hetzner ist
+das dieselbe Datenbank, in jeder getrennten Installation (lokal, E2E, künftiges Staging mit
+eigener Auth-DB) fehlten sie: erste KI-Anfrage → „relation saas_credit_balance does not
+exist" (Kreditgate, Trial-Gutschrift, Stripe-Sync). Fix: `src/lib/billing/saas-schema.ts`
+trägt die DDL in der Endform und läuft vor dem Kreditgate und der Org-Anlage. Verifiziert
+auf einer leeren Postgres: Web-DDL zuerst, danach `gbrain init --url` mit 134
+Engine-Migrationen — fehlerfrei, Spalten/Indizes identisch mit der Dev-DB, Engine ergänzt
+`chk_sub_plan`. Pflegeregel im Dateikopf: Engine-Änderungen an diesen Tabellen spiegeln.
+
+**Realtime-Client:** Beim Verlassen der Seite (pagehide) wird der SSE-Stream geschlossen
+statt „SSE error (will reconnect)" zu loggen und einen Reconnect zu planen.

@@ -15,6 +15,7 @@
  */
 
 import { getSharedPgPool } from "@/lib/auth/store";
+import { ensureSaasSchema } from "@/lib/billing/saas-schema";
 import { toSaasPlan, BILLABLE_PLANS } from "@/lib/billing/plans";
 import { PLANS } from "../../../server/src/core/saas-pricing";
 
@@ -42,6 +43,7 @@ export async function createSaasOrgForUser(
   /** Override seats (from Stripe metadata). Falls back to BILLABLE_PLANS default. */
   seatsOverride?: number
 ): Promise<string | null> {
+  await ensureSaasSchema();
   const pool = getSharedPgPool();
   if (!pool) return null; // PGLite mode — SaaS billing tables not available
 
