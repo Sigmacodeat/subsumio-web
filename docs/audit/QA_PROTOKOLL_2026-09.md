@@ -154,7 +154,7 @@ Zweitprüfungs-Spur) und alle Dokumente. Jetzt:
 - **Port 3000 doppelt belegt:** Während der QA startete ein fremdes Projekt (`Trustwallet`,
   Vinxi) einen Dev-Server auf `[::1]:3000`; Chrome löst `localhost` zuerst nach IPv6 auf und
   landete auf der falschen App. QA läuft daher gegen `127.0.0.1:3000`.
-- **Copy-Reste:** Tooltip „Unified Inbox für beA, WhatsApp, …" nennt beA (AT-Pilot).
+- **Copy-Reste:** beA aus Kommunikation (Tab + Copy), Fristen-Statkarte, Sidebar-Tooltip und Eingangs-Beschreibung entfernt; Freigabe-Status und IP-Allowlist-Karte übersetzt.
 
 ## Noch offen im Skript
 

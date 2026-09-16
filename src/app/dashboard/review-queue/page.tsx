@@ -47,8 +47,8 @@ function useStatusLabels(t: ReturnType<typeof useLang>["t"]): Record<string, str
     approved: t("review_queue.status_approved"),
     rejected: t("review_queue.status_rejected"),
     changes_requested: t("review_queue.status_changes_requested"),
-    awaiting_review: "Awaiting Review",
-    needs_human_review: "Needs Human Review",
+    awaiting_review: t("review_queue.status_awaiting_review"),
+    needs_human_review: t("review_queue.status_needs_human_review"),
   };
 }
 

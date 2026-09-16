@@ -217,8 +217,8 @@ export const D = {
     en: "Import German beA exports and create filing packages; native Austrian webERV submission is not included",
   },
   "nav.tooltip.communications": {
-    de: "Unified Inbox für beA, WhatsApp, E-Mail und Mandantenportal-Nachrichten",
-    en: "Unified inbox for beA, WhatsApp, email and client portal messages",
+    de: "Unified Inbox für WhatsApp, E-Mail und Mandantenportal-Nachrichten",
+    en: "Unified inbox for WhatsApp, email and client portal messages",
   },
   "nav.tooltip.deep_analysis": {
     de: "Cross-Dokument-Analyse mit KI: Themen, Risiken und Muster über mehrere Dokumente hinweg erkennen",
@@ -827,8 +827,8 @@ export const D = {
   },
   "widget.inbox": { de: "Eingang", en: "Inbox" },
   "widget.inbox_desc": {
-    de: "Neue Eingänge aus beA, E-Mail und Mandatsaufnahme",
-    en: "New items from beA, email and intake",
+    de: "Neue Eingänge aus E-Mail, Portal und Mandatsaufnahme",
+    en: "New items from email, portal and intake",
   },
   "widget.review_gaps": { de: "Review-Lücken", en: "Review Gaps" },
   "widget.review_gaps_desc": {
@@ -4663,6 +4663,11 @@ export const D = {
   "review_queue.status_approved": { de: "Freigegeben", en: "Approved" },
   "review_queue.status_rejected": { de: "Abgelehnt", en: "Rejected" },
   "review_queue.status_changes_requested": { de: "Überarbeitung", en: "Changes requested" },
+  "review_queue.status_awaiting_review": { de: "Wartet auf Prüfung", en: "Awaiting review" },
+  "review_queue.status_needs_human_review": {
+    de: "Menschliche Prüfung nötig",
+    en: "Needs human review",
+  },
   "review_queue.all_status": { de: "Alle Status", en: "All statuses" },
   "review_queue.all_assignees": { de: "Alle Bearbeiter", en: "All assignees" },
   "review_queue.docs_count": { de: "Vorgänge", en: "items" },

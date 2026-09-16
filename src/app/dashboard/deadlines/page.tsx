@@ -1023,11 +1023,10 @@ export default function DeadlinesPage() {
         </div>
       )}
 
-      <div className="grid gap-px overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-border)] sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-px overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-border)] sm:grid-cols-2 lg:grid-cols-4">
         {[
           { label: t("deadlines.source_case"), value: sourceCounts.case || 0 },
           { label: t("deadlines.source_direct"), value: sourceCounts.direct || 0 },
-          { label: t("deadlines.source_bea"), value: sourceCounts.bea || 0 },
           { label: t("deadlines.source_ai"), value: sourceCounts.ai || 0 },
           { label: t("deadlines.review_open_count"), value: reviewOpenCount },
         ].map((item) => (

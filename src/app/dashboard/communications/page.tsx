@@ -191,15 +191,15 @@ function timeLabel(lang: Lang, value: string): string {
 const I18N: Record<string, { de: string; en: string }> = {
   title: { de: "Kommunikation", en: "Communications" },
   description: {
-    de: "Unified Inbox für beA, WhatsApp, E-Mail und Mandantenportal — alle Nachrichten an einem Ort.",
-    en: "Unified inbox for beA, WhatsApp, email and client portal — all messages in one place.",
+    de: "Unified Inbox für WhatsApp, E-Mail und Mandantenportal — alle Nachrichten an einem Ort.",
+    en: "Unified inbox for WhatsApp, email and client portal — all messages in one place.",
   },
   refresh: { de: "Aktualisieren", en: "Refresh" },
   all: { de: "Alle", en: "All" },
   search_placeholder: { de: "Nachrichten durchsuchen…", en: "Search messages…" },
   empty: {
-    de: "Keine Nachrichten vorhanden. Sobald beA-, WhatsApp-, E-Mail- oder Portal-Nachrichten eingehen, erscheinen sie hier.",
-    en: "No messages yet. Once beA, WhatsApp, email or portal messages arrive, they will appear here.",
+    de: "Keine Nachrichten vorhanden. Sobald WhatsApp-, E-Mail- oder Portal-Nachrichten eingehen, erscheinen sie hier.",
+    en: "No messages yet. Once WhatsApp, email or portal messages arrive, they will appear here.",
   },
   error: { de: "Nachrichten konnten nicht geladen werden.", en: "Failed to load messages." },
   unread: { de: "ungelesen", en: "unread" },
@@ -353,7 +353,6 @@ export default function CommunicationsPage() {
 
   const tabs: Array<{ key: Channel; icon: React.ElementType; label: string }> = [
     { key: "all", icon: InboxIcon, label: tr("all", lang) },
-    { key: "bea", icon: Landmark, label: "beA" },
     { key: "whatsapp", icon: MessageSquareText, label: "WhatsApp" },
     { key: "email", icon: Mail, label: lang === "en" ? "Email" : "E-Mail" },
     { key: "portal", icon: User, label: lang === "en" ? "Portal" : "Portal" },

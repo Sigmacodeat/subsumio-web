@@ -19,7 +19,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 
 export default function SecuritySettingsPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [step, setStep] = useState<"idle" | "setup" | "verify">("idle");
   const [qrUrl, setQrUrl] = useState("");
   const [token, setToken] = useState("");
@@ -346,14 +346,14 @@ export default function SecuritySettingsPage() {
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
           <div className="flex items-center gap-2">
             <Globe size={16} className="text-[color:var(--ds-text-muted)]" />
-            <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">IP Allowlist</h3>
+            <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">IP-Allowlist</h3>
             {ipAllowlistEnabled ? (
               <Badge variant="default" className="text-xs">
-                Active
+                {lang === "en" ? "Active" : "Aktiv"}
               </Badge>
             ) : (
               <Badge variant="default" className="text-xs text-[color:var(--ds-text-muted)]">
-                Inactive
+                {lang === "en" ? "Inactive" : "Inaktiv"}
               </Badge>
             )}
           </div>
@@ -365,7 +365,7 @@ export default function SecuritySettingsPage() {
               aria-live="polite"
             >
               <Loader2 size={12} className="animate-spin" />
-              Loading...
+              {lang === "en" ? "Loading…" : "Lädt…"}
             </div>
           ) : (
             <>
@@ -385,16 +385,22 @@ export default function SecuritySettingsPage() {
                 </div>
               ) : (
                 <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-3 text-xs text-[color:var(--ds-text-muted)]">
-                  No IPs configured. Set{" "}
+                  {lang === "en"
+                    ? "No IPs configured. Set the "
+                    : "Keine IPs konfiguriert. Setze die Umgebungsvariable "}
                   <code className="rounded bg-[color:var(--ds-surface)] px-1 py-0.5 font-mono">
                     SUBSUMIO_IP_ALLOWLIST
                   </code>{" "}
-                  environment variable to enable.
+                  {lang === "en"
+                    ? "environment variable to enable."
+                    : "auf dem Server, um die Allowlist zu aktivieren."}
                 </div>
               )}
 
               <div className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]">
-                Configure via environment variable:
+                {lang === "en"
+                  ? "Configure via environment variable:"
+                  : "Konfiguration über Umgebungsvariable:"}
                 <pre className="mt-1 font-mono text-xs whitespace-pre-wrap">
                   SUBSUMIO_IP_ALLOWLIST=10.0.0.0/8,192.168.1.100\nSUBSUMIO_TRUSTED_PROXY_HOPS=1
                 </pre>
