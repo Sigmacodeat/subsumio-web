@@ -211,7 +211,7 @@ durchgespielt, Protokoll in `docs/audit/QA_PROTOKOLL_2026-09.md`. Behoben und ge
 Offen mit Priorität (siehe Protokoll):
 
 1. ~~P1 Portal-Dokumentsichtbarkeit~~ — erledigt (Freigabe-Flag pro Dokument, Whitelist-View).
-2. Kontakte aus Akten-Parteien (Produktentscheidung), Dokumentansicht statt Brain-Seite.
+2. ~~Kontakte aus Akten-Parteien~~ erledigt; offen: Dokumentansicht statt Brain-Seite.
 3. Copy-Reste beA/DE (Kommunikation, Fristen-Statkarte), englische Labels (Freigaben,
    Sicherheit), Sidebar-Links ohne Namen (axe-Lauf), Stundensatz-Plausibilität.
 4. Phase 3: Engine lokal auf echtes Modell (OpenRouter/Anthropic) für die KI-Stationen 4/Strategie.

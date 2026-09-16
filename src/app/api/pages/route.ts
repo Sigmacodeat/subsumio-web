@@ -3,6 +3,7 @@ import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { markOnboardingProgress } from "@/lib/auth/store";
+import { ensureCaseContacts } from "@/lib/case-contacts";
 
 const pagesQuerySchema = z.object({
   limit: z.string().optional(),
@@ -187,6 +188,14 @@ export const POST = createHandler(
             ...body.frontmatter,
             conflict_status: "conflict_cleared",
           };
+        }
+      }
+
+      if (body.type === "legal_case" && body.merge !== true) {
+        // Parties typed into the wizard become contacts linked to the matter.
+        const links = await ensureCaseContacts(ctx.headers, body.frontmatter ?? {});
+        if (Object.keys(links).length > 0) {
+          body.frontmatter = { ...body.frontmatter, ...links };
         }
       }
 
