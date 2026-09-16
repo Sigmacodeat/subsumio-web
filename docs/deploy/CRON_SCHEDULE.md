@@ -34,11 +34,11 @@ Abgleich unten bleibt als Beleg. `src/lib/ingest-schedule.test.ts` prüft seithe
 
 Alle übrigen 17 Einträge stimmen überein. Der Crontab enthält 35 Jobs, `vercel.json` 31.
 
-## Nicht eingeplant (bewusst offen)
+## Ergänzt am 16.09.2026
 
-- `/api/cron/autonomous-engine` — laut Kopfkommentar „runs every minute", steht in keinem
-  Scheduler. Führt autonome Aufgaben aus der Prioritäts-Queue aus (Fristen-Follow-ups,
-  Entwürfe). Vor dem Piloten entscheiden: einplanen (`* * * * *`) oder Route entfernen.
+- `/api/cron/autonomous-engine` läuft jetzt minütlich (Queue-Worker). Kritische Aktionen
+  bleiben im Status `requires_approval` und warten auf eine anwaltliche Freigabe; der Job
+  führt nichts Unumkehrbares unbeaufsichtigt aus.
 
 ## Noch zu tun auf dem Server (braucht SSH, Phase 4)
 

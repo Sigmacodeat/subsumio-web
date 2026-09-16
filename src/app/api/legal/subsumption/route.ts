@@ -5,6 +5,9 @@ import { createHandler } from "@/lib/api-handler";
 import { trustedLegalJurisdiction } from "@/lib/legal-jurisdiction";
 import { getJurisdictionConfig, normalizeJurisdiction } from "@/lib/legal-jurisdiction-config";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/legal/subsumption");
+
 export const maxDuration = 60;
 
 /**
@@ -146,7 +149,7 @@ export const POST = createHandler(
 
     if (!res.ok) {
       const payload = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-      console.error("[legal/subsumption] engine think failed:", res.status, payload);
+      log.error("[legal/subsumption] engine think failed:", res.status, payload);
       return Response.json(
         {
           error: "subsumption_failed",
@@ -179,7 +182,7 @@ export const POST = createHandler(
               controller.enqueue(value);
             }
           } catch (err) {
-            console.error("[legal/subsumption] stream error:", err);
+            log.error("[legal/subsumption] stream error:", err);
           } finally {
             controller.close();
           }

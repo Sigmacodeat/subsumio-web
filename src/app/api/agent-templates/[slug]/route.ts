@@ -2,6 +2,9 @@ import { z } from "zod";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { createHandler, apiError, apiNotFound } from "@/lib/api-handler";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/agent-templates/[slug]");
+
 function buildSlug(slug: string): string | null {
   if (slug.includes("..")) return null;
   return slug;
@@ -71,7 +74,7 @@ export const GET = createHandler(
         updated_at: String(p.updated_at ?? ""),
       });
     } catch (err) {
-      console.error(
+      log.error(
         "[agent-templates/slug] get failed:",
         err instanceof Error ? err.message : String(err)
       );
@@ -133,7 +136,7 @@ export const PATCH = createHandler(
       const data = await res.json();
       return Response.json({ slug: data.slug ?? slug, success: true });
     } catch (err) {
-      console.error(
+      log.error(
         "[agent-templates/slug] patch failed:",
         err instanceof Error ? err.message : String(err)
       );
@@ -176,7 +179,7 @@ export const DELETE = createHandler(
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return Response.json({ success: true });
     } catch (err) {
-      console.error(
+      log.error(
         "[agent-templates/slug] delete failed:",
         err instanceof Error ? err.message : String(err)
       );

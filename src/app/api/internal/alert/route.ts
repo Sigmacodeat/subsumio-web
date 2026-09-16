@@ -2,6 +2,9 @@ import { NextRequest } from "next/server";
 import { requireInternalSecret } from "@/lib/auth/internal-guard";
 import { logAudit } from "@/lib/audit";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/internal/alert");
+
 export const dynamic = "force-dynamic";
 
 /**
@@ -33,13 +36,15 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Log to console for operational visibility
-    const logFn = body.severity === "critical" ? console.error : console.warn;
-    logFn(`[alert:${body.type}] [${body.severity}] ${body.message}`);
+    // Structured log line for operational visibility
+    (body.severity === "critical" ? log.error : log.warn)(`[alert:${body.type}] ${body.message}`, {
+      alert_type: body.type,
+      severity: body.severity,
+    });
 
     return Response.json({ ok: true });
   } catch (err) {
-    console.error("[internal/alert] failed:", err instanceof Error ? err.message : String(err));
+    log.error("[internal/alert] failed:", err instanceof Error ? err.message : String(err));
     return Response.json(
       { error: "alert_failed", message: err instanceof Error ? err.message : "unknown" },
       { status: 500 }

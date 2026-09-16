@@ -119,6 +119,9 @@ export interface UserStore {
 import { env } from "@/lib/env";
 import { encryptFields, decryptFields } from "@/lib/encryption";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/auth/store");
+
 /** Fields that must be encrypted at rest in production. */
 export const SENSITIVE_USER_FIELDS = [
   "twoFactorSecret",
@@ -159,7 +162,7 @@ class FileUserStore implements UserStore {
       // Decrypt sensitive fields on load
       this.cache = await Promise.all(users.map(decryptUser));
     } catch (err) {
-      console.error(
+      log.error(
         "[auth] failed to load users file:",
         err instanceof Error ? err.message : String(err)
       );

@@ -6,6 +6,9 @@ import { getSharedPgPool } from "@/lib/auth/store";
 import { env } from "@/lib/env";
 import { createSchemaInit } from "@/lib/schema-init";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/dashboard/widgets");
+
 const widgetSchema = z.object({
   id: z.string().max(200),
   type: z.string().optional(),
@@ -88,7 +91,7 @@ export const POST = createHandler(
         );
         return Response.json({ ok: true });
       } catch (err) {
-        console.error(
+        log.error(
           "[widget-prefs] postgres save failed:",
           err instanceof Error ? err.message : String(err)
         );
@@ -109,7 +112,7 @@ export const POST = createHandler(
       await fs.rename(tmp, WIDGET_PREFS_FILE);
       return Response.json({ ok: true });
     } catch (err) {
-      console.error(
+      log.error(
         "[widget-prefs] file save failed:",
         err instanceof Error ? err.message : String(err)
       );

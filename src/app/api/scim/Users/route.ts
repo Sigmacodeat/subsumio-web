@@ -13,6 +13,9 @@ import {
 } from "@/lib/scim";
 import { z } from "zod";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/scim/Users");
+
 export const dynamic = "force-dynamic";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu";
@@ -156,7 +159,7 @@ export const POST = createScimHandler(
       return scimResponse(userToScim(user, BASE_URL), created ? 201 : 200);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error("[scim/Users POST] error:", msg);
+      log.error("[scim/Users POST] error:", msg);
       return scimError(500, "Failed to create user");
     }
   }

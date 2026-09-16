@@ -20,6 +20,9 @@ import {
 import { env } from "@/lib/env";
 import type { BrainPage } from "@/lib/types";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/cron/regulatory-monitors");
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
@@ -282,7 +285,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
         }
       } catch (err) {
         errors++;
-        console.error(
+        log.error(
           `[regulatory-monitors] Monitor ${monitor.monitor_id} failed:`,
           err instanceof Error ? err.message : String(err)
         );

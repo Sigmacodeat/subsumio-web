@@ -1,6 +1,9 @@
 import { createHandler } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/brain/stats");
+
 export const GET = createHandler(
   {
     action: "brain.read",
@@ -17,7 +20,7 @@ export const GET = createHandler(
       const data = await res.json();
       return Response.json({ ...data, engine_reachable: true });
     } catch (err) {
-      console.error(
+      log.error(
         "[brain/stats] engine unreachable:",
         err instanceof Error ? err.message : String(err)
       );

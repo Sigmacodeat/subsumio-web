@@ -10,6 +10,9 @@
 
 import { ENGINE_URL } from "@/lib/engine";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/dms/index");
+
 export interface DMSDocument {
   id: string;
   name: string;
@@ -118,12 +121,12 @@ export async function importToBrainCommon(
         const blob = await contentRes.arrayBuffer();
         content = Buffer.from(blob).toString("base64");
       } else {
-        console.warn(
+        log.warn(
           `[dms] content fetch from ${contentUrl} returned ${contentRes.status}; importing without content`
         );
       }
     } catch (err) {
-      console.warn(
+      log.warn(
         `[dms] content fetch from ${contentUrl} failed: ${err instanceof Error ? err.message : String(err)}; importing without content`
       );
     }

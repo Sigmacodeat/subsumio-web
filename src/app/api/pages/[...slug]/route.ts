@@ -4,6 +4,9 @@ import { createHandler, apiError, apiNotFound } from "@/lib/api-handler";
 import { logAudit } from "@/lib/audit";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/pages/[...slug]");
+
 function buildPath(slug: string[]): string | null {
   if (slug.some((s) => s.includes(".."))) return null;
   return slug.map(encodeURIComponent).join("/");
@@ -35,10 +38,7 @@ export const GET = createHandler(
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return Response.json(await res.json());
     } catch (err) {
-      console.error(
-        "[pages/...slug] get failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[pages/...slug] get failed:", err instanceof Error ? err.message : String(err));
       return apiNotFound("not_found");
     }
   }
@@ -336,7 +336,7 @@ export const PATCH = createHandler(
             };
           }
         } catch (err) {
-          console.error(
+          log.error(
             "[pages/...slug] restore cascade failed:",
             err instanceof Error ? err.message : String(err)
           );
@@ -423,10 +423,7 @@ export const PATCH = createHandler(
         { status: partialFailure ? 207 : 200 }
       );
     } catch (err) {
-      console.error(
-        "[pages/...slug] patch failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[pages/...slug] patch failed:", err instanceof Error ? err.message : String(err));
       return apiError("engine_unreachable", "Seite nicht aktualisierbar", 503);
     }
   }
@@ -640,7 +637,7 @@ export const DELETE = createHandler(
             };
           }
         } catch (err) {
-          console.error(
+          log.error(
             "[pages/...slug] cascade tombstone failed:",
             err instanceof Error ? err.message : String(err)
           );
@@ -723,7 +720,7 @@ export const DELETE = createHandler(
         { status: cascade.attempted && cascade.failed.length > 0 ? 207 : 200 }
       );
     } catch (e) {
-      console.error("[pages/...slug] delete failed:", e instanceof Error ? e.message : String(e));
+      log.error("[pages/...slug] delete failed:", e instanceof Error ? e.message : String(e));
       return apiError("engine_unreachable", "Seite nicht löschbar", 503);
     }
   }

@@ -2,6 +2,9 @@ import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/acls/groups/[groupId]/members");
+
 const addMemberSchema = z.object({
   user_id: z.string().min(1).max(200),
 });
@@ -31,10 +34,7 @@ export const GET = createHandler(
       const data = await res.json();
       return Response.json(data);
     } catch (err) {
-      console.error(
-        "[acls/members] list failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[acls/members] list failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Mitglieder konnten nicht geladen werden", 500);
     }
   }
@@ -72,7 +72,7 @@ export const POST = createHandler(
       const data = await res.json();
       return Response.json(data);
     } catch (err) {
-      console.error("[acls/members] add failed:", err instanceof Error ? err.message : String(err));
+      log.error("[acls/members] add failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Mitglied konnte nicht hinzugefügt werden", 500);
     }
   }

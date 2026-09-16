@@ -34,6 +34,13 @@ const eslintConfig = defineConfig([
       "jsx-a11y/anchor-is-valid": "error",
     },
   },
+  // Server code logs through the structured logger (module + requestId, JSON
+  // lines); console.* is only for browser code, tests and scripts.
+  {
+    files: ["src/app/api/**/*.ts", "src/lib/auth/**/*.ts", "src/lib/legal-graph/**/*.ts"],
+    ignores: ["**/*.test.ts"],
+    rules: { "no-console": "error" },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

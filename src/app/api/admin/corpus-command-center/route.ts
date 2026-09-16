@@ -5,6 +5,9 @@ import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { lawCorpusNormalizedDir } from "@/lib/corpus-paths";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/admin/corpus-command-center");
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 15;
 
@@ -156,7 +159,7 @@ export const GET = createHandler(
           };
         }
       } catch (err) {
-        console.error("[corpus-command-center] DB stats query failed:", err);
+        log.error("[corpus-command-center] DB stats query failed:", err);
       }
 
       // Pipeline State
@@ -181,7 +184,7 @@ export const GET = createHandler(
           alertFlags: Array.isArray(r.alert_flags) ? r.alert_flags : [],
         }));
       } catch (err) {
-        console.error("[corpus-command-center] pipeline_state query failed:", err);
+        log.error("[corpus-command-center] pipeline_state query failed:", err);
       }
 
       // Pipeline paused?
@@ -193,7 +196,7 @@ export const GET = createHandler(
           pipelinePaused = pauseResult.rows[0].value?.paused === true;
         }
       } catch (err) {
-        console.error("[corpus-command-center] pipeline_config query failed:", err);
+        log.error("[corpus-command-center] pipeline_config query failed:", err);
       }
     }
 
@@ -531,7 +534,7 @@ export const GET = createHandler(
           });
         }
       } catch (err) {
-        console.error("[corpus-command-center] ris-delta query failed:", err);
+        log.error("[corpus-command-center] ris-delta query failed:", err);
       }
     }
 

@@ -2,6 +2,9 @@ import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/agents/[...slug]");
+
 export const maxDuration = 300;
 
 const validActions = new Set(["pause", "resume", "cancel", "replay", "inbox"]);
@@ -35,7 +38,7 @@ export const GET = createHandler(
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return Response.json(await res.json());
     } catch (err) {
-      console.error("[agents/slug] get failed:", err instanceof Error ? err.message : String(err));
+      log.error("[agents/slug] get failed:", err instanceof Error ? err.message : String(err));
       return Response.json(
         { error: "not_found", message: "Agent nicht gefunden" },
         { status: 404 }
@@ -90,7 +93,7 @@ export const POST = createHandler(
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return Response.json(await res.json());
     } catch (err) {
-      console.error("[agents/slug] post failed:", err instanceof Error ? err.message : String(err));
+      log.error("[agents/slug] post failed:", err instanceof Error ? err.message : String(err));
       return apiError("engine_unavailable", "Engine nicht erreichbar", 503);
     }
   }

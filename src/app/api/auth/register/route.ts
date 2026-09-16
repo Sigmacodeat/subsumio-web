@@ -8,6 +8,9 @@ import { clientIp } from "@/lib/auth/rate-limit";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { z } from "zod";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/auth/register");
+
 // Extended schema with trimmed email and name for internal validation
 const registerSchemaInternal = registerSchema.extend({
   email: z
@@ -57,7 +60,7 @@ export const POST = createPublicHandler(
 
       return Response.json({ user: toPublic(user) as PublicUser, success: true });
     } catch (err: unknown) {
-      console.error("[auth/register]", err instanceof Error ? err.message : String(err));
+      log.error("[auth/register]", err instanceof Error ? err.message : String(err));
       return apiError("server_error", "Server error", 500);
     }
   }

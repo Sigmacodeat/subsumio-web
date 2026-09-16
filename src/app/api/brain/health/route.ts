@@ -1,6 +1,9 @@
 import { createHandler } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/brain/health");
+
 export const GET = createHandler(
   {
     action: "brain.read",
@@ -24,7 +27,7 @@ export const GET = createHandler(
         db_size_bytes: data.db_size_bytes ?? null,
       });
     } catch (err) {
-      console.error(
+      log.error(
         "[brain/health] engine unreachable:",
         err instanceof Error ? err.message : String(err)
       );

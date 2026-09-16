@@ -20,6 +20,9 @@ import {
 import { createTimeEntry } from "@/lib/time-tracking";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/time/auto-extract");
+
 export const dynamic = "force-dynamic";
 
 const messageSchema = z.object({
@@ -110,7 +113,7 @@ export const POST = createHandler(
           });
           persistedEntries.push({ id: created.id, case_slug: body.case_slug });
         } catch (err) {
-          console.error("[auto-extract] Failed to create entry:", err);
+          log.error("[auto-extract] Failed to create entry:", err);
         }
       }
 

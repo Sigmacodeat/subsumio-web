@@ -1,6 +1,9 @@
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/connectors");
+
 export const GET = createHandler(
   {
     action: "connector.read",
@@ -21,7 +24,7 @@ export const GET = createHandler(
       }
       return Response.json(await upstream.json());
     } catch (err) {
-      console.error("[connectors] list failed:", err instanceof Error ? err.message : String(err));
+      log.error("[connectors] list failed:", err instanceof Error ? err.message : String(err));
       return apiError("service_unavailable", "Engine nicht erreichbar", 503);
     }
   }

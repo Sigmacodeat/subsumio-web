@@ -3,6 +3,9 @@ import { getTrackingEvents } from "@/lib/email/tracking";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { mailboxScopeFor } from "@/lib/email/mailbox-scope";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/email/messages/[id]/tracking");
+
 export const GET = createHandler(
   {
     action: "brain.read",
@@ -31,7 +34,7 @@ export const GET = createHandler(
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       const status = msg === "mailbox_database_not_configured" ? 503 : 500;
-      console.error("[email] failed to load tracking data:", msg);
+      log.error("[email] failed to load tracking data:", msg);
       return apiError("load_failed", "Tracking-Daten konnten nicht geladen werden", status);
     }
   }

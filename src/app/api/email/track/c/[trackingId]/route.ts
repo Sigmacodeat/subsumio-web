@@ -12,6 +12,9 @@ import {
 import { clientIp } from "@/lib/auth/rate-limit";
 import { z } from "zod";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/email/track/c/[trackingId]");
+
 export const dynamic = "force-dynamic";
 
 const clickTrackSchema = z.object({
@@ -100,7 +103,7 @@ export const GET = createPublicHandler(
           raw: { source: "click_redirect" },
         });
       } catch (err) {
-        console.error(
+        log.error(
           `[email-tracking] click redirect logging failed: ${err instanceof Error ? err.message : String(err)}`
         );
       }

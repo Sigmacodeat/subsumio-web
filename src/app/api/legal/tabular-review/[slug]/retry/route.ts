@@ -2,6 +2,9 @@ import { z } from "zod";
 import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/legal/tabular-review/[slug]/retry");
+
 export const maxDuration = 60;
 
 const tabularReviewRetrySchema = z.object({
@@ -64,7 +67,7 @@ export const POST = createHandler(
 
       return Response.json(payload);
     } catch (err) {
-      console.error(
+      log.error(
         "[tabular-review/retry] engine unreachable:",
         err instanceof Error ? err.message : String(err)
       );

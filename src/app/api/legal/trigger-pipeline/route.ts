@@ -10,6 +10,9 @@ import {
   type OwnerType,
 } from "@/lib/billing/credits";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/legal/trigger-pipeline");
+
 export const maxDuration = 30;
 
 const triggerSchema = z.object({
@@ -206,14 +209,14 @@ export const POST = createHandler(
           0,
           pendingReservation.pipelineKey
         ).catch((refundError) =>
-          console.error(
+          log.error(
             "[trigger-pipeline] CRITICAL: reservation refund failed:",
             refundError instanceof Error ? refundError.message : String(refundError)
           )
         );
       }
       const msg = err instanceof Error ? err.message : String(err);
-      console.error("[trigger-pipeline] error:", msg);
+      log.error("[trigger-pipeline] error:", msg);
       return apiError("internal_error", `Pipeline-Trigger fehlgeschlagen: ${msg}`, 500);
     }
   }

@@ -13,6 +13,9 @@ import {
 } from "@/lib/copilot-memory";
 import { extractMemoriesWithLLM, isLLMExtractionAvailable } from "@/lib/copilot-memory-llm";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/copilot/memory");
+
 const memoryPostSchema = z.object({
   action: z.enum(["create", "update", "delete", "infer", "search"]).optional(),
   type: z.enum(["preference", "fact", "instruction", "context", "deadline"]).optional(),
@@ -40,10 +43,7 @@ export const GET = createHandler(
       const memories = await listMemories({ caseSlug, type, pinnedOnly });
       return NextResponse.json({ memories });
     } catch (err) {
-      console.error(
-        "[copilot/memory] GET failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[copilot/memory] GET failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Failed to load memories", 500);
     }
   }
@@ -178,10 +178,7 @@ export const POST = createHandler(
 
       return apiError("bad_request", "Invalid action or missing fields", 400);
     } catch (err) {
-      console.error(
-        "[copilot/memory] POST failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[copilot/memory] POST failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Failed to create memory", 500);
     }
   }
@@ -217,10 +214,7 @@ export const PATCH = createHandler(
       await updateMemory(id, { value, pinned, type });
       return NextResponse.json({ ok: true });
     } catch (err) {
-      console.error(
-        "[copilot/memory] PATCH failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[copilot/memory] PATCH failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Failed to update memory", 500);
     }
   }
@@ -251,7 +245,7 @@ export const DELETE = createHandler(
       await deleteMemory(id);
       return NextResponse.json({ ok: true });
     } catch (err) {
-      console.error(
+      log.error(
         "[copilot/memory] DELETE failed:",
         err instanceof Error ? err.message : String(err)
       );

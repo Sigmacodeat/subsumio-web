@@ -13,6 +13,9 @@ import { createCitationGateStream } from "@/lib/citation-gate";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
 import { storeReceipt, type WorkProductReceipt } from "@/lib/work-product-receipt-store";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/legal/contract-redline");
+
 export const maxDuration = 300;
 
 const contractRedlineSchema = z.object({
@@ -113,7 +116,7 @@ export const POST = createHandler(
           };
           await storeReceipt(scopedReceipt);
         } catch (err) {
-          console.error(
+          log.error(
             "[contract-redline] receipt store failed:",
             err instanceof Error ? err.message : String(err)
           );
@@ -127,7 +130,7 @@ export const POST = createHandler(
         );
         result._grounding = grounding;
       } catch (err) {
-        console.error(
+        log.error(
           "[contract-redline] grounding failed:",
           err instanceof Error ? err.message : String(err)
         );
@@ -142,7 +145,7 @@ export const POST = createHandler(
 
       return Response.json(result);
     } catch (err) {
-      console.error(
+      log.error(
         "[contract-redline] engine unreachable:",
         err instanceof Error ? err.message : String(err)
       );

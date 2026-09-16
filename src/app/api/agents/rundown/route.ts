@@ -1,6 +1,9 @@
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/agents/rundown");
+
 export const maxDuration = 300;
 
 /**
@@ -77,7 +80,7 @@ export const POST = createHandler(
       const data = await res.json();
       return Response.json({ jobId: data.jobId ?? null, success: true });
     } catch (err) {
-      console.error(
+      log.error(
         "[agents/rundown] submit failed:",
         err instanceof Error ? err.message : String(err)
       );

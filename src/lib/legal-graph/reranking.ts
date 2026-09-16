@@ -23,6 +23,9 @@ import { env } from "@/lib/env";
 import type { HybridSearchResult } from "./search";
 import { collectSSE } from "./sse";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/legal-graph/reranking");
+
 const LEGAL_GRAPH_BRAIN_ID = "legal-graph";
 const RERANK_TOP_K = 20;
 const LLM_TIMEOUT_MS = 30_000;
@@ -65,7 +68,7 @@ export async function rerankResults(
     const scores = await scoreWithLLM(query, candidates);
     return scores;
   } catch (err) {
-    console.error("[legal-graph] Reranking failed, returning original order:", err);
+    log.error("[legal-graph] Reranking failed, returning original order:", err);
     return {
       results: candidates.map((r, i) => ({
         ...r,

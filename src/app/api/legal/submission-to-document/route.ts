@@ -5,6 +5,9 @@ import { reconcileCaseDocuments } from "@/lib/case-documents";
 import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
 import { inferInitialExtractionStatus, createInitialMetadata } from "@/lib/extraction-status";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/legal/submission-to-document");
+
 const bodySchema = z.object({
   submissionSlug: z.string().min(1).max(500),
 });
@@ -128,12 +131,12 @@ export const POST = createHandler(
 
       const text = await upstream.text();
       if (!upstream.ok) {
-        console.error("[submission-to-document] upload failed:", text.slice(0, 500));
+        log.error("[submission-to-document] upload failed:", text.slice(0, 500));
         return apiError("internal_error", "Upload an die Engine fehlgeschlagen", 502);
       }
       uploadResult = JSON.parse(text);
     } catch (err) {
-      console.error(
+      log.error(
         "[submission-to-document] upload error:",
         err instanceof Error ? err.message : String(err)
       );
@@ -159,7 +162,7 @@ export const POST = createHandler(
       });
     } catch (err) {
       reconciliationOk = false;
-      console.error(
+      log.error(
         "[submission-to-document] case reconciliation failed:",
         err instanceof Error ? err.message : String(err)
       );
@@ -178,7 +181,7 @@ export const POST = createHandler(
       });
     } catch (err) {
       analysisEnqueued = false;
-      console.error(
+      log.error(
         "[submission-to-document] outbox enqueue failed:",
         err instanceof Error ? err.message : String(err)
       );

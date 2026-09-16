@@ -2,6 +2,9 @@ import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { getConnectorByEngineService } from "@/lib/connector-coverage";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/connectors/[service]/toggle");
+
 export const dynamic = "force-dynamic";
 
 export const POST = createHandler(
@@ -34,13 +37,13 @@ export const POST = createHandler(
       );
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        console.error("[connector/toggle] engine error:", res.status, text);
+        log.error("[connector/toggle] engine error:", res.status, text);
         return apiError("service_unavailable", "Toggle fehlgeschlagen", 503);
       }
       const result = await res.json();
       return Response.json(result);
     } catch (err) {
-      console.error("[connector/toggle] failed:", err instanceof Error ? err.message : String(err));
+      log.error("[connector/toggle] failed:", err instanceof Error ? err.message : String(err));
       return apiError("service_unavailable", "Toggle fehlgeschlagen", 503);
     }
   }

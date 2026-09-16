@@ -3,6 +3,9 @@ import { createCronHandler } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { env } from "@/lib/env";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/cron/upload-multipart-cleanup");
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
@@ -39,7 +42,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     message?: string;
   };
 
-  console.info(
+  log.info(
     `[cron:multipart-cleanup] in_progress=${result.total_in_progress} stale=${result.stale} aborted=${result.aborted}`
   );
 

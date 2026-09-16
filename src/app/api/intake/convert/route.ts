@@ -7,6 +7,9 @@ import { validateAcceptanceForConversion } from "@/lib/intake-acceptance";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import type { BrainPage } from "@/lib/types";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/intake/convert");
+
 export const dynamic = "force-dynamic";
 
 const convertSchema = z.object({
@@ -84,7 +87,7 @@ export const POST = createHandler(
     });
     if (!createRes.ok) {
       const message = await createRes.text().catch(() => "");
-      console.error("[intake/convert] case create failed:", createRes.status, message);
+      log.error("[intake/convert] case create failed:", createRes.status, message);
       return apiError("case_create_failed", "Akte konnte nicht erstellt werden", 502);
     }
 

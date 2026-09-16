@@ -11,6 +11,13 @@ vi.mock("react-dom", async () => {
 });
 
 // Mock next/navigation useRouter
+vi.mock("@/lib/queries/auth", () => ({ useMe: () => ({ data: undefined }) }));
+vi.mock("@tanstack/react-query", () => ({
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+}));
+vi.mock("@/lib/api", () => ({
+  api: { onboarding: { updateProgress: vi.fn(async () => ({ ok: true, progress: {} })) } },
+}));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: vi.fn(),

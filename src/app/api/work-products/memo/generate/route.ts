@@ -16,6 +16,9 @@ import {
 } from "@/lib/work-product-store";
 import { createAndStoreReceipt } from "@/lib/work-product-receipt-store";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/work-products/memo/generate");
+
 const generateSchema = z.object({
   question: z.string().min(1).max(2_000),
   facts: z.string().min(1).max(10_000),
@@ -123,7 +126,7 @@ export const POST = createHandler(
         await attachReceiptToWorkProduct(wp.id, ctx.brainId, receipt.receipt_id);
       } catch (receiptErr) {
         // Receipt failure is non-fatal — the memo is still created
-        console.warn(
+        log.warn(
           `[memo-generate] Receipt creation failed: ${receiptErr instanceof Error ? receiptErr.message : String(receiptErr)}`
         );
       }

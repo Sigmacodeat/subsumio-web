@@ -3,6 +3,9 @@ import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { logAudit } from "@/lib/audit";
 import { createHandler, apiError } from "@/lib/api-handler";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/invoices/[slug]");
+
 function validSlug(raw: string): string | null {
   const decoded = decodeURIComponent(raw);
   if (!decoded || decoded.includes("..") || decoded.includes("//")) return null;
@@ -36,10 +39,7 @@ export const GET = createHandler(
       }
       return Response.json(page);
     } catch (err) {
-      console.error(
-        "[invoices/slug] get failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[invoices/slug] get failed:", err instanceof Error ? err.message : String(err));
       return apiError("not_found", "Rechnung nicht gefunden", 404);
     }
   }
@@ -98,10 +98,7 @@ export const PATCH = createHandler(
       });
       return Response.json(await res.json());
     } catch (err) {
-      console.error(
-        "[invoices/slug] patch failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[invoices/slug] patch failed:", err instanceof Error ? err.message : String(err));
       return apiError("engine_unreachable", "Engine nicht erreichbar", 503);
     }
   }
@@ -161,10 +158,7 @@ export const DELETE = createHandler(
       void logAudit("invoice.delete", "invoice", { entityId: slug });
       return Response.json({ ok: true });
     } catch (err) {
-      console.error(
-        "[invoices/slug] delete failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[invoices/slug] delete failed:", err instanceof Error ? err.message : String(err));
       return apiError("engine_unreachable", "Engine nicht erreichbar", 503);
     }
   }

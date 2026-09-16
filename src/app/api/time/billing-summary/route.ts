@@ -3,6 +3,9 @@ import { createServerBrainClient } from "@/lib/server-brain";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { filterEntries, computeBillingSummary, type TimeEntryWithCase } from "@/lib/time-tracking";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/time/billing-summary");
+
 export const dynamic = "force-dynamic";
 
 const billingSummarySchema = z.object({
@@ -50,10 +53,7 @@ export const GET = createHandler(
 
       return apiSuccess(summary);
     } catch (err) {
-      console.error(
-        "[time] billing-summary failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[time] billing-summary failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Billing-Summary konnte nicht geladen werden", 500);
     }
   }

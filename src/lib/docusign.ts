@@ -19,6 +19,9 @@ import { createIdempotencyStore } from "@/lib/idempotency";
 
 import { env } from "@/lib/env";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/docusign");
+
 const BASE = env("DOCUSIGN_BASE_URL") || "https://demo.docusign.net/restapi/v2.1";
 const IK = env("DOCUSIGN_INTEGRATION_KEY") || "";
 const SECRET = env("DOCUSIGN_SECRET_KEY") || "";
@@ -237,7 +240,7 @@ export async function getUserAccessToken(userId: string): Promise<string> {
       });
       return refreshed.access_token;
     } catch (err) {
-      console.error(
+      log.error(
         "[docusign] token refresh failed:",
         err instanceof Error ? err.message : String(err)
       );

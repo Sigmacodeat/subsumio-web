@@ -6,6 +6,9 @@ import {
 } from "@/lib/email/mailbox";
 import { createWebhookHandler } from "@/lib/api-handler";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/email/webhook/resend");
+
 export const dynamic = "force-dynamic";
 
 export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => {
@@ -35,7 +38,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       message === "mailbox_database_not_configured"
         ? 503
         : 400;
-    console.error("[email] failed to process Resend webhook:", message);
+    log.error("[email] failed to process Resend webhook:", message);
     return NextResponse.json({ ok: false, error: message }, { status });
   }
 });

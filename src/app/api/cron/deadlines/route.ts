@@ -9,6 +9,9 @@ import { env } from "@/lib/env";
 import type { WhatsAppTemplateMessage } from "@/lib/whatsapp/types";
 import { syncPipelineDeadlines } from "@/lib/legal/pipeline-sync";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/cron/deadlines");
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
@@ -228,7 +231,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
           if (result.sent) whatsappSent++;
           else whatsappBlocked++;
         } catch (err) {
-          console.error(
+          log.error(
             `[cron/deadlines] WhatsApp send to ${phone.slice(-4)} failed:`,
             err instanceof Error ? err.message : String(err)
           );

@@ -2,6 +2,9 @@ import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { createWhatsAppClientInvite } from "@/lib/whatsapp/client-verification";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/whatsapp/client-invites");
+
 export const dynamic = "force-dynamic";
 
 const inviteSchema = z.object({
@@ -61,7 +64,7 @@ export const POST = createHandler(
         message: invite.message,
       });
     } catch (err) {
-      console.error(
+      log.error(
         "[whatsapp/client-invites] create failed:",
         err instanceof Error ? err.message : String(err)
       );

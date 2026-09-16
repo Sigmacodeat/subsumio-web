@@ -30,6 +30,9 @@ import { createSchemaInit } from "@/lib/schema-init";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/comments");
+
 // Simple serialization queue for file-based notification writes (dev mode)
 class AsyncQueue {
   private tail: Promise<void> = Promise.resolve();
@@ -281,7 +284,7 @@ async function persistNotification(notif: Notification): Promise<void> {
         ]
       );
     } catch (err) {
-      console.error(
+      log.error(
         `[notifications] persist failed: ${err instanceof Error ? err.message : String(err)}`
       );
     }
@@ -304,7 +307,7 @@ async function persistNotification(notif: Notification): Promise<void> {
       await fs.writeFile(tmp, JSON.stringify(all, null, 2));
       await fs.rename(tmp, NOTIF_FILE);
     } catch (err) {
-      console.error(
+      log.error(
         `[notifications] file persist failed: ${err instanceof Error ? err.message : String(err)}`
       );
     }
@@ -335,7 +338,7 @@ export async function persistNotificationUpsert(notif: Notification): Promise<vo
         ]
       );
     } catch (err) {
-      console.error(
+      log.error(
         `[notifications] upsert failed: ${err instanceof Error ? err.message : String(err)}`
       );
     }
@@ -367,7 +370,7 @@ export async function persistNotificationUpsert(notif: Notification): Promise<vo
       await fs.writeFile(tmp, JSON.stringify(all, null, 2));
       await fs.rename(tmp, NOTIF_FILE);
     } catch (err) {
-      console.error(
+      log.error(
         `[notifications] file upsert failed: ${err instanceof Error ? err.message : String(err)}`
       );
     }

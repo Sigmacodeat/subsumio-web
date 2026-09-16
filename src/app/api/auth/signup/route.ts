@@ -11,6 +11,9 @@ import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { env } from "@/lib/env";
 import { z } from "zod";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/auth/signup");
+
 // Extended schema with trimmed email and name for internal validation
 const signupSchemaInternal = signupSchema.extend({
   email: z
@@ -93,7 +96,7 @@ export const POST = createPublicHandler(
             : `Hi ${user.name},\n\nwelcome to Subsumio! Please confirm your email address (link valid for 48 hours):\n${verifyUrl}\n\n— Subsumio`,
         });
       } catch (err) {
-        console.error(
+        log.error(
           `[signup] verification mail failed: ${err instanceof Error ? err.message : String(err)}`
         );
       }

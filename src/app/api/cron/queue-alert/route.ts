@@ -4,6 +4,9 @@ import { ENGINE_URL } from "@/lib/engine";
 import { env } from "@/lib/env";
 import { isMailConfigured, sendMail } from "@/lib/mail";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/cron/queue-alert");
+
 export const dynamic = "force-dynamic";
 
 /**
@@ -96,10 +99,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     });
     notified = result.sent;
   } else {
-    console.error(
-      "[queue-alert] BREACH (no alert email / mail unconfigured):",
-      breaches.join(" | ")
-    );
+    log.error("[queue-alert] BREACH (no alert email / mail unconfigured):", breaches.join(" | "));
   }
 
   return Response.json({ ok: true, healthy: false, breaches, notified });

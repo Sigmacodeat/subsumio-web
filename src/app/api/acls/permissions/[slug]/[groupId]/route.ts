@@ -1,6 +1,9 @@
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/acls/permissions/[slug]/[groupId]");
+
 export const DELETE = createHandler(
   {
     action: "settings.write",
@@ -36,7 +39,7 @@ export const DELETE = createHandler(
       const data = await res.json();
       return Response.json(data);
     } catch (err) {
-      console.error(
+      log.error(
         "[acls/permissions] delete failed:",
         err instanceof Error ? err.message : String(err)
       );

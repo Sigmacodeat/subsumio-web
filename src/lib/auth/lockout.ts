@@ -5,6 +5,9 @@ import path from "node:path";
 
 import { env } from "@/lib/env";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/auth/lockout");
+
 const DATA_DIR = env("SUBSUMIO_DATA_DIR") || path.join(process.cwd(), ".data");
 const LOCKOUT_FILE = path.join(DATA_DIR, "lockouts.json");
 
@@ -129,9 +132,7 @@ async function persistLockout(key: string, entry: LockoutEntry): Promise<void> {
         [key, entry.failedAttempts, entry.firstFailedAt, entry.lockedUntil]
       );
     } catch (err) {
-      console.error(
-        `[lockout] persist failed: ${err instanceof Error ? err.message : String(err)}`
-      );
+      log.error(`[lockout] persist failed: ${err instanceof Error ? err.message : String(err)}`);
     }
     return;
   }
@@ -153,9 +154,7 @@ async function persistLockout(key: string, entry: LockoutEntry): Promise<void> {
     await fs.writeFile(tmp, JSON.stringify(allLockouts, null, 2));
     await fs.rename(tmp, LOCKOUT_FILE);
   } catch (err) {
-    console.error(
-      `[lockout] file persist failed: ${err instanceof Error ? err.message : String(err)}`
-    );
+    log.error(`[lockout] file persist failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
 
@@ -166,7 +165,7 @@ async function removeLockout(key: string): Promise<void> {
       await ensureLockoutSchema();
       await pool.query("DELETE FROM subsumio_lockouts WHERE key = $1", [key]);
     } catch (err) {
-      console.error(`[lockout] remove failed: ${err instanceof Error ? err.message : String(err)}`);
+      log.error(`[lockout] remove failed: ${err instanceof Error ? err.message : String(err)}`);
     }
     return;
   }

@@ -8,6 +8,9 @@ import { timingSafeCompare } from "@/lib/crypto-utils";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { z } from "zod";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/auth/sso/callback");
+
 export const dynamic = "force-dynamic";
 
 const SSO_STATE_COOKIE = "sb_sso_state";
@@ -34,7 +37,7 @@ export const GET = createPublicHandler(
     const { code, state, error } = query;
 
     if (error) {
-      console.error("[sso/callback] SSO provider error:", error);
+      log.error("[sso/callback] SSO provider error:", error);
       return apiError("sso_denied", "SSO denied", 400);
     }
     if (!code) {
@@ -96,7 +99,7 @@ export const GET = createPublicHandler(
         302
       );
     } catch (err) {
-      console.error("[sso callback] error:", err instanceof Error ? err.message : String(err));
+      log.error("[sso callback] error:", err instanceof Error ? err.message : String(err));
       return apiError("sso_failed", "SSO login failed", 500);
     }
   }

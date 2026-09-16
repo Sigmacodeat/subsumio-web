@@ -2,6 +2,9 @@ import { z } from "zod";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/legal/templates/[slug]");
+
 function decodedSlug(raw: string): string | null {
   try {
     const decoded = decodeURIComponent(raw);
@@ -53,10 +56,7 @@ export const GET = createHandler(
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return apiSuccess(await res.json());
     } catch (err) {
-      console.error(
-        "[templates/slug] get failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[templates/slug] get failed:", err instanceof Error ? err.message : String(err));
       return apiError("not_found", "Template nicht gefunden", 404);
     }
   }
@@ -106,10 +106,7 @@ export const PATCH = createHandler(
       }
       return apiSuccess(await res.json());
     } catch (err) {
-      console.error(
-        "[templates/slug] patch failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[templates/slug] patch failed:", err instanceof Error ? err.message : String(err));
       return apiError("engine_unreachable", "Engine nicht erreichbar", 503);
     }
   }
@@ -148,7 +145,7 @@ export const DELETE = createHandler(
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return apiSuccess({ ok: true });
     } catch (err) {
-      console.error(
+      log.error(
         "[templates/slug] delete failed:",
         err instanceof Error ? err.message : String(err)
       );

@@ -3,6 +3,9 @@ import { NextRequest } from "next/server";
 import { ENGINE_URL, engineHeadersWithCaseJurisdiction } from "@/lib/engine";
 import { createHandler } from "@/lib/api-handler";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/legal/research");
+
 export const maxDuration = 30;
 
 /**
@@ -90,10 +93,7 @@ export const POST = createHandler(
     const prompt = buildResearchPrompt(question, jurisdiction, case_slugs);
 
     const firstCaseSlug = case_slugs?.[0];
-    const caseScopedHeaders = await engineHeadersWithCaseJurisdiction(
-      ctx.headers,
-      firstCaseSlug
-    );
+    const caseScopedHeaders = await engineHeadersWithCaseJurisdiction(ctx.headers, firstCaseSlug);
 
     const res = await fetch(`${ENGINE_URL}/api/agents/supervisor`, {
       method: "POST",
@@ -109,7 +109,7 @@ export const POST = createHandler(
 
     if (!res.ok) {
       const payload = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-      console.error("[legal/research] supervisor submit failed:", res.status, payload);
+      log.error("[legal/research] supervisor submit failed:", res.status, payload);
       return Response.json(
         {
           error: "research_submit_failed",

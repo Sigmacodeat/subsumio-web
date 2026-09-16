@@ -4,6 +4,9 @@ import { createHandler, apiError } from "@/lib/api-handler";
 import { executeApprovedAction } from "@/lib/approval-execution";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/approvals/execute");
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
@@ -44,10 +47,7 @@ export const POST = createHandler(
 
       return Response.json({ ok: true, result });
     } catch (err) {
-      console.error(
-        "[approvals/execute] failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[approvals/execute] failed:", err instanceof Error ? err.message : String(err));
       return apiError(
         "approval_execution_failed",
         err instanceof Error ? err.message : "Freigabe konnte nicht ausgefuehrt werden",

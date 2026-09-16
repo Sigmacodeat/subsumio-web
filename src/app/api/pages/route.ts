@@ -6,6 +6,9 @@ import { markOnboardingProgress } from "@/lib/auth/store";
 import { ensureCaseContacts } from "@/lib/case-contacts";
 import { caseContentWithAktenblatt, isCaseSlug, isDeadlineSlug } from "@/lib/aktenblatt";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/pages");
+
 const pagesQuerySchema = z.object({
   limit: z.string().optional(),
   offset: z.string().optional(),
@@ -100,7 +103,7 @@ export const GET = createHandler(
       }
       return Response.json(data);
     } catch (err) {
-      console.error("[pages] list failed:", err instanceof Error ? err.message : String(err));
+      log.error("[pages] list failed:", err instanceof Error ? err.message : String(err));
       return apiError("service_unavailable", "Seiten derzeit nicht verfügbar", 503);
     }
   }
@@ -153,7 +156,7 @@ async function refreshAktenblatt(headers: Record<string, string>, slug: string):
       signal: AbortSignal.timeout(15_000),
     });
   } catch (e) {
-    console.warn("[pages] aktenblatt refresh skipped:", e instanceof Error ? e.message : String(e));
+    log.warn("[pages] aktenblatt refresh skipped:", e instanceof Error ? e.message : String(e));
   }
 }
 
@@ -209,7 +212,7 @@ export const POST = createHandler(
         try {
           conflictWarning = await checkLegalCaseConflicts(ctx.headers, body.frontmatter);
         } catch (err) {
-          console.error(
+          log.error(
             "[pages] conflict check failed:",
             err instanceof Error ? err.message : String(err)
           );
@@ -289,7 +292,7 @@ export const POST = createHandler(
       });
       if (!res.ok) {
         const upstream = (await res.json().catch(() => null)) as Record<string, unknown> | null;
-        console.error("[pages] engine create rejected:", res.status, upstream);
+        log.error("[pages] engine create rejected:", res.status, upstream);
         return Response.json(
           upstream ?? {
             error: "engine_error",
@@ -326,7 +329,7 @@ export const POST = createHandler(
 
       return Response.json({ ...result, conflictWarning });
     } catch (e) {
-      console.error("[pages] create failed:", e instanceof Error ? e.message : String(e));
+      log.error("[pages] create failed:", e instanceof Error ? e.message : String(e));
       return apiError("internal_error", "Seite konnte nicht erstellt werden", 500);
     }
   }

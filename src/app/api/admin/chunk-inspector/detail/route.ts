@@ -2,6 +2,9 @@ import { z } from "zod";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { getSharedPgPool } from "@/lib/auth/store";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/admin/chunk-inspector/detail");
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 10;
 
@@ -88,7 +91,7 @@ export const GET = createHandler(
         [q.id]
       );
     } catch (err) {
-      console.error("[chunk-inspector/detail] query failed:", (err as Error).message);
+      log.error("[chunk-inspector/detail] query failed:", (err as Error).message);
       return apiError("not_found", "Chunk nicht gefunden", 404);
     }
 
@@ -224,7 +227,7 @@ export const PATCH = createHandler(
 
       return apiSuccess({ id: result.rows[0].id, updated: true });
     } catch (err) {
-      console.error("[chunk-inspector/detail] PATCH failed:", (err as Error).message);
+      log.error("[chunk-inspector/detail] PATCH failed:", (err as Error).message);
       return apiError("internal_error", "Aktualisierung fehlgeschlagen", 500);
     }
   }
@@ -270,7 +273,7 @@ export const DELETE = createHandler(
 
       return apiSuccess({ id: result.rows[0].id, deleted: true });
     } catch (err) {
-      console.error("[chunk-inspector/detail] DELETE failed:", (err as Error).message);
+      log.error("[chunk-inspector/detail] DELETE failed:", (err as Error).message);
       return apiError("internal_error", "Löschen fehlgeschlagen", 500);
     }
   }

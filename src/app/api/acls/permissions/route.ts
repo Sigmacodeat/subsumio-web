@@ -2,6 +2,9 @@ import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/acls/permissions");
+
 const permissionPostSchema = z.object({
   slug: z.string().min(1).max(512),
   group_id: z.string().min(1).max(200),
@@ -30,10 +33,7 @@ export const GET = createHandler(
       const data = await res.json();
       return Response.json(data);
     } catch (err) {
-      console.error(
-        "[acls/permissions] get failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[acls/permissions] get failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Berechtigungen konnten nicht geladen werden", 500);
     }
   }
@@ -68,10 +68,7 @@ export const POST = createHandler(
       const data = await res.json();
       return Response.json(data);
     } catch (err) {
-      console.error(
-        "[acls/permissions] set failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[acls/permissions] set failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Berechtigung konnte nicht gesetzt werden", 500);
     }
   }

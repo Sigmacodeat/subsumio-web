@@ -4,6 +4,9 @@ import { createHandler, apiError } from "@/lib/api-handler";
 import { mailboxScopeFor } from "@/lib/email/mailbox-scope";
 import { caseAccessForUser } from "@/lib/email/case-link";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/email/messages/[id]/reply");
+
 const replySchema = z
   .object({
     subject: z.string().trim().min(1, "subject_required").max(500),
@@ -59,7 +62,7 @@ export const POST = createHandler(
           : /required|invalid/.test(message)
             ? 400
             : 500;
-      console.error("[email] failed to send reply:", message);
+      log.error("[email] failed to send reply:", message);
       if (status === 500)
         return apiError("internal_error", "Antwort konnte nicht gesendet werden", 500);
       return apiError(message, message, status);

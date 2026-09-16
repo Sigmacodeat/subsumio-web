@@ -119,6 +119,8 @@ export interface OnboardingProgress {
   firstDeadline: boolean;
   teamInvited: boolean;
   firstQuery: boolean;
+  /** Guided dashboard tour finished or skipped — kept server-side so a new device does not replay it. */
+  tourCompleted?: boolean;
 }
 
 export interface ConflictMatch {

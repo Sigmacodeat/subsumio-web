@@ -25,6 +25,9 @@ import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/whatsapp/flow-endpoint");
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
@@ -147,7 +150,7 @@ async function handleCaseIntake(
           details: { brainId, caseNumber, legalArea: legalAreaId },
         });
       } catch (err) {
-        console.error(
+        log.error(
           "[flow/case-intake] brain write failed:",
           err instanceof Error ? err.message : String(err)
         );
@@ -242,7 +245,7 @@ async function handleAppointmentBooking(
           details: { brainId, date: appointmentDate, time: appointmentTime },
         });
       } catch (err) {
-        console.error(
+        log.error(
           "[flow/appointment] brain write failed:",
           err instanceof Error ? err.message : String(err)
         );
@@ -345,10 +348,7 @@ export const POST = createPublicHandler(
         result = { screen: "INTAKE_FORM", data: { legal_areas: LEGAL_AREAS } };
       }
     } catch (err) {
-      console.error(
-        "[whatsapp/flow] handler error:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[whatsapp/flow] handler error:", err instanceof Error ? err.message : String(err));
       result = {
         screen: request.screen,
         data: { ...request.data, error: "processing_failed" },

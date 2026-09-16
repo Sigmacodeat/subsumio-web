@@ -1,6 +1,9 @@
 import { getStore } from "@/lib/auth/store";
 import { createHandler, apiError } from "@/lib/api-handler";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/team");
+
 export const GET = createHandler(
   {
     action: "settings.read",
@@ -22,10 +25,7 @@ export const GET = createHandler(
 
       return Response.json({ members });
     } catch (err) {
-      console.error(
-        "[team] failed to list users:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[team] failed to list users:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Team konnte nicht geladen werden", 500);
     }
   }

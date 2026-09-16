@@ -4,6 +4,9 @@ import { requireInternalSecret } from "@/lib/auth/internal-guard";
 import { NextRequest } from "next/server";
 import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/internal/post-upload");
+
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
@@ -76,7 +79,7 @@ export async function POST(req: NextRequest) {
       results.reconcile = "ok";
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error(`[post-upload] reconcileCaseDocuments failed for ${doc_slug}:`, msg);
+      log.error(`[post-upload] reconcileCaseDocuments failed for ${doc_slug}:`, msg);
       results.reconcile = `failed: ${msg}`;
     }
   }
@@ -97,7 +100,7 @@ export async function POST(req: NextRequest) {
     });
     results.queued = "analyze" + (case_slug ? ",contradiction" : "");
   } catch (err) {
-    console.error(
+    log.error(
       "[post-upload] outbox enqueue failed (non-fatal):",
       err instanceof Error ? err.message : String(err)
     );

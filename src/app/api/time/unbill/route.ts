@@ -5,6 +5,9 @@ import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { unbillEntries, type TimeEntryWithCase } from "@/lib/time-tracking";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/time/unbill");
+
 export const dynamic = "force-dynamic";
 
 const unbillSchema = z.object({
@@ -59,7 +62,7 @@ export const POST = createHandler(
         not_found: result.not_found,
       });
     } catch (err) {
-      console.error("[time] unbill failed:", err instanceof Error ? err.message : String(err));
+      log.error("[time] unbill failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Abrechnung konnte nicht zurückgenommen werden", 500);
     }
   }

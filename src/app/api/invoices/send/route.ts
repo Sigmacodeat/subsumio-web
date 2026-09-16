@@ -5,6 +5,9 @@ import nodemailer from "nodemailer";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { generateTrackingId, injectTracking, logTrackingEvent } from "@/lib/email/tracking";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/invoices/send");
+
 export const maxDuration = 60;
 
 const sendSchema = z.object({
@@ -91,7 +94,7 @@ export const POST = createHandler(
 
       return Response.json({ ok: true, sentTo: recipient });
     } catch (err) {
-      console.error("[invoice-send] failed:", err instanceof Error ? err.message : String(err));
+      log.error("[invoice-send] failed:", err instanceof Error ? err.message : String(err));
       return apiError("send_failed", "Rechnung konnte nicht gesendet werden", 500);
     }
   }

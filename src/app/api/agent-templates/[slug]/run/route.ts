@@ -3,6 +3,9 @@ import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, apiNotFound } from "@/lib/api-handler";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/agent-templates/[slug]/run");
+
 export const maxDuration = 300;
 
 const runSchema = z
@@ -43,7 +46,7 @@ export const POST = createHandler(
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       template = await res.json();
     } catch (err) {
-      console.error(
+      log.error(
         "[agent-templates/run] load failed:",
         err instanceof Error ? err.message : String(err)
       );
@@ -92,7 +95,7 @@ export const POST = createHandler(
       const data = await res.json();
       return Response.json({ jobId: data.jobId ?? null, success: true });
     } catch (err) {
-      console.error(
+      log.error(
         "[agent-templates/run] submit failed:",
         err instanceof Error ? err.message : String(err)
       );

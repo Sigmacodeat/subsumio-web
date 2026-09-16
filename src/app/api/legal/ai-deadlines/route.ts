@@ -13,6 +13,9 @@ import { createHandler } from "@/lib/api-handler";
 import { groundAnswerCitations, emptyGroundingMetadata } from "@/lib/citation-gate";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/legal/ai-deadlines");
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
@@ -110,7 +113,7 @@ export const POST = createHandler(
       const textParts = detected.map((d) => `${d.description} ${d.sourceSnippet}`).join(" ");
       response._grounding = await groundAnswerCitations(textParts);
     } catch (err) {
-      console.error(
+      log.error(
         "[ai-deadlines] grounding failed:",
         err instanceof Error ? err.message : String(err)
       );

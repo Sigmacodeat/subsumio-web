@@ -14,6 +14,9 @@ import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
 import { mapQueryModeToEngineMode } from "@/lib/matter-context";
 import { createHash } from "node:crypto";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/think");
+
 export const maxDuration = 300;
 
 const thinkSchema = z.object({
@@ -93,10 +96,7 @@ export const POST = createHandler(
         aiGenerated: true,
       });
     } catch (err) {
-      console.error(
-        "[think] engine unreachable:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[think] engine unreachable:", err instanceof Error ? err.message : String(err));
       return apiError("service_unavailable", "Engine nicht erreichbar", 503);
     }
   }

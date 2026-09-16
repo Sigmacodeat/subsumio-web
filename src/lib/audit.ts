@@ -13,6 +13,9 @@ export { auditLabel } from "@/lib/audit-labels";
 import type { AuditEntry, AuditAction } from "@/lib/audit-labels";
 import { auditLabel } from "@/lib/audit-labels";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/audit");
+
 // The browser/engine API client is only needed by the local development
 // fallback. Loading it eagerly made every API route that records an audit log
 // compile the complete upload/SSE/client graph as a server dependency.
@@ -118,9 +121,7 @@ export async function logAudit(
       );
       return;
     } catch (err) {
-      console.error(
-        `[audit] postgres log failed: ${err instanceof Error ? err.message : String(err)}`
-      );
+      log.error(`[audit] postgres log failed: ${err instanceof Error ? err.message : String(err)}`);
       // Fall through to brain-page fallback
     }
   }
@@ -356,7 +357,7 @@ export async function verifyAuditChain(brainId: string): Promise<ChainVerificati
 
     return result;
   } catch (err) {
-    console.error(
+    log.error(
       `[audit] verifyAuditChain failed: ${err instanceof Error ? err.message : String(err)}`
     );
     return empty;
@@ -425,7 +426,7 @@ export async function listAuditLogs(opts: {
         timestamp: r.timestamp,
       }));
     } catch (err) {
-      console.error(
+      log.error(
         `[audit] postgres list failed: ${err instanceof Error ? err.message : String(err)}`
       );
     }

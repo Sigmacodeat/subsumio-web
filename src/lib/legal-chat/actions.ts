@@ -12,6 +12,9 @@ import { calculateRvg } from "@/lib/rvg";
 import { calculateDeadline, DEADLINE_RULES, type Bundesland } from "@/lib/legal-deadlines";
 import { expandRelativeDates, hasRelativeDates } from "@/lib/whatsapp/relative-date";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/legal-chat/actions");
+
 interface ChatContext {
   sender: WhatsAppIdentity;
   fromPhone: string;
@@ -944,7 +947,7 @@ async function queueWhatsAppDocumentAnalysis(brainId: string, documentSlug: stri
       },
       merge: true,
     }).catch((err) =>
-      console.warn(
+      log.warn(
         "[legal-chat] Failed to mark analysis as failed:",
         err instanceof Error ? err.message : err
       )
@@ -1987,10 +1990,7 @@ export async function handleLegalChatMessage(ctx: ChatContext): Promise<string> 
   const expandedText = hasRelativeDates(ctx.text) ? expandRelativeDates(ctx.text) : ctx.text;
   const intent = parseIntent(expandedText);
   await createInboxPage(ctx, intent).catch((err) => {
-    console.warn(
-      "[legal-chat] inbox write failed:",
-      err instanceof Error ? err.message : String(err)
-    );
+    log.warn("[legal-chat] inbox write failed:", err instanceof Error ? err.message : String(err));
   });
 
   const reply = await processIntent(ctx, intent);
@@ -2004,7 +2004,7 @@ export async function handleLegalChatMessage(ctx: ChatContext): Promise<string> 
       reply,
       intent.kind
     ).catch((err) => {
-      console.warn(
+      log.warn(
         "[legal-chat] outbox write failed:",
         err instanceof Error ? err.message : String(err)
       );
@@ -2949,7 +2949,7 @@ export async function handleLegalChatMedia(
   media: StoredWhatsAppMedia
 ): Promise<string> {
   await createMediaInboxPage(ctx, media).catch((err) => {
-    console.warn(
+    log.warn(
       "[legal-chat] media inbox write failed:",
       err instanceof Error ? err.message : String(err)
     );
@@ -2998,7 +2998,7 @@ export async function handleLegalChatMedia(
     reply,
     "media_upload"
   ).catch((err) => {
-    console.warn(
+    log.warn(
       "[legal-chat] media outbox write failed:",
       err instanceof Error ? err.message : String(err)
     );

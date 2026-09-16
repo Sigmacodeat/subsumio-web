@@ -4,6 +4,9 @@ import { caseFrontmatter } from "@/lib/legal-types";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { resolveEmailImport, type EmailHeaders } from "@/lib/email-threading";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/email-import");
+
 export const maxDuration = 60;
 
 const emailImportSchema = z.object({
@@ -89,7 +92,7 @@ export const POST = createHandler(
 
       return await importEmailIntoCase(brain, matchedCase, body, result.threadId);
     } catch (err) {
-      console.error("[email-import] failed:", err instanceof Error ? err.message : String(err));
+      log.error("[email-import] failed:", err instanceof Error ? err.message : String(err));
       return apiError("import_failed", "E-Mail-Import fehlgeschlagen", 500);
     }
   }

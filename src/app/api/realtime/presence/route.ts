@@ -2,6 +2,9 @@ import { createHandler } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { z } from "zod";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/realtime/presence");
+
 const presenceSchema = z.object({
   page: z.string().min(1).max(500),
   action: z.enum(["join", "leave", "heartbeat"]).optional(),
@@ -129,7 +132,7 @@ async function getRedisStore(): Promise<PresenceStore | null> {
     };
     return redisStore;
   } catch (err) {
-    console.warn(
+    log.warn(
       "[presence] Redis unavailable, falling back to in-memory:",
       err instanceof Error ? err.message : String(err)
     );

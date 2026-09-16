@@ -723,6 +723,9 @@ import path from "node:path";
 
 import { env } from "@/lib/env";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/scim");
+
 const DATA_DIR = env("SUBSUMIO_DATA_DIR") || path.join(process.cwd(), ".data");
 const SYNC_STATUS_FILE = path.join(DATA_DIR, "scim-sync-status.json");
 
@@ -773,7 +776,7 @@ export async function saveSyncStatus(result: SyncResult): Promise<void> {
       "utf8"
     );
   } catch (err) {
-    console.error(
+    log.error(
       "[scim] failed to save sync status:",
       err instanceof Error ? err.message : String(err)
     );

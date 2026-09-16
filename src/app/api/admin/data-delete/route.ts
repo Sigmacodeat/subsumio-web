@@ -11,6 +11,9 @@ import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { logAudit } from "@/lib/audit";
 import { getSharedPgPool } from "@/lib/auth/store";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/admin/data-delete");
+
 export const dynamic = "force-dynamic";
 
 const deleteSchema = z.object({
@@ -66,7 +69,7 @@ export const POST = createHandler(
       );
       actionsTaken.push("sessions_revoked");
     } catch (err) {
-      console.error(`[data-delete] session revocation failed: ${err}`);
+      log.error(`[data-delete] session revocation failed: ${err}`);
     }
 
     // 2. Remove from ACL groups (via org data)
@@ -157,7 +160,7 @@ export const POST = createHandler(
         await pool.query(`DELETE FROM subsumio_users WHERE id = $1`, [userId]);
         actionsTaken.push("user_profile_deleted");
       } catch (err) {
-        console.error(`[data-delete] user deletion failed: ${err}`);
+        log.error(`[data-delete] user deletion failed: ${err}`);
         actionsTaken.push("user_profile_delete_failed");
       }
     } else {
@@ -172,7 +175,7 @@ export const POST = createHandler(
         );
         actionsTaken.push("user_profile_soft_deleted");
       } catch (err) {
-        console.error(`[data-delete] user soft-delete failed: ${err}`);
+        log.error(`[data-delete] user soft-delete failed: ${err}`);
         actionsTaken.push("user_profile_soft_delete_failed");
       }
     }

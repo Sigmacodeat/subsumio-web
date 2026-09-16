@@ -2,6 +2,9 @@ import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/agents");
+
 export const maxDuration = 300;
 
 const agentsPostSchema = z
@@ -37,7 +40,7 @@ export const GET = createHandler(
 
       return Response.json({ jobs });
     } catch (err) {
-      console.error("[agents] list failed:", err instanceof Error ? err.message : String(err));
+      log.error("[agents] list failed:", err instanceof Error ? err.message : String(err));
       return Response.json({ jobs: [] });
     }
   }
@@ -72,10 +75,7 @@ export const POST = createHandler(
 
       return Response.json(await upstream.json());
     } catch (err) {
-      console.error(
-        "[agents] supervisor failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[agents] supervisor failed:", err instanceof Error ? err.message : String(err));
       return apiError("engine_unavailable", "Engine nicht erreichbar", 503);
     }
   }

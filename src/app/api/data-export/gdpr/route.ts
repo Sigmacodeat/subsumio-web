@@ -1,6 +1,9 @@
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/data-export/gdpr");
+
 export const maxDuration = 120;
 
 // Firm-wide portability export (Art. 20) of the firm's records: exercised by the
@@ -91,7 +94,7 @@ export const GET = createHandler(
 
       return Response.json(exportData);
     } catch (err) {
-      console.error("[gdpr-export] failed:", err instanceof Error ? err.message : String(err));
+      log.error("[gdpr-export] failed:", err instanceof Error ? err.message : String(err));
       return apiError("export_failed", "Datenexport fehlgeschlagen", 500);
     }
   }

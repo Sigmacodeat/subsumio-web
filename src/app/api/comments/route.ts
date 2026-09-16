@@ -3,6 +3,9 @@ import { addComment, listComments, deleteComment } from "@/lib/comments";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/comments");
+
 export const dynamic = "force-dynamic";
 
 const commentsQuerySchema = z
@@ -40,7 +43,7 @@ export const GET = createHandler(
       const comments = await listComments(parentSlug);
       return Response.json({ comments, total: comments.length });
     } catch (err) {
-      console.error("[comments] list failed:", err instanceof Error ? err.message : String(err));
+      log.error("[comments] list failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Kommentare konnten nicht geladen werden", 500);
     }
   }
@@ -76,7 +79,7 @@ export const POST = createHandler(
       });
       return Response.json({ comment }, { status: 201 });
     } catch (err) {
-      console.error("[comments] create failed:", err instanceof Error ? err.message : String(err));
+      log.error("[comments] create failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Kommentar konnte nicht erstellt werden", 500);
     }
   }
@@ -105,7 +108,7 @@ export const DELETE = createHandler(
       broadcastSseEvent(ctx.brainId, "comment.deleted", { commentId: body.id, by: ctx.user.email });
       return Response.json({ ok: true });
     } catch (err) {
-      console.error("[comments] delete failed:", err instanceof Error ? err.message : String(err));
+      log.error("[comments] delete failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Kommentar konnte nicht gelöscht werden", 500);
     }
   }

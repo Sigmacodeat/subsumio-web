@@ -12,6 +12,9 @@ import {
   type PlanStatus,
 } from "@/lib/planning-session";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/copilot/plan");
+
 const planPostSchema = z.object({
   action: z.enum(["create", "refine", "abandon", "step"]).optional(),
   goal: z.string().max(5000).optional(),
@@ -46,7 +49,7 @@ export const GET = createHandler(
       const plans = await listPlans({ caseSlug, status });
       return NextResponse.json({ plans });
     } catch (err) {
-      console.error("[copilot/plan] GET failed:", err instanceof Error ? err.message : String(err));
+      log.error("[copilot/plan] GET failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Failed to load plans", 500);
     }
   }
@@ -99,10 +102,7 @@ export const POST = createHandler(
 
       return apiError("bad_request", "Invalid action or missing fields", 400);
     } catch (err) {
-      console.error(
-        "[copilot/plan] POST failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[copilot/plan] POST failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Failed to process plan", 500);
     }
   }
@@ -144,10 +144,7 @@ export const PATCH = createHandler(
       await updatePlanStep(planId, stepId, { status, notes });
       return NextResponse.json({ ok: true });
     } catch (err) {
-      console.error(
-        "[copilot/plan] PATCH failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[copilot/plan] PATCH failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Failed to update step", 500);
     }
   }
@@ -176,10 +173,7 @@ export const DELETE = createHandler(
       await abandonPlan(planId);
       return NextResponse.json({ ok: true });
     } catch (err) {
-      console.error(
-        "[copilot/plan] DELETE failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[copilot/plan] DELETE failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Failed to abandon plan", 500);
     }
   }

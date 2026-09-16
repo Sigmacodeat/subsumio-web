@@ -21,6 +21,9 @@
 import type { Pool } from "pg";
 import { ensureLegalGraphSchema } from "./schema";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/legal-graph/principle-extraction");
+
 // ── Types ─────────────────────────────────────────────────────────────
 
 export interface ExtractedPrinciple {
@@ -296,7 +299,7 @@ export async function storePrinciples(
       );
       edgeCount++;
     } catch (err) {
-      console.error(
+      log.error(
         `[principle-extraction] store failed for "${principle.title}": ${err instanceof Error ? err.message : String(err)}`
       );
     }

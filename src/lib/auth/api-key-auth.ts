@@ -17,6 +17,9 @@ import { getStore, getOrgStore, type Plan } from "@/lib/auth/store";
 import { env } from "@/lib/env";
 import type { EngineContext } from "@/lib/engine";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/auth/api-key-auth");
+
 const BEARER_PREFIX = "Bearer ";
 
 export function extractBearerToken(authHeader: string | null): string | null {
@@ -65,7 +68,7 @@ export async function verifyApiKey(
   store
     .update(match.id, { lastUsedAt: new Date().toISOString() })
     .catch((err) =>
-      console.warn(
+      log.warn(
         "[api-key-auth] Failed to update lastUsedAt:",
         err instanceof Error ? err.message : err
       )

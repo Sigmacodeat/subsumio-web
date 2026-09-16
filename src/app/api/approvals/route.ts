@@ -10,6 +10,9 @@ import { executeApprovedAction } from "@/lib/approval-execution";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/approvals");
+
 export const dynamic = "force-dynamic";
 
 const approvalsQuerySchema = z.object({
@@ -80,7 +83,7 @@ export const GET = createHandler(
         });
       return Response.json({ items, total: items.length });
     } catch (err) {
-      console.error("[approvals] list failed:", err instanceof Error ? err.message : String(err));
+      log.error("[approvals] list failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Freigaben konnten nicht geladen werden", 500);
     }
   }
@@ -177,7 +180,7 @@ export const PATCH = createHandler(
           execution: result,
         });
       } catch (err) {
-        console.error(
+        log.error(
           "[approvals] execute after decision failed:",
           err instanceof Error ? err.message : String(err)
         );

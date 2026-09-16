@@ -2,6 +2,9 @@ import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/acls/groups");
+
 export const GET = createHandler(
   {
     action: "settings.read",
@@ -20,7 +23,7 @@ export const GET = createHandler(
       const data = await res.json();
       return Response.json(data);
     } catch (err) {
-      console.error("[acls/groups] failed:", err instanceof Error ? err.message : String(err));
+      log.error("[acls/groups] failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Gruppen konnten nicht geladen werden", 500);
     }
   }
@@ -55,10 +58,7 @@ export const POST = createHandler(
       const data = await res.json();
       return Response.json(data);
     } catch (err) {
-      console.error(
-        "[acls/groups] create failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[acls/groups] create failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Gruppe konnte nicht erstellt werden", 500);
     }
   }

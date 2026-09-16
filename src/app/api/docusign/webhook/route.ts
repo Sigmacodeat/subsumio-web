@@ -10,6 +10,9 @@ import { createWebhookHandler } from "@/lib/api-handler";
 import { createNotificationFailureNotification } from "@/lib/comments";
 import { getRecipientsByBrain } from "@/lib/cron-utils";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/docusign/webhook");
+
 export const maxDuration = 30;
 
 export const dynamic = "force-dynamic";
@@ -75,7 +78,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
   // or leaking information about processed events.
   const connectSecret = process.env.DOCUSIGN_CONNECT_SECRET;
   if (!connectSecret) {
-    console.error("[docusign-webhook] DOCUSIGN_CONNECT_SECRET not configured — rejecting webhook");
+    log.error("[docusign-webhook] DOCUSIGN_CONNECT_SECRET not configured — rejecting webhook");
     return Response.json({ error: "webhook_not_configured" }, { status: 501 });
   }
   const signature = req.headers.get("x-docusign-signature-1");
@@ -150,7 +153,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
     envelopeData.envelopeSummary?.metadata?.brain_id;
 
   if (!brainId) {
-    console.warn("[docusign-webhook] No brain_id in envelope metadata — skipping");
+    log.warn("[docusign-webhook] No brain_id in envelope metadata — skipping");
     return Response.json({ ok: true, skipped: true });
   }
 
@@ -246,7 +249,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
           );
         }
       } catch (docErr) {
-        console.error(
+        log.error(
           "[docusign-webhook] Document download/upload failed:",
           docErr instanceof Error ? docErr.message : String(docErr)
         );
@@ -275,14 +278,14 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
           });
         }
       } catch (notifErr) {
-        console.error(
+        log.error(
           "[docusign-webhook] Declined notification failed:",
           notifErr instanceof Error ? notifErr.message : String(notifErr)
         );
       }
     }
   } catch (err) {
-    console.error(
+    log.error(
       "[docusign webhook] brain update failed:",
       err instanceof Error ? err.message : String(err)
     );

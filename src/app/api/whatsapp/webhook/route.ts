@@ -21,6 +21,9 @@ import type { ActionType } from "@/lib/approval";
 import type { BrainPage } from "@/lib/types";
 import { z } from "zod";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/whatsapp/webhook");
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
@@ -134,7 +137,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       results.push({ id: message.id, status: result.status });
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
-      console.error("[whatsapp-webhook] message failed:", error);
+      log.error("[whatsapp-webhook] message failed:", error);
       try {
         const errSendResult = await sendWhatsAppText(
           message.from,
@@ -198,7 +201,7 @@ async function processMessageStatuses(statuses: WhatsAppMessageStatus[]): Promis
         signal: AbortSignal.timeout(15_000),
       });
     } catch (err) {
-      console.error(
+      log.error(
         "[whatsapp-webhook] status update failed:",
         err instanceof Error ? err.message : String(err)
       );

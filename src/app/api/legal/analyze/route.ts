@@ -18,6 +18,9 @@ import {
 import { findRelevantPrecedents } from "@/lib/legal/precedent-search";
 import { writeSuggestedDeadlinesAndParties } from "@/lib/legal/case-writeback";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/legal/analyze");
+
 export const maxDuration = 120;
 
 /**
@@ -125,11 +128,11 @@ export const POST = createHandler(
               ? page.frontmatter.case_slug
               : undefined;
         } else {
-          console.error(`[analyze] page fetch for ${documentSlug} returned ${pageRes.status}`);
+          log.error(`[analyze] page fetch for ${documentSlug} returned ${pageRes.status}`);
           warnings.push("document_fetch_failed");
         }
       } catch (err) {
-        console.error(
+        log.error(
           `[analyze] page fetch for ${documentSlug} failed:`,
           err instanceof Error ? err.message : String(err)
         );
@@ -192,7 +195,7 @@ export const POST = createHandler(
         parsed = safeParseJson(answer || "{}");
       }
     } catch (err) {
-      console.error("[analyze] AI step failed:", err instanceof Error ? err.message : String(err));
+      log.error("[analyze] AI step failed:", err instanceof Error ? err.message : String(err));
       if (documentSlug) {
         try {
           const failedPatch = await enginePatchPage(engineHeaders, {
@@ -204,9 +207,9 @@ export const POST = createHandler(
             },
           });
           if (!failedPatch.ok)
-            console.error(`[analyze] failed to persist failure status: HTTP ${failedPatch.status}`);
+            log.error(`[analyze] failed to persist failure status: HTTP ${failedPatch.status}`);
         } catch (patchErr) {
-          console.error("[analyze] failed to persist failure status:", patchErr);
+          log.error("[analyze] failed to persist failure status:", patchErr);
         }
       }
       const empty = buildEmptyResult("Analyse fehlgeschlagen \u2014 Engine nicht verf\u00fcgbar.");
@@ -267,7 +270,7 @@ export const POST = createHandler(
         if (!docPatch.ok)
           throw new Error(`HTTP ${docPatch.status}: ${(await docPatch.text()).slice(0, 300)}`);
       } catch (err) {
-        console.error(
+        log.error(
           `[analyze] failed to persist analysis for ${documentSlug}:`,
           err instanceof Error ? err.message : String(err)
         );

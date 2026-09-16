@@ -1,6 +1,9 @@
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/data-export/backup");
+
 export const maxDuration = 60;
 
 export const GET = createHandler(
@@ -74,7 +77,7 @@ export const GET = createHandler(
 
       return Response.json(exportData);
     } catch (err) {
-      console.error("[backup] failed:", err instanceof Error ? err.message : String(err));
+      log.error("[backup] failed:", err instanceof Error ? err.message : String(err));
       return apiError("backup_failed", "Backup konnte nicht erstellt werden", 500);
     }
   }

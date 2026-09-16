@@ -30,6 +30,9 @@ declare global {
 const windows = (globalThis.__subsumioRateLimitWindows ??= new Map<string, Window>());
 import { env } from "@/lib/env";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/auth/rate-limit");
+
 const DATA_DIR = env("SUBSUMIO_DATA_DIR") || path.join(process.cwd(), ".data");
 const RATE_LIMIT_FILE = path.join(DATA_DIR, "rate-limits.json");
 
@@ -156,7 +159,7 @@ export async function hit(key: string, max: number, windowMs: number): Promise<R
     try {
       return await hitUpstash(key, max, windowMs);
     } catch (err) {
-      console.error(
+      log.error(
         `[rate-limit] upstash unreachable, per-instance fallback: ${err instanceof Error ? err.message : String(err)}`
       );
     }

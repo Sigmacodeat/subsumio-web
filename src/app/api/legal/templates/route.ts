@@ -2,6 +2,9 @@ import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/legal/templates");
+
 const templatesQuerySchema = z.object({
   limit: z
     .string()
@@ -73,7 +76,7 @@ export const GET = createHandler(
 
       return apiSuccess(templates);
     } catch (err) {
-      console.error("[templates] list failed:", err instanceof Error ? err.message : String(err));
+      log.error("[templates] list failed:", err instanceof Error ? err.message : String(err));
       return apiSuccess([]);
     }
   }
@@ -127,7 +130,7 @@ export const POST = createHandler(
       const result = await res.json();
       return apiSuccess({ slug, ...result });
     } catch (err) {
-      console.error("[templates] create failed:", err instanceof Error ? err.message : String(err));
+      log.error("[templates] create failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Template konnte nicht erstellt werden", 500);
     }
   }

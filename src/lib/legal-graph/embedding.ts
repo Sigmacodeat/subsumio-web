@@ -15,6 +15,9 @@ import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { env } from "@/lib/env";
 import type { Pool } from "pg";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/legal-graph/embedding");
+
 const LEGAL_GRAPH_BRAIN_ID = "legal-graph";
 const EMBED_BATCH_SIZE = 100;
 const MAX_RETRIES = 3;
@@ -199,7 +202,7 @@ export async function embedPendingChunks(
         client.release();
       }
     } catch (err) {
-      console.error(
+      log.error(
         `[legal-graph] Embedding batch failed at offset ${offset}:`,
         err instanceof Error ? err.message : err
       );

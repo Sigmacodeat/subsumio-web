@@ -8,6 +8,9 @@ import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
 import { reconcileCaseDocuments } from "@/lib/case-documents";
 import { acquireUploadSlot } from "@/lib/upload-concurrency";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/upload");
+
 // Hetzner/self-hosted agency uploads can be scanned + proxied synchronously up
 // to MAX_FILE_SIZE. If this route runs behind a stricter web host/proxy, that
 // layer must be raised too; otherwise the request fails before this handler runs.
@@ -99,7 +102,7 @@ export const POST = createHandler(
       try {
         formData = await req.formData();
       } catch (parseErr) {
-        console.error(
+        log.error(
           "[upload] formData parse failed:",
           parseErr instanceof Error ? parseErr.message : String(parseErr)
         );
@@ -245,7 +248,7 @@ export const POST = createHandler(
               duplicateStore
                 .record(result.sha256, uploadResult.slug, result.cleanName)
                 .catch((err) => {
-                  console.error(
+                  log.error(
                     "[upload] duplicate hash recording failed (non-fatal, engine dedup remains):",
                     err instanceof Error ? err.message : String(err)
                   );
@@ -271,7 +274,7 @@ export const POST = createHandler(
                 reconciliation = { attempted: true, ok: true };
               } catch (err) {
                 const message = err instanceof Error ? err.message : String(err);
-                console.error("[upload] case reconciliation failed:", message);
+                log.error("[upload] case reconciliation failed:", message);
                 reconciliation = { attempted: true, ok: false, error: message };
               }
             }
@@ -305,7 +308,7 @@ export const POST = createHandler(
                   });
                 } catch (err) {
                   analysisStatus = "failed";
-                  console.error(
+                  log.error(
                     "[upload] outbox enqueue failed:",
                     err instanceof Error ? err.message : String(err)
                   );
@@ -348,7 +351,7 @@ export const POST = createHandler(
               }
             );
           } catch (err) {
-            console.error(
+            log.error(
               "[upload] upstream response parsing failed:",
               err instanceof Error ? err.message : String(err)
             );
@@ -364,7 +367,7 @@ export const POST = createHandler(
         });
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        console.error("[upload] failed:", msg);
+        log.error("[upload] failed:", msg);
         // Distinguish body-size errors from other server errors
         if (/body|too large|413|payload/i.test(msg)) {
           return apiError("file_too_large", "Datei überschreitet das Größenlimit.", 413);
@@ -390,12 +393,12 @@ async function patchDocFrontmatter(
   try {
     const res = await enginePatchPage(headers, { slug: docSlug, frontmatter });
     if (!res.ok) {
-      console.error(`[upload] frontmatter patch failed for ${docSlug}: HTTP ${res.status}`);
+      log.error(`[upload] frontmatter patch failed for ${docSlug}: HTTP ${res.status}`);
       return false;
     }
     return true;
   } catch (err) {
-    console.error(
+    log.error(
       `[upload] frontmatter patch error for ${docSlug}:`,
       err instanceof Error ? err.message : String(err)
     );

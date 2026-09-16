@@ -7,6 +7,9 @@ import {
   type MatterContextForEval,
 } from "@/lib/superbrain-eval";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/brain-quality/eval");
+
 export const maxDuration = 60;
 
 export const GET = createHandler(
@@ -45,7 +48,7 @@ export const GET = createHandler(
       const summary = await runSuperbrainEval(contextFetcher, SUPERBRAIN_EVAL_FIXTURES);
       return Response.json(summary);
     } catch (err) {
-      console.error("[superbrain-eval] failed:", err instanceof Error ? err.message : String(err));
+      log.error("[superbrain-eval] failed:", err instanceof Error ? err.message : String(err));
       return apiError("eval_error", "Superbrain Eval failed", 500);
     }
   }

@@ -346,3 +346,24 @@ und Aktenblatt; Upload → Analyse → Fristvorschläge durchgängig.
   nach dem Piloten.
 - Onboarding-Tour-Status liegt nur im Browser (localStorage): neues Gerät = Tour erneut.
 - Lokal kein Rechtskorpus: Zitatqualität gegen AT-Normen nur auf Staging/Prod prüfbar.
+
+## Code auf Stand bringen (vor den Offline-Tests)
+
+- **Ein LLM-Gateway.** Fünf Web-Module riefen OpenRouter direkt auf (Copilot-Gedächtnis,
+  LLM-Fristen-Fallback, WhatsApp-Intent, WhatsApp-Transkription, Empfehlungs-Politur im
+  WhatsApp-Briefing). Grund: die Engine bot nur die schwere `think`-Pipeline, für Mini-Aufgaben
+  zu teuer und zu langsam. Folge: zweiter Key, keine Modell-Tiers, kein Budget-Tracking, kein
+  Sanitizer — und im Hetzner-Web-Container gar kein Key, die Funktionen liefen dort stumm ins
+  Leere. Jetzt: Engine-Endpunkte `/api/llm/complete` (Tier `utility` = Haiku, pro Zweck per
+  Config überschreibbar) und `/api/llm/transcribe`; Web-Client `src/lib/engine-llm.ts`;
+  Invariantentest verbietet Provider-URLs/-Keys in `src/`. Live geprüft: Fristen-Fallback
+  läuft durch die Engine. Doku: `docs/architecture/LLM_GATEWAY.md`.
+- **Strukturiertes Logging.** 119 API-Routen und 26 serverseitige Lib-Module von `console.*`
+  auf den JSON-Logger (Modul, Request-ID) umgestellt; der Logger akzeptiert console-artige
+  Argumente (Fehlerobjekte → `error`, Zusatzwerte → `details`) und ist browsersicher.
+  ESLint `no-console` für `src/app/api`, `src/lib/auth`, `src/lib/legal-graph`.
+- **Tour-Status serverseitig** (`onboardingProgress.tourCompleted`): neues Gerät spielt die
+  Tour nicht erneut ab.
+- **`autonomous-engine`** minütlich im Hetzner-Crontab eingeplant (Freigabe-Gate bleibt).
+- **Kontingent-Entscheidung:** Free-Plan bleibt bei 100 Anfragen/Monat als Testschwelle; die
+  Pilotkanzlei erhält über die Ops-Konsole den Plan `team` (4 000/Monat). Kein Code nötig.

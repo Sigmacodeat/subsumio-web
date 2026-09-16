@@ -1,6 +1,9 @@
 import { getSharedPgPool } from "@/lib/auth/store";
 import { createSchemaInit } from "@/lib/schema-init";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/billing/webhook/helpers.ts");
+
 // In-memory fallback for dev mode (no Postgres)
 const processedEventIds = new Set<string>();
 const MAX_INMEMORY_EVENTS = 1000;
@@ -28,7 +31,7 @@ export async function isDuplicateEvent(eventId: string, _eventType: string): Pro
       );
       return result.rows.length > 0;
     } catch (err) {
-      console.error(
+      log.error(
         `[stripe-webhook] idempotency check failed: ${err instanceof Error ? err.message : String(err)}`
       );
       // Non-fatal — proceed without idempotency (dev mode)
@@ -55,7 +58,7 @@ export async function markEventProcessed(eventId: string, eventType: string): Pr
         [eventId, eventType]
       );
     } catch (err) {
-      console.error(
+      log.error(
         `[stripe-webhook] markEventProcessed failed: ${err instanceof Error ? err.message : String(err)}`
       );
     }

@@ -2,6 +2,9 @@ import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { createHandler, recordQuota } from "@/lib/api-handler";
 import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/upload/confirm");
+
 /**
  * Stamp analysis_status=pending on the freshly-confirmed document BEFORE (or
  * alongside) enqueueing its analysis task. This makes the document visible to
@@ -22,10 +25,10 @@ async function stampAnalysisPending(
       },
     });
     if (!res.ok) {
-      console.error(`[upload/confirm] analysis_status stamp failed for ${docSlug}: ${res.status}`);
+      log.error(`[upload/confirm] analysis_status stamp failed for ${docSlug}: ${res.status}`);
     }
   } catch (err) {
-    console.error(
+    log.error(
       `[upload/confirm] analysis_status stamp error for ${docSlug}:`,
       err instanceof Error ? err.message : String(err)
     );

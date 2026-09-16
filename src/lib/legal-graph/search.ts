@@ -1,6 +1,9 @@
 import type { Pool } from "pg";
 import { ensureLegalGraphSchema } from "./schema";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/legal-graph/search");
+
 // ── Types ─────────────────────────────────────────────────────────────
 
 export interface HybridSearchResult {
@@ -335,7 +338,7 @@ export async function hybridSearch(
     try {
       vectorHits = await vectorSearch(pool, queryEmbedding, opts);
     } catch (err) {
-      console.error("[legal-graph] Vector search failed, falling back to BM25 only:", err);
+      log.error("[legal-graph] Vector search failed, falling back to BM25 only:", err);
     }
   }
 

@@ -2,6 +2,9 @@ import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/queries/recent");
+
 const recentQuerySchema = z.object({
   limit: z
     .string()
@@ -25,7 +28,7 @@ export const GET = createHandler(
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return Response.json(await res.json());
     } catch (err) {
-      console.error("[queries/recent] failed:", err instanceof Error ? err.message : String(err));
+      log.error("[queries/recent] failed:", err instanceof Error ? err.message : String(err));
       return apiError("service_unavailable", "Engine nicht erreichbar", 503);
     }
   }

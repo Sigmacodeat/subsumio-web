@@ -12,6 +12,9 @@ import { generateInsights, type InsightInput } from "@/lib/insights-engine";
 import type { BrainPage } from "@/lib/types";
 import { z } from "zod";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/insights");
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -83,7 +86,7 @@ export const GET = createHandler(
 
       return NextResponse.json({ insights, count: insights.length });
     } catch (err) {
-      console.error("[insights] Failed to generate:", err);
+      log.error("[insights] Failed to generate:", err);
       return NextResponse.json(
         {
           error: "insights_generation_failed",

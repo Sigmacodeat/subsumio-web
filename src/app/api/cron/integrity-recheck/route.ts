@@ -3,6 +3,9 @@ import { createCronHandler } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { env } from "@/lib/env";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/cron/integrity-recheck");
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
@@ -50,13 +53,11 @@ export const GET = createCronHandler(async (req: NextRequest) => {
     }>;
   };
 
-  console.info(
-    `[cron:integrity-recheck] checked=${result.checked} mismatches=${result.mismatches}`
-  );
+  log.info(`[cron:integrity-recheck] checked=${result.checked} mismatches=${result.mismatches}`);
 
   if (result.mismatches > 0 && result.mismatch_details) {
     for (const m of result.mismatch_details) {
-      console.error(
+      log.error(
         `[cron:integrity-recheck] CORRUPTION DETECTED: ${m.filename} at ${m.storage_path} — expected ${m.expected}, got ${m.actual}`
       );
     }

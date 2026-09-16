@@ -26,6 +26,7 @@ const progressSchema = z.object({
     firstDeadline: z.boolean().optional(),
     teamInvited: z.boolean().optional(),
     firstQuery: z.boolean().optional(),
+    tourCompleted: z.boolean().optional(),
   }),
 });
 

@@ -21,6 +21,9 @@ import { engineComplete, isEngineLLMAvailable, parseJsonObject } from "@/lib/eng
 import { engineHeadersForBrain } from "@/lib/engine";
 import type { ParsedIntent } from "@/lib/legal-chat/actions";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/whatsapp/llm-intent");
+
 const SYSTEM_PROMPT = `Du bist ein Intent-Parser für einen Legal AI WhatsApp-Assistenten (Subsumio).
 
 Deine Aufgabe: Interpretiere eine WhatsApp-Nachricht eines Anwalts/Anwältin und gib sie als strukturiertes JSON zurück.
@@ -109,12 +112,12 @@ export async function parseIntentWithLLM(
     if (!content) return null;
     const parsed = parseJsonObject<LLMIntentResponse>(content);
     if (!parsed) {
-      console.warn("[llm-intent] no JSON in response:", content.slice(0, 200));
+      log.warn("[llm-intent] no JSON in response:", content.slice(0, 200));
       return null;
     }
     return validateAndCoerce(parsed, text);
   } catch (err) {
-    console.warn("[llm-intent] request failed:", err instanceof Error ? err.message : String(err));
+    log.warn("[llm-intent] request failed:", err instanceof Error ? err.message : String(err));
     return null;
   }
 }
@@ -282,7 +285,7 @@ function validateAndCoerce(raw: LLMIntentResponse, originalText: string): Parsed
       return { kind: "free_text", text: str(raw.text) || originalText };
 
     default:
-      console.warn("[llm-intent] unknown kind:", kind);
+      log.warn("[llm-intent] unknown kind:", kind);
       return null;
   }
 }

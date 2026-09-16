@@ -2,6 +2,9 @@ import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { encodeSlugPath } from "@/lib/utils";
 import { DEADLINE_CREATE_TIMEOUT, ENGINE_FETCH_TIMEOUT } from "@/lib/legal/analysis-utils";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/legal/case-writeback");
+
 interface EngineHeaders {
   [key: string]: string;
 }
@@ -71,7 +74,7 @@ export async function writeSuggestedDeadlinesAndParties(
 
     await autoCreateDeadlinePages(engineHeaders, suggestedDeadlines, caseSlug);
   } catch (err) {
-    console.error(
+    log.error(
       `[analyze] failed to write suggested deadlines to case ${caseSlug}:`,
       err instanceof Error ? err.message : String(err)
     );

@@ -6,6 +6,9 @@ import { applyMatterKnowledgeMutation } from "@/lib/matter-knowledge";
 import type { CaseFrontmatter } from "@/lib/legal-types";
 import { encodeSlugPath } from "@/lib/utils";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/legal/matter-knowledge");
+
 export const dynamic = "force-dynamic";
 
 const sourceSchema = z.object({
@@ -100,7 +103,7 @@ export const POST = createHandler(
       if (message.startsWith("knowledge_")) {
         return apiError("bad_request", message, 400);
       }
-      console.error("[legal/matter-knowledge] mutation failed:", message);
+      log.error("[legal/matter-knowledge] mutation failed:", message);
       return apiError("internal_error", "Failed to mutate matter knowledge", 500);
     }
   }

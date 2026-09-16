@@ -7,6 +7,9 @@ import { logAudit } from "@/lib/audit";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/settings/gdpr/data-deletion");
+
 export const maxDuration = 120;
 
 const deletionSchema = z.object({
@@ -57,7 +60,7 @@ export const POST = createHandler(
         apiKeyStore
           .delete(k.id)
           .catch((err) =>
-            console.warn(
+            log.warn(
               "[gdpr] Failed to delete API key",
               k.id,
               "during data deletion:",

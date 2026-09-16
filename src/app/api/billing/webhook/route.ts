@@ -24,6 +24,9 @@ import {
   cancelSaasOrg,
 } from "@/lib/billing/saas-billing-sync";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/billing/webhook");
+
 export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secret) {
@@ -118,7 +121,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
             }
           }
 
-          console.info(
+          log.info(
             `[stripe-webhook] credit purchase: user=${userId} pack=${packId ?? "custom"} credits=${credits}`
           );
         }
@@ -252,7 +255,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
         (metadata?.plan === "pro" || metadata?.plan === "team" ? metadata.plan : null);
       const userId = metadata?.user_id;
       if (!resolvedPlan) {
-        console.warn(
+        log.warn(
           `[stripe-webhook] subscription.updated: could not resolve plan for price ${priceId ?? "unknown"} (customer ${customerId ?? "unknown"})`
         );
         break;
@@ -372,7 +375,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
             });
           }
         } catch (err) {
-          console.error("[stripe-webhook] charge.refunded: failed to claw back credits:", err);
+          log.error("[stripe-webhook] charge.refunded: failed to claw back credits:", err);
         }
       }
       break;
@@ -411,14 +414,14 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
                 text: emailBody,
               });
             } catch (err) {
-              console.warn(
+              log.warn(
                 "[stripe-webhook] dunning email failed:",
                 err instanceof Error ? err.message : err
               );
             }
           }
 
-          console.warn(
+          log.warn(
             `[stripe-webhook] payment_failed dunning: user=${user.id} failure=${dunningState.failureCount} status=${dunningState.status}`
           );
         }
@@ -460,7 +463,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
                   text: emailBody,
                 });
               } catch (err) {
-                console.warn(
+                log.warn(
                   "[stripe-webhook] reactivation email failed:",
                   err instanceof Error ? err.message : err
                 );
@@ -509,12 +512,12 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
               status: "suspended",
               failureCount: 99, // force suspended
             });
-            console.warn(
+            log.warn(
               `[stripe-webhook] charge.dispute.created: user=${userId} suspended (reason: ${disputeObj.reason ?? "unknown"})`
             );
           }
         } catch (err) {
-          console.error("[stripe-webhook] dispute.created handler failed:", err);
+          log.error("[stripe-webhook] dispute.created handler failed:", err);
         }
       }
       break;
@@ -538,7 +541,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
             await store.update(userId, { plan: resolvedPlan as Plan });
           }
         } catch (err) {
-          console.error("[stripe-webhook] dispute.closed handler failed:", err);
+          log.error("[stripe-webhook] dispute.closed handler failed:", err);
         }
       }
       break;
@@ -560,7 +563,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
             });
           }
         } catch (err) {
-          console.warn("[stripe-webhook] 3DS email failed:", err);
+          log.warn("[stripe-webhook] 3DS email failed:", err);
         }
       }
       break;
@@ -581,7 +584,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
             });
           }
         } catch (err) {
-          console.warn("[stripe-webhook] source.expiring email failed:", err);
+          log.warn("[stripe-webhook] source.expiring email failed:", err);
         }
       }
       break;
@@ -601,7 +604,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
             });
           }
         } catch (err) {
-          console.warn("[stripe-webhook] trial_will_end email failed:", err);
+          log.warn("[stripe-webhook] trial_will_end email failed:", err);
         }
       }
       break;

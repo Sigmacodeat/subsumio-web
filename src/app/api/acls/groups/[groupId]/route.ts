@@ -1,6 +1,9 @@
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/acls/groups/[groupId]");
+
 export const DELETE = createHandler(
   {
     action: "settings.write",
@@ -28,10 +31,7 @@ export const DELETE = createHandler(
       const data = await res.json();
       return Response.json(data);
     } catch (err) {
-      console.error(
-        "[acls/groups] delete failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[acls/groups] delete failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Gruppe konnte nicht gelöscht werden", 500);
     }
   }

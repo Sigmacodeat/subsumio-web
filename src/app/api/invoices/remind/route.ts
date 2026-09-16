@@ -4,6 +4,9 @@ import { createServerBrainClient } from "@/lib/server-brain";
 import nodemailer from "nodemailer";
 import { createHandler, apiError } from "@/lib/api-handler";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/invoices/remind");
+
 function calculateReminderFee(count: number, baseAmount: number): number {
   switch (count) {
     case 1:
@@ -120,7 +123,7 @@ export const POST = createHandler(
         sentTo: recipient,
       });
     } catch (err) {
-      console.error("[invoice-remind] failed:", err instanceof Error ? err.message : String(err));
+      log.error("[invoice-remind] failed:", err instanceof Error ? err.message : String(err));
       return apiError("send_failed", "Mahnung konnte nicht gesendet werden", 500);
     }
   }

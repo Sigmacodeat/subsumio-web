@@ -3,6 +3,9 @@ import { createHandler } from "@/lib/api-handler";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { randomUUID } from "node:crypto";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/whatsapp/templates");
+
 export const dynamic = "force-dynamic";
 
 interface TemplatePage {
@@ -103,7 +106,7 @@ export const POST = createHandler(
     });
     if (!res.ok) {
       const err = await res.text().catch(() => "");
-      console.error("[whatsapp/templates] create failed:", res.status, err);
+      log.error("[whatsapp/templates] create failed:", res.status, err);
       return Response.json({ error: "engine_error" }, { status: 502 });
     }
     return Response.json({ slug, name: body.name, status: "draft" });
@@ -142,7 +145,7 @@ export const PATCH = createHandler(
     });
     if (!patchRes.ok) {
       const err = await patchRes.text().catch(() => "");
-      console.error("[whatsapp/templates] patch failed:", patchRes.status, err);
+      log.error("[whatsapp/templates] patch failed:", patchRes.status, err);
       return Response.json({ error: "engine_error" }, { status: 502 });
     }
     return Response.json({ ok: true });

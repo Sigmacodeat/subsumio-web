@@ -5,6 +5,9 @@ import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
 import { logAudit } from "@/lib/audit";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/documents/retry");
+
 export const dynamic = "force-dynamic";
 
 const retrySchema = z.object({
@@ -89,7 +92,7 @@ export const POST = createHandler(
         uploaded_at: typeof fm.uploaded_at === "string" ? fm.uploaded_at : undefined,
       });
     } catch (err) {
-      console.error("[documents/retry] enqueue failed:", err);
+      log.error("[documents/retry] enqueue failed:", err);
       // Non-fatal — the upload-reconcile sweeper will pick it up
     }
 

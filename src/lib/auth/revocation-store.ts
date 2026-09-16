@@ -9,6 +9,9 @@
 import { getSharedPgPool } from "./store";
 import { createSchemaInit } from "@/lib/schema-init";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/auth/revocation-store");
+
 const revokedVersions = new Map<string, number>();
 
 const ensureRevocationSchema = createSchemaInit(`
@@ -57,7 +60,7 @@ export async function revokeAllSessions(userId: string): Promise<void> {
     );
     revokedVersions.set(userId, rows[0]?.min_version ?? 1);
   } catch (err) {
-    console.error(
+    log.error(
       `[revocation] failed to persist for ${userId}:`,
       err instanceof Error ? err.message : String(err)
     );

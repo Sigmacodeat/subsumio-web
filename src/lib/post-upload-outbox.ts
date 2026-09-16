@@ -13,6 +13,9 @@
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { createHash } from "node:crypto";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/post-upload-outbox");
+
 export type PostUploadTaskType =
   | "reconcile_case" // update case.documents[] array
   | "analyze" // run legal analysis on the document
@@ -158,7 +161,7 @@ export async function enqueueAllPostUploadTasks(params: {
         }
       }
       // All retries exhausted — log and rethrow so caller knows
-      console.error(
+      log.error(
         `[post-upload-outbox] Failed to enqueue ${task_type} for ${params.doc_slug} after ${MAX_RETRIES} attempts:`,
         lastErr
       );

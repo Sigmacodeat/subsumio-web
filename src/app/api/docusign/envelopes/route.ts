@@ -3,6 +3,9 @@ import { listEnvelopes } from "@/lib/docusign";
 import { isAppError } from "@/lib/errors";
 import { createHandler, apiError } from "@/lib/api-handler";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/docusign/envelopes");
+
 const envelopesQuerySchema = z.object({
   fromDate: z.string().optional(),
   status: z.string().optional(),
@@ -28,7 +31,7 @@ export const GET = createHandler(
         return apiError(err.code, err.message, err.statusCode);
       }
       const msg = err instanceof Error ? err.message : String(err);
-      console.error("[docusign envelopes] error:", msg);
+      log.error("[docusign envelopes] error:", msg);
       return apiError("list_failed", "Envelope-Liste konnte nicht geladen werden", 500);
     }
   }

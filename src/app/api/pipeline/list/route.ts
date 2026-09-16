@@ -1,6 +1,9 @@
 import { createHandler } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/pipeline/list");
+
 export const maxDuration = 30;
 
 export const GET = createHandler(
@@ -19,7 +22,7 @@ export const GET = createHandler(
       const data = await res.json();
       return Response.json({ pipelines: data.pipelines ?? [] });
     } catch (err) {
-      console.error(
+      log.error(
         "[pipeline/list] engine unreachable:",
         err instanceof Error ? err.message : String(err)
       );

@@ -3,6 +3,9 @@ import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { getConnectorByEngineService } from "@/lib/connector-coverage";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/connectors/[service]/configure");
+
 export const dynamic = "force-dynamic";
 
 const folderConfigSchema = z.object({
@@ -63,7 +66,7 @@ export const POST = createHandler(
       }
       return Response.json(result);
     } catch (error) {
-      console.error(
+      log.error(
         "[connector/configure] failed:",
         error instanceof Error ? error.message : String(error)
       );

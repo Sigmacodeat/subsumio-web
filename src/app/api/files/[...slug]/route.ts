@@ -1,6 +1,9 @@
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, apiNotFound } from "@/lib/api-handler";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/files/[...slug]");
+
 export const dynamic = "force-dynamic";
 // Large originals (up to 1 GB) stream through; give the proxy headroom.
 export const maxDuration = 600;
@@ -62,7 +65,7 @@ export const GET = createHandler(
 
       return new Response(res.body, { status: 200, headers });
     } catch (err) {
-      console.error(
+      log.error(
         "[files/...slug] download failed:",
         err instanceof Error ? err.message : String(err)
       );

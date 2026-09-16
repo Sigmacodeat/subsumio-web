@@ -5,6 +5,9 @@ import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { explainRetrieval } from "@/lib/matter-context";
 import type { QueryMode } from "@/lib/matter-context-types";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/copilot/explain");
+
 const explainBodySchema = z.object({
   query: z.string().min(1).max(2000),
   answer: z.string().min(1).max(10000),
@@ -169,10 +172,7 @@ export const POST = createHandler(
 
       return NextResponse.json({ explanation });
     } catch (err) {
-      console.error(
-        "[copilot/explain] POST failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[copilot/explain] POST failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Failed to generate explanation", 500);
     }
   }

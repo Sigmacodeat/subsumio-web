@@ -5,6 +5,9 @@ import { createHandler, apiError, recordQuota, recordCreditConsumption } from "@
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
 import { storeReceipt, type WorkProductReceipt } from "@/lib/work-product-receipt-store";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/legal/fristenreport");
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
@@ -84,7 +87,7 @@ export const POST = createHandler(
           };
           await storeReceipt(scopedReceipt);
         } catch (err) {
-          console.error(
+          log.error(
             "[fristenreport] receipt store failed:",
             err instanceof Error ? err.message : String(err)
           );
@@ -93,7 +96,7 @@ export const POST = createHandler(
 
       return Response.json(result);
     } catch (err) {
-      console.error(
+      log.error(
         "[fristenreport] engine unreachable:",
         err instanceof Error ? err.message : String(err)
       );

@@ -1,5 +1,8 @@
 import type { Pool } from "pg";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/legal-graph/citations");
+
 // ── Citation patterns for German legal documents ──────────────────────
 
 // German case citation patterns:
@@ -311,7 +314,7 @@ export async function buildCitationGraphForJudgement(
 
       if (citedId) resolved++;
     } catch (err) {
-      console.error(`[legal-graph] Failed to insert citation: ${err}`);
+      log.error(`[legal-graph] Failed to insert citation: ${err}`);
     }
   }
 
@@ -325,7 +328,7 @@ export async function buildCitationGraphForJudgement(
         [judgementId, citation.reference, citation.statute, citation.context.slice(0, 500)]
       );
     } catch (err) {
-      console.error(`[legal-graph] Failed to insert statute citation: ${err}`);
+      log.error(`[legal-graph] Failed to insert statute citation: ${err}`);
     }
   }
 

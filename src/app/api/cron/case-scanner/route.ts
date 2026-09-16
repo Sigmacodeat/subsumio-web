@@ -3,6 +3,9 @@ import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { createCronHandler } from "@/lib/api-handler";
 import { getRecipientsByBrain } from "@/lib/cron-utils";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/cron/case-scanner");
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
@@ -64,7 +67,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       jobsQueued++;
     } else {
       failures++;
-      console.error(`[case-scanner] Brain ${brainId}: ${result.error}`);
+      log.error(`[case-scanner] Brain ${brainId}: ${result.error}`);
     }
   }
 

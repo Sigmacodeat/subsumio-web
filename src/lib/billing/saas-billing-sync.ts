@@ -19,6 +19,9 @@ import { ensureSaasSchema } from "@/lib/billing/saas-schema";
 import { toSaasPlan, BILLABLE_PLANS } from "@/lib/billing/plans";
 import { PLANS } from "../../../server/src/core/saas-pricing";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/billing/saas-billing-sync");
+
 /** Stripe plan ID ("pro" | "team") → SaaS PlanTier ("solo" | "kanzlei"). */
 export type SaasPlanTier = "solo" | "kanzlei" | "enterprise";
 
@@ -122,7 +125,7 @@ export async function createSaasOrgForUser(
     return orgId;
   } catch (err) {
     await client.query("ROLLBACK").catch(() => {});
-    console.warn(
+    log.warn(
       `[saas-billing-sync] createSaasOrgForUser failed: ${err instanceof Error ? err.message : String(err)}`
     );
     return null;
@@ -193,7 +196,7 @@ export async function updateSaasPlan(
       [orgId, periodStart, periodEnd, includedCredit]
     );
   } catch (err) {
-    console.warn(
+    log.warn(
       `[saas-billing-sync] updateSaasPlan failed: ${err instanceof Error ? err.message : String(err)}`
     );
   }
@@ -231,7 +234,7 @@ export async function cancelSaasOrg(userId: string): Promise<void> {
       );
     }
   } catch (err) {
-    console.warn(
+    log.warn(
       `[saas-billing-sync] cancelSaasOrg failed: ${err instanceof Error ? err.message : String(err)}`
     );
   }
@@ -340,7 +343,7 @@ export async function billMonthlyOverage(): Promise<{ orgs: number; invoices: nu
 
     return { orgs: orgs.rows.length, invoices };
   } catch (err) {
-    console.warn(
+    log.warn(
       `[saas-billing-sync] billMonthlyOverage failed: ${err instanceof Error ? err.message : String(err)}`
     );
     return { orgs: 0, invoices: 0 };
@@ -390,7 +393,7 @@ export async function updateSaasSeats(userId: string, seats: number): Promise<vo
       );
     }
   } catch (err) {
-    console.warn(
+    log.warn(
       `[saas-billing-sync] updateSaasSeats failed: ${err instanceof Error ? err.message : String(err)}`
     );
   }
@@ -437,7 +440,7 @@ export async function reactivateSaasSubscription(userId: string): Promise<void> 
       }
     }
   } catch (err) {
-    console.warn(
+    log.warn(
       `[saas-billing-sync] reactivateSaasSubscription failed: ${err instanceof Error ? err.message : String(err)}`
     );
   }
@@ -506,7 +509,7 @@ export async function resetMonthlyPeriod(): Promise<{ orgs: number; rows: number
 
     return { orgs: orgs.rows.length, rows };
   } catch (err) {
-    console.warn(
+    log.warn(
       `[saas-billing-sync] resetMonthlyPeriod failed: ${err instanceof Error ? err.message : String(err)}`
     );
     return { orgs: 0, rows: 0 };

@@ -10,6 +10,9 @@ import {
   type DraftReviewResult,
 } from "@/lib/draft-review";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/copilot/draft-review");
+
 const draftReviewPostSchema = z.object({
   action: z.enum(["review", "persist", "update_issue"]).optional(),
   content: z.string().max(50000).optional(),
@@ -37,7 +40,7 @@ export const GET = createHandler(
       const reviews = await listReviews({ draftSlug, status });
       return NextResponse.json({ reviews });
     } catch (err) {
-      console.error(
+      log.error(
         "[copilot/draft-review] GET failed:",
         err instanceof Error ? err.message : String(err)
       );
@@ -98,7 +101,7 @@ export const POST = createHandler(
 
       return apiError("bad_request", "Invalid action or missing fields", 400);
     } catch (err) {
-      console.error(
+      log.error(
         "[copilot/draft-review] POST failed:",
         err instanceof Error ? err.message : String(err)
       );
@@ -143,7 +146,7 @@ export const PATCH = createHandler(
       await updateIssueStatus(reviewId, issueId, status);
       return NextResponse.json({ ok: true });
     } catch (err) {
-      console.error(
+      log.error(
         "[copilot/draft-review] PATCH failed:",
         err instanceof Error ? err.message : String(err)
       );

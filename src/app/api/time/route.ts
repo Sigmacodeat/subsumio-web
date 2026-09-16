@@ -14,6 +14,9 @@ import {
   type TimeEntryWithCase,
 } from "@/lib/time-tracking";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/time");
+
 export const dynamic = "force-dynamic";
 
 const timeQuerySchema = z
@@ -127,7 +130,7 @@ export const GET = createHandler(
 
       return apiSuccess({ entries: filtered, total: filtered.length, summary });
     } catch (err) {
-      console.error("[time] list failed:", err instanceof Error ? err.message : String(err));
+      log.error("[time] list failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Zeiterfassung konnte nicht geladen werden", 500);
     }
   }

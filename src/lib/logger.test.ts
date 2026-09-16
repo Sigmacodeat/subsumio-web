@@ -128,3 +128,29 @@ describe("logger", () => {
     spy.mockRestore();
   });
 });
+
+describe("normalizeLogArgs (console-compatible arguments)", () => {
+  test("string + object → meta", async () => {
+    const { normalizeLogArgs } = await import("./logger");
+    expect(normalizeLogArgs("saved", [{ caseSlug: "x" }])).toEqual({
+      msg: "saved",
+      meta: { caseSlug: "x" },
+    });
+  });
+  test("string + Error → meta.error", async () => {
+    const { normalizeLogArgs } = await import("./logger");
+    const out = normalizeLogArgs("failed", [new Error("boom")]);
+    expect(out.msg).toBe("failed");
+    expect((out.meta?.error as { message: string }).message).toBe("boom");
+  });
+  test("Error as message → message text + stack meta", async () => {
+    const { normalizeLogArgs } = await import("./logger");
+    const out = normalizeLogArgs(new Error("kaputt"), []);
+    expect(out.msg).toBe("kaputt");
+    expect(out.meta?.error).toBeDefined();
+  });
+  test("several extra values → details[]", async () => {
+    const { normalizeLogArgs } = await import("./logger");
+    expect(normalizeLogArgs("x", [1, "y"])).toEqual({ msg: "x", meta: { details: [1, "y"] } });
+  });
+});

@@ -11,6 +11,9 @@ import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { createDocumentRequestNotification } from "@/lib/comments";
 import type { BrainPage } from "@/lib/types";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/document-requests");
+
 export const dynamic = "force-dynamic";
 
 const docRequestQuerySchema = z.object({
@@ -227,7 +230,7 @@ export const PATCH = createHandler(
           isReminder: false,
         });
       } catch (err) {
-        console.error(
+        log.error(
           "[doc-request] notification creation failed:",
           err instanceof Error ? err.message : String(err)
         );

@@ -2,6 +2,9 @@ import { z } from "zod";
 import { getConnector } from "@/lib/dms";
 import { createHandler, apiError } from "@/lib/api-handler";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/dms/search");
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
@@ -32,7 +35,7 @@ export const GET = createHandler(
       return Response.json(results);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error("[dms search] error:", msg);
+      log.error("[dms search] error:", msg);
       return apiError("search_failed", "Suche fehlgeschlagen", 500);
     }
   }

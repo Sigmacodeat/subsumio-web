@@ -15,6 +15,9 @@ import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { env } from "@/lib/env";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/demo");
+
 const CONFIGURED = env("SUBSUMIO_API_URL");
 const DEMO_BRAIN = env("SUBSUMIO_DEMO_BRAIN") || "demo";
 
@@ -42,10 +45,7 @@ export const GET = createPublicHandler(
         results: Array.isArray(data) ? data : (data?.results ?? []),
       });
     } catch (err) {
-      console.error(
-        "[demo] engine search failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[demo] engine search failed:", err instanceof Error ? err.message : String(err));
       return Response.json({ configured: false });
     }
   }

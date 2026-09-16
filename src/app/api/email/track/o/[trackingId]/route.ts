@@ -10,6 +10,9 @@ import {
 } from "@/lib/email/tracking";
 import { clientIp } from "@/lib/auth/rate-limit";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/email/track/o/[trackingId]");
+
 export const dynamic = "force-dynamic";
 
 /**
@@ -84,7 +87,7 @@ export const GET = createPublicHandler(
           });
         }
       } catch (err) {
-        console.error(
+        log.error(
           `[email-tracking] open pixel logging failed: ${err instanceof Error ? err.message : String(err)}`
         );
       }

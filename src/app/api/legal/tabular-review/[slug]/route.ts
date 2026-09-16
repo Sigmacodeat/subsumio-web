@@ -1,6 +1,9 @@
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/legal/tabular-review/[slug]");
+
 export const dynamic = "force-dynamic";
 
 function decodedSlug(raw: string): string | null {
@@ -43,7 +46,7 @@ export const GET = createHandler(
       }
       return Response.json(payload);
     } catch (err) {
-      console.error(
+      log.error(
         "[tabular-review/status] engine unreachable:",
         err instanceof Error ? err.message : String(err)
       );

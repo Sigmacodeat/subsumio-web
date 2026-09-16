@@ -1,6 +1,9 @@
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { getSharedPgPool } from "@/lib/auth/store";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/admin/chunk-quality");
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
@@ -107,7 +110,7 @@ export const GET = createHandler(
       `),
       ]);
     } catch (err) {
-      console.error("[chunk-quality] query failed:", (err as Error).message);
+      log.error("[chunk-quality] query failed:", (err as Error).message);
       return apiSuccess({
         totalChunks: 0,
         embeddedChunks: 0,

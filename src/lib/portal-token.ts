@@ -10,6 +10,9 @@ import { createHash } from "node:crypto";
 import { AuthError } from "@/lib/errors";
 import { createSchemaInit } from "@/lib/schema-init";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/portal-token");
+
 const encoder = new TextEncoder();
 
 export interface PortalTokenPayload {
@@ -122,7 +125,7 @@ export async function revokePortalToken(token: string): Promise<void> {
       [hash]
     );
   } catch (err) {
-    console.error(
+    log.error(
       `[portal-token] revocation persist failed: ${err instanceof Error ? err.message : String(err)}`
     );
   }

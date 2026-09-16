@@ -4,6 +4,9 @@ import { createHandler, apiError } from "@/lib/api-handler";
 import { mailboxScopeFor } from "@/lib/email/mailbox-scope";
 import { caseAccessForUser } from "@/lib/email/case-link";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/email/messages/[id]");
+
 const patchSchema = z
   .object({
     folder: z.enum(["inbox", "sent", "archive", "spam", "trash"]).optional(),
@@ -41,7 +44,7 @@ export const GET = createHandler(
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       const status = msg === "mailbox_database_not_configured" ? 503 : 500;
-      console.error("[email] failed to load message:", msg);
+      log.error("[email] failed to load message:", msg);
       return apiError("load_failed", "Nachricht konnte nicht geladen werden", status);
     }
   }
@@ -87,7 +90,7 @@ export const PATCH = createHandler(
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       const status = msg === "mailbox_database_not_configured" ? 503 : 500;
-      console.error("[email] failed to update message:", msg);
+      log.error("[email] failed to update message:", msg);
       return apiError("update_failed", "Nachricht konnte nicht aktualisiert werden", status);
     }
   }

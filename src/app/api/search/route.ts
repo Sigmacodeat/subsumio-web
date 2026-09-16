@@ -4,6 +4,9 @@ import { recordQuery } from "@/lib/usage";
 import { sanitizeTypeFilter, buildSearchParams } from "@/lib/search-params";
 import { createHandler, recordQuota, apiError } from "@/lib/api-handler";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/search");
+
 const searchQuerySchema = z.object({
   q: z.string().default(""),
   limit: z
@@ -46,10 +49,7 @@ export const GET = createHandler(
       const data = await res.json();
       return Response.json(data);
     } catch (err) {
-      console.error(
-        "[search] engine search failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[search] engine search failed:", err instanceof Error ? err.message : String(err));
       return apiError("service_unavailable", "Suche derzeit nicht verfügbar", 503);
     }
   }

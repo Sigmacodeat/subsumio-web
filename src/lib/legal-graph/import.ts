@@ -1,6 +1,9 @@
 import type { Pool } from "pg";
 import { ensureLegalGraphSchema } from "./schema";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/legal-graph/import");
+
 // ── Types ─────────────────────────────────────────────────────────────
 
 export interface JudgementRecord {
@@ -359,7 +362,7 @@ export async function bulkImportOpenLegalData(
           }
         } catch (err) {
           errors++;
-          console.error(`[legal-graph] Failed to import case ${caseItem.id}:`, err);
+          log.error(`[legal-graph] Failed to import case ${caseItem.id}:`, err);
         }
       }
 

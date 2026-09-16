@@ -7,6 +7,9 @@ import { MAX_ATTEMPTS } from "@/lib/post-upload-outbox";
 import { getRecipientsByBrain, mapWithConcurrency } from "@/lib/cron-utils";
 import { reconcileCaseDocuments } from "@/lib/case-documents";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/cron/post-upload-drain");
+
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
@@ -54,7 +57,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   const allPages: TaskPage[] = [];
   for (const result of fetched) {
     if (result.status === "fulfilled") allPages.push(...result.value);
-    else console.error(`[post-upload-drain] ${String(result.reason)}`);
+    else log.error(`[post-upload-drain] ${String(result.reason)}`);
   }
   const now = new Date();
 
@@ -90,7 +93,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
           },
         });
         if (!patch.ok) {
-          console.error(`[post-upload-drain] failed to defer ${page.slug}: ${patch.status}`);
+          log.error(`[post-upload-drain] failed to defer ${page.slug}: ${patch.status}`);
         }
         continue;
       }
@@ -159,7 +162,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       }
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : String(err);
-      console.error(
+      log.error(
         `[post-upload-drain] ${task_type} failed for ${doc_slug} (attempt ${attempt}):`,
         errorMsg
       );
@@ -178,9 +181,9 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
         },
       });
       if (!patch.ok) {
-        console.error(`[post-upload-drain] failed to defer blocked ${page.slug}: ${patch.status}`);
+        log.error(`[post-upload-drain] failed to defer blocked ${page.slug}: ${patch.status}`);
       }
-      console.error(
+      log.error(
         `[post-upload-drain] ${task_type} blocked for ${doc_slug}: ${errorMsg} — kept pending`
       );
       blocked++;
@@ -196,7 +199,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       // strands every remaining task). The next drain re-runs this task, so the
       // analyze/contradiction endpoints MUST be idempotent by doc_slug/case_slug.
       if (!patch.ok) {
-        console.error(
+        log.error(
           `[post-upload-drain] work completed but mark-done failed for ${page.slug}: HTTP ${patch.status} — will re-run next drain`
         );
       }
@@ -209,7 +212,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
         frontmatter: { status: "exhausted", attempts: attempt, last_error: errorMsg },
       });
       if (!patch.ok)
-        console.error(`[post-upload-drain] failed to mark ${page.slug} exhausted: ${patch.status}`);
+        log.error(`[post-upload-drain] failed to mark ${page.slug} exhausted: ${patch.status}`);
       exhausted++;
     } else {
       // Schedule retry with backoff
@@ -224,7 +227,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
         },
       });
       if (!patch.ok)
-        console.error(`[post-upload-drain] failed to reschedule ${page.slug}: ${patch.status}`);
+        log.error(`[post-upload-drain] failed to reschedule ${page.slug}: ${patch.status}`);
       failed++;
     }
   }

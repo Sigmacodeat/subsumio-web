@@ -2,6 +2,9 @@ import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/agent-templates");
+
 const listQuerySchema = z.object({
   search: z.string().optional(),
 });
@@ -96,10 +99,7 @@ export const GET = createHandler(
 
       return Response.json({ templates });
     } catch (err) {
-      console.error(
-        "[agent-templates] list failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[agent-templates] list failed:", err instanceof Error ? err.message : String(err));
       return Response.json({ templates: [] });
     }
   }
@@ -154,7 +154,7 @@ export const POST = createHandler(
       const data = await res.json();
       return Response.json({ slug: data.slug ?? slug, success: true });
     } catch (err) {
-      console.error(
+      log.error(
         "[agent-templates] create failed:",
         err instanceof Error ? err.message : String(err)
       );

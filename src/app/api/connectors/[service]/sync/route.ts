@@ -2,6 +2,9 @@ import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { getConnectorByEngineService } from "@/lib/connector-coverage";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/connectors/[service]/sync");
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
@@ -32,13 +35,13 @@ export const POST = createHandler(
       });
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        console.error("[connector/sync] engine error:", res.status, text);
+        log.error("[connector/sync] engine error:", res.status, text);
         return apiError("service_unavailable", "Sync fehlgeschlagen", 503);
       }
       const result = await res.json();
       return Response.json(result);
     } catch (err) {
-      console.error("[connector/sync] failed:", err instanceof Error ? err.message : String(err));
+      log.error("[connector/sync] failed:", err instanceof Error ? err.message : String(err));
       return apiError("service_unavailable", "Sync fehlgeschlagen", 503);
     }
   }

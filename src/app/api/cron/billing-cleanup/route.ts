@@ -18,6 +18,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
 import { getSharedPgPool } from "@/lib/auth/store";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/cron/billing-cleanup");
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
@@ -95,7 +98,7 @@ async function billingCleanupHandler(_req: NextRequest): Promise<Response> {
     );
     results.oldSettlementQueueDeleted = queueDeleted.rowCount ?? 0;
   } catch (err) {
-    console.error("[billing-cleanup] error:", err);
+    log.error("[billing-cleanup] error:", err);
     return NextResponse.json({
       ok: false,
       error: err instanceof Error ? err.message : String(err),

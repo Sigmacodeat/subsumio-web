@@ -27,6 +27,9 @@ import { env } from "@/lib/env";
 import { isPlatformOperator } from "@/lib/auth/platform-operator";
 import { getActiveSupportSession, type SupportSession } from "@/lib/support-session";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/engine");
+
 const CONFIGURED_ENGINE_URL = env("SUBSUMIO_API_URL");
 
 export const ENGINE_URL = CONFIGURED_ENGINE_URL || "http://localhost:3001";
@@ -439,7 +442,7 @@ export async function recordCreditConsumption(
       });
     }
   } catch (err) {
-    console.error(
+    log.error(
       `[credits] consumption record failed: ${err instanceof Error ? err.message : String(err)}`
     );
   }

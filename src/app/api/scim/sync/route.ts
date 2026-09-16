@@ -1,6 +1,9 @@
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { syncFromWorkOS, saveSyncStatus, isWorkosDirectorySyncConfigured } from "@/lib/scim";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/scim/sync");
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
@@ -37,7 +40,7 @@ export const POST = createHandler(
       return apiSuccess(result);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error("[scim/sync] error:", msg);
+      log.error("[scim/sync] error:", msg);
       return apiError("sync_failed", "Sync fehlgeschlagen", 500);
     }
   }

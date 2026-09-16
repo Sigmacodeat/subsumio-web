@@ -21,6 +21,9 @@ import {
   buildWorkflowTitle,
 } from "@/lib/workflow";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/provision");
+
 export interface ProvisionResult {
   ok: boolean;
   brainId: string;
@@ -124,7 +127,7 @@ export async function provisionBrain(
  */
 export function provisionBrainAsync(brainId: string, opts?: { industry?: string | null }): void {
   void provisionBrain(brainId, opts).catch((err) => {
-    console.error(
+    log.error(
       `[provision] failed for ${brainId}:`,
       err instanceof Error ? err.message : String(err)
     );

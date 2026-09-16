@@ -1,5 +1,8 @@
 import type { Pool } from "pg";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/legal-graph/validation");
+
 // ── Types ─────────────────────────────────────────────────────────────
 
 export type TreatmentLabel =
@@ -517,7 +520,7 @@ export async function classifyCitationsForJudgement(
       classified++;
     } catch (err) {
       errors++;
-      console.error(`[legal-graph] Failed to classify citation ${row.id}:`, err);
+      log.error(`[legal-graph] Failed to classify citation ${row.id}:`, err);
     }
   }
 
@@ -560,7 +563,7 @@ export async function batchValidateCitations(
         classified++;
       } catch (err) {
         errors++;
-        console.error(`[legal-graph] Failed to classify citation ${row.id}:`, err);
+        log.error(`[legal-graph] Failed to classify citation ${row.id}:`, err);
       }
       processed++;
     }
@@ -579,7 +582,7 @@ export async function batchValidateCitations(
       try {
         await aggregateTreatments(pool, row.cited_id);
       } catch (err) {
-        console.error(`[legal-graph] Failed to aggregate treatments for ${row.cited_id}:`, err);
+        log.error(`[legal-graph] Failed to aggregate treatments for ${row.cited_id}:`, err);
       }
     }
   }

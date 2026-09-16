@@ -3,6 +3,9 @@ import { getMinRevocationVersion } from "@/lib/auth/revocation-store";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { z } from "zod";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/internal/revocation-check");
+
 const UID_PATTERN = /^[a-zA-Z0-9_-]{1,128}$/;
 
 const revocationCheckSchema = z.object({
@@ -36,7 +39,7 @@ export const GET = createPublicHandler(
       const minVersion = await getMinRevocationVersion(uid);
       return Response.json({ minVersion });
     } catch (err) {
-      console.error("[revocation-check] error:", err instanceof Error ? err.message : String(err));
+      log.error("[revocation-check] error:", err instanceof Error ? err.message : String(err));
       // Fail-open: return 0 so sessions remain valid if the store is unreachable
       return Response.json({ minVersion: 0 });
     }

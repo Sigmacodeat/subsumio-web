@@ -6,6 +6,9 @@ import { isToolAvailable, getToolList, type ToolConditionContext } from "@/lib/a
 import { sendMailboxMessage, buildMailDraft } from "@/lib/email/mailbox";
 import { markOnboardingProgress } from "@/lib/auth/store";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/copilot/tools");
+
 // ── Tool Schemas ──────────────────────────────────────────────────────
 
 const navigateSchema = z.object({
@@ -2145,7 +2148,7 @@ export const POST = createHandler(
       if (err instanceof z.ZodError) {
         return apiError("invalid_params", JSON.stringify(err.issues), 400);
       }
-      console.error(
+      log.error(
         "[copilot/tools] execution failed:",
         err instanceof Error ? err.message : String(err)
       );

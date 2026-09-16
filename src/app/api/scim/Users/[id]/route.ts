@@ -15,6 +15,9 @@ import {
 } from "@/lib/scim";
 import { z } from "zod";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/scim/Users/[id]");
+
 export const dynamic = "force-dynamic";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu";
@@ -130,7 +133,7 @@ export const PUT = createScimHandler(
       return scimResponse(userToScim(user, BASE_URL));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error("[scim/Users PUT] error:", msg);
+      log.error("[scim/Users PUT] error:", msg);
       return scimError(500, "Failed to update user");
     }
   }
@@ -184,7 +187,7 @@ export const PATCH = createScimHandler(
       return scimResponse(userToScim(user, BASE_URL));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error("[scim/Users PATCH] error:", msg);
+      log.error("[scim/Users PATCH] error:", msg);
       return scimError(500, "Failed to patch user");
     }
   }

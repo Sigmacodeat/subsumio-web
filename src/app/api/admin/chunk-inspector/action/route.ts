@@ -2,6 +2,9 @@ import { z } from "zod";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { getSharedPgPool } from "@/lib/auth/store";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/admin/chunk-inspector/action");
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
@@ -95,7 +98,7 @@ export const POST = createHandler(
 
       return apiSuccess({ action, affected, requested: chunkIds.length });
     } catch (err) {
-      console.error("[chunk-inspector/action] failed:", (err as Error).message);
+      log.error("[chunk-inspector/action] failed:", (err as Error).message);
       return apiError("internal_error", "Aktion fehlgeschlagen", 500);
     }
   }

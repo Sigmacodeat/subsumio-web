@@ -9,6 +9,9 @@ import { groundAnswerCitations } from "@/lib/citation-gate";
 import { emptyGroundingMetadata } from "@/lib/citation-gate-client";
 import type { BrainPage } from "@/lib/types";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/portal/chat");
+
 const chatSchema = z.object({
   token: z.string().min(1, "token_required"),
   message: z.string().min(1, "message_required").max(4_000, "message_too_long"),
@@ -201,7 +204,7 @@ export const POST = createPublicHandler(
     try {
       grounding = await groundAnswerCitations(answer);
     } catch (err) {
-      console.error(
+      log.error(
         "[portal/chat] grounding failed:",
         err instanceof Error ? err.message : String(err)
       );

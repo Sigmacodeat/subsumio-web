@@ -147,6 +147,12 @@
 # Rolling: 50 files per run, oldest-first.
 30 3 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/integrity-recheck || true
 
+# ── Every minute — Autonomous engine (queue worker) ──
+# Executes queued autonomous tasks (deadline follow-ups, inbox triage, document
+# analysis, workflow starts). Critical actions stop at requires_approval and wait
+# for a lawyer; nothing irreversible runs unattended. Idempotent per task id.
+* * * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/autonomous-engine || true
+
 # ─────────────────────────────────────────────────────────────────────────
 # Abrechnung / SaaS-Billing
 # Diese fünf Jobs standen bisher nur in vercel.json. Beim Betrieb auf

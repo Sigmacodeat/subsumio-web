@@ -1,6 +1,9 @@
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler } from "@/lib/api-handler";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/stats");
+
 export const GET = createHandler(
   {
     action: "brain.read",
@@ -20,10 +23,7 @@ export const GET = createHandler(
       // shapes return total_pages: 0 otherwise, which the UI cannot tell apart.
       return Response.json({ ...data, engine_reachable: true });
     } catch (err) {
-      console.error(
-        "[stats] engine unreachable:",
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("[stats] engine unreachable:", err instanceof Error ? err.message : String(err));
       return Response.json(
         {
           total_pages: 0,

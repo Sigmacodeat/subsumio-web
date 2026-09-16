@@ -8,6 +8,9 @@ import { getWhatsAppIdentityStore } from "@/lib/whatsapp/identity-store";
 import { normalizePhone, type WhatsAppTemplateMessage } from "@/lib/whatsapp/types";
 import type { OutboundScope } from "@/lib/whatsapp/outbound-gate";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/whatsapp/send");
+
 const sendSchema = z
   .object({
     to: z.string().min(1, "recipient_required").optional(),
@@ -279,7 +282,7 @@ export const POST = createHandler(
           return apiError("unknown_type", `Unbekannter Message-Type: ${body.type}`, 400);
       }
     } catch (err) {
-      console.error("[whatsapp/send] failed:", err instanceof Error ? err.message : String(err));
+      log.error("[whatsapp/send] failed:", err instanceof Error ? err.message : String(err));
       return apiError("send_failed", "WhatsApp-Nachricht konnte nicht gesendet werden", 502);
     }
   }

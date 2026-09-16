@@ -12,6 +12,9 @@ import { mailboxScopeFor } from "@/lib/email/mailbox-scope";
 import { blockedCasesForUser, caseAccessForUser } from "@/lib/email/case-link";
 import { mailboxAddressForBrain } from "@/lib/email/mailbox";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/email/messages");
+
 const messagesQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(50),
   direction: z.enum(["inbound", "outbound"]).optional(),
@@ -89,7 +92,7 @@ export const GET = createHandler(
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const status = message === "mailbox_database_not_configured" ? 503 : 500;
-      console.error("[email] failed to list messages:", message);
+      log.error("[email] failed to list messages:", message);
       if (status === 500)
         return apiError("internal_error", "Nachrichten konnten nicht geladen werden", 500);
       return apiError(message, message, status);
@@ -135,7 +138,7 @@ export const POST = createHandler(
           : /required|invalid/.test(message)
             ? 400
             : 500;
-      console.error("[email] failed to send message:", message);
+      log.error("[email] failed to send message:", message);
       if (status === 500)
         return apiError("internal_error", "E-Mail konnte nicht gesendet werden", 500);
       return apiError(message, message, status);

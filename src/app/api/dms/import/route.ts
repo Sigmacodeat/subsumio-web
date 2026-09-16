@@ -3,6 +3,9 @@ import { getConnector } from "@/lib/dms";
 import { recordQuota } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/dms/import");
+
 export const maxDuration = 60;
 
 const dmsImportSchema = z.object({
@@ -38,7 +41,7 @@ export const POST = createHandler(
       return Response.json(result);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error("[dms import] error:", msg);
+      log.error("[dms import] error:", msg);
       return apiError("import_failed", "Import fehlgeschlagen", 500);
     }
   }

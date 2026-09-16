@@ -5,6 +5,9 @@ import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { markEntriesBilled, type TimeEntryWithCase } from "@/lib/time-tracking";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/time/mark-billed");
+
 export const dynamic = "force-dynamic";
 
 const markBilledSchema = z.object({
@@ -62,7 +65,7 @@ export const POST = createHandler(
         invoice_number: body.invoice_number,
       });
     } catch (err) {
-      console.error("[time] mark-billed failed:", err instanceof Error ? err.message : String(err));
+      log.error("[time] mark-billed failed:", err instanceof Error ? err.message : String(err));
       return apiError(
         "internal_error",
         "Einträge konnten nicht als abgerechnet markiert werden",

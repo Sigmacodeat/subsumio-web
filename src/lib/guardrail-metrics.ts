@@ -23,6 +23,9 @@
 import { createSchemaInit } from "@/lib/schema-init";
 import { getSharedPgPool } from "@/lib/auth/store";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/guardrail-metrics");
+
 const ensureSchema = createSchemaInit([
   `CREATE TABLE IF NOT EXISTS subsumio_guardrail_metrics (
     id bigserial PRIMARY KEY,
@@ -93,7 +96,7 @@ export async function logGuardrailMetric(metric: GuardrailMetric): Promise<void>
     );
   } catch (err) {
     // Metrics logging must never break the response
-    console.error(
+    log.error(
       "[guardrail-metrics] Failed to log:",
       err instanceof Error ? err.message : String(err)
     );
@@ -119,10 +122,7 @@ export interface GuardrailStats {
   hourly: Array<{ hour: string; total: number; passed: number; flagged: number }>;
 }
 
-export async function getGuardrailStats(
-  brainId: string,
-  hours = 24
-): Promise<GuardrailStats> {
+export async function getGuardrailStats(brainId: string, hours = 24): Promise<GuardrailStats> {
   await ensureSchema();
   const pool = getSharedPgPool();
   if (!pool) {
@@ -193,8 +193,18 @@ export async function getGuardrailStats(
   const recentFlags = recentRes.rows.map((r) => ({
     id: parseInt((r as Record<string, string>).id, 10),
     created_at: (r as Record<string, string>).created_at,
-    tier_0_passed: (r as Record<string, string>).tier_0_passed === "true" ? true : (r as Record<string, string>).tier_0_passed === "false" ? false : null,
-    tier_1_passed: (r as Record<string, string>).tier_1_passed === "true" ? true : (r as Record<string, string>).tier_1_passed === "false" ? false : null,
+    tier_0_passed:
+      (r as Record<string, string>).tier_0_passed === "true"
+        ? true
+        : (r as Record<string, string>).tier_0_passed === "false"
+          ? false
+          : null,
+    tier_1_passed:
+      (r as Record<string, string>).tier_1_passed === "true"
+        ? true
+        : (r as Record<string, string>).tier_1_passed === "false"
+          ? false
+          : null,
     warnings: (r as Record<string, string[]>).warnings ?? [],
     jurisdiction: (r as Record<string, string>).jurisdiction ?? null,
   }));

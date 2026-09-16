@@ -5,6 +5,9 @@ import type { AuditAction } from "@/lib/audit-labels";
 import { hasValidInternalSecret } from "@/lib/auth/internal";
 import type { NextRequest } from "next/server";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/audit");
+
 export const dynamic = "force-dynamic";
 
 const auditQuerySchema = z.object({
@@ -46,7 +49,7 @@ export const GET = createHandler(
       });
       return Response.json({ entries, total: entries.length });
     } catch (err) {
-      console.error("[audit] failed:", err instanceof Error ? err.message : String(err));
+      log.error("[audit] failed:", err instanceof Error ? err.message : String(err));
       return Response.json({ entries: [], total: 0 });
     }
   }
@@ -71,7 +74,7 @@ export async function POST(req: NextRequest) {
 
     return Response.json({ ok: true });
   } catch (err) {
-    console.error("[audit POST] failed:", err instanceof Error ? err.message : String(err));
+    log.error("[audit POST] failed:", err instanceof Error ? err.message : String(err));
     return Response.json(
       { error: "audit_write_failed", message: err instanceof Error ? err.message : "unknown" },
       { status: 500 }

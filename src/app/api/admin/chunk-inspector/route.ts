@@ -2,6 +2,9 @@ import { z } from "zod";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { getSharedPgPool } from "@/lib/auth/store";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/admin/chunk-inspector");
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
@@ -142,7 +145,7 @@ export const GET = createHandler(
         chunkIds
       );
     } catch (err) {
-      console.error("[chunk-inspector] query failed:", (err as Error).message);
+      log.error("[chunk-inspector] query failed:", (err as Error).message);
       return apiSuccess([], { page, limit: pageSize, total: 0 });
     }
 

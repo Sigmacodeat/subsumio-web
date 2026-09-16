@@ -134,7 +134,7 @@ Gate: 0 Konsolenfehler, 0 5xx, jede Kernstation grün, Protokoll vollständig.
 
 - Hydration-Bug (Nonce) beheben; jede Seite ohne React-Warnung.
 - Fehler- und Ladezustände: `error.tsx`/`loading.tsx` pro Modul prüfen, Retry-Pfade.
-- Logger statt `console.*` in den 112 Routen; strukturierte Fehler (`src/lib/errors.ts`).
+- ~~Logger statt `console.*` in den 112 Routen~~ erledigt (119 Routen + 26 Lib-Module, Lint-Regel).
 - E2E-Suite: Mock-Modus vollständig grün; Real-Engine-Modus für die 8 Kernstationen.
 - Secrets aus `playwright.config.ts` in Env; CSRF/2FA/Lockout-Specs im Real-Modus.
 - Responsiv (Mobile-Tab-Bar) und Dark-Mode für die Kernflächen.

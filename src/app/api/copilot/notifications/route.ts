@@ -8,6 +8,9 @@ import {
   dismissCopilotNotification,
 } from "@/lib/copilot-notifications";
 
+import { logger } from "@/lib/logger";
+const log = logger("api/copilot/notifications");
+
 const notifPostSchema = z.object({
   action: z.enum(["dismiss", "refresh"]).optional(),
   notificationId: z.string().max(200).optional(),
@@ -34,7 +37,7 @@ export const GET = createHandler(
 
       return NextResponse.json({ notifications });
     } catch (err) {
-      console.error(
+      log.error(
         "[copilot/notifications] GET failed:",
         err instanceof Error ? err.message : String(err)
       );
@@ -86,7 +89,7 @@ export const POST = createHandler(
 
       return apiError("bad_request", "Invalid action", 400);
     } catch (err) {
-      console.error(
+      log.error(
         "[copilot/notifications] POST failed:",
         err instanceof Error ? err.message : String(err)
       );

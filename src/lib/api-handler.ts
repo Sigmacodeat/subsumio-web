@@ -64,6 +64,9 @@ import { hit } from "@/lib/auth/rate-limit";
 import { storeReceipt, type WorkProductReceipt } from "@/lib/work-product-receipt-store";
 import type { WorkProductType } from "@/lib/work-product-receipts";
 
+import { logger } from "@/lib/logger";
+const log = logger("lib/api-handler");
+
 // ── Types ─────────────────────────────────────────────────────────────
 
 /** Best-effort client IP for audit rows (first hop of x-forwarded-for, else x-real-ip). */
@@ -509,7 +512,7 @@ export function createHandler<
       if (isAppError(err)) {
         response = apiError(err.code, err.message, err.statusCode, err.details);
       } else {
-        console.error(
+        log.error(
           `[api-handler] uncaught error for action '${options.action}':`,
           err instanceof Error ? err.message : String(err)
         );
@@ -710,7 +713,7 @@ export function createWebhookHandler<B extends z.ZodTypeAny | undefined = undefi
       if (isAppError(err)) {
         response = apiError(err.code, err.message, err.statusCode, err.details);
       } else {
-        console.error(
+        log.error(
           "[api-handler] uncaught error in webhook handler:",
           err instanceof Error ? err.message : String(err)
         );
@@ -775,7 +778,7 @@ export function createCronHandler(
       if (isAppError(err)) {
         response = apiError(err.code, err.message, err.statusCode, err.details);
       } else {
-        console.error(
+        log.error(
           "[api-handler] uncaught error in cron handler:",
           err instanceof Error ? err.message : String(err)
         );
@@ -1021,7 +1024,7 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
           try {
             void storeReceipt(scoped);
           } catch (err) {
-            console.error(
+            log.error(
               `[${label}] receipt store failed:`,
               err instanceof Error ? err.message : String(err)
             );
@@ -1067,7 +1070,7 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
             const grounding = await groundJsonResponse(result);
             result._grounding = grounding;
           } catch (err) {
-            console.error(
+            log.error(
               `[${label}] citation gate grounding failed:`,
               err instanceof Error ? err.message : String(err)
             );
@@ -1081,7 +1084,7 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
 
         return Response.json(result);
       } catch (err) {
-        console.error(
+        log.error(
           `[${label}] engine unreachable:`,
           err instanceof Error ? err.message : String(err)
         );

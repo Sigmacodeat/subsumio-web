@@ -17,6 +17,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, X, CheckCircle2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createT, type Lang, type TFunc } from "@/content/dashboard";
+import { useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { useMe } from "@/lib/queries/auth";
 
 // SSR-safe useLayoutEffect — falls back to useEffect during server rendering
 // to avoid the "useLayoutEffect does nothing on the server" warning.
@@ -177,6 +180,11 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const [hasCompleted, setHasCompleted] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [mounted, setMounted] = useState(false);
+  // The flag lives in the user's onboarding progress (server) so a new device
+  // or browser does not replay the tour; localStorage is only the fast path.
+  const { data: me } = useMe();
+  const queryClient = useQueryClient();
+  const serverCompleted = me?.user?.onboardingProgress?.tourCompleted;
 
   useEffect(() => {
     setMounted(true);
@@ -188,6 +196,27 @@ export function TourProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  useEffect(() => {
+    if (serverCompleted === undefined) return;
+    setHasCompleted(serverCompleted);
+    try {
+      if (serverCompleted) localStorage.setItem(STORAGE_KEY, "true");
+      else localStorage.removeItem(STORAGE_KEY);
+    } catch {}
+  }, [serverCompleted]);
+
+  const persistTourState = useCallback(
+    (completed: boolean) => {
+      api.onboarding
+        .updateProgress({ tourCompleted: completed })
+        .then(() => queryClient.invalidateQueries({ queryKey: ["auth", "me"] }))
+        .catch(() => {
+          /* best-effort: localStorage already holds the state */
+        });
+    },
+    [queryClient]
+  );
+
   const startTour = useCallback(() => {
     setCurrentStep(0);
     setIsOpen(true);
@@ -198,9 +227,10 @@ export function TourProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch {}
+    persistTourState(false);
     setCurrentStep(0);
     setIsOpen(true);
-  }, []);
+  }, [persistTourState]);
 
   const closeTour = useCallback(() => {
     setIsOpen(false);
@@ -212,7 +242,8 @@ export function TourProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem(STORAGE_KEY, "true");
     } catch {}
-  }, []);
+    persistTourState(true);
+  }, [persistTourState]);
 
   // Filter steps for mobile — skip steps with mobile: false on small screens
   const [isMobile, setIsMobile] = useState(false);

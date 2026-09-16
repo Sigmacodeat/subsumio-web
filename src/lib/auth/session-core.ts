@@ -1,3 +1,6 @@
+import { logger } from "@/lib/logger";
+const log = logger("lib/auth/session-core");
+
 // Edge-safe session primitives — no Node.js builtins, no Postgres.
 // Used by middleware.ts (Edge Runtime) and re-exported by session.ts (Node).
 
@@ -48,10 +51,9 @@ async function fetchRevocationVersion(userId: string): Promise<number> {
   // immediately and populate the cache asynchronously for subsequent requests.
   const baseUrl = process.env.SUBSUMIO_INTERNAL_URL || process.env.NEXT_PUBLIC_SITE_URL || "";
   if (baseUrl) {
-    fetch(
-      `${baseUrl}/api/internal/revocation-check?uid=${encodeURIComponent(userId)}`,
-      { signal: AbortSignal.timeout(2_000) }
-    )
+    fetch(`${baseUrl}/api/internal/revocation-check?uid=${encodeURIComponent(userId)}`, {
+      signal: AbortSignal.timeout(2_000),
+    })
       .then((res) => (res.ok ? res.json() : null))
       .then((data: { minVersion: number } | null) => {
         if (data) {
@@ -89,7 +91,7 @@ export function getAuthSecret(): string {
   if (process.env.NODE_ENV === "production") {
     throw new Error("AUTH_SECRET must be set in this environment.");
   }
-  console.warn(
+  log.warn(
     "[auth] AUTH_SECRET not set — using an insecure local-dev fallback. " +
       "This must never happen outside `next dev` on your own machine."
   );
