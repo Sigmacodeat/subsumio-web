@@ -1272,8 +1272,8 @@ export const D = {
   "deadlines.vorfrist_reached": { de: "Vorfrist erreicht", en: "Pre-deadline reached" },
   "deadlines.notfrist": { de: "Notfrist", en: "Statutory deadline" },
   "deadlines.second_check": { de: "Vier-Augen-Kontrolle", en: "Four-eyes check" },
-  "deadlines.second_check_pending": { de: "Zweiprüfung ausstehend", en: "Second check pending" },
-  "deadlines.second_check_done": { de: "Zweiprüfung bestätigt", en: "Second check confirmed" },
+  "deadlines.second_check_pending": { de: "Zweitprüfung ausstehend", en: "Second check pending" },
+  "deadlines.second_check_done": { de: "Zweitprüfung bestätigt", en: "Second check confirmed" },
   "deadlines.second_check_by": { de: "Geprüft von", en: "Checked by" },
   "deadlines.second_check_self_blocked": {
     de: "Selbstprüfung nicht erlaubt — Vier-Augen-Prinzip",
@@ -8392,7 +8392,7 @@ export const D = {
     en: "Statutory deadline (four-eyes review)",
   },
   "deadlines.notfrist_desc": {
-    de: "Gesetzliche Frist mit zwingender Zweiprüfung vor Erledigung.",
+    de: "Gesetzliche Frist mit zwingender Zweitprüfung vor Erledigung.",
     en: "Statutory deadline requiring a second review before completion.",
   },
   "dashboard.quick_deadline": { de: "Neue Frist", en: "New deadline" },

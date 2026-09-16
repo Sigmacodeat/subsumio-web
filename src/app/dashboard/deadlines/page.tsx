@@ -283,6 +283,13 @@ export default function DeadlinesPage() {
       .catch(() => {});
   }, []);
 
+  // The approver may not also perform the second check (four-eyes). Shown
+  // inline in the modal and enforced again in confirmSecondCheck().
+  const currentUserNameForCheck =
+    meQuery.data?.user?.name ?? meQuery.data?.user?.email ?? "Unknown";
+  const secondCheckSelfBlocked =
+    !!secondCheckTarget?.reviewedBy && secondCheckTarget.reviewedBy === currentUserNameForCheck;
+
   // P0: Vier-Augen second-check confirmation handler
   async function confirmSecondCheck(item: DeadlineItem) {
     if (!item.slug) return;
@@ -1166,6 +1173,14 @@ export default function DeadlinesPage() {
               <strong>{t("deadlines.second_check_by")}:</strong>{" "}
               {meQuery.data?.user?.name ?? meQuery.data?.user?.email ?? "—"}
             </div>
+            {secondCheckSelfBlocked && (
+              <div
+                role="alert"
+                className="mb-4 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2 text-xs text-[color:var(--ds-danger-text)]"
+              >
+                {t("deadlines.second_check_self_blocked")}
+              </div>
+            )}
             <div className="flex justify-end gap-2">
               <Button
                 variant="ghost"
@@ -1179,7 +1194,7 @@ export default function DeadlinesPage() {
               <Button
                 ref={secondCheckConfirmRef}
                 size="sm"
-                disabled={secondCheckBusy}
+                disabled={secondCheckBusy || secondCheckSelfBlocked}
                 onClick={() => void confirmSecondCheck(secondCheckTarget)}
                 className="gap-1.5 bg-[color:var(--ds-warning-solid)] text-xs text-white hover:bg-[color:var(--ds-warning-solid)]"
               >
