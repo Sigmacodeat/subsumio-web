@@ -108,16 +108,12 @@ function emit(level: LogLevel, module: string, rawMsg: unknown, rest: unknown[])
   } catch {
     line = JSON.stringify({ ts: entry.ts, level, module, msg, unserializable: true });
   }
-  // Browser bundles have no process streams; fall back to the console so a
-  // shared module never crashes on the client.
-  const stream =
-    typeof process !== "undefined" && process.stdout && process.stderr
-      ? level === "error"
-        ? process.stderr
-        : process.stdout
-      : null;
-  if (stream) {
-    stream.write(line + "\n");
+  // Node writes to the real streams; Edge middleware and browser bundles have
+  // none, so they fall back to the console. The streams are reached through
+  // globalThis so the Edge bundler does not flag a Node API in shared code.
+  const streams = nodeStreams();
+  if (streams) {
+    (level === "error" ? streams.stderr : streams.stdout).write(line + "\n");
   } else if (level === "error") {
     console.error(line);
   } else if (level === "warn") {
@@ -125,6 +121,19 @@ function emit(level: LogLevel, module: string, rawMsg: unknown, rest: unknown[])
   } else {
     console.log(line);
   }
+}
+
+type WritableLike = { write: (chunk: string) => unknown };
+type NodeProcessLike = {
+  versions?: { node?: string };
+  stdout?: WritableLike;
+  stderr?: WritableLike;
+};
+
+function nodeStreams(): { stdout: WritableLike; stderr: WritableLike } | null {
+  const proc = (globalThis as { process?: NodeProcessLike }).process;
+  if (!proc?.versions?.node || !proc.stdout || !proc.stderr) return null;
+  return { stdout: proc.stdout, stderr: proc.stderr };
 }
 
 export function logger(module: string) {
