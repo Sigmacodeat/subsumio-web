@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DOCUSIGN_OAUTH_HOST } from "@/lib/docusign";
 import { NextResponse } from "next/server";
 import { getStore } from "@/lib/auth/store";
 import { createHandler, apiError } from "@/lib/api-handler";
@@ -47,7 +48,7 @@ export const GET = createHandler(
     }
 
     const redirectUri = `${env("NEXT_PUBLIC_APP_URL") || "https://subsum.io"}/api/docusign/callback`;
-    const tokenRes = await fetch("https://account-d.docusign.com/oauth/token", {
+    const tokenRes = await fetch(`https://${DOCUSIGN_OAUTH_HOST}/oauth/token`, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({

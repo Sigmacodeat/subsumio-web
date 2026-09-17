@@ -1,6 +1,13 @@
 import { z } from "zod";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
-import { createEnvelopeAsUser, createEnvelope } from "@/lib/docusign";
+import {
+  createEnvelopeAsUser,
+  createEnvelope,
+  isConfigured,
+  type EnvelopeRequest,
+} from "@/lib/docusign";
+import { buildEnvelopeCustomFields } from "@/lib/docusign-connect";
+import { ENGINE_URL } from "@/lib/engine";
 import {
   assertOutputActionAllowed,
   VerificationPolicyError,
@@ -100,7 +107,15 @@ export const POST = createHandler(
       }
     }
 
-    const req = {
+    if (!isConfigured()) {
+      return apiError(
+        "docusign_not_configured",
+        "DocuSign ist für diese Installation nicht eingerichtet. Bitte wenden Sie sich an den Betreiber.",
+        503
+      );
+    }
+
+    const req: EnvelopeRequest = {
       emailSubject: body.emailSubject,
       emailBlurb: body.emailBlurb || "",
       documents: body.documents,
@@ -113,11 +128,11 @@ export const POST = createHandler(
         })),
       },
       status: body.status,
-      metadata: {
-        caseSlug: body.caseSlug || "",
-        caseTitle: body.caseTitle || "",
-        sentBy: ctx.user.email,
-      },
+      // Connect sends these back, so the status event finds this firm and matter.
+      customFields: buildEnvelopeCustomFields({
+        brain_id: ctx.brainId,
+        case_slug: body.caseSlug,
+      }),
     };
 
     try {
@@ -129,10 +144,41 @@ export const POST = createHandler(
         result = await createEnvelope(req);
       }
 
+      // The signature request the status events update (Signaturen, matter).
+      const now = new Date().toISOString();
+      const requestSlug = `legal/signatures/docusign-${result.envelopeId}`;
+      const stored = await fetch(`${ENGINE_URL}/api/pages`, {
+        method: "POST",
+        headers: { ...ctx.headers, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: requestSlug,
+          title: body.emailSubject,
+          type: "signature_request",
+          content: `Versand über DocuSign an ${body.recipients.signers.map((s) => s.name).join(", ")}.`,
+          frontmatter: {
+            type: "signature_request",
+            title: body.emailSubject,
+            provider: "docusign",
+            docusign_envelope_id: result.envelopeId,
+            docusign_status: result.status === "created" ? "draft" : "sent",
+            docusign_event: result.status,
+            status: result.status === "created" ? "draft" : "sent",
+            case_slug: body.caseSlug || undefined,
+            case_title: body.caseTitle || undefined,
+            signers: body.recipients.signers.map((s) => ({ name: s.name, email: s.email })),
+            documents: body.documents.map((d) => d.name),
+            sent_by: ctx.user.email,
+            sent_at: now,
+          },
+        }),
+        signal: AbortSignal.timeout(15_000),
+      }).catch(() => null);
+
       return apiSuccess({
         ok: true,
         envelopeId: result.envelopeId,
         status: result.status,
+        signatureRequest: stored?.ok ? requestSlug : null,
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

@@ -38,6 +38,25 @@ import {
 // funktioniert.
 type TFunc = (key: import("@/content/dashboard").DashboardKey) => string;
 
+interface ImportIssue {
+  row: number;
+  title: string;
+  reason: string;
+}
+interface ImportResult {
+  ok: number;
+  failed: number;
+  skipped: number;
+  issues: ImportIssue[];
+  createdSlugs: string[];
+  rolledBack?: number;
+}
+
+const normaliseNumber = (v: unknown) =>
+  String(v ?? "")
+    .toLowerCase()
+    .replace(/\s+/g, "");
+
 function getFields(t: TFunc) {
   return [
     {
@@ -50,7 +69,7 @@ function getFields(t: TFunc) {
       key: "case_number",
       label: t("importkanz.field.case_number"),
       required: false,
-      guess: /(aktenz|akten-?nr|az\b|aktennummer|registernummer)/i,
+      guess: /(aktenz|akten-?nr|az\b|aktennummer|registernummer|geschäftszahl|gz\b)/i,
     },
     {
       key: "client_name",
@@ -149,7 +168,8 @@ export default function ImportKanzleiPage() {
   const [fileName, setFileName] = useState("");
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [result, setResult] = useState<{ ok: number; failed: number } | null>(null);
+  const [result, setResult] = useState<ImportResult | null>(null);
+  const [rollingBack, setRollingBack] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Migration-project tracking (src/lib/migration-project.ts) — was dead
   // code before: this CSV import ran with no project record, no dry-run
@@ -247,8 +267,11 @@ export default function ImportKanzleiPage() {
   const titleCol = mapping.title ?? -1;
   const canDryRun =
     headers.length > 0 && titleCol >= 0 && rows.length > 0 && !importing && !dryRunning;
+  // A successful dry run leaves the project "validated"; only "dry_run" was
+  // accepted before, so the import button never became active.
   const dryRunOk =
-    project?.status === "dry_run" && (project.dry_run_result?.stats.error_rate ?? 100) < 50;
+    (project?.status === "dry_run" || project?.status === "validated") &&
+    (project.dry_run_result?.stats.error_rate ?? 100) < 50;
   const canImport = dryRunOk && !importing;
 
   async function persistProject(p: MigrationProject): Promise<void> {
@@ -291,6 +314,28 @@ export default function ImportKanzleiPage() {
     const startedAt = Date.now();
     let ok = 0;
     let failed = 0;
+    let skipped = 0;
+    const issues: ImportIssue[] = [];
+    const createdSlugs: string[] = [];
+
+    // Never overwrite: the page API creates OR updates, so a matter with the
+    // same id or case number would lose its deadlines and documents.
+    let existing: Array<{ slug: string; frontmatter?: Record<string, unknown> }> = [];
+    try {
+      existing = (await api.brain.listPages({
+        type: "legal_case",
+        limit: 5000,
+      })) as typeof existing;
+    } catch {
+      setError("Bestehende Akten konnten nicht geladen werden. Der Import wurde nicht gestartet.");
+      setImporting(false);
+      return;
+    }
+    const existingSlugs = new Set(existing.map((p) => p.slug));
+    const existingNumbers = new Set(
+      existing.map((p) => normaliseNumber(p.frontmatter?.case_number)).filter(Boolean)
+    );
+
     const seen = new Set<string>();
     let imported = startImport(project, "dashboard-user");
     for (let i = 0; i < rows.length; i++) {
@@ -301,8 +346,25 @@ export default function ImportKanzleiPage() {
         return v || undefined;
       };
       const title = val("title") || val("case_number") || `Akte ${i + 1}`;
-      let slug = `legal/cases/${slugify(val("case_number") || title) || `row-${i + 1}`}`;
-      if (seen.has(slug)) slug = `${slug}-${i + 1}`;
+      const caseNumber = val("case_number");
+      setProgress(Math.round(((i + 1) / rows.length) * 100));
+      if (!val("title")) {
+        failed++;
+        issues.push({ row: i + 2, title, reason: "Titel fehlt" });
+        continue;
+      }
+      if (caseNumber && existingNumbers.has(normaliseNumber(caseNumber))) {
+        skipped++;
+        issues.push({ row: i + 2, title, reason: `Aktenzahl ${caseNumber} existiert bereits` });
+        continue;
+      }
+      let slug = `legal/cases/${slugify(caseNumber || title) || `row-${i + 1}`}`;
+      if (seen.has(slug) || existingSlugs.has(slug)) slug = `${slug}-import-${i + 1}`;
+      if (existingSlugs.has(slug)) {
+        skipped++;
+        issues.push({ row: i + 2, title, reason: "Akte existiert bereits" });
+        continue;
+      }
       seen.add(slug);
       try {
         await api.brain.createPage({
@@ -311,7 +373,7 @@ export default function ImportKanzleiPage() {
           type: "legal_case",
           frontmatter: {
             type: "legal_case",
-            case_number: val("case_number"),
+            case_number: caseNumber,
             client_name: val("client_name"),
             opponent_name: val("opponent_name"),
             legal_area: val("legal_area"),
@@ -319,22 +381,30 @@ export default function ImportKanzleiPage() {
             own_lawyer_name: val("own_lawyer_name"),
             status: val("status") || "active",
             source: "kanzlei-import",
+            import_project_id: project.id,
             imported_at: new Date().toISOString(),
           },
         });
         ok++;
-      } catch {
+        createdSlugs.push(slug);
+        existingSlugs.add(slug);
+        if (caseNumber) existingNumbers.add(normaliseNumber(caseNumber));
+      } catch (err) {
         failed++;
+        issues.push({
+          row: i + 2,
+          title,
+          reason: err instanceof Error ? err.message : "Speichern fehlgeschlagen",
+        });
       }
-      setProgress(Math.round(((i + 1) / rows.length) * 100));
     }
-    setResult({ ok, failed });
+    setResult({ ok, failed, skipped, issues, createdSlugs });
     const postStats = {
       total_records: rows.length,
       processed_records: rows.length,
       successful_records: ok,
       failed_records: failed,
-      skipped_records: 0,
+      skipped_records: skipped,
       error_rate: rows.length > 0 ? Math.round((failed / rows.length) * 1000) / 10 : 0,
       success_rate: rows.length > 0 ? Math.round((ok / rows.length) * 1000) / 10 : 0,
     };
@@ -344,8 +414,8 @@ export default function ImportKanzleiPage() {
       post_import_stats: postStats,
       delta_stats: postStats,
       duration_seconds: Math.round((Date.now() - startedAt) / 1000),
-      rollback_available: false,
-      summary: `${ok} Akten importiert, ${failed} fehlgeschlagen.`,
+      rollback_available: createdSlugs.length > 0,
+      summary: `${ok} Akten importiert, ${skipped} übersprungen, ${failed} fehlgeschlagen.`,
     };
     imported =
       failed > 0 && ok === 0
@@ -353,6 +423,24 @@ export default function ImportKanzleiPage() {
         : completeMigration(imported, report, "dashboard-user");
     await persistProject(imported);
     setImporting(false);
+  }
+
+  /** Archives exactly the matters this import created (matters are never hard-deleted). */
+  async function rollbackImport() {
+    if (!result || result.createdSlugs.length === 0) return;
+    if (!window.confirm(`${result.createdSlugs.length} importierte Akten archivieren?`)) return;
+    setRollingBack(true);
+    let removed = 0;
+    for (const slug of result.createdSlugs) {
+      try {
+        await api.brain.deletePage(slug);
+        removed++;
+      } catch {
+        // keep going; the count shows what was removed
+      }
+    }
+    setResult({ ...result, createdSlugs: [], rolledBack: removed });
+    setRollingBack(false);
   }
 
   return (
@@ -559,18 +647,65 @@ export default function ImportKanzleiPage() {
                 {t("importkanz.need_dry_run")}
               </span>
             )}
-            {result && (
-              <span className="flex items-center gap-1.5 text-sm">
-                <CheckCircle2 size={15} className="text-[color:var(--ds-success-text)]" />
+          </div>
+          {result && (
+            <section
+              aria-label="Ergebnis des Imports"
+              className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-sm"
+            >
+              <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <CheckCircle2
+                  size={15}
+                  className="text-[color:var(--ds-success-text)]"
+                  aria-hidden
+                />
                 <span className="text-[color:var(--ds-success-text)]">{result.ok} importiert</span>
+                {result.skipped > 0 && <span>{result.skipped} übersprungen</span>}
                 {result.failed > 0 && (
                   <span className="text-[color:var(--ds-danger-text)]">
-                    · {result.failed} fehlgeschlagen
+                    {result.failed} fehlgeschlagen
                   </span>
                 )}
-              </span>
-            )}
-          </div>
+                {result.rolledBack !== undefined && <span>{result.rolledBack} archiviert</span>}
+              </p>
+              {result.issues.length > 0 && (
+                <div className="max-h-64 overflow-auto rounded-md border border-[color:var(--ds-border)]">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="text-left text-[color:var(--ds-text-muted)]">
+                        <th className="px-3 py-2 font-medium">Zeile</th>
+                        <th className="px-3 py-2 font-medium">Akte</th>
+                        <th className="px-3 py-2 font-medium">Grund</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {result.issues.map((issue) => (
+                        <tr
+                          key={`${issue.row}-${issue.reason}`}
+                          className="border-t border-[color:var(--ds-border)]"
+                        >
+                          <td className="px-3 py-1.5 tabular-nums">{issue.row}</td>
+                          <td className="px-3 py-1.5">{issue.title}</td>
+                          <td className="px-3 py-1.5">{issue.reason}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {result.createdSlugs.length > 0 && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={rollingBack}
+                  onClick={() => void rollbackImport()}
+                >
+                  {rollingBack ? "Wird archiviert…" : "Importierte Akten archivieren"}
+                </Button>
+              )}
+            </section>
+          )}
         </>
       )}
     </div>

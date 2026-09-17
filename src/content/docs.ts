@@ -419,7 +419,7 @@ export const DOCS: DocsContent = {
         {
           icon: "FileSignature",
           title: "DocuSign",
-          desc: "Elektronische Signatur direkt aus Subsumio. Verträge senden, Status verfolgen, archivieren.",
+          desc: "Dokumente über DocuSign zur Unterschrift senden, Status verfolgen; das unterschriebene PDF landet in der Akte. Einfache Unterschriften holen Sie über das Mandantenportal ein.",
         },
         {
           icon: "Network",
@@ -439,7 +439,7 @@ export const DOCS: DocsContent = {
         {
           icon: "Database",
           title: "Kanzlei-Import",
-          desc: "Übernahme bestehender Kanzleidaten über CSV- und Dateiexporte: Kontakte, Akten, Dokumente, Zeiterfassung.",
+          desc: "Akten aus Ihrer bisherigen Kanzleisoftware per CSV übernehmen, samt Mandant, Gegner und Gericht als Kontakte. Probelauf vor dem Import, keine bestehende Akte wird überschrieben, importierte Akten lassen sich gesammelt wieder archivieren. Dokumente übernehmen Sie per Ordner-Upload in die jeweilige Akte.",
         },
         {
           icon: "Shield",

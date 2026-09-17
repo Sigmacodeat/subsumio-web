@@ -47,15 +47,15 @@ docker compose exec web npx tsx scripts/create-admin.ts --email admin@yourfirm.c
 
 ### Optional Integrations
 
-| Variable               | Description                                                                                                                                                   |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `MS365_CLIENT_ID`      | Microsoft Graph (Outlook)                                                                                                                                     |
-| `MS365_CLIENT_SECRET`  | Microsoft Graph (Outlook)                                                                                                                                     |
-| `MS365_TENANT_ID`      | Microsoft Graph (Outlook)                                                                                                                                     |
-| `DOCUSIGN_CLIENT_ID`   | DocuSign e-signature                                                                                                                                          |
-| `DOCUSIGN_PRIVATE_KEY` | DocuSign private key                                                                                                                                          |
-| `STRIPE_SECRET_KEY`    | Stripe billing                                                                                                                                                |
-| `DATEV_API_KEY`        | Reserved for a future DATEV direct API integration (not yet implemented — setting this does not connect to DATEV; see `docs/DATEV_DIRECT_INTEGRATION_GAP.md`) |
+| Variable                   | Description                                                                                                                                                          |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MS365_CLIENT_ID`          | Microsoft Graph (Outlook)                                                                                                                                            |
+| `MS365_CLIENT_SECRET`      | Microsoft Graph (Outlook)                                                                                                                                            |
+| `MS365_TENANT_ID`          | Microsoft Graph (Outlook)                                                                                                                                            |
+| `DOCUSIGN_INTEGRATION_KEY` | DocuSign e-signature (plus `DOCUSIGN_SECRET_KEY`, `DOCUSIGN_ACCOUNT_ID`, `DOCUSIGN_BASE_URL`, `DOCUSIGN_PRIVATE_KEY`, `DOCUSIGN_CONNECT_SECRET`; see `.env.example`) |
+| `DOCUSIGN_PRIVATE_KEY`     | DocuSign private key                                                                                                                                                 |
+| `STRIPE_SECRET_KEY`        | Stripe billing                                                                                                                                                       |
+| `DATEV_API_KEY`            | Reserved for a future DATEV direct API integration (not yet implemented — setting this does not connect to DATEV; see `docs/DATEV_DIRECT_INTEGRATION_GAP.md`)        |
 
 ## License Check
 

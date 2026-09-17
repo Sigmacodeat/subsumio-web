@@ -40,15 +40,11 @@ describe("signature-capture", () => {
   });
 
   it("validates missing document_slug", () => {
-    expect(validateCaptureInput({ ...validBase, document_slug: "" })).toBe(
-      "missing_document_slug"
-    );
+    expect(validateCaptureInput({ ...validBase, document_slug: "" })).toBe("missing_document_slug");
   });
 
   it("validates missing signer_name", () => {
-    expect(validateCaptureInput({ ...validBase, signer_name: "" })).toBe(
-      "missing_signer_name"
-    );
+    expect(validateCaptureInput({ ...validBase, signer_name: "" })).toBe("missing_signer_name");
   });
 
   it("validates missing signature_data", () => {
@@ -91,7 +87,7 @@ describe("signature-capture", () => {
   });
 
   it("has legal level labels with warnings for DACH", () => {
-    expect(LEGAL_LEVEL_LABELS.simple.warning_de).toContain("qES");
+    expect(LEGAL_LEVEL_LABELS.simple.warning_de).toContain("eigenhändige Unterschrift");
     expect(LEGAL_LEVEL_LABELS.qualified.warning_de).toContain("gleichgestellt");
     expect(LEGAL_LEVEL_LABELS.advanced.warning_de).toBeTruthy();
   });

@@ -18,6 +18,7 @@ import { DocusignError, AuthError } from "@/lib/errors";
 import { createIdempotencyStore } from "@/lib/idempotency";
 
 import { env } from "@/lib/env";
+import { docusignOAuthHost, type EnvelopeCustomFields } from "@/lib/docusign-connect";
 
 import { logger } from "@/lib/logger";
 const log = logger("lib/docusign");
@@ -26,6 +27,8 @@ const BASE = env("DOCUSIGN_BASE_URL") || "https://demo.docusign.net/restapi/v2.1
 const IK = env("DOCUSIGN_INTEGRATION_KEY") || "";
 const SECRET = env("DOCUSIGN_SECRET_KEY") || "";
 const ACCOUNT = env("DOCUSIGN_ACCOUNT_ID") || "";
+/** account-d.docusign.com for the demo environment, account.docusign.com in production. */
+export const DOCUSIGN_OAUTH_HOST = docusignOAuthHost(BASE, env("DOCUSIGN_OAUTH_HOST"));
 
 export interface EnvelopeRequest {
   emailSubject: string;
@@ -48,7 +51,8 @@ export interface EnvelopeRequest {
     }>;
   };
   status: "sent" | "created";
-  metadata?: Record<string, string>;
+  /** Returned by Connect; the REST API ignores anything called "metadata". */
+  customFields?: EnvelopeCustomFields;
 }
 
 export interface EnvelopeSummary {
@@ -126,7 +130,7 @@ async function buildJwt(): Promise<string> {
   const payload = {
     iss: IK,
     sub: ACCOUNT,
-    aud: "account-d.docusign.com",
+    aud: DOCUSIGN_OAUTH_HOST,
     iat: now,
     exp: now + 3600,
     scope: "signature impersonation",
@@ -191,7 +195,7 @@ function getUserDocusign(user: User): DocusignConnection | null {
 }
 
 async function refreshUserToken(refreshToken: string): Promise<TokenResponse> {
-  const res = await fetch("https://account-d.docusign.com/oauth/token", {
+  const res = await fetch(`https://${DOCUSIGN_OAUTH_HOST}/oauth/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -456,7 +460,7 @@ export function getAuthUrl(redirectUri: string, state?: string): string {
     throw new DocusignError("Docusign nicht konfiguriert: DOCUSIGN_INTEGRATION_KEY fehlt.", {
       code: "DOCUSIGN_NOT_CONFIGURED",
     });
-  const url = new URL("https://account-d.docusign.com/oauth/auth");
+  const url = new URL(`https://${DOCUSIGN_OAUTH_HOST}/oauth/auth`);
   url.searchParams.set("response_type", "code");
   url.searchParams.set("scope", "signature impersonation extended");
   url.searchParams.set("client_id", IK);

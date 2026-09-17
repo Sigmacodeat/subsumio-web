@@ -7634,7 +7634,7 @@ export const D = {
     de: "Prüft Zuordnung und schätzt die Fehlerquote, ohne Akten anzulegen.",
     en: "Validates mapping and estimates error rate without creating cases.",
   },
-  "importkanz.dry_run_start": { de: "Dry Run starten", en: "Start dry run" },
+  "importkanz.dry_run_start": { de: "Probelauf starten", en: "Start dry run" },
   "importkanz.dry_run_checking": { de: "Prüfe…", en: "Checking…" },
   "importkanz.dry_run_ready": { de: "Bereit für Import.", en: "Ready for import." },
   "importkanz.dry_run_error": {
@@ -9471,12 +9471,12 @@ export const D = {
   "sig.status_expired": { de: "Abgelaufen", en: "Expired" },
   "sig.btn_configure": { de: "Anbieter konfigurieren", en: "Configure provider" },
   "sig.setup_hint_title": {
-    de: "Externer Signatur-Provider erforderlich",
-    en: "External signature provider required",
+    de: "Welche Unterschrift wofür",
+    en: "Which signature for what",
   },
   "sig.setup_hint_body": {
-    de: "Subsumio speichert Signatur-Anfragen revisionsfähig im Kanzleiwissen und verfolgt Status. Der rechtlich wirksame Versand erfolgt über einen Anbieter wie Docusign oder ein Kanzlei-Signaturportal. Kein Demo-Versand wird vorgetäuscht.",
-    en: "Subsumio stores signature requests auditably in the Brain and tracks status. Legally binding dispatch happens via a provider like Docusign or a firm signature portal. No demo dispatch is simulated.",
+    de: "Über den Portal-Link unterschreibt Ihre Mandantschaft mit einer einfachen elektronischen Signatur, protokolliert mit Zeitpunkt und IP-Adresse. Wo Schriftform verlangt ist, ersetzt sie keine eigenhändige Unterschrift. Fortgeschrittene Signaturen holen Sie über DocuSign ein, sofern für Ihre Kanzlei eingerichtet.",
+    en: "Via the portal link your client signs with a simple electronic signature, logged with time and IP address. Where written form is required it does not replace a handwritten signature. Advanced signatures are obtained via DocuSign where set up for your firm.",
   },
   "sig.empty": {
     de: "Noch keine Unterschriften-Anfragen.",
@@ -9489,7 +9489,7 @@ export const D = {
   "sig.valid_until": { de: "Gültig bis", en: "Valid until" },
   "sigdialog.title": { de: "Dokument unterschreiben", en: "Sign document" },
   "sigdialog.desc": {
-    de: "Zeichnen oder tippen Sie Ihre Unterschrift. Diese wird rechtsverbindlich im Dokument gespeichert.",
+    de: "Zeichnen oder tippen Sie Ihre Unterschrift. Sie wird als einfache elektronische Signatur mit Zeitpunkt beim Dokument gespeichert.",
     en: "Draw or type your signature. It will be legally stored in the document.",
   },
   "sigdialog.legal_level": { de: "Rechtsform", en: "Legal level" },
@@ -9501,8 +9501,8 @@ export const D = {
   },
   "sigdialog.canvas_aria": { de: "Signatur-Zeichenfläche", en: "Signature drawing area" },
   "sigdialog.confirm": {
-    de: "Ich bestätige, dass ich dieses Dokument rechtsverbindlich unterschreibe.",
-    en: "I confirm that I am signing this document legally binding.",
+    de: "Ich bestätige, dass ich mit dieser Unterschrift dem Dokument zustimme.",
+    en: "I confirm that with this signature I agree to the document.",
   },
   "sigdialog.btn_sign": { de: "Unterschreiben", en: "Sign" },
   "sigdialog.signed_ok": { de: "Unterschrift erfasst", en: "Signature captured" },

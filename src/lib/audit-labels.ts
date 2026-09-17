@@ -161,6 +161,7 @@ export type AuditAction =
   | "space.update"
   | "email.send"
   | "docusign.send"
+  | "docusign.status"
   | "space.delete"
   | "whatsapp.document_to_space"
   | "litigation.create"
@@ -583,6 +584,7 @@ const ACTION_LABELS: Record<string, string> = {
   "connector.write": "Konnektor geändert",
   "copilot.tool": "Assistent: Aktion ausgeführt",
   "docusign.send": "DocuSign: Dokument zur Unterschrift versendet",
+  "docusign.status": "DocuSign: Status aktualisiert",
   "email.send": "E-Mail gesendet",
   "fibu.bank_feed": "Buchhaltung: Bankumsätze verarbeitet",
   "fibu.opos_import": "Buchhaltung: offene Posten importiert",

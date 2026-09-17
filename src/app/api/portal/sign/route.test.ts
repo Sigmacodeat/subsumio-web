@@ -134,6 +134,25 @@ describe("POST /api/portal/sign", () => {
     expect(res.status).toBe(409);
   });
 
+  it("refuses a request past its expiry date", async () => {
+    mockEngine({
+      "cases/mueller": openCase,
+      "legal/signatures/vollmacht-1": {
+        body: {
+          type: "signature_request",
+          frontmatter: {
+            case_slug: "cases/mueller",
+            status: "sent",
+            expires_at: "2020-01-01T00:00:00Z",
+          },
+        },
+      },
+    });
+    const res = await POST(request(baseBody));
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toMatch(/abgelaufen/);
+  });
+
   it("refuses matters not released for the portal", async () => {
     mockEngine({ "cases/mueller": { body: { frontmatter: { portal_enabled: false } } } });
     const res = await POST(request(baseBody));

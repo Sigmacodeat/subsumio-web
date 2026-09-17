@@ -68,6 +68,10 @@ export const POST = createPublicHandler(
     if (fm.case_slug !== caseSlug || !SIGNABLE_TYPES.has(String(doc.type ?? ""))) {
       return apiError("document_not_found", "Dokument nicht gefunden", 404);
     }
+    // A request past its expiry date can no longer be signed.
+    if (typeof fm.expires_at === "string" && new Date(fm.expires_at).getTime() < Date.now()) {
+      return apiError("request_expired", "Diese Signaturanfrage ist abgelaufen", 409);
+    }
     if (CLOSED_STATUSES.has(String(fm.status ?? ""))) {
       return apiError(
         "already_signed",

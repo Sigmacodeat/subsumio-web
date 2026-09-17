@@ -89,7 +89,10 @@ export function validateCaptureInput(input: CaptureInput): string | null {
   if (input.signature_format === "typed_name" && input.signature_data.trim().length < 2) {
     return "typed_name_too_short";
   }
-  if (input.signature_format === "canvas_png" && !input.signature_data.startsWith("data:image/png")) {
+  if (
+    input.signature_format === "canvas_png" &&
+    !input.signature_data.startsWith("data:image/png")
+  ) {
     return "invalid_png_data";
   }
   return null;
@@ -102,8 +105,8 @@ export const LEGAL_LEVEL_LABELS: Record<
   simple: {
     de: "Einfache elektronische Signatur",
     en: "Simple electronic signature",
-    warning_de: "Nicht qES — für Gerichtsfiling unzureichend",
-    warning_en: "Not qES — insufficient for court filing",
+    warning_de: "Ersetzt keine eigenhändige Unterschrift, wo Schriftform verlangt ist",
+    warning_en: "Does not replace a handwritten signature where written form is required",
   },
   advanced: {
     de: "Fortgeschrittene elektronische Signatur",

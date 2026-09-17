@@ -555,3 +555,28 @@ Details: `docs/architecture/TRUST_AND_AML.md`.
 - **Offen (Produktentscheidung):** automatische Abfrage von Sanktions- und PEP-Listen
   (z. B. EU-Finanzsanktionsdatei), Anbindung an die Treuhandeinrichtung der Kammer,
   Hochladen der Ausweiskopie direkt in die Prüfung.
+
+## Unterschriften und Kanzlei-Import — Praxistest (17.09., nachts)
+
+Über die echte Oberfläche und Datenbank durchgespielt, 12 von 12 Prüfungen bestanden; der
+DocuSign-Webhook zusätzlich als ausgeführter Test gegen simulierte Connect-Ereignisse.
+Details: `docs/architecture/SIGNATURE_AND_IMPORT.md`.
+
+- **Import unmöglich (Befund, behoben).** Nach einem erfolgreichen Probelauf blieb der
+  Import-Knopf immer gesperrt.
+- **Import überschrieb bestehende Akten (Befund, behoben).** Die Seiten-API legt an oder
+  aktualisiert; eine vorhandene Aktenzahl hätte eine Akte samt Fristen und Dokumentliste
+  ersetzt. Jetzt übersprungen mit Grund, Ergebnis je Zeile, gesammelte Archivierung der
+  importierten Akten. Gegentest: Demo-Akte nach dem Import unverändert.
+- **DocuSign-Status kam nie an (Befund, behoben).** Der Versand schickte die Kanzlei-ID in einem
+  Feld, das die DocuSign-API verwirft, und speicherte keine Anfrage; der Webhook fand deshalb
+  nichts. Zusätzlich verwarf die Duplikatsperre „unterschrieben“ nach „versendet“, und die
+  Anmeldung war fest auf die DocuSign-Testumgebung verdrahtet. Unterschriebene PDFs landeten als
+  Text in Metadaten statt als Dokument der Akte. Alles behoben; ohne Einrichtung klare Meldung.
+- **Unterschrift in der Kanzlei (Befund, behoben).** Der Browser konnte „qualifiziert“ behaupten,
+  das Dokument blieb unsigniert, Fehler beim Speichern wurden verschluckt. Portal: abgelaufene
+  Anfragen waren unterschreibbar.
+- **Texte:** „rechtsverbindlich“ bei der einfachen Signatur ersetzt durch den tatsächlichen
+  Stellenwert; Hilfe-Seite zum Import auf den tatsächlichen Umfang gebracht.
+- **Nicht prüfbar ohne Konto:** echter Versand über DocuSign. Offen (Produktentscheidung):
+  qualifizierte Signatur (A-Trust/ID Austria), Import von Fristen, Kontakten und Zeiten.

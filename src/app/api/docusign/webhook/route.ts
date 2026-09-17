@@ -6,76 +6,40 @@ import {
   verifyDocusignConnectSignature,
   downloadEnvelopeDocuments,
 } from "@/lib/docusign";
+import {
+  SIGNATURE_STATUS_FROM_DOCUSIGN,
+  connectEventKey,
+  parseConnectJson,
+  parseConnectXml,
+  type ConnectEvent,
+} from "@/lib/docusign-connect";
+import { appendDocumentsToMatter, uploadFileToMatter } from "@/lib/email/mail-filing";
 import { createWebhookHandler } from "@/lib/api-handler";
 import { createNotificationFailureNotification } from "@/lib/comments";
 import { getRecipientsByBrain } from "@/lib/cron-utils";
-
+import { logAudit } from "@/lib/audit";
 import { logger } from "@/lib/logger";
+
 const log = logger("api/docusign/webhook");
 
 export const maxDuration = 30;
-
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/docusign/webhook
- * Empfängt Docusign Connect Webhook Events (Envelope Status Updates).
- * Verifiziert HMAC-Signatur über X-DocuSign-Signature-1.
- * Dedup: gleiche Event-IDs werden idempotent behandelt.
+ * POST /api/docusign/webhook — DocuSign Connect envelope events.
  *
- * Events:
- *   - envelope-completed → Update Brain-Page (signature_request) zu "signed" + signed PDF download & upload to case
- *   - envelope-declined → Update zu "declined" + visible notification to all recipients
- *   - envelope-voided   → Update zu "expired"
+ * 1. HMAC over the raw body (X-DocuSign-Signature-1) before anything else.
+ * 2. JSON or XML; firm and matter come from the envelope custom fields set at
+ *    sending (brain_id, case_slug).
+ * 3. Processed once per envelope AND status, so "sent" does not swallow
+ *    "completed".
+ * 4. The signature request's status follows DocuSign; on completion the
+ *    signed PDF is stored as a document of the matter; on decline the firm is
+ *    notified.
  */
-/**
- * Parse DocuSign Connect XML payload into the same shape as the JSON webhook.
- * DocuSign Connect XML contains <EnvelopeStatus><EnvelopeID>, <Status>, and
- * <RecipientStatuses> elements. We extract the key fields without a full XML
- * parser to keep the dependency footprint minimal.
- */
-function parseDocusignXml(xml: string): {
-  event?: string;
-  data?: {
-    envelopeId?: string;
-    envelopeSummary?: {
-      status?: string;
-      recipients?: {
-        signers?: Array<{ status: string; signedDateTime?: string; email?: string }>;
-      };
-    };
-  };
-  eventId?: string;
-} {
-  const extract = (tag: string): string | undefined => {
-    const match = xml.match(
-      new RegExp(`<${tag}>(?:<!\\[CDATA\\[)?(.*?)(?:\\]\\]>)?</${tag}>`, "i")
-    );
-    return match?.[1]?.trim();
-  };
-
-  const envelopeId = extract("EnvelopeID") ?? extract("EnvelopeId");
-  const status = extract("Status");
-  const event = extract("EventType") ?? extract("Event");
-
-  return {
-    event: event ?? undefined,
-    eventId: envelopeId,
-    data: {
-      envelopeId: envelopeId ?? undefined,
-      envelopeSummary: {
-        status: status ?? undefined,
-      },
-    },
-  };
-}
-
 export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => {
   const rawBody = await req.clone().text();
 
-  // HMAC verification FIRST — before any processing or database lookups.
-  // This prevents unauthenticated requests from triggering idempotency checks
-  // or leaking information about processed events.
   const connectSecret = process.env.DOCUSIGN_CONNECT_SECRET;
   if (!connectSecret) {
     log.error("[docusign-webhook] DOCUSIGN_CONNECT_SECRET not configured — rejecting webhook");
@@ -86,212 +50,159 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
     return Response.json({ error: "invalid_signature" }, { status: 401 });
   }
 
-  // Parse payload — DocuSign Connect can send JSON or XML (XML is the default).
-  // Try JSON first, fall back to XML extraction.
-  let body: {
-    event?: string;
-    data?: {
-      envelopeId?: string;
-      envelopeSummary?: {
-        status?: string;
-        recipients?: {
-          signers?: Array<{ status: string; signedDateTime?: string; email?: string }>;
-        };
-      };
-    };
-    eventId?: string;
-  };
+  let event: ConnectEvent;
   const contentType = req.headers.get("content-type") ?? "";
   if (contentType.includes("xml") || rawBody.trimStart().startsWith("<")) {
-    body = parseDocusignXml(rawBody);
+    event = parseConnectXml(rawBody);
   } else {
     try {
-      body = JSON.parse(rawBody) as typeof body;
+      event = parseConnectJson(JSON.parse(rawBody));
     } catch {
       return Response.json({ ok: true, error: "invalid_json" });
     }
   }
 
-  const eventId = body.eventId ?? body.data?.envelopeId;
-  const envelopeId = body.data?.envelopeId;
-  const status = body.data?.envelopeSummary?.status;
+  const { envelopeId, status } = event;
+  const key = connectEventKey(event);
+  if (!envelopeId || !status || !key) return Response.json({ ok: true });
+  if (await isWebhookProcessed(key)) return Response.json({ ok: true, dedup: true });
 
-  if (!envelopeId || !status) {
-    return Response.json({ ok: true }); // Acknowledge even on malformed
-  }
-
-  // Idempotency: skip already processed events (Postgres-backed)
-  if (eventId && (await isWebhookProcessed(eventId))) {
-    return Response.json({ ok: true, dedup: true });
-  }
-
-  // Map Docusign → Subsumio status
-  const statusMap: Record<string, string> = {
-    completed: "signed",
-    declined: "declined",
-    voided: "expired",
-    sent: "sent",
-    created: "draft",
-  };
-  const mapped = statusMap[status] || status;
-
-  // Resolve tenant from envelope metadata (multi-tenant safe)
-  const envelopeData = body.data as {
-    envelope?: {
-      customFields?: { brain_id?: string };
-      metadata?: { brain_id?: string };
-    };
-    envelopeSummary?: {
-      customFields?: { brain_id?: string };
-      metadata?: { brain_id?: string };
-    };
-  };
-  const brainId =
-    envelopeData.envelope?.customFields?.brain_id ??
-    envelopeData.envelope?.metadata?.brain_id ??
-    envelopeData.envelopeSummary?.customFields?.brain_id ??
-    envelopeData.envelopeSummary?.metadata?.brain_id;
-
+  const mapped = SIGNATURE_STATUS_FROM_DOCUSIGN[status] ?? status;
+  const brainId = event.customFields.brain_id;
   if (!brainId) {
-    log.warn("[docusign-webhook] No brain_id in envelope metadata — skipping");
+    log.warn("[docusign-webhook] envelope without brain_id custom field — skipping", {
+      envelopeId,
+    });
     return Response.json({ ok: true, skipped: true });
   }
 
+  const headers = engineHeadersForBrain(brainId);
   let updated = false;
-  let documentUploaded = false;
+  let documentStored = false;
   let declined = false;
+
   try {
-    const headers = engineHeadersForBrain(brainId);
-    // The mock engine supports search?q=frontmatter_field:value, but the real
-    // engine uses hybrid vector+BM25 search which doesn't match structured
-    // frontmatter queries. Use the type-filtered page list instead, then
-    // filter client-side by docusign_envelope_id in the frontmatter.
-    const listRes = await fetch(`${ENGINE_URL}/api/pages?type=signature_request&limit=500`, {
-      headers,
-      signal: AbortSignal.timeout(15_000),
-    });
-    let pageSlug: string | undefined;
-    let pageFrontmatter: Record<string, unknown> = {};
-    if (listRes.ok) {
-      const raw = await listRes.json();
-      const results = Array.isArray(raw)
-        ? raw
-        : Array.isArray((raw as Record<string, unknown>)?.pages)
-          ? (raw as Record<string, unknown[]>).pages
-          : Array.isArray((raw as Record<string, unknown>)?.results)
-            ? (raw as Record<string, unknown[]>).results
-            : [];
-      // Find the page with matching docusign_envelope_id in frontmatter
-      const page = results.find(
-        (p) =>
-          (p as { frontmatter?: Record<string, unknown> })?.frontmatter?.docusign_envelope_id ===
-          envelopeId
-      ) as { slug: string; frontmatter?: Record<string, unknown> } | undefined;
-      if (page) {
-        pageSlug = page.slug;
-        pageFrontmatter = page.frontmatter ?? {};
-        const patchRes = await enginePatchPage(
-          headers,
-          {
-            slug: page.slug,
-            frontmatter: {
-              docusign_status: mapped,
-              docusign_updated_at: new Date().toISOString(),
-              ...(status === "completed" ? { signed_at: new Date().toISOString() } : {}),
-            },
+    const page = await findSignatureRequest(headers, envelopeId);
+    if (!page) {
+      log.warn("[docusign-webhook] no signature request for envelope", { envelopeId });
+    } else {
+      const fm = page.frontmatter ?? {};
+      const now = new Date().toISOString();
+      const patch = await enginePatchPage(
+        headers,
+        {
+          slug: page.slug,
+          frontmatter: {
+            status: mapped,
+            // Kept as the Subsumio status for existing readers; the raw DocuSign value alongside.
+            docusign_status: mapped,
+            docusign_event: status,
+            docusign_updated_at: now,
+            ...(status === "completed" ? { signed_at: now } : {}),
           },
-          { timeoutMs: 15_000 }
-        );
-        updated = patchRes.ok;
-      }
-    }
+        },
+        { timeoutMs: 15_000 }
+      );
+      updated = patch.ok;
 
-    // On completed: download the signed PDF and upload it to the case as a document page
-    if (status === "completed" && pageSlug) {
-      try {
-        const pdfBuffer = await downloadEnvelopeDocuments(envelopeId);
-        const caseSlug = String(pageFrontmatter.case_slug ?? "");
-        const docSlug = `legal/documents/signed_${envelopeId.slice(0, 12)}_${Date.now()}`;
-        const docTitle = `Signiertes Dokument — ${String(pageFrontmatter.case_title ?? pageFrontmatter.title ?? envelopeId)}`;
-
-        const createDocRes = await fetch(`${ENGINE_URL}/api/pages`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...headers },
-          body: JSON.stringify({
-            slug: docSlug,
-            title: docTitle,
-            type: "document",
-            frontmatter: {
-              document_type: "signed_contract",
-              source: "docusign",
-              docusign_envelope_id: envelopeId,
-              case_slug: caseSlug || undefined,
-              signed_at: new Date().toISOString(),
-              content_base64: pdfBuffer.toString("base64"),
-              mime_type: "application/pdf",
-            },
-          }),
-          signal: AbortSignal.timeout(30_000),
-        });
-        documentUploaded = createDocRes.ok;
-
-        // Also update the signature_request page to reference the uploaded document
-        if (documentUploaded) {
-          await enginePatchPage(
-            headers,
+      const caseSlug = String(fm.case_slug ?? event.customFields.case_slug ?? "");
+      if (status === "completed" && caseSlug) {
+        try {
+          const pdf = await downloadEnvelopeDocuments(envelopeId);
+          const title = String(fm.title ?? "Dokument")
+            .replace(/[^\p{L}\p{N} ._-]/gu, "")
+            .slice(0, 80);
+          const entry = await uploadFileToMatter(
+            brainId,
+            caseSlug,
             {
-              slug: pageSlug,
-              frontmatter: {
-                signed_document_slug: docSlug,
-              },
+              filename: `${title || "Dokument"} (unterschrieben).pdf`,
+              contentType: "application/pdf",
+              size: pdf.byteLength,
+              content: pdf,
             },
-            { timeoutMs: 15_000 }
+            "docusign"
+          );
+          if (entry) {
+            documentStored = await appendDocumentsToMatter(brainId, caseSlug, [entry]);
+            await enginePatchPage(
+              headers,
+              { slug: page.slug, frontmatter: { signed_document_slug: entry.slug } },
+              { timeoutMs: 15_000 }
+            );
+          }
+        } catch (docErr) {
+          log.error(
+            "[docusign-webhook] signed document not stored",
+            docErr instanceof Error ? docErr.message : String(docErr)
           );
         }
-      } catch (docErr) {
-        log.error(
-          "[docusign-webhook] Document download/upload failed:",
-          docErr instanceof Error ? docErr.message : String(docErr)
-        );
       }
-    }
 
-    // On declined: create visible notification to all recipients of this brain
-    if (status === "declined") {
-      declined = true;
-      try {
-        const recipientsByBrain = await getRecipientsByBrain();
-        const recipients = recipientsByBrain.get(brainId) ?? [];
-        const caseTitle = String(
-          pageFrontmatter.case_title ?? pageFrontmatter.title ?? "Unbekannte Akte"
-        );
-        for (const recipient of recipients) {
-          await createNotificationFailureNotification({
-            userId: recipient.id,
-            brainId,
-            caseSlug: pageSlug,
-            caseTitle,
-            deadlineTitle: "DocuSign-Signatur",
-            deadlineDate: new Date().toISOString(),
-            channels: ["docusign"],
-            reason: "envelope_declined",
-          });
+      if (status === "declined") {
+        declined = true;
+        try {
+          const recipients = (await getRecipientsByBrain()).get(brainId) ?? [];
+          for (const recipient of recipients) {
+            await createNotificationFailureNotification({
+              userId: recipient.id,
+              brainId,
+              caseSlug: caseSlug || page.slug,
+              caseTitle: String(fm.case_title ?? fm.title ?? "Signaturanfrage"),
+              deadlineTitle: "DocuSign-Signatur",
+              deadlineDate: now,
+              channels: ["docusign"],
+              reason: "envelope_declined",
+            });
+          }
+        } catch (notifErr) {
+          log.error(
+            "[docusign-webhook] declined notification failed",
+            notifErr instanceof Error ? notifErr.message : String(notifErr)
+          );
         }
-      } catch (notifErr) {
-        log.error(
-          "[docusign-webhook] Declined notification failed:",
-          notifErr instanceof Error ? notifErr.message : String(notifErr)
-        );
       }
+
+      void logAudit("docusign.status", "envelope", {
+        entityId: envelopeId,
+        brainId,
+        details: { status, mapped, caseSlug: caseSlug || undefined, documentStored },
+      });
     }
   } catch (err) {
-    log.error(
-      "[docusign webhook] brain update failed:",
-      err instanceof Error ? err.message : String(err)
-    );
+    log.error("[docusign-webhook] update failed", err instanceof Error ? err.message : String(err));
+    // Not marked as processed: DocuSign retries.
+    return Response.json({ ok: false }, { status: 500 });
   }
 
-  if (eventId) await markWebhookProcessed(eventId, envelopeId, body.event);
-
-  return Response.json({ ok: true, envelopeId, mapped, updated, documentUploaded, declined });
+  await markWebhookProcessed(key, envelopeId, status);
+  return Response.json({ ok: true, envelopeId, mapped, updated, documentStored, declined });
 });
+
+async function findSignatureRequest(
+  headers: Record<string, string>,
+  envelopeId: string
+): Promise<{ slug: string; frontmatter?: Record<string, unknown> } | null> {
+  // Requests sent from Subsumio have a predictable slug.
+  const direct = await fetch(
+    `${ENGINE_URL}/api/pages/${["legal", "signatures", `docusign-${envelopeId}`].map(encodeURIComponent).join("/")}`,
+    { headers, signal: AbortSignal.timeout(10_000) }
+  );
+  if (direct.ok)
+    return (await direct.json()) as { slug: string; frontmatter?: Record<string, unknown> };
+
+  // Older requests: search the list.
+  const listRes = await fetch(`${ENGINE_URL}/api/pages?type=signature_request&limit=500`, {
+    headers,
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!listRes.ok) return null;
+  const raw = (await listRes.json()) as unknown;
+  const pages = (
+    Array.isArray(raw) ? raw : ((raw as { pages?: unknown[] })?.pages ?? [])
+  ) as Array<{
+    slug: string;
+    frontmatter?: Record<string, unknown>;
+  }>;
+  return pages.find((p) => p.frontmatter?.docusign_envelope_id === envelopeId) ?? null;
+}

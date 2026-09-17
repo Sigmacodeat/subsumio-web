@@ -89,6 +89,24 @@ export function mergeSuggestedDeadlines(
   return [...current, ...incoming.filter((s) => !seen.has(key(s)) && seen.add(key(s)))];
 }
 
+/** Adds stored documents to the matter's document list. */
+export async function appendDocumentsToMatter(
+  brainId: string,
+  caseSlug: string,
+  entries: DocumentEntry[]
+): Promise<boolean> {
+  if (entries.length === 0) return true;
+  const page = await getPage(brainId, caseSlug);
+  if (!page) return false;
+  let documents = (page.frontmatter ?? {}).documents as DocumentEntry[] | undefined;
+  for (const e of entries) documents = appendCaseDocument(documents, e);
+  const res = await enginePatchPage(engineHeadersForBrain(brainId), {
+    slug: page.slug,
+    frontmatter: { documents },
+  });
+  return res.ok;
+}
+
 async function getPage(brainId: string, slug: string) {
   const res = await fetch(
     `${ENGINE_URL}/api/pages/${slug.split("/").map(encodeURIComponent).join("/")}`,
@@ -102,10 +120,17 @@ async function getPage(brainId: string, slug: string) {
   };
 }
 
-async function uploadAttachment(
+/**
+ * Stores one file in a matter the way the upload page does: type/size scan,
+ * duplicate check, engine upload, background analysis. Returns the document
+ * entry for the matter's list, or null when the file was not stored. Shared by
+ * mail attachments and signed documents.
+ */
+export async function uploadFileToMatter(
   brainId: string,
   caseSlug: string,
-  att: MailAttachment
+  att: MailAttachment,
+  source: "email" | "docusign" = "email"
 ): Promise<DocumentEntry | null> {
   const name = att.filename?.trim() || `anhang-${randomUUID().slice(0, 8)}`;
   const file = new File([new Uint8Array(att.content)], name, { type: att.contentType });
@@ -118,8 +143,8 @@ async function uploadAttachment(
   const form = new FormData();
   form.append("file", new File([scan.buffer], scan.cleanName, { type: scan.mimeType }));
   form.append("title", scan.cleanName);
-  form.append("source", "email");
-  form.append("tags", JSON.stringify([caseSlug, "email"]));
+  form.append("source", source);
+  form.append("tags", JSON.stringify([caseSlug, source]));
   form.append("case_slug", caseSlug);
   const res = await fetch(`${ENGINE_URL}/api/upload`, {
     method: "POST",
@@ -154,8 +179,8 @@ async function uploadAttachment(
     slug: upload.slug,
     uploadedAt: now,
     size: scan.buffer.byteLength,
-    source: "email",
-    // Correspondence is internal until a lawyer releases it to the portal.
+    source,
+    // Internal until a lawyer releases it to the portal.
     portal_visible: false,
   };
 }
@@ -174,7 +199,7 @@ export async function fileMailIntoMatter(input: {
   const entries: DocumentEntry[] = [];
   for (const att of fileable) {
     try {
-      const entry = await uploadAttachment(input.brainId, input.caseSlug, att);
+      const entry = await uploadFileToMatter(input.brainId, input.caseSlug, att);
       if (entry) entries.push(entry);
       else result.skipped += 1;
     } catch (err) {

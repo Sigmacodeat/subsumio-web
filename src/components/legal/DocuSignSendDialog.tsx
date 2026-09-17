@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PenTool, Send, Loader2, FileText, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +45,22 @@ export function DocuSignSendDialog({
   const [blurb, setBlurb] = useState("");
   const [signers, setSigners] = useState<Signer[]>([{ email: "", name: "" }]);
   const [sending, setSending] = useState(false);
+  // null while checking; false when DocuSign is not set up for this installation.
+  const [available, setAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    fetch("/api/docusign/status", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((b: { configured?: boolean; data?: { configured?: boolean } }) => {
+        if (!cancelled) setAvailable(Boolean(b.configured ?? b.data?.configured));
+      })
+      .catch(() => !cancelled && setAvailable(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   function addSigner() {
     setSigners([...signers, { email: "", name: "" }]);
@@ -146,6 +162,16 @@ export function DocuSignSendDialog({
           <DialogDescription>{t("docusign.send_desc")}</DialogDescription>
         </DialogHeader>
 
+        {available === false && (
+          <p
+            role="status"
+            className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-sm text-[color:var(--ds-warning-text)]"
+          >
+            DocuSign ist für diese Installation noch nicht eingerichtet. Solange können Sie
+            Dokumente über den Portal-Link unterschreiben lassen (einfache elektronische Signatur).
+          </p>
+        )}
+
         <div className="space-y-4">
           <div>
             <Label htmlFor="ds-subject">{t("email.subject")}</Label>
@@ -234,7 +260,7 @@ export function DocuSignSendDialog({
           </Button>
           <Button
             onClick={handleSend}
-            disabled={sending || !subject || signers.every((s) => !s.email)}
+            disabled={sending || available !== true || !subject || signers.every((s) => !s.email)}
           >
             {sending ? (
               <Loader2 size={16} className="mr-2 animate-spin" />

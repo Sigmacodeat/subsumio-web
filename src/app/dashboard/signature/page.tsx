@@ -8,7 +8,7 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  AlertTriangle,
+  Info,
   PenTool,
   Settings,
   ExternalLink,
@@ -170,15 +170,12 @@ export default function SignaturePage() {
         }
       />
 
-      {/* Setup hint */}
-      <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
+      {/* Which signature for what */}
+      <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-4">
         <div className="flex items-start gap-3">
-          <AlertTriangle
-            size={18}
-            className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
-          />
+          <Info size={18} className="mt-0.5 shrink-0 text-[color:var(--ds-text-muted)]" />
           <div>
-            <p className="text-sm font-medium text-[color:var(--ds-warning-text)]">
+            <p className="text-sm font-medium text-[color:var(--ds-text)]">
               {t("sig.setup_hint_title")}
             </p>
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
