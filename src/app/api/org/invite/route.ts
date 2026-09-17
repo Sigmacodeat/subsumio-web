@@ -55,10 +55,10 @@ export const POST = createHandler(
     const result = await sendMail({
       to: email,
       subject: de
-        ? `${ctx.user.name} l\u00e4dt dich zu \u201e${org.name}\u201c auf Subsumio ein`
+        ? `${ctx.user.name} l\u00e4dt Sie zu \u201e${org.name}\u201c auf Subsumio ein`
         : `${ctx.user.name} invited you to \u201c${org.name}\u201d on Subsumio`,
       text: de
-        ? `Hallo,\n\n${ctx.user.name} (${ctx.user.email}) l\u00e4dt dich ein, dem Team \u201e${org.name}\u201c auf Subsumio beizutreten \u2014 ein gemeinsames Brain f\u00fcr euer Wissen.\n\nBeitreten (Link 7 Tage g\u00fcltig):\n${joinUrl}\n\nNoch kein Konto? Der Link f\u00fchrt dich zuerst durch die Registrierung.\n\n\u2014 Subsumio`
+        ? `Guten Tag,\n\n${ctx.user.name} (${ctx.user.email}) l\u00e4dt Sie ein, der Kanzlei \u201e${org.name}\u201c auf Subsumio beizutreten.\n\nBeitreten (Link 7 Tage g\u00fcltig):\n${joinUrl}\n\nNoch kein Konto? Der Link f\u00fchrt Sie zuerst durch die Registrierung.\n\n\u2014 Subsumio`
         : `Hi,\n\n${ctx.user.name} (${ctx.user.email}) invited you to join the team \u201c${org.name}\u201d on Subsumio \u2014 one shared brain for your knowledge.\n\nJoin (link valid for 7 days):\n${joinUrl}\n\nNo account yet? The link walks you through signup first.\n\n\u2014 Subsumio`,
     });
 

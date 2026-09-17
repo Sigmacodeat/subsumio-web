@@ -736,7 +736,7 @@ async function caseLookupHelp(
     return `Ich finde keine Akte zu "${caseRef}". Bitte mit Aktenzeichen senden, z.B. "akt 2026-014".`;
   }
   return [
-    `Ich finde keine eindeutige Akte zu "${caseRef}". Meinst du:`,
+    `Ich finde keine eindeutige Akte zu "${caseRef}". Meinen Sie:`,
     ...candidates.map(({ page }) => {
       const front = fm(page);
       return `- ${str(front.case_number) || page.slug}: ${page.title}`;
@@ -2063,7 +2063,7 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
       "  konflikt Müller — Konflikt-Check",
       "",
       "🧠 Brain:",
-      "  frage: was weißt du über Müller Vergleich?",
+      "  frage: Was ist zum Vergleich in der Akte Müller bekannt?",
       "  Oder einfach freie Frage — ich antworte aus dem Brain",
       "",
       "📎 Medien:",

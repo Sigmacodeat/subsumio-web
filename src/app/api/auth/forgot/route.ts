@@ -38,7 +38,7 @@ export const POST = createPublicHandler(
       lang === "de" ? "Subsumio — Passwort zurücksetzen" : "Subsumio — reset your password";
     const text =
       lang === "de"
-        ? `Hallo ${user.name},\n\njemand (hoffentlich du) hat ein neues Passwort für dieses Konto angefordert.\n\nLink (1 Stunde gültig):\n${resetUrl}\n\nWenn du das nicht warst, ignoriere diese Mail — dein Passwort bleibt unverändert.\n\n— Subsumio`
+        ? `Guten Tag ${user.name},\n\nfür dieses Konto wurde ein neues Passwort angefordert.\n\nLink (1 Stunde gültig):\n${resetUrl}\n\nFalls Sie das nicht waren, können Sie diese Nachricht ignorieren. Ihr Passwort bleibt unverändert.\n\n— Subsumio`
         : `Hi ${user.name},\n\nsomeone (hopefully you) requested a new password for this account.\n\nLink (valid for 1 hour):\n${resetUrl}\n\nIf this wasn't you, ignore this email — your password stays unchanged.\n\n— Subsumio`;
 
     const result = await sendMail({ to: user.email, subject, text });

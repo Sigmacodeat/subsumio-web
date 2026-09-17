@@ -253,15 +253,15 @@ function buildGreeting(sender: WhatsAppIdentity, ctx: DashboardContext): string 
 
   const name = sender.name || "Sie";
 
-  let reply = `${timeGreeting}, ${name}. Ich bin dein Subsumio Kanzlei-Assistent. `;
+  let reply = `${timeGreeting}, ${name}. Ich bin Ihr Subsumio-Kanzleiassistent. `;
 
   if (ctx.totalCases === 0) {
     reply +=
-      "Dein Dashboard ist noch leer — du kannst hier gerne Akten, Fristen oder Aufgaben per WhatsApp anlegen.";
+      "Ihre Kanzleiübersicht ist noch leer. Sie können hier Akten, Fristen oder Aufgaben per WhatsApp anlegen.";
   } else if (ctx.openDeadlines > 0 || ctx.openTasks > 0) {
-    reply += `Aktuell hast du ${ctx.totalCases} Akten, ${ctx.openTasks} offene Aufgaben und ${ctx.openDeadlines} offene Fristen. Wie kann ich dir helfen?`;
+    reply += `Aktuell haben Sie ${ctx.totalCases} Akten, ${ctx.openTasks} offene Aufgaben und ${ctx.openDeadlines} offene Fristen. Wie kann ich Ihnen helfen?`;
   } else {
-    reply += `Alles im Griff: ${ctx.totalCases} Akten, keine offenen Fristen oder Aufgaben. Was steht an?`;
+    reply += `${ctx.totalCases} Akten, keine offenen Fristen oder Aufgaben. Was steht an?`;
   }
 
   return reply;
@@ -270,27 +270,27 @@ function buildGreeting(sender: WhatsAppIdentity, ctx: DashboardContext): string 
 function buildSmalltalkReply(sender: WhatsAppIdentity, text: string): string {
   const lower = text.toLowerCase();
   if (/danke|vielen dank|super|toll|perfekt/.test(lower)) {
-    return "Gerne! Ich bin da, wenn du etwas brauchst — sei es eine Akten-Info, eine Frist oder einfach nur ein schneller Überblick.";
+    return "Gerne. Schreiben Sie mir, wenn Sie eine Akteninfo, eine Frist oder einen schnellen Überblick brauchen.";
   }
   if (/tschüss|bis dann|auf wiedersehen|ciao|cu/.test(lower)) {
-    return "Bis bald! Melde dich einfach, wenn du wieder etwas benötigst.";
+    return "Auf Wiedersehen. Schreiben Sie mir, wenn Sie wieder etwas benötigen.";
   }
   if (/wie geht|wie gehts/.test(lower)) {
-    return "Mir geht es gut, danke! Ich bin bereit, dir bei deinen Akten und Recherchen zu helfen. Wie läuft es bei dir?";
+    return "Danke der Nachfrage. Ich helfe Ihnen gern bei Ihren Akten und Recherchen. Womit darf ich beginnen?";
   }
   if (/wer bist|was machst|was kannst/.test(lower)) {
-    return `Ich bin der Subsumio Kanzlei-Assistent für ${sender.name || "dich"}. Ich helfe dir bei: Akten-Überblick, Fristen, Aufgaben, Dokumenten, Rechtsrecherche, Zeit-Erfassung und mehr. Schreibe mir einfach in natürlicher Sprache.`;
+    return `Ich bin der Subsumio-Kanzleiassistent${sender.name ? ` für ${sender.name}` : ""}. Ich helfe Ihnen bei Aktenüberblick, Fristen, Aufgaben, Dokumenten, Rechtsrecherche und Zeiterfassung. Schreiben Sie mir einfach in normaler Sprache.`;
   }
-  return "Verstanden. Sag mir einfach, was du brauchst — ich schaue in deinem Dashboard und in den Gesetzen nach.";
+  return "Verstanden. Schreiben Sie mir, was Sie brauchen. Ich sehe in Ihren Akten und in den Gesetzen nach.";
 }
 
 function buildDashboardOverviewReply(sender: WhatsAppIdentity, ctx: DashboardContext): string {
   if (ctx.totalCases === 0) {
-    return 'Dein Dashboard ist noch leer. Noch keine Akten, Fristen oder Termine. Du kannst mit "neue akte [Mandant] vs. [Gegner]" starten.';
+    return 'Ihre Kanzleiübersicht ist noch leer: keine Akten, Fristen oder Termine. Beginnen Sie mit "neue akte [Mandant] gg. [Gegner]".';
   }
 
   const parts: string[] = [];
-  parts.push(`Hier ist dein Überblick, ${sender.name || ""}:`);
+  parts.push(`Ihr Überblick${sender.name ? `, ${sender.name}` : ""}:`);
   parts.push(`\n📁 ${ctx.totalCases} Akten`);
   parts.push(`📋 ${ctx.openTasks} offene Aufgaben`);
   parts.push(`⚖️ ${ctx.openDeadlines} offene Fristen`);
@@ -308,7 +308,7 @@ function buildDashboardOverviewReply(sender: WhatsAppIdentity, ctx: DashboardCon
     }
   }
 
-  parts.push("\nWas möchtest du als Nächstes tun?");
+  parts.push("\nWas möchten Sie als Nächstes tun?");
   return parts.join("\n");
 }
 
@@ -359,7 +359,7 @@ export async function naturalWhatsAppReply(ctx: NaturalChatContext): Promise<str
       const trimmed = ctx.text.trim().toLowerCase();
       if (/^(?:nein|no|abbrechen|verwerfen|stopp|stop|abbruch)$/i.test(trimmed)) {
         await clearConversationState(ctx.sender, ctx.fromPhone).catch(() => {});
-        return "Verstanden, die Eingabe wurde abgebrochen. Was kann ich sonst für dich tun?";
+        return "Verstanden, die Eingabe wurde abgebrochen. Was kann ich sonst für Sie tun?";
       }
       if (/^(?:hilfe|help)$/i.test(trimmed)) {
         await clearConversationState(ctx.sender, ctx.fromPhone).catch(() => {});
@@ -438,7 +438,7 @@ export async function naturalWhatsAppReply(ctx: NaturalChatContext): Promise<str
     // Step 6: Final fallback — could not structure the request → ask clarifying question
     return [
       `Ich habe verstanden, dass es um einen Kanzlei-Alltag-Vorgang geht.`,
-      `Damit ich dir helfen kann, bitte präziser formulieren, z.B.:`,
+      `Bitte formulieren Sie genauer, damit ich helfen kann, zum Beispiel:`,
       `• "30 Minuten für Müller telefoniert"`,
       `• "12,50 Euro für Kopien ausgelegt"`,
       `• "Morgen 10 Uhr Termin mit Müller"`,
@@ -459,7 +459,7 @@ export async function naturalWhatsAppReply(ctx: NaturalChatContext): Promise<str
     historyText ? `Letzte Nachrichten:\n${historyText}` : "",
     `Aktuelle Nutzer-Nachricht: ${ctx.text}`,
     "",
-    "Anweisung: Du bist ein Kanzlei-Alltags-Assistent. Antworte in natürlichem, professionellem Deutsch. Hilf bei: Terminen, Mandanten-Infos, offenen Aufgaben/Fristen, Zeiterfassung und Kosten. Gib konkrete, aus dem Brain/Dashboard belegte Informationen. Vermeide technische Ausgabeformate wie `## Answer` oder `## Gaps`. Keine Rechtsberatung. Wenn Daten fehlen, sage das ehrlich.",
+    "Anweisung: Du bist ein Kanzlei-Alltags-Assistent. Antworte in natürlichem, professionellem Deutsch und sprich die Person immer mit „Sie“ an. Hilf bei: Terminen, Mandanten-Infos, offenen Aufgaben/Fristen, Zeiterfassung und Kosten. Gib konkrete, aus dem Brain/Dashboard belegte Informationen. Vermeide technische Ausgabeformate wie `## Answer` oder `## Gaps`. Keine Rechtsberatung. Wenn Daten fehlen, sage das ehrlich.",
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -476,7 +476,7 @@ export async function naturalWhatsAppReply(ctx: NaturalChatContext): Promise<str
     return withDisclaimer.slice(0, 3500);
   } catch (err) {
     console.error("[whatsapp-natural-chat] think failed:", err);
-    return "Entschuldigung, ich konnte deine Frage gerade nicht beantworten. Bitte versuche es später erneut oder öffne das Dashboard.";
+    return "Ich konnte Ihre Frage gerade nicht beantworten. Bitte versuchen Sie es später erneut oder öffnen Sie Subsumio im Browser.";
   }
 }
 

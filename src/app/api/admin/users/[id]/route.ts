@@ -91,7 +91,7 @@ export const DELETE = createHandler(
     }
 
     if (target.id === ctx.user.id) {
-      return apiError("cannot_delete_self", "Du kannst dich nicht selbst deaktivieren", 409);
+      return apiError("cannot_delete_self", "Das eigene Konto lässt sich nicht deaktivieren", 409);
     }
 
     const updated = await store.update(id, {

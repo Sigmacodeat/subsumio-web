@@ -34,9 +34,9 @@ describe("dunning escalation logic", () => {
       const retryDate = new Date("2026-07-03T10:00:00Z");
       const result = buildDunningEmailBody("Kanzlei Müller", 2, retryDate);
       expect(result.subject).toContain("Zweiter Zahlungsversuch");
-      expect(result.subject).toContain("Grace-Period");
+      expect(result.subject).toContain("Nachfrist");
       expect(result.body).toContain("zweimal fehlgeschlagen");
-      expect(result.body).toContain("Grace-Period");
+      expect(result.body).toContain("Nachfrist");
     });
 
     test("failure 3: suspension email", async () => {
@@ -70,7 +70,7 @@ describe("dunning escalation logic", () => {
     test("contains reactivation message", async () => {
       const { buildReactivationEmailBody } = await import("./dunning");
       const result = buildReactivationEmailBody("Kanzlei Müller");
-      expect(result.subject).toContain("reaktiviert");
+      expect(result.subject).toContain("wieder aktiv");
       expect(result.body).toContain("erfolgreich");
       expect(result.body).toContain("Kanzlei Müller");
       expect(result.body).toContain("vollständig aktiv");

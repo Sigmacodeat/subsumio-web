@@ -92,7 +92,7 @@ export const POST = createPublicHandler(
           to: user.email,
           subject: de ? "Subsumio — E-Mail bestätigen" : "Subsumio — confirm your email",
           text: de
-            ? `Hallo ${user.name},\n\nwillkommen bei Subsumio! Bitte bestätige deine E-Mail-Adresse (Link 48 Stunden gültig):\n${verifyUrl}\n\n— Subsumio`
+            ? `Guten Tag ${user.name},\n\nwillkommen bei Subsumio. Bitte bestätigen Sie Ihre E-Mail-Adresse (Link 48 Stunden gültig):\n${verifyUrl}\n\n— Subsumio`
             : `Hi ${user.name},\n\nwelcome to Subsumio! Please confirm your email address (link valid for 48 hours):\n${verifyUrl}\n\n— Subsumio`,
         });
       } catch (err) {

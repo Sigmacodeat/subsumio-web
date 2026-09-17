@@ -196,7 +196,7 @@ export function buildClarifyingQuestion(expectedKind: string, missing: string[])
     time: ["Zu welcher Uhrzeit?", "Bitte Uhrzeit angeben (z.B. 14:00)."],
     title: ["Worum geht es?", "Bitte Thema/Betreff angeben."],
     dueDate: ["Bis wann ist die Frist?", "Bitte Datum angeben (z.B. 15.07.2026 oder in 3 Tagen)."],
-    minutes: ["Wie lange hast du gearbeitet?", "Bitte Zeit angeben (z.B. 30m, 1,5h, 2 Stunden)."],
+    minutes: ["Wie lange haben Sie gearbeitet?", "Bitte Zeit angeben (z.B. 30m, 1,5h, 2 Stunden)."],
     amount: ["Wie hoch ist die Auslage?", "Bitte Betrag angeben (z.B. 12,50 EUR)."],
     note: ["Was soll ich notieren?", "Bitte Notiztext angeben."],
   };

@@ -42,7 +42,7 @@ const handler = createHandler(
       return apiError("owner_only", "Nur der Eigentümer kann Rollen ändern", 403);
     }
     if (targetUser.orgId !== ctx.user.orgId) {
-      return apiError("not_in_your_org", "Benutzer nicht in deiner Organisation", 403);
+      return apiError("not_in_your_org", "Diese Person gehört nicht zu Ihrer Kanzlei", 403);
     }
 
     if (targetUser.id === ctx.user.id && targetUser.role === "admin" && body.role !== "admin") {

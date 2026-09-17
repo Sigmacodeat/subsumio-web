@@ -93,7 +93,7 @@ describe("buildClarifyingQuestion", () => {
 
   it("asks for minutes when missing for time_entry", () => {
     const q = buildClarifyingQuestion("time_entry", ["minutes"]);
-    expect(q).toContain("Wie lange hast du gearbeitet?");
+    expect(q).toContain("Wie lange haben Sie gearbeitet?");
   });
 
   it("asks for amount when missing for expense", () => {

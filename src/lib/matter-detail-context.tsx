@@ -1273,7 +1273,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
             description:
               lang === "en"
                 ? "You don't have permission to restore this case."
-                : "Du hast keine Berechtigung, diese Akte wiederherzustellen.",
+                : "Ihnen fehlt die Berechtigung, diese Akte wiederherzustellen.",
           });
         } else if (res.status === 409) {
           setConflictWarning(t("casesdetail.conflict_warning"));

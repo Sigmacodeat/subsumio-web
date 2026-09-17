@@ -43,7 +43,7 @@ export const POST = createHandler(
     if (ctx.user.orgId) {
       return apiError(
         "leave_current_org_first",
-        "Bitte verlasse zuerst die aktuelle Organisation",
+        "Bitte verlassen Sie zuerst die aktuelle Kanzlei",
         409
       );
     }
@@ -56,7 +56,13 @@ export const POST = createHandler(
       return apiError("no_seats_left", "Keine freien Plätze", 409);
     }
 
-    await store.update(ctx.user.id, { orgId: org.id });
+    // A joining member is NOT an administrator of the firm they join. Their own
+    // signup made them admin of their (now unused) personal workspace; inside
+    // the firm the owner assigns roles (/api/team/role).
+    await store.update(ctx.user.id, {
+      orgId: org.id,
+      ...(org.ownerId === ctx.user.id ? {} : { role: "lawyer" as const }),
+    });
     return Response.json({ ok: true, org: { name: org.name } });
   }
 );
