@@ -29,6 +29,7 @@ import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/upload-formats";
 import { csrfFetch } from "@/lib/csrf";
 import { api } from "@/lib/api";
 import { ActImportCockpit } from "@/components/legal/ActImportCockpit";
+import { QesSignButton } from "@/components/legal/QesSignButton";
 
 interface DocJurisdiction {
   jurisdiction: string;
@@ -47,6 +48,8 @@ export function DocumentsTab() {
   const searchAbortRef = useRef<AbortController | null>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const qesResult = searchParams.get("qes");
+  const qesReason = searchParams.get("reason");
 
   useEffect(() => {
     // Debounce: wait 250ms after last keystroke before searching.
@@ -139,6 +142,29 @@ export function DocumentsTab() {
 
   return (
     <div className="space-y-4 p-4 md:p-6">
+      {(qesResult === "signed" || qesResult === "failed") && (
+        <div
+          role={qesResult === "failed" ? "alert" : "status"}
+          className={`flex items-start gap-2 rounded-lg border px-4 py-3 text-sm ${
+            qesResult === "signed"
+              ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+              : "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
+          }`}
+        >
+          <span className="flex-1">
+            {qesResult === "signed"
+              ? "Das Dokument wurde qualifiziert signiert. Das signierte PDF liegt jetzt zusätzlich in dieser Akte."
+              : `Die qualifizierte Signatur wurde nicht abgeschlossen${qesReason ? `: ${qesReason}` : "."} Das Original ist unverändert.`}
+          </span>
+          <button
+            type="button"
+            className="text-xs underline"
+            onClick={() => router.replace(pathname)}
+          >
+            Ausblenden
+          </button>
+        </div>
+      )}
       <ActImportCockpit caseSlug={caseData.slug} />
       {/* Upload zone */}
       <div
@@ -661,6 +687,14 @@ export function DocumentsTab() {
                   >
                     {t("cases.detail_doc_open")}
                   </Link>
+                )}
+                {(doc.slug || doc.url) && (
+                  <QesSignButton
+                    documentSlug={doc.slug || doc.url || ""}
+                    documentName={doc.name}
+                    mimeType={doc.mime_type}
+                    disabled={caseData?.status === "archived"}
+                  />
                 )}
                 {(doc.slug || doc.url) && (
                   <a

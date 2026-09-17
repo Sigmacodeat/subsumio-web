@@ -18,7 +18,6 @@ export const GET = createHandler(
   {
     action: "invoice.read",
     rateTier: "standard",
-    cacheMaxAge: 15,
   },
   async (ctx, _body, _query, req) => {
     const { slug: rawSlug } = await (req as unknown as { params: Promise<{ slug: string }> })

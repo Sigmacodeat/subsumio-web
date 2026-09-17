@@ -270,6 +270,7 @@ export const POST = createHandler(
                   uploadedAt: new Date().toISOString(),
                   size: result.buffer.byteLength,
                   kind: (formData.get("document_type") as string) || undefined,
+                  mime_type: result.mimeType,
                 });
                 reconciliation = { attempted: true, ok: true };
               } catch (err) {

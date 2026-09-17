@@ -25,7 +25,6 @@ export const GET = createPublicHandler(
   {
     query: querySchema,
     cors: true,
-    cacheMaxAge: 15,
     rateLimitKey: (req) => `portal-doc-req:${clientIp(req.headers)}`,
     rateLimitMax: 30,
     rateLimitWindowMs: 60_000,

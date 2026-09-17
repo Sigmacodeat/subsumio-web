@@ -11,6 +11,8 @@ import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine
 import { scanUploadWithDuplicateCheck } from "@/lib/upload-pipeline";
 import { brainDuplicateStore } from "@/lib/duplicate-store";
 import { appendCaseDocument } from "@/lib/portal-fulfillment";
+import { caseDocumentsLockKey } from "@/lib/case-documents";
+import { withKeyedLock } from "@/lib/keyed-lock";
 import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
 import type { DetectedDeadline } from "@/lib/ai-deadline-detect";
 import type { DocumentEntry } from "@/lib/legal-types";
@@ -96,15 +98,17 @@ export async function appendDocumentsToMatter(
   entries: DocumentEntry[]
 ): Promise<boolean> {
   if (entries.length === 0) return true;
-  const page = await getPage(brainId, caseSlug);
-  if (!page) return false;
-  let documents = (page.frontmatter ?? {}).documents as DocumentEntry[] | undefined;
-  for (const e of entries) documents = appendCaseDocument(documents, e);
-  const res = await enginePatchPage(engineHeadersForBrain(brainId), {
-    slug: page.slug,
-    frontmatter: { documents },
+  return withKeyedLock(caseDocumentsLockKey(brainId, caseSlug), async () => {
+    const page = await getPage(brainId, caseSlug);
+    if (!page) return false;
+    let documents = (page.frontmatter ?? {}).documents as DocumentEntry[] | undefined;
+    for (const e of entries) documents = appendCaseDocument(documents, e);
+    const res = await enginePatchPage(engineHeadersForBrain(brainId), {
+      slug: page.slug,
+      frontmatter: { documents },
+    });
+    return res.ok;
   });
-  return res.ok;
 }
 
 async function getPage(brainId: string, slug: string) {
@@ -130,7 +134,7 @@ export async function uploadFileToMatter(
   brainId: string,
   caseSlug: string,
   att: MailAttachment,
-  source: "email" | "docusign" = "email"
+  source: "email" | "docusign" | "qes" = "email"
 ): Promise<DocumentEntry | null> {
   const name = att.filename?.trim() || `anhang-${randomUUID().slice(0, 8)}`;
   const file = new File([new Uint8Array(att.content)], name, { type: att.contentType });
@@ -179,6 +183,7 @@ export async function uploadFileToMatter(
     slug: upload.slug,
     uploadedAt: now,
     size: scan.buffer.byteLength,
+    mime_type: scan.mimeType,
     source,
     // Internal until a lawyer releases it to the portal.
     portal_visible: false,
@@ -211,24 +216,26 @@ export async function fileMailIntoMatter(input: {
   const suggestions = toSuggestedDeadlines(input.deadlines, input.mailLabel);
   if (entries.length === 0 && suggestions.length === 0) return result;
 
-  const page = await getPage(input.brainId, input.caseSlug);
-  if (!page) return result;
-  const fm = page.frontmatter ?? {};
-  let documents = fm.documents as DocumentEntry[] | undefined;
-  for (const e of entries) documents = appendCaseDocument(documents, e);
-  const before = Array.isArray(fm.suggested_deadlines) ? fm.suggested_deadlines.length : 0;
-  const merged = mergeSuggestedDeadlines(
-    fm.suggested_deadlines as SuggestedDeadline[] | undefined,
-    suggestions
-  );
+  await withKeyedLock(caseDocumentsLockKey(input.brainId, input.caseSlug), async () => {
+    const page = await getPage(input.brainId, input.caseSlug);
+    if (!page) return;
+    const fm = page.frontmatter ?? {};
+    let documents = fm.documents as DocumentEntry[] | undefined;
+    for (const e of entries) documents = appendCaseDocument(documents, e);
+    const before = Array.isArray(fm.suggested_deadlines) ? fm.suggested_deadlines.length : 0;
+    const merged = mergeSuggestedDeadlines(
+      fm.suggested_deadlines as SuggestedDeadline[] | undefined,
+      suggestions
+    );
 
-  const patched = await enginePatchPage(engineHeadersForBrain(input.brainId), {
-    slug: page.slug,
-    frontmatter: { documents, suggested_deadlines: merged },
+    const patched = await enginePatchPage(engineHeadersForBrain(input.brainId), {
+      slug: page.slug,
+      frontmatter: { documents, suggested_deadlines: merged },
+    });
+    if (patched.ok) {
+      result.documents = entries.length;
+      result.suggestions = merged.length - before;
+    }
   });
-  if (patched.ok) {
-    result.documents = entries.length;
-    result.suggestions = merged.length - before;
-  }
   return result;
 }

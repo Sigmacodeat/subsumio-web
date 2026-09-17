@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { ENGINE_URL, enginePatchPage, engineHeadersForBrain } from "@/lib/engine";
+import { engineHeadersForBrain } from "@/lib/engine";
 import { requireInternalSecret } from "@/lib/auth/internal-guard";
 import { NextRequest } from "next/server";
 import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
+import { reconcileCaseDocuments } from "@/lib/case-documents";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/internal/post-upload");
@@ -115,37 +116,3 @@ export async function POST(req: NextRequest) {
 }
 
 // ── helpers (mirrors upload/route.ts — kept local to avoid circular imports) ──
-
-function encodeSlug(slug: string): string {
-  return slug.split("/").map(encodeURIComponent).join("/");
-}
-
-async function reconcileCaseDocuments(
-  headers: Record<string, string>,
-  caseSlug: string,
-  docEntry: {
-    id: string;
-    slug: string;
-    name: string;
-    url: string;
-    uploadedAt: string;
-    size: number;
-    kind?: string;
-  }
-): Promise<void> {
-  const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(caseSlug)}`, {
-    headers,
-    signal: AbortSignal.timeout(10_000),
-  });
-  if (!getRes.ok) throw new Error(`case_fetch_failed_${getRes.status}`);
-  const casePage = (await getRes.json()) as { frontmatter?: Record<string, unknown> };
-  const fm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
-  const existingDocs = Array.isArray(fm.documents) ? fm.documents : [];
-  if (existingDocs.some((d) => (d as Record<string, unknown>).slug === docEntry.slug)) return;
-  const updatedDocs = [...existingDocs, docEntry];
-  const patchRes = await enginePatchPage(headers, {
-    slug: caseSlug,
-    frontmatter: { documents: updatedDocs },
-  });
-  if (!patchRes.ok) throw new Error(`case_patch_failed_${patchRes.status}`);
-}

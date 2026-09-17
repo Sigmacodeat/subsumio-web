@@ -14,7 +14,6 @@ export const GET = createPublicHandler(
   {
     query: caseSchema,
     cors: true,
-    cacheMaxAge: 15,
     rateLimitKey: (req) => `portal-case:${clientIp(req.headers)}`,
     rateLimitMax: 30,
     rateLimitWindowMs: 60_000,

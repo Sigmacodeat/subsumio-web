@@ -100,3 +100,23 @@ describe("reconcileCaseDocuments", () => {
     ).rejects.toThrow(/convergence_failed/);
   });
 });
+
+describe("reconcileCaseDocuments under parallel uploads", () => {
+  it("a slow writer cannot drop an entry another upload already confirmed", async () => {
+    const engine = fakeEngine([]);
+    const inner = global.fetch;
+    // Upload "b" read the list early but its write arrives late — after "a"
+    // wrote, re-read and returned. Without a lock "a" is silently lost.
+    global.fetch = (async (url: string, init?: { method?: string; body?: string }) => {
+      const slow = init?.method === "POST" && (init.body ?? "").includes('"slug":"b"');
+      await new Promise((r) => setTimeout(r, slow ? 40 : 2));
+      return inner(url, init as RequestInit);
+    }) as typeof fetch;
+    await Promise.all(
+      ["a", "b"].map((s) =>
+        reconcileCaseDocuments({ "x-subsumio-source": "kanzlei-1" }, "legal/cases/berger", entry(s))
+      )
+    );
+    expect(engine.state.documents.map((d) => d.slug).sort()).toEqual(["a", "b"]);
+  });
+});

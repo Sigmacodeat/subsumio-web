@@ -580,3 +580,28 @@ Details: `docs/architecture/SIGNATURE_AND_IMPORT.md`.
   Stellenwert; Hilfe-Seite zum Import auf den tatsächlichen Umfang gebracht.
 - **Nicht prüfbar ohne Konto:** echter Versand über DocuSign. Offen (Produktentscheidung):
   qualifizierte Signatur (A-Trust/ID Austria), Import von Fristen, Kontakten und Zeiten.
+
+## Qualifizierte Signatur und Dokument-Upload — Praxistest (17.09., abends)
+
+Über die echte Oberfläche und Datenbank durchgespielt, 16 von 16 Prüfungen bestanden. PDF-AS-WEB
+wurde durch einen lokalen Dienst ersetzt, der die dokumentierte Schnittstelle nachbildet
+(Sign-Aufruf, Abruf des Originals, PDFData mit `origdigest`, Prüfcodes, Abbruch). Details:
+`docs/architecture/SIGNATURE_AND_IMPORT.md`.
+
+- **Qualifizierte Signatur (neu).** Knopf je PDF in der Akte mit Auswahl ID Austria oder
+  A-Trust-Signaturkarte; das signierte PDF wird neben dem Original abgelegt und als
+  „qualifiziert“ mit Prüfcodes, Hashwerten und Signatureintrag vermerkt. Abbruch führt mit
+  Hinweis zurück, das Original bleibt unverändert.
+- **Dokument-Upload in der Akte ging nie (Befund, behoben).** Der Upload im Browser schickte bei
+  Vorbereitung und Abschluss kein CSRF-Token und wurde immer mit 403 abgelehnt. Der E2E-Test rief
+  die API direkt mit Token auf und sah das nicht. Ohne Objektspeicher läuft der Upload jetzt über
+  den direkten Weg; ein Unit-Test prüft beides.
+- **Parallele Uploads verloren Dokumente (Befund, behoben).** Zwei gleichzeitige Uploads in eine
+  Akte schrieben die Dokumentliste gegeneinander, eines fehlte danach. Alle Schreiber der Liste
+  (Upload, E-Mail-Ablage, Signaturen) laufen jetzt unter einer Sperre je Akte; ein Test bildet die
+  verlorene Reihenfolge nach.
+- **Akte zeigte nach Änderungen alte Daten (Befund, behoben).** Aktenseiten, Rechnungen,
+  Prüfeingang, Portal und Rechte wurden 15–30 Sekunden im Browser zwischengespeichert; neu
+  hochgeladene Dokumente erschienen erst nach dem Neuladen. Nachweis: Liste aktualisiert sich
+  jetzt nach rund 3 Sekunden ohne Neuladen.
+- **Nicht prüfbar ohne Instanz:** echte PDF-AS-WEB-Anbindung mit ID Austria und Signaturkarte.

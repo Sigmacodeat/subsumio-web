@@ -21,7 +21,6 @@ export const GET = createHandler(
   {
     action: "brain.read",
     rateTier: "standard",
-    cacheMaxAge: 15,
   },
   async (ctx, _body, _query, req) => {
     const path = buildPath(

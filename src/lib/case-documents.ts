@@ -23,6 +23,16 @@
  */
 
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
+import { withKeyedLock } from "@/lib/keyed-lock";
+
+/**
+ * Every writer of a matter's `documents` list holds this lock (uploads, mail
+ * filing, signatures). The convergence loop alone cannot stop a slow writer
+ * from overwriting an entry another writer already confirmed.
+ */
+export function caseDocumentsLockKey(brainOrSource: string, caseSlug: string): string {
+  return `case-documents:${brainOrSource}:${caseSlug}`;
+}
 
 export interface CaseDocumentEntry {
   id: string;
@@ -32,6 +42,7 @@ export interface CaseDocumentEntry {
   uploadedAt: string;
   size: number;
   kind?: string;
+  mime_type?: string;
 }
 
 function encodeSlug(slug: string): string {
@@ -62,6 +73,16 @@ export async function reconcileCaseDocuments(
   caseSlug: string,
   docEntry: CaseDocumentEntry,
   maxAttempts = 4
+): Promise<void> {
+  const key = caseDocumentsLockKey(headers["x-subsumio-source"] ?? "", caseSlug);
+  return withKeyedLock(key, () => reconcileUnlocked(headers, caseSlug, docEntry, maxAttempts));
+}
+
+async function reconcileUnlocked(
+  headers: Record<string, string>,
+  caseSlug: string,
+  docEntry: CaseDocumentEntry,
+  maxAttempts: number
 ): Promise<void> {
   let lastError = "";
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {

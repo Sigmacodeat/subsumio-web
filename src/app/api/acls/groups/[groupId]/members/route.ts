@@ -13,7 +13,6 @@ export const GET = createHandler(
   {
     action: "settings.read",
     rateTier: "standard",
-    cacheMaxAge: 15,
   },
   async (ctx, _body, _query, req) => {
     try {

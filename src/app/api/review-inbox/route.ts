@@ -78,7 +78,6 @@ export const GET = createHandler(
   {
     action: "brain.read",
     rateTier: "standard",
-    cacheMaxAge: 15,
   },
   async (ctx, _body, _query, _req) => {
     const [docRequests, deadlines, submissions, casePages] = await Promise.all([

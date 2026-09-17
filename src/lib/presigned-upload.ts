@@ -5,12 +5,30 @@
  * Step 2: PUT file directly to storage (S3/R2) or stream to engine (local)
  * Step 3: POST /api/upload/confirm → trigger extraction + import
  *
- * For local storage (no presigned URL), falls back to streaming PUT
- * to the engine's /api/upload/stream/:token endpoint.
+ * Without object storage (no presigned URL) the file goes through the web
+ * app's /api/upload instead (uploadFileDirect).
  *
  * Adaptive concurrency: dynamically adjusts parallel uploads based on
  * file size and observed throughput (Harvey-style).
  */
+
+import { getCsrfToken } from "@/lib/csrf";
+
+/** Same-origin state-changing calls need the double-submit CSRF header. */
+function csrfHeader(): Record<string, string> {
+  const token = getCsrfToken();
+  return token ? { "x-csrf-token": token } : {};
+}
+
+/**
+ * The engine answers presign with no_storage_configured (installation without
+ * object storage) or with a streaming URL that only the engine itself serves.
+ * In both cases the file goes through the web app's /api/upload instead.
+ */
+function needsDirectUpload(body: unknown): boolean {
+  const b = body as { error?: unknown; code?: unknown } | null;
+  return b?.error === "no_storage_configured" || b?.code === "no_storage_configured";
+}
 
 export interface PresignResult {
   mode: "presigned" | "streaming";
@@ -135,7 +153,7 @@ export async function uploadFile(file: File, opts: UploadOptions = {}): Promise<
 
   const presignRes = await fetch("/api/upload/presign", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...csrfHeader() },
     body: JSON.stringify({
       filename,
       size: file.size,
@@ -152,6 +170,7 @@ export async function uploadFile(file: File, opts: UploadOptions = {}): Promise<
 
   if (!presignRes.ok) {
     const err = await presignRes.json().catch(() => ({}));
+    if (needsDirectUpload(err)) return uploadFileDirect(file, opts);
     const msg = (err as Record<string, string>).message ?? "Presign fehlgeschlagen";
     onProgress?.({
       filename,
@@ -165,6 +184,7 @@ export async function uploadFile(file: File, opts: UploadOptions = {}): Promise<
   }
 
   const presign = (await presignRes.json()) as PresignResult;
+  if (presign.mode === "streaming") return uploadFileDirect(file, opts);
 
   // Step 2: Upload to storage
   onProgress?.({
@@ -175,59 +195,24 @@ export async function uploadFile(file: File, opts: UploadOptions = {}): Promise<
     percent: 0,
   });
 
-  if (presign.mode === "presigned") {
-    // Direct PUT to S3/R2 with real progress tracking via XHR
-    await putWithProgress(
-      presign.url,
-      file,
-      presign.headers,
-      presign.method,
-      (uploaded, total) => {
-        const pct = total > 0 ? Math.round((uploaded / total) * 100) : 0;
-        onProgress?.({
-          filename,
-          phase: "uploading",
-          uploadedBytes: uploaded,
-          totalBytes: total,
-          percent: pct,
-        });
-      },
-      signal
-    );
-  } else {
-    // Streaming fallback: PUT to engine with progress via XHR
-    const streamUrl = presign.upload_url ?? `/api/upload/stream/${presign.upload_token}`;
-    try {
-      await putWithProgress(
-        streamUrl,
-        file,
-        { "Content-Type": file.type || "application/octet-stream" },
-        "PUT",
-        (uploaded, total) => {
-          const pct = total > 0 ? Math.round((uploaded / total) * 100) : 0;
-          onProgress?.({
-            filename,
-            phase: "uploading",
-            uploadedBytes: uploaded,
-            totalBytes: total,
-            percent: pct,
-          });
-        },
-        signal
-      );
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : `Stream upload failed`;
+  // Direct PUT to S3/R2 with real progress tracking via XHR
+  await putWithProgress(
+    presign.url,
+    file,
+    presign.headers,
+    presign.method,
+    (uploaded, total) => {
+      const pct = total > 0 ? Math.round((uploaded / total) * 100) : 0;
       onProgress?.({
         filename,
-        phase: "error",
-        uploadedBytes: 0,
-        totalBytes,
-        percent: 0,
-        error: msg,
+        phase: "uploading",
+        uploadedBytes: uploaded,
+        totalBytes: total,
+        percent: pct,
       });
-      throw err;
-    }
-  }
+    },
+    signal
+  );
 
   onProgress?.({
     filename,
@@ -251,6 +236,7 @@ export async function uploadFile(file: File, opts: UploadOptions = {}): Promise<
     headers: {
       "Content-Type": "application/json",
       Accept: "text/event-stream",
+      ...csrfHeader(),
     },
     body: JSON.stringify({
       upload_token: presign.upload_token,
@@ -377,6 +363,89 @@ export async function uploadFile(file: File, opts: UploadOptions = {}): Promise<
   return result;
 }
 
+/**
+ * Upload through the web app's /api/upload (multipart, scanned server-side).
+ * Used when the installation has no object storage for presigned uploads.
+ */
+export function uploadFileDirect(file: File, opts: UploadOptions = {}): Promise<ConfirmResult> {
+  const { onProgress, signal } = opts;
+  const filename = file.name;
+  const totalBytes = file.size;
+  const form = new FormData();
+  form.append("file", file);
+  if (opts.title) form.append("title", opts.title);
+  if (opts.source) form.append("source", opts.source);
+  const tags = opts.tags ?? (opts.caseSlug ? [opts.caseSlug] : undefined);
+  if (tags) form.append("tags", JSON.stringify(tags));
+  if (opts.caseSlug) form.append("case_slug", opts.caseSlug);
+  if (opts.password) form.append("password", opts.password);
+  if (opts.deferPipeline) form.append("defer_pipeline", "true");
+
+  return new Promise<ConfirmResult>((resolve, reject) => {
+    const fail = (msg: string) => {
+      onProgress?.({
+        filename,
+        phase: "error",
+        uploadedBytes: 0,
+        totalBytes,
+        percent: 0,
+        error: msg,
+      });
+      reject(new Error(msg));
+    };
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/upload", true);
+    for (const [k, v] of Object.entries(csrfHeader())) xhr.setRequestHeader(k, v);
+    xhr.upload.onprogress = (e) => {
+      if (!e.lengthComputable) return;
+      onProgress?.({
+        filename,
+        phase: "uploading",
+        uploadedBytes: e.loaded,
+        totalBytes: e.total,
+        percent: e.total > 0 ? Math.round((e.loaded / e.total) * 100) : 0,
+      });
+    };
+    xhr.upload.onload = () =>
+      onProgress?.({
+        filename,
+        phase: "confirming",
+        uploadedBytes: totalBytes,
+        totalBytes,
+        percent: 100,
+      });
+    xhr.onload = () => {
+      let body: Record<string, unknown> = {};
+      try {
+        body = JSON.parse(xhr.responseText) as Record<string, unknown>;
+      } catch {
+        /* non-JSON error page */
+      }
+      if (xhr.status < 200 || xhr.status >= 300 || typeof body.slug !== "string") {
+        fail(String(body.message ?? body.error ?? `Upload fehlgeschlagen (HTTP ${xhr.status})`));
+        return;
+      }
+      const result = body as unknown as ConfirmResult;
+      onProgress?.({
+        filename,
+        phase: "done",
+        uploadedBytes: totalBytes,
+        totalBytes,
+        percent: 100,
+        result,
+      });
+      resolve(result);
+    };
+    xhr.onerror = () => fail("Netzwerkfehler beim Upload");
+    xhr.ontimeout = () => fail("Zeitüberschreitung beim Upload");
+    signal?.addEventListener("abort", () => {
+      xhr.abort();
+      reject(new Error("Upload aborted"));
+    });
+    xhr.send(form);
+  });
+}
+
 /** Upload multiple files with adaptive parallelism. */
 export async function uploadFiles(
   files: File[],
@@ -448,7 +517,7 @@ async function uploadFilesBatch(
   // Step 1: Batch presign
   const presignRes = await fetch("/api/upload/presign-batch", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...csrfHeader() },
     body: JSON.stringify({
       files: files.map((f) => ({
         filename: f.name,
@@ -464,6 +533,7 @@ async function uploadFilesBatch(
 
   if (!presignRes.ok) {
     const err = await presignRes.json().catch(() => ({}));
+    if (needsDirectUpload(err)) return uploadFiles(files, opts);
     const msg = (err as Record<string, string>).message ?? "Batch presign fehlgeschlagen";
     throw new Error(msg);
   }
@@ -532,24 +602,10 @@ async function uploadFilesBatch(
             },
             signal
           );
-        } else if (presign.upload_url) {
-          await putWithProgress(
-            presign.upload_url,
-            file,
-            { "Content-Type": file.type || "application/octet-stream" },
-            "PUT",
-            (uploaded, total) => {
-              const pct = total > 0 ? Math.round((uploaded / total) * 100) : 0;
-              onProgress?.({
-                filename: file.name,
-                phase: "uploading",
-                uploadedBytes: uploaded,
-                totalBytes: total,
-                percent: pct,
-              });
-            },
-            signal
-          );
+        } else {
+          const result = await uploadFileDirect(file, opts);
+          results.push({ file, result });
+          continue;
         }
 
         onProgress?.({
@@ -566,6 +622,7 @@ async function uploadFilesBatch(
           headers: {
             "Content-Type": "application/json",
             Accept: "text/event-stream",
+            ...csrfHeader(),
           },
           body: JSON.stringify({
             upload_token: presign.upload_token,

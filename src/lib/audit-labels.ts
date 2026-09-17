@@ -200,6 +200,9 @@ export type AuditAction =
   | "verification.override_granted"
   | "verification.receipt_invalidated"
   | "signature.capture"
+  | "signature.qes_start"
+  | "signature.qes_signed"
+  | "signature.qes_failed"
   | "poa.generate_pdf"
   | "admin.settlement_retry"
   | "billing.budget_alert"
@@ -463,6 +466,9 @@ const ACTION_LABELS: Record<string, string> = {
   "verification.override_granted": "Verifikations-Policy: Anwaltlicher Override erteilt",
   "verification.receipt_invalidated": "Verifikations-Policy: Receipt invalidiert (Inhaltsänderung)",
   "signature.capture": "Signatur erfasst",
+  "signature.qes_start": "Qualifizierte Signatur gestartet",
+  "signature.qes_signed": "Dokument qualifiziert signiert",
+  "signature.qes_failed": "Qualifizierte Signatur fehlgeschlagen",
   "poa.generate_pdf": "Vollmacht-PDF generiert",
   "admin.settlement_retry": "Admin: Settlement-Retry",
   "billing.budget_alert": "Billing: Budget-Alert gesendet",

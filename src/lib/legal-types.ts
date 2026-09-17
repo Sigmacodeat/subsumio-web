@@ -113,6 +113,8 @@ export interface DocumentEntry {
   portal_visible?: boolean;
   size?: number;
   slug?: string;
+  /** Media type of the stored original, e.g. application/pdf. */
+  mime_type?: string;
   source?: string;
   kind?: string;
   doc_type?: string;
