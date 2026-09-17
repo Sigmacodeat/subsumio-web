@@ -87,7 +87,7 @@ export const VERTICALS: Record<VerticalSlug, VerticalContent> = {
       {
         icon: "Mail",
         title: "E-Mail-Import und Word-Add-in",
-        desc: "E-Mails samt Anhängen werden über IMAP eingelesen und durchsuchbar. Im Word-Add-in arbeiten Sie direkt im Dokument; Unterschriften holen Sie über DocuSign ein.",
+        desc: "E-Mails samt Anhängen importieren Sie als .eml- oder .msg-Datei; sie werden durchsuchbar. Im Word-Add-in arbeiten Sie direkt im Dokument; Unterschriften holen Sie über DocuSign ein.",
       },
       {
         icon: "ShieldAlert",

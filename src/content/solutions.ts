@@ -268,7 +268,7 @@ export const SOLUTIONS: Record<SolutionSlug, SolutionContent> = {
     faq: [
       {
         q: "Wie kommen unsere Dokumente in Subsumio?",
-        a: "Per Upload und über den E-Mail-Import (IMAP). Weitere Wege — etwa die Übernahme aus Ihrem Dokumentenmanagement — klären wir gemeinsam im Pilot.",
+        a: "Per Upload — auch E-Mails als .eml- oder .msg-Datei. Weitere Wege — etwa die Übernahme aus Ihrem Dokumentenmanagement — klären wir gemeinsam im Pilot.",
       },
       {
         q: "Können wir kontrollieren, welches Team was sieht?",

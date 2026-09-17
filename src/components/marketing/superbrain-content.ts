@@ -292,7 +292,7 @@ export const copy = {
     ],
     integrationsTitle: "Anbindungen",
     integrations: [
-      { name: "E-Mail-Import (IMAP)", desc: "Nachrichten aus Ihrem Postfach" },
+      { name: "E-Mail-Import", desc: "E-Mails als .eml- oder .msg-Datei" },
       { name: "WhatsApp Business", desc: "Mandantenkommunikation" },
       { name: "Word-Add-in", desc: "Arbeiten direkt im Dokument" },
       { name: "DocuSign", desc: "Elektronische Unterschrift" },

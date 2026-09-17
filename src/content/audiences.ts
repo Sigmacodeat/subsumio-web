@@ -62,7 +62,7 @@ export function professionalPricing(): {
           "Rollen und Zugriffe auf Aktenebene",
           "Assistent auf WhatsApp für das ganze Team",
           "Auswertungen für die Kanzleileitung, Einschulung und bevorzugter Support",
-          "E-Mail-Import (IMAP), WhatsApp Business, DocuSign",
+          "E-Mail-Import (.eml/.msg), WhatsApp Business, DocuSign",
         ],
         cta: "Kanzlei testen",
         href: "/signup?plan=team",

@@ -62,7 +62,7 @@ const _cities: Record<string, CityPageContent> = {
       },
       {
         q: "Kann ich Subsumio neben meiner Kanzleisoftware nutzen?",
-        a: "Ja. Subsumio ersetzt Ihre Kanzleisoftware nicht. Dokumente kommen per Upload oder E-Mail-Import (IMAP) in Subsumio; Ihr bestehendes System bleibt unverändert.",
+        a: "Ja. Subsumio ersetzt Ihre Kanzleisoftware nicht. Dokumente kommen per Upload in Subsumio, E-Mails als .eml- oder .msg-Datei; Ihr bestehendes System bleibt unverändert.",
       },
     ],
   },
@@ -111,7 +111,7 @@ const _cities: Record<string, CityPageContent> = {
       },
       {
         q: "Wie kommen meine bestehenden Akten in Subsumio?",
-        a: "Per Upload oder E-Mail-Import (IMAP). Ihre bestehende Kanzleisoftware bleibt unverändert — Subsumio ergänzt sie.",
+        a: "Per Upload, E-Mails als .eml- oder .msg-Datei. Ihre bestehende Kanzleisoftware bleibt unverändert — Subsumio ergänzt sie.",
       },
     ],
   },

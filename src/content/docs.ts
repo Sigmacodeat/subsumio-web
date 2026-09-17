@@ -164,7 +164,7 @@ export const DOCS: DocsContent = {
         {
           icon: "Mail",
           title: "E-Mail-Import",
-          desc: "E-Mails per IMAP in das Kanzleiwissen importieren — mit Anhängen, Metadaten und Aktenzuordnung.",
+          desc: "E-Mails als .eml- oder .msg-Datei in das Kanzleiwissen importieren — mit Anhängen, Metadaten und Aktenzuordnung.",
         },
         {
           icon: "MessageSquare",

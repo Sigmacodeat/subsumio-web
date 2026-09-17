@@ -193,7 +193,7 @@ export const FEATURES_PAGE: FeaturesContent = {
       glance: "E-Mail-Import, Word-Add-in, WhatsApp Business und DocuSign.",
       items: [
         {
-          title: "E-Mail-Import (IMAP)",
+          title: "E-Mail-Import (.eml/.msg)",
           desc: "Nachrichten und Anhänge aus Ihrem Postfach werden eingelesen und durchsuchbar.",
         },
         {
@@ -231,7 +231,7 @@ export const FEATURES_PAGE: FeaturesContent = {
     },
     {
       q: "Funktioniert es mit meinen bestehenden Programmen?",
-      a: "Subsumio übernimmt Dokumente als PDF, Word oder E-Mail-Export, liest E-Mails über IMAP ein und bindet WhatsApp Business, DocuSign und Word (Add-in) an. Ihre Kanzleisoftware bleibt, wie sie ist.",
+      a: "Subsumio übernimmt Dokumente als PDF, Word oder E-Mail-Export, importiert E-Mails als .eml- oder .msg-Datei und bindet WhatsApp Business, DocuSign und Word (Add-in) an. Ihre Kanzleisoftware bleibt, wie sie ist.",
     },
     {
       q: "Wie verlässlich sind die Antworten?",
