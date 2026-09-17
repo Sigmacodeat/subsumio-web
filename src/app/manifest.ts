@@ -18,8 +18,8 @@ export default function manifest(): MetadataRoute.Manifest {
     // landscape — locking portrait would break exactly the on-the-go work
     // the app exists for.
     orientation: "any",
-    background_color: "#06060f",
-    theme_color: "#06060f",
+    background_color: "#0c1017",
+    theme_color: "#0c1017",
     categories: ["business", "productivity"],
     icons: [
       { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
