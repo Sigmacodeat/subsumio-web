@@ -72,7 +72,14 @@ async function openChat(page: import("@playwright/test").Page) {
 
 async function sendMessage(page: import("@playwright/test").Page, message: string) {
   const chatInput = await openChat(page);
-  await chatInput.fill(message);
+  // Right after load the app still moves focus around (panel opening, route
+  // announcer). A fill in that window focuses the textarea, loses focus again
+  // and inserts nothing — no input event fires. That was the "flake under
+  // load". Filling is idempotent, so repeat it until the text is in the field.
+  await expect(async () => {
+    await chatInput.fill(message);
+    await expect(chatInput).toHaveValue(message, { timeout: 500 });
+  }).toPass({ timeout: 20_000 });
   await chatInput.press("Enter");
   // Wait for the user message to appear
   await expect(page.getByText(message.slice(0, 50))).toBeVisible({ timeout: 10_000 });

@@ -948,7 +948,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           setActiveSessionId(handoff.id);
           const msgs = await loadMessages(handoff.id);
           const sanitized = sanitizeSessionMessages(msgs);
-          setMessages(sanitized);
+          // History arrives asynchronously; never replace what was sent meanwhile.
+          setMessages((current) => (current.length > 0 ? current : sanitized));
           setSessionTokens(sanitized.reduce((sum, m) => sum + (m.tokensUsed ?? 0), 0));
           return;
         }
@@ -962,7 +963,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         setActiveSessionId(latest.id);
         const msgs = await loadMessages(latest.id);
         const sanitized = sanitizeSessionMessages(msgs);
-        setMessages(sanitized);
+        setMessages((current) => (current.length > 0 ? current : sanitized));
         setSessionTokens(sanitized.reduce((sum, m) => sum + (m.tokensUsed ?? 0), 0));
       } else if (list.length === 0) {
         const newId = generateSessionId();

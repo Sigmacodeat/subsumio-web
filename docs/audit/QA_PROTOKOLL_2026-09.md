@@ -396,3 +396,39 @@ Richtlinie: `docs/design/DESIGN_STANDARD.md`; Befunde und Wellen: `docs/design/D
   Seiten ohne Befund. Plan und Nachweise: `docs/design/DESIGN_MEGAPLAN_2026-09-17.md`.
 - **Bewusst außen vor:** technische Admin-Flächen (Ops, Verbindung, SCIM, Word-Add-in)
   behalten Fachbegriffe.
+
+## Postfach, Rollen und Fristerkennung — Praxistest über die echte Oberfläche (17.09.)
+
+Geprüft mit einem lokalen Test-Mailserver, einem frisch registrierten Kanzlei-Konto und der
+echten Engine. Testdaten und Testserver sind wieder entfernt.
+
+- **Rollenmodell (Befund, behoben):** Nur das allererste Konto einer Installation wurde
+  Administrator. Jede weitere Kanzlei konnte ihre eigenen Admin-Einstellungen nicht öffnen.
+  Jetzt verwaltet jede Registrierung ihre eigene Kanzlei; wer per Einladung beitritt, wird
+  Anwältin bzw. Anwalt, bis die Inhaberin die Rolle ändert. Einstellungen, die über eine
+  Kanzlei hinausreichen, sind dem Betreiber vorbehalten. Tests: `operator-gate.test.ts`,
+  `store.test.ts`, `org/join/route.test.ts`.
+- **Passwortformulare (Befund, behoben):** Ein Absenden vor dem vollständigen Laden der Seite
+  lief als GET und schrieb die Eingaben in die Adresszeile. Alle Passwortformulare deklarieren
+  jetzt `method="post"`.
+- **Postfach verbinden:** Formular als Admin, falsches Passwort mit verständlicher Meldung,
+  richtiges Passwort speichert und ruft sofort ab, manueller Abruf, Trennen. Bestanden.
+- **Antwort vorschlagen:** Entwurf in zwei bis vier Sekunden, Sie-Form. Eine Mail mit
+  eingeschleusten Anweisungen wurde nicht befolgt. Nachgeschärft: Entwürfe bestätigen keine
+  Fristen und kündigen keine Schriftsätze an.
+- **KI-Fristerkennung (Befund, behoben):** Das Modell bekam kein Bezugsdatum und riet das
+  Jahr („dritten Oktober dieses Jahres“ wurde 2024). Jetzt erhält es das Bezugsdatum, und ein
+  Datum mit nicht belegbarem Jahr wird verworfen. Gilt auch für die Fristerkennung aus
+  Dokumenten. Gegentest: 2026-10-03 als unbestätigter Vorschlag.
+- **Sie-Form:** Registrierungs-, Passwort-, Einladungs- und Zahlungs-Mails, der
+  Judikatur-Digest, Servermeldungen und die WhatsApp-Antworten.
+- **Gates:** Vitest 6820 Tests grün (der frühere Wackeltest im Archiv-Dialog wartet jetzt auf
+  den aktivierten Button), tsc und eslint sauber.
+- **E2E Chromium (CI-Gate) auf Port 3210:** 589 bestanden, 3 übersprungen, alle
+  Barrierefreiheits-Tests grün. Der als „Last-Flake“ geführte Adversarial-Spec ist erklärt:
+  Direkt nach dem Laden verschiebt die App noch den Fokus, ein `fill` in diesem Fenster fügt
+  nichts ein (kein Eingabe-Ereignis). Der Spec füllt jetzt, bis der Text im Feld steht;
+  Gegentest 60/60. Der nachgeladene Chat-Verlauf überschreibt keine bereits gesendeten
+  Nachrichten mehr. Der Landing-Snapshot weicht nach der Klickflächen-Korrektur um 10 px Höhe
+  ab; die Snapshots sind lokal und nicht versioniert. Ohne `CI=1` startet Playwright fünf
+  Browser-Projekte (rund 3.000 Tests); das Gate ist `--project=chromium`.

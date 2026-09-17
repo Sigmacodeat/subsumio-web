@@ -280,7 +280,7 @@ export function StrategyTab() {
       icon: Lightbulb,
       labelDe: "Strategie empfehlen",
       labelEn: "Recommend strategy",
-      queryDe: "Welche Strategie empfiehlst du für diese Akte?",
+      queryDe: "Welche Strategie ist für diese Akte zu empfehlen?",
       queryEn: "What strategy do you recommend for this case?",
     },
     {

@@ -7819,7 +7819,7 @@ export const D = {
     en: "Team created — invite members now.",
   },
   "team.description": {
-    de: "Ein gemeinsames Kanzleiwissen für euer ganzes Team — Mitglieder sehen und füttern dasselbe Wissen.",
+    de: "Ein gemeinsames Kanzleiwissen für Ihr ganzes Team. Alle Mitglieder sehen und ergänzen dasselbe Wissen.",
     en: "A shared brain for your entire team — members see and feed the same knowledge.",
   },
   "team.create_desc": {
