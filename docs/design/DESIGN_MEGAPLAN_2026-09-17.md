@@ -132,3 +132,27 @@ Offene Betreiber-Entscheidungen: Logo-Richtung; Rechtsträger/Impressum (Verein,
 UID, Telefon); eine E-Mail-Domain (subsum.eu vs. rciid.at); Auftragsverarbeiter-Liste (Meta,
 DocuSign, Upstash, Sentry fehlen); Partnerbedingungen als Dokument; deutsche Module im Produkt
 (beA, DATEV, RVG, GoBD-Panel) ausblenden oder behalten; AGB/AVV anwaltlich prüfen.
+
+## Etappe 4 — Marke und Austrifizierung des Produkts (17.09., Mittag)
+
+- Marke: Richtung B „Fundstelle“ vom Betreiber gewählt. `SubsumioMark` (Kachel, Randmarke, drei
+  Zeilen, Goldzeile zeichnet sich einmal und atmet danach langsam; Reduced Motion statisch),
+  `SubsumioWordmark` „Subsum•io“ in Fraunces 600 mit goldenem Domain-Punkt (subsum.io).
+  Eingebunden in Website-Kopf/-Fuß, Anmeldung, Dashboard-Seitenleiste, Produkt-Nachbau, Favicon
+  (svg/ico), App-Icons (192/512/maskable/apple), OG-Renderer und `public/og-image.png`.
+  Startseiten-Überschrift in der Marken-Serif. 404- und Fehlerseite deutsch.
+- Faktencheck Integrationen im Code: DocuSign, WhatsApp Business, Word-Add-in, SSO/SAML (WorkOS)
+  vorhanden; ein IMAP-Postfachabruf existiert NICHT (nur .eml/.msg-Upload) — Aussage auf allen
+  Seiten korrigiert, Faktenblatt angepasst.
+- Produkt (Dashboard): deutsche Marktreste entfernt — beA/DATEV/RVG/FAO-Einträge aus Navigation,
+  Befehlspalette, Guide, Auswahllisten; DE/CH-Rechtsquellen und -Auswahl entfernt; Compliance-
+  Checkliste auf §§ 8a ff RAO und BAO; Verfahrensdokumentation und Aufbewahrung auf §§ 131, 132
+  BAO (7 Jahre ab Jahresende); RVG-Rechner aus dem Rechnungsdialog ausgeblendet; rund 200 Texte
+  in Sie-Form und ohne Jargon; Audit-Protokoll zeigt deutsche Bezeichnungen statt roher Kennungen.
+- Nachweis: gerenderter Text aller 116 Dashboard-Seiten gegen die Regeln gescannt
+  (`qa/dash-dump.ts`), Vitest 6795/6795.
+
+Juristisch gegenzulesen (Liste der Agenten): § 1416 ABGB (Zahlungsanrechnung), § 10 RAO als
+Grundlage der Kollisionsprüfung, §§ 8a ff RAO, § 131/§ 132 BAO-Zuordnung in der
+Verfahrensdokumentation, 10-Jahres-Schwelle „löschfällig“, Platzhalter-Normen (§ 1295, § 879,
+§ 1096 ABGB), „TP 3A RATG“.

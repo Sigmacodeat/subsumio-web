@@ -72,7 +72,7 @@ const CHANNEL_ICON: Record<UnifiedMessage["channel"], React.ElementType> = {
 };
 
 const CHANNEL_LABEL: Record<UnifiedMessage["channel"], { de: string; en: string }> = {
-  bea: { de: "beA", en: "beA" },
+  bea: { de: "Elektronischer Rechtsverkehr", en: "Electronic court filing" },
   whatsapp: { de: "WhatsApp", en: "WhatsApp" },
   email: { de: "E-Mail", en: "Email" },
   portal: { de: "Portal", en: "Portal" },

@@ -22,7 +22,8 @@ export type PrivilegeLevel =
 export const PRIVILEGE_LABELS: Record<PrivilegeLevel, { label: string; description: string }> = {
   attorney_client: {
     label: "Mandantenprivileg",
-    description: "Vertrauliche Kommunikation zwischen Anwalt und Mandant (§ 203 StGB, § 43a BRAO)",
+    description:
+      "Vertrauliche Kommunikation zwischen Anwalt und Mandant (Verschwiegenheit nach § 9 Abs. 2 RAO)",
   },
   work_product: {
     label: "Arbeitsergebnis",

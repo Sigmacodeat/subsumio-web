@@ -137,10 +137,10 @@ export default function VerfahrensdokuPage() {
       anwaltName: "",
       ustId: "",
       verantwortlich: "",
-      systeme: "Subsumio, DATEV-Export, beA",
+      systeme: "Subsumio",
       belegEingang: "",
       erfassung: "",
-      ablageOrt: "Subsumio-Kanzleiwissen (steuerlich relevante Belege mit GoBD-Stempel)",
+      ablageOrt: "Subsumio-Kanzleiwissen (steuerlich relevante Belege mit Prüfsumme)",
       backup: "",
       zugriffsschutz: "",
       iks: "",
@@ -220,7 +220,7 @@ export default function VerfahrensdokuPage() {
     try {
       await api.brain.updatePage({
         slug: DOC_SLUG,
-        title: "GoBD-Verfahrensdokumentation",
+        title: "Verfahrensdokumentation",
         type: "document",
         content: markdown,
         frontmatter: {
@@ -244,13 +244,13 @@ export default function VerfahrensdokuPage() {
   function printPdf() {
     const w = window.open("", "_blank");
     if (!w) return;
-    w.document.write(exportHtmlDocument("GoBD-Verfahrensdokumentation", markdown));
+    w.document.write(exportHtmlDocument("Verfahrensdokumentation", markdown));
     w.document.close();
     w.onload = () => setTimeout(() => w.print(), 300);
   }
 
   function downloadWord() {
-    const blob = new Blob([exportHtmlDocument("GoBD-Verfahrensdokumentation", markdown)], {
+    const blob = new Blob([exportHtmlDocument("Verfahrensdokumentation", markdown)], {
       type: "application/msword",
     });
     const url = URL.createObjectURL(blob);

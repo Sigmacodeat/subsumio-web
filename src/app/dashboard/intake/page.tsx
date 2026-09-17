@@ -901,7 +901,6 @@ export default function IntakePage() {
                 <option value="manual">{t("intake.source_manual")}</option>
                 <option value="whatsapp">WhatsApp</option>
                 <option value="email">E-Mail</option>
-                <option value="bea">beA</option>
                 <option value="scan">{t("intake.source_scan")}</option>
                 <option value="portal">Portal</option>
                 <option value="web">Web</option>

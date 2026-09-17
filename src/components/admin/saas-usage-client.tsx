@@ -97,7 +97,9 @@ export function SaasUsageClient() {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-muted)]" />
-        <span className="ml-2 text-sm text-[color:var(--ds-text-muted)]">Lade Usage-Daten…</span>
+        <span className="ml-2 text-sm text-[color:var(--ds-text-muted)]">
+          Nutzungsdaten werden geladen…
+        </span>
       </div>
     );
   }

@@ -299,7 +299,7 @@ export default function DRPage() {
           </h3>
           {manifests.length === 0 ? (
             <p className="py-4 text-center text-sm text-[color:var(--ds-text-muted)]">
-              Noch keine Backups erstellt. Klicke &ldquo;Backup erstellen&rdquo; um ein
+              Noch keine Backups erstellt. Klicken Sie auf &ldquo;Backup erstellen&rdquo;, um ein
               Simulations-Backup zu erzeugen.
             </p>
           ) : (
@@ -358,7 +358,7 @@ export default function DRPage() {
           </h3>
           {drills.length === 0 ? (
             <p className="py-4 text-center text-sm text-[color:var(--ds-text-muted)]">
-              Noch keine Drills durchgeführt. Klicke &ldquo;Restore-Drill&rdquo; um einen
+              Noch keine Drills durchgeführt. Klicken Sie auf &ldquo;Restore-Drill&rdquo;, um einen
               Simulations-Drill zu starten.
             </p>
           ) : (

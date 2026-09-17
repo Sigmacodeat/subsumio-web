@@ -53,12 +53,12 @@ export function calculateForensicsFee(
   const pricing = rciidCase.pricing;
 
   if (cfg.mode === "rvg_auslage") {
-    // RVG Auslagenpauschale VV 7002 — flat expense
+    // Barauslagenpauschale — flat expense
     return {
       amount: cfg.rvgAuslagenpauschale,
       currency: cfg.currency,
       type: "flat",
-      description: "Auslagenpauschale VV 7002 (forensische Untersuchung)",
+      description: "Barauslagenpauschale (forensische Untersuchung)",
     };
   }
 

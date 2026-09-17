@@ -93,7 +93,7 @@ export function computeBudgetStatus(
 }
 
 export const FEE_MODEL_LABELS: Record<FeeModelType, { de: string; en: string }> = {
-  rvg: { de: "RVG", en: "RVG (Statutory)" },
+  rvg: { de: "Tarif (RATG/AHK)", en: "Statutory tariff (RATG/AHK)" },
   hourly: { de: "Stundensatz", en: "Hourly Rate" },
   flat: { de: "Pauschale", en: "Flat Fee" },
   capped: { de: "Deckelung", en: "Capped Budget" },

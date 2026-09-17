@@ -483,8 +483,8 @@ export default function DraftingPage() {
             </label>
             <Input
               {...register("legalBasis")}
-              placeholder="z.B. § 823 BGB"
-              aria-label="z.B. § 823 BGB"
+              placeholder="z.B. § 1295 ABGB"
+              aria-label="z.B. § 1295 ABGB"
               className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
           </div>

@@ -277,7 +277,7 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
             placeholder={
               isEn
                 ? "What do you want to plan? e.g. 'Prepare for the hearing on 2026-08-15'"
-                : "Was möchtest du planen? z.B. 'Vorbereitung der mündlichen Verhandlung am 15.08.2026'"
+                : "Was möchten Sie planen? z.B. 'Vorbereitung der mündlichen Verhandlung am 15.08.2026'"
             }
             rows={2}
             className="w-full rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-[11px] text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"

@@ -604,7 +604,7 @@ export default function TrustAccountingPage() {
             {overdueReconciliation && (
               <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3 text-sm text-[color:var(--ds-warning-text)]">
                 <AlertCircle size={16} />
-                <span>Quartalsabstimmung für dieses Konto ist überfällig (§ 51a BRAO).</span>
+                <span>Die Quartalsabstimmung für dieses Anderkonto ist überfällig.</span>
               </div>
             )}
 
@@ -671,7 +671,7 @@ export default function TrustAccountingPage() {
               </div>
             )}
 
-            {/* Quarterly Report (§ 51a BRAO) */}
+            {/* Quarterly Report */}
             {selectedAccount.frontmatter?.transactions &&
               (() => {
                 const now = new Date();
@@ -700,7 +700,7 @@ export default function TrustAccountingPage() {
                     <div className="flex items-center gap-2">
                       <FileBarChart size={14} className="text-[color:var(--brand-primary)]" />
                       <h4 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                        Quartalsbericht Q{currentQuarter} {currentYear} (§ 51a BRAO)
+                        Quartalsbericht Q{currentQuarter} {currentYear}
                       </h4>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
@@ -981,9 +981,7 @@ export default function TrustAccountingPage() {
                 </div>
                 <div className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3 text-xs text-[color:var(--ds-warning-text)]">
                   <Lock size={14} className="mt-0.5 shrink-0" />
-                  <span>
-                    Nach Bestätigung wird die Abstimmung unwiderruflich gesperrt (§ 51a BRAO).
-                  </span>
+                  <span>Nach Bestätigung wird die Abstimmung unwiderruflich gesperrt.</span>
                 </div>
               </div>
             )}

@@ -103,13 +103,11 @@ const PAGE_EXAMPLE_QUERIES: Record<string, { de: string[]; en: string[] }> = {
   "/dashboard/billing": {
     de: [
       "Welche Rechnungen sind noch offen?",
-      "Berechne das RVG-Honorar für einen Streitwert von 50.000€",
       "Zeige mir die Zeiterfassung dieser Woche",
-      "Erstelle eine Honorarrechnung für Mandant Müller",
+      "Erstelle eine Honorarnote für Mandant Müller",
     ],
     en: [
       "Which invoices are still open?",
-      "Calculate the fee for a dispute value of €50,000",
       "Show me this week's time tracking",
       "Create an invoice for client Müller",
     ],
@@ -487,7 +485,6 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           "deadline",
           "deadline_alert",
           "deadline_overdue",
-          "bea_incoming",
           "document_processed",
           "approval_needed",
           "conflict_alert",
@@ -525,14 +522,6 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                   query: string;
                 }
               > = {
-                bea_incoming: {
-                  icon: "mail",
-                  severity: "info",
-                  label: `${t("copilot.alert.bea")}: ${title}`,
-                  query: isEn
-                    ? `Summarize the new beA message "${title}" and identify required actions.`
-                    : `Fasse die neue beA-Nachricht „${title}“ zusammen und nenne erforderliche Schritte.`,
-                },
                 document_processed: {
                   icon: "document",
                   severity: "info",

@@ -463,8 +463,8 @@ function RunDialog({
         </div>
         <p className="text-sm text-[color:var(--ds-text-muted)]">
           <span className="font-medium text-[color:var(--ds-text)]">{template.name}</span> wird
-          ausgeführt. Optional kannst du eine Eingabe mitgeben, die an das Prompt-Template angehängt
-          wird.
+          ausgeführt. Optional können Sie eine Eingabe mitgeben, die an das Prompt-Template
+          angehängt wird.
         </p>
         <textarea
           ref={inputRef}
@@ -710,7 +710,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                 Keine Agent-Templates
               </p>
               <p className="mb-4 text-xs text-[color:var(--ds-text-subtle)]">
-                Erstelle deinen ersten Custom Agent
+                Erstellen Sie Ihren ersten eigenen Agenten
               </p>
               <button
                 onClick={handleNew}
@@ -843,8 +843,9 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                 Agent Builder
               </h3>
               <p className="mb-6 max-w-md text-sm text-[color:var(--ds-text-muted)]">
-                Erstelle Custom Agents mit Prompt-Templates, Model-Auswahl und Workflow-Steps.
-                Speichere wiederverwendbare Agent-Definitionen und starte sie mit einem Klick.
+                Erstellen Sie eigene Agenten mit Prompt-Vorlagen, Modellauswahl und
+                Arbeitsschritten. Speichern Sie wiederverwendbare Agenten-Definitionen und starten
+                Sie sie mit einem Klick.
               </p>
               <button
                 onClick={handleNew}
@@ -937,8 +938,8 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                   className="focus:brand-border w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 font-mono text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
                 <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
-                  Der Prompt wird an den Supervisor gesendet. Verwende Variablen wie {"{{eingabe}}"}{" "}
-                  für dynamische Werte.
+                  Der Prompt wird an den Supervisor gesendet. Verwenden Sie Variablen wie{" "}
+                  {"{{eingabe}}"} für dynamische Werte.
                 </p>
               </div>
 

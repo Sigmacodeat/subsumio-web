@@ -135,7 +135,7 @@ export function CaseInsightsPanel({ caseSlug, className }: CaseInsightsPanelProp
             aria-live="polite"
           >
             <Loader2 size={16} className="animate-spin" />
-            {lang === "en" ? "Loading insights…" : "Lade Insights…"}
+            {lang === "en" ? "Loading insights…" : "Erkenntnisse werden geladen…"}
           </div>
         )}
 

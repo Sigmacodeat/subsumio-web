@@ -111,7 +111,7 @@ export function InsightsWidget() {
           aria-live="polite"
         >
           <Loader2 size={16} className="animate-spin" />
-          Lade Insights…
+          Erkenntnisse werden geladen…
         </div>
       )}
 

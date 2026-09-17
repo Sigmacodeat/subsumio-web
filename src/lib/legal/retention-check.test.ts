@@ -2,7 +2,7 @@
 
 import { describe, test, expect } from "vitest";
 
-const RETENTION_REVIEW_YEARS = 6;
+const RETENTION_REVIEW_YEARS = 7; // § 132 BAO
 const RETENTION_DELETE_YEARS = 10;
 
 interface RetentionCandidate {
@@ -38,21 +38,22 @@ describe("retention evaluation logic", () => {
   }
 
   test("returns null for open cases", () => {
-    expect(evaluateRetention("open", yearsAgo(7), now)).toBeNull();
+    expect(evaluateRetention("open", yearsAgo(8), now)).toBeNull();
   });
 
   test("returns null for archived cases without closed_at", () => {
     expect(evaluateRetention("archived", null, now)).toBeNull();
   });
 
-  test("returns null for cases closed less than 6 years ago", () => {
+  test("returns null for cases closed less than 7 years ago", () => {
     expect(evaluateRetention("archived", yearsAgo(3), now)).toBeNull();
     expect(evaluateRetention("closed", yearsAgo(5), now)).toBeNull();
+    expect(evaluateRetention("closed", yearsAgo(6), now)).toBeNull();
   });
 
-  test("returns review for cases closed 6-10 years ago", () => {
-    expect(evaluateRetention("archived", yearsAgo(6), now)).toBe("review");
-    expect(evaluateRetention("closed", yearsAgo(7), now)).toBe("review");
+  test("returns review for cases closed 7-10 years ago", () => {
+    expect(evaluateRetention("archived", yearsAgo(7), now)).toBe("review");
+    expect(evaluateRetention("closed", yearsAgo(8), now)).toBe("review");
     expect(evaluateRetention("archived", yearsAgo(9), now)).toBe("review");
   });
 
@@ -61,8 +62,8 @@ describe("retention evaluation logic", () => {
     expect(evaluateRetention("closed", yearsAgo(15), now)).toBe("delete");
   });
 
-  test("boundary: exactly 6 years → review", () => {
-    expect(evaluateRetention("archived", yearsAgo(6), now)).toBe("review");
+  test("boundary: exactly 7 years → review", () => {
+    expect(evaluateRetention("archived", yearsAgo(7), now)).toBe("review");
   });
 
   test("boundary: exactly 10 years → delete", () => {

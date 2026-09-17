@@ -108,7 +108,7 @@ export function RciidWalletSuggestion({ caseSlug, onAcceptWallets }: RciidWallet
         <div className="flex items-center justify-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6">
           <Loader2 size={20} className="animate-spin text-[color:var(--ds-text-muted)]" />
           <span className="text-sm text-[color:var(--ds-text-muted)]">
-            Scanne Fall-Dokumente...
+            Dokumente der Akte werden durchsucht…
           </span>
         </div>
       )}

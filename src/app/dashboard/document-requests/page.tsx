@@ -334,7 +334,7 @@ export default function DocumentRequestsPage() {
           role="status"
           aria-live="polite"
         >
-          <Loader2 size={20} className="mr-2 animate-spin" /> Lade Dokumentenanfragen…
+          <Loader2 size={20} className="mr-2 animate-spin" /> Dokumentenanfragen werden geladen…
         </div>
       ) : filtered.length === 0 ? (
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-10 text-center">

@@ -156,7 +156,7 @@ function UploadPageInner() {
   const [selectedCaseSlug, setSelectedCaseSlug] = useState(searchParams.get("case") || "");
   const [casesLoading, setCasesLoading] = useState(true);
   // GoBD-Baustein: steuerlich relevante Belege beim Ingest mit Aufbewahrungs-
-  // frist + Inhalts-Hash stempeln (§ 147 AO / § 146 Abs. 4 AO). Bewusst opt-in:
+  // frist + Inhalts-Hash stempeln (§§ 131, 132 BAO). Bewusst opt-in:
   // nicht jeder Upload ist ein Buchungsbeleg.
   const [gobdReceipt, setGobdReceipt] = useState(false);
   // HITL: Pause pipeline after Layer 2 for attorney review of extracted entities.
@@ -451,7 +451,7 @@ function UploadPageInner() {
           }
         );
 
-        // GoBD-Stempel: Hash über die hochgeladenen Datei-Bytes + 10-Jahre-
+        // GoBD-Stempel: Hash über die hochgeladenen Datei-Bytes + 7-Jahre-
         // Aufbewahrungsfrist ins Frontmatter mergen. Eine spätere Verifikation
         // (Originaldatei erneut hashen) deckt jede Byte-Änderung auf.
         let gobdStamped = false;
@@ -474,7 +474,7 @@ function UploadPageInner() {
           }
         }
 
-        // Surface engine-side persistence failures (GoBD § 147 AO).
+        // Surface engine-side persistence failures (Aufbewahrung § 132 BAO).
         // The upload succeeded (markdown extracted), but the original bytes
         // may not have been stored — the user needs to know.
         const persistWarning =
@@ -833,8 +833,6 @@ function UploadPageInner() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="at">Österreich</SelectItem>
-                <SelectItem value="de">Deutschland</SelectItem>
-                <SelectItem value="ch">Schweiz</SelectItem>
                 <SelectItem value="eu">EU</SelectItem>
               </SelectContent>
             </Select>
@@ -1125,7 +1123,7 @@ function UploadPageInner() {
                       {f.persistWarning && (
                         <span className="flex items-center gap-1 text-xs text-[color:var(--ds-warning-text)]">
                           <AlertCircle size={11} />
-                          GoBD-Warnung: Original nicht gespeichert ({f.persistWarning})
+                          Aufbewahrungs-Warnung: Original nicht gespeichert ({f.persistWarning})
                         </span>
                       )}
                       {f.extractionWarning && (

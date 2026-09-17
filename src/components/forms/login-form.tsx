@@ -150,7 +150,7 @@ export function LoginForm() {
           {login.data.error === "invalid_credentials"
             ? "E-Mail oder Passwort falsch."
             : login.data.error === "sso_required"
-              ? `Bitte melde dich über ${login.data.provider ?? "SSO"} an.`
+              ? `Bitte melden Sie sich über ${login.data.provider ?? "SSO"} an.`
               : "Anmeldung fehlgeschlagen."}
         </p>
       )}

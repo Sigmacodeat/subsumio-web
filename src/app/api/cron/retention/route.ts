@@ -22,8 +22,8 @@ export const maxDuration = 300;
  *
  * Pro Brain (Kanzlei): sammelt geschlossene Akten (legal_case mit closed_at),
  * berechnet Jahre seit Abschluss und benachrichtigt bei:
- *   - ≥ 6 Jahren: "Prüfung empfohlen" (§ 147 AO Frist abgelaufen)
- *   - ≥ 10 Jahren: "Löschfällig" (§ 50 BRAO Frist abgelaufen)
+ *   - ≥ 7 Jahren: "Prüfung empfohlen" (Aufbewahrungsfrist §§ 131, 132 BAO abgelaufen)
+ *   - ≥ 10 Jahren: "Löschfällig" (3 Jahre Karenz nach Fristablauf)
  *
  * Dedupe: maximal eine Mail pro Brain pro Kalendertag.
  */
@@ -37,7 +37,7 @@ interface RetentionItem {
   action: "review" | "delete";
 }
 
-const REVIEW_YEARS = 6;
+const REVIEW_YEARS = 7; // § 132 BAO
 const DELETE_YEARS = 10;
 
 async function fetchClosedCases(brainId: string): Promise<EnginePage[]> {
@@ -149,7 +149,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
     const parts: string[] = [];
     if (toDelete.length > 0) {
-      parts.push("🔴 LÖSCHFÄLLIG (≥ 10 Jahre nach Abschluss, § 50 BRAO):");
+      parts.push("🔴 LÖSCHFÄLLIG (≥ 10 Jahre nach Abschluss):");
       for (const i of toDelete) {
         parts.push(
           `  • ${i.caseNumber} — ${i.title} (geschlossen ${i.closedAt}, ${i.yearsSinceClosure} J.)`
@@ -158,7 +158,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       parts.push("");
     }
     if (toReview.length > 0) {
-      parts.push("🟡 PRÜFUNG EMPFOHLEN (≥ 6 Jahre nach Abschluss, § 147 AO):");
+      parts.push("🟡 PRÜFUNG EMPFOHLEN (≥ 7 Jahre nach Abschluss, §§ 131, 132 BAO):");
       for (const i of toReview) {
         parts.push(
           `  • ${i.caseNumber} — ${i.title} (geschlossen ${i.closedAt}, ${i.yearsSinceClosure} J.)`
@@ -168,7 +168,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     }
     parts.push(`Löschfristen-Übersicht: ${appUrl}/dashboard/compliance/retention`);
     parts.push("");
-    parts.push("Vor Löschung stets eine Datenträgerkopie anfertigen (§ 50 BRAO Abs. 2).");
+    parts.push("Fertigen Sie vor der Löschung stets eine Sicherungskopie an.");
 
     const subject = `📦 Aufbewahrungsfristen: ${toDelete.length} löschfällig, ${toReview.length} zu prüfen`;
     const text = parts.join("\n");

@@ -61,7 +61,7 @@ export const BILLING_PLANS_DISPLAY: BillingPlanDisplay[] = [
       "100 KI-Anfragen/Mon. inklusive",
       "5 GB lokaler Speicher",
       "Akten-Q&A mit seitengenauen Zitaten",
-      "Fristenverwaltung (ZPO/BGB/ABGB)",
+      "Fristenverwaltung (ZPO/ABGB)",
       "Community-Support",
     ],
   },

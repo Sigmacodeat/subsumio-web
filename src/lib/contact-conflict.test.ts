@@ -178,7 +178,7 @@ describe("checkContactConflict — exact name match", () => {
       EXISTING_CONTACTS
     );
     expect(result.severity).toBe("critical");
-    expect(result.warning).toContain("§ 43a BRAO");
+    expect(result.warning).toContain("§ 10 RAO");
   });
 
   test("exact name match opponent vs existing client → critical", () => {

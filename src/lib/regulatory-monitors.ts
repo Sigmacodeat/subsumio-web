@@ -275,7 +275,7 @@ export const JURISDICTION_LABELS: Record<Jurisdiction, string> = {
   at: "Österreich",
   de: "Deutschland",
   ch: "Schweiz",
-  all: "DE + AT + CH",
+  all: "Alle",
   eu: "EU",
 };
 

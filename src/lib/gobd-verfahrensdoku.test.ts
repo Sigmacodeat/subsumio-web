@@ -6,9 +6,9 @@ import { buildVerfahrensdoku, type VerfahrensdokuInput } from "./gobd-verfahrens
 const sampleInput: VerfahrensdokuInput = {
   kanzleiName: "Kanzlei Schmidt",
   anwaltName: "Dr. Schmidt",
-  ustId: "DE123456789",
+  ustId: "ATU12345678",
   verantwortlich: "Dr. Schmidt",
-  systeme: "Subsumio, DATEV",
+  systeme: "Subsumio, Buchhaltungssoftware",
   belegEingang: "Post und E-Mail",
   erfassung: "Täglich verbucht",
   ablageOrt: "Subsumio Brain",
@@ -35,15 +35,16 @@ describe("buildVerfahrensdoku", () => {
     expect(doc).toContain("Kanzlei Schmidt");
   });
 
-  test("contains USt-IdNr", () => {
+  test("contains UID-Nummer", () => {
     const doc = buildVerfahrensdoku(sampleInput);
-    expect(doc).toContain("DE123456789");
+    expect(doc).toContain("UID-Nummer");
+    expect(doc).toContain("ATU12345678");
   });
 
-  test("contains 10-year retention reference", () => {
+  test("contains 7-year retention reference (§ 132 BAO)", () => {
     const doc = buildVerfahrensdoku(sampleInput);
-    expect(doc).toContain("10 Jahre");
-    expect(doc).toContain("§ 147 Abs. 3 AO");
+    expect(doc).toContain("7 Jahre");
+    expect(doc).toContain("§ 132 BAO");
   });
 
   test("contains SHA-256 reference", () => {
@@ -79,34 +80,36 @@ describe("buildVerfahrensdoku", () => {
 });
 
 describe("buildVerfahrensdoku — Rechtliche Referenzen", () => {
-  test("enthält § 146 Abs. 4 AO (Manipulations-Evidenz)", () => {
+  test("enthält § 131 BAO (Unveränderbarkeit der Aufzeichnungen)", () => {
     const doc = buildVerfahrensdoku(sampleInput);
-    expect(doc).toContain("§ 146 Abs. 4 AO");
+    expect(doc).toContain("§ 131 BAO");
   });
 
-  test("enthält GoBD Rz. 107 (Unveränderbarkeit)", () => {
+  test("beschreibt die Unveränderbarkeit über eine Prüfsumme", () => {
     const doc = buildVerfahrensdoku(sampleInput);
-    expect(doc).toContain("GoBD Rz. 107");
+    expect(doc).toContain("Unveränderbarkeit");
+    expect(doc).toContain("Prüfsumme");
   });
 
-  test("enthält GoBD Rz. 151 (Verfahrensdokumentation)", () => {
+  test("Titel ohne GoBD-Zusatz (Österreich)", () => {
     const doc = buildVerfahrensdoku(sampleInput);
-    expect(doc).toContain("GoBD Rz. 151");
+    expect(doc).toContain("# Verfahrensdokumentation zur ordnungsmäßigen Beleg- und Buchführung\n");
   });
 
-  test("enthält GoBD Rz. 126 (maschinelle Auswertbarkeit)", () => {
+  test("enthält keine deutschen Rechtsgrundlagen (GoBD, AO, DATEV)", () => {
     const doc = buildVerfahrensdoku(sampleInput);
-    expect(doc).toContain("GoBD Rz. 126");
+    expect(doc).not.toMatch(/GoBD|§ 14[67]\b|\bAO\b|DATEV/);
   });
 
-  test("enthält GoBD Rz. 100 (IKS)", () => {
+  test("IKS-Abschnitt verweist auf § 131 BAO", () => {
     const doc = buildVerfahrensdoku(sampleInput);
-    expect(doc).toContain("GoBD Rz. 100");
+    const iks = doc.split("### 4.3 Internes Kontrollsystem (IKS)")[1].split("## 5.")[0];
+    expect(iks).toContain("§ 131 BAO");
   });
 
-  test("enthält Referenz auf DATEV-kompatiblen Export", () => {
+  test("enthält Referenz auf den Export der Buchungsdaten", () => {
     const doc = buildVerfahrensdoku(sampleInput);
-    expect(doc).toContain("DATEV");
+    expect(doc).toContain("Export der Buchungsdaten");
   });
 
   test("enthält 'maschinell auswertbar' Begriff", () => {
@@ -159,7 +162,7 @@ describe("buildVerfahrensdoku — Edge Cases", () => {
       ...sampleInput,
       kanzleiName: "Kanzlei Müller — Köln €",
       belegEingang: "E-Mail: post@müller-köln.de — Upload über Portal",
-      erfassung: "Täglich — Verbuchung mit DATEV",
+      erfassung: "Täglich — Verbuchung in der Buchhaltungssoftware",
     });
     expect(doc).toContain("Müller — Köln €");
     expect(doc).toContain("post@müller-köln.de");
@@ -180,8 +183,8 @@ describe("buildVerfahrensdoku — Edge Cases", () => {
     const doc = buildVerfahrensdoku(sampleInput);
     expect(doc).toContain("Kanzlei Schmidt");
     expect(doc).toContain("Dr. Schmidt");
-    expect(doc).toContain("DE123456789");
-    expect(doc).toContain("Subsumio, DATEV");
+    expect(doc).toContain("ATU12345678");
+    expect(doc).toContain("Subsumio, Buchhaltungssoftware");
     expect(doc).toContain("Post und E-Mail");
     expect(doc).toContain("Täglich verbucht");
     expect(doc).toContain("Subsumio Brain");
@@ -221,11 +224,11 @@ describe("buildVerfahrensdoku — Edge Cases", () => {
     expect(doc).toContain("|---|---|---|---|");
   });
 
-  test("Sektion 5 (Aufbewahrung) erwähnt 10 Jahre und § 147", () => {
+  test("Sektion 5 (Aufbewahrung) erwähnt 7 Jahre und § 132 BAO", () => {
     const doc = buildVerfahrensdoku(sampleInput);
     const section5 = doc.split("## 5. Aufbewahrung und Auswertbarkeit")[1].split("## 6.")[0];
-    expect(section5).toContain("10 Jahre");
-    expect(section5).toContain("§ 147 Abs. 3 AO");
+    expect(section5).toContain("7 Jahre");
+    expect(section5).toContain("§ 132 BAO");
   });
 
   test("Footer enthält Subsumio-Referenz und Haftungsausschluss", () => {

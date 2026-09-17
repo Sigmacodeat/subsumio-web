@@ -41,7 +41,7 @@ const I18N: Record<string, { de: string; en: string }> = {
   },
   chat_analytics: { de: "Chat-Analytics", en: "Chat Analytics" },
   chat_analytics_desc: {
-    de: "Copilot-Nutzung, Modellvergleich, Token-Verbrauch",
+    de: "Assistenten-Nutzung, Modellvergleich, Verbrauch",
     en: "Copilot usage, model comparison, token consumption",
   },
 };

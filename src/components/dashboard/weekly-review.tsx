@@ -5,7 +5,7 @@ import { ClipboardCheck, X } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 import { Button } from "@/components/ui/button";
 
-const ITEMS = ["deadlines", "followups", "billing", "invoices", "inbox", "bea"] as const;
+const ITEMS = ["deadlines", "followups", "billing", "invoices", "inbox"] as const;
 
 function weekKey() {
   const date = new Date();

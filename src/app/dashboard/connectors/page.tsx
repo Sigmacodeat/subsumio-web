@@ -36,7 +36,6 @@ const CONNECTOR_ICONS: Record<string, React.ElementType> = {
   asana: FileText,
   jira: FileText,
   "legal-judgements": Landmark,
-  "bea-import": FileText,
   "advokat-import": Folder,
 };
 
@@ -51,9 +50,35 @@ const CONNECTOR_LABELS: Record<string, string> = {
   asana: "Asana",
   jira: "Jira",
   "legal-judgements": "Rechtsprechung",
-  "bea-import": "beA Import",
   "advokat-import": "ADVOKAT Import",
 };
+
+// Nur Österreich: Konnektoren für den deutschen/schweizerischen Markt werden
+// nicht angezeigt (die Server-Logik bleibt unberührt).
+const HIDDEN_SERVICES = new Set(["bea-import"]);
+const HIDDEN_COVERAGE_IDS = new Set([
+  "bea-import",
+  "datev-import",
+  "legal-judgements-de",
+  "legal-judgements-ch",
+]);
+const HIDDEN_GAP_CATEGORIES = new Set(["bea", "datev"]);
+
+const PERMISSION_MESSAGE =
+  "Für diese Seite fehlt Ihnen die Berechtigung. Bitte wenden Sie sich an Ihre Kanzlei-Administration.";
+
+function isPermissionError(e: unknown): boolean {
+  const status = (e as { status?: unknown } | null)?.status;
+  if (status === 403) return true;
+  const message = e instanceof Error ? e.message : typeof e === "string" ? e : "";
+  return /not permitted|forbidden|permission|nicht berechtigt|keine berechtigung/i.test(message);
+}
+
+/** Server-Fehlertexte nie roh anzeigen, wenn es nur an der Berechtigung liegt. */
+function errorText(e: unknown, fallback: string): string {
+  if (isPermissionError(e)) return PERMISSION_MESSAGE;
+  return e instanceof Error ? e.message : fallback;
+}
 
 export default function ConnectorsPage() {
   const { addToast } = useToast();
@@ -67,18 +92,16 @@ export default function ConnectorsPage() {
   const [showCoverage, setShowCoverage] = useState(false);
   const [advokatPath, setAdvokatPath] = useState("/imports/advokat");
   const [configuringAdvokat, setConfiguringAdvokat] = useState(false);
-  const [beaPath, setBeaPath] = useState("~/Downloads/bea");
-  const [configuringBea, setConfiguringBea] = useState(false);
 
   async function loadConnectors() {
     setLoading(true);
     setError(null);
     try {
       const res = await api.connectors.list();
-      setConnectors(res.connectors);
+      setConnectors(res.connectors.filter((c) => !HIDDEN_SERVICES.has(c.service)));
     } catch (e) {
       setConnectors([]);
-      setError(e instanceof Error ? e.message : "Connector-Status konnte nicht geladen werden.");
+      setError(errorText(e, "Connector-Status konnte nicht geladen werden."));
     } finally {
       setLoading(false);
     }
@@ -101,7 +124,7 @@ export default function ConnectorsPage() {
       });
       await loadConnectors();
     } catch (e) {
-      setError(e instanceof Error ? e.message : `Sync für ${service} fehlgeschlagen.`);
+      setError(errorText(e, `Sync für ${service} fehlgeschlagen.`));
       addToast({ type: "error", description: `Sync für ${service} fehlgeschlagen` });
     } finally {
       setSyncing(null);
@@ -123,9 +146,7 @@ export default function ConnectorsPage() {
         description: `${CONNECTOR_LABELS[service] ?? service} ${res.enabled ? "aktiviert" : "deaktiviert"}`,
       });
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : `Status für ${service} konnte nicht geändert werden.`
-      );
+      setError(errorText(e, `Status für ${service} konnte nicht geändert werden.`));
       addToast({
         type: "error",
         description: `Status für ${service} konnte nicht geändert werden`,
@@ -147,27 +168,9 @@ export default function ConnectorsPage() {
       setMessage("ADVOKAT-Bridge eingerichtet. Der Ordner wird jede Minute synchronisiert.");
       await loadConnectors();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "ADVOKAT-Bridge konnte nicht eingerichtet werden.");
+      setError(errorText(e, "ADVOKAT-Bridge konnte nicht eingerichtet werden."));
     } finally {
       setConfiguringAdvokat(false);
-    }
-  }
-
-  async function configureBea() {
-    setConfiguringBea(true);
-    setMessage(null);
-    setError(null);
-    try {
-      await api.connectors.configureFolder("bea-import", {
-        watch_dir: beaPath,
-        poll_interval_ms: 60_000,
-      });
-      setMessage("beA-Import eingerichtet — Posteingang wird überwacht.");
-      await loadConnectors();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "beA-Import konnte nicht eingerichtet werden.");
-    } finally {
-      setConfiguringBea(false);
     }
   }
 
@@ -235,7 +238,7 @@ export default function ConnectorsPage() {
           {connectors.map((c) => {
             const Icon = CONNECTOR_ICONS[c.service] || Plug;
             const label = CONNECTOR_LABELS[c.service] || c.service;
-            const isLegal = c.service === "legal-judgements" || c.service === "bea-import";
+            const isLegal = c.service === "legal-judgements";
 
             return (
               <div
@@ -374,28 +377,6 @@ export default function ConnectorsPage() {
         </div>
       </div>
 
-      <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-        <div>
-          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">beA Import</h2>
-          <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-            beA-Posteingangsordner überwachen — neue Nachrichten werden automatisch als
-            Akten-Ereignis importiert.
-          </p>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Input
-            value={beaPath}
-            onChange={(event) => setBeaPath(event.target.value)}
-            placeholder="~/Downloads/bea"
-            aria-label="beA Importordner"
-          />
-          <Button type="button" onClick={configureBea} disabled={!beaPath.trim() || configuringBea}>
-            {configuringBea ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Verbinden
-          </Button>
-        </div>
-      </div>
-
       {/* CLI reference */}
       <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">CLI-Kommandos</h2>
@@ -410,12 +391,6 @@ export default function ConnectorsPage() {
             <span className="brand-text">$</span>
             <span className="text-[color:var(--ds-text-muted)]">
               subsumio connector add advokat-import --watch-dir /imports/advokat
-            </span>
-          </div>
-          <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2">
-            <span className="brand-text">$</span>
-            <span className="text-[color:var(--ds-text-muted)]">
-              subsumio connector add bea-import --watch-dir ~/Downloads/bea
             </span>
           </div>
           <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2">
@@ -455,7 +430,16 @@ export default function ConnectorsPage() {
 
 function CoverageMatrix() {
   const { t } = useLang();
-  const matrix = getCoverageMatrix();
+  const fullMatrix = getCoverageMatrix();
+  const visibleConnectors = fullMatrix.connectors.filter((c) => !HIDDEN_COVERAGE_IDS.has(c.id));
+  const matrix = {
+    connectors: visibleConnectors,
+    total: visibleConnectors.length,
+    available_count: visibleConnectors.filter((c) => c.status === "available").length,
+    beta_count: visibleConnectors.filter((c) => c.status === "beta").length,
+    planned_count: visibleConnectors.filter((c) => c.status === "planned").length,
+    coverage_gaps: fullMatrix.coverage_gaps.filter((g) => !HIDDEN_GAP_CATEGORIES.has(g.category)),
+  };
 
   const statusColors: Record<string, string> = {
     available: "text-[color:var(--ds-success-text)]",
@@ -548,7 +532,7 @@ function CoverageMatrix() {
               <th className="px-3 py-2 font-medium">Status</th>
               <th className="px-3 py-2 font-medium">Sync</th>
               <th className="px-3 py-2 font-medium">Auth</th>
-              <th className="px-3 py-2 font-medium">GoBD</th>
+              <th className="px-3 py-2 font-medium">Aufbewahrung</th>
               <th className="px-3 py-2 font-medium">DSGVO</th>
               <th className="px-3 py-2 font-medium">
                 {t("connectors.col_matter" as DashboardKey)}

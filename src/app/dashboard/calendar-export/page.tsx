@@ -333,7 +333,9 @@ export default function CalendarExportPage() {
 
       {/* Events */}
       {loading ? (
-        <div className="py-20 text-center text-[color:var(--ds-text-muted)]">Lade Termine…</div>
+        <div className="py-20 text-center text-[color:var(--ds-text-muted)]">
+          Termine werden geladen…
+        </div>
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={CalendarClock}

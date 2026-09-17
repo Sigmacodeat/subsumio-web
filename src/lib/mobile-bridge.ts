@@ -168,7 +168,7 @@ export async function onPushNotification(
 export async function capturePhoto(): Promise<{ base64?: string; error?: string }> {
   try {
     const mod = (await importCamera()) as typeof import("@capacitor/camera") | null;
-    if (!mod) return { error: "Kamera nicht verfügbar. Nutze Datei-Upload." };
+    if (!mod) return { error: "Kamera nicht verfügbar. Bitte nutzen Sie den Datei-Upload." };
     const { Camera } = mod;
     const photo = await Camera.getPhoto({
       quality: 90,
@@ -179,7 +179,7 @@ export async function capturePhoto(): Promise<{ base64?: string; error?: string 
     return { base64: photo.base64String || undefined };
   } catch {
     // Fallback: file input
-    return { error: "Kamera nicht verfügbar. Nutze Datei-Upload." };
+    return { error: "Kamera nicht verfügbar. Bitte nutzen Sie den Datei-Upload." };
   }
 }
 
@@ -194,8 +194,8 @@ export async function biometricAuth(): Promise<{ success: boolean; error?: strin
     await NativeBiometric.verifyIdentity({
       reason: "Subsumio entsperren",
       title: "Biometrische Authentifizierung",
-      subtitle: "Verifiziere deine Identität",
-      description: "Nutze Face ID / Touch ID / Fingerabdruck",
+      subtitle: "Bestätigen Sie Ihre Identität",
+      description: "Face ID, Touch ID oder Fingerabdruck verwenden",
     });
     return { success: true };
   } catch {

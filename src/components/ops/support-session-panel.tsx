@@ -140,8 +140,8 @@ export function SupportSessionPanel({ orgId, orgName }: { orgId: string; orgName
         <div className="space-y-3">
           {active && (
             <p className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]">
-              Du hast bereits eine aktive Sitzung für <strong>{active.orgName}</strong>. Diese wird
-              beendet, wenn du hier eine neue startest.
+              Sie haben bereits eine aktive Sitzung für <strong>{active.orgName}</strong>. Diese
+              wird beendet, wenn Sie hier eine neue starten.
             </p>
           )}
           <Textarea

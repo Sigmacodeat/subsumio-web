@@ -27,40 +27,31 @@ const LAW_PAGES_LIMIT = 300;
 interface NormItem {
   slug: string;
   title: string;
-  code: string; // BGB, BRAO, ABGB, etc.
+  code: string; // ABGB, ZPO, UGB, etc.
   section: string; // § number
   content: string;
   jurisdiction: string;
 }
 
 const CODE_LABELS: Record<string, string> = {
-  bgb: "Bürgerliches Gesetzbuch (BGB)",
-  brao: "Bundesrechtsanwaltsordnung (BRAO)",
   zpo: "Zivilprozessordnung (ZPO)",
-  "zpo-de": "Zivilprozessordnung (ZPO)",
   stgb: "Strafgesetzbuch (StGB)",
-  "stgb-de": "Strafgesetzbuch (StGB)",
-  "stgb-at": "Strafgesetzbuch (AT)",
-  "stgb-ch": "Strafgesetzbuch (CH)",
+  "stgb-at": "Strafgesetzbuch (StGB)",
   stpo: "Strafprozessordnung (StPO)",
-  "stpo-de": "Strafprozessordnung (StPO)",
-  "stpo-at": "Strafprozessordnung (AT)",
+  "stpo-at": "Strafprozessordnung (StPO)",
   abgb: "Allgemeines bürgerliches Gesetzbuch (ABGB)",
-  ao: "Abgabenordnung (AO)",
   estg: "Einkommensteuergesetz (EStG)",
   ugb: "Unternehmensgesetzbuch (UGB)",
   eo: "Exekutionsordnung (EO)",
-  ahg: "Arbeits- und Sozialversicherungsgesetz (ASVG/AHG)",
+  ahg: "Amtshaftungsgesetz (AHG)",
+  asvg: "Allgemeines Sozialversicherungsgesetz (ASVG)",
+  rao: "Rechtsanwaltsordnung (RAO)",
+  kschg: "Konsumentenschutzgesetz (KSchG)",
+  io: "Insolvenzordnung (IO)",
   bao: "Bundesabgabenordnung (BAO)",
-  famfg: "Gesetz über das Verfahren in Familiensachen (FamFG)",
-  gg: "Grundgesetz (GG)",
   gmbhg: "GmbH-Gesetz (GmbHG)",
-  hgb: "Handelsgesetzbuch (HGB)",
-  inso: "Insolvenzordnung (InsO)",
   ustg: "Umsatzsteuergesetz (UStG)",
   uwg: "Gesetz gegen unlauteren Wettbewerb (UWG)",
-  or: "Obligationenrecht (OR)",
-  zgb: "Zivilgesetzbuch (ZGB)",
 };
 
 // useSearchParams() braucht eine Suspense-Grenze, sonst scheitert das
@@ -286,9 +277,7 @@ function NormsPageInner() {
                   >
                     {selectedNorm.jurisdiction === "at"
                       ? t("norms.jurisdiction_at")
-                      : selectedNorm.jurisdiction === "ch"
-                        ? t("norms.jurisdiction_ch")
-                        : t("norms.jurisdiction_de")}
+                      : selectedNorm.jurisdiction.toUpperCase()}
                   </Badge>
                 </div>
               </div>

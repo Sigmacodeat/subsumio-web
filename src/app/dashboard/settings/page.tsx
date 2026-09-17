@@ -866,7 +866,7 @@ function SettingsPageInner() {
                     <Input
                       id="settings-ust-id"
                       {...kanzleiForm.register("ustId")}
-                      placeholder="DEXXXXXXXXX"
+                      placeholder="ATU12345678"
                     />
                   </Field>
 
@@ -913,7 +913,6 @@ function SettingsPageInner() {
                       {(
                         [
                           { key: "custom", label: t("settings.tarif_custom") },
-                          { key: "rvg", label: t("settings.tarif_rvg") },
                           { key: "ratg", label: t("settings.tarif_ratg") },
                         ] as const
                       ).map((opt) => (

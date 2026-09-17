@@ -318,7 +318,7 @@ function BillingInner() {
           <CheckCircle2 size={16} className="text-[color:var(--ds-success-text)]" />
           <p className="text-sm text-[color:var(--ds-success-text)]">
             {t("billing.credit_success") ||
-              "Credits erfolgreich gekauft — dein Saldo wurde aktualisiert."}
+              "Credits erfolgreich gekauft — Ihr Guthaben wurde aktualisiert."}
           </p>
         </div>
       )}

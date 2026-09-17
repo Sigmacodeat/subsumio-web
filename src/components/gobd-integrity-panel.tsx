@@ -34,7 +34,7 @@ function invoiceFieldsFromFrontmatter(fm: Record<string, unknown>): InvoiceHashF
 }
 
 /**
- * Verifikations-Panel für GoBD-gestempelte Belege. Zeigt Aufbewahrungsfrist +
+ * Verifikations-Panel für gestempelte Belege (Aufbewahrung §§ 131, 132 BAO). Zeigt Aufbewahrungsfrist +
  * gespeicherten Inhalts-Hash und erlaubt die Soll/Ist-Prüfung:
  *   - Rechnungen: Hash aus den Frontmatter-Feldern neu rechnen (kein Datei-Upload nötig).
  *   - Hochgeladene Belege (Datei-Hash): Originaldatei wählen → Bytes neu hashen.
@@ -77,7 +77,7 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
       <div className="flex items-center gap-2">
         <Archive size={15} className="brand-text" />
         <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-          GoBD-Beleg — Integrität
+          Beleg — Integrität und Aufbewahrung
         </h3>
       </div>
 

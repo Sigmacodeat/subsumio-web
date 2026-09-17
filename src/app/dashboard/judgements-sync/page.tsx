@@ -31,16 +31,6 @@ const SOURCES: Source[] = [
     status: "idle",
     count: 0,
   },
-  {
-    id: "openlegaldata",
-    jurisdiction: "de",
-    name: "OpenLegalData (Deutschland)",
-    url: "https://de.openlegaldata.io/api",
-    description: "BGH, BVerfG, BVerwG, BFH und Instanzgerichte — deutsche Rechtsprechung",
-    courts: ["BGH", "BVerfG", "BVerwG", "BFH", "LG", "OLG"],
-    status: "idle",
-    count: 0,
-  },
 ];
 
 export default function JudgementsSyncPage() {
@@ -156,7 +146,6 @@ export default function JudgementsSyncPage() {
         <div className="space-y-2">
           {[
             "subsumio connector add legal-judgements --jurisdiction at --query 'Haftung'",
-            "subsumio connector add legal-judgements --jurisdiction de --query 'Haftung'",
             "subsumio connector sync legal-judgements",
             "subsumio search 'Haftung' --type court_decision",
           ].map((cmd) => (

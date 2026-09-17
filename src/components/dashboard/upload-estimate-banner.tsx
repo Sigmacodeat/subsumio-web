@@ -63,7 +63,7 @@ export function UploadEstimateBanner({
         aria-live="polite"
       >
         <Coins size={12} className="brand-text" aria-hidden />
-        <span>Schätze Token-Verbrauch…</span>
+        <span>Verbrauch wird geschätzt…</span>
       </div>
     );
   }

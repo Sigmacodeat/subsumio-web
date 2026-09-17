@@ -209,7 +209,7 @@ export const DEFAULT_STEPS_BY_PHASE: Record<LitigationPhase, DefaultStep[]> = {
       title: "Klageprüfung",
       description: "Schlüssigkeit, Zuständigkeit, Streitwert",
     },
-    { type: "task", title: "Kollisionsprüfung", description: "BRAO § 43a, BORA § 31" },
+    { type: "task", title: "Kollisionsprüfung", description: "§ 10 RAO" },
   ],
   filing: [
     { type: "filing", title: "Klageschrift", description: "Klage einreichen beim Gericht" },

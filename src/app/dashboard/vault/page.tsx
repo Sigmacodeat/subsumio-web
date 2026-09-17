@@ -114,7 +114,6 @@ function useTypeLabels(t: ReturnType<typeof useLang>["t"]): Record<string, strin
     legal_case: t("vault.type_legal_case"),
     legal_contract: t("vault.type_legal_contract"),
     legal_document: t("vault.type_legal_document"),
-    bea_message: t("vault.type_bea_message"),
     court_decision: t("vault.type_court_decision"),
     invoice: t("vault.type_invoice"),
     contact: t("vault.type_contact"),
@@ -128,8 +127,6 @@ const TYPE_COLORS: Record<string, string> = {
     "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
   legal_document:
     "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
-  bea_message:
-    "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
   court_decision:
     "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
   invoice:

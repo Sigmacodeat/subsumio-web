@@ -86,7 +86,6 @@ const CMD_LABEL_KEYS: Record<string, DashboardKey> = {
   // Schriftsätze & Abrechnung
   drafting: "nav.drafting",
   invoicing: "nav.invoicing",
-  "datev-export": "nav.datev_export",
   signature: "nav.signature",
   // Daten & Integration
   connectors: "nav.connectors",
@@ -94,7 +93,6 @@ const CMD_LABEL_KEYS: Record<string, DashboardKey> = {
   intake: "nav.intake",
   "document-requests": "nav.document_requests",
   "import-kanzlei": "nav.import_kanzlei",
-  bea: "nav.bea",
   "email-import": "nav.email_import",
   "calendar-export": "nav.calendar_export",
   compliance: "nav.compliance",
@@ -118,7 +116,6 @@ const CMD_LABEL_KEYS: Record<string, DashboardKey> = {
   "shared-spaces": "nav.shared_spaces",
   "outbound-register": "nav.outbound_register",
   "power-of-attorney": "nav.power_of_attorney",
-  "fao-tracking": "nav.fao_tracking",
   dictation: "nav.dictation",
   kyc: "nav.kyc",
   absences: "nav.absences",

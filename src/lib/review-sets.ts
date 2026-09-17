@@ -82,7 +82,7 @@ export interface ReviewSet {
 }
 
 export const REDACTION_CODE_LABELS_DE: Record<RedactionCode, string> = {
-  PRIV_ATTORNEY_CLIENT: "Mandatsgeheimnis (§ 203 StGB)",
+  PRIV_ATTORNEY_CLIENT: "Verschwiegenheit (§ 9 Abs. 2 RAO)",
   PRIV_WORK_PRODUCT: "Arbeitsprodukt des Anwalts",
   PRIV_SETTLEMENT: "Vergleichsgeheimnis",
   PERSONAL_DATA: "Personenbezogene Daten (DSGVO)",

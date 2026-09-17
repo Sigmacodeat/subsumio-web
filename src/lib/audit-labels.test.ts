@@ -1,13 +1,19 @@
 import { describe, test, expect } from "vitest";
-import { auditLabel, type AuditAction } from "./audit-labels";
+import {
+  auditLabel,
+  hasAuditLabel,
+  humaniseAuditAction,
+  OTHER_AUDIT_ACTION_LABEL,
+  type AuditAction,
+} from "./audit-labels";
 
 describe("auditLabel", () => {
   test("returns German label for user.login", () => {
-    expect(auditLabel("user.login")).toBe("Login");
+    expect(auditLabel("user.login")).toBe("Anmeldung");
   });
 
   test("returns German label for user.logout", () => {
-    expect(auditLabel("user.logout")).toBe("Logout");
+    expect(auditLabel("user.logout")).toBe("Abmeldung");
   });
 
   test("returns German label for user.signup", () => {
@@ -39,7 +45,7 @@ describe("auditLabel", () => {
   });
 
   test("returns German label for query.submit", () => {
-    expect(auditLabel("query.submit")).toBe("KI-Query");
+    expect(auditLabel("query.submit")).toBe("KI-Anfrage");
   });
 
   test("returns German label for conflict.check", () => {
@@ -66,8 +72,35 @@ describe("auditLabel", () => {
     expect(auditLabel("data.delete")).toBe("Datenlöschung (DSGVO)");
   });
 
-  test("returns the raw action string for unknown actions", () => {
-    expect(auditLabel("unknown.action")).toBe("unknown.action");
+  test("never shows the raw action id for unknown actions", () => {
+    expect(auditLabel("unknown.action")).toBe(OTHER_AUDIT_ACTION_LABEL);
+    expect(auditLabel("unknown.action")).toBe("Sonstige Aktion");
+    expect(hasAuditLabel("unknown.action")).toBe(false);
+  });
+
+  test("derives a German label from the noun/verb dictionary", () => {
+    expect(humaniseAuditAction("task.created")).toBe("Aufgabe: erstellt");
+    expect(auditLabel("task.created")).toBe("Aufgabe: erstellt");
+    expect(auditLabel("team.member_removed")).toBe("Team: Mitglied entfernt");
+    expect(hasAuditLabel("task.created")).toBe(true);
+    // Halb bekannte IDs werden nicht halb übersetzt.
+    expect(humaniseAuditAction("task.frobnicated")).toBeNull();
+    expect(humaniseAuditAction("task.widget_created")).toBeNull();
+    expect(auditLabel("case.created")).not.toBe("Case created");
+  });
+
+  test("labels the permission-style ids written by the API handlers", () => {
+    expect(auditLabel("dashboard.briefing")).toBe("Tagesübersicht abgerufen");
+    expect(auditLabel("brain.read")).toBe("Kanzleiwissen gelesen");
+    expect(auditLabel("brain.write")).toBe("Kanzleiwissen geändert");
+    expect(auditLabel("email.import")).toBe("E-Mail importiert");
+    expect(auditLabel("connector.read")).toBe("Konnektoren abgerufen");
+  });
+
+  test("no label exposes internal product jargon", () => {
+    for (const id of ["copilot.explain", "dashboard.briefing", "brain.read", "bea.send"]) {
+      expect(auditLabel(id)).not.toMatch(/Copilot|Brain|Dashboard|beA|GoBD/);
+    }
   });
 
   test("returns the raw action string for empty string", () => {

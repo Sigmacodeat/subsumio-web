@@ -1,31 +1,34 @@
 /**
- * GoBD (Grundsätze zur ordnungsmäßigen Führung und Aufbewahrung von Büchern,
- * Aufzeichnungen und Unterlagen in elektronischer Form) — Bausteine für die
- * revisionssichere Behandlung steuerlich relevanter Belege.
+ * Bausteine für die ordnungsmäßige Aufbewahrung steuerlich relevanter Belege
+ * (Österreich: §§ 131, 132 BAO). Datei- und Bezeichnernamen ("gobd…") sind
+ * historisch und bleiben aus Kompatibilitätsgründen (Frontmatter-Feld
+ * `gobd_retention`) bestehen.
  *
  * EHRLICHKEITSREGEL (wie /security bei SOC 2): Diese Helfer liefern die
  * TECHNISCHEN Bausteine — Aufbewahrungsfrist-Stempel + Manipulations-Evidenz
- * per Hash. Volle GoBD-Konformität verlangt zusätzlich eine
- * Verfahrensdokumentation der Kanzlei und die Abnahme durch den steuerlichen
- * Berater/Prüfer. Nichts hier behauptet, der reine Speicherort sei von sich
+ * per Hash. Die Ordnungsmäßigkeit verlangt zusätzlich eine
+ * Verfahrensdokumentation der Kanzlei und die Prüfung durch die Steuerberatung. Nichts hier behauptet, der reine Speicherort sei von sich
  * aus „revisionssicher".
  */
 
-/** Steuerliche Aufbewahrungsfrist für Buchungsbelege: 10 Jahre (§ 147 Abs. 3 AO). */
-export const GOBD_RETENTION_YEARS = 10;
+/** Steuerliche Aufbewahrungsfrist für Bücher, Aufzeichnungen und Belege: 7 Jahre (§ 132 BAO). */
+export const GOBD_RETENTION_YEARS = 7;
 
-/** ISO-Datum (YYYY-MM-DD) für „heute + 10 Jahre" — Ende der Aufbewahrungspflicht. */
+/**
+ * ISO-Datum (YYYY-MM-DD) für das Ende der Aufbewahrungspflicht. § 132 BAO
+ * rechnet die sieben Jahre ab dem Schluss des Kalenderjahres — deshalb ist das
+ * Ergebnis immer der 31.12. des siebenten Folgejahres (nie kürzer als die
+ * gesetzliche Frist).
+ */
 export function retentionUntil(from: Date = new Date()): string {
-  const d = new Date(from);
-  d.setFullYear(d.getFullYear() + GOBD_RETENTION_YEARS);
-  return d.toISOString().split("T")[0];
+  return `${from.getUTCFullYear() + GOBD_RETENTION_YEARS}-12-31`;
 }
 
 /**
  * SHA-256-Hex über einen kanonischen String. Manipulations-Evidenz: wird der
  * Hash bei Ausstellung gespeichert, deckt eine spätere Neuberechnung jede
  * Änderung an den belegrelevanten Feldern auf (Unveränderbarkeit nachprüfbar,
- * GoBD Rz. 107 ff., § 146 Abs. 4 AO).
+ * § 131 BAO).
  */
 export async function sha256Hex(input: string): Promise<string> {
   const bytes = new TextEncoder().encode(input);
@@ -36,7 +39,7 @@ export async function sha256Hex(input: string): Promise<string> {
  * SHA-256-Hex über Roh-Bytes — für hochgeladene Belege (PDF/Bild), deren
  * Manipulations-Evidenz der Datei-Inhalt selbst ist, nicht ein kanonischer
  * Feld-String. Wird der Hash beim Ingest gespeichert, deckt eine spätere
- * Neuberechnung über dieselbe Datei jede Byte-Änderung auf (§ 146 Abs. 4 AO).
+ * Neuberechnung über dieselbe Datei jede Byte-Änderung auf (§ 131 BAO).
  */
 export async function sha256HexBytes(input: ArrayBuffer | Uint8Array): Promise<string> {
   // Über eine frische, ArrayBuffer-gestützte Kopie hashen — vermeidet das
@@ -90,7 +93,7 @@ export function invoiceContentString(inv: InvoiceHashFields): string {
 /**
  * Frontmatter-Felder, die einen Beleg als aufbewahrungspflichtig +
  * manipulations-evident markieren — der maschinenlesbare Teil der
- * GoBD-Bausteine.
+ * Aufbewahrungs-Bausteine.
  */
 export function gobdFrontmatter(contentHash: string, from: Date = new Date()) {
   return {

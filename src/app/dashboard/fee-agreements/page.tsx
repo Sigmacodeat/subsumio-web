@@ -136,7 +136,7 @@ export default function FeeAgreementsPage() {
                   })
                 }
               >
-                <option value="rvg">RVG (Gesetzlich)</option>
+                <option value="rvg">Tarif (RATG/AHK)</option>
                 <option value="hourly">Stundensatz</option>
                 <option value="flat">Pauschale</option>
                 <option value="capped">Deckelung</option>
@@ -176,7 +176,7 @@ export default function FeeAgreementsPage() {
               <Input
                 value={form.rvg_area}
                 onChange={(e) => setForm({ ...form, rvg_area: e.target.value })}
-                placeholder="z.B. 1.3 RVG"
+                placeholder="z. B. TP 3A RATG"
               />
             </div>
             <div className="md:col-span-2">
@@ -236,7 +236,7 @@ export default function FeeAgreementsPage() {
                     {ag.hourly_rate && <span>Stundensatz: {ag.hourly_rate} €</span>}
                     {ag.flat_amount && <span>Pauschale: {ag.flat_amount} €</span>}
                     {ag.budget_cap && <span>Deckel: {ag.budget_cap} €</span>}
-                    {ag.rvg_area && <span>RVG: {ag.rvg_area}</span>}
+                    {ag.rvg_area && <span>Tarif: {ag.rvg_area}</span>}
                   </div>
                 </div>
                 {ag.budget_cap && (

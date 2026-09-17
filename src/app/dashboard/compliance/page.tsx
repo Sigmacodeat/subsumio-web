@@ -341,7 +341,7 @@ export default function CompliancePage() {
           )}
         >
           <ShieldAlert size={14} aria-hidden="true" />
-          GwG
+          Geldwäscheprävention
         </button>
         <button
           role="tab"
@@ -357,7 +357,7 @@ export default function CompliancePage() {
           )}
         >
           <Archive size={14} aria-hidden="true" />
-          GoBD
+          Buchführung
         </button>
       </div>
 

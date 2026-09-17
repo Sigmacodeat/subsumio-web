@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, FileText, Calculator, AlertTriangle } from "lucide-react";
+import { Loader2, FileText, AlertTriangle } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { api } from "@/lib/api";
@@ -34,7 +34,6 @@ import {
 } from "@/lib/legal-types";
 import { sha256Hex, gobdFrontmatter, invoiceContentString } from "@/lib/gobd";
 import { loadKanzleiSettings, type KanzleiSettings, vatRateFor } from "@/lib/kanzlei-settings";
-import { calculateRvg, type RvgResult } from "@/lib/rvg";
 
 interface InvoiceQuickCreateDialogProps {
   open: boolean;
@@ -137,9 +136,6 @@ export function InvoiceQuickCreateDialog({
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [kanzlei, setKanzlei] = useState<KanzleiSettings | null>(null);
   const [loadingCases, setLoadingCases] = useState(false);
-  const [showRvg, setShowRvg] = useState(false);
-  const [streitwert, setStreitwert] = useState("");
-  const [rvgResult, setRvgResult] = useState<RvgResult | null>(null);
   const [leitwegId, setLeitwegId] = useState("");
   const [eInvoiceFormat, setEInvoiceFormat] = useState<"none" | "xrechnung" | "zugferd">("none");
 
@@ -147,9 +143,6 @@ export function InvoiceQuickCreateDialog({
     setSelectedCaseSlug(presetCaseSlug ?? "");
     setInvoiceType("standard");
     setAdvancePayment("");
-    setShowRvg(false);
-    setStreitwert("");
-    setRvgResult(null);
     setLeitwegId("");
     setEInvoiceFormat("none");
   }, [presetCaseSlug]);
@@ -252,8 +245,6 @@ export function InvoiceQuickCreateDialog({
   );
   const hasBillable = openTime.length > 0 || openExpenses.length > 0;
   const previewVatRate = vatRateFor(kanzlei);
-  // The RVG calculator is German fee law; only firms on the RVG tariff see it.
-  const rvgAvailable = kanzlei?.tarifModell === "rvg";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -289,50 +280,25 @@ export function InvoiceQuickCreateDialog({
       const billableTimeIds = billableTime.map((e) => e.id);
       const billableExpenseIds = billableExpenses.map((e) => e.id);
 
-      let items: InvoiceItem[];
-      let expenses: InvoiceExpenseEntry[];
-      let subtotal: number;
-      let expTotal: number;
-
-      if (showRvg && rvgResult) {
-        // RVG mode: use calculated RVG fees as the invoice total
-        items = [
-          {
-            description: `RVG-Gebühren (Streitwert ${rvgResult.streitwert.toLocaleString("de-DE")} €)`,
-            date: new Date().toISOString().split("T")[0],
-            hours: 0,
-            rate: 0,
-            amount: rvgResult.summeNetto,
-          },
-        ];
-        expenses = billableExpenses.map((entry) => ({
+      // Hourly rate mode (the German RVG calculator is not offered in Austria)
+      const items: InvoiceItem[] = billableTime.map((entry) => {
+        const hours = entry.minutes / 60;
+        const rate = entry.rate || defaultRate;
+        return {
           description: entry.description,
           date: entry.date.split("T")[0],
-          amount: entry.amount,
-        }));
-        subtotal = rvgResult.summeNetto;
-        expTotal = expenses.reduce((s, i) => s + i.amount, 0);
-      } else {
-        // Hourly rate mode
-        items = billableTime.map((entry) => {
-          const hours = entry.minutes / 60;
-          const rate = entry.rate || defaultRate;
-          return {
-            description: entry.description,
-            date: entry.date.split("T")[0],
-            hours: Math.round(hours * 100) / 100,
-            rate,
-            amount: Math.round(hours * rate * 100) / 100,
-          };
-        });
-        expenses = billableExpenses.map((entry) => ({
-          description: entry.description,
-          date: entry.date.split("T")[0],
-          amount: entry.amount,
-        }));
-        subtotal = items.reduce((s, i) => s + i.amount, 0);
-        expTotal = expenses.reduce((s, i) => s + i.amount, 0);
-      }
+          hours: Math.round(hours * 100) / 100,
+          rate,
+          amount: Math.round(hours * rate * 100) / 100,
+        };
+      });
+      const expenses: InvoiceExpenseEntry[] = billableExpenses.map((entry) => ({
+        description: entry.description,
+        date: entry.date.split("T")[0],
+        amount: entry.amount,
+      }));
+      const subtotal = items.reduce((s, i) => s + i.amount, 0);
+      const expTotal = expenses.reduce((s, i) => s + i.amount, 0);
       const parsedAdvance = Math.max(0, parseFloat(advancePayment) || 0);
       const vatRate = vatRateFor(settings);
       const taxableBase = subtotal + expTotal;
@@ -683,74 +649,6 @@ export function InvoiceQuickCreateDialog({
               </div>
             </div>
 
-            {/* RVG Calculator (collapsible) — German fee law, RVG tariff only */}
-            {rvgAvailable && (
-              <button
-                type="button"
-                onClick={() => setShowRvg((v) => !v)}
-                className="flex items-center gap-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
-              >
-                <Calculator size={13} />
-                {showRvg
-                  ? t("inv.quick_hide_rvg" as DashboardKey)
-                  : t("inv.quick_show_rvg" as DashboardKey)}
-              </button>
-            )}
-
-            {showRvg && (
-              <div className="space-y-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="quick-rvg-sw" className="text-xs">
-                    {t("inv.rvg_streitwert" as DashboardKey)} (€)
-                  </Label>
-                  <Input
-                    id="quick-rvg-sw"
-                    type="number"
-                    inputMode="numeric"
-                    value={streitwert}
-                    onChange={(e) => {
-                      setStreitwert(e.target.value);
-                      const sv = parseFloat(e.target.value);
-                      setRvgResult(sv > 0 ? calculateRvg(sv) : null);
-                    }}
-                    placeholder="z. B. 10000"
-                  />
-                </div>
-                {rvgResult && (
-                  <div className="space-y-1.5 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-[color:var(--ds-text-muted)]">
-                        {t("inv.rvg_basis" as DashboardKey)} (1,0)
-                      </span>
-                      <span className="text-[color:var(--ds-text)]">
-                        {rvgResult.basisGebuehr.toFixed(2)} €
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[color:var(--ds-text-muted)]">
-                        {t("inv.rvg_verfahren" as DashboardKey)} (1,3)
-                      </span>
-                      <span className="text-[color:var(--ds-text)]">
-                        {rvgResult.verfahrensgebuehr.toFixed(2)} €
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[color:var(--ds-text-muted)]">
-                        {t("inv.rvg_termins" as DashboardKey)} (1,2)
-                      </span>
-                      <span className="text-[color:var(--ds-text)]">
-                        {rvgResult.terminsgebuehr.toFixed(2)} €
-                      </span>
-                    </div>
-                    <div className="flex justify-between border-t border-[color:var(--ds-border)] pt-1.5 font-semibold text-[color:var(--ds-success-text)]">
-                      <span>{t("inv.rvg_brutto" as DashboardKey)}</span>
-                      <span>{rvgResult.summeBrutto.toFixed(2)} €</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
             <aside
               aria-label={t("inv.preview_title")}
               className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-5 lg:sticky lg:bottom-0"
@@ -788,17 +686,13 @@ export function InvoiceQuickCreateDialog({
                 <div className="flex justify-between gap-4">
                   <dt className="text-[color:var(--ds-text-muted)]">{t("inv.preview_subtotal")}</dt>
                   <dd className="font-medium text-[color:var(--ds-text)]">
-                    {(rvgResult?.summeNetto ?? estimatedFee).toFixed(2)} €
+                    {estimatedFee.toFixed(2)} €
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4">
                   <dt className="text-[color:var(--ds-text-muted)]">{t("inv.preview_vat")}</dt>
                   <dd className="font-medium text-[color:var(--ds-text)]">
-                    {(
-                      ((rvgResult?.summeNetto ?? estimatedFee) + expenseTotal) *
-                      previewVatRate
-                    ).toFixed(2)}{" "}
-                    €
+                    {((estimatedFee + expenseTotal) * previewVatRate).toFixed(2)} €
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4 border-t border-[color:var(--ds-border)] pt-3 text-base">
@@ -807,8 +701,7 @@ export function InvoiceQuickCreateDialog({
                   </dt>
                   <dd className="font-bold text-[color:var(--ds-success-text)]">
                     {(
-                      ((rvgResult?.summeNetto ?? estimatedFee) + expenseTotal) *
-                        (1 + previewVatRate) -
+                      (estimatedFee + expenseTotal) * (1 + previewVatRate) -
                       (parseFloat(advancePayment) || 0)
                     ).toFixed(2)}{" "}
                     €

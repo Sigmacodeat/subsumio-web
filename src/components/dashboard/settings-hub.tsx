@@ -164,8 +164,6 @@ const SETTINGS_DESC_MAP: Record<string, DashboardKey> = {
   "/dashboard/signature": "settings.tile_signature_desc",
   "/dashboard/vault": "settings.tile_vault_desc",
   "/dashboard/settings/kanzlei": "settings.tile_kanzlei_settings_desc",
-  "/dashboard/datev-export": "settings.tile_datev_export_desc",
-  "/dashboard/bea": "settings.tile_bea_desc",
   "/dashboard/word-addin": "settings.tile_word_addin_desc",
   "/dashboard/compliance": "settings.tile_compliance_desc",
   "/dashboard/compliance/retention": "settings.tile_retention_desc",

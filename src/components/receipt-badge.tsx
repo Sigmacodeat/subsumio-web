@@ -102,7 +102,7 @@ export function ReceiptBadge({
         className={`inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-text-muted)] ${className}`}
       >
         <Loader2 className="h-3 w-3 animate-spin" />
-        Prüfe Status…
+        Status wird geprüft…
       </span>
     );
   }

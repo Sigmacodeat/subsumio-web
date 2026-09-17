@@ -39,7 +39,7 @@ import type {
 } from "@/lib/types";
 import type { DashboardKey } from "@/content/dashboard";
 
-const JURISDICTION_KEYS = ["at", "de", "ch", "all"] as const;
+const JURISDICTION_KEYS = ["at", "all"] as const;
 
 const SEVERITY_COLORS: Record<string, string> = {
   low: "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",

@@ -85,7 +85,7 @@ export function RetrievalFeedbackButtons({
         )}
       >
         <ThumbsUp size={10} className="text-[color:var(--ds-success-text)]" />
-        Danke für dein Feedback
+        Danke für Ihre Rückmeldung
       </span>
     );
   }

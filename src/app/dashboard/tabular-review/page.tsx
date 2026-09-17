@@ -28,7 +28,6 @@ const LAST_RUN_KEY = "tabular-review:last-run";
 const DOC_TYPES: Array<{ value: string; labelKey: DashboardKey }> = [
   { value: "legal_case", labelKey: "tabular.type_cases" },
   { value: "legal_document", labelKey: "tabular.type_documents" },
-  { value: "bea_message", labelKey: "tabular.type_bea" },
   { value: "court_decision", labelKey: "tabular.type_decisions" },
   { value: "", labelKey: "tabular.type_all" },
 ];
@@ -304,7 +303,8 @@ function TabularReviewPageInner() {
                   {t("tabular.max_docs")}
                 </label>
                 <input
-                  type="number" inputMode="numeric"
+                  type="number"
+                  inputMode="numeric"
                   min={1}
                   max={MAX_LIMIT}
                   value={limit}

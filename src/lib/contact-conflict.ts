@@ -173,7 +173,7 @@ export function checkContactConflict(
     hits: hits.sort((a, b) => b.similarity - a.similarity),
     checkedContacts: existingContacts.length,
     warning: hasCritical
-      ? "§ 43a BRAO: Möglicher Interessenkonflikt — Mandatsübernahme prüfen!"
+      ? "§ 10 RAO: Möglicher Interessenkonflikt — Mandatsübernahme prüfen!"
       : hasHits
         ? "Ähnliche Kontakte gefunden — Bitte Identität bestätigen."
         : undefined,

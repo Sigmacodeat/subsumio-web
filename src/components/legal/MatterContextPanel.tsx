@@ -151,7 +151,7 @@ export function MatterContextPanel({
                 aria-live="polite"
               >
                 <Loader2 size={16} className="animate-spin" />
-                Lade Matter Context…
+                Aktenkontext wird geladen…
               </div>
             )}
 

@@ -152,7 +152,7 @@ export function deriveMatterWorkflowActions(
         kind: "complete_acceptance",
         priority: "critical",
         title: "Kollisionsprüfung offen",
-        description: "§ 43a BRAO erfordert eine Kollisionsprüfung vor Mandatsannahme.",
+        description: "§ 10 RAO erfordert eine Kollisionsprüfung vor Mandatsannahme.",
       });
     } else if (
       acceptance.kyc.required &&

@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { auditLabel, type AuditEntry } from "@/lib/audit-labels";
+import { auditLabel, hasAuditLabel, type AuditEntry } from "@/lib/audit-labels";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { useApiQuery } from "@/lib/use-api-query";
@@ -378,8 +378,8 @@ export default function AuditLogPage() {
               >
                 <option value="">Alle Aktionen</option>
                 {uniqueActions.map((a) => (
-                  <option key={a} value={a}>
-                    {auditLabel(a)}
+                  <option key={a} value={a} title={a}>
+                    {hasAuditLabel(a) ? auditLabel(a) : `${auditLabel(a)} (${a})`}
                   </option>
                 ))}
               </select>
@@ -549,12 +549,18 @@ export default function AuditLogPage() {
                               <Icon size={13} className={cn(`text-${color}-500`)} />
                             </div>
                             <div className="min-w-0">
-                              <div className="truncate text-xs font-medium text-[color:var(--ds-text)]">
+                              {/* Rohe Aktions-ID nur als Tooltip; sichtbar nur, wenn kein Label existiert. */}
+                              <div
+                                className="truncate text-xs font-medium text-[color:var(--ds-text)]"
+                                title={e.action}
+                              >
                                 {auditLabel(e.action)}
                               </div>
-                              <div className="truncate font-mono text-xs text-[color:var(--ds-text-subtle)]">
-                                {e.action}
-                              </div>
+                              {!hasAuditLabel(e.action) && (
+                                <div className="truncate font-mono text-xs text-[color:var(--ds-text-subtle)]">
+                                  {e.action}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </td>
@@ -681,12 +687,17 @@ export default function AuditLogPage() {
                           <Icon size={15} className={cn(`text-${color}-500`)} />
                         </div>
                         <div>
-                          <div className="text-sm font-medium text-[color:var(--ds-text)]">
+                          <div
+                            className="text-sm font-medium text-[color:var(--ds-text)]"
+                            title={selectedEntry.action}
+                          >
                             {auditLabel(selectedEntry.action)}
                           </div>
-                          <div className="font-mono text-xs text-[color:var(--ds-text-subtle)]">
-                            {selectedEntry.action}
-                          </div>
+                          {!hasAuditLabel(selectedEntry.action) && (
+                            <div className="font-mono text-xs text-[color:var(--ds-text-subtle)]">
+                              {selectedEntry.action}
+                            </div>
+                          )}
                         </div>
                       </>
                     );

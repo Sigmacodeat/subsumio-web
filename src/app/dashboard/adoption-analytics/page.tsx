@@ -87,7 +87,7 @@ const FEATURE_LABELS: Record<string, string> = {
   portal: "Mandantenportal",
   email: "E-Mail",
   whatsapp: "WhatsApp",
-  bea: "beA Anwaltspostfach",
+  bea: "Elektronischer Rechtsverkehr",
   docusign: "DocuSign",
   cron: "Automatisierte Jobs",
   search: "Suche",

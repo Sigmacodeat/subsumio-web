@@ -579,7 +579,7 @@ export default function MailboxClient({
             <div>
               <Mail size={32} className="mx-auto mb-3 [color:var(--ds-border-strong)]" />
               <p className="text-sm text-[color:var(--ds-text-subtle)]">
-                Wähle links eine E-Mail aus.
+                Wählen Sie links eine E-Mail aus.
               </p>
             </div>
           </div>

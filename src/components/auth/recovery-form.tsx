@@ -16,8 +16,8 @@ const COPY = {
     title: "Passwort zurücksetzen",
     sub: "Geben Sie Ihre E-Mail-Adresse ein — falls ein Konto existiert, senden wir einen Link zum Zurücksetzen.",
     cta: "Reset-Link senden",
-    done: "Falls ein Konto zu dieser Adresse existiert, ist ein Reset-Link unterwegs. Prüfe Posteingang (und Spam).",
-    devNote: "Mail-Provider nicht konfiguriert — nutze diesen Direkt-Link:",
+    done: "Falls ein Konto zu dieser Adresse existiert, ist ein Reset-Link unterwegs. Bitte prüfen Sie Ihren Posteingang (und den Spam-Ordner).",
+    devNote: "Mail-Provider nicht konfiguriert — nutzen Sie diesen Direkt-Link:",
   },
   reset: {
     title: "Neues Passwort wählen",

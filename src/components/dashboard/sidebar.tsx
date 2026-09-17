@@ -211,7 +211,7 @@ const NAV_MODULE_SECTIONS: NavSection[] = [
         href: "/dashboard/communications",
         icon: Mailbox,
         labelKey: "nav.communications",
-        keywords: "kommunikation inbox messages unified bea whatsapp email portal",
+        keywords: "kommunikation inbox messages unified whatsapp email portal",
         tooltipKey: "nav.tooltip.communications",
       },
     ],
@@ -784,7 +784,7 @@ const PRIMARY_ITEMS: NavItem[] = [
     href: "/dashboard/intake",
     icon: Inbox,
     labelKey: "nav.intake",
-    keywords: "mandantsaufnahme intake eingang neue posteingang bea whatsapp email",
+    keywords: "mandantsaufnahme intake eingang neue posteingang whatsapp email",
     tooltipKey: "nav.tooltip.intake",
   },
   {

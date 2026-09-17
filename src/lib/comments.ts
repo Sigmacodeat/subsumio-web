@@ -255,7 +255,7 @@ async function createMentionNotifications(opts: {
         commentId: opts.commentId,
         authorName: opts.authorName,
         parentSlug: opts.parentSlug,
-        message: `${opts.authorName} hat dich in einem Kommentar erwähnt`,
+        message: `${opts.authorName} hat Sie in einem Kommentar erwähnt`,
       },
       readAt: null,
       createdAt: new Date().toISOString(),

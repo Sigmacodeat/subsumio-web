@@ -127,36 +127,35 @@ describe("sha256Hex / sha256HexBytes", () => {
 });
 
 describe("retentionUntil / gobdFrontmatter", () => {
-  test("Aufbewahrung = +10 Jahre (§ 147 AO)", () => {
-    expect(GOBD_RETENTION_YEARS).toBe(10);
-    expect(retentionUntil(new Date("2026-06-13T00:00:00Z"))).toBe("2036-06-13");
+  test("Aufbewahrung = 7 Jahre ab Schluss des Kalenderjahres (§ 132 BAO)", () => {
+    expect(GOBD_RETENTION_YEARS).toBe(7);
+    expect(retentionUntil(new Date("2026-06-13T00:00:00Z"))).toBe("2033-12-31");
   });
 
   test("Frontmatter trägt Hash + Frist + Zeitstempel", () => {
     const fm = gobdFrontmatter("abc123", new Date("2026-06-13T10:00:00Z"));
     expect(fm).toMatchObject({
       gobd_retention: true,
-      retention_until: "2036-06-13",
+      retention_until: "2033-12-31",
       content_hash: "abc123",
     });
     expect(fm.hashed_at).toBe("2026-06-13T10:00:00.000Z");
   });
 
-  test("retentionUntil — Jahreswechsel (31.12. → 31.12.+10)", () => {
-    expect(retentionUntil(new Date("2026-12-31T00:00:00Z"))).toBe("2036-12-31");
+  test("retentionUntil — Jahreswechsel (31.12. → 31.12.+7)", () => {
+    expect(retentionUntil(new Date("2026-12-31T00:00:00Z"))).toBe("2033-12-31");
+    expect(retentionUntil(new Date("2027-01-01T00:00:00Z"))).toBe("2034-12-31");
   });
 
-  test("retentionUntil — Schaltjahr (29.02.2024 → 01.03.2034, JS Date overflow)", () => {
-    // 29.02. + 10 Jahre: 2034 ist kein Schaltjahr, JS Date rollt auf 01.03. über.
-    // Das ist korrektes JS-Verhalten (setFullYear auf nicht-Schaltjahr-Februar).
-    expect(retentionUntil(new Date("2024-02-29T00:00:00Z"))).toBe("2034-03-01");
+  test("retentionUntil — Schaltjahr (29.02.2024 → 31.12.2031, kein Datums-Überlauf)", () => {
+    // Die Frist endet immer am Jahresende — der 29.02. braucht keine Sonderbehandlung.
+    expect(retentionUntil(new Date("2024-02-29T00:00:00Z"))).toBe("2031-12-31");
   });
 
   test("retentionUntil — Monatsende wird korrekt gehandhabt", () => {
-    // 31.01. + 10 Jahre = 31.01.
-    expect(retentionUntil(new Date("2026-01-31T00:00:00Z"))).toBe("2036-01-31");
-    // 30.11. + 10 Jahre = 30.11.
-    expect(retentionUntil(new Date("2026-11-30T00:00:00Z"))).toBe("2036-11-30");
+    // Jeder Tag des Jahres 2026 führt zum selben Fristende (Schluss des Kalenderjahres + 7).
+    expect(retentionUntil(new Date("2026-01-31T00:00:00Z"))).toBe("2033-12-31");
+    expect(retentionUntil(new Date("2026-11-30T00:00:00Z"))).toBe("2033-12-31");
   });
 
   test("gobdFrontmatter — Default-Datum (now) produziert gültige ISO-Daten", () => {
@@ -169,12 +168,14 @@ describe("retentionUntil / gobdFrontmatter", () => {
     expect(fm.hashed_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
   });
 
-  test("gobdFrontmatter — retention_until liegt exakt 10 Jahre in der Zukunft", () => {
+  test("gobdFrontmatter — retention_until ist das Jahresende des siebenten Folgejahres", () => {
     const now = new Date("2026-06-20T12:00:00Z");
     const fm = gobdFrontmatter("test", now);
-    const expected = new Date(now);
-    expected.setFullYear(expected.getFullYear() + 10);
-    expect(fm.retention_until).toBe(expected.toISOString().split("T")[0]);
+    expect(fm.retention_until).toBe(`${now.getUTCFullYear() + 7}-12-31`);
+    // Nie kürzer als 7 volle Jahre ab dem Belegdatum.
+    const sevenYearsLater = new Date(now);
+    sevenYearsLater.setUTCFullYear(sevenYearsLater.getUTCFullYear() + 7);
+    expect(fm.retention_until >= sevenYearsLater.toISOString().split("T")[0]).toBe(true);
   });
 });
 

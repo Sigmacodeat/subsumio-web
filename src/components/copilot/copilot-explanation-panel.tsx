@@ -123,7 +123,7 @@ export function CopilotExplanationPanel({ query, answer, onClose }: CopilotExpla
       >
         <Loader2 size={14} className="animate-spin text-[color:var(--brand-primary)]" />
         <span className="text-xs text-[color:var(--ds-text-muted)]">
-          {isEn ? "Analyzing reasoning..." : "Analysiere Begründung..."}
+          {isEn ? "Analyzing reasoning..." : "Begründung wird analysiert…"}
         </span>
       </div>
     );

@@ -99,7 +99,7 @@ export default function SecuritySettingsPage() {
   async function disable2FA() {
     setError(null);
     if (!disablePassword) {
-      setError("Bitte gib dein Passwort ein");
+      setError("Bitte geben Sie Ihr Passwort ein");
       return;
     }
     try {
@@ -187,8 +187,8 @@ export default function SecuritySettingsPage() {
                     Backup-Codes — sicher speichern!
                   </p>
                   <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                    Diese Codes werden nur einmal angezeigt. Speichere sie an einem sicheren Ort.
-                    Jeder Code kann einmal anstelle eines TOTP-Codes verwendet werden.
+                    Diese Codes werden nur einmal angezeigt. Bewahren Sie sie an einem sicheren Ort
+                    auf. Jeder Code kann einmal anstelle eines TOTP-Codes verwendet werden.
                   </p>
                 </div>
               </div>
@@ -235,7 +235,8 @@ export default function SecuritySettingsPage() {
                     2FA deaktivieren
                   </p>
                   <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                    Bitte bestätige mit deinem Passwort, dass du 2FA deaktivieren möchtest.
+                    Bitte bestätigen Sie mit Ihrem Passwort, dass Sie die Zwei-Faktor-Anmeldung
+                    deaktivieren möchten.
                   </p>
                 </div>
               </div>
@@ -387,7 +388,7 @@ export default function SecuritySettingsPage() {
                 <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-3 text-xs text-[color:var(--ds-text-muted)]">
                   {lang === "en"
                     ? "No IPs configured. Set the "
-                    : "Keine IPs konfiguriert. Setze die Umgebungsvariable "}
+                    : "Keine IPs konfiguriert. Setzen Sie die Umgebungsvariable "}
                   <code className="rounded bg-[color:var(--ds-surface)] px-1 py-0.5 font-mono">
                     SUBSUMIO_IP_ALLOWLIST
                   </code>{" "}

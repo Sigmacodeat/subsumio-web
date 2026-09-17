@@ -794,7 +794,7 @@ export default function AgentsPage() {
                   {
                     label: t("agents.template_contract_review"),
                     prompt:
-                      "Analysiere alle Verträge im Vault nach deutschem Recht. Erstelle eine Klauselmatrix, identifiziere rote Flaggen, und empfehle konkrete Änderungen. Prüfe AGB-Konformität und DSGVO-Klauseln.",
+                      "Analysiere alle Verträge im Vault nach österreichischem Recht (ABGB, KSchG, DSGVO). Erstelle eine Klauselmatrix, identifiziere rote Flaggen, und empfehle konkrete Änderungen. Prüfe AGB-Konformität und DSGVO-Klauseln.",
                     icon: "📋",
                   },
                   {
@@ -806,7 +806,7 @@ export default function AgentsPage() {
                   {
                     label: t("agents.template_compliance_check"),
                     prompt:
-                      "Führe einen vollständigen Compliance-Check durch. Prüfe DSGVO-Konformität, GwG-Vorgaben, GOBD-Anforderungen, und identifiziere Handlungsbedarf mit Priorisierung.",
+                      "Führe einen vollständigen Compliance-Check durch. Prüfe DSGVO-Konformität, die Vorgaben zur Geldwäscheprävention (§§ 8a ff RAO) und die Aufbewahrungspflichten (§§ 131, 132 BAO) und identifiziere Handlungsbedarf mit Priorisierung.",
                     icon: "✅",
                   },
                   {

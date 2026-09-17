@@ -87,7 +87,7 @@ interface MonitorFormState {
 const emptyForm: MonitorFormState = {
   topic: "",
   description: "",
-  jurisdiction: "all",
+  jurisdiction: "at",
   frequency: "daily",
   sources: ["case-law"],
   keywords: [],
@@ -233,11 +233,13 @@ function MonitorFormDialog({
                 }
                 className={selectCls}
               >
-                {Object.entries(JURISDICTION_LABELS).map(([v, l]) => (
-                  <option key={v} value={v}>
-                    {l}
-                  </option>
-                ))}
+                {Object.entries(JURISDICTION_LABELS)
+                  .filter(([v]) => v === "at" || v === "eu" || v === form.jurisdiction)
+                  .map(([v, l]) => (
+                    <option key={v} value={v}>
+                      {l}
+                    </option>
+                  ))}
               </select>
             </div>
             <div>

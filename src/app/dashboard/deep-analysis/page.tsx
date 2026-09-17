@@ -139,7 +139,7 @@ export default function DeepAnalysisPage() {
         <div className="space-y-4">
           <div>
             <label className="mb-1.5 block text-sm font-medium">
-              Dokument-Slugs (komma- oder zeilengetrennt)
+              Dokument-Kennungen (durch Komma oder Zeilenumbruch getrennt)
             </label>
             <textarea
               value={slugs}
@@ -346,10 +346,10 @@ export default function DeepAnalysisPage() {
       {!report && !loading && !error && (
         <Card className="flex flex-col items-center justify-center gap-4 p-12">
           <FileSearch className="h-12 w-12 text-[color:var(--ds-text-muted)]" />
-          <h2 className="text-xl font-semibold">Deep Analysis</h2>
+          <h2 className="text-xl font-semibold">Tiefenanalyse</h2>
           <p className="max-w-md text-center text-[color:var(--ds-text-muted)]">
-            Gib Dokument-Slugs ein und starte die Analyse. Die KI analysiert alle Dokumente zusammen
-            und erstellt einen Bericht mit übergreifenden Erkenntnissen.
+            Geben Sie oben die Dokumente an und starten Sie die Analyse. Die KI analysiert alle
+            Dokumente zusammen und erstellt einen Bericht mit übergreifenden Erkenntnissen.
           </p>
         </Card>
       )}

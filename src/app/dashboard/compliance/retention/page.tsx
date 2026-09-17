@@ -17,10 +17,13 @@ interface RetentionCase {
   action: "keep" | "review" | "delete";
 }
 
-// DSGVO + BRAO: Handakten 6 Jahre nach Abschluss (§ 147 AO, § 50 BRAO)
-// Persönliche Daten: Löschung nach Zweckwegfall (Art. 5 DSGVO)
-// Empfohlene Fristen: 6 Jahre (steuerrechtlich) / 10 Jahre (BRAO) / 3 Jahre (DSGVO nach Zweckwegfall)
-const RETENTION_YEARS = 6;
+// Österreich: Bücher, Aufzeichnungen und Belege sind sieben Jahre aufzubewahren
+// (§§ 131, 132 BAO). Persönliche Daten: Löschung nach Zweckwegfall (Art. 5 DSGVO).
+// Ab 7 Jahren wird eine Prüfung empfohlen; nach weiteren 3 Jahren Karenz (für
+// anhängige Verfahren, Haftungsfragen) gilt die Akte als löschfällig. Gelöscht
+// wird nie automatisch — immer nur nach ausdrücklicher Bestätigung.
+const RETENTION_YEARS = 7; // § 132 BAO
+const DELETE_GRACE_YEARS = 3;
 
 export default function RetentionPage() {
   const { t } = useLang();
@@ -44,9 +47,9 @@ export default function RetentionPage() {
             ? (now.getTime() - new Date(closedAt).getTime()) / (1000 * 60 * 60 * 24 * 365)
             : 0;
           let action: RetentionCase["action"] = "keep";
-          if (years >= RETENTION_YEARS + 4)
-            action = "delete"; // > 10 Jahre
-          else if (years >= RETENTION_YEARS) action = "review"; // 6-10 Jahre
+          if (years >= RETENTION_YEARS + DELETE_GRACE_YEARS)
+            action = "delete"; // ≥ 10 Jahre
+          else if (years >= RETENTION_YEARS) action = "review"; // 7–10 Jahre
           return {
             slug: p.slug,
             title: p.title,
@@ -108,7 +111,10 @@ export default function RetentionPage() {
             {toDelete.length}
           </div>
           <div className="text-xs text-[color:var(--ds-text-muted)]">
-            {t("retention.stat_delete").replace("{{years}}", String(RETENTION_YEARS + 4))}
+            {t("retention.stat_delete").replace(
+              "{{years}}",
+              String(RETENTION_YEARS + DELETE_GRACE_YEARS)
+            )}
           </div>
         </div>
       </div>

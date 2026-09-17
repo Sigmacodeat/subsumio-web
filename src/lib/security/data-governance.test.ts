@@ -256,10 +256,10 @@ describe("Data Governance: Residency + Policy Combined", () => {
 // ── 5. Retention Policy ──────────────────────────────────────────────
 
 describe("Data Governance: Retention Policy", () => {
-  it("6-year review threshold is correct", () => {
-    const REVIEW_YEARS = 6;
+  it("7-year review threshold is correct (§ 132 BAO)", () => {
+    const REVIEW_YEARS = 7;
     const closedDate = new Date();
-    closedDate.setFullYear(closedDate.getFullYear() - 6);
+    closedDate.setFullYear(closedDate.getFullYear() - 7);
     const years = (Date.now() - closedDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
     expect(years).toBeGreaterThanOrEqual(REVIEW_YEARS);
   });
@@ -272,11 +272,11 @@ describe("Data Governance: Retention Policy", () => {
     expect(years).toBeGreaterThanOrEqual(DELETE_YEARS);
   });
 
-  it("case under 6 years is not flagged", () => {
+  it("case under 7 years is not flagged", () => {
     const closedDate = new Date();
     closedDate.setFullYear(closedDate.getFullYear() - 3);
     const years = (Date.now() - closedDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
-    expect(years).toBeLessThan(6);
+    expect(years).toBeLessThan(7);
   });
 });
 

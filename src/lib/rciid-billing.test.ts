@@ -54,7 +54,7 @@ describe("rciid-billing", () => {
         rvgAuslagenpauschale: 20,
       });
       expect(fee.amount).toBe(20);
-      expect(fee.description).toContain("VV 7002");
+      expect(fee.description).toContain("Barauslagenpauschale");
     });
   });
 

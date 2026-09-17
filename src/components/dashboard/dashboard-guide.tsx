@@ -67,10 +67,7 @@ const ROUTE_HELP: Array<{
     match: "/dashboard/intake",
     title: "guide.route.intake_title",
     desc: "guide.route.intake_desc",
-    links: [
-      { href: "/dashboard/bea", label: "nav.bea" },
-      { href: "/dashboard/email-import", label: "nav.email_import" },
-    ],
+    links: [{ href: "/dashboard/email-import", label: "nav.email_import" }],
   },
   {
     match: "/dashboard/invoicing",
@@ -93,7 +90,6 @@ const ROUTE_HELP: Array<{
     ["team", "nav.team"],
     ["review-queue", "nav.review_queue"],
     ["signature", "nav.signature"],
-    ["bea", "nav.bea"],
     ["whatsapp", "nav.whatsapp"],
     ["contacts", "nav.contacts"],
     ["opponents", "nav.opponents"],

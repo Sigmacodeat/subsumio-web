@@ -451,7 +451,7 @@ describe("Display label constants", () => {
     expect(JURISDICTION_LABELS.at).toBe("Österreich");
     expect(JURISDICTION_LABELS.de).toBe("Deutschland");
     expect(JURISDICTION_LABELS.ch).toBe("Schweiz");
-    expect(JURISDICTION_LABELS.all).toBe("DE + AT + CH");
+    expect(JURISDICTION_LABELS.all).toBe("Alle");
     expect(JURISDICTION_LABELS.eu).toBe("EU");
   });
 

@@ -465,8 +465,8 @@ export default function OnboardingPage() {
                     </div>
                     <div className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2">
                       <p className="text-xs text-[color:var(--ds-warning-text)]">
-                        Für WhatsApp Business wird ein Meta-Webhook benötigt. Nach dem Onboarding
-                        kannst du die Webhook-URL im Dashboard konfigurieren.
+                        Für WhatsApp Business wird ein Meta-Webhook benötigt. Nach der Einrichtung
+                        können Sie die Webhook-URL in den Einstellungen konfigurieren.
                       </p>
                     </div>
                   </div>

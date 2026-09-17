@@ -64,7 +64,7 @@ interface IntakeAcceptanceWizardProps {
 
 const STEPS: Array<{ id: AcceptanceStep; label: string; icon: React.ElementType }> = [
   { id: "conflict", label: "Kollisionsprüfung", icon: ShieldAlert },
-  { id: "kyc", label: "KYC / GwG", icon: UserCheck },
+  { id: "kyc", label: "Identitätsprüfung", icon: UserCheck },
   { id: "poa", label: "Vollmacht", icon: PenTool },
   { id: "engagement", label: "Mandatsbrief", icon: FileText },
   { id: "convert", label: "Akte anlegen", icon: FileCheck },
@@ -347,7 +347,7 @@ export function IntakeAcceptanceWizard({
                 <div className="space-y-1">
                   <h3 className="text-sm font-medium">Kollisionsprüfung</h3>
                   <p className="text-xs text-[color:var(--ds-text-muted)]">
-                    § 43a BRAO verpflichtet zur Prüfung von Interessenkonflikten vor Mandatsannahme.
+                    § 10 RAO verpflichtet zur Prüfung von Interessenkonflikten vor Mandatsannahme.
                   </p>
                 </div>
 
@@ -468,9 +468,9 @@ export function IntakeAcceptanceWizard({
 
             {step === "kyc" && (
               <div className="space-y-4">
-                <h3 className="text-sm font-medium">KYC / GwG</h3>
+                <h3 className="text-sm font-medium">Identitätsprüfung</h3>
                 <p className="text-xs text-[color:var(--ds-text-muted)]">
-                  Identität und Risikoeinschätzung nach § 1 ff. GwG.
+                  Identität und Risikoeinschätzung nach §§ 8a ff RAO.
                 </p>
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-sm">

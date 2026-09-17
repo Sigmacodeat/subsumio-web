@@ -232,7 +232,7 @@ export default function KYCPage() {
           <ShieldCheck size={32} className="mb-3 text-[color:var(--ds-text-muted)]" />
           <p className="text-sm font-medium">Keine KYC-Prüfungen</p>
           <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-            Starten Sie eine Identitätsprüfung für GwG-Konformität.
+            Starten Sie eine Identitätsprüfung zur Geldwäscheprävention (§§ 8a ff RAO).
           </p>
         </div>
       ) : (

@@ -112,9 +112,7 @@ const AUTHORITY_CONFIG: Record<AuthorityTier, { labelKey: DashboardKey; badge: s
 };
 
 const JURISDICTION_LABEL_KEYS: Partial<Record<JurisdictionCode, DashboardKey>> = {
-  DE: "norms.jurisdiction_de",
   AT: "norms.jurisdiction_at",
-  CH: "norms.jurisdiction_ch",
 };
 
 // ── Source Card ───────────────────────────────────────────────────────
@@ -443,7 +441,7 @@ export default function SourcesPage() {
           {t("sources.filter")}
         </span>
         <span className="brand-soft brand-text rounded-lg px-2 py-1 text-xs font-medium">
-          🇦🇹 {t("norms.jurisdiction_at")}
+          {t("norms.jurisdiction_at")}
         </span>
         <select
           aria-label={t("sources.type_filter" as DashboardKey)}

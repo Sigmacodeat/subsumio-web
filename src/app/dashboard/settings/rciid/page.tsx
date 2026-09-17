@@ -179,7 +179,7 @@ export default function RciidSettingsPage() {
               ) : (
                 <Save size={14} className="mr-2" />
               )}
-              Save
+              Speichern
             </Button>
           </div>
 
@@ -231,10 +231,10 @@ export default function RciidSettingsPage() {
             />
             <div>
               <p className="text-sm font-medium text-[color:var(--ds-text)]">
-                RVG-Auslagenpauschale (VV 7002)
+                Barauslagenpauschale
               </p>
               <p className="text-xs text-[color:var(--ds-text-muted)]">
-                20 EUR Pauschale als Auslage für Gutachten/Sachverständige
+                20 EUR Pauschale als Barauslage für Gutachten/Sachverständige
               </p>
             </div>
           </label>

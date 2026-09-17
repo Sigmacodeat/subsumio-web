@@ -29,11 +29,11 @@ interface HearingFollowup {
 }
 
 const DEFAULT_TASKS_DE: FollowupTask[] = [
-  { id: "protokoll", label: "Sitzungsprotokoll erstellt", done: false },
-  { id: "frist", label: "Fristen aus Urteil/Verfügung notiert", done: false },
+  { id: "protokoll", label: "Verhandlungsprotokoll erstellt", done: false },
+  { id: "frist", label: "Fristen aus Urteil/Beschluss notiert", done: false },
   { id: "mandant", label: "Mandant informiert (schriftlich)", done: false },
   { id: "aktennotiz", label: "Aktennotiz erstellt", done: false },
-  { id: "kosten", label: "Kostenrechnung / RVG geprüft", done: false },
+  { id: "kosten", label: "Kostenverzeichnis (RATG) geprüft", done: false },
   { id: "rechtsmittel", label: "Rechtsmittelprüfung dokumentiert", done: false },
 ];
 
@@ -42,7 +42,7 @@ const DEFAULT_TASKS_EN: FollowupTask[] = [
   { id: "deadlines", label: "Deadlines from order noted", done: false },
   { id: "client", label: "Client informed (written)", done: false },
   { id: "memo", label: "Case memo created", done: false },
-  { id: "costs", label: "Cost calculation / RVG checked", done: false },
+  { id: "costs", label: "Cost schedule (RATG) checked", done: false },
   { id: "appeal", label: "Appeal review documented", done: false },
 ];
 
