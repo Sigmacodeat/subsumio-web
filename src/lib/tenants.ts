@@ -5,6 +5,7 @@
 // supportable as a firm with twenty members.
 
 import { getOrgStore, getStore, type Org, type User } from "@/lib/auth/store";
+import { billingUserOf } from "@/lib/billing/billing-account";
 
 export const SOLO_TENANT_PREFIX = "solo-";
 
@@ -50,7 +51,7 @@ function orgTenant(org: Org): Tenant {
     brainId: org.brainId,
     ownerId: org.ownerId,
     createdAt: org.createdAt,
-    billing: { ownerId: org.id, ownerType: "org" },
+    billing: { ownerId: billingUserOf(org), ownerType: "user" },
     org,
   };
 }

@@ -63,6 +63,9 @@ const COPY = {
     sso_required: "Bitte nutzen Sie die Microsoft- oder Google-Anmeldung.",
     invalid_token: "Der Code ist ungültig. Bitte versuchen Sie es erneut.",
     invalid_challenge: "Die Anmeldung ist abgelaufen. Bitte melden Sie sich erneut an.",
+    account_deactivated:
+      "Dieses Konto ist gesperrt. Bitte wenden Sie sich an Ihre Kanzlei oder an support@subsum.io.",
+    account_locked: "Zu viele Fehlversuche. Bitte versuchen Sie es in 30 Minuten erneut.",
     generic: "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
   } as Record<string, string>,
   twoFactor: {
@@ -95,7 +98,11 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
   const [challengeToken, setChallengeToken] = useState<string | null>(null);
   const [totpCode, setTotpCode] = useState("");
   const industry = "legal";
-  const [error, setError] = useState<string | null>(null);
+  // SSO sends a blocked account back here with ?error=<code>.
+  const [error, setError] = useState<string | null>(() => {
+    const code = params.get("error");
+    return code ? (t.errors[code] ?? null) : null;
+  });
   const [loading, setLoading] = useState(false);
   const [ssoLoading, setSsoLoading] = useState(false);
   const [ssoConfigured, setSsoConfigured] = useState(false);

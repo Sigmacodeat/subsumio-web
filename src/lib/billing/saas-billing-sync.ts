@@ -25,6 +25,8 @@ const log = logger("lib/billing/saas-billing-sync");
 /** Stripe plan ID ("pro" | "team") → SaaS PlanTier ("solo" | "kanzlei"). */
 export type SaasPlanTier = "solo" | "kanzlei" | "enterprise";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * Erstellt einen saas_orgs Row + saas_subscriptions Row für einen User,
  * der gerade via Stripe abonniert hat. Idempotent: wenn bereits vorhanden,
@@ -78,12 +80,15 @@ export async function createSaasOrgForUser(
         [saasPlan, seats, orgId]
       );
     } else {
-      // Create new org
+      // Create the billing account under the paying user's own id, the same
+      // key every credit query uses (see src/lib/billing/billing-account.ts
+      // and ensureBillingOrg). A random id here used to force a workaround
+      // that wrote the billing id into user.orgId — the team-membership field.
       const orgResult = await client.query<{ id: string }>(
-        `INSERT INTO saas_orgs (name, slug, plan, seats)
-         VALUES ($1, $2, $3, $4)
+        `INSERT INTO saas_orgs (id, name, slug, plan, seats)
+         VALUES (COALESCE($5::uuid, gen_random_uuid()), $1, $2, $3, $4)
          RETURNING id`,
-        [orgName, orgSlug, saasPlan, seats]
+        [orgName, orgSlug, saasPlan, seats, UUID_RE.test(userId) ? userId : null]
       );
       orgId = orgResult.rows[0].id;
     }

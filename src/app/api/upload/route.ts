@@ -209,8 +209,8 @@ export const POST = createHandler(
             // The engine may start the paid legal pipeline after extraction.
             // Ownership is added only by this authenticated server-side proxy,
             // never accepted from the browser multipart body.
-            "x-subsumio-owner-id": ctx.user.orgId ?? ctx.user.id,
-            "x-subsumio-owner-type": ctx.user.orgId ? "org" : "user",
+            "x-subsumio-owner-id": ctx.billing.ownerId,
+            "x-subsumio-owner-type": ctx.billing.ownerType,
             "x-subsumio-user-id": ctx.user.id,
           },
           body: cleanForm,

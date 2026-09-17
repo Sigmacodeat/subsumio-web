@@ -8,16 +8,11 @@ import { StatCard, PlanBadge } from "@/components/admin/admin-stat-card";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { SpendCapForm } from "@/components/ops/spend-cap-form";
 import { SupportSessionPanel } from "@/components/ops/support-session-panel";
+import { MemberRoleControl, TenantSuspensionPanel } from "@/components/ops/tenant-actions";
+import { suspensionOf } from "@/lib/tenant-admin";
 
 export const metadata = { title: "Kanzlei" };
 export const dynamic = "force-dynamic";
-
-const ROLE_LABEL: Record<string, string> = {
-  admin: "Admin",
-  lawyer: "Anwalt",
-  assistant: "Assistenz",
-  client_viewer: "Mandant (lesend)",
-};
 
 export default async function OpsFirmDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -31,6 +26,7 @@ export default async function OpsFirmDetailPage({ params }: { params: Promise<{ 
     checkSpendCap(org.billing.ownerId, org.billing.ownerType, 0),
     listSupportSessionsForOrg(org.id, 10),
   ]);
+  const suspension = await suspensionOf(org);
   const active = members.filter((u) => !u.deactivatedAt);
   const owner = members.find((u) => u.id === org.ownerId);
   const twoFactor = active.filter((u) => u.twoFactorEnabled).length;
@@ -127,7 +123,17 @@ export default async function OpsFirmDetailPage({ params }: { params: Promise<{ 
                   )}
                 </td>
                 <td className="px-5 py-3 text-[color:var(--ds-text-muted)]">{u.email}</td>
-                <td className="px-5 py-3">{ROLE_LABEL[u.role] ?? u.role}</td>
+                <td className="px-5 py-3">
+                  <MemberRoleControl
+                    tenantId={org.id}
+                    userId={u.id}
+                    userName={u.name}
+                    role={u.role}
+                    isOwner={u.id === org.ownerId}
+                    deactivated={Boolean(u.deactivatedAt)}
+                    teamFirm={org.kind === "org"}
+                  />
+                </td>
                 <td className="px-5 py-3">{u.twoFactorEnabled ? "aktiv" : "—"}</td>
                 <td className="px-5 py-3">
                   {u.deactivatedAt ? (
@@ -148,6 +154,15 @@ export default async function OpsFirmDetailPage({ params }: { params: Promise<{ 
         currentLimit={spend.cap?.creditLimit ?? null}
         currentPeriod={spend.cap?.period ?? "monthly"}
         spentInPeriod={spend.cap?.spentInPeriod ?? null}
+      />
+
+      <TenantSuspensionPanel
+        tenantId={org.id}
+        tenantName={org.name}
+        suspended={suspension.suspended}
+        suspendedAt={suspension.suspendedAt}
+        reason={suspension.reason}
+        activeMembers={active.length}
       />
 
       <SupportSessionPanel orgId={org.id} orgName={org.name} />

@@ -8,6 +8,11 @@ import { loginSchema } from "@/lib/api-validation";
 import { isAccountLocked, recordFailedLogin, clearLockout } from "@/lib/auth/lockout";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { logAudit } from "@/lib/audit";
+import {
+  ACCOUNT_BLOCKED_CODE,
+  ACCOUNT_BLOCKED_MESSAGE,
+  isAccountBlocked,
+} from "@/lib/auth/account-status";
 import { z } from "zod";
 
 // Extended schema with trimmed email for internal validation
@@ -66,6 +71,11 @@ export const POST = createPublicHandler(
 
     // Successful login — clear any lockout state
     await clearLockout(email);
+
+    // Checked only after the password, so the status never leaks to a guesser.
+    if (await isAccountBlocked(user)) {
+      return apiError(ACCOUNT_BLOCKED_CODE, ACCOUNT_BLOCKED_MESSAGE, 403);
+    }
 
     // 2FA enforcement: if enabled, return a challenge token instead of a session.
     // The client must POST to /api/auth/2fa/login-verify with the TOTP code.

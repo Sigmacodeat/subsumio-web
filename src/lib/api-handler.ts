@@ -306,6 +306,7 @@ export function createHandler<
         internalContext = {
           brainId: "internal",
           plan: "enterprise",
+          billing: { ownerId: "internal", ownerType: "user" },
           user: {
             id: "internal",
             email: "internal@subsumio",

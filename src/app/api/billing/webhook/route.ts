@@ -3,7 +3,8 @@
 // Idempotency: tracks processed event IDs to prevent duplicate plan updates.
 
 import { NextRequest, NextResponse } from "next/server";
-import { getStore, type Plan } from "@/lib/auth/store";
+import { getOrgStore, getStore, type Plan } from "@/lib/auth/store";
+import { billingAccountFor } from "@/lib/billing/billing-account";
 import { verifyStripeSignature } from "@/lib/stripe-webhook";
 import { createWebhookHandler } from "@/lib/api-handler";
 import { planForPriceId } from "@/lib/billing/plans";
@@ -16,7 +17,7 @@ import {
   buildDunningEmailBody,
   buildReactivationEmailBody,
 } from "@/lib/billing/dunning";
-import { addCredits, getCreditPack, type OwnerType } from "@/lib/billing/credits";
+import { addCredits, getCreditPack } from "@/lib/billing/credits";
 import { isDuplicateEvent, markEventProcessed } from "./helpers";
 import {
   createSaasOrgForUser,
@@ -85,10 +86,11 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
         const credits = pack ? pack.credits : creditsAmount;
 
         if (credits > 0) {
-          // Resolve owner type: if user has orgId, credits go to org pool
+          // Credits go to the firm's paying account (the team's billing user,
+          // or the buyer when they work alone).
           const user = await store.getById(userId);
-          const ownerType: OwnerType = user?.orgId ? "org" : "user";
-          const ownerId = user?.orgId ?? userId;
+          const org = user?.orgId ? await getOrgStore().getById(user.orgId) : null;
+          const { ownerId, ownerType } = billingAccountFor({ id: userId }, org);
 
           await addCredits(ownerId, ownerType, credits, {
             type: "purchase",
@@ -145,7 +147,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
           const subscriptionId = (obj as { subscription?: string }).subscription;
           // For team plan, seats come from metadata (5-50); default 5.
           const seatsFromMeta = obj.metadata?.seats ? parseInt(obj.metadata.seats, 10) : undefined;
-          const orgId = await createSaasOrgForUser(
+          await createSaasOrgForUser(
             userId,
             user.email ?? userId,
             plan as "pro" | "team",
@@ -153,14 +155,6 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
             typeof subscriptionId === "string" ? subscriptionId : undefined,
             seatsFromMeta && seatsFromMeta >= 5 ? seatsFromMeta : undefined
           );
-          // Persist orgId on the user record so that pipeline-settle's session
-          // path resolves ownerType='org' + ownerId=UUID. Without this,
-          // deductCredits would use the user-id string as org_id → 0 rows
-          // matched on saas_credit_balance (UUID column) → credits never
-          // deducted for browser-initiated settlements.
-          if (orgId && !user.orgId) {
-            await store.update(userId, { orgId });
-          }
         }
       }
       break;
@@ -191,7 +185,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
         const user = await store.getById(userId);
         if (user) {
           const seatsFromMeta = metadata?.seats ? parseInt(metadata.seats, 10) : undefined;
-          const orgId = await createSaasOrgForUser(
+          await createSaasOrgForUser(
             userId,
             user.email ?? userId,
             resolvedPlan as "pro" | "team",
@@ -205,9 +199,6 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
                 ? stripeQuantity
                 : undefined
           );
-          if (orgId && !user.orgId) {
-            await store.update(userId, { orgId });
-          }
         }
       }
       break;
@@ -236,7 +227,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
         if (customerId) {
           const user = await store.getByStripeCustomerId(customerId);
           if (user) {
-            await store.update(user.id, { plan: "free", orgId: null });
+            await store.update(user.id, { plan: "free" });
             await cancelSaasOrg(user.id);
           }
         }
@@ -271,28 +262,6 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
         // SaaS Billing Sync: update saas_orgs.plan + saas_subscriptions +
         // saas_credit_balance included credits for the new plan.
         await updateSaasPlan(resolvedUserId, resolvedPlan);
-        // Backfill user.orgId for existing users who subscribed before the
-        // checkout.session.completed orgId fix. Without this, ctx.user.orgId
-        // stays null → ownerType='user' → deductCredits uses user-id string
-        // as org_id → 0 rows matched on saas_credit_balance (UUID column).
-        const userForOrgBackfill = await store.getById(resolvedUserId);
-        if (userForOrgBackfill && !userForOrgBackfill.orgId) {
-          const pool = (await import("@/lib/auth/store")).getSharedPgPool();
-          if (pool) {
-            try {
-              const orgSlug = `user-${resolvedUserId.slice(0, 8)}`;
-              const { rows } = await pool.query<{ id: string }>(
-                `SELECT id FROM saas_orgs WHERE slug = $1`,
-                [orgSlug]
-              );
-              if (rows[0]?.id) {
-                await store.update(resolvedUserId, { orgId: rows[0].id });
-              }
-            } catch {
-              // best-effort
-            }
-          }
-        }
         // SaaS Billing Sync: sync seat count from Stripe quantity.
         // For team plan, quantity = seats. For pro, quantity is always 1.
         // Only call if quantity changed (avoids redundant updates).
@@ -332,10 +301,8 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       if (customerId) {
         const user = await store.getByStripeCustomerId(customerId);
         if (user) {
-          // Clear orgId + set plan to free — fully disconnect from SaaS billing.
-          // Without clearing orgId, getBalance would still find the old
-          // saas_credit_balance row (with included_credit=0 from cancelSaasOrg).
-          await store.update(user.id, { plan: "free", orgId: null });
+          // Back to free. Team membership (orgId) is not billing and stays.
+          await store.update(user.id, { plan: "free" });
           // SaaS Billing Sync: mark subscription as canceled
           await cancelSaasOrg(user.id);
         }

@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { getStore, toPublic } from "@/lib/auth/store";
+import {
+  ACCOUNT_BLOCKED_CODE,
+  ACCOUNT_BLOCKED_MESSAGE,
+  isAccountBlocked,
+} from "@/lib/auth/account-status";
 import { createSession, SESSION_COOKIE } from "@/lib/auth/session";
 import { verifyActionToken, bindFragment } from "@/lib/auth/tokens";
 import { verifyTOTP } from "@/lib/totp";
@@ -42,6 +47,11 @@ export const POST = createPublicHandler(
     const user = await store.getById(payload.uid);
     if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
       return apiError("2fa_not_enabled", "2FA not enabled", 400);
+    }
+
+    // The account may have been blocked between password and second factor.
+    if (await isAccountBlocked(user)) {
+      return apiError(ACCOUNT_BLOCKED_CODE, ACCOUNT_BLOCKED_MESSAGE, 403);
     }
 
     // Verify the bind is still valid (password hasn't changed)

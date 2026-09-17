@@ -15,8 +15,8 @@ export const GET = createHandler(
     cacheMaxAge: 30,
   },
   async (ctx, _body, query, req) => {
-    const ownerType: OwnerType = ctx.user.orgId ? "org" : "user";
-    const ownerId = ctx.user.orgId ?? ctx.user.id;
+    const ownerType: OwnerType = ctx.billing.ownerType;
+    const ownerId = ctx.billing.ownerId;
 
     const sinceParam = query?.since as string | undefined;
     const untilParam = query?.until as string | undefined;

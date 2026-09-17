@@ -62,8 +62,8 @@ export const POST = createHandler(
         "Content-Type": "application/json",
         // Trusted engine-to-web boundary: the engine receives these only via
         // this authenticated server-side proxy, never from browser input.
-        "x-subsumio-owner-id": ctx.user.orgId ?? ctx.user.id,
-        "x-subsumio-owner-type": ctx.user.orgId ? "org" : "user",
+        "x-subsumio-owner-id": ctx.billing.ownerId,
+        "x-subsumio-owner-type": ctx.billing.ownerType,
         "x-subsumio-user-id": ctx.user.id,
         ...(wantsSse ? { Accept: "text/event-stream" } : {}),
       },

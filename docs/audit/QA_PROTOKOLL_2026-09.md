@@ -458,3 +458,30 @@ Kanzlei mit Team und einer Einzelkanzlei. Testkonten sind wieder entfernt.
 - **Offen:** Guthaben beim Wechsel von Einzelkanzlei zu Team (Abrechnung läuft dann über die
   Organisation) ist nicht geprüft. Kanzlei sperren und Admin neu setzen gibt es in der
   Konsole noch nicht.
+
+## Kanzlei-Aktionen, Anmeldesperre und Abrechnung — Praxistest (17.09., abends)
+
+Durchgespielt über die Betreiber-Konsole mit einer Kanzlei aus Gründerin und
+eingeladenem Mitglied; Testkonten danach gelöscht. 16 von 16 Prüfungen bestanden.
+
+- **Deaktivierte Konten konnten sich anmelden (Befund, behoben).** Login, Zwei-Faktor,
+  SSO und Sitzungs-Leser prüfen jetzt Konto- und Kanzleistatus.
+- **Kanzlei sperren und entsperren:** alle Konten sofort abgemeldet (401), Login zeigt
+  eine lesbare Meldung, Liste markiert „gesperrt“, Entsperren stellt den Zugang wieder her.
+- **Rollen und Inhaber:** Rolle eines Mitglieds geändert, Inhaber gewechselt (neuer
+  Inhaber wird Admin), Inhaber kann nicht herabgestuft werden, auch nicht über die
+  Nutzerseite; eine Rollenänderung meldet das Konto ab.
+- **Guthaben im Team (Befund, behoben):** Mitglieder verbrauchten aus einem eigenen
+  Kanzlei-Topf, der nur Testguthaben bekam; ein gekauftes Abo lag beim Zahler. Eine
+  Teamgründung hätte ein zweites Testguthaben erzeugt. Jetzt nutzt die ganze Kanzlei das
+  Guthaben des zahlenden Kontos. Gegentest: Mitglied und Gründerin sehen denselben Topf.
+- **Stripe-Webhook (Befund, behoben):** schrieb die Abrechnungs-ID in das Feld für die
+  Team-Mitgliedschaft und leerte es bei Kündigung, womit ein Inhaber aus seiner Kanzlei
+  gefallen wäre. Der Webhook fasst die Mitgliedschaft nicht mehr an (Test sichert das ab).
+- **Fehlermeldungen auf der Website unlesbar (Befund, behoben):** Status-Farben waren nur im
+  Dashboard definiert. Meldung „Konto gesperrt“ jetzt gut lesbar.
+- **Banner-Aussage korrigiert:** „Jede Antwort wird fünffach geprüft“ vermischte die fünf
+  Aufnahme-Schritte des Kanzleiwissens mit der Antwortprüfung. Neu: „Zitierte Normen in
+  Antworten werden gegen die Rechtsquellen geprüft“.
+- Architektur und Prüfabfragen für die Produktionsdatenbank:
+  `docs/architecture/TENANTS_AND_BILLING.md`.

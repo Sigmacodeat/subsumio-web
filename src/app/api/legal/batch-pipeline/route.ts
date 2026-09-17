@@ -96,8 +96,8 @@ export const POST = createHandler(
               };
             }
 
-            const ownerType: OwnerType = ctx.user.orgId ? "org" : "user";
-            const ownerId = ctx.user.orgId ?? ctx.user.id;
+            const ownerType: OwnerType = ctx.billing.ownerType;
+            const ownerId = ctx.billing.ownerId;
             const workflowId = "aktencheck";
             // A document can span many pages. Reserving by document count
             // underestimates multi-page Akten and makes settlement fail later.

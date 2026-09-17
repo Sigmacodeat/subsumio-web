@@ -27,6 +27,7 @@ import { env } from "@/lib/env";
 import { isPlatformOperator } from "@/lib/auth/platform-operator";
 import { getActiveSupportSession, type SupportSession } from "@/lib/support-session";
 import { getTenant } from "@/lib/tenants";
+import { billingAccountFor, type BillingAccount } from "@/lib/billing/billing-account";
 
 import { logger } from "@/lib/logger";
 const log = logger("lib/engine");
@@ -106,6 +107,8 @@ export interface EngineContext {
   /** Plan whose limits apply to this brain (org → the OWNER's plan). */
   plan: Plan;
   user: User;
+  /** Whose credits this request uses — see src/lib/billing/billing-account.ts. */
+  billing: BillingAccount;
   /** Set only while a platform operator is inside a time-boxed support
    *  session (see src/lib/support-session.ts) — never for firm users. */
   supportSession?: SupportSession;
@@ -138,6 +141,7 @@ export async function engineContext(): Promise<EngineContext | null> {
   let plan: Plan = user.plan;
   let effectiveUser = user;
   let supportSession: SupportSession | undefined;
+  let billing = billingAccountFor(user, null);
 
   if (isPlatformOperator(user)) {
     const active = await getActiveSupportSession(user.id);
@@ -146,8 +150,9 @@ export async function engineContext(): Promise<EngineContext | null> {
       const tenant = await getTenant(active.orgId);
       if (tenant) {
         brainId = tenant.brainId;
-        const owner = await getStore().getById(tenant.ownerId);
-        if (owner) plan = owner.plan;
+        billing = { ownerId: tenant.billing.ownerId, ownerType: tenant.billing.ownerType };
+        const payer = await getStore().getById(tenant.billing.ownerId);
+        if (payer) plan = payer.plan;
         supportSession = active;
         effectiveUser = { ...user, role: "admin", orgId: tenant.org?.id ?? null };
       }
@@ -155,10 +160,21 @@ export async function engineContext(): Promise<EngineContext | null> {
   }
   if (!supportSession && user.orgId) {
     const org = await getOrgStore().getById(user.orgId);
+    // Defence in depth: members are deactivated on suspension, but an account
+    // added afterwards (SCIM, invite) must not work in a suspended firm either.
+    if (org?.suspendedAt) return null;
     if (org) {
       brainId = org.brainId;
-      const owner = await getStore().getById(org.ownerId);
-      if (owner) plan = owner.plan;
+      billing = billingAccountFor(user, org);
+      const payer = await getStore().getById(billing.ownerId);
+      if (payer) plan = payer.plan;
+    } else {
+      // `orgId` without a firm behind it (older Stripe checkouts wrote their
+      // billing id here). The person works alone; repair the record.
+      effectiveUser = { ...user, orgId: null };
+      void getStore()
+        .update(user.id, { orgId: null })
+        .catch(() => {});
     }
   }
 
@@ -172,7 +188,7 @@ export async function engineContext(): Promise<EngineContext | null> {
   if (user.jurisdiction) {
     headers["x-subsumio-jurisdiction"] = user.jurisdiction;
   }
-  return { headers, brainId, plan, user: effectiveUser, supportSession };
+  return { headers, brainId, plan, user: effectiveUser, billing, supportSession };
 }
 
 /**
@@ -386,8 +402,8 @@ export async function requireEngineContext(
   // production-build server).
   const e2eBypass = env("SUBSUMIO_E2E") === "1";
   if (creditOp && CREDIT_COSTS[creditOp] > 0 && !e2eBypass) {
-    const ownerType: OwnerType = ctx.user.orgId ? "org" : "user";
-    const ownerId = ctx.user.orgId ?? ctx.user.id;
+    const ownerType: OwnerType = ctx.billing.ownerType;
+    const ownerId = ctx.billing.ownerId;
     // New accounts start with the 14-day trial balance (idempotent, one-time).
     await ensureTrialCredits(ownerId, ownerType);
     const creditCheck = await checkCredits(ownerId, ownerType, CREDIT_COSTS[creditOp]);
@@ -431,8 +447,8 @@ export async function recordCreditConsumption(
 ): Promise<void> {
   const cost = CREDIT_COSTS[operation];
   if (cost <= 0) return;
-  const ownerType: OwnerType = ctx.user.orgId ? "org" : "user";
-  const ownerId = ctx.user.orgId ?? ctx.user.id;
+  const ownerType: OwnerType = ctx.billing.ownerType;
+  const ownerId = ctx.billing.ownerId;
   try {
     await deductCredits(ownerId, ownerType, cost, { operation, caseSlug });
     // Budget Alert prüfen (50%/75%/90% wie OpenAI) — non-blocking.

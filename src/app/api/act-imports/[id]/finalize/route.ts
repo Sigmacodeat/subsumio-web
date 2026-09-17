@@ -75,8 +75,8 @@ export const POST = createHandler(
         400
       );
     }
-    const ownerType: OwnerType = ctx.user.orgId ? "org" : "user";
-    const ownerId = ctx.user.orgId ?? ctx.user.id;
+    const ownerType: OwnerType = ctx.billing.ownerType;
+    const ownerId = ctx.billing.ownerId;
     // Finalizing a complete act preserves the former full-pipeline behavior;
     // unlike the everyday trigger, it is an explicit, reviewed bulk action.
     const workflowId = "full_pipeline";

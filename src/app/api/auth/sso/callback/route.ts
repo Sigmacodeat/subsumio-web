@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { authenticateWithCode } from "@/lib/workos";
 import { getStore, buildNewUser } from "@/lib/auth/store";
+import { ACCOUNT_BLOCKED_CODE, isAccountBlocked } from "@/lib/auth/account-status";
 import { createSession, SESSION_COOKIE } from "@/lib/auth/session";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { env } from "@/lib/env";
@@ -87,6 +88,13 @@ export const GET = createPublicHandler(
             ? new Date().toISOString()
             : user.emailVerifiedAt,
         });
+      }
+
+      if (await isAccountBlocked(user)) {
+        return Response.redirect(
+          `${env("NEXT_PUBLIC_APP_URL") || "https://subsum.io"}/at/login?error=${ACCOUNT_BLOCKED_CODE}`,
+          302
+        );
       }
 
       // Create Subsumio session

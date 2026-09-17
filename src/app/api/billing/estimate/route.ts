@@ -31,8 +31,8 @@ export const GET = createHandler(
     query: estimateQuerySchema,
   },
   async (ctx, _body, query) => {
-    const ownerType: OwnerType = ctx.user.orgId ? "org" : "user";
-    const ownerId = ctx.user.orgId ?? ctx.user.id;
+    const ownerType: OwnerType = ctx.billing.ownerType;
+    const ownerId = ctx.billing.ownerId;
 
     // Determine page count: explicit pages > parts × 50 > default 50
     const pages = query?.pages ?? (query?.parts ? query.parts * 50 : 50);

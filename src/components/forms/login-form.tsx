@@ -150,9 +150,11 @@ export function LoginForm() {
         <p className="text-sm text-[color:var(--ds-danger-text)]">
           {login.data.error === "invalid_credentials"
             ? "E-Mail oder Passwort falsch."
-            : login.data.error === "sso_required"
-              ? `Bitte melden Sie sich über ${login.data.provider ?? "SSO"} an.`
-              : "Anmeldung fehlgeschlagen."}
+            : login.data.error === "account_deactivated"
+              ? "Dieses Konto ist gesperrt. Bitte wenden Sie sich an Ihre Kanzlei oder an support@subsum.io."
+              : login.data.error === "sso_required"
+                ? `Bitte melden Sie sich über ${login.data.provider ?? "SSO"} an.`
+                : "Anmeldung fehlgeschlagen."}
         </p>
       )}
 

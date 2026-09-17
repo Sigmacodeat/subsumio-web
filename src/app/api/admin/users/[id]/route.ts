@@ -3,6 +3,8 @@ import { createHandler, apiError } from "@/lib/api-handler";
 import { getStore, type Plan, type KanzleiRole } from "@/lib/auth/store";
 import { revokeAllSessions } from "@/lib/auth/session";
 import { isValidIndustry } from "@/lib/industry-pack";
+import { getTenant } from "@/lib/tenants";
+import { TenantAdminFailure, setMemberRole, tenantAdminMessage } from "@/lib/tenant-admin";
 
 const updateSchema = z.object({
   plan: z.enum(["free", "pro", "team", "enterprise"]).optional(),
@@ -33,7 +35,23 @@ export const PATCH = createHandler(
 
     const patch: Record<string, unknown> = {};
     if (body.plan !== undefined) patch.plan = body.plan as Plan;
-    if (body.role !== undefined) patch.role = body.role as KanzleiRole;
+    if (body.role !== undefined && body.role !== target.role) {
+      // Inside a team the same rules as on the firm page apply: the owner stays
+      // admin and the firm keeps at least one active admin.
+      const tenant = target.orgId ? await getTenant(target.orgId) : null;
+      if (tenant?.kind === "org") {
+        try {
+          await setMemberRole(tenant, target.id, body.role as KanzleiRole);
+        } catch (err) {
+          if (err instanceof TenantAdminFailure) {
+            return apiError(err.code, tenantAdminMessage(err.code), 409);
+          }
+          throw err;
+        }
+      } else {
+        patch.role = body.role as KanzleiRole;
+      }
+    }
     if (body.industry !== undefined) {
       if (body.industry === null || isValidIndustry(body.industry)) {
         patch.industry = body.industry;

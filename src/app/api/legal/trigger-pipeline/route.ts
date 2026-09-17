@@ -55,8 +55,8 @@ export const POST = createHandler(
   async (ctx, body) => {
     const headers = await engineHeaders();
     if (!headers) return apiError("unauthorized", "Nicht authentifiziert", 401);
-    const ownerType: OwnerType = ctx.user.orgId ? "org" : "user";
-    const ownerId = ctx.user.orgId ?? ctx.user.id;
+    const ownerType: OwnerType = ctx.billing.ownerType;
+    const ownerId = ctx.billing.ownerId;
     let pendingReservation: { pipelineKey: string; reservedCredits: number } | undefined;
     let pipelineQueued = false;
 

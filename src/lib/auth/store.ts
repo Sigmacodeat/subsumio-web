@@ -88,6 +88,15 @@ export interface Org {
    * undefined = "any" (no restriction, prior behavior for every existing org).
    */
   modelPolicy?: "any" | "eu_only";
+  /** The user who holds the subscription and whose credits the team uses.
+   *  Defaults to ownerId; stays put when ownership is handed over. */
+  billingUserId?: string | null;
+  /** Set by the platform operator; every member is signed out and blocked. */
+  suspendedAt?: string | null;
+  suspendedReason?: string | null;
+  suspendedBy?: string | null;
+  /** Members the suspension deactivated — reactivation restores exactly these. */
+  suspendedMemberIds?: string[] | null;
 }
 
 export interface OrgStore {
@@ -640,6 +649,8 @@ export function buildNewOrg(opts: { name: string; ownerId: string; brainId?: str
   return {
     id: randomUUID(),
     name: opts.name.trim(),
+    // The founder's subscription and credits carry the team.
+    billingUserId: opts.ownerId,
     // A founder who already worked alone keeps their data: the firm adopts the
     // founder's brain instead of starting on an empty one.
     brainId: opts.brainId?.trim() || `org_${randomUUID().slice(0, 8)}`,

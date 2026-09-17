@@ -170,8 +170,8 @@ export const POST = createHandler(
     const payload: UploadTokenPayload = {
       brain_id: ctx.brainId,
       user_id: ctx.user.id,
-      owner_id: ctx.user.orgId ?? ctx.user.id,
-      owner_type: ctx.user.orgId ? "org" : "user",
+      owner_id: ctx.billing.ownerId,
+      owner_type: ctx.billing.ownerType,
       source,
       ...(caseSlug ? { case_slug: caseSlug } : {}),
       ...(title ? { title } : {}),

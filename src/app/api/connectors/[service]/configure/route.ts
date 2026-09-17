@@ -54,8 +54,8 @@ export const POST = createHandler(
             // The browser cannot select an organisation or user id. The
             // authenticated dashboard context supplies both server-side.
             responsible_user_id: ctx.user.id,
-            owner_id: ctx.user.orgId ?? ctx.user.id,
-            owner_type: ctx.user.orgId ? "org" : "user",
+            owner_id: ctx.billing.ownerId,
+            owner_type: ctx.billing.ownerType,
           }),
           signal: AbortSignal.timeout(15_000),
         }

@@ -130,7 +130,7 @@ export const NAV: NavContent = {
   pricingLabel: "Preise",
   pricingHref: "/pricing",
   announcement: {
-    text: "Neu: Jede Antwort wird fünffach gegen Akte und Rechtsquellen geprüft",
+    text: "Neu: Zitierte Normen in Antworten werden gegen die Rechtsquellen geprüft",
     href: "/superbrain",
     badge: "AI",
   },
@@ -185,7 +185,7 @@ export const NAV: NavContent = {
       featuredContent: {
         title: "SuperBrain 2.0",
         description:
-          "Wie Subsumio Antworten fünffach prüft und das Kanzleiwissen über Nacht ordnet — belegte Antworten statt Halluzination",
+          "Wie Subsumio Kanzleiwissen in fünf Prüfschritten aufbaut und über Nacht auf Widersprüche prüft",
         href: "/superbrain",
         badge: "AI",
         icon: "Brain",

@@ -23,8 +23,8 @@ export const GET = createHandler(
     cacheMaxAge: 15,
   },
   async (ctx, _body, _query, _req) => {
-    const ownerType: OwnerType = ctx.user.orgId ? "org" : "user";
-    const ownerId = ctx.user.orgId ?? ctx.user.id;
+    const ownerType: OwnerType = ctx.billing.ownerType;
+    const ownerId = ctx.billing.ownerId;
 
     const [balance, transactions] = await Promise.all([
       getBalance(ownerId, ownerType),
@@ -63,8 +63,8 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body, _query, _req) => {
-    const ownerType: OwnerType = ctx.user.orgId ? "org" : "user";
-    const ownerId = ctx.user.orgId ?? ctx.user.id;
+    const ownerType: OwnerType = ctx.billing.ownerType;
+    const ownerId = ctx.billing.ownerId;
 
     await setAutoReload(ownerId, ownerType, {
       enabled: body.enabled,

@@ -685,6 +685,18 @@
      ──────────────────────────────────────────────────────────────── */
   --ds-bg: var(--neutral-900);
   --ds-surface: var(--neutral-800);
+  /* Status colours outside the dashboard (website, sign-in, join, recovery).
+     Before, they existed only inside [data-app="dashboard"], so an error on
+     the sign-in page rendered in an inherited near-black on a dark card. */
+  --ds-success-text: hsl(150, 40%, 72%);
+  --ds-success-bg: hsla(150, 35%, 55%, 0.12);
+  --ds-success-border: hsla(150, 35%, 55%, 0.22);
+  --ds-warning-text: hsl(38, 60%, 70%);
+  --ds-warning-bg: hsla(38, 55%, 55%, 0.12);
+  --ds-warning-border: hsla(38, 55%, 55%, 0.22);
+  --ds-danger-text: hsl(0, 50%, 72%);
+  --ds-danger-bg: hsla(0, 45%, 55%, 0.12);
+  --ds-danger-border: hsla(0, 45%, 55%, 0.22);
   --ds-surface-2: var(--neutral-700);
   --ds-hover: var(--neutral-600);
   --ds-surface-hover: var(--ds-hover);
@@ -781,6 +793,17 @@
   --mk-parchment: hsl(38, 26%, 95%);
   --mk-ink: hsl(222, 35%, 12%);
   --mk-accent-brass: hsl(36, 58%, 32%);
+
+  /* Status colours on light website sections (same values as the light dashboard). */
+  --ds-success-text: var(--signal-success-700);
+  --ds-success-bg: color-mix(in srgb, var(--signal-success-500) 10%, #ffffff);
+  --ds-success-border: color-mix(in srgb, var(--signal-success-500) 24%, #ffffff);
+  --ds-warning-text: var(--signal-warning-800);
+  --ds-warning-bg: color-mix(in srgb, var(--signal-warning-500) 10%, #ffffff);
+  --ds-warning-border: color-mix(in srgb, var(--signal-warning-500) 24%, #ffffff);
+  --ds-danger-text: var(--signal-danger-700);
+  --ds-danger-bg: color-mix(in srgb, var(--signal-danger-500) 10%, #ffffff);
+  --ds-danger-border: color-mix(in srgb, var(--signal-danger-500) 24%, #ffffff);
 }
 [data-tone="slate"] {
   --mk-bg: hsl(222, 30%, 12%);
@@ -826,6 +849,15 @@
   --ds-text-muted: var(--mk-text-muted);
   --ds-text-subtle: var(--mk-text-subtle);
   --ds-surface-2: var(--mk-surface-2);
+  --ds-success-text: hsl(150, 40%, 72%);
+  --ds-success-bg: hsla(150, 35%, 55%, 0.12);
+  --ds-success-border: hsla(150, 35%, 55%, 0.22);
+  --ds-warning-text: hsl(38, 60%, 70%);
+  --ds-warning-bg: hsla(38, 55%, 55%, 0.12);
+  --ds-warning-border: hsla(38, 55%, 55%, 0.22);
+  --ds-danger-text: hsl(0, 50%, 72%);
+  --ds-danger-bg: hsla(0, 45%, 55%, 0.12);
+  --ds-danger-border: hsla(0, 45%, 55%, 0.22);
 }
 
 /* DASHBOARD tone — maps --mk-* to the authenticated dashboard's --ds-* dark

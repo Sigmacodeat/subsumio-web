@@ -11,6 +11,7 @@
  * 5. Update lastUsedAt (fire-and-forget)
  */
 
+import { billingAccountFor } from "@/lib/billing/billing-account";
 import { hashApiKey } from "@/lib/api-keys";
 import { getApiKeyStore, type StoredApiKey } from "@/lib/api-key-store";
 import { getStore, getOrgStore, type Plan } from "@/lib/auth/store";
@@ -48,15 +49,18 @@ export async function verifyApiKey(
   if (!user) return null;
   if (user.deactivatedAt) return null;
 
-  // Resolve brainId + plan (same logic as engineContext)
+  // Resolve brainId, plan and paying account (same logic as engineContext)
   let brainId = user.brainId;
   let plan: Plan = user.plan;
+  let billing = billingAccountFor(user, null);
   if (user.orgId) {
     const org = await getOrgStore().getById(user.orgId);
+    if (org?.suspendedAt) return null;
     if (org) {
       brainId = org.brainId;
-      const owner = await getStore().getById(org.ownerId);
-      if (owner) plan = owner.plan;
+      billing = billingAccountFor(user, org);
+      const payer = await getStore().getById(billing.ownerId);
+      if (payer) plan = payer.plan;
     }
   }
 
@@ -75,7 +79,7 @@ export async function verifyApiKey(
     );
 
   return {
-    ctx: { headers, brainId, plan, user },
+    ctx: { headers, brainId, plan, user, billing },
     key: match,
   };
 }

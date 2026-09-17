@@ -72,6 +72,11 @@ export default async function OpsFirmsPage() {
                   >
                     {org.name}
                   </Link>
+                  {org.org?.suspendedAt && (
+                    <span className="ml-2 rounded-full bg-[color:var(--ds-danger-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-danger-text)]">
+                      gesperrt
+                    </span>
+                  )}
                   {org.kind === "solo" && (
                     <span className="ml-2 text-xs text-[color:var(--ds-text-subtle)]">
                       Einzelkanzlei

@@ -25,8 +25,8 @@ export const GET = createHandler(
     query: tokenUsageQuerySchema,
   },
   async (ctx, _body, query) => {
-    const ownerType: OwnerType = ctx.user.orgId ? "org" : "user";
-    const ownerId = ctx.user.orgId ?? ctx.user.id;
+    const ownerType: OwnerType = ctx.billing.ownerType;
+    const ownerId = ctx.billing.ownerId;
 
     const since = query?.since ? new Date(query.since) : undefined;
     const until = query?.until ? new Date(query.until) : undefined;

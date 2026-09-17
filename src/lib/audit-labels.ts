@@ -118,6 +118,10 @@ export type AuditAction =
   | "feedback.submit"
   | "time.auto_extract"
   | "admin.user_update"
+  | "admin.tenant_suspend"
+  | "admin.tenant_reactivate"
+  | "admin.tenant_role_change"
+  | "admin.tenant_owner_transfer"
   | "admin.user_deactivate"
   | "admin.data_delete"
   | "admin.data_export"
@@ -378,6 +382,10 @@ const ACTION_LABELS: Record<string, string> = {
   "time.auto_extract": "KI-Zeiterfassung generiert",
   "feedback.submit": "Retrieval-Feedback",
   "admin.user_update": "Admin: Benutzer aktualisiert",
+  "admin.tenant_suspend": "Betreiber: Kanzlei gesperrt",
+  "admin.tenant_reactivate": "Betreiber: Kanzlei entsperrt",
+  "admin.tenant_role_change": "Betreiber: Rolle in Kanzlei geändert",
+  "admin.tenant_owner_transfer": "Betreiber: Kanzlei-Inhaber gewechselt",
   "admin.user_deactivate": "Admin: Benutzer deaktiviert",
   "admin.data_delete": "Admin: Benutzerdaten gelöscht",
   "admin.data_export": "Admin: Benutzerdaten exportiert",

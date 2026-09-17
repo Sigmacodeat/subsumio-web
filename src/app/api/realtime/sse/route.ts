@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
+import { isAccountBlocked } from "@/lib/auth/account-status";
 import { verifySession, SESSION_COOKIE } from "@/lib/auth/session";
 import { getStore, getOrgStore } from "@/lib/auth/store";
 import { addSseConnection, removeSseConnection } from "@/lib/realtime-bus";
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
   }
 
   const user = await getStore().getById(session.uid);
-  if (!user) {
+  if (!user || (await isAccountBlocked(user))) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
 
