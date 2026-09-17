@@ -82,8 +82,8 @@ export default function LandingHero() {
 
           {/* H1 — bold (not black — Space Grotesk loads max 700) */}
           <h1
-            className="mb-5 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-bold tracking-tight text-balance [color:var(--mk-text)]"
-            style={{ fontFamily: "var(--font-display)" }}
+            className="mb-5 text-[clamp(2.5rem,7vw,4.25rem)] leading-[1.06] font-semibold tracking-[-0.02em] text-balance [color:var(--mk-text)]"
+            style={{ fontFamily: "var(--font-brand), Georgia, serif" }}
           >
             <SplitTextReveal
               as="span"
