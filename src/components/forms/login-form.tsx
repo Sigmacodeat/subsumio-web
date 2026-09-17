@@ -37,7 +37,7 @@ export function LoginForm() {
     };
 
     return (
-      <form onSubmit={submit2FA} className="space-y-4">
+      <form method="post" onSubmit={submit2FA} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="totp">2FA-Code</Label>
           <p className="text-xs text-[color:var(--ds-text-muted)]">
@@ -100,6 +100,7 @@ export function LoginForm() {
 
   return (
     <form
+      method="post"
       onSubmit={handleSubmit((data) => {
         login.mutate(data, {
           onSuccess: (res) => {

@@ -1,3 +1,4 @@
+import { getOrgStore } from "@/lib/auth/store";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { syncFromWorkOS, saveSyncStatus, isWorkosDirectorySyncConfigured } from "@/lib/scim";
 
@@ -32,6 +33,15 @@ export const POST = createHandler(
     }
     if (!ctx.user.orgId) {
       return apiError("no_org", "You must belong to an org to run a Directory Sync.", 400);
+    }
+    // Directory sync creates and deactivates accounts: firm owner only.
+    const org = await getOrgStore().getById(ctx.user.orgId);
+    if (!org || org.ownerId !== ctx.user.id) {
+      return apiError(
+        "owner_only",
+        "Nur die Inhaberin oder der Inhaber der Kanzlei darf synchronisieren",
+        403
+      );
     }
 
     try {

@@ -35,7 +35,11 @@ export function RegisterForm() {
   const registerMutation = useRegister();
 
   return (
-    <form onSubmit={handleSubmit((data) => registerMutation.mutate(data))} className="space-y-4">
+    <form
+      method="post"
+      onSubmit={handleSubmit((data) => registerMutation.mutate(data))}
+      className="space-y-4"
+    >
       <div className="space-y-1.5">
         <Label htmlFor="name">Name</Label>
         <Input

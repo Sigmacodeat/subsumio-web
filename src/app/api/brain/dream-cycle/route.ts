@@ -6,7 +6,7 @@ export const maxDuration = 300;
 
 export const POST = createHandler(
   {
-    action: "brain.write",
+    action: "admin.*",
     rateTier: "heavy",
     audit: (_ctx, _body) => ({
       action: "admin.dr" as const,

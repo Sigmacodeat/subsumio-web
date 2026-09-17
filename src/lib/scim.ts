@@ -739,9 +739,11 @@ export interface SyncStatus {
   deactivatedScimUsers: number;
 }
 
-export async function getSyncStatus(): Promise<SyncStatus> {
+export async function getSyncStatus(orgId?: string | null): Promise<SyncStatus> {
   const store = getStore();
-  const allUsers = await store.list();
+  // Counts are per firm. Without an org there is nothing to report — never fall
+  // back to the whole installation.
+  const allUsers = orgId ? await store.listByOrg(orgId) : [];
   const scimUsers = allUsers.filter((u) => u.scimExternalId || u.ssoProvider === "scim");
   const activeScimUsers = scimUsers.filter((u) => !u.deactivatedAt);
   const deactivatedScimUsers = scimUsers.filter((u) => u.deactivatedAt);

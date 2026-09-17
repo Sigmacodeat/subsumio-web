@@ -667,8 +667,6 @@ export async function buildNewUser(opts: {
   jurisdiction?: "DE" | "AT" | "CH" | null;
 }): Promise<User> {
   const s = getStore();
-  // first user ever becomes admin — sensible bootstrap for a fresh install
-  const isFirst = (await s.list()).length === 0;
   let referralCode = generateReferralCode();
   // collision check (8 chars over 31-alphabet makes this near-impossible, but cheap to verify)
   while (await s.getByReferralCode(referralCode)) referralCode = generateReferralCode();
@@ -677,7 +675,12 @@ export async function buildNewUser(opts: {
     email: opts.email.trim().toLowerCase(),
     name: opts.name.trim(),
     passwordHash: opts.passwordHash,
-    role: isFirst ? "admin" : "lawyer",
+    // Every signup creates its own firm (own brainId below), so the person who
+    // signs up administers it: team, security, mailbox, export. Platform-wide
+    // functions are NOT behind this role — they require a platform operator
+    // (src/lib/auth/platform-operator.ts). Members who join a firm via invite
+    // are downgraded on join (src/app/api/org/join).
+    role: "admin",
     plan: "free",
     locale: opts.locale ?? "en",
     referralCode,

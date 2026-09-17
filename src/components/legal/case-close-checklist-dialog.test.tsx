@@ -166,8 +166,9 @@ describe("CaseCloseChecklistDialog", () => {
       />
     );
 
+    // The button renders while the checklist is still loading, but disabled.
     await waitFor(() => {
-      expect(screen.getByText("cases.btn_archive")).toBeInTheDocument();
+      expect(screen.getByText("cases.btn_archive").closest("button")).toBeEnabled();
     });
 
     fireEvent.click(screen.getByText("cases.btn_archive"));

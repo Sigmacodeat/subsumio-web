@@ -477,6 +477,17 @@ describe("Onboarding progress", () => {
     } catch {}
   });
 
+  test("every signup administers its own firm, each with its own brain", async () => {
+    const first = await buildNewUser({ email: "a@kanzlei-a.at", name: "A", passwordHash: "h" });
+    await getStore().create(first);
+    const second = await buildNewUser({ email: "b@kanzlei-b.at", name: "B", passwordHash: "h" });
+    // Not only the very first account of an installation: a firm that signs up
+    // later must be able to reach its own team, security and mailbox settings.
+    expect(first.role).toBe("admin");
+    expect(second.role).toBe("admin");
+    expect(second.brainId).not.toBe(first.brainId);
+  });
+
   test("buildNewUser seeds default onboarding progress", async () => {
     const user = await buildNewUser({
       email: "onboarding@example.com",
@@ -532,7 +543,13 @@ describe("Onboarding progress", () => {
   test("toPublic exposes onboarding progress", () => {
     const user = makeUser({
       id: "test-public-onboarding",
-      onboardingProgress: { firm: true, firstCase: true, firstDeadline: false, teamInvited: false, firstQuery: false },
+      onboardingProgress: {
+        firm: true,
+        firstCase: true,
+        firstDeadline: false,
+        teamInvited: false,
+        firstQuery: false,
+      },
     });
     const pub = toPublic(user);
     expect(pub.onboardingProgress).toEqual({

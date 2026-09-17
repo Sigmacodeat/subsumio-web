@@ -133,7 +133,7 @@ export default function RecoveryForm({ mode }: { mode: "forgot" | "reset" }) {
               </Link>
             </div>
           ) : (
-            <form onSubmit={submit} className="space-y-4" noValidate>
+            <form method="post" onSubmit={submit} className="space-y-4" noValidate>
               {error && (
                 <div
                   role="alert"

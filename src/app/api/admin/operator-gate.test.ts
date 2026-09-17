@@ -18,6 +18,7 @@ vi.mock("@/lib/billing/saas-usage", () => ({
 vi.mock("@/lib/auth/api-key-auth", () => ({ verifyApiKey: vi.fn().mockResolvedValue(null) }));
 
 import { GET as saasUsage } from "./saas-usage/route";
+import { GET as ipAllowlist } from "./ip-allowlist/route";
 import { requireEngineContext } from "@/lib/engine";
 
 const OPERATOR = "ops@subsumio.example";
@@ -63,5 +64,17 @@ describe("operator gate on /api/admin/saas-usage", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.mocked(requireEngineContext).mockResolvedValue(ctx(OPERATOR) as any);
     expect((await saasUsage(request("subsum.io"))).status).toBe(404);
+  });
+
+  // Every firm owner is admin of their own firm, so installation-wide settings
+  // must sit behind the operator gate, not behind the firm role.
+  it("keeps the installation-wide IP allowlist away from Kanzlei admins", async () => {
+    (requireEngineContext as any).mockResolvedValue(ctx("ra@kanzlei.example"));
+    const res = await ipAllowlist(
+      new NextRequest("http://localhost:3000/api/admin/ip-allowlist", {
+        headers: { host: "ops.subsum.io" },
+      })
+    );
+    expect(res.status).toBe(403);
   });
 });

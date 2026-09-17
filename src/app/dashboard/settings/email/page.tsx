@@ -284,6 +284,7 @@ export default function EmailSettingsPage() {
 
       {showForm && (
         <form
+          method="post"
           onSubmit={connect}
           className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5"
         >

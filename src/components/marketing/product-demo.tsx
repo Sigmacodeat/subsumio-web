@@ -228,19 +228,25 @@ export default function ProductDemo({
 
       {/* Scene dots — also the manual control when autoplaying */}
       {!controlled && (
-        <div className="flex items-center justify-center gap-1.5 border-t border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2">
+        <div className="flex items-center justify-center gap-1 border-t border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-1">
           {ORDER.map((s) => (
             <button
               key={s}
               type="button"
               onClick={() => setAuto(s)}
               aria-label={d.sceneLabels[s]}
-              className={`h-1.5 rounded-full transition-[width,background-color] duration-[var(--ds-duration-normal)] ${
-                s === current
-                  ? "w-5 bg-[color:var(--brand-primary)]"
-                  : "w-1.5 bg-[color:var(--ds-border-hover,var(--ds-border))]"
-              }`}
-            />
+              aria-current={s === current ? "step" : undefined}
+              /* 24px hit area (WCAG target size); the visible dot stays small. */
+              className="group flex h-6 min-w-6 items-center justify-center px-1"
+            >
+              <span
+                className={`h-1.5 rounded-full transition-[width,background-color] duration-[var(--ds-duration-normal)] ${
+                  s === current
+                    ? "w-5 bg-[color:var(--brand-primary)]"
+                    : "w-1.5 bg-[color:var(--ds-text-subtle)] group-hover:bg-[color:var(--ds-text-muted)]"
+                }`}
+              />
+            </button>
           ))}
         </div>
       )}

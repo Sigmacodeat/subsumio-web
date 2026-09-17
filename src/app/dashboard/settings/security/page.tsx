@@ -33,6 +33,8 @@ export default function SecuritySettingsPage() {
   const [ipAllowlistEnabled, setIpAllowlistEnabled] = useState(false);
   const [ipAllowlistNote, setIpAllowlistNote] = useState("");
   const [ipAllowlistLoading, setIpAllowlistLoading] = useState(true);
+  // Installation-wide setting, visible to platform operators only.
+  const [ipAllowlistAvailable, setIpAllowlistAvailable] = useState(false);
 
   const meQuery = useMe();
   const setupMutation = use2FASetup();
@@ -60,8 +62,14 @@ export default function SecuritySettingsPage() {
       return;
     }
     fetch("/api/admin/ip-allowlist")
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
+        // Operator-only route: firm admins get 403 and simply see no card.
+        if (!data) {
+          setIpAllowlistAvailable(false);
+          return;
+        }
+        setIpAllowlistAvailable(true);
         const d = data.data ?? data;
         setIpAllowlist(d.entries ?? []);
         setIpAllowlistEnabled(d.enabled ?? false);
@@ -343,7 +351,7 @@ export default function SecuritySettingsPage() {
       )}
 
       {/* IP Allowlist Section — admin-only (the API requires connector.read) */}
-      {isAdmin && (
+      {isAdmin && ipAllowlistAvailable && (
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
           <div className="flex items-center gap-2">
             <Globe size={16} className="text-[color:var(--ds-text-muted)]" />

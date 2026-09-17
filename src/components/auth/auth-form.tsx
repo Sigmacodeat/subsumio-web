@@ -274,7 +274,7 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
           </ClipReveal>
 
           {challengeToken ? (
-            <form onSubmit={verifyTwoFactor} className="space-y-4" noValidate>
+            <form method="post" onSubmit={verifyTwoFactor} className="space-y-4" noValidate>
               <div className="flex items-center gap-2 text-sm font-medium [color:var(--mk-text)]">
                 <ShieldCheck size={16} className="text-[var(--brand-primary)]" aria-hidden />
                 {t.twoFactor.title}
@@ -337,7 +337,7 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
               </div>
             </form>
           ) : (
-            <form onSubmit={submit} className="space-y-4" noValidate>
+            <form method="post" onSubmit={submit} className="space-y-4" noValidate>
               {mode === "signup" && (
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-medium [color:var(--mk-text-muted)]">

@@ -1,4 +1,4 @@
-import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
+import { createHandler, apiSuccess } from "@/lib/api-handler";
 
 /**
  * GET /api/admin/ip-allowlist
@@ -14,15 +14,12 @@ import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 
 export const GET = createHandler(
   {
-    action: "connector.read",
+    // Installation-wide network configuration: platform operators only, never a
+    // firm role (every firm owner is admin of their own firm).
+    action: "platform.operator",
     rateTier: "standard",
-    admin: true,
   },
-  async (ctx) => {
-    if (ctx.user.role !== "admin") {
-      return apiError("forbidden", "Admin access required", 403);
-    }
-
+  async (_ctx) => {
     const rawAllowlist = process.env.SUBSUMIO_IP_ALLOWLIST ?? "";
     const entries = rawAllowlist
       .split(",")

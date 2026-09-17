@@ -14,8 +14,8 @@ export const GET = createHandler(
     rateTier: "standard",
     cacheMaxAge: 15,
   },
-  async (_ctx, _body, _query, _req) => {
-    const status = await getSyncStatus();
+  async (ctx, _body, _query, _req) => {
+    const status = await getSyncStatus(ctx.user.orgId);
     return apiSuccess(status);
   }
 );

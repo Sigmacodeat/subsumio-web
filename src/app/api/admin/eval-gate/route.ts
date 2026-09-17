@@ -5,7 +5,7 @@ import {
   type HarnessResult,
   type HarnessId,
 } from "@/lib/eval-harness-reuse";
-import { getFeedbackStats, getFeedbackForOrg } from "@/lib/retrieval-feedback";
+import { getFeedbackStats, getFeedbackForBrain } from "@/lib/retrieval-feedback";
 
 /**
  * GET /api/admin/eval-gate
@@ -28,7 +28,7 @@ export const GET = createHandler(
     const results: Partial<Record<HarnessId, HarnessResult>> = {};
 
     // Feedback harness — live from in-memory store
-    const orgFeedback = getFeedbackForOrg(ctx.user.orgId ?? "default");
+    const orgFeedback = getFeedbackForBrain(ctx.brainId);
     const feedbackStats = getFeedbackStats(orgFeedback);
     results.feedback = {
       harness_id: "feedback",
