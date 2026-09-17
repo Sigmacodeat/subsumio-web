@@ -712,7 +712,7 @@ export const LANDING = {
     },
     {
       q: "Funktioniert das mit unserer bestehenden Software?",
-      a: "Ja. Subsumio übernimmt Dokumente aus jedem System, das sie exportieren kann (PDF, Word, E-Mail-Archive), importiert E-Mails als .eml- oder .msg-Datei und bindet WhatsApp Business, DocuSign und Word an. Subsumio ersetzt Ihre Kanzleisoftware nicht — es macht deren Inhalte abfragbar.",
+      a: "Ja. Subsumio übernimmt Dokumente aus jedem System, das sie exportieren kann (PDF, Word, E-Mail-Archive), ruft Ihr E-Mail-Postfach per IMAP ab, ordnet E-Mails der Akte zu und bindet WhatsApp Business, DocuSign und Word an. Subsumio ersetzt Ihre Kanzleisoftware nicht — es macht deren Inhalte abfragbar.",
     },
     {
       q: "Was passiert, wenn eine Antwort falsch ist?",

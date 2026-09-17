@@ -271,6 +271,11 @@ export type AuditAction =
   | "email.reply"
   | "email.message_detail"
   | "email.message_update"
+  | "email.account_connect"
+  | "email.account_update"
+  | "email.account_disconnect"
+  | "email.account_sync"
+  | "email.draft_reply"
   | "billing.seats_list"
   | "billing.seats_change"
   | "billing.proration_preview"
@@ -518,6 +523,11 @@ const ACTION_LABELS: Record<string, string> = {
   "email.reply": "E-Mail beantwortet",
   "email.message_detail": "E-Mail-Detail abgefragt",
   "email.message_update": "E-Mail aktualisiert",
+  "email.account_connect": "Postfach verbunden",
+  "email.account_update": "Postfach aktiviert oder pausiert",
+  "email.account_disconnect": "Postfach getrennt",
+  "email.account_sync": "Postfach abgerufen",
+  "email.draft_reply": "Antwortentwurf erstellt",
   "billing.seats_list": "Nutzerplätze abgerufen",
   "billing.seats_change": "Nutzerplätze geändert",
   "billing.proration_preview": "Vorschau der anteiligen Abrechnung",

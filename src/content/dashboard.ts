@@ -211,7 +211,7 @@ export const D = {
     en: "Full-text search across all cases, documents, notes and invoices with scope filters",
   },
   "nav.tooltip.communications": {
-    de: "Unified Inbox für WhatsApp, E-Mail und Mandantenportal-Nachrichten",
+    de: "WhatsApp, E-Mail und Mandantenportal-Nachrichten an einem Ort",
     en: "Unified inbox for WhatsApp, email and client portal messages",
   },
   "nav.tooltip.deep_analysis": {
@@ -1769,6 +1769,11 @@ export const D = {
   "crypto_forensics.evidence_refs": { de: "Beweismittel", en: "Evidence" },
   "crypto_forensics.timeline": { de: "Timeline", en: "Timeline" },
   "crypto_forensics.summary": { de: "Zusammenfassung", en: "Summary" },
+  "settings.tile_email": { de: "E-Mail-Postfach", en: "E-mail mailbox" },
+  "settings.tile_email_desc": {
+    de: "Postfach der Kanzlei verbinden: E-Mails landen automatisch in der richtigen Akte",
+    en: "Connect the firm mailbox: e-mails are filed under the right matter automatically",
+  },
   "settings.tab_brain": { de: "Wissensbasis", en: "Knowledge Base" },
   "settings.tab_api": { de: "API Keys", en: "API Keys" },
   "settings.tab_dream": { de: "Nächtliche Konsolidierung", en: "Dream Cycle" },

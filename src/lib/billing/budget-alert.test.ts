@@ -69,7 +69,8 @@ describe("checkAndSendBudgetAlert", () => {
     const [first] = mail.mock.calls[0];
     expect(first.subject).toContain("nur noch 10 %");
     expect(first.text).toContain("https://app.subsum.io/dashboard/billing");
-    expect(first.text).not.toContain("subsum.io");
+    expect(first.text).not.toContain("subsumio.com");
+    expect(first.text).not.toContain("subsum.eu");
   });
 
   it("does not alert above the first threshold", async () => {

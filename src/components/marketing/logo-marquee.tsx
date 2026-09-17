@@ -49,7 +49,7 @@ const ROW_BOTTOM: MarqueeItem[] = [
   { icon: FileSignature, label: "DocuSign-Integration" },
   { icon: MessageSquare, label: "WhatsApp Business" },
   { icon: Gavel, label: "Nachvollziehbarer Audit-Trail" },
-  { icon: Mail, label: "E-Mail-Import (.eml/.msg)" },
+  { icon: Mail, label: "E-Mail-Postfach (IMAP)" },
   { icon: Cloud, label: "EU-Hosting mit AVV" },
   { icon: Database, label: "Rechtsquellen aus dem RIS" },
   { icon: FileText, label: "Word-Add-in" },

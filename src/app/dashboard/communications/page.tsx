@@ -24,6 +24,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
+import { csrfFetch } from "@/lib/csrf";
 import { triageBatch, type TriageInput, type TriageCard } from "@/lib/triage";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -95,6 +96,22 @@ const URGENCY_STYLES: Record<string, string> = {
   medium:
     "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
   low: "border-[color:var(--ds-neutral-border)] bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)]",
+};
+
+const URGENCY_LABEL: Record<string, string> = {
+  critical: "Kritisch",
+  high: "Hoch",
+  medium: "Mittel",
+  low: "Niedrig",
+};
+const ACTION_LABEL: Record<string, string> = {
+  frist: "Frist",
+  termin: "Termin",
+  antwort: "Antwort nötig",
+  dokument: "Dokument",
+  zahlung: "Zahlung",
+  info: "Information",
+  konflikt: "Kollision",
 };
 
 function extractMessages(pagesByType: Record<string, BrainPage[]>): UnifiedMessage[] {
@@ -191,7 +208,7 @@ function timeLabel(lang: Lang, value: string): string {
 const I18N: Record<string, { de: string; en: string }> = {
   title: { de: "Kommunikation", en: "Communications" },
   description: {
-    de: "Unified Inbox für WhatsApp, E-Mail und Mandantenportal — alle Nachrichten an einem Ort.",
+    de: "WhatsApp, E-Mail und Mandantenportal — alle Nachrichten an einem Ort.",
     en: "Unified inbox for WhatsApp, email and client portal — all messages in one place.",
   },
   refresh: { de: "Aktualisieren", en: "Refresh" },
@@ -249,8 +266,47 @@ export default function CommunicationsPage() {
     staleTime: 30_000,
   });
 
+  // Mail from connected firm mailboxes lives in the mailbox table, not in brain pages.
+  const mailQuery = useQuery({
+    queryKey: ["communications", "mail"],
+    queryFn: async (): Promise<UnifiedMessage[]> => {
+      const res = await fetch("/api/email/messages?folder=inbox&limit=100");
+      if (!res.ok) return [];
+      const json = await res.json();
+      const list = (json?.data?.messages ?? json?.messages ?? []) as Array<Record<string, unknown>>;
+      return list
+        .filter((m) => m.direction === "inbound")
+        .map((m) => ({
+          slug: `mail:${String(m.id)}`,
+          title: String(m.subject || "(ohne Betreff)"),
+          channel: "email" as const,
+          body: String(m.text ?? ""),
+          sender: m.fromName
+            ? `${String(m.fromName)} <${String(m.fromEmail)}>`
+            : String(m.fromEmail),
+          caseSlug: typeof m.caseSlug === "string" ? m.caseSlug : undefined,
+          createdAt: String(m.createdAt ?? ""),
+          read: Boolean(m.isRead),
+        }));
+    },
+    staleTime: 30_000,
+  });
+
+  async function patchMail(slug: string, patch: Record<string, unknown>) {
+    const res = await csrfFetch(`/api/email/messages/${encodeURIComponent(slug.slice(5))}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) throw new Error("E-Mail konnte nicht aktualisiert werden");
+    await mailQuery.refetch();
+  }
+
   const markReadMutation = useMutation({
-    mutationFn: api.inbox.markRead,
+    mutationFn: (input: Parameters<typeof api.inbox.markRead>[0]) =>
+      input.slug.startsWith("mail:")
+        ? patchMail(input.slug, { isRead: true }).then(() => ({ success: true }))
+        : api.inbox.markRead(input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["communications", "batch"] });
       addToast({ type: "success", title: tr("toast_read", lang) });
@@ -280,6 +336,13 @@ export default function CommunicationsPage() {
     if (!caseSlug) return;
     setAssignBusy(true);
     try {
+      if (msg.slug.startsWith("mail:")) {
+        await patchMail(msg.slug, { case_slug: caseSlug });
+        addToast({ type: "success", title: "E-Mail der Akte zugewiesen" });
+        setAssignTarget(null);
+        setAssignCase("");
+        return;
+      }
       await api.brain.updatePage({
         slug: msg.slug,
         frontmatter: {
@@ -301,10 +364,12 @@ export default function CommunicationsPage() {
     }
   }
 
-  const allMessages = useMemo(
-    () => (batchQuery.data ? extractMessages(batchQuery.data) : []),
-    [batchQuery.data]
-  );
+  const allMessages = useMemo(() => {
+    const pages = batchQuery.data ? extractMessages(batchQuery.data) : [];
+    return [...pages, ...(mailQuery.data ?? [])].sort((a, b) =>
+      String(b.createdAt).localeCompare(String(a.createdAt))
+    );
+  }, [batchQuery.data, mailQuery.data]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: allMessages.length };
@@ -602,12 +667,12 @@ export default function CommunicationsPage() {
                               URGENCY_STYLES[card.urgency]
                             )}
                           >
-                            {card.urgency}
+                            {URGENCY_LABEL[card.urgency] ?? card.urgency}
                           </span>
                         )}
                         {card?.actionType && card.actionType !== "info" && (
                           <span className="shrink-0 rounded-full border border-[color:var(--brand-primary)]/20 bg-[color:var(--brand-primary)]/5 px-2 py-0.5 text-xs font-medium text-[color:var(--brand-primary)]">
-                            {card.actionType}
+                            {ACTION_LABEL[card.actionType] ?? card.actionType}
                           </span>
                         )}
                         {card?.deadline && (

@@ -11,6 +11,7 @@ import {
   Mail,
   PenLine,
   Reply,
+  Sparkles,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -152,6 +153,27 @@ export function EmailsTab() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [composer, setComposer] = useState<Composer | null>(null);
+  const [drafting, setDrafting] = useState(false);
+
+  // AI draft for the lawyer to edit — nothing is sent until they press "Senden".
+  async function draftReply() {
+    if (!composer?.replyToId) return;
+    setDrafting(true);
+    try {
+      const res = await csrfFetch(
+        `/api/email/messages/${encodeURIComponent(composer.replyToId)}/draft-reply`,
+        { method: "POST" }
+      );
+      const data = await res.json().catch(() => ({}));
+      const draft = (data?.data?.draft ?? data?.draft) as string | undefined;
+      if (!res.ok || !draft) throw new Error(data?.message ?? "draft_failed");
+      setComposer((c) => (c ? { ...c, text: draft } : c));
+    } catch {
+      setError("Der Antwortentwurf konnte nicht erstellt werden.");
+    } finally {
+      setDrafting(false);
+    }
+  }
   const [sending, setSending] = useState(false);
 
   const imported = useMemo<ImportedEmail[]>(
@@ -459,7 +481,18 @@ export function EmailsTab() {
               onChange={(e) => setComposer({ ...composer, text: e.target.value })}
             />
           </div>
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {composer.mode === "reply" && composer.replyToId && (
+              <Button
+                type="button"
+                variant="outline"
+                className="mr-auto gap-2"
+                loading={drafting}
+                onClick={() => void draftReply()}
+              >
+                <Sparkles size={14} /> Antwort vorschlagen
+              </Button>
+            )}
             <Button type="button" variant="ghost" onClick={() => setComposer(null)}>
               {copy.cancel}
             </Button>

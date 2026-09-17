@@ -9,6 +9,7 @@ import { generateTrackingId, logTrackingEvent } from "@/lib/email/tracking";
 import { createSchemaInit } from "@/lib/schema-init";
 import { logger } from "@/lib/logger";
 import { env } from "@/lib/env";
+import { getMailAccountSecrets, getSendingAccount } from "@/lib/email/imap-accounts";
 
 const log = logger("mailbox");
 
@@ -618,9 +619,20 @@ export async function sendMailboxMessage(
     headers: Object.keys(headers).length > 0 ? headers : undefined,
     trackingId,
   };
-  const result = await sendMail(mailInput);
+  // A connected firm mailbox sends through its own SMTP server: the client sees
+  // the firm's address, replies thread correctly and land back in that mailbox.
+  const account = await getSendingAccount(scope.brainId).catch(() => null);
+  let result: { sent: boolean; id?: string; error?: string };
+  let provider = "resend";
+  let from = parseAddress(env("MAIL_FROM") || "Subsumio <hello@subsum.io>");
+  if (account?.smtpHost) {
+    provider = "smtp";
+    from = { email: account.email, name: account.label || null };
+    result = await sendViaAccountSmtp(account, mailInput, parent);
+  } else {
+    result = await sendMail(mailInput);
+  }
 
-  const from = parseAddress(env("MAIL_FROM") || "Subsumio <hello@subsum.io>");
   const pool = getSharedPgPool();
   if (!pool) {
     if (env("NODE_ENV") === "production" && !allowFileMailbox) {
@@ -645,7 +657,7 @@ export async function sendMailboxMessage(
       userId: scope.userId,
       brainId: scope.brainId,
       caseSlug,
-      raw: { provider: "resend", result, trackingId },
+      raw: { provider, result, trackingId },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       folder: "sent",
@@ -678,11 +690,181 @@ export async function sendMailboxMessage(
       scope.userId,
       scope.brainId,
       trackingId,
-      JSON.stringify({ provider: "resend", result, trackingId }),
+      JSON.stringify({ provider, result, trackingId }),
       caseSlug,
     ]
   );
   return rowToMessage(rows[0]);
+}
+
+async function sendViaAccountSmtp(
+  account: NonNullable<Awaited<ReturnType<typeof getSendingAccount>>>,
+  mail: MailInput,
+  parent: MailMessage | null
+): Promise<{ sent: boolean; id?: string; error?: string }> {
+  try {
+    const secrets = await getMailAccountSecrets(account.id);
+    if (!secrets?.smtpPassword) return { sent: false, error: "smtp_credentials_missing" };
+    const nodemailer = await import("nodemailer");
+    const transport = nodemailer.createTransport({
+      host: account.smtpHost ?? undefined,
+      port: account.smtpPort ?? 465,
+      secure: account.smtpSecure,
+      auth: { user: account.smtpUser ?? account.imapUser, pass: secrets.smtpPassword },
+    });
+    const parentRefs =
+      typeof parent?.raw?.references === "string" ? String(parent.raw.references) : "";
+    const references = [parentRefs, parent?.messageId ?? ""].filter(Boolean).join(" ").trim();
+    const info = await transport.sendMail({
+      from: account.label
+        ? `"${account.label.replace(/"/g, "")}" <${account.email}>`
+        : account.email,
+      to: mail.to,
+      cc: mail.cc,
+      bcc: mail.bcc,
+      subject: mail.subject,
+      text: mail.text,
+      html: mail.html,
+      inReplyTo: parent?.messageId ?? undefined,
+      references: references || undefined,
+    });
+    return { sent: true, id: info.messageId };
+  } catch (err) {
+    log.error("smtp send failed", err instanceof Error ? err.message : String(err));
+    return { sent: false, error: "smtp_send_failed" };
+  }
+}
+
+/* ── Mail fetched from a connected mailbox (IMAP) ───────────────────────── */
+
+export interface ExternalInboundEmail {
+  /** Stable dedupe key, e.g. `imap:<account>:<message-id>`. */
+  providerId: string;
+  brainId: string;
+  fromEmail: string;
+  fromName: string | null;
+  to: string[];
+  cc: string[];
+  subject: string;
+  text: string | null;
+  html: string | null;
+  messageId: string | null;
+  inReplyTo: string | null;
+  references: string | null;
+  receivedAt: string;
+  /** Matter resolved by the caller (subject/party matching); replies inherit the parent's. */
+  caseSlug: string | null;
+  raw: Record<string, unknown>;
+}
+
+/**
+ * Store one fetched message. Returns `created: false` when the message was
+ * already stored (same provider id) — the caller must not triage it twice.
+ */
+export async function storeInboundExternalEmail(
+  input: ExternalInboundEmail
+): Promise<{ message: MailMessage; created: boolean } | null> {
+  await ensureMailboxReady();
+  const pool = getSharedPgPool();
+  if (!pool) {
+    if (process.env.NODE_ENV === "production" && !allowFileMailbox) {
+      throw new Error("mailbox_database_not_configured");
+    }
+    const messages = await loadLocalMailbox();
+    const existing = messages.find((m) => m.providerId === input.providerId);
+    if (existing) return { message: existing, created: false };
+    const parentCase = input.inReplyTo
+      ? (messages.find((m) => m.messageId === input.inReplyTo && m.caseSlug)?.caseSlug ?? null)
+      : null;
+    const next: MailMessage = {
+      id: randomUUID(),
+      providerId: input.providerId,
+      direction: "inbound",
+      status: "received",
+      fromEmail: input.fromEmail || "unknown",
+      fromName: input.fromName,
+      toEmails: input.to,
+      ccEmails: input.cc,
+      bccEmails: [],
+      subject: input.subject,
+      text: input.text,
+      html: input.html,
+      messageId: input.messageId,
+      inReplyTo: input.inReplyTo,
+      userId: null,
+      brainId: input.brainId,
+      caseSlug: parentCase ?? input.caseSlug,
+      raw: { ...input.raw, references: input.references },
+      createdAt: input.receivedAt,
+      updatedAt: new Date().toISOString(),
+      folder: "inbox",
+      isRead: false,
+    };
+    messages.push(next);
+    await persistLocalMailbox(messages);
+    return { message: next, created: true };
+  }
+
+  let caseSlug = input.caseSlug;
+  if (input.inReplyTo) {
+    const parent = await pool.query(
+      `SELECT case_slug FROM subsumio_mail_messages
+        WHERE brain_id = $1 AND case_slug IS NOT NULL AND message_id = $2
+        ORDER BY created_at DESC LIMIT 1`,
+      [input.brainId, input.inReplyTo]
+    );
+    if (parent.rows[0]?.case_slug) caseSlug = String(parent.rows[0].case_slug);
+  }
+  const { rows } = await pool.query(
+    `INSERT INTO subsumio_mail_messages
+      (id, provider_id, direction, status, from_email, from_name, to_emails, cc_emails, bcc_emails,
+       subject, text_body, html_body, message_id, brain_id, raw, created_at, updated_at, in_reply_to, case_slug)
+     VALUES ($1,$2,'inbound','received',$3,$4,$5,$6,'{}',$7,$8,$9,$10,$11,$12::jsonb,$13,now(),$14,$15)
+     ON CONFLICT (provider_id) DO NOTHING
+     RETURNING *`,
+    [
+      randomUUID(),
+      input.providerId,
+      input.fromEmail || "unknown",
+      input.fromName,
+      input.to,
+      input.cc,
+      input.subject,
+      input.text,
+      input.html,
+      input.messageId,
+      input.brainId,
+      JSON.stringify({ ...input.raw, references: input.references }),
+      input.receivedAt,
+      input.inReplyTo,
+      caseSlug,
+    ]
+  );
+  if (rows[0]) return { message: rowToMessage(rows[0]), created: true };
+  const existing = await pool.query(
+    "SELECT * FROM subsumio_mail_messages WHERE provider_id = $1 LIMIT 1",
+    [input.providerId]
+  );
+  return existing.rows[0] ? { message: rowToMessage(existing.rows[0]), created: false } : null;
+}
+
+/** Attach the AI triage result to a stored message (kept in `raw.triage`). */
+export async function setMailTriage(id: string, triage: Record<string, unknown>): Promise<void> {
+  const pool = getSharedPgPool();
+  if (!pool) {
+    const messages = await loadLocalMailbox();
+    const m = messages.find((x) => x.id === id);
+    if (!m) return;
+    m.raw = { ...m.raw, triage };
+    await persistLocalMailbox(messages);
+    return;
+  }
+  await pool.query(
+    `UPDATE subsumio_mail_messages
+        SET raw = raw || jsonb_build_object('triage', $2::jsonb), updated_at = now()
+      WHERE id = $1`,
+    [id, JSON.stringify(triage)]
+  );
 }
 
 /**

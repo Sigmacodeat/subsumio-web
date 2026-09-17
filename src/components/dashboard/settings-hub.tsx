@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, AlertCircle } from "lucide-react";
+import { Mail, Search, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
@@ -50,6 +50,13 @@ const TILE_GROUPS: SettingsTileGroup[] = [
   {
     groupKey: "settings.group_firm",
     tiles: [
+      {
+        labelKey: "settings.tile_email",
+        descKey: "settings.tile_email_desc",
+        icon: Mail,
+        href: "/dashboard/settings/email",
+        allowed: ["admin"],
+      },
       {
         labelKey: "settings.tab_brain",
         descKey: "settings.tile_brain_desc",

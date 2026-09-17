@@ -125,6 +125,11 @@
 # Aggregates today's activity_event pages per user into draft time_suggestion pages.
 0 19 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/time-suggestions || true
 
+# ── Every 5 minutes — connected firm mailboxes (IMAP) ──
+# Fetches new mail for every connected mailbox, assigns it to matters and triages it.
+# Read-only on the mail server. No-op when no mailbox is connected.
+*/5 * * * *   curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/imap-sync || true
+
 # ── Every 15 minutes — Outlook/M365 calendar + mail sync ──
 # Two-way calendar sync + mail delta sync via Microsoft Graph. No-op if MS Graph not configured.
 */15 * * * *   curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/outlook-sync || true

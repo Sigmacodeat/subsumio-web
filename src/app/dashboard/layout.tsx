@@ -47,7 +47,7 @@ const CopilotSidebar = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex items-center justify-center p-8" role="status" aria-live="polite">
-        <span className="text-xs text-[color:var(--ds-text-muted)]">Copilot wird geladen…</span>
+        <span className="text-xs text-[color:var(--ds-text-muted)]">Assistent wird geladen…</span>
       </div>
     ),
   }
