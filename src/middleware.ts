@@ -242,6 +242,25 @@ const RETIRED_PILOT_DASHBOARD_PREFIXES = [
   "/dashboard/fao-tracking",
   "/dashboard/cost-calculator",
 ] as const;
+// Parked on 2026-09-17: areas that are not part of a lawyer's daily work and
+// were never verified in practice. Source lives in src/app/_archive/parked,
+// manifest in docs/archive/PARKED_AREAS_2026-09-17.md.
+const PARKED_DASHBOARD_REDIRECTS: ReadonlyArray<readonly [string, string]> = [
+  ["/dashboard/analytics", "/dashboard/reports"],
+  ["/dashboard/litigation-analytics", "/dashboard/reports"],
+  ["/dashboard/portfolio-insights", "/dashboard/reports"],
+  ["/dashboard/adoption-analytics", "/dashboard/reports"],
+  ["/dashboard/chat/analytics", "/dashboard/chat"],
+  ["/dashboard/chat/compare", "/dashboard/chat"],
+  ["/dashboard/war-room", "/dashboard"],
+  ["/dashboard/crypto-forensics", "/dashboard"],
+  ["/dashboard/court-analytics", "/dashboard"],
+  ["/dashboard/experience", "/dashboard"],
+  ["/dashboard/autonomous", "/dashboard"],
+  ["/dashboard/mobile", "/dashboard"],
+  ["/dashboard/online-booking", "/dashboard"],
+  ["/dashboard/team-meeting", "/dashboard"],
+];
 const RETIRED_PILOT_API_PREFIXES = [
   "/api/bea",
   "/api/datev",
@@ -251,6 +270,7 @@ const RETIRED_PILOT_API_PREFIXES = [
   "/api/fachrechner",
   "/api/fao-tracking",
   "/api/court-directory",
+  "/api/court-analytics",
 ] as const;
 
 function matchesRoutePrefix(pathname: string, prefix: string): boolean {
@@ -304,11 +324,20 @@ export async function middleware(req: NextRequest) {
       NextResponse.json(
         {
           error: "market_feature_retired",
-          message: "Diese Integration ist im AT-Pilot deaktiviert.",
+          message: "Diese Funktion ist derzeit nicht verfügbar.",
         },
         { status: 410 }
       )
     );
+  }
+  const parked = PARKED_DASHBOARD_REDIRECTS.find(([prefix]) =>
+    matchesRoutePrefix(pathname, prefix)
+  );
+  if (parked) {
+    const target = req.nextUrl.clone();
+    target.pathname = parked[1];
+    target.search = "";
+    return applyCsp(NextResponse.redirect(target, 307));
   }
   if (RETIRED_PILOT_DASHBOARD_PREFIXES.some((prefix) => matchesRoutePrefix(pathname, prefix))) {
     const dashboardUrl = req.nextUrl.clone();

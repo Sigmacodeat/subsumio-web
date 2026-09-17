@@ -59,11 +59,6 @@ test.describe("Misc Dashboard: Pages Render", () => {
   const pages = [
     { path: "/dashboard/litigation", heading: /Prozessführung|Litigation/i },
     { path: "/dashboard/process-strategy", heading: /Prozessstrategie|Litigation Strategy/i },
-    { path: "/dashboard/experience", heading: /Erfahrungen & Insights|Experience & Insights/i },
-    {
-      path: "/dashboard/litigation-analytics",
-      heading: /Verfahrensanalytics|Litigation Analytics/i,
-    },
     { path: "/dashboard/whatsapp/templates", heading: /WhatsApp-Vorlagen|WhatsApp Templates/i },
     { path: "/dashboard/trust-accounting", heading: /Treuhandkonten|Trust Accounts/i },
   ];
@@ -93,24 +88,6 @@ test.describe("Misc Dashboard: Pages Render", () => {
     await page.waitForTimeout(2000);
     const content = page
       .locator("table, [role='list'], textarea, button")
-      .or(page.getByText(/Keine|None|Empty|No/i));
-    expect(await content.count()).toBeGreaterThan(0);
-  });
-
-  test("experience shows experience content", async ({ page }) => {
-    await page.goto("/dashboard/experience", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(2000);
-    const content = page
-      .locator("table, [role='list'], .recharts-surface")
-      .or(page.getByText(/Keine|None|Empty|No/i));
-    expect(await content.count()).toBeGreaterThan(0);
-  });
-
-  test("litigation-analytics shows analytics content", async ({ page }) => {
-    await page.goto("/dashboard/litigation-analytics", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(2000);
-    const content = page
-      .locator(".recharts-surface, table, .tabular-nums")
       .or(page.getByText(/Keine|None|Empty|No/i));
     expect(await content.count()).toBeGreaterThan(0);
   });

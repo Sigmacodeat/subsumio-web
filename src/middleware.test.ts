@@ -64,6 +64,32 @@ describe("middleware Austria-only public routing", () => {
   });
 });
 
+describe("middleware parked product areas", () => {
+  it.each([
+    ["/dashboard/war-room", "/dashboard"],
+    ["/dashboard/crypto-forensics", "/dashboard"],
+    ["/dashboard/analytics", "/dashboard/reports"],
+    ["/dashboard/chat/compare", "/dashboard/chat"],
+    ["/dashboard/autonomous/run/7", "/dashboard"],
+  ])("sends %s to %s", async (source, destination) => {
+    const res = await run(source);
+    expect(res.status).toBe(307);
+    expect(new URL(res.headers.get("location") ?? "https://invalid.test").pathname).toBe(
+      destination
+    );
+  });
+
+  it("leaves neighbouring areas alone", async () => {
+    for (const path of ["/dashboard/chat", "/dashboard/reports", "/dashboard/analyze"]) {
+      const res = await run(path);
+      expect(
+        new URL(res.headers.get("location") ?? "https://x.test/other").pathname,
+        path
+      ).not.toBe("/dashboard");
+    }
+  });
+});
+
 describe("middleware operator console host", () => {
   const onOps = (pathname: string) =>
     middleware(

@@ -46,12 +46,6 @@ const CAPABILITIES = [
     href: "/dashboard/red-team",
   },
   {
-    name: "Entscheider-Analytics",
-    description: "Gerichtsdaten aggregieren",
-    key: "aggregateCourtAnalytics",
-    href: "/dashboard/court-analytics",
-  },
-  {
     name: "Diktat-Loop",
     description: "Diktate bis zur Ablage verfolgen",
     key: "createDictationEntry",
@@ -62,12 +56,6 @@ const CAPABILITIES = [
     description: "Geltung und Ablauf verwalten",
     key: "createPowerOfAttorney",
     href: "/dashboard/power-of-attorney",
-  },
-  {
-    name: "Online-Terminbuchung",
-    description: "Verfügbare Beratungsslots verwalten",
-    key: "generateSlots",
-    href: "/dashboard/online-booking",
   },
   {
     name: "Massenakten",
@@ -337,9 +325,6 @@ export function KanzleiTools() {
       <div className="flex flex-wrap gap-2">
         <Button variant="secondary" asChild>
           <Link href="/dashboard/fibu">FiBu öffnen</Link>
-        </Button>
-        <Button variant="secondary" asChild>
-          <Link href="/dashboard/autonomous">Autopilot öffnen</Link>
         </Button>
       </div>
     </div>

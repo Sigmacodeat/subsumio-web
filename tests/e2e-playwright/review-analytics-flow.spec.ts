@@ -60,13 +60,6 @@ test.describe("Review & Analytics: Pages Render", () => {
     { path: "/dashboard/review-queue", heading: /Freigaben|Approvals/i },
     { path: "/dashboard/review-sets", heading: /Defensible Review|Review Sets/i },
     { path: "/dashboard/reports", heading: /Agenten-Berichte|Agent Reports/i },
-    { path: "/dashboard/analytics", heading: /Feature-Nutzung|Analytics/i },
-    { path: "/dashboard/adoption-analytics", heading: /Adoption Analytics/i },
-    {
-      path: "/dashboard/litigation-analytics",
-      heading: /Verfahrensanalytics|Litigation Analytics/i,
-    },
-    { path: "/dashboard/portfolio-insights", heading: /Portfolio/i },
     { path: "/dashboard/precedent-search", heading: /Präzedenzsuche|Precedent Search/i },
   ];
 
@@ -99,33 +92,6 @@ test.describe("Review & Analytics: Pages Render", () => {
     await page.waitForTimeout(2000);
     const content = page
       .locator("table, [role='list'], button")
-      .or(page.getByText(/Keine|None|Empty|No/i));
-    expect(await content.count()).toBeGreaterThan(0);
-  });
-
-  test("litigation-analytics shows charts or KPIs", async ({ page }) => {
-    await page.goto("/dashboard/litigation-analytics", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
-    const content = page
-      .locator(".recharts-surface, table, .tabular-nums")
-      .or(page.getByText(/Keine|None|Empty|No/i));
-    expect(await content.count()).toBeGreaterThan(0);
-  });
-
-  test("adoption-analytics shows analytics content", async ({ page }) => {
-    await page.goto("/dashboard/adoption-analytics", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(2000);
-    const content = page
-      .locator(".recharts-surface, table, .tabular-nums")
-      .or(page.getByText(/Keine|None|Empty|No/i));
-    expect(await content.count()).toBeGreaterThan(0);
-  });
-
-  test("portfolio-insights shows portfolio content", async ({ page }) => {
-    await page.goto("/dashboard/portfolio-insights", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(2000);
-    const content = page
-      .locator("table, .recharts-surface, [role='list']")
       .or(page.getByText(/Keine|None|Empty|No/i));
     expect(await content.count()).toBeGreaterThan(0);
   });

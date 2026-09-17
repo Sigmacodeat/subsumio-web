@@ -53,8 +53,6 @@ test.describe("Chat & Research: Pages Render", () => {
 
   const pages = [
     { path: "/dashboard/chat", name: "Chat" },
-    { path: "/dashboard/chat/analytics", name: "Chat Analytics" },
-    { path: "/dashboard/chat/compare", name: "Chat Compare" },
     { path: "/dashboard/research", name: "Research" },
     { path: "/dashboard/deep-analysis", name: "Deep Analysis" },
     { path: "/dashboard/analyze", name: "Analyze" },
@@ -78,27 +76,6 @@ test.describe("Chat & Research: Pages Render", () => {
     );
     const messageArea = page.locator("[role='log'], [class*='message'], [class*='chat']");
     expect((await chatInput.count()) + (await messageArea.count())).toBeGreaterThan(0);
-  });
-
-  test("chat/analytics shows analytics content", async ({ page }) => {
-    await page.goto("/dashboard/chat/analytics", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(2000);
-    const heading = page
-      .getByRole("heading", { name: /Gesprächsauswertung|Chat Analytics/i })
-      .first();
-    await expect(heading).toBeVisible({ timeout: 10_000 });
-  });
-
-  test("chat/compare shows comparison interface", async ({ page }) => {
-    await page.goto("/dashboard/chat/compare", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(2000);
-    // Should have some content — model selector, comparison panel, etc.
-    const content = page
-      .locator("select")
-      .or(page.locator("textarea"))
-      .or(page.locator("[role='combobox']"))
-      .or(page.getByText(/Compare|Vergleich|Modell/i));
-    expect(await content.count()).toBeGreaterThan(0);
   });
 
   test("research page shows search or research interface", async ({ page }) => {

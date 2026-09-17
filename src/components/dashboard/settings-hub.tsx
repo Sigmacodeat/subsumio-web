@@ -153,18 +153,11 @@ const SETTINGS_DESC_MAP: Record<string, DashboardKey> = {
   "/dashboard/settings/security": "settings.tile_security_desc_full",
   "/dashboard/directory": "settings.tile_directory_desc",
   "/dashboard/connectors": "settings.tile_connectors_desc",
-  "/dashboard/crypto-forensics": "settings.tile_rciid_desc",
   "/dashboard/agents": "settings.tile_agents_desc",
   "/dashboard/settings/scim": "settings.tile_scim_desc_full",
   "/dashboard/monitoring": "settings.tile_monitoring_desc",
-  "/dashboard/chat/analytics": "settings.tile_chat_analytics_desc",
-  "/dashboard/chat/compare": "settings.tile_chat_compare_desc",
   "/dashboard/reports": "settings.tile_reports_desc",
-  "/dashboard/adoption-analytics": "settings.tile_adoption_analytics_desc",
   "/dashboard/shared-spaces": "settings.tile_shared_spaces_desc",
-  "/dashboard/mobile": "settings.tile_mobile_desc",
-  "/dashboard/experience": "settings.tile_experience_desc",
-  "/dashboard/portfolio-insights": "settings.tile_portfolio_insights_desc",
   "/dashboard/process-strategy": "settings.tile_process_strategy_desc",
   "/dashboard/client-portal": "settings.tile_client_portal_desc",
   "/dashboard/version-history": "settings.tile_version_history_desc",
@@ -198,7 +191,6 @@ const ROLE_ALLOWED: Record<string, string[]> = {
   "/dashboard/connectors": ["admin"],
   "/dashboard/agents": ["admin", "lawyer"],
   "/dashboard/monitoring": ["admin"],
-  "/dashboard/adoption-analytics": ["admin"],
 };
 
 interface NotifHealth {

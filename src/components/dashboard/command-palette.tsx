@@ -24,7 +24,6 @@ import {
   Brain,
   Network,
   Database,
-  GitCompare,
   Activity,
   CheckCircle2,
   AlertTriangle,
@@ -448,14 +447,6 @@ export function CommandPalette({
       href: "/dashboard/sources",
       section: t("cmd.section.admin"),
       keywords: "sources connectors datenquellen source management",
-    });
-    cmds.push({
-      id: "power-model-compare",
-      label: "Model Compare — KI-Modelle vergleichen",
-      icon: GitCompare,
-      href: "/dashboard/chat/compare",
-      section: t("cmd.section.admin"),
-      keywords: "model compare ai models vergleiche benchmark evaluation",
     });
     // Operations Cockpit — quick access + filter presets
     cmds.push({

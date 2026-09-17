@@ -59,7 +59,6 @@ test.describe("Platform & Integration: Pages Render", () => {
     { path: "/dashboard/word-addin", name: "Word Add-in" },
     { path: "/dashboard/workflows/builder", name: "Workflow Builder" },
     { path: "/dashboard/case-scanner", name: "Case Scanner" },
-    { path: "/dashboard/mobile/pipeline", name: "Mobile Pipeline" },
   ];
 
   for (const p of pages) {
@@ -108,17 +107,6 @@ test.describe("Platform & Integration: Pages Render", () => {
     await page.waitForTimeout(2000);
     const heading = page.getByRole("heading", { name: /Akten-Scanner|Case Scanner/i }).first();
     await expect(heading).toBeVisible({ timeout: 10_000 });
-  });
-
-  test("mobile/pipeline shows pipeline content", async ({ page }) => {
-    await page.goto("/dashboard/mobile/pipeline", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(2000);
-    const content = page
-      .locator("h1")
-      .or(page.locator("h2"))
-      .or(page.locator("[role='list']"))
-      .or(page.getByText(/Pipeline/i));
-    expect(await content.count()).toBeGreaterThan(0);
   });
 
   test("workflows/builder shows builder interface", async ({ page }) => {

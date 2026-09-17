@@ -432,3 +432,29 @@ echten Engine. Testdaten und Testserver sind wieder entfernt.
   Nachrichten mehr. Der Landing-Snapshot weicht nach der Klickflächen-Korrektur um 10 px Höhe
   ab; die Snapshots sind lokal und nicht versioniert. Ohne `CI=1` startet Playwright fünf
   Browser-Projekte (rund 3.000 Tests); das Gate ist `--project=chromium`.
+
+## Betreiber-Konsole und geparkte Bereiche — Praxistest (17.09., nachmittags)
+
+Durchgespielt mit einem lokalen Betreiber-Konto (Allowlist plus echte 2FA-Einrichtung), einer
+Kanzlei mit Team und einer Einzelkanzlei. Testkonten sind wieder entfernt.
+
+- **Anmeldung an der Konsole (Befund, behoben):** Auf der Betreiber-Adresse lief die
+  Anmeldeseite in eine Weiterleitungsschleife, weil `/login` seit der Österreich-Umstellung
+  auf `/at/login` zeigt und dieser Pfad dort nicht durchgelassen wurde.
+- **Einzelkanzleien (Befund, behoben):** Die Konsole kannte nur Organisationen. Eine
+  Kanzlei ohne angelegtes Team war unsichtbar und nicht supportbar. Jetzt arbeitet die
+  Konsole auf Mandanten (`src/lib/tenants.ts`): Kanzlei mit Team oder Einzelkanzlei, mit
+  Inhaber, Plan, Rollen, 2FA-Stand, Guthaben, Ausgabenlimit und Support-Zugriff.
+- **Teamgründung (Befund, behoben):** Eine neu angelegte Kanzlei bekam einen leeren
+  Datenraum, die bisherigen Akten des Gründers wären verschwunden. Die Kanzlei übernimmt
+  jetzt den Datenraum des Gründers. Gegentest: Akte vor und nach der Gründung lesbar.
+- **Support-Zugriff:** Pflichtgrund, 60 Minuten, Banner im Kanzlei-Dashboard. Ohne Sitzung
+  404 auf Akten, Dokumente und Originaldateien; in der Sitzung lesbar, fremde Kanzleien
+  bleiben 404; nach dem Beenden sofort wieder 404. Start und Ende stehen im Audit-Protokoll
+  der Kanzlei. Die Konsole ist auf der App-Adresse unsichtbar (404).
+- **Geparkt:** 14 Bereiche außerhalb des Anwaltsalltags, Liste und Rückweg in
+  `docs/archive/PARKED_AREAS_2026-09-17.md`. Gates: Vitest 6.832 grün, betroffene
+  E2E-Specs inklusive Barrierefreiheit 125 bestanden.
+- **Offen:** Guthaben beim Wechsel von Einzelkanzlei zu Team (Abrechnung läuft dann über die
+  Organisation) ist nicht geprüft. Kanzlei sperren und Admin neu setzen gibt es in der
+  Konsole noch nicht.
