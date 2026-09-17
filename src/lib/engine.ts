@@ -289,6 +289,20 @@ export async function engineHeadersWithCaseJurisdiction(
  * webhooks) that act on behalf of a tenant without a browser session.
  * Never expose to request-derived input: the caller must own the brainId.
  */
+/**
+ * Headers for deployment-wide probes (queue health, readiness) that belong to
+ * no firm. In fail-closed tenant mode the engine rejects every /api call whose
+ * source header is missing or "default", so monitoring sends its own marker.
+ */
+export function engineMonitoringHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    "x-subsumio-source": env("SUBSUMIO_MONITORING_SOURCE") || "ops-health-probe",
+  };
+  const apiKey = env("SUBSUMIO_WEB_API_KEY");
+  if (apiKey) headers["x-subsumio-api-key"] = apiKey;
+  return headers;
+}
+
 export function engineHeadersForBrain(brainId: string): Record<string, string> {
   const headers: Record<string, string> = { "x-subsumio-source": brainId };
   const apiKey = env("SUBSUMIO_WEB_API_KEY");

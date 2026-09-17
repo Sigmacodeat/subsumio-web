@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { validateCronAuth } from "@/lib/cron-auth";
 import { ENGINE_URL } from "@/lib/engine";
+import { checkBackup, checkDisk } from "@/lib/ops-health";
 
 export const dynamic = "force-dynamic";
 
@@ -75,9 +76,8 @@ export async function GET(req: NextRequest) {
 
   // 4. Engine reachable?
   try {
-    const res = await fetch(`${ENGINE_URL}/api/health`, {
-      signal: AbortSignal.timeout(5_000),
-    });
+    // /health is the engine's unauthenticated probe; /api/* needs a tenant header.
+    const res = await fetch(`${ENGINE_URL}/health`, { signal: AbortSignal.timeout(5_000) });
     checks.engine = { ok: res.ok, detail: res.ok ? "reachable" : `HTTP ${res.status}` };
   } catch (err) {
     checks.engine = {
@@ -128,6 +128,12 @@ export async function GET(req: NextRequest) {
   } catch {
     checks.notifications = { ok: false, detail: "cannot load kanzlei settings" };
   }
+
+  // 7. Free disk space — a full disk took the engine down for weeks unnoticed.
+  checks.disk = await checkDisk();
+
+  // 8. Age of the last successful backup.
+  checks.backup = await checkBackup();
 
   const allOk = Object.values(checks).every((c) => c.ok);
   return NextResponse.json(

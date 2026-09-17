@@ -56,6 +56,25 @@ require_exact SUBSUMIO_WEB_URL http://web:3000
 
 require_value PLATFORM_OPERATOR_EMAILS
 
+# Backups: an offsite repo is the goal, a local encrypted copy the minimum.
+# A production launch without either loses a firm's files on one disk failure.
+if [ -z "$(value BACKUP_RESTIC_REPOSITORY)" ]; then
+  if [ -n "$(value BACKUP_LOCAL_PASSPHRASE)" ]; then
+    echo "[preflight] WARN     kein Offsite-Backup (BACKUP_RESTIC_REPOSITORY) — nur lokale Kopie."
+  else
+    echo "[preflight] MISSING  Backup: weder BACKUP_RESTIC_REPOSITORY noch BACKUP_LOCAL_PASSPHRASE." >&2
+    failed=1
+  fi
+fi
+
+free_pct="$(df -P / | awk 'NR==2 {print 100 - int($5)}' | tr -d '%')"
+if [ -n "$free_pct" ] && [ "$free_pct" -lt 15 ]; then
+  echo "[preflight] MISSING  Nur ${free_pct} % Plattenplatz frei. Ein Rebuild braucht ~6 GB." >&2
+  failed=1
+else
+  echo "[preflight] OK       Plattenplatz frei: ${free_pct} %"
+fi
+
 corpus_dir="$(value LAW_CORPUS_HOST_DIR)"
 corpus_dir="${corpus_dir:-/opt/subsumio-data/law-corpus}"
 case "$corpus_dir" in

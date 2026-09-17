@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, engineMonitoringHeaders } from "@/lib/engine";
 import { env } from "@/lib/env";
 import { isMailConfigured, sendMail } from "@/lib/mail";
 
@@ -37,7 +37,7 @@ interface JobsHealth {
 
 export const GET = createCronHandler(async (_req: NextRequest) => {
   const res = await fetch(`${ENGINE_URL}/api/jobs/health`, {
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...engineMonitoringHeaders() },
     signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) {

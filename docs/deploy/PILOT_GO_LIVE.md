@@ -1,6 +1,7 @@
 # Pilot Go-Live — Subsumio Kanzlei-OS
 
 Stand: 2026-09-13. Reihenfolge einhalten; jeder Schritt hat eine Prüfung.
+Aktueller Serverzustand und die offenen Punkte: `docs/deploy/SERVER_STATUS_2026-09-18.md`.
 
 ## 1. Code
 

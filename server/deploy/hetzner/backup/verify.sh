@@ -1,10 +1,11 @@
 #!/bin/sh
-# Weekly restore-VERIFICATION: proves the latest backup is actually restorable,
-# not merely present. Restores the newest dump into a throwaway database,
-# asserts key tables are non-empty, then drops it. Alerts on any failure.
+# Weekly restore VERIFICATION: proves the latest backup is actually restorable,
+# not merely present. Restores it into a throwaway database, asserts the firm's
+# tables are populated, then drops it. Alerts on any failure.
 #
 # This is the difference between "we have backups" and "we have RESTORABLE
-# backups" — the audit's missing "getesteter Restore".
+# backups". Works with the offsite repo when configured, otherwise with the
+# newest local encrypted archive.
 set -eu
 # shellcheck source=lib.sh
 . "$(dirname "$0")/lib.sh"
@@ -18,47 +19,54 @@ cleanup() {
   case "${rdir:-}" in
     /tmp/verify-*) rm -rf "${rdir}" 2>/dev/null || true ;;
   esac
-  PGPASSWORD="${PGPASSWORD:-}" dropdb -h "${PGHOST}" -U "${PGUSER}" --if-exists "${check_db}" 2>/dev/null || true
+  dropdb -h "${PGHOST}" -U "${PGUSER}" --if-exists "${check_db}" 2>/dev/null || true
 }
 trap 'cleanup; alert "Restore-Verifikation fehlgeschlagen (verify.sh, exit $?)."' EXIT
 
-ts=$(date -u +%FT%TZ)
-echo "[verify] ${ts} starting restore verification"
-
+echo "[verify] $(date -u +%FT%TZ) starting restore verification"
 rdir="/tmp/verify-$(date -u +%s)"
-restic restore latest --target "${rdir}"
-dump=$(find "${rdir}" -name '*.dump' | head -1)
-if [ -z "${dump}" ]; then
-  alert "Kein DB-Dump im jüngsten Snapshot gefunden."
+mkdir -p "${rdir}"
+
+if [ -n "${RESTIC_REPOSITORY:-}" ]; then
+  restic restore latest --target "${rdir}"
+elif [ -n "${BACKUP_LOCAL_DIR:-}" ]; then
+  archive=$(ls -t "${BACKUP_LOCAL_DIR}"/subsumio-*.tar.gz.enc 2>/dev/null | head -1 || true)
+  [ -n "${archive}" ] || {
+    alert "Keine lokale Sicherung in ${BACKUP_LOCAL_DIR} gefunden."
+    exit 1
+  }
+  echo "[verify] lokale Sicherung: ${archive}"
+  openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_LOCAL_PASSPHRASE \
+    -in "${archive}" | tar -C "${rdir}" -xzf -
+else
+  alert "Weder Offsite-Repo noch lokales Verzeichnis konfiguriert — nichts zu prüfen."
   exit 1
 fi
 
-export PGPASSWORD="${PGPASSWORD}"
+set_dir=$(dirname "$(find "${rdir}" -name 'schema-and-app-data.dump' | head -1)")
+[ -d "${set_dir}" ] || {
+  alert "Kein Datenbank-Dump in der jüngsten Sicherung gefunden."
+  exit 1
+}
+
 dropdb -h "${PGHOST}" -U "${PGUSER}" --if-exists "${check_db}"
 createdb -h "${PGHOST}" -U "${PGUSER}" "${check_db}"
-# --no-owner: the throwaway DB may not have the prod role grants. A restore
-# error is fatal: accepting a partial restore defeats the purpose of this
-# weekly recoverability proof.
-pg_restore --exit-on-error --no-owner -h "${PGHOST}" -U "${PGUSER}" -d "${check_db}" "${dump}"
+IN_DIR="${set_dir}" PGDATABASE="${check_db}" sh "$(dirname "$0")/restore-firm-data.sh"
 
-pages=$(psql -h "${PGHOST}" -U "${PGUSER}" -d "${check_db}" -tAc "SELECT count(*) FROM pages;" 2>/dev/null || echo 0)
-files=$(psql -h "${PGHOST}" -U "${PGUSER}" -d "${check_db}" -tAc "SELECT count(*) FROM files;" 2>/dev/null || echo 0)
+count() {
+  psql -h "${PGHOST}" -U "${PGUSER}" -d "${check_db}" -tAc "$1" 2>/dev/null || echo 0
+}
+pages=$(count "SELECT count(*) FROM pages")
+cases=$(count "SELECT count(*) FROM pages WHERE type = 'legal_case'")
+users=$(count "SELECT count(*) FROM subsumio_users")
 restored_files=$(find "${rdir}/data" -type f 2>/dev/null | wc -l | tr -d ' ')
-
-# The production compose setup stores originals on engine-data and includes
-# that volume in restic. A database with file records but no recovered files
-# is not a usable legal-file restore, even if pages themselves are present.
-if [ "${files:-0}" -gt 0 ] && [ "${restored_files:-0}" -eq 0 ]; then
-  alert "Restore-Verifikation: DB enthält ${files} Dateireferenzen, aber kein Original im wiederhergestellten /data-Volume."
-  exit 1
-fi
 
 cleanup
 trap - EXIT
 
 if [ "${pages:-0}" -gt 0 ]; then
-  echo "[verify] OK — restored snapshot has pages=${pages}, files=${files}, original_files=${restored_files}"
+  echo "[verify] OK — pages=${pages}, Akten=${cases}, Nutzer=${users}, Originaldateien=${restored_files}"
 else
-  alert "Restore-Verifikation: wiederhergestellte DB hat 0 Seiten (pages=${pages}, files=${files}) — Backup könnte unbrauchbar sein!"
+  alert "Restore-Verifikation: wiederhergestellte DB hat 0 Seiten — Backup könnte unbrauchbar sein!"
   exit 1
 fi

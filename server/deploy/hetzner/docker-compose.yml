@@ -25,8 +25,17 @@
 # collision regardless of what any other compose file on the box is named.
 name: subsumio-engine
 
+# Container logs are capped: one unrotated log grew to 1.4 GB and filled the
+# disk, which stopped the engine for weeks. Anchors are applied per service.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "3"
+
 services:
   clamav:
+    logging: *default-logging
     image: clamav/clamav:stable
     restart: unless-stopped
     environment:
@@ -47,6 +56,7 @@ services:
     # clamd stays on the private compose network; no host port is published.
 
   db:
+    logging: *default-logging
     build:
       context: .
       dockerfile: Dockerfile.db
@@ -87,6 +97,7 @@ services:
       - "127.0.0.1:5432:5432"
 
   engine:
+    logging: *default-logging
     build:
       context: ../.. # = server/  (where the Dockerfile lives)
       dockerfile: Dockerfile
@@ -131,6 +142,7 @@ services:
       start_period: 40s
 
   web:
+    logging: *default-logging
     build:
       context: ../../.. # = repo root (Next.js app)
       dockerfile: Dockerfile.web
@@ -157,10 +169,13 @@ services:
       NEXT_PUBLIC_ENGINE_URL: "https://${ENGINE_DOMAIN:?set ENGINE_DOMAIN in .env}"
       # Operator console (/ops) and operator APIs are served only on this host.
       OPS_HOSTS: ${OPS_DOMAIN:-ops.subsum.io}
+      BACKUP_STATUS_FILE: /backup-status/last-success
     volumes:
       # Corpus read-only mount so the dashboard can enumerate local disk files.
       # Mounted at /app/law-corpus to match src/lib/corpus-index.ts (NORMALIZED_ROOT).
       - ${LAW_CORPUS_HOST_DIR:-/opt/subsumio-data/law-corpus}:/app/law-corpus:ro
+      # Timestamp of the last successful backup, checked by /api/cron/health.
+      - backup-status:/backup-status:ro
     depends_on:
       db:
         condition: service_healthy
@@ -201,6 +216,7 @@ services:
       - engine
 
   cron:
+    logging: *default-logging
     image: alpine:3.20
     restart: unless-stopped
     depends_on:
@@ -222,6 +238,7 @@ services:
   # Inert until the BACKUP_* vars are set in .env — the stack runs fine without
   # them (the service just logs that the repo isn't configured and idles).
   backup:
+    logging: *default-logging
     image: alpine:3.20
     restart: unless-stopped
     depends_on:
@@ -243,19 +260,23 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       MAIL_FROM: ${MAIL_FROM:-Subsumio <hello@subsum.io>}
       QUEUE_ALERT_EMAIL: ${QUEUE_ALERT_EMAIL:-}
+      # Local encrypted copy — runs even without an offsite repo, so a firm is
+      # never left with no backup at all.
+      BACKUP_LOCAL_DIR: ${BACKUP_LOCAL_DIR:-/backups}
+      BACKUP_LOCAL_PASSPHRASE: ${BACKUP_LOCAL_PASSPHRASE:-}
+      BACKUP_LOCAL_KEEP_DAYS: ${BACKUP_LOCAL_KEEP_DAYS:-14}
+      # Read by /api/cron/health to alert when backups stop running.
+      BACKUP_STATUS_FILE: /backup-status/last-success
     volumes:
       # Original files — only needed when STORAGE_BACKEND=local. Harmless if s3.
       - engine-data:/data:ro
       - ./backup:/backup:ro
+      - backup-local:/backups
+      - backup-status:/backup-status
     entrypoint: >
       sh -c "
-        apk add --no-cache restic postgresql16-client curl supercronic ca-certificates &&
-        if [ -z \"$RESTIC_REPOSITORY\" ]; then
-          echo '[backup] BACKUP_RESTIC_REPOSITORY not set — backup disabled, idling.' ;
-          while true; do sleep 86400; done ;
-        else
-          supercronic /backup/crontab ;
-        fi
+        apk add --no-cache restic postgresql16-client curl supercronic ca-certificates openssl tar &&
+        supercronic /backup/crontab
       "
 
   # Corpus Pipeline Orchestrator — supervises the legal-corpus ingest chain
@@ -267,6 +288,7 @@ services:
   # import-eu-corpus.ts, etc.) — this service does NOT do initial discovery.
   # It only orchestrates backfill/import/embed for files already on disk.
   corpus-pipeline:
+    logging: *default-logging
     build:
       context: ../.. # = server/ dir
       dockerfile: Dockerfile
@@ -345,6 +367,9 @@ volumes:
   caddy-config:
     external: true
     name: hetzner_caddy-config
+  # Local encrypted backups + the timestamp of the last successful run.
+  backup-local:
+  backup-status:
   # Corpus data — pre-populated with law-corpus before first deploy.
   # Not external: created fresh by Compose on first `up`.
   corpus-data:
