@@ -45,20 +45,40 @@ Stand 17.09.2026.
 - **Nicht vorhanden:** eingebettetes Signieren,
   Verbindungs-Knopf für persönliche DocuSign-Konten (Versand läuft über das Servicekonto).
 
-## Kanzlei-Import (CSV)
+## Kanzlei-Import
 
-Seite `/dashboard/import-kanzlei`.
+Seite `/dashboard/import-kanzlei`, Logik in `src/lib/kanzlei-import/` (`values.ts`, `parse.ts`,
+`fields.ts`, `plan.ts`, `run.ts`; alles ohne Oberfläche getestet).
 
-- **Umfang:** Akten mit Aktenzahl, Mandant, Gegner, Rechtsgebiet, Gericht, zuständiger Person,
-  Status; Mandant, Gegner und Gericht werden als Kontakte verknüpft. Keine Fristen, Dokumente,
-  Zeiten oder Rechnungen (Dokumente per Ordner-Upload je Akte).
-- **Ablauf:** CSV (`;` oder `,`, UTF-8) → Spalten zuordnen (Vorschlag aus den Überschriften) →
-  Probelauf → Import.
-- **Nie überschreiben:** Zeilen mit einer bereits vorhandenen Aktenzahl oder Akte werden
-  übersprungen; die Seiten-API legt an oder aktualisiert, deshalb prüft der Import vorher.
-- **Ergebnis je Zeile:** importiert, übersprungen (mit Grund), fehlgeschlagen (mit Grund).
-- **Zurücknehmen:** „Importierte Akten archivieren“ archiviert genau die Akten dieses Imports
-  (Akten werden nie endgültig gelöscht).
+- **Arten und Reihenfolge:** Akten → Kontakte → Fristen → Zeiten. Fristen und Zeiten werden über
+  die Aktenzahl (sonst exakte Bezeichnung) einer Akte zugeordnet; mehrdeutige oder unbekannte
+  Akten sind Fehler der Zeile.
+- **Dateien:** CSV/TXT mit `;`, `,` oder Tabulator, UTF-8 oder Windows-1252 (erkannt über
+  ungültiges UTF-8); Excel `.xlsx` (erstes Blatt, Datums- und Dauerzellen als Text). Altes `.xls`
+  wird mit Hinweis abgelehnt.
+- **Werte:** Datum `31.12.2026`, `31.12.26`, ISO, Excel-Seriennummer; nicht existierende Tage
+  werden abgelehnt. Beträge `1.234,56`. Dauer `1:30`, `0,75` (Spalte „Stunden“), `45`
+  (Spalte „Minuten“), `20 min`, `2 Std`. Status und Rollen aus üblichen Wörtern, unbekannte mit
+  Hinweis.
+- **Probelauf = Plan:** Vorhandene Akten, Kontakte und Fristen werden vollständig gelesen (in
+  Blöcken zu 200, gelöschte mitgezählt). Jede Zeile bekommt eine Entscheidung mit Grund:
+  neu, ergänzen, übersprungen, Fehler; dazu Hinweise. Der Import führt genau diesen Plan aus.
+- **Nie überschreiben:**
+  - Akten: vorhandene Aktenzahl oder Seite → übersprungen; vor dem Anlegen wird erneut geprüft.
+    Status „erledigt“ u. ä. → archiviert.
+  - Kontakte: Treffer per E-Mail, sonst eindeutigem Namen; nur leere Felder (Firma, E-Mail,
+    Telefon, Anschrift, Notiz) werden ergänzt. Mehrere gleichnamige Kontakte → übersprungen.
+  - Fristen: eigene `legal_deadline`-Seiten, `review_status: unreviewed`,
+    `imported_unverified: true`, Hinweis „Fristberechnung nicht geprüft“. Notfrist unklar →
+    Notfrist mit Vier-Augen-Kontrolle. Vergangene und erledigte Fristen werden übersprungen
+    (vergangene optional übernehmbar), gleiche Frist (Akte, Datum, Bezeichnung) ebenso.
+  - Zeiten: an `time_entries` der Akte angehängt, ein Schreibvorgang je Akte; gleicher Eintrag
+    (Datum, Minuten, Tätigkeit) wird übersprungen. „Abgerechnet“ aus der Datei, sonst gewählte
+    Voreinstellung (Standard: nicht abgerechnet).
+- **Zurücknehmen:** Jeder Import speichert, was er geschrieben hat (`migration_project`-Seite,
+  `created_refs`). „Letzte Importe“ nimmt ihn auch später zurück: Akten archivieren, Fristen und
+  Kontakte entfernen, ergänzte Kontaktfelder leeren (nur wenn unverändert), Zeiten entfernen
+  (inzwischen verrechnete bleiben).
 
 ## Dokumentliste einer Akte
 
@@ -69,3 +89,12 @@ Seite `/dashboard/import-kanzlei`.
 - Browser-Upload (`src/lib/presigned-upload.ts`): Vorbereitung und Abschluss mit CSRF-Token.
   Ohne Objektspeicher (`no_storage_configured`) geht die Datei über `/api/upload`.
 - Aktenseiten und andere bearbeitbare Datensätze werden nicht im Browser zwischengespeichert.
+
+## Listen und gelöschte Einträge
+
+- Die Engine liefert je Anfrage höchstens 200 Seiten. `listEnginePages` (`src/lib/engine-pages.ts`)
+  liest in Blöcken; Fristenliste (`/api/legal/fristen`), Fristen-Digest und Fristen-Erinnerungen
+  lesen damit alle Akten und Fristen. Aktenliste und Kontaktliste im Dashboard lesen noch 200.
+- Gelöschte Einträge (außer Akten) bleiben als `status: tombstoned` bestehen. `/api/pages`,
+  `/api/pages/batch-list` und `listEnginePages` lassen sie weg; `include_tombstoned=1` bzw.
+  `includeTombstoned` liefert sie für Aufrufer, die per Offset blättern.

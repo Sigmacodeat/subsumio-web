@@ -605,3 +605,30 @@ wurde durch einen lokalen Dienst ersetzt, der die dokumentierte Schnittstelle na
   hochgeladene Dokumente erschienen erst nach dem Neuladen. Nachweis: Liste aktualisiert sich
   jetzt nach rund 3 Sekunden ohne Neuladen.
 - **Nicht prüfbar ohne Instanz:** echte PDF-AS-WEB-Anbindung mit ID Austria und Signaturkarte.
+
+## Kanzlei-Import vollständig — Praxistest (17.09., abends)
+
+Über die echte Oberfläche und Datenbank durchgespielt, 23 von 23 Prüfungen bestanden, mehrmals
+hintereinander. Testdateien: Aktenliste als Windows-1252-CSV im RA-MICRO-Stil, Adressbuch und
+Leistungsliste als Excel, Fristenliste als CSV. Details: `docs/architecture/SIGNATURE_AND_IMPORT.md`.
+
+- **Neu:** Import von Kontakten, Fristen und Zeiten zusätzlich zu Akten; Excel-Dateien und
+  Windows-Zeichensatz; Probelauf mit Entscheidung und Grund je Zeile; Rücknahme auch später
+  über „Letzte Importe“.
+- **Doppelimport ausgeschlossen:** dieselbe Zeitenliste ein zweites Mal ergibt 3 von 3
+  „schon erfasst“, der Import-Knopf bleibt gesperrt.
+- **Kontakte ergänzt statt verdoppelt:** Der beim Aktenimport angelegte Mandant bekam E-Mail,
+  Telefon und Anschrift aus dem Adressbuch; nach der Rücknahme sind genau diese Felder wieder leer.
+- **Import konnte Akten überschreiben (Befund, behoben).** Die Duplikatsprüfung verlangte 5.000
+  Akten, die Engine liefert aber höchstens 200. Ab der 201. Akte hätte eine vorhandene Aktenzahl
+  eine bestehende Akte ersetzen können. Jetzt vollständige Liste in Blöcken und zweite Prüfung
+  direkt vor dem Anlegen.
+- **Ungültiger Aktenstatus (Befund, behoben).** Importierte Akten bekamen den Status „active“, den
+  es nicht gibt. Jetzt offen, wartend, ruhend oder archiviert.
+- **Fristen sahen nur 200 Einträge (Befund, behoben).** Fristenliste, Fristen-Digest und
+  Fristen-Erinnerungen lesen jetzt alle Akten und Fristen in Blöcken; ein Test bildet 450 Akten
+  nach.
+- **Gelöschte Kontakte und Fristen kamen zurück (Befund, behoben).** Löschen markiert nur; Listen
+  und Fristen-Digest zeigten die Einträge weiter. Listen und Jobs lassen sie jetzt weg.
+- **Offen:** Die Aktenliste, die Kontaktliste und einige Auswahllisten lesen weiterhin nur die
+  ersten 200 Einträge; das betrifft große Kanzleien und ist als eigene Aufgabe vermerkt.

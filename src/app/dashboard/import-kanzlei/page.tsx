@@ -1,188 +1,250 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  UploadCloud,
-  Loader2,
-  CheckCircle2,
   AlertTriangle,
-  Info,
   ArrowRight,
+  CheckCircle2,
   FlaskConical,
+  History,
+  Info,
+  Loader2,
+  RotateCcw,
+  UploadCloud,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { api } from "@/lib/api";
-import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { api, ApiRequestError } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import {
-  createMigrationProject,
-  setFieldMappings,
-  runDryRun,
-  validateMigration,
-  startImport,
   completeMigration,
+  createMigrationProject,
   failMigration,
-  validateMigrationProject,
-  getUnmappedRequiredFields,
-  type MigrationProject,
-  type FieldMapping,
-  type DryRunResult,
+  runDryRun,
+  setFieldMappings,
+  startImport,
+  validateMigration,
   type CutoverReport,
+  type DryRunResult,
+  type FieldMapping,
+  type MigrationProject,
 } from "@/lib/migration-project";
+import {
+  IMPORT_KINDS,
+  guessMapping,
+  missingMappings,
+  type ColumnMapping,
+  type ImportKind,
+} from "@/lib/kanzlei-import/fields";
+import { readImportFile, type ImportTable } from "@/lib/kanzlei-import/parse";
+import {
+  planImport,
+  type ExistingData,
+  type ExistingPage,
+  type ImportPlan,
+  type PlanAction,
+} from "@/lib/kanzlei-import/plan";
+import {
+  executeImport,
+  rollbackImport,
+  type ImportClient,
+  type ImportOutcome,
+  type ImportRefs,
+  type RollbackResult,
+  type RowStatus,
+} from "@/lib/kanzlei-import/run";
 
-// Zielfelder einer Akte (Teilmenge von CaseFrontmatter). Aktenlisten-Exporte
-// aus RA-MICRO, Advoware und DATEV Anwalt sind CSV — der Import mapmt die
-// Spalten auf diese Felder. Ehrlich: kein proprietärer Parser, sondern ein
-// generischer CSV-Import mit Spalten-Zuordnung, der mit jedem dieser Exporte
-// funktioniert.
-type TFunc = (key: import("@/content/dashboard").DashboardKey) => string;
+const KIND_ORDER: ImportKind[] = ["cases", "contacts", "deadlines", "time_entries"];
+/** The engine returns at most this many pages per list request. */
+const LIST_PAGE_SIZE = 200;
 
-interface ImportIssue {
-  row: number;
-  title: string;
-  reason: string;
-}
-interface ImportResult {
-  ok: number;
-  failed: number;
-  skipped: number;
-  issues: ImportIssue[];
-  createdSlugs: string[];
-  rolledBack?: number;
-}
+const ACTION_LABEL: Record<PlanAction, string> = {
+  create: "Neu",
+  complete: "Ergänzen",
+  skip: "Übersprungen",
+  error: "Fehler",
+};
+const STATUS_LABEL: Record<RowStatus, string> = {
+  imported: "Importiert",
+  completed: "Ergänzt",
+  skipped: "Übersprungen",
+  failed: "Fehlgeschlagen",
+};
+const TONE: Record<PlanAction | RowStatus, string> = {
+  create: "text-[color:var(--ds-success-text)]",
+  imported: "text-[color:var(--ds-success-text)]",
+  complete: "text-[color:var(--ds-info-text)]",
+  completed: "text-[color:var(--ds-info-text)]",
+  skip: "text-[color:var(--ds-text-muted)]",
+  skipped: "text-[color:var(--ds-text-muted)]",
+  error: "text-[color:var(--ds-danger-text)]",
+  failed: "text-[color:var(--ds-danger-text)]",
+};
 
-const normaliseNumber = (v: unknown) =>
-  String(v ?? "")
-    .toLowerCase()
-    .replace(/\s+/g, "");
-
-function getFields(t: TFunc) {
-  return [
-    {
-      key: "title",
-      label: t("importkanz.field.title"),
-      required: true,
-      guess: /(rubrum|bezeichnung|kurzbez|betreff|sache|gegenstand|kurzrubrum)/i,
-    },
-    {
-      key: "case_number",
-      label: t("importkanz.field.case_number"),
-      required: false,
-      guess: /(aktenz|akten-?nr|az\b|aktennummer|registernummer|geschäftszahl|gz\b)/i,
-    },
-    {
-      key: "client_name",
-      label: t("importkanz.field.client_name"),
-      required: false,
-      guess: /(mandant|auftraggeber|kläger|klient)/i,
-    },
-    {
-      key: "opponent_name",
-      label: t("importkanz.field.opponent_name"),
-      required: false,
-      guess: /(gegner|gegenseite|beklagt|gegenpartei)/i,
-    },
-    {
-      key: "legal_area",
-      label: t("importkanz.field.legal_area"),
-      required: false,
-      guess: /(rechtsgebiet|sachgebiet|referat|fachgebiet)/i,
-    },
-    {
-      key: "court_name",
-      label: t("importkanz.field.court_name"),
-      required: false,
-      guess: /(gericht|instanz)/i,
-    },
-    {
-      key: "own_lawyer_name",
-      label: t("importkanz.field.own_lawyer_name"),
-      required: false,
-      guess: /(sachbearb|anwalt|bearbeiter|dezernent|sb\b)/i,
-    },
-    {
-      key: "status",
-      label: t("importkanz.field.status"),
-      required: false,
-      guess: /(status|stand|zustand)/i,
-    },
-  ] as const;
+interface HistoryEntry {
+  slug: string;
+  project: MigrationProject;
+  kind: ImportKind;
+  refs?: ImportRefs;
+  counts?: Record<RowStatus, number>;
+  rolledBackAt?: string;
 }
 
-type FieldKey = ReturnType<typeof getFields>[number]["key"];
-
-/** Generischer CSV/Delimited-Parser: erkennt ; oder , und behandelt "…"-Quotes. */
-function parseDelimited(text: string): string[][] {
-  const clean = text.replace(/^﻿/, ""); // BOM weg
-  const firstLine = clean.split(/\r?\n/)[0] ?? "";
-  const delim =
-    (firstLine.match(/;/g)?.length ?? 0) >= (firstLine.match(/,/g)?.length ?? 0) ? ";" : ",";
-  const rows: string[][] = [];
-  let field = "";
-  let row: string[] = [];
-  let inQuotes = false;
-  for (let i = 0; i < clean.length; i++) {
-    const c = clean[i];
-    if (inQuotes) {
-      if (c === '"') {
-        if (clean[i + 1] === '"') {
-          field += '"';
-          i++;
-        } else inQuotes = false;
-      } else field += c;
-    } else if (c === '"') {
-      inQuotes = true;
-    } else if (c === delim) {
-      row.push(field);
-      field = "";
-    } else if (c === "\n" || c === "\r") {
-      if (c === "\r" && clean[i + 1] === "\n") i++;
-      row.push(field);
-      field = "";
-      if (row.some((v) => v.trim() !== "")) rows.push(row);
-      row = [];
-    } else field += c;
+async function listAll(type: string): Promise<ExistingPage[]> {
+  const out: ExistingPage[] = [];
+  for (let offset = 0; offset < 50_000; offset += LIST_PAGE_SIZE) {
+    // Deleted records must count for the batch size, or paging stops early.
+    const batch = (await api.brain.listPages({
+      type,
+      limit: LIST_PAGE_SIZE,
+      offset,
+      includeTombstoned: true,
+    })) as ExistingPage[];
+    out.push(...batch);
+    if (batch.length < LIST_PAGE_SIZE) break;
   }
-  if (field !== "" || row.length) {
-    row.push(field);
-    if (row.some((v) => v.trim() !== "")) rows.push(row);
-  }
-  return rows;
+  // Paging by "recently updated" can return a page twice when it changes meanwhile.
+  return [...new Map(out.map((p) => [p.slug, p])).values()];
 }
 
-function slugify(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9äöüß]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 60);
+const importClient: ImportClient = {
+  async getPage(slug) {
+    try {
+      return (await api.brain.getPage(slug)) as {
+        slug: string;
+        title?: string;
+        frontmatter?: Record<string, unknown>;
+      };
+    } catch (err) {
+      if (err instanceof ApiRequestError && err.status === 404) return null;
+      throw err;
+    }
+  },
+  async createPage(page) {
+    await api.brain.createPage(page);
+  },
+  async updatePage(page) {
+    await api.brain.updatePage(page);
+  },
+  async deletePage(slug) {
+    try {
+      await api.brain.deletePage(slug);
+    } catch (err) {
+      // A matter imported as closed is archived already.
+      if (err instanceof ApiRequestError && err.status === 409) return;
+      throw err;
+    }
+  },
+};
+
+function todayInVienna(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Vienna" }).format(new Date());
+}
+
+function kindOf(value: unknown): ImportKind {
+  return KIND_ORDER.includes(value as ImportKind) ? (value as ImportKind) : "cases";
+}
+
+function describeRollback(r: RollbackResult): string {
+  const parts = [
+    r.archivedCases && `${r.archivedCases} Akten archiviert`,
+    r.removedRecords && `${r.removedRecords} Einträge entfernt`,
+    r.removedTimeEntries && `${r.removedTimeEntries} Zeiteinträge entfernt`,
+    r.revertedContacts && `${r.revertedContacts} Kontakte zurückgesetzt`,
+  ].filter(Boolean);
+  return parts.length ? `${parts.join(", ")}.` : "Nichts mehr zurückzunehmen.";
 }
 
 export default function ImportKanzleiPage() {
   const { t } = useLang();
-  const FIELDS = getFields(t);
-  const [headers, setHeaders] = useState<string[]>([]);
-  const [rows, setRows] = useState<string[][]>([]);
-  const [mapping, setMapping] = useState<Record<FieldKey, number>>({} as Record<FieldKey, number>);
+  const [kind, setKind] = useState<ImportKind>("cases");
+  const [table, setTable] = useState<ImportTable | null>(null);
   const [fileName, setFileName] = useState("");
-  const [importing, setImporting] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [result, setResult] = useState<ImportResult | null>(null);
-  const [rollingBack, setRollingBack] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  // Migration-project tracking (src/lib/migration-project.ts) — was dead
-  // code before: this CSV import ran with no project record, no dry-run
-  // gate, and no cutover report. Persisted as a brain page (type
-  // "migration_project"), same pattern as the other dashboard import flows.
+  const [mapping, setMapping] = useState<ColumnMapping>({});
+  const [includePast, setIncludePast] = useState(false);
+  const [defaultBilled, setDefaultBilled] = useState(false);
+  const [plan, setPlan] = useState<ImportPlan | null>(null);
   const [project, setProject] = useState<MigrationProject | null>(null);
-  const [dryRunning, setDryRunning] = useState(false);
+  const [filter, setFilter] = useState<PlanAction | "all">("all");
+  const [busy, setBusy] = useState<"read" | "plan" | "import" | "rollback" | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [outcome, setOutcome] = useState<ImportOutcome | null>(null);
+  const [rollback, setRollback] = useState<RollbackResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
 
-  function buildFieldMappings(): FieldMapping[] {
-    return FIELDS.map((f) => {
+  const def = IMPORT_KINDS[kind];
+  const missing = table ? missingMappings(kind, mapping) : [];
+
+  const loadHistory = useCallback(async () => {
+    try {
+      const pages = await api.brain.listPages({ type: "migration_project", limit: LIST_PAGE_SIZE });
+      const entries: HistoryEntry[] = [];
+      for (const p of pages) {
+        const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+        const proj = fm.project as MigrationProject | undefined;
+        const refs = fm.created_refs as ImportRefs | undefined;
+        if (!proj || !refs) continue;
+        entries.push({
+          slug: p.slug,
+          project: proj,
+          kind: kindOf(fm.import_kind),
+          refs,
+          counts: fm.outcome_counts as Record<RowStatus, number> | undefined,
+          rolledBackAt: typeof fm.rolled_back_at === "string" ? fm.rolled_back_at : undefined,
+        });
+      }
+      entries.sort((a, b) =>
+        (b.project.updated_at ?? "").localeCompare(a.project.updated_at ?? "")
+      );
+      setHistory(entries.slice(0, 10));
+    } catch {
+      // History is a convenience; the import works without it.
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadHistory();
+  }, [loadHistory]);
+
+  function resetPlan() {
+    setPlan(null);
+    setProject(null);
+    setOutcome(null);
+    setRollback(null);
+    setFilter("all");
+  }
+
+  function chooseKind(next: ImportKind) {
+    setKind(next);
+    resetPlan();
+    if (table) setMapping(guessMapping(next, table.headers));
+  }
+
+  async function handleFile(file: File) {
+    setError(null);
+    resetPlan();
+    setBusy("read");
+    try {
+      const read = await readImportFile(file);
+      setTable(read);
+      setFileName(file.name);
+      setMapping(guessMapping(kind, read.headers));
+    } catch (err) {
+      setTable(null);
+      setFileName("");
+      setError(err instanceof Error ? err.message : "Die Datei konnte nicht gelesen werden.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function fieldMappings(): FieldMapping[] {
+    return def.fields.map((f) => {
       const idx = mapping[f.key] ?? -1;
       return {
-        source_field: idx >= 0 ? (headers[idx] ?? `col_${idx}`) : "",
+        source_field: idx >= 0 && table ? (table.headers[idx] ?? `Spalte ${idx + 1}`) : "",
         target_field: f.key,
         status: idx < 0 ? "unmapped" : "auto_mapped",
         required: f.required,
@@ -190,258 +252,175 @@ export default function ImportKanzleiPage() {
     });
   }
 
-  function runDryRunCheck(): { project: MigrationProject; result: DryRunResult } {
-    const base =
-      project ??
-      createMigrationProject({
-        name: fileName || "Kanzlei-Import",
-        brain_id: "default",
-        org_id: "default",
-        source_system: "csv",
-        source_path: fileName,
-        created_by: "dashboard-user",
-      });
-    const mapped = setFieldMappings(base, buildFieldMappings(), "dashboard-user");
-
-    let errorCount = 0;
-    const warnings: string[] = [];
-    for (let i = 0; i < rows.length; i++) {
-      if (titleCol < 0 || !(rows[i][titleCol] ?? "").trim()) errorCount++;
-    }
-    const unmapped = getUnmappedRequiredFields(mapped);
-    if (unmapped.length > 0) {
-      warnings.push(
-        `${unmapped.length} Pflichtfeld(er) nicht zugeordnet: ${unmapped.map((m) => m.target_field).join(", ")}`
-      );
-    }
-    const total = rows.length;
-    const failedRows = errorCount;
-    const dryRun: DryRunResult = {
-      run_at: new Date().toISOString(),
-      stats: {
-        total_records: total,
-        processed_records: total,
-        successful_records: total - failedRows,
-        failed_records: failedRows,
-        skipped_records: 0,
-        error_rate: total > 0 ? Math.round((failedRows / total) * 1000) / 10 : 0,
-        success_rate: total > 0 ? Math.round(((total - failedRows) / total) * 1000) / 10 : 0,
-      },
-      errors: [],
-      warnings,
-      sample_records: rows.slice(0, 3),
-    };
-    const withDryRun = runDryRun(mapped, dryRun, "dashboard-user");
-    return { project: withDryRun, result: dryRun };
-  }
-
-  function handleFile(file: File) {
-    setError(null);
-    setResult(null);
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const parsed = parseDelimited(String(reader.result));
-        if (parsed.length < 2) {
-          setError(t("importkanz.error_no_data"));
-          return;
-        }
-        const head = parsed[0].map((h) => h.trim());
-        const body = parsed.slice(1);
-        // Auto-Mapping per Header-Heuristik.
-        const guess = {} as Record<FieldKey, number>;
-        for (const f of FIELDS) {
-          guess[f.key] = head.findIndex((h) => f.guess.test(h));
-        }
-        setHeaders(head);
-        setRows(body);
-        setMapping(guess);
-        setFileName(file.name);
-      } catch {
-        setError("Datei konnte nicht gelesen werden. Ist es eine CSV (UTF-8)?");
-      }
-    };
-    reader.readAsText(file, "utf-8");
-  }
-
-  const titleCol = mapping.title ?? -1;
-  const canDryRun =
-    headers.length > 0 && titleCol >= 0 && rows.length > 0 && !importing && !dryRunning;
-  // A successful dry run leaves the project "validated"; only "dry_run" was
-  // accepted before, so the import button never became active.
-  const dryRunOk =
-    (project?.status === "dry_run" || project?.status === "validated") &&
-    (project.dry_run_result?.stats.error_rate ?? 100) < 50;
-  const canImport = dryRunOk && !importing;
-
-  async function persistProject(p: MigrationProject): Promise<void> {
+  async function persist(p: MigrationProject, extra: Record<string, unknown> = {}): Promise<void> {
     await api.brain.createPage({
       slug: `legal/migration-projects/${p.id}`,
-      title: `Migration: ${p.name}`,
+      title: `Import ${IMPORT_KINDS[kindOf(extra.import_kind ?? kind)].label}: ${p.name}`,
       type: "migration_project",
-      frontmatter: { project: p },
+      frontmatter: { project: p, import_kind: kind, ...extra },
     });
     setProject(p);
   }
 
-  /** Dry run: validates mappings + estimates error rate WITHOUT writing any case pages. */
   async function runDryRunStep() {
-    setDryRunning(true);
+    if (!table) return;
+    setBusy("plan");
     setError(null);
+    setOutcome(null);
+    setRollback(null);
     try {
-      const { project: withDryRun } = runDryRunCheck();
-      const validation = validateMigrationProject(withDryRun);
-      const validated = validation.valid
-        ? validateMigration(withDryRun, "dashboard-user")
-        : withDryRun;
-      await persistProject(validated);
-      if (!validation.valid) {
-        setError(`Dry Run zeigt Probleme: ${validation.errors.join("; ")}`);
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Dry Run fehlgeschlagen.");
+      const [cases, contacts, deadlines] = await Promise.all([
+        listAll("legal_case"),
+        kind === "contacts" ? listAll("legal_contact") : Promise.resolve([]),
+        kind === "deadlines" ? listAll("legal_deadline") : Promise.resolve([]),
+      ]);
+      const existing: ExistingData = { cases, contacts, deadlines };
+      const base = createMigrationProject({
+        name: fileName || "Kanzlei-Import",
+        brain_id: "current",
+        org_id: "current",
+        source_system: table.encoding === "xlsx" ? "excel" : "csv",
+        source_path: fileName,
+        created_by: "dashboard",
+      });
+      const nextPlan = planImport(kind, table.rows, mapping, existing, {
+        projectId: base.id,
+        today: todayInVienna(),
+        now: new Date().toISOString(),
+        includePastDeadlines: includePast,
+        defaultBilled,
+      });
+      const total = nextPlan.rows.length;
+      const failed = nextPlan.counts.error;
+      const dryRun: DryRunResult = {
+        run_at: new Date().toISOString(),
+        stats: {
+          total_records: total,
+          processed_records: total,
+          successful_records: nextPlan.counts.create + nextPlan.counts.complete,
+          failed_records: failed,
+          skipped_records: nextPlan.counts.skip,
+          error_rate: total ? Math.round((failed / total) * 1000) / 10 : 0,
+          success_rate: total
+            ? Math.round(((nextPlan.counts.create + nextPlan.counts.complete) / total) * 1000) / 10
+            : 0,
+        },
+        errors: [],
+        warnings: [],
+        sample_records: table.rows.slice(0, 3),
+      };
+      const checked = validateMigration(
+        runDryRun(setFieldMappings(base, fieldMappings(), "dashboard"), dryRun, "dashboard"),
+        "dashboard"
+      );
+      await persist(checked);
+      setPlan(nextPlan);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? `Probelauf fehlgeschlagen: ${err.message}`
+          : "Probelauf fehlgeschlagen."
+      );
     } finally {
-      setDryRunning(false);
+      setBusy(null);
     }
   }
 
   async function runImport() {
-    if (!project) return;
-    setImporting(true);
+    if (!plan || !project) return;
+    setBusy("import");
     setProgress(0);
-    setResult(null);
     setError(null);
     const startedAt = Date.now();
-    let ok = 0;
-    let failed = 0;
-    let skipped = 0;
-    const issues: ImportIssue[] = [];
-    const createdSlugs: string[] = [];
-
-    // Never overwrite: the page API creates OR updates, so a matter with the
-    // same id or case number would lose its deadlines and documents.
-    let existing: Array<{ slug: string; frontmatter?: Record<string, unknown> }> = [];
+    let running = startImport(project, "dashboard");
     try {
-      existing = (await api.brain.listPages({
-        type: "legal_case",
-        limit: 5000,
-      })) as typeof existing;
-    } catch {
-      setError("Bestehende Akten konnten nicht geladen werden. Der Import wurde nicht gestartet.");
-      setImporting(false);
-      return;
-    }
-    const existingSlugs = new Set(existing.map((p) => p.slug));
-    const existingNumbers = new Set(
-      existing.map((p) => normaliseNumber(p.frontmatter?.case_number)).filter(Boolean)
-    );
-
-    const seen = new Set<string>();
-    let imported = startImport(project, "dashboard-user");
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      const val = (key: FieldKey): string | undefined => {
-        const idx = mapping[key];
-        const v = idx != null && idx >= 0 ? (row[idx] ?? "").trim() : "";
-        return v || undefined;
+      const result = await executeImport(plan, importClient, (done, total) =>
+        setProgress(total ? Math.round((done / total) * 100) : 100)
+      );
+      setOutcome(result);
+      const written = result.counts.imported + result.counts.completed;
+      const stats = {
+        total_records: result.rows.length,
+        processed_records: result.rows.length,
+        successful_records: written,
+        failed_records: result.counts.failed,
+        skipped_records: result.counts.skipped,
+        error_rate: result.rows.length
+          ? Math.round((result.counts.failed / result.rows.length) * 1000) / 10
+          : 0,
+        success_rate: result.rows.length
+          ? Math.round((written / result.rows.length) * 1000) / 10
+          : 0,
       };
-      const title = val("title") || val("case_number") || `Akte ${i + 1}`;
-      const caseNumber = val("case_number");
-      setProgress(Math.round(((i + 1) / rows.length) * 100));
-      if (!val("title")) {
-        failed++;
-        issues.push({ row: i + 2, title, reason: "Titel fehlt" });
-        continue;
-      }
-      if (caseNumber && existingNumbers.has(normaliseNumber(caseNumber))) {
-        skipped++;
-        issues.push({ row: i + 2, title, reason: `Aktenzahl ${caseNumber} existiert bereits` });
-        continue;
-      }
-      let slug = `legal/cases/${slugify(caseNumber || title) || `row-${i + 1}`}`;
-      if (seen.has(slug) || existingSlugs.has(slug)) slug = `${slug}-import-${i + 1}`;
-      if (existingSlugs.has(slug)) {
-        skipped++;
-        issues.push({ row: i + 2, title, reason: "Akte existiert bereits" });
-        continue;
-      }
-      seen.add(slug);
-      try {
-        await api.brain.createPage({
-          slug,
-          title,
-          type: "legal_case",
-          frontmatter: {
-            type: "legal_case",
-            case_number: caseNumber,
-            client_name: val("client_name"),
-            opponent_name: val("opponent_name"),
-            legal_area: val("legal_area"),
-            court_name: val("court_name"),
-            own_lawyer_name: val("own_lawyer_name"),
-            status: val("status") || "active",
-            source: "kanzlei-import",
-            import_project_id: project.id,
-            imported_at: new Date().toISOString(),
-          },
-        });
-        ok++;
-        createdSlugs.push(slug);
-        existingSlugs.add(slug);
-        if (caseNumber) existingNumbers.add(normaliseNumber(caseNumber));
-      } catch (err) {
-        failed++;
-        issues.push({
-          row: i + 2,
-          title,
-          reason: err instanceof Error ? err.message : "Speichern fehlgeschlagen",
-        });
-      }
+      const report: CutoverReport = {
+        generated_at: new Date().toISOString(),
+        pre_import_stats: running.dry_run_result?.stats ?? stats,
+        post_import_stats: stats,
+        delta_stats: stats,
+        duration_seconds: Math.round((Date.now() - startedAt) / 1000),
+        rollback_available: written > 0,
+        summary: `${result.counts.imported} importiert, ${result.counts.completed} ergänzt, ${result.counts.skipped} übersprungen, ${result.counts.failed} fehlgeschlagen.`,
+      };
+      running =
+        written === 0 && result.counts.failed > 0
+          ? failMigration(running, report.summary, "dashboard")
+          : completeMigration(running, report, "dashboard");
+      await persist(running, { created_refs: result.refs, outcome_counts: result.counts });
+      void loadHistory();
+    } catch (err) {
+      setError(err instanceof Error ? `Import abgebrochen: ${err.message}` : "Import abgebrochen.");
+    } finally {
+      setBusy(null);
     }
-    setResult({ ok, failed, skipped, issues, createdSlugs });
-    const postStats = {
-      total_records: rows.length,
-      processed_records: rows.length,
-      successful_records: ok,
-      failed_records: failed,
-      skipped_records: skipped,
-      error_rate: rows.length > 0 ? Math.round((failed / rows.length) * 1000) / 10 : 0,
-      success_rate: rows.length > 0 ? Math.round((ok / rows.length) * 1000) / 10 : 0,
-    };
-    const report: CutoverReport = {
-      generated_at: new Date().toISOString(),
-      pre_import_stats: imported.dry_run_result?.stats ?? postStats,
-      post_import_stats: postStats,
-      delta_stats: postStats,
-      duration_seconds: Math.round((Date.now() - startedAt) / 1000),
-      rollback_available: createdSlugs.length > 0,
-      summary: `${ok} Akten importiert, ${skipped} übersprungen, ${failed} fehlgeschlagen.`,
-    };
-    imported =
-      failed > 0 && ok === 0
-        ? failMigration(imported, report.summary, "dashboard-user")
-        : completeMigration(imported, report, "dashboard-user");
-    await persistProject(imported);
-    setImporting(false);
   }
 
-  /** Archives exactly the matters this import created (matters are never hard-deleted). */
-  async function rollbackImport() {
-    if (!result || result.createdSlugs.length === 0) return;
-    if (!window.confirm(`${result.createdSlugs.length} importierte Akten archivieren?`)) return;
-    setRollingBack(true);
-    let removed = 0;
-    for (const slug of result.createdSlugs) {
-      try {
-        await api.brain.deletePage(slug);
-        removed++;
-      } catch {
-        // keep going; the count shows what was removed
-      }
+  async function takeBack(entry: {
+    slug: string;
+    refs: ImportRefs;
+    project: MigrationProject;
+    kind: ImportKind;
+  }): Promise<boolean> {
+    const n =
+      entry.refs.pages.length +
+      entry.refs.contactCompletions.length +
+      entry.refs.timeEntries.reduce((s, t) => s + t.ids.length, 0);
+    if (
+      !window.confirm(
+        `Import „${entry.project.name}“ zurücknehmen? ${n} Einträge werden archiviert, entfernt oder zurückgesetzt. Inzwischen geänderte oder verrechnete Einträge bleiben erhalten.`
+      )
+    ) {
+      return false;
     }
-    setResult({ ...result, createdSlugs: [], rolledBack: removed });
-    setRollingBack(false);
+    setBusy("rollback");
+    setError(null);
+    try {
+      const result = await rollbackImport(entry.refs, importClient);
+      setRollback(result);
+      await api.brain.updatePage({
+        slug: entry.slug,
+        frontmatter: { rolled_back_at: new Date().toISOString(), rollback_result: result },
+      });
+      void loadHistory();
+      return true;
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? `Zurücknehmen fehlgeschlagen: ${err.message}`
+          : "Zurücknehmen fehlgeschlagen."
+      );
+      return false;
+    } finally {
+      setBusy(null);
+    }
   }
+
+  const writable = plan ? plan.counts.create + plan.counts.complete : 0;
+  const shownRows = useMemo(() => {
+    if (outcome) return null;
+    if (!plan) return [];
+    return filter === "all" ? plan.rows : plan.rows.filter((r) => r.action === filter);
+  }, [plan, filter, outcome]);
+  const warningCount = plan ? plan.rows.filter((r) => r.warnings.length > 0).length : 0;
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
@@ -454,46 +433,92 @@ export default function ImportKanzleiPage() {
         ]}
       />
 
-      {/* Honest framing */}
       <div
         className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-4 py-3"
         role="note"
       >
-        <Info
-          size={16}
-          className="mt-0.5 shrink-0 text-[color:var(--ds-info-text)]"
-          aria-hidden="true"
-        />
+        <Info size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-info-text)]" aria-hidden />
         <p className="text-xs leading-relaxed text-[color:var(--ds-info-text)]">
-          {t("importkanz.info")}
+          Export aus RA-MICRO, Advoware, DATEV Anwalt oder Excel als CSV oder .xlsx. Reihenfolge:
+          zuerst Akten, dann Kontakte, Fristen und Zeiten, denn diese werden über die Aktenzahl
+          zugeordnet. Der Probelauf zeigt für jede Zeile, was passiert; vorhandene Daten werden nie
+          überschrieben, und jeder Import lässt sich zurücknehmen.
         </p>
       </div>
 
-      {/* Upload */}
+      {/* 1 · Was */}
+      <fieldset className="space-y-3">
+        <legend className="text-sm font-semibold text-[color:var(--ds-text)]">
+          Was importieren?
+        </legend>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          {KIND_ORDER.map((k) => (
+            <label
+              key={k}
+              className={cn(
+                "flex cursor-pointer flex-col gap-1 rounded-xl border p-3 text-left transition-[background-color,border-color] motion-reduce:transition-none",
+                kind === k
+                  ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]"
+                  : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:bg-[color:var(--ds-hover)]"
+              )}
+            >
+              <span className="flex items-center gap-2 text-sm font-medium text-[color:var(--ds-text)]">
+                <input
+                  type="radio"
+                  name="import-kind"
+                  id={`import-kind-${k}`}
+                  value={k}
+                  checked={kind === k}
+                  onChange={() => chooseKind(k)}
+                  disabled={busy !== null}
+                />
+                {IMPORT_KINDS[k].label}
+              </span>
+              <span className="text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                {IMPORT_KINDS[k].description}
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      {/* 2 · Datei */}
       <label
         className={cn(
-          "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed py-10 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
-          headers.length
+          "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed py-8 transition-[background-color,border-color] motion-reduce:transition-none",
+          table
             ? "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
-            : "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] hover:border-[color:var(--ds-info-border)] hover:bg-[color:var(--ds-info-bg)]"
+            : "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]"
         )}
       >
-        <UploadCloud size={28} className="text-[color:var(--ds-info-text)]" aria-hidden="true" />
+        {busy === "read" ? (
+          <Loader2
+            size={24}
+            className="animate-spin text-[color:var(--ds-info-text)]"
+            aria-hidden
+          />
+        ) : (
+          <UploadCloud size={24} className="text-[color:var(--ds-info-text)]" aria-hidden />
+        )}
         <span className="text-sm text-[color:var(--ds-text)]">
-          {fileName || t("importkanz.choose_file")}
+          {fileName || "Datei wählen (CSV oder Excel .xlsx)"}
         </span>
-        {headers.length > 0 && (
+        {table && (
           <span className="text-xs text-[color:var(--ds-text-muted)]">
-            {rows.length} {t("importkanz.rows_detected")}
+            {table.rows.length} Zeilen
+            {table.encoding === "windows-1252" && " · als Windows-1252 gelesen (Umlaute geprüft)"}
+            {table.encoding === "xlsx" && " · erstes Tabellenblatt"}
           </span>
         )}
         <input
+          id="import-file"
           type="file"
-          accept=".csv,text/csv,text/plain"
-          className="hidden"
+          accept=".csv,.txt,.xlsx,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          className="sr-only"
           onChange={(e) => {
             const f = e.target.files?.[0];
-            if (f) handleFile(f);
+            if (f) void handleFile(f);
+            e.target.value = "";
           }}
         />
       </label>
@@ -504,17 +529,19 @@ export default function ImportKanzleiPage() {
         </p>
       )}
 
-      {/* Mapping + preview */}
-      {headers.length > 0 && (
+      {table && (
         <>
-          <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Spalten zuordnen</h2>
+          {/* 3 · Spalten */}
+          <section className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              Spalten zuordnen: {def.label}
+            </h2>
             <div className="grid gap-3 sm:grid-cols-2">
-              {FIELDS.map((f) => (
+              {def.fields.map((f) => (
                 <div key={f.key} className="flex items-center gap-2">
                   <label
                     htmlFor={`map-${f.key}`}
-                    className="w-36 shrink-0 text-xs text-[color:var(--ds-text-muted)]"
+                    className="w-44 shrink-0 text-xs text-[color:var(--ds-text-muted)]"
                   >
                     {f.label}
                     {f.required && <span className="text-[color:var(--ds-danger-text)]"> *</span>}
@@ -522,11 +549,15 @@ export default function ImportKanzleiPage() {
                   <select
                     id={`map-${f.key}`}
                     value={mapping[f.key] ?? -1}
-                    onChange={(e) => setMapping((m) => ({ ...m, [f.key]: Number(e.target.value) }))}
-                    className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--ds-info-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                    disabled={busy !== null}
+                    onChange={(e) => {
+                      setMapping((m) => ({ ...m, [f.key]: Number(e.target.value) }));
+                      resetPlan();
+                    }}
+                    className="min-w-0 flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
                   >
                     <option value={-1}>— nicht importieren —</option>
-                    {headers.map((h, i) => (
+                    {table.headers.map((h, i) => (
                       <option key={i} value={i}>
                         {h || `Spalte ${i + 1}`}
                       </option>
@@ -535,120 +566,152 @@ export default function ImportKanzleiPage() {
                 </div>
               ))}
             </div>
-            {titleCol < 0 && (
+            {missing.length > 0 && (
               <p className="flex items-center gap-1.5 text-xs text-[color:var(--ds-warning-text)]">
-                <AlertTriangle size={12} /> „Bezeichnung / Rubrum&quot; muss zugeordnet sein.
+                <AlertTriangle size={12} aria-hidden /> Noch zuordnen: {missing.join(", ")}
               </p>
             )}
-          </div>
-
-          {/* Preview (first 5) */}
-          <div className="overflow-x-auto rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-            <h2 className="mb-3 text-sm font-semibold text-[color:var(--ds-text)]">
-              Vorschau (erste 5)
-            </h2>
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="text-left text-[color:var(--ds-text-muted)]">
-                  {FIELDS.filter((f) => (mapping[f.key] ?? -1) >= 0).map((f) => (
-                    <th key={f.key} scope="col" className="pr-3 pb-2 font-medium">
-                      {f.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.slice(0, 5).map((r, ri) => (
-                  <tr key={ri} className="border-t border-[color:var(--ds-border)]">
-                    {FIELDS.filter((f) => (mapping[f.key] ?? -1) >= 0).map((f) => (
-                      <td
-                        key={f.key}
-                        className="max-w-[180px] truncate py-1.5 pr-3 text-[color:var(--ds-text)]"
-                      >
-                        {r[mapping[f.key]] ?? ""}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Dry Run — validates mappings + estimates error rate, writes nothing */}
-          <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-[color:var(--ds-text)]">
-              <FlaskConical
-                size={14}
-                className="text-[color:var(--ds-info-text)]"
-                aria-hidden="true"
-              />
-              Dry Run
-            </h2>
-            <p className="text-xs text-[color:var(--ds-text-muted)]">
-              {t("importkanz.dry_run_desc")}
-            </p>
-            <Button
-              variant="secondary"
-              className="gap-2"
-              disabled={!canDryRun}
-              onClick={() => void runDryRunStep()}
-            >
-              {dryRunning ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                <FlaskConical size={14} />
-              )}
-              {dryRunning ? t("importkanz.dry_run_checking") : t("importkanz.dry_run_start")}
-            </Button>
-            {project?.dry_run_result && (
-              <div className="space-y-1 text-xs text-[color:var(--ds-text-muted)]">
-                <p>
-                  Erfolgsquote: <strong>{project.dry_run_result.stats.success_rate}%</strong> ·
-                  Fehlerquote: <strong>{project.dry_run_result.stats.error_rate}%</strong>
-                </p>
-                {project.dry_run_result.warnings.map((w, i) => (
-                  <p
-                    key={i}
-                    className="flex items-center gap-1.5 text-[color:var(--ds-warning-text)]"
-                  >
-                    <AlertTriangle size={11} aria-hidden="true" /> {w}
-                  </p>
-                ))}
-                {dryRunOk ? (
-                  <p className="flex items-center gap-1.5 text-[color:var(--ds-success-text)]">
-                    <CheckCircle2 size={11} aria-hidden="true" /> {t("importkanz.dry_run_ready")}
-                  </p>
-                ) : (
-                  <p className="text-[color:var(--ds-danger-text)]">
-                    {t("importkanz.dry_run_error")}
-                  </p>
-                )}
-              </div>
+            {kind === "deadlines" && (
+              <label className="flex items-center gap-2 text-xs text-[color:var(--ds-text)]">
+                <input
+                  id="import-include-past"
+                  type="checkbox"
+                  checked={includePast}
+                  onChange={(e) => {
+                    setIncludePast(e.target.checked);
+                    resetPlan();
+                  }}
+                />
+                Auch Fristen vor dem heutigen Tag übernehmen
+              </label>
             )}
-          </div>
+            {kind === "time_entries" && (
+              <label className="flex flex-wrap items-center gap-2 text-xs text-[color:var(--ds-text)]">
+                <span>Zeiten ohne Angabe „abgerechnet“ gelten als</span>
+                <select
+                  id="import-default-billed"
+                  value={defaultBilled ? "billed" : "open"}
+                  onChange={(e) => {
+                    setDefaultBilled(e.target.value === "billed");
+                    resetPlan();
+                  }}
+                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs"
+                >
+                  <option value="open">noch nicht abgerechnet</option>
+                  <option value="billed">bereits abgerechnet</option>
+                </select>
+              </label>
+            )}
+            {kind === "deadlines" && (
+              <p className="text-xs text-[color:var(--ds-warning-text)]">
+                Übernommene Fristen sind nicht nachgerechnet. Sie erscheinen in der Fristenliste als
+                „Ungeprüft“; unklare Notfrist-Angaben werden als Notfrist mit Vier-Augen-Kontrolle
+                übernommen.
+              </p>
+            )}
+          </section>
 
-          {/* Import */}
-          <div className="flex items-center gap-3">
+          {/* 4 · Probelauf */}
+          <section className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-[color:var(--ds-text)]">
+                <FlaskConical size={14} className="text-[color:var(--ds-info-text)]" aria-hidden />
+                Probelauf
+              </h2>
+              <Button
+                variant="secondary"
+                className="gap-2"
+                disabled={missing.length > 0 || busy !== null || table.rows.length === 0}
+                onClick={() => void runDryRunStep()}
+              >
+                {busy === "plan" ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <FlaskConical size={14} />
+                )}
+                {busy === "plan" ? "Prüfe…" : "Probelauf starten"}
+              </Button>
+            </div>
+            <p className="text-xs text-[color:var(--ds-text-muted)]">
+              Liest die vorhandenen Daten und entscheidet für jede Zeile, ohne etwas zu speichern.
+            </p>
+
+            {plan && !outcome && (
+              <>
+                <div className="flex flex-wrap gap-2" role="group" aria-label="Zeilen filtern">
+                  {(["all", "create", "complete", "skip", "error"] as const).map((a) => {
+                    const n = a === "all" ? plan.rows.length : plan.counts[a];
+                    if (a !== "all" && n === 0) return null;
+                    return (
+                      <button
+                        key={a}
+                        type="button"
+                        aria-pressed={filter === a}
+                        onClick={() => setFilter(a)}
+                        className={cn(
+                          "rounded-full border px-3 py-1 text-xs tabular-nums",
+                          filter === a
+                            ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-text)]"
+                            : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]"
+                        )}
+                      >
+                        {a === "all" ? "Alle" : ACTION_LABEL[a]} {n}
+                      </button>
+                    );
+                  })}
+                  {warningCount > 0 && (
+                    <span className="flex items-center gap-1 text-xs text-[color:var(--ds-warning-text)]">
+                      <AlertTriangle size={12} aria-hidden /> {warningCount} mit Hinweis
+                    </span>
+                  )}
+                </div>
+                <PlanTable
+                  rows={(shownRows ?? []).map((r) => ({
+                    row: r.row,
+                    label: r.label,
+                    state: r.action,
+                    stateLabel: ACTION_LABEL[r.action],
+                    reason: r.reason,
+                    warnings: r.warnings,
+                  }))}
+                  ariaLabel="Ergebnis des Probelaufs"
+                />
+              </>
+            )}
+          </section>
+
+          {/* 5 · Import */}
+          <div className="flex flex-wrap items-center gap-3">
             <Button
               variant="primary"
-              className="gap-2 bg-[color:var(--ds-info-solid)] text-white hover:bg-[color:var(--ds-info-solid)]"
-              disabled={!canImport}
-              onClick={runImport}
+              className="gap-2"
+              disabled={!plan || writable === 0 || busy !== null || Boolean(outcome)}
+              onClick={() => void runImport()}
             >
-              {importing ? (
+              {busy === "import" ? (
                 <Loader2 size={16} className="animate-spin" />
               ) : (
                 <ArrowRight size={16} />
               )}
-              {importing ? `Importiere… ${progress}%` : `${rows.length} Akten importieren`}
+              {busy === "import"
+                ? `Importiere… ${progress}%`
+                : plan
+                  ? `${writable} ${writable === 1 ? "Eintrag" : "Einträge"} importieren`
+                  : "Importieren"}
             </Button>
-            {!canImport && !importing && (
+            {!plan && (
               <span className="text-xs text-[color:var(--ds-text-muted)]">
-                {t("importkanz.need_dry_run")}
+                Zuerst den Probelauf starten.
+              </span>
+            )}
+            {plan && writable === 0 && !outcome && (
+              <span className="text-xs text-[color:var(--ds-text-muted)]">
+                Der Probelauf hat nichts zu importieren gefunden.
               </span>
             )}
           </div>
-          {result && (
+
+          {outcome && (
             <section
               aria-label="Ergebnis des Imports"
               className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-sm"
@@ -659,55 +722,178 @@ export default function ImportKanzleiPage() {
                   className="text-[color:var(--ds-success-text)]"
                   aria-hidden
                 />
-                <span className="text-[color:var(--ds-success-text)]">{result.ok} importiert</span>
-                {result.skipped > 0 && <span>{result.skipped} übersprungen</span>}
-                {result.failed > 0 && (
+                <span className="text-[color:var(--ds-success-text)]">
+                  {outcome.counts.imported} importiert
+                </span>
+                {outcome.counts.completed > 0 && <span>{outcome.counts.completed} ergänzt</span>}
+                {outcome.counts.skipped > 0 && <span>{outcome.counts.skipped} übersprungen</span>}
+                {outcome.counts.failed > 0 && (
                   <span className="text-[color:var(--ds-danger-text)]">
-                    {result.failed} fehlgeschlagen
+                    {outcome.counts.failed} fehlgeschlagen
                   </span>
                 )}
-                {result.rolledBack !== undefined && <span>{result.rolledBack} archiviert</span>}
               </p>
-              {result.issues.length > 0 && (
-                <div className="max-h-64 overflow-auto rounded-md border border-[color:var(--ds-border)]">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="text-left text-[color:var(--ds-text-muted)]">
-                        <th className="px-3 py-2 font-medium">Zeile</th>
-                        <th className="px-3 py-2 font-medium">Akte</th>
-                        <th className="px-3 py-2 font-medium">Grund</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {result.issues.map((issue) => (
-                        <tr
-                          key={`${issue.row}-${issue.reason}`}
-                          className="border-t border-[color:var(--ds-border)]"
-                        >
-                          <td className="px-3 py-1.5 tabular-nums">{issue.row}</td>
-                          <td className="px-3 py-1.5">{issue.title}</td>
-                          <td className="px-3 py-1.5">{issue.reason}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-              {result.createdSlugs.length > 0 && (
+              <PlanTable
+                rows={outcome.rows
+                  .filter((r) => r.status !== "imported" || r.warnings.length > 0)
+                  .map((r) => ({
+                    row: r.row,
+                    label: r.label,
+                    state: r.status,
+                    stateLabel: STATUS_LABEL[r.status],
+                    reason: r.reason,
+                    warnings: r.warnings,
+                  }))}
+                ariaLabel="Zeilen mit Hinweis"
+              />
+              {project && (outcome.counts.imported > 0 || outcome.counts.completed > 0) && (
                 <Button
                   type="button"
                   variant="secondary"
                   size="sm"
-                  disabled={rollingBack}
-                  onClick={() => void rollbackImport()}
+                  className="gap-2"
+                  disabled={busy !== null}
+                  onClick={() =>
+                    void takeBack({
+                      slug: `legal/migration-projects/${project.id}`,
+                      refs: outcome.refs,
+                      project,
+                      kind,
+                    }).then((done) => done && setOutcome(null))
+                  }
                 >
-                  {rollingBack ? "Wird archiviert…" : "Importierte Akten archivieren"}
+                  <RotateCcw size={14} aria-hidden />
+                  Diesen Import zurücknehmen
                 </Button>
               )}
             </section>
           )}
         </>
       )}
+
+      {rollback && (
+        <div
+          role="status"
+          className="space-y-1 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-sm"
+        >
+          <p className="font-medium text-[color:var(--ds-text)]">
+            Zurückgenommen. {describeRollback(rollback)}
+          </p>
+          {rollback.kept.map((k) => (
+            <p key={k} className="text-xs text-[color:var(--ds-text-muted)]">
+              Behalten: {k}
+            </p>
+          ))}
+          {rollback.failed.map((f) => (
+            <p key={f} className="text-xs text-[color:var(--ds-danger-text)]">
+              Nicht zurückgenommen: {f}
+            </p>
+          ))}
+        </div>
+      )}
+
+      {history.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-[color:var(--ds-text)]">
+            <History size={14} aria-hidden /> Letzte Importe
+          </h2>
+          <ul className="divide-y divide-[color:var(--ds-border)] rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+            {history.map((h) => (
+              <li key={h.slug} className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-xs">
+                <span className="min-w-0 flex-1">
+                  <span className="font-medium text-[color:var(--ds-text)]">
+                    {IMPORT_KINDS[h.kind].label}
+                  </span>{" "}
+                  <span className="text-[color:var(--ds-text-muted)]">
+                    · {h.project.name} ·{" "}
+                    {new Date(h.project.updated_at).toLocaleString("de-AT", {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    })}
+                    {h.counts &&
+                      ` · ${h.counts.imported} importiert${h.counts.completed ? `, ${h.counts.completed} ergänzt` : ""}`}
+                  </span>
+                </span>
+                {h.rolledBackAt ? (
+                  <span className="text-[color:var(--ds-text-muted)]">zurückgenommen</span>
+                ) : (
+                  h.refs &&
+                  (h.refs.pages.length > 0 ||
+                    h.refs.contactCompletions.length > 0 ||
+                    h.refs.timeEntries.length > 0) && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1.5"
+                      disabled={busy !== null}
+                      onClick={() => void takeBack({ ...h, refs: h.refs! })}
+                    >
+                      <RotateCcw size={12} aria-hidden /> Zurücknehmen
+                    </Button>
+                  )
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function PlanTable({
+  rows,
+  ariaLabel,
+}: {
+  rows: Array<{
+    row: number;
+    label: string;
+    state: PlanAction | RowStatus;
+    stateLabel: string;
+    reason?: string;
+    warnings: string[];
+  }>;
+  ariaLabel: string;
+}) {
+  if (rows.length === 0) return null;
+  return (
+    <div className="max-h-96 overflow-auto rounded-lg border border-[color:var(--ds-border)]">
+      <table className="w-full text-xs" aria-label={ariaLabel}>
+        <thead className="sticky top-0 bg-[color:var(--ds-surface)]">
+          <tr className="text-left text-[color:var(--ds-text-muted)]">
+            <th scope="col" className="px-3 py-2 font-medium">
+              Zeile
+            </th>
+            <th scope="col" className="px-3 py-2 font-medium">
+              Eintrag
+            </th>
+            <th scope="col" className="px-3 py-2 font-medium">
+              Ergebnis
+            </th>
+            <th scope="col" className="px-3 py-2 font-medium">
+              Grund / Hinweis
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.row} className="border-t border-[color:var(--ds-border)] align-top">
+              <td className="px-3 py-1.5 tabular-nums">{r.row}</td>
+              <td className="max-w-[280px] px-3 py-1.5 break-words">{r.label}</td>
+              <td className={cn("px-3 py-1.5 whitespace-nowrap", TONE[r.state])}>{r.stateLabel}</td>
+              <td className="px-3 py-1.5">
+                {r.reason && <span>{r.reason}</span>}
+                {r.warnings.map((w) => (
+                  <span key={w} className="block text-[color:var(--ds-warning-text)]">
+                    {w}
+                  </span>
+                ))}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

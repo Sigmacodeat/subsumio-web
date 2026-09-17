@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isTombstoned } from "@/lib/tombstone";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
@@ -17,6 +18,8 @@ const pagesQuerySchema = z.object({
   tag: z.string().optional(),
   q: z.string().optional(),
   cursor: z.string().optional(),
+  /** "1": also return deleted (tombstoned) pages, for callers that page by offset. */
+  include_tombstoned: z.string().optional(),
 });
 
 // One route, two intents: `merge: true` is a partial update (the engine keeps
@@ -95,7 +98,12 @@ export const GET = createHandler(
         signal: AbortSignal.timeout(10_000),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const raw = (await res.json()) as unknown;
+      // Deleted records are tombstoned, not removed; lists must not bring them back.
+      const data =
+        Array.isArray(raw) && query.include_tombstoned !== "1"
+          ? raw.filter((p) => !isTombstoned(p as { frontmatter?: Record<string, unknown> }))
+          : raw;
       // Relay cursor pagination metadata from engine if present
       const nextCursor = res.headers.get("x-next-cursor");
       if (nextCursor) {

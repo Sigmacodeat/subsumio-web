@@ -439,7 +439,7 @@ export const DOCS: DocsContent = {
         {
           icon: "Database",
           title: "Kanzlei-Import",
-          desc: "Akten aus Ihrer bisherigen Kanzleisoftware per CSV übernehmen, samt Mandant, Gegner und Gericht als Kontakte. Probelauf vor dem Import, keine bestehende Akte wird überschrieben, importierte Akten lassen sich gesammelt wieder archivieren. Dokumente übernehmen Sie per Ordner-Upload in die jeweilige Akte.",
+          desc: "Akten, Kontakte, offene Fristen und erfasste Zeiten aus Ihrer bisherigen Kanzleisoftware übernehmen, als CSV (auch Windows-Zeichensatz) oder Excel-Datei. Der Probelauf zeigt für jede Zeile, was passiert. Nichts Bestehendes wird überschrieben: Kontakte werden nur um leere Angaben ergänzt, Fristen kommen als „Ungeprüft“ an, abgerechnete Zeiten bleiben abgerechnet. Jeder Import lässt sich zurücknehmen. Dokumente übernehmen Sie per Ordner-Upload in die jeweilige Akte.",
         },
         {
           icon: "Shield",

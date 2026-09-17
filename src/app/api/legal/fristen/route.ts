@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { listEnginePages } from "@/lib/engine-pages";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler } from "@/lib/api-handler";
 import { computeDeadlineStatus, normalizeFristenbuchStatus } from "@/lib/legal-deadlines";
@@ -177,27 +178,9 @@ export const GET = createHandler(
 
     // ── Source 2+3: Brain pages (legal_deadline + legal_case) ─────────────
     try {
-      // The real engine has no /api/pages/batch-list (only the e2e mock does).
-      // Fetch each type via /api/pages?type=… and merge — works with both.
-      const fetchPagesByType = async (type: string): Promise<BrainPage[]> => {
-        const url = new URL(`${ENGINE_URL}/api/pages`);
-        url.searchParams.set("type", type);
-        url.searchParams.set("limit", "300");
-        const res = await fetch(url.toString(), {
-          headers: ctx.headers,
-          signal: AbortSignal.timeout(15_000),
-        });
-        if (!res.ok) return [];
-        const raw = await res.json();
-        return Array.isArray(raw)
-          ? raw
-          : Array.isArray((raw as Record<string, unknown>)?.pages)
-            ? ((raw as Record<string, unknown[]>).pages as BrainPage[])
-            : Array.isArray((raw as Record<string, unknown>)?.results)
-              ? ((raw as Record<string, unknown[]>).results as BrainPage[])
-              : [];
-      };
-
+      // All matters and deadlines, in batches of 200; deleted deadlines are left out.
+      const fetchPagesByType = async (type: string): Promise<BrainPage[]> =>
+        (await listEnginePages(ctx.headers, type, 10_000)) as unknown as BrainPage[];
       const [deadlinePages, casePages] = await Promise.all([
         fetchPagesByType("legal_deadline"),
         fetchPagesByType("legal_case"),

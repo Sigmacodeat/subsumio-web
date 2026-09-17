@@ -61,7 +61,7 @@ function classify(
 async function collectDeadlines(brainId: string): Promise<DeadlineItem[]> {
   const items: DeadlineItem[] = [];
 
-  const batch = await batchFetchPages(brainId, ["legal_case", "legal_deadline"], 200);
+  const batch = await batchFetchPages(brainId, ["legal_case", "legal_deadline"], 10_000);
   const cases = batch["legal_case"] ?? [];
   const deadlinePages = batch["legal_deadline"] ?? [];
 

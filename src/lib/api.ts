@@ -323,6 +323,8 @@ export const api = {
       q?: string;
       cursor?: string;
       slugPrefix?: string;
+      /** Also return deleted (tombstoned) pages — needed when paging by offset. */
+      includeTombstoned?: boolean;
     }): Promise<BrainPage[]> {
       const params = new URLSearchParams();
       if (options?.limit) params.set("limit", String(options.limit));
@@ -333,6 +335,7 @@ export const api = {
       if (options?.q) params.set("q", options.q);
       if (options?.cursor) params.set("cursor", options.cursor);
       if (options?.slugPrefix) params.set("slug_prefix", options.slugPrefix);
+      if (options?.includeTombstoned) params.set("include_tombstoned", "1");
       return request(`/api/pages?${params.toString()}`);
     },
 

@@ -15,7 +15,7 @@ vi.mock("@/lib/engine", async () => ({
   recordQuota: vi.fn(),
 }));
 
-import { POST } from "./route";
+import { GET, POST } from "./route";
 import { requireEngineContext, recordQuota } from "@/lib/engine";
 import { logAudit } from "@/lib/audit";
 
@@ -85,5 +85,35 @@ describe("POST /api/pages", () => {
     expect(res.status).toBe(200);
     expect(recordQuota).toHaveBeenCalledWith(expect.anything(), "pages");
     expect(vi.mocked(logAudit).mock.calls[0]?.[0]).toBe("case.create");
+  });
+});
+
+describe("GET /api/pages", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(requireEngineContext).mockResolvedValue(ctx as any);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json([
+          { slug: "contact/a", title: "Anna", frontmatter: {} },
+          { slug: "contact/b", title: "Gelöscht", frontmatter: { status: "tombstoned" } },
+        ])
+      )
+    );
+  });
+
+  it("does not bring deleted records back into lists", async () => {
+    const res = await GET(new NextRequest("http://localhost:3000/api/pages?type=legal_contact"));
+    expect(((await res.json()) as Array<{ slug: string }>).map((p) => p.slug)).toEqual([
+      "contact/a",
+    ]);
+  });
+
+  it("returns them on request, so offset paging counts every engine row", async () => {
+    const res = await GET(
+      new NextRequest("http://localhost:3000/api/pages?type=legal_contact&include_tombstoned=1")
+    );
+    expect((await res.json()) as unknown[]).toHaveLength(2);
   });
 });

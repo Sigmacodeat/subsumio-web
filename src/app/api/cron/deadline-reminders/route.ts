@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
+import { engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
 import nodemailer from "nodemailer";
 import { createCronHandler } from "@/lib/api-handler";
 import type { BrainPage } from "@/lib/types";
-import { getRecipientsByBrain } from "@/lib/cron-utils";
+import { fetchPages, getRecipientsByBrain } from "@/lib/cron-utils";
 import { generateTrackingId, injectTracking, logTrackingEvent } from "@/lib/email/tracking";
 import { createDeadlineNotification, createNotificationFailureNotification } from "@/lib/comments";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
@@ -32,22 +32,8 @@ interface DeadlineItem {
 const REMINDER_STAGES_DAYS = [7, 3, 1, 0] as const;
 
 async function listCasePages(brainId: string): Promise<BrainPage[]> {
-  try {
-    // Subsumio: was type=case — a page type nothing in this codebase
-    // writes (same bug class as the daily-briefing cron, fixed earlier in
-    // this followup pass). Real case pages are typed "legal_case"
-    // everywhere else (cron/deadlines.ts, matter-context.ts, import-kanzlei,
-    // bea filing). This cron was silently scanning an empty/wrong page set.
-    const res = await fetch(`${ENGINE_URL}/api/pages?type=legal_case&limit=1000`, {
-      headers: engineHeadersForBrain(brainId),
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return Array.isArray(data) ? data : [];
-  } catch {
-    return [];
-  }
+  // All matters, read in batches: the engine returns at most 200 per request.
+  return (await fetchPages(brainId, "legal_case", 10_000)) as unknown as BrainPage[];
 }
 
 async function updatePageDeadlines(

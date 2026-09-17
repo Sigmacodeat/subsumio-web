@@ -67,6 +67,44 @@ describe("fetchPages", () => {
   });
 });
 
+describe("fetchPages beyond the engine's 200-page cap", () => {
+  beforeEach(() => vi.restoreAllMocks());
+
+  test("reads all matters in batches and leaves out deleted records", async () => {
+    const all = Array.from({ length: 450 }, (_, i) => ({
+      slug: `legal/cases/${i}`,
+      title: `Akte ${i}`,
+      frontmatter: i === 7 ? { status: "tombstoned" } : { status: "open" },
+    }));
+    const calls: string[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      calls.push(`${url.searchParams.get("limit")}@${url.searchParams.get("offset")}`);
+      const limit = Number(url.searchParams.get("limit"));
+      const offset = Number(url.searchParams.get("offset"));
+      // The engine never returns more than 200, whatever is asked for.
+      const batch = all.slice(offset, offset + Math.min(limit, 200));
+      return new Response(JSON.stringify(batch), { status: 200 });
+    });
+    const result = await fetchPages("brain-1", "legal_case", 10_000);
+    expect(calls).toEqual(["200@0", "200@200", "200@400"]);
+    expect(result).toHaveLength(449);
+    expect(result.some((p) => p.slug === "legal/cases/7")).toBe(false);
+    const withDeleted = await fetchPages("brain-1", "legal_case", 10_000, {
+      includeTombstoned: true,
+    });
+    expect(withDeleted).toHaveLength(450);
+  });
+
+  test("keeps what was read when a later batch fails", async () => {
+    const first = Array.from({ length: 200 }, (_, i) => ({ slug: `d/${i}`, title: "x" }));
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify(first), { status: 200 }))
+      .mockResolvedValueOnce(new Response("down", { status: 503 }));
+    expect(await fetchPages("brain-1", "legal_deadline", 1000)).toHaveLength(200);
+  });
+});
+
 describe("getRecipientsByBrain", () => {
   beforeEach(() => {
     vi.clearAllMocks();

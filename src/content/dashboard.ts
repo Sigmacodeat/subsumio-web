@@ -5992,8 +5992,8 @@ export const D = {
   // ── Import Kanzlei page ──
   "importkanzlei.title": { de: "Kanzlei-Import", en: "Firm Import" },
   "importkanzlei.description": {
-    de: "Akten per CSV aus Ihrer bisherigen Kanzleisoftware importieren",
-    en: "Import cases via CSV from your previous practice management software",
+    de: "Akten, Kontakte, Fristen und Zeiten aus Ihrer bisherigen Kanzleisoftware übernehmen",
+    en: "Bring over matters, contacts, deadlines and time entries from your previous software",
   },
   "importkanzlei.breadcrumb": { de: "Kanzlei-Import", en: "Firm Import" },
   "importkanzlei.drop_hint": {

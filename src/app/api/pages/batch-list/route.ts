@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler } from "@/lib/api-handler";
+import { isTombstoned } from "@/lib/tombstone";
 
 const batchListSchema = z.object({
   types: z.array(z.string().min(1).max(64)).min(1).max(20),
@@ -34,7 +35,10 @@ export const POST = createHandler(
             return;
           }
           const data = await res.json();
-          results[type] = Array.isArray(data) ? data : (data.items ?? []);
+          const list = (Array.isArray(data) ? data : (data.items ?? [])) as Array<{
+            frontmatter?: Record<string, unknown>;
+          }>;
+          results[type] = list.filter((p) => !isTombstoned(p));
         } catch {
           errors.push(type);
         }

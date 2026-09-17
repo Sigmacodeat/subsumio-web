@@ -7,6 +7,7 @@
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { getStore, getOrgStore, getSharedPgPool, type User } from "@/lib/auth/store";
 import { createSchemaInit } from "@/lib/schema-init";
+import { listEnginePages } from "@/lib/engine-pages";
 
 /**
  * Map an async worker over items with a bounded concurrency (default 8), never
@@ -48,27 +49,16 @@ export interface EnginePage {
 }
 
 /**
- * Fetch pages from the engine by type. Returns [] on any error.
+ * Up to `limit` pages of a type for a tenant, read in batches of 200, without
+ * deleted records unless asked for. See listEnginePages.
  */
 export async function fetchPages(
   brainId: string,
   type: string,
-  limit: number
+  limit: number,
+  opts: { includeTombstoned?: boolean } = {}
 ): Promise<EnginePage[]> {
-  try {
-    const res = await fetch(
-      `${ENGINE_URL}/api/pages?type=${encodeURIComponent(type)}&limit=${limit}`,
-      {
-        headers: engineHeadersForBrain(brainId),
-        signal: AbortSignal.timeout(15_000),
-      }
-    );
-    if (!res.ok) return [];
-    const data = (await res.json()) as unknown;
-    return Array.isArray(data) ? (data as EnginePage[]) : [];
-  } catch {
-    return [];
-  }
+  return listEnginePages(engineHeadersForBrain(brainId), type, limit, opts);
 }
 
 /**
