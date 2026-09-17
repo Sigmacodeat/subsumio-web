@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
-import { getOrgStore } from "@/lib/auth/store";
+import { getTenant } from "@/lib/tenants";
 import { logAudit } from "@/lib/audit";
 import {
   getActiveSupportSession,
@@ -55,25 +55,27 @@ export const POST = createHandler(
     body: startSchema,
   },
   async (ctx, body) => {
-    const org = await getOrgStore().getById(body.orgId);
-    if (!org) return apiError("org_not_found", "Kanzlei nicht gefunden", 404);
+    // `orgId` carries a tenant id: a firm, or `solo-<userId>` for a lawyer
+    // who works alone (see src/lib/tenants.ts).
+    const tenant = await getTenant(body.orgId);
+    if (!tenant) return apiError("org_not_found", "Kanzlei nicht gefunden", 404);
 
     const session = await startSupportSession({
       operatorId: ctx.user.id,
       operatorEmail: ctx.user.email,
-      orgId: org.id,
-      orgName: org.name,
+      orgId: tenant.id,
+      orgName: tenant.name,
       reason: body.reason,
     });
 
     void logAudit("support.session_start", "org", {
-      entityId: org.id,
-      brainId: org.brainId,
+      entityId: tenant.id,
+      brainId: tenant.brainId,
       userId: ctx.user.id,
       userEmail: ctx.user.email,
-      details: { reason: session.reason, orgName: org.name, expiresAt: session.expiresAt },
+      details: { reason: session.reason, orgName: tenant.name, expiresAt: session.expiresAt },
     });
-    void writeFirmVisibleSupportAuditEntry(org.brainId, "support.session_start", session);
+    void writeFirmVisibleSupportAuditEntry(tenant.brainId, "support.session_start", session);
 
     return apiSuccess({ session: publicSession(session) }, undefined, 201);
   }

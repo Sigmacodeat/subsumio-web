@@ -64,6 +64,36 @@ describe("middleware Austria-only public routing", () => {
   });
 });
 
+describe("middleware operator console host", () => {
+  const onOps = (pathname: string) =>
+    middleware(
+      new NextRequest(`https://ops.subsum.io${pathname}`, { headers: { host: "ops.subsum.io" } })
+    );
+
+  it("serves the sign-in pages the legacy paths redirect to — no loop with /ops", async () => {
+    const legacy = await onOps("/login");
+    expect(new URL(legacy.headers.get("location") ?? "https://invalid.test").pathname).toBe(
+      "/at/login"
+    );
+    for (const path of ["/at/login", "/at/forgot", "/at/reset"]) {
+      const res = await onOps(path);
+      expect(res.headers.get("location"), path).toBeNull();
+    }
+  });
+
+  it("keeps everything else on the ops host inside the console", async () => {
+    const res = await onOps("/at/pricing");
+    expect(new URL(res.headers.get("location") ?? "https://invalid.test").pathname).toBe("/ops");
+  });
+
+  it("hides the console on every other host", async () => {
+    const res = await middleware(
+      new NextRequest("https://app.subsum.io/ops/kanzleien", { headers: { host: "app.subsum.io" } })
+    );
+    expect(res.status).toBe(404);
+  });
+});
+
 describe("middleware retired pilot product surfaces", () => {
   it.each([
     "/dashboard/bea",

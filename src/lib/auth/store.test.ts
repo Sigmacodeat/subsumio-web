@@ -159,6 +159,9 @@ describe("buildNewOrg", () => {
   });
 
   test("generates unique IDs", () => {
+    expect(buildNewOrg({ name: "A", ownerId: "u1", brainId: "brain_abc12345" }).brainId).toBe(
+      "brain_abc12345"
+    );
     const org1 = buildNewOrg({ name: "A", ownerId: "u1" });
     const org2 = buildNewOrg({ name: "B", ownerId: "u2" });
     expect(org1.id).not.toBe(org2.id);

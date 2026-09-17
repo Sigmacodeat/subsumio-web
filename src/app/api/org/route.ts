@@ -80,7 +80,11 @@ export const POST = createHandler(
   async (ctx, body, _query, _req) => {
     if (ctx.user.orgId) return apiError("already_in_org", "Bereits in einer Organisation", 409);
 
-    const org = await getOrgStore().create(buildNewOrg({ name: body.name, ownerId: ctx.user.id }));
+    // The firm adopts the founder's brain, so matters, deadlines and documents
+    // created before the team existed stay where they are.
+    const org = await getOrgStore().create(
+      buildNewOrg({ name: body.name, ownerId: ctx.user.id, brainId: ctx.user.brainId })
+    );
     // The founder administers the new firm (team, roles, settings, billing).
     // Without this only the very first account of an installation was admin.
     await getStore().update(ctx.user.id, { orgId: org.id, role: "admin" });

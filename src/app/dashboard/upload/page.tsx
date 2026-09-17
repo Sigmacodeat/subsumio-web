@@ -691,7 +691,7 @@ function UploadPageInner() {
           {!selectedCaseSlug && !casesLoading && cases.length > 0 && (
             <p className="mt-2 flex items-center gap-1.5 text-xs text-[color:var(--ds-warning-text)]">
               <AlertCircle size={12} />
-              Bitte wähle eine Akte aus. Dokumente ohne Aktenbezug werden nicht akzeptiert.
+              Bitte wählen Sie eine Akte aus. Dokumente ohne Aktenbezug werden nicht akzeptiert.
             </p>
           )}
           {!casesLoading && cases.length === 0 && (

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getOrgStore, getStore } from "@/lib/auth/store";
+import { tenantsFrom } from "@/lib/tenants";
 import { PlanBadge } from "@/components/admin/admin-stat-card";
 import { PageHeader } from "@/components/dashboard/page-header";
 
@@ -10,21 +11,22 @@ export default async function OpsFirmsPage() {
   const [orgs, users] = await Promise.all([getOrgStore().list(), getStore().list()]);
   const usersById = new Map(users.map((u) => [u.id, u] as const));
 
-  const rows = orgs
-    .map((org) => {
-      const members = users.filter((u) => u.orgId === org.id);
-      const active = members.filter((u) => !u.deactivatedAt);
-      const owner = usersById.get(org.ownerId);
-      return {
-        org,
-        owner,
-        activeCount: active.length,
-        adminCount: active.filter((u) => u.role === "admin").length,
-        lawyerCount: active.filter((u) => u.role === "lawyer").length,
-        twoFactorCount: active.filter((u) => u.twoFactorEnabled).length,
-      };
-    })
-    .sort((a, b) => b.org.createdAt.localeCompare(a.org.createdAt));
+  // Firms with a team and lawyers who work alone: both are customers.
+  const rows = tenantsFrom(orgs, users).map((tenant) => {
+    const members =
+      tenant.kind === "org"
+        ? users.filter((u) => u.orgId === tenant.id)
+        : users.filter((u) => u.id === tenant.ownerId);
+    const active = members.filter((u) => !u.deactivatedAt);
+    return {
+      org: tenant,
+      owner: usersById.get(tenant.ownerId),
+      activeCount: active.length,
+      adminCount: active.filter((u) => u.role === "admin").length,
+      lawyerCount: active.filter((u) => u.role === "lawyer").length,
+      twoFactorCount: active.filter((u) => u.twoFactorEnabled).length,
+    };
+  });
 
   return (
     <div className="mx-0 w-full space-y-6 p-4 md:p-6 lg:p-8">
@@ -70,6 +72,11 @@ export default async function OpsFirmsPage() {
                   >
                     {org.name}
                   </Link>
+                  {org.kind === "solo" && (
+                    <span className="ml-2 text-xs text-[color:var(--ds-text-subtle)]">
+                      Einzelkanzlei
+                    </span>
+                  )}
                 </td>
                 <td className="px-5 py-3 text-[color:var(--ds-text-muted)]">
                   {owner?.email ?? "—"}

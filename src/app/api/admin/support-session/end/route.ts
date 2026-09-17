@@ -1,5 +1,5 @@
 import { createHandler, apiSuccess } from "@/lib/api-handler";
-import { getOrgStore } from "@/lib/auth/store";
+import { getTenant } from "@/lib/tenants";
 import { logAudit } from "@/lib/audit";
 import { endSupportSession } from "@/lib/support-session";
 import { writeFirmVisibleSupportAuditEntry } from "@/lib/support-session-audit";
@@ -22,15 +22,17 @@ export const POST = createHandler(
     const ended = await endSupportSession(ctx.user.id);
     if (!ended) return apiSuccess({ session: null });
 
-    const org = await getOrgStore().getById(ended.orgId);
+    const tenant = await getTenant(ended.orgId);
     void logAudit("support.session_end", "org", {
       entityId: ended.orgId,
-      brainId: org?.brainId,
+      brainId: tenant?.brainId,
       userId: ctx.user.id,
       userEmail: ctx.user.email,
       details: { reason: ended.reason, orgName: ended.orgName, startedAt: ended.startedAt },
     });
-    if (org) void writeFirmVisibleSupportAuditEntry(org.brainId, "support.session_end", ended);
+    if (tenant) {
+      void writeFirmVisibleSupportAuditEntry(tenant.brainId, "support.session_end", ended);
+    }
 
     return apiSuccess({ session: null });
   }

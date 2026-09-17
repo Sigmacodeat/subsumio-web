@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, Mail, Calendar, Brain, Building2, Gift, Shield } from "lucide-react";
 import { requirePlatformOperator } from "@/lib/auth/require-operator";
 import { getStore, toPublic, type PublicUser } from "@/lib/auth/store";
+import { getTenant, tenantIdForUser } from "@/lib/tenants";
 import { PlanBadge } from "@/components/admin/admin-stat-card";
 import { UserDetailForm } from "@/components/admin/user-detail-form";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -19,12 +20,14 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
   if (!user) redirect("/ops/users");
 
   const safe = toPublic(user) as PublicUser;
+  const tenantId = tenantIdForUser(user);
+  const tenant = tenantId ? await getTenant(tenantId) : null;
 
   const infoItems = [
     { icon: Mail, label: "E-Mail", value: safe.email },
     { icon: Calendar, label: "Registriert", value: safe.createdAt.slice(0, 10) },
-    { icon: Brain, label: "Brain ID", value: safe.brainId },
-    { icon: Building2, label: "Organisation", value: safe.orgId ?? "—" },
+    { icon: Brain, label: "Datenraum", value: tenant?.brainId ?? safe.brainId },
+    { icon: Building2, label: "Kanzlei", value: tenant?.name ?? "—" },
     { icon: Gift, label: "Empfehlungscode", value: safe.referralCode },
     { icon: Gift, label: "Geworben von", value: safe.referredBy ?? "—" },
     { icon: Shield, label: "2FA", value: safe.twoFactorEnabled ? "Aktiv" : "Inaktiv" },
@@ -53,6 +56,14 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
         >
           <ArrowLeft size={14} /> Kunden
         </Link>
+        {tenant && (
+          <Link
+            href={`/ops/kanzleien/${tenant.id}`}
+            className="text-sm font-medium text-[color:var(--brand-primary)] hover:underline"
+          >
+            Zur Kanzlei: {tenant.name}
+          </Link>
+        )}
       </div>
 
       <div>

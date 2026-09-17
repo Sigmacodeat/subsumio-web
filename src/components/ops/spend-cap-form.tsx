@@ -16,11 +16,13 @@ const PERIOD_LABEL: Record<Period, string> = {
 
 export function SpendCapForm({
   ownerId,
+  ownerType = "org",
   currentLimit,
   currentPeriod,
   spentInPeriod,
 }: {
   ownerId: string;
+  ownerType?: "org" | "user";
   currentLimit: number | null;
   currentPeriod: Period;
   spentInPeriod: number | null;
@@ -43,7 +45,7 @@ export function SpendCapForm({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         owner_id: ownerId,
-        owner_type: "org",
+        owner_type: ownerType,
         credit_limit: creditLimit,
         period,
       }),

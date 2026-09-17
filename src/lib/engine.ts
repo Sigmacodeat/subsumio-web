@@ -26,6 +26,7 @@ import { createHmac } from "node:crypto";
 import { env } from "@/lib/env";
 import { isPlatformOperator } from "@/lib/auth/platform-operator";
 import { getActiveSupportSession, type SupportSession } from "@/lib/support-session";
+import { getTenant } from "@/lib/tenants";
 
 import { logger } from "@/lib/logger";
 const log = logger("lib/engine");
@@ -141,13 +142,14 @@ export async function engineContext(): Promise<EngineContext | null> {
   if (isPlatformOperator(user)) {
     const active = await getActiveSupportSession(user.id);
     if (active) {
-      const org = await getOrgStore().getById(active.orgId);
-      if (org) {
-        brainId = org.brainId;
-        const owner = await getStore().getById(org.ownerId);
+      // A tenant is a firm or a lawyer working alone (see src/lib/tenants.ts).
+      const tenant = await getTenant(active.orgId);
+      if (tenant) {
+        brainId = tenant.brainId;
+        const owner = await getStore().getById(tenant.ownerId);
         if (owner) plan = owner.plan;
         supportSession = active;
-        effectiveUser = { ...user, role: "admin", orgId: org.id };
+        effectiveUser = { ...user, role: "admin", orgId: tenant.org?.id ?? null };
       }
     }
   }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Building2, Coins, ShieldCheck, Users } from "lucide-react";
-import { getOrgStore, getStore } from "@/lib/auth/store";
+import { getTenant, listTenantMembers } from "@/lib/tenants";
 import { checkSpendCap, getBalance } from "@/lib/billing/credits";
 import { listSupportSessionsForOrg } from "@/lib/support-session";
 import { StatCard, PlanBadge } from "@/components/admin/admin-stat-card";
@@ -21,13 +21,14 @@ const ROLE_LABEL: Record<string, string> = {
 
 export default async function OpsFirmDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const org = await getOrgStore().getById(id);
+  // A firm with a team or a lawyer working alone (see src/lib/tenants.ts).
+  const org = await getTenant(decodeURIComponent(id));
   if (!org) notFound();
 
   const [members, balance, spend, supportSessions] = await Promise.all([
-    getStore().listByOrg(org.id),
-    getBalance(org.id, "org"),
-    checkSpendCap(org.id, "org", 0),
+    listTenantMembers(org),
+    getBalance(org.billing.ownerId, org.billing.ownerType),
+    checkSpendCap(org.billing.ownerId, org.billing.ownerType, 0),
     listSupportSessionsForOrg(org.id, 10),
   ]);
   const active = members.filter((u) => !u.deactivatedAt);
@@ -62,7 +63,7 @@ export default async function OpsFirmDetailPage({ params }: { params: Promise<{ 
         <StatCard
           icon={Building2}
           label="Modell-Policy"
-          value={org.modelPolicy === "eu_only" ? "Nur EU" : "Alle"}
+          value={org.org?.modelPolicy === "eu_only" ? "Nur EU" : "Alle"}
         />
       </div>
 
@@ -80,6 +81,14 @@ export default async function OpsFirmDetailPage({ params }: { params: Promise<{ 
           <div className="flex justify-between gap-4">
             <dt className="text-[color:var(--ds-text-muted)]">Angelegt</dt>
             <dd>{org.createdAt.slice(0, 10)}</dd>
+          </div>
+          <div className="flex justify-between gap-4">
+            <dt className="text-[color:var(--ds-text-muted)]">Art</dt>
+            <dd>{org.kind === "org" ? "Kanzlei mit Team" : "Einzelkanzlei"}</dd>
+          </div>
+          <div className="flex justify-between gap-4">
+            <dt className="text-[color:var(--ds-text-muted)]">Datenraum</dt>
+            <dd className="font-mono text-xs">{org.brainId}</dd>
           </div>
           <div className="flex justify-between gap-4">
             <dt className="text-[color:var(--ds-text-muted)]">Kanzlei-ID</dt>
@@ -134,7 +143,8 @@ export default async function OpsFirmDetailPage({ params }: { params: Promise<{ 
       </section>
 
       <SpendCapForm
-        ownerId={org.id}
+        ownerId={org.billing.ownerId}
+        ownerType={org.billing.ownerType}
         currentLimit={spend.cap?.creditLimit ?? null}
         currentPeriod={spend.cap?.period ?? "monthly"}
         spentInPeriod={spend.cap?.spentInPeriod ?? null}

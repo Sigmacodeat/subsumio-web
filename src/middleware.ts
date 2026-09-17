@@ -65,7 +65,18 @@ const LEGACY_PRODUCT_HOSTS = new Set(LEGACY_TAXUMIO_HOSTS.map((host) => host.toL
 // --- Operator console host split ---
 // The ops host (OPS_HOSTS, production: ops.subsum.io) serves only the operator
 // console plus what it needs to sign in; /ops is invisible on every other host.
-const OPS_HOST_PASSTHROUGH_PREFIXES = ["/ops", "/api/", "/login", "/forgot", "/reset"];
+// The sign-in pages live under /at (the legacy paths redirect there); without
+// them the console would bounce between /ops and the login page forever.
+const OPS_HOST_PASSTHROUGH_PREFIXES = [
+  "/ops",
+  "/api/",
+  "/login",
+  "/forgot",
+  "/reset",
+  "/at/login",
+  "/at/forgot",
+  "/at/reset",
+];
 
 function isOpsPath(pathname: string): boolean {
   return pathname === "/ops" || pathname.startsWith("/ops/");

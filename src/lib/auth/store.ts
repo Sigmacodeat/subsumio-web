@@ -636,11 +636,13 @@ function createOrgStore(): OrgStore {
   return new FileOrgStore();
 }
 
-export function buildNewOrg(opts: { name: string; ownerId: string }): Org {
+export function buildNewOrg(opts: { name: string; ownerId: string; brainId?: string }): Org {
   return {
     id: randomUUID(),
     name: opts.name.trim(),
-    brainId: `org_${randomUUID().slice(0, 8)}`,
+    // A founder who already worked alone keeps their data: the firm adopts the
+    // founder's brain instead of starting on an empty one.
+    brainId: opts.brainId?.trim() || `org_${randomUUID().slice(0, 8)}`,
     ownerId: opts.ownerId,
     createdAt: new Date().toISOString(),
   };
