@@ -9,7 +9,7 @@ import { generateTrackingId, logTrackingEvent } from "@/lib/email/tracking";
 import { createSchemaInit } from "@/lib/schema-init";
 import { logger } from "@/lib/logger";
 import { env } from "@/lib/env";
-import { getMailAccountSecrets, getSendingAccount } from "@/lib/email/imap-accounts";
+import { getMailAccountAuth, getSendingAccount } from "@/lib/email/imap-accounts";
 
 const log = logger("mailbox");
 
@@ -703,14 +703,18 @@ async function sendViaAccountSmtp(
   parent: MailMessage | null
 ): Promise<{ sent: boolean; id?: string; error?: string }> {
   try {
-    const secrets = await getMailAccountSecrets(account.id);
-    if (!secrets?.smtpPassword) return { sent: false, error: "smtp_credentials_missing" };
+    const auth = await getMailAccountAuth(account);
+    if (!auth) return { sent: false, error: "smtp_credentials_missing" };
+    const user = account.smtpUser ?? account.imapUser;
     const nodemailer = await import("nodemailer");
     const transport = nodemailer.createTransport({
       host: account.smtpHost ?? undefined,
       port: account.smtpPort ?? 465,
       secure: account.smtpSecure,
-      auth: { user: account.smtpUser ?? account.imapUser, pass: secrets.smtpPassword },
+      auth:
+        auth.type === "oauth"
+          ? { type: "OAuth2", user, accessToken: auth.accessToken }
+          : { user, pass: auth.smtpPassword },
     });
     const parentRefs =
       typeof parent?.raw?.references === "string" ? String(parent.raw.references) : "";
@@ -848,23 +852,26 @@ export async function storeInboundExternalEmail(
   return existing.rows[0] ? { message: rowToMessage(existing.rows[0]), created: false } : null;
 }
 
-/** Attach the AI triage result to a stored message (kept in `raw.triage`). */
-export async function setMailTriage(id: string, triage: Record<string, unknown>): Promise<void> {
+/** Merge keys into a stored message's `raw` metadata (triage, filing state …). */
+export async function mergeMailRaw(id: string, patch: Record<string, unknown>): Promise<void> {
   const pool = getSharedPgPool();
   if (!pool) {
     const messages = await loadLocalMailbox();
     const m = messages.find((x) => x.id === id);
     if (!m) return;
-    m.raw = { ...m.raw, triage };
+    m.raw = { ...m.raw, ...patch };
     await persistLocalMailbox(messages);
     return;
   }
   await pool.query(
-    `UPDATE subsumio_mail_messages
-        SET raw = raw || jsonb_build_object('triage', $2::jsonb), updated_at = now()
-      WHERE id = $1`,
-    [id, JSON.stringify(triage)]
+    `UPDATE subsumio_mail_messages SET raw = raw || $2::jsonb, updated_at = now() WHERE id = $1`,
+    [id, JSON.stringify(patch)]
   );
+}
+
+/** Attach the AI triage result to a stored message (kept in `raw.triage`). */
+export async function setMailTriage(id: string, triage: Record<string, unknown>): Promise<void> {
+  await mergeMailRaw(id, { triage });
 }
 
 /**

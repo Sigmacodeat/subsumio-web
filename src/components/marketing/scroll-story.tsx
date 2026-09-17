@@ -63,10 +63,10 @@ export default function ScrollStory() {
                 <button
                   type="button"
                   onClick={() => setActive(i)}
-                  className={`w-full border-l-2 py-2 pl-6 text-left transition-[border-color,opacity] duration-[var(--ds-duration-normal)] motion-reduce:transition-none ${
+                  className={`w-full border-l-2 py-2 pl-6 text-left transition-[border-color] duration-[var(--ds-duration-normal)] motion-reduce:transition-none ${
                     active === i
-                      ? "[border-color:var(--accent-premium)] opacity-100"
-                      : "[border-color:var(--mk-border)] opacity-45 hover:opacity-80"
+                      ? "[border-color:var(--accent-premium)]"
+                      : "[border-color:var(--mk-border)] hover:[border-color:var(--mk-border-strong)]"
                   }`}
                   aria-current={active === i ? "step" : undefined}
                 >
@@ -74,7 +74,9 @@ export default function ScrollStory() {
                     Schritt {i + 1} von {STEPS.length}
                   </span>
                   <span
-                    className="block text-2xl font-semibold tracking-[-0.01em] text-balance [color:var(--mk-text)]"
+                    className={`block text-2xl font-semibold tracking-[-0.01em] text-balance ${
+                      active === i ? "[color:var(--mk-text)]" : "[color:var(--mk-text-muted)]"
+                    }`}
                     style={{ fontFamily: "var(--font-display)" }}
                   >
                     {s.title}

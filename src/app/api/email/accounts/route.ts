@@ -3,6 +3,7 @@ import { createHandler, apiError } from "@/lib/api-handler";
 import { mailboxScopeFor } from "@/lib/email/mailbox-scope";
 import { createMailAccount, listMailAccounts } from "@/lib/email/imap-accounts";
 import { syncImapAccount, testImapConnection } from "@/lib/email/imap-sync";
+import { isMailOAuthConfigured } from "@/lib/email/mail-oauth";
 import { logger } from "@/lib/logger";
 
 const log = logger("api/email/accounts");
@@ -39,7 +40,13 @@ export const GET = createHandler(
   async (ctx, _body, _query, req) => {
     try {
       const accounts = await listMailAccounts(mailboxScopeFor(ctx, req).brainId);
-      return Response.json({ accounts });
+      return Response.json({
+        accounts,
+        oauthProviders: {
+          microsoft: isMailOAuthConfigured("microsoft"),
+          google: isMailOAuthConfigured("google"),
+        },
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       const status = msg === "mail_accounts_database_not_configured" ? 503 : 500;

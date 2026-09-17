@@ -130,8 +130,9 @@
 # Read-only on the mail server. No-op when no mailbox is connected.
 */5 * * * *   curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/imap-sync || true
 
-# ── Every 15 minutes — Outlook/M365 calendar + mail sync ──
-# Two-way calendar sync + mail delta sync via Microsoft Graph. No-op if MS Graph not configured.
+# ── Every 15 minutes — Microsoft 365 calendar sync ──
+# Calendar events via Microsoft Graph into the firm named by MS365_BRAIN_ID. No-op if not configured.
+# Mail is handled by imap-sync above.
 */15 * * * *   curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/outlook-sync || true
 
 # ── Every 30 minutes — Deadline alerts (realtime escalation) ──

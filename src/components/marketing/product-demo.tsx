@@ -114,12 +114,17 @@ export default function ProductDemo({
       data-app="dashboard"
       data-theme={theme}
       data-product-demo
-      role="img"
-      aria-label={d.ariaLabel}
       className={`relative overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] text-left text-[color:var(--ds-text)] ${className}`}
       style={{ boxShadow: "var(--ds-shadow-3)" }}
     >
-      <div className="grid min-h-[430px] grid-cols-1 sm:grid-cols-[196px_minmax(0,1fr)]">
+      {/* The replica is a picture of the product: described once, not operable
+          (inert keeps the real CitationPanel's buttons out of the tab order). */}
+      <div
+        role="img"
+        aria-label={d.ariaLabel}
+        inert
+        className="grid min-h-[430px] grid-cols-1 sm:grid-cols-[196px_minmax(0,1fr)]"
+      >
         {/* ── Sidebar (real labels, icons and active style) ── */}
         <aside className="hidden flex-col border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] sm:flex">
           <div className="flex items-center gap-2 border-b border-[color:var(--ds-border)] px-3 py-3">

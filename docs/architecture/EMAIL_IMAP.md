@@ -20,7 +20,7 @@ des Postfachs hinaus, also von der Adresse der Kanzlei, mit `In-Reply-To` und `R
 - **Fristen sind Vorschläge.** Regelbasierte Erkennung, bei Frist-Mails ohne Datum einmal das
   Sprachmodell; eine Frist steht erst nach Bestätigung im Fristenbuch.
 - Erster Abruf: die letzten 14 Tage, höchstens 150 Nachrichten pro Lauf, Nachrichten über
-  25 MB werden übersprungen. Anhänge werden derzeit nur als Metadaten erfasst.
+  25 MB werden übersprungen.
 
 ## Bausteine
 
@@ -41,12 +41,38 @@ Passwort, kein Geheimnis in der API-Antwort, Abruf, zweiter Abruf ohne Dubletten
 über die Aktenzahl im Betreff, Einstufung „kritisch / Frist“, Antwort über SMTP mit geerbter
 Akte. Unit-Tests: `src/lib/email/imap-sync.test.ts`.
 
+## Anhänge und Fristvorschläge
+
+Ist eine E-Mail einer Akte zugeordnet, gehen ihre Anhänge denselben Weg wie Portal-Uploads
+(`src/lib/email/mail-filing.ts`): Typ-/Größenprüfung, Dublettenprüfung je Akte, Engine-Upload,
+Eintrag in der Dokumentliste der Akte (Quelle „email“, nicht im Mandantenportal sichtbar),
+danach die normale Analyse-Strecke. Signatur-Logos, Tracking-Pixel, S/MIME-Signaturen und
+Kalendereinladungen werden übersprungen. Fristen mit konkretem Datum aus dem Mailtext werden
+als `suggested_deadlines` an der Akte vorgeschlagen (unbestätigt, Bestätigung unter „Eingang
+prüfen“). Wird eine zunächst unzugeordnete E-Mail später einer Akte zugewiesen, holt
+`fileAssignedMail` die Nachricht einmal neu vom Server und reicht Anhänge und Vorschläge nach
+(wir speichern keine Rohquellen).
+
+## Anmeldung beim Anbieter (OAuth)
+
+Für Microsoft 365 und Google, wo Passwort-Logins oft gesperrt sind: `src/lib/email/mail-oauth.ts`,
+Routen `/api/email/oauth/<anbieter>/start|callback`. Gespeichert wird nur das verschlüsselte
+Refresh-Token; Zugriffstoken werden bei Bedarf erneuert und für IMAP und SMTP per XOAUTH2
+verwendet. Die Schaltflächen erscheinen erst, wenn der Betreiber die Apps registriert hat:
+
+| Variable                                            | Wert                                                                                                            |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `MAIL_OAUTH_MICROSOFT_CLIENT_ID` / `_CLIENT_SECRET` | Entra-App, mandantenfähig, delegiert: `IMAP.AccessAsUser.All`, `SMTP.Send`, `offline_access`, `openid`, `email` |
+| `MAIL_OAUTH_GOOGLE_CLIENT_ID` / `_CLIENT_SECRET`    | Google-OAuth-Client (Web), Scope `https://mail.google.com/` (eingeschränkter Scope: Google-Verifizierung nötig) |
+
+Redirect-URI: `${NEXT_PUBLIC_APP_URL}/api/email/oauth/<microsoft|google>/callback`.
+**Nicht gegen echte Anbieter getestet** — dafür sind die App-Registrierungen nötig. Getestet sind
+URL-Aufbau, Token-Erneuerung (gemockt), Adress-Ermittlung aus dem ID-Token.
+
 ## Offen
 
-- Anhänge als Dokumente in die Akte übernehmen (derzeit nur Dateiname, Typ, Größe).
-- OAuth für Microsoft 365 und Google (derzeit App-Passwort; Basic Auth ist bei manchen
-  Mandanten deaktiviert).
-- `outlook-sync` (Microsoft Graph) ist ein älterer, globaler Pfad: Cron ruft per GET, die Route
-  exportiert nur POST, und die Engine-Header sind falsch. Entweder reparieren oder entfernen.
+- OAuth-Apps bei Microsoft und Google registrieren und den Ablauf einmal echt durchspielen.
+- `outlook-sync` synchronisiert nur noch den Kalender (Graph) in die Kanzlei aus `MS365_BRAIN_ID`;
+  der frühere Mail-Teil ist entfernt, weil das Postfach jetzt hierüber läuft.
 - Auftragsverarbeitung: Das Postfach liegt beim Mailanbieter der Kanzlei; Subsumio verarbeitet
   die abgerufenen Inhalte wie andere Akteninhalte (AVV).

@@ -44,6 +44,8 @@ const PUBLIC_PAGES = [
 test.describe("Marketing Visual Regression", () => {
   for (const path of PUBLIC_PAGES) {
     test(`${path} matches baseline`, async ({ page }) => {
+      // Autoplaying product demos and counters would make every run differ.
+      await page.emulateMedia({ reducedMotion: "reduce" });
       await page.goto(path, { waitUntil: "load" });
       await page.waitForLoadState("networkidle");
       await expect(page.locator("h1").first()).toBeVisible({ timeout: 15_000 });

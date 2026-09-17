@@ -89,8 +89,8 @@ test.describe("Kanzlei-OS E2E Flow", () => {
     await legalBasisCheck.click();
     await expect(page.locator("text=OK").first()).toBeVisible();
     // Verify tab switching
-    await page.getByRole("tab", { name: "GwG" }).click();
-    await expect(page.getByRole("tab", { name: "GoBD" })).toBeVisible();
+    await page.getByRole("tab", { name: "Geldwäscheprävention" }).click();
+    await expect(page.getByRole("tab", { name: "Buchführung" })).toBeVisible();
 
     // 3. Calendar export
     await page.goto("/dashboard/calendar-export");

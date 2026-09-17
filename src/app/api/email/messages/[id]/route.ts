@@ -3,6 +3,7 @@ import { getMailMessage, updateMailMessage, type MailFolder } from "@/lib/email/
 import { createHandler, apiError } from "@/lib/api-handler";
 import { mailboxScopeFor } from "@/lib/email/mailbox-scope";
 import { caseAccessForUser } from "@/lib/email/case-link";
+import { fileAssignedMail } from "@/lib/email/imap-sync";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/email/messages/[id]");
@@ -86,6 +87,11 @@ export const PATCH = createHandler(
         caseSlug: body.case_slug,
       });
       if (!updated) return apiError("not_found", "Nachricht nicht gefunden", 404);
+      // A mailbox mail that just got its matter: attachments and deadline
+      // suggestions follow in the background (needs one IMAP round trip).
+      if (body.case_slug && updated.caseSlug) {
+        void fileAssignedMail(updated).catch(() => undefined);
+      }
       return Response.json({ message: updated });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

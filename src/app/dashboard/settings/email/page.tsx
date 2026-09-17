@@ -34,6 +34,7 @@ interface Account {
   imapHost: string;
   folder: string;
   smtpHost: string | null;
+  authType?: "password" | "oauth";
   enabled: boolean;
   lastSyncAt: string | null;
   lastError: string | null;
@@ -85,6 +86,10 @@ export default function EmailSettingsPage() {
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [oauth, setOauth] = useState<{ microsoft: boolean; google: boolean }>({
+    microsoft: false,
+    google: false,
+  });
 
   const load = useCallback(async () => {
     try {
@@ -92,6 +97,7 @@ export default function EmailSettingsPage() {
       if (!res.ok) throw new Error();
       const data = unwrapApiBody(await res.json());
       setAccounts(data.accounts ?? []);
+      setOauth(data.oauthProviders ?? { microsoft: false, google: false });
     } catch {
       setAccounts([]);
       addToast({ type: "error", title: "Postfächer konnten nicht geladen werden" });
@@ -101,6 +107,45 @@ export default function EmailSettingsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Result of the provider sign-in round trip (?verbunden=ok|abgebrochen|unvollstaendig|fehler).
+  useEffect(() => {
+    const result = new URLSearchParams(window.location.search).get("verbunden");
+    if (!result) return;
+    if (result === "ok") {
+      addToast({
+        type: "success",
+        title: "Postfach verbunden",
+        description: "Die E-Mails der letzten 14 Tage werden jetzt abgerufen.",
+      });
+    } else {
+      addToast({
+        type: "error",
+        title: "Anmeldung beim Anbieter nicht abgeschlossen",
+        description:
+          result === "unvollstaendig"
+            ? "Der Anbieter hat keine dauerhafte Freigabe erteilt. Bitte erneut anmelden und alle Berechtigungen bestätigen."
+            : "Bitte versuchen Sie es erneut.",
+      });
+    }
+    window.history.replaceState(null, "", window.location.pathname);
+  }, [addToast]);
+
+  async function signInAt(provider: "microsoft" | "google") {
+    setBusy(`oauth:${provider}`);
+    try {
+      const res = await fetch(`/api/email/oauth/${provider}/start`);
+      const data = await res.json().catch(() => ({}));
+      const url = (data?.data?.authUrl ?? data?.authUrl) as string | undefined;
+      if (!res.ok || !url) {
+        addToast({ type: "error", title: "Anmeldung nicht möglich", description: data?.message });
+        return;
+      }
+      window.location.assign(url);
+    } finally {
+      setBusy(null);
+    }
+  }
 
   function applyPreset(key: string) {
     const p = PRESETS[key] ?? PRESETS.custom;
@@ -208,6 +253,34 @@ export default function EmailSettingsPage() {
           App-Passwort Ihres Anbieters.
         </p>
       </div>
+
+      {(oauth.microsoft || oauth.google) && (
+        <div className="flex flex-wrap items-center gap-2">
+          {oauth.microsoft && (
+            <Button
+              variant="outline"
+              className="gap-2"
+              disabled={busy !== null}
+              onClick={() => void signInAt("microsoft")}
+            >
+              <Mail size={14} /> Mit Microsoft 365 anmelden
+            </Button>
+          )}
+          {oauth.google && (
+            <Button
+              variant="outline"
+              className="gap-2"
+              disabled={busy !== null}
+              onClick={() => void signInAt("google")}
+            >
+              <Mail size={14} /> Mit Google anmelden
+            </Button>
+          )}
+          <span className="text-xs text-[color:var(--ds-text-muted)]">
+            Empfohlen: Sie melden sich bei Ihrem Anbieter an, Subsumio erhält kein Passwort.
+          </span>
+        </div>
+      )}
 
       {showForm && (
         <form
@@ -364,6 +437,9 @@ export default function EmailSettingsPage() {
                     {a.lastError ? "Fehler" : a.enabled ? "Aktiv" : "Pausiert"}
                   </Badge>
                   {a.smtpHost && <Badge variant="info">Versand über Ihr Postfach</Badge>}
+                  {a.authType === "oauth" && (
+                    <Badge variant="default">Anmeldung beim Anbieter</Badge>
+                  )}
                 </div>
                 <div className="mt-1 text-xs text-[color:var(--ds-text-muted)] tabular-nums">
                   {a.imapHost} · Ordner {a.folder} · zuletzt abgerufen: {formatWhen(a.lastSyncAt)}

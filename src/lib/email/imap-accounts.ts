@@ -10,6 +10,12 @@ import { randomUUID } from "node:crypto";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { createSchemaInit } from "@/lib/schema-init";
 import { decrypt, encrypt } from "@/lib/encryption";
+import {
+  MAIL_OAUTH_PROVIDERS,
+  refreshMailOAuthToken,
+  type MailOAuthProvider,
+  type MailOAuthTokens,
+} from "@/lib/email/mail-oauth";
 
 export interface MailAccountSecrets {
   imapPassword: string;
@@ -30,6 +36,9 @@ export interface MailAccount {
   smtpPort: number | null;
   smtpSecure: boolean;
   smtpUser: string | null;
+  /** "oauth": signed in at the provider, no password stored. */
+  authType: "password" | "oauth";
+  oauthProvider: MailOAuthProvider | null;
   enabled: boolean;
   lastUid: number | null;
   uidValidity: string | null;
@@ -84,6 +93,13 @@ const ensureSchema = createSchemaInit([
     UNIQUE (brain_id, email)
   )`,
   "CREATE INDEX IF NOT EXISTS subsumio_mail_accounts_brain_idx ON subsumio_mail_accounts (brain_id)",
+  // OAuth mailboxes (Microsoft 365, Google): no password, encrypted refresh token instead.
+  "ALTER TABLE subsumio_mail_accounts ALTER COLUMN imap_password_enc DROP NOT NULL",
+  "ALTER TABLE subsumio_mail_accounts ADD COLUMN IF NOT EXISTS auth_type text NOT NULL DEFAULT 'password'",
+  "ALTER TABLE subsumio_mail_accounts ADD COLUMN IF NOT EXISTS oauth_provider text",
+  "ALTER TABLE subsumio_mail_accounts ADD COLUMN IF NOT EXISTS oauth_refresh_enc text",
+  "ALTER TABLE subsumio_mail_accounts ADD COLUMN IF NOT EXISTS oauth_access_enc text",
+  "ALTER TABLE subsumio_mail_accounts ADD COLUMN IF NOT EXISTS oauth_expires_at timestamptz",
 ]);
 
 function pool() {
@@ -107,6 +123,9 @@ function rowToAccount(r: Record<string, unknown>): MailAccount {
     smtpPort: r.smtp_port == null ? null : Number(r.smtp_port),
     smtpSecure: Boolean(r.smtp_secure),
     smtpUser: r.smtp_user ? String(r.smtp_user) : null,
+    authType: r.auth_type === "oauth" ? "oauth" : "password",
+    oauthProvider:
+      r.oauth_provider === "microsoft" || r.oauth_provider === "google" ? r.oauth_provider : null,
     enabled: Boolean(r.enabled),
     lastUid: r.last_uid == null ? null : Number(r.last_uid),
     uidValidity: r.uid_validity ? String(r.uid_validity) : null,
@@ -163,7 +182,7 @@ export async function getMailAccountSecrets(id: string): Promise<MailAccountSecr
     "SELECT imap_password_enc, smtp_password_enc FROM subsumio_mail_accounts WHERE id = $1",
     [id]
   );
-  if (!rows[0]) return null;
+  if (!rows[0] || !rows[0].imap_password_enc) return null;
   const imapPassword = await decrypt(String(rows[0].imap_password_enc));
   if (!imapPassword) return null;
   const smtpPassword = rows[0].smtp_password_enc
@@ -194,6 +213,7 @@ export async function createMailAccount(
        smtp_host = EXCLUDED.smtp_host, smtp_port = EXCLUDED.smtp_port,
        smtp_secure = EXCLUDED.smtp_secure, smtp_user = EXCLUDED.smtp_user,
        smtp_password_enc = EXCLUDED.smtp_password_enc,
+       auth_type = 'password', oauth_provider = NULL, oauth_refresh_enc = NULL, oauth_access_enc = NULL,
        enabled = true, last_error = NULL, updated_at = now()
      RETURNING *`,
     [
@@ -255,4 +275,101 @@ export async function recordSyncResult(
      WHERE id = $1`,
     [id, result.lastUid ?? null, result.uidValidity ?? null, result.error ?? null]
   );
+}
+
+/** Connect (or reconnect) a mailbox that signed in at its provider. */
+export async function createOAuthMailAccount(
+  brainId: string,
+  userId: string,
+  provider: MailOAuthProvider,
+  email: string,
+  tokens: MailOAuthTokens
+): Promise<MailAccount> {
+  await ensureSchema();
+  if (!tokens.refreshToken) throw new Error("mail_oauth_refresh_token_missing");
+  const cfg = MAIL_OAUTH_PROVIDERS[provider];
+  const refreshEnc = await encrypt(tokens.refreshToken);
+  const accessEnc = await encrypt(tokens.accessToken);
+  const address = email.trim().toLowerCase();
+  const { rows } = await pool().query(
+    `INSERT INTO subsumio_mail_accounts
+      (id, brain_id, label, email, imap_host, imap_port, imap_secure, imap_user, folder,
+       smtp_host, smtp_port, smtp_secure, smtp_user, auth_type, oauth_provider,
+       oauth_refresh_enc, oauth_access_enc, oauth_expires_at, created_by)
+     VALUES ($1,$2,$3,$4,$5,993,true,$4,'INBOX',$6,$7,$8,$4,'oauth',$9,$10,$11,$12,$13)
+     ON CONFLICT (brain_id, email) DO UPDATE SET
+       imap_host = EXCLUDED.imap_host, imap_port = 993, imap_secure = true, imap_user = EXCLUDED.imap_user,
+       smtp_host = EXCLUDED.smtp_host, smtp_port = EXCLUDED.smtp_port, smtp_secure = EXCLUDED.smtp_secure,
+       smtp_user = EXCLUDED.smtp_user, auth_type = 'oauth', oauth_provider = EXCLUDED.oauth_provider,
+       oauth_refresh_enc = EXCLUDED.oauth_refresh_enc, oauth_access_enc = EXCLUDED.oauth_access_enc,
+       oauth_expires_at = EXCLUDED.oauth_expires_at, imap_password_enc = NULL, smtp_password_enc = NULL,
+       enabled = true, last_error = NULL, updated_at = now()
+     RETURNING *`,
+    [
+      randomUUID(),
+      brainId,
+      address,
+      address,
+      cfg.imapHost,
+      cfg.smtpHost,
+      cfg.smtpPort,
+      cfg.smtpPort === 465,
+      provider,
+      refreshEnc,
+      accessEnc,
+      tokens.expiresAt,
+      userId,
+    ]
+  );
+  return rowToAccount(rows[0]);
+}
+
+export type MailAccountAuth =
+  | { type: "password"; imapPassword: string; smtpPassword: string }
+  | { type: "oauth"; accessToken: string };
+
+/**
+ * Credentials for one IMAP/SMTP session. OAuth access tokens are refreshed when
+ * they have less than two minutes left; a rotated refresh token is stored.
+ */
+export async function getMailAccountAuth(account: MailAccount): Promise<MailAccountAuth | null> {
+  if (account.authType === "password") {
+    const secrets = await getMailAccountSecrets(account.id);
+    return secrets
+      ? {
+          type: "password",
+          imapPassword: secrets.imapPassword,
+          smtpPassword: secrets.smtpPassword ?? secrets.imapPassword,
+        }
+      : null;
+  }
+  if (!account.oauthProvider) return null;
+  await ensureSchema();
+  const { rows } = await pool().query(
+    "SELECT oauth_refresh_enc, oauth_access_enc, oauth_expires_at FROM subsumio_mail_accounts WHERE id = $1",
+    [account.id]
+  );
+  const row = rows[0];
+  if (!row?.oauth_refresh_enc) return null;
+  const expiresAt = row.oauth_expires_at ? new Date(row.oauth_expires_at as string).getTime() : 0;
+  if (row.oauth_access_enc && expiresAt - Date.now() > 120_000) {
+    const cached = await decrypt(String(row.oauth_access_enc));
+    if (cached) return { type: "oauth", accessToken: cached };
+  }
+  const refreshToken = await decrypt(String(row.oauth_refresh_enc));
+  if (!refreshToken) return null;
+  const fresh = await refreshMailOAuthToken(account.oauthProvider, refreshToken);
+  await pool().query(
+    `UPDATE subsumio_mail_accounts SET
+       oauth_access_enc = $2, oauth_expires_at = $3,
+       oauth_refresh_enc = COALESCE($4, oauth_refresh_enc), updated_at = now()
+     WHERE id = $1`,
+    [
+      account.id,
+      await encrypt(fresh.accessToken),
+      fresh.expiresAt,
+      fresh.refreshToken ? await encrypt(fresh.refreshToken) : null,
+    ]
+  );
+  return { type: "oauth", accessToken: fresh.accessToken };
 }

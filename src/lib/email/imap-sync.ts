@@ -16,16 +16,17 @@ import {
   isLLMDeadlineExtractionAvailable,
 } from "@/lib/llm-deadline-extract";
 import { logger } from "@/lib/logger";
+import { getMailAccountAuth, recordSyncResult, type MailAccount } from "@/lib/email/imap-accounts";
 import {
-  getMailAccountSecrets,
-  recordSyncResult,
-  type MailAccount,
-} from "@/lib/email/imap-accounts";
-import {
+  mergeMailRaw,
   setMailTriage,
   storeInboundExternalEmail,
   type ExternalInboundEmail,
+  type MailMessage,
 } from "@/lib/email/mailbox";
+import { fileMailIntoMatter, type MailAttachment } from "@/lib/email/mail-filing";
+import { getMailAccount } from "@/lib/email/imap-accounts";
+import type { DetectedDeadline } from "@/lib/ai-deadline-detect";
 
 const log = logger("imap-sync");
 
@@ -40,7 +41,9 @@ export interface ImapConnectionConfig {
   port: number;
   secure: boolean;
   user: string;
-  password: string;
+  /** Exactly one of the two: mailbox password or an OAuth access token (XOAUTH2). */
+  password?: string;
+  accessToken?: string;
 }
 
 export interface SyncResult {
@@ -65,11 +68,28 @@ function newClient(cfg: ImapConnectionConfig): ImapFlow {
     host: cfg.host,
     port: cfg.port,
     secure: cfg.secure,
-    auth: { user: cfg.user, pass: cfg.password },
+    auth: cfg.accessToken
+      ? { user: cfg.user, accessToken: cfg.accessToken }
+      : { user: cfg.user, pass: cfg.password ?? "" },
     logger: false,
     socketTimeout: 45_000,
     greetingTimeout: 15_000,
   });
+}
+
+function connectionFor(
+  account: MailAccount,
+  auth: NonNullable<Awaited<ReturnType<typeof getMailAccountAuth>>>
+): ImapConnectionConfig {
+  const base = {
+    host: account.imapHost,
+    port: account.imapPort,
+    secure: account.imapSecure,
+    user: account.imapUser,
+  };
+  return auth.type === "oauth"
+    ? { ...base, accessToken: auth.accessToken }
+    : { ...base, password: auth.imapPassword };
 }
 
 /** Human-readable reason for a failed login — never echoes the password. */
@@ -113,6 +133,23 @@ function addresses(obj: AddressObject | AddressObject[] | undefined): string[] {
     .flatMap((o) => o.value)
     .map((a) => (a.address ?? "").toLowerCase())
     .filter(Boolean);
+}
+
+function attachmentsOf(mail: ParsedMail): MailAttachment[] {
+  return (mail.attachments ?? []).map((a) => ({
+    filename: a.filename ?? null,
+    contentType: a.contentType,
+    size: a.size,
+    content: a.content,
+    inline: a.contentDisposition === "inline" || Boolean(a.related),
+  }));
+}
+
+function mailLabel(
+  email: Pick<ExternalInboundEmail, "subject" | "fromEmail" | "receivedAt">
+): string {
+  const day = email.receivedAt.slice(0, 10).split("-").reverse().join(".");
+  return `E-Mail vom ${day} · ${email.fromEmail} · ${email.subject}`.slice(0, 200);
 }
 
 /** Pure mapping from a parsed message to the mailbox input — unit tested. */
@@ -239,20 +276,17 @@ async function triageFor(
 
 export async function syncImapAccount(account: MailAccount): Promise<SyncResult> {
   const result: SyncResult = { accountId: account.id, fetched: 0, stored: 0, assigned: 0 };
-  const secrets = await getMailAccountSecrets(account.id);
-  if (!secrets) {
-    result.error = "Zugangsdaten konnten nicht entschlüsselt werden.";
+  const auth = await getMailAccountAuth(account).catch(() => null);
+  if (!auth) {
+    result.error =
+      account.authType === "oauth"
+        ? "Die Anmeldung beim Anbieter ist abgelaufen — bitte das Postfach neu verbinden."
+        : "Zugangsdaten konnten nicht entschlüsselt werden.";
     await recordSyncResult(account.id, { error: result.error });
     return result;
   }
 
-  const client = newClient({
-    host: account.imapHost,
-    port: account.imapPort,
-    secure: account.imapSecure,
-    user: account.imapUser,
-    password: secrets.imapPassword,
-  });
+  const client = newClient(connectionFor(account, auth));
 
   try {
     await client.connect();
@@ -295,10 +329,31 @@ export async function syncImapAccount(account: MailAccount): Promise<SyncResult>
           if (!stored?.created) continue;
           result.stored += 1;
           if (stored.message.caseSlug) result.assigned += 1;
-          await setMailTriage(
-            stored.message.id,
-            await triageFor(email, stored.message.caseSlug ?? null)
-          );
+          const triage = await triageFor(email, stored.message.caseSlug ?? null);
+          await setMailTriage(stored.message.id, triage);
+          const filedCase = stored.message.caseSlug;
+          const hasAttachments = (parsed.attachments ?? []).length > 0;
+          if (filedCase) {
+            const filing = await fileMailIntoMatter({
+              brainId: account.brainId,
+              caseSlug: filedCase,
+              mailLabel: mailLabel(email),
+              attachments: attachmentsOf(parsed),
+              deadlines: (triage.deadlines as DetectedDeadline[]) ?? [],
+            }).catch(() => null);
+            await mergeMailRaw(stored.message.id, {
+              uid_validity: uidValidity,
+              filed: filing
+                ? { ...filing, caseSlug: filedCase, at: new Date().toISOString() }
+                : null,
+            });
+          } else {
+            // Unassigned mail: remember where to fetch it again once a lawyer files it.
+            await mergeMailRaw(stored.message.id, {
+              uid_validity: uidValidity,
+              filing_pending: hasAttachments || ((triage.deadlines as unknown[]) ?? []).length > 0,
+            });
+          }
         }
       }
       await recordSyncResult(account.id, {
@@ -321,4 +376,65 @@ export async function syncImapAccount(account: MailAccount): Promise<SyncResult>
     await recordSyncResult(account.id, { error: result.error });
   }
   return result;
+}
+
+/**
+ * A lawyer assigned a previously unassigned mail to a matter: fetch the message
+ * once more (we do not keep raw sources) and file attachments and deadline
+ * suggestions. No-op when the mailbox changed (uidValidity) or the mail is gone.
+ */
+export async function fileAssignedMail(message: MailMessage): Promise<void> {
+  const raw = message.raw as {
+    provider?: string;
+    account_id?: string;
+    uid?: number;
+    uid_validity?: string | null;
+    filing_pending?: boolean;
+    triage?: { deadlines?: DetectedDeadline[] };
+  };
+  if (raw.provider !== "imap" || !raw.filing_pending || !message.caseSlug || !message.brainId)
+    return;
+  if (!raw.account_id || typeof raw.uid !== "number") return;
+  const account = await getMailAccount(message.brainId, raw.account_id);
+  const auth = account ? await getMailAccountAuth(account).catch(() => null) : null;
+  if (!account || !auth) return;
+
+  const client = newClient(connectionFor(account, auth));
+  try {
+    await client.connect();
+    const lock = await client.getMailboxLock(account.folder, { readOnly: true });
+    try {
+      const box = client.mailbox;
+      const validity = box && typeof box !== "boolean" ? String(box.uidValidity) : null;
+      if (raw.uid_validity && validity !== raw.uid_validity) return;
+      const msg = await client.fetchOne(String(raw.uid), { source: true }, { uid: true });
+      if (!msg || !msg.source) return;
+      const parsed = await simpleParser(msg.source);
+      const filing = await fileMailIntoMatter({
+        brainId: message.brainId,
+        caseSlug: message.caseSlug,
+        mailLabel: mailLabel({
+          subject: message.subject,
+          fromEmail: message.fromEmail,
+          receivedAt: message.createdAt,
+        }),
+        attachments: attachmentsOf(parsed),
+        deadlines: raw.triage?.deadlines ?? [],
+      });
+      await mergeMailRaw(message.id, {
+        filing_pending: false,
+        filed: { ...filing, caseSlug: message.caseSlug, at: new Date().toISOString() },
+      });
+    } finally {
+      lock.release();
+    }
+    await client.logout();
+  } catch (err) {
+    try {
+      client.close();
+    } catch {
+      /* already closed */
+    }
+    log.warn("filing assigned mail failed", { mail: message.id, reason: describeImapError(err) });
+  }
 }

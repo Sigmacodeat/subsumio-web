@@ -106,8 +106,8 @@ test.describe("Misc Dashboard: Pages Render", () => {
     expect(await content.count()).toBeGreaterThan(0);
   });
 
-  test("rechtsprechung/analytics shows analytics content", async ({ page }) => {
-    await page.goto("/dashboard/rechtsprechung/analytics", { waitUntil: "domcontentloaded" });
+  test("litigation-analytics shows analytics content", async ({ page }) => {
+    await page.goto("/dashboard/litigation-analytics", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
     const content = page
       .locator(".recharts-surface, table, .tabular-nums")

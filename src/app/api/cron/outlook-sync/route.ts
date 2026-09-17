@@ -1,23 +1,31 @@
 import { NextRequest } from "next/server";
 import { createCronHandler, apiSuccess } from "@/lib/api-handler";
-import { syncCalendar, syncMail, isMsGraphConfigured } from "@/lib/msgraph";
-import { ENGINE_URL } from "@/lib/engine";
+import { syncCalendar, isMsGraphConfigured } from "@/lib/msgraph";
+import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-export const POST = createCronHandler(async (_req: NextRequest) => {
+/**
+ * Microsoft 365 calendar sync (Graph, app credentials, one mailbox per deployment).
+ * Mail is NOT synced here any more: firms connect their mailbox under
+ * Einstellungen → E-Mail-Postfach (IMAP/OAuth), see docs/architecture/EMAIL_IMAP.md.
+ */
+const handler = createCronHandler(async (_req: NextRequest) => {
   if (!isMsGraphConfigured()) {
     return apiSuccess({ ok: true, skipped: "msgraph_not_configured" });
   }
 
-  const engineHeaders: Record<string, string> = {
-    "x-api-key": process.env.ENGINE_API_KEY ?? "",
-  };
+  // The events belong to one firm: without the target firm the job must not write anywhere.
+  const brainId = env("MS365_BRAIN_ID");
+  if (!brainId) {
+    return apiSuccess({ ok: true, skipped: "ms365_brain_not_configured" });
+  }
+  const engineHeaders = engineHeadersForBrain(brainId);
 
   const since = new Date(Date.now() - 7 * 86400000).toISOString();
   let calendarSynced = 0;
-  let mailSynced = 0;
   const errors: string[] = [];
 
   // 1. Sync calendar events
@@ -51,44 +59,14 @@ export const POST = createCronHandler(async (_req: NextRequest) => {
     errors.push(`calendar: ${e instanceof Error ? e.message : String(e)}`);
   }
 
-  // 2. Sync mail
-  try {
-    const mailResult = await syncMail({ maxResults: 50 });
-    for (const msg of mailResult.messages) {
-      const slug = `email/outlook/${msg.id}`;
-      const res = await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...engineHeaders },
-        body: JSON.stringify({
-          slug,
-          title: `E-Mail: ${msg.subject}`,
-          type: "outlook_email",
-          frontmatter: {
-            type: "outlook_email",
-            outlook_message_id: msg.id,
-            subject: msg.subject,
-            from: msg.from?.emailAddress?.address,
-            from_name: msg.from?.emailAddress?.name,
-            received_at: msg.receivedDateTime,
-            has_attachments: msg.hasAttachments,
-            web_link: msg.webLink,
-            conversation_id: msg.conversationId,
-            synced_at: new Date().toISOString(),
-          },
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (res.ok) mailSynced++;
-    }
-  } catch (e) {
-    errors.push(`mail: ${e instanceof Error ? e.message : String(e)}`);
-  }
-
   return apiSuccess({
     ok: true,
     calendarSynced,
-    mailSynced,
     errors: errors.length > 0 ? errors : undefined,
     syncedAt: new Date().toISOString(),
   });
 });
+
+// The crontab calls GET; POST stays for manual triggers.
+export const GET = handler;
+export const POST = handler;
