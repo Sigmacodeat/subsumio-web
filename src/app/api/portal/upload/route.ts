@@ -1,3 +1,4 @@
+import { listEnginePages } from "@/lib/engine-pages";
 import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { apiError, createPublicHandler } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
@@ -79,14 +80,10 @@ async function findOpenDocumentRequest(
     return null;
   }
 
-  const res = await fetch(`${ENGINE_URL}/api/pages?type=document_request&limit=200`, {
-    headers: engineHeadersForBrain(brainId),
-    signal: AbortSignal.timeout(10_000),
-  });
-  if (!res.ok) return null;
+  const listed = await listEnginePages(engineHeadersForBrain(brainId), "document_request", 50_000);
 
   return (
-    pagesFrom(await res.json())
+    pagesFrom(listed)
       .map(documentRequestFromPage)
       .filter(
         (request): request is NonNullable<ReturnType<typeof documentRequestFromPage>> =>

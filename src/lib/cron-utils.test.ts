@@ -67,7 +67,7 @@ describe("fetchPages", () => {
   });
 });
 
-describe("fetchPages beyond the engine's 200-page cap", () => {
+describe("fetchPages beyond the engine's per-request cap", () => {
   beforeEach(() => vi.restoreAllMocks());
 
   test("reads all matters in batches and leaves out deleted records", async () => {
@@ -82,12 +82,12 @@ describe("fetchPages beyond the engine's 200-page cap", () => {
       calls.push(`${url.searchParams.get("limit")}@${url.searchParams.get("offset")}`);
       const limit = Number(url.searchParams.get("limit"));
       const offset = Number(url.searchParams.get("offset"));
-      // The engine never returns more than 200, whatever is asked for.
-      const batch = all.slice(offset, offset + Math.min(limit, 200));
+      // The engine never returns more than 100, whatever is asked for.
+      const batch = all.slice(offset, offset + Math.min(limit, 100));
       return new Response(JSON.stringify(batch), { status: 200 });
     });
     const result = await fetchPages("brain-1", "legal_case", 10_000);
-    expect(calls).toEqual(["200@0", "200@200", "200@400"]);
+    expect(calls).toEqual(["100@0", "100@100", "100@200", "100@300", "100@400"]);
     expect(result).toHaveLength(449);
     expect(result.some((p) => p.slug === "legal/cases/7")).toBe(false);
     const withDeleted = await fetchPages("brain-1", "legal_case", 10_000, {
@@ -97,11 +97,11 @@ describe("fetchPages beyond the engine's 200-page cap", () => {
   });
 
   test("keeps what was read when a later batch fails", async () => {
-    const first = Array.from({ length: 200 }, (_, i) => ({ slug: `d/${i}`, title: "x" }));
+    const first = Array.from({ length: 100 }, (_, i) => ({ slug: `d/${i}`, title: "x" }));
     vi.spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(new Response(JSON.stringify(first), { status: 200 }))
       .mockResolvedValueOnce(new Response("down", { status: 503 }));
-    expect(await fetchPages("brain-1", "legal_deadline", 1000)).toHaveLength(200);
+    expect(await fetchPages("brain-1", "legal_deadline", 1000)).toHaveLength(100);
   });
 });
 

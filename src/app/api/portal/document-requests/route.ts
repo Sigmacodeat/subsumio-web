@@ -1,5 +1,6 @@
+import { listEnginePages } from "@/lib/engine-pages";
 import { z } from "zod";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { engineHeadersForBrain } from "@/lib/engine";
 import { apiError, createPublicHandler } from "@/lib/api-handler";
 import { verifyPortalToken } from "@/lib/portal-token";
 import { clientIp } from "@/lib/auth/rate-limit";
@@ -47,19 +48,14 @@ export const GET = createPublicHandler(
       );
     }
 
-    const res = await fetch(`${ENGINE_URL}/api/pages?type=document_request&limit=200`, {
-      headers: engineHeadersForBrain(payload.brain_id),
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) {
-      return apiError(
-        "document_requests_load_failed",
-        "Dokumentenanfragen konnten nicht geladen werden",
-        502
-      );
-    }
+    // Every request of the firm, in batches: the engine returns 200 per call.
+    const listed = await listEnginePages(
+      engineHeadersForBrain(payload.brain_id),
+      "document_request",
+      50_000
+    );
 
-    const requests = pagesFrom(await res.json())
+    const requests = pagesFrom(listed)
       .map(documentRequestFromPage)
       .filter(
         (request): request is NonNullable<ReturnType<typeof documentRequestFromPage>> =>

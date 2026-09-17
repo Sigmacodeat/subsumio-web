@@ -92,9 +92,33 @@ Seite `/dashboard/import-kanzlei`, Logik in `src/lib/kanzlei-import/` (`values.t
 
 ## Listen und gelöschte Einträge
 
-- Die Engine liefert je Anfrage höchstens 200 Seiten. `listEnginePages` (`src/lib/engine-pages.ts`)
-  liest in Blöcken; Fristenliste (`/api/legal/fristen`), Fristen-Digest und Fristen-Erinnerungen
-  lesen damit alle Akten und Fristen. Aktenliste und Kontaktliste im Dashboard lesen noch 200.
+- Die Engine liefert je Anfrage höchstens 100 Seiten (`clampSearchLimit` in
+  `server/src/core/operations.ts`, Operation `list_pages`); größere Werte werden still gekürzt.
+  `listEnginePages` (`src/lib/engine-pages.ts`) liest deshalb in Blöcken, im Browser
+  `api.brain.listAllPages` und `batchListPages`. Damit lesen vollständig: Aktenliste,
+  Kontaktliste, Kollisionsprüfung beim Anlegen einer Akte, Fristenliste, Fristen-Digest,
+  Fristen-Erinnerungen, Rechnungsnummern-Vergabe, DocuSign-Zuordnung, Portal-Anfragen,
+  Prüfeingang, Import und die Wartungsjobs.
 - Gelöschte Einträge (außer Akten) bleiben als `status: tombstoned` bestehen. `/api/pages`,
   `/api/pages/batch-list` und `listEnginePages` lassen sie weg; `include_tombstoned=1` bzw.
   `includeTombstoned` liefert sie für Aufrufer, die per Offset blättern.
+
+## Fristen-Erinnerungen
+
+`src/lib/deadline-reminders.ts` entscheidet, welche Erinnerung heute fällig ist;
+`/api/cron/deadline-reminders` verschickt sie per E-Mail, WhatsApp, Push und im Programm.
+
+- **Beide Orte:** Fristen in der Akte (`frontmatter.deadlines`) und eigenständige
+  `legal_deadline`-Seiten (Fristenliste, Import, Dokumentanalyse, Schnellanlage). Vorher wurden
+  nur die Fristen in der Akte erinnert.
+- **Stufen 7, 3, 1 und 0 Tage** vor Fälligkeit, jede genau einmal. Beim Versenden werden alle
+  bereits überschrittenen Stufen vermerkt, sonst feuert am Folgetag die übersprungene Stufe.
+- **Vorfrist** einmal, sobald sie erreicht ist.
+- **Nicht erinnert:** erledigte, stornierte, verworfene und gelöschte Fristen, Fristen
+  archivierter Akten und überfällige Fristen (die stehen im täglichen Sammelbericht).
+- **Doppelt vermeiden:** Liegt eine eigenständige Frist auch als Kopie in der Akte (gleiches
+  Datum und gleiche Bezeichnung oder `id` „page:<slug>“), zählt nur die eigenständige.
+- **Vermerken:** Die Akte wird vor dem Schreiben neu gelesen, und nur ihre Fristenliste wird
+  geschrieben. Vorher schrieb der Job den alten Stand der ganzen Akte zurück und konnte
+  gleichzeitig hochgeladene Dokumente oder erfasste Zeiten überschreiben.
+- **Ohne Akte:** Fristen ohne Aktenbezug werden als eigene Gruppe „Fristen ohne Akte“ erinnert.

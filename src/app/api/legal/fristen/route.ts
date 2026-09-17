@@ -178,7 +178,7 @@ export const GET = createHandler(
 
     // ── Source 2+3: Brain pages (legal_deadline + legal_case) ─────────────
     try {
-      // All matters and deadlines, in batches of 200; deleted deadlines are left out.
+      // All matters and deadlines, in batches; deleted deadlines are left out.
       const fetchPagesByType = async (type: string): Promise<BrainPage[]> =>
         (await listEnginePages(ctx.headers, type, 10_000)) as unknown as BrainPage[];
       const [deadlinePages, casePages] = await Promise.all([

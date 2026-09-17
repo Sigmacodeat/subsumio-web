@@ -1,5 +1,5 @@
+import { listEnginePages } from "@/lib/engine-pages";
 import { createHandler, apiSuccess } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
 import { allocateInvoiceNumber, highestInvoiceNumber } from "@/lib/invoice-numbering";
 
 export const dynamic = "force-dynamic";
@@ -18,16 +18,9 @@ export const POST = createHandler(
     const year = new Date().getFullYear();
     let existing: string[] = [];
     try {
-      const res = await fetch(`${ENGINE_URL}/api/pages?type=invoice&limit=1000`, {
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (res.ok) {
-        const pages = (await res.json()) as Array<{ frontmatter?: { invoice_number?: string } }>;
-        existing = (Array.isArray(pages) ? pages : []).map(
-          (p) => p.frontmatter?.invoice_number ?? ""
-        );
-      }
+      // Every invoice, in batches: a partial list could hand out a number twice.
+      const pages = await listEnginePages(ctx.headers, "invoice", 50_000);
+      existing = pages.map((p) => String(p.frontmatter?.invoice_number ?? ""));
     } catch {
       // The counter alone still guarantees uniqueness from here on.
     }

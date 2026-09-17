@@ -1,8 +1,11 @@
 import { ENGINE_URL } from "@/lib/engine";
 import { isTombstoned } from "@/lib/tombstone";
 
-/** The engine returns at most this many pages per list request. */
-export const ENGINE_LIST_MAX = 200;
+/**
+ * The engine clamps every page listing to this many rows per request
+ * (clampSearchLimit in server/src/core/operations.ts, list_pages).
+ */
+export const ENGINE_LIST_MAX = 100;
 
 export interface ListedPage {
   slug: string;
@@ -15,7 +18,7 @@ export interface ListedPage {
 
 /**
  * Up to `limit` pages of a type, most recently updated first, read in batches of
- * 200 (a single larger request silently returns 200). Deleted (tombstoned) pages
+ * 100 (a single larger request silently returns 100). Deleted (tombstoned) pages
  * are left out unless asked for. Returns what was read so far when a batch fails.
  */
 export async function listEnginePages(

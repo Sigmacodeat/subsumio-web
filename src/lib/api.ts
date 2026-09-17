@@ -339,6 +339,32 @@ export const api = {
       return request(`/api/pages?${params.toString()}`);
     },
 
+    /**
+     * Every page of a type, in batches. The engine returns at most 100 per
+     * request, so a plain listPages call silently stops there.
+     */
+    async listAllPages(
+      options: { type: string; max?: number } & Record<string, unknown>
+    ): Promise<BrainPage[]> {
+      const max = options.max ?? 10_000;
+      const seen = new Map<string, BrainPage>();
+      const size = 100;
+      for (let offset = 0; offset < max; offset += size) {
+        const want = Math.min(size, max - offset);
+        const batch = await this.listPages({
+          type: options.type,
+          limit: want,
+          offset,
+          includeTombstoned: true,
+        });
+        for (const page of batch) seen.set(page.slug, page);
+        if (batch.length < want) break;
+      }
+      return [...seen.values()].filter(
+        (p) => (p.frontmatter as Record<string, unknown> | undefined)?.status !== "tombstoned"
+      );
+    },
+
     batchListPages(types: string[], limit = 100): Promise<Record<string, BrainPage[]>> {
       if (types.length === 0) return Promise.resolve({});
       return request<{ results: Record<string, BrainPage[]>; errors: string[] }>(

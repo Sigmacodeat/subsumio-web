@@ -1,3 +1,4 @@
+import { listEnginePages } from "@/lib/engine-pages";
 import { z } from "zod";
 import { isTombstoned } from "@/lib/tombstone";
 import { ENGINE_URL } from "@/lib/engine";
@@ -135,16 +136,9 @@ async function refreshAktenblatt(headers: Record<string, string>, slug: string):
       frontmatter?: Record<string, unknown>;
     };
     // Deadlines are usually standalone pages linked by case_slug.
-    const listRes = await fetch(`${ENGINE_URL}/api/pages?type=legal_deadline&limit=300`, {
-      headers,
-      signal: AbortSignal.timeout(10_000),
-    }).catch(() => null);
-    const listJson = listRes?.ok ? await listRes.json().catch(() => null) : null;
-    const allDeadlines: Array<Record<string, unknown>> = Array.isArray(listJson)
-      ? listJson
-      : Array.isArray((listJson as { items?: unknown })?.items)
-        ? ((listJson as { items: Array<Record<string, unknown>> }).items ?? [])
-        : [];
+    const allDeadlines = (await listEnginePages(headers, "legal_deadline", 10_000, {
+      timeoutMs: 10_000,
+    })) as unknown as Array<Record<string, unknown>>;
     const linkedDeadlines = allDeadlines.filter(
       (d) => ((d.frontmatter ?? {}) as Record<string, unknown>).case_slug === slug
     );

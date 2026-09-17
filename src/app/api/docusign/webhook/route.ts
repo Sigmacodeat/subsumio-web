@@ -1,3 +1,4 @@
+import { listEnginePages } from "@/lib/engine-pages";
 import { NextRequest } from "next/server";
 import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import {
@@ -192,17 +193,6 @@ async function findSignatureRequest(
     return (await direct.json()) as { slug: string; frontmatter?: Record<string, unknown> };
 
   // Older requests: search the list.
-  const listRes = await fetch(`${ENGINE_URL}/api/pages?type=signature_request&limit=500`, {
-    headers,
-    signal: AbortSignal.timeout(15_000),
-  });
-  if (!listRes.ok) return null;
-  const raw = (await listRes.json()) as unknown;
-  const pages = (
-    Array.isArray(raw) ? raw : ((raw as { pages?: unknown[] })?.pages ?? [])
-  ) as Array<{
-    slug: string;
-    frontmatter?: Record<string, unknown>;
-  }>;
+  const pages = await listEnginePages(headers, "signature_request", 50_000);
   return pages.find((p) => p.frontmatter?.docusign_envelope_id === envelopeId) ?? null;
 }

@@ -632,3 +632,29 @@ Leistungsliste als Excel, Fristenliste als CSV. Details: `docs/architecture/SIGN
   und Fristen-Digest zeigten die Einträge weiter. Listen und Jobs lassen sie jetzt weg.
 - **Offen:** Die Aktenliste, die Kontaktliste und einige Auswahllisten lesen weiterhin nur die
   ersten 200 Einträge; das betrifft große Kanzleien und ist als eigene Aufgabe vermerkt.
+
+## Fristen-Erinnerungen und große Listen — Praxistest (17.09., spät)
+
+Beides gegen die lokale Datenbank durchgespielt: Erinnerungen 13 von 13, Listen 6 von 6.
+
+- **Eigenständige Fristen wurden nie erinnert (Befund, behoben).** Die gestaffelten
+  Erinnerungen (7, 3, 1, 0 Tage) galten nur für Fristen, die direkt in der Akte stehen. Alle
+  importierten, aus Dokumenten erkannten und über die Fristenliste angelegten Fristen bekamen
+  nur den täglichen Sammelbericht. Jetzt werden beide Orte erinnert, auch Fristen ohne Akte.
+- **Übersprungene Stufe feuerte nachträglich (Befund, behoben).** Nach der Erinnerung „in 3
+  Tagen“ kam am Folgetag zusätzlich die Stufe „in 7 Tagen“. Jetzt werden alle überschrittenen
+  Stufen beim Senden vermerkt. Nachweis: vier Läufe hintereinander senden genau einmal je Stufe.
+- **Erledigte Fristen wurden weiter erinnert (Befund, behoben).** Erledigte, stornierte,
+  verworfene und gelöschte Fristen sowie Fristen archivierter Akten bleiben jetzt still.
+- **Erinnerungsjob konnte die Akte überschreiben (Befund, behoben).** Beim Vermerken schrieb er
+  den alten Stand der ganzen Akte zurück. Jetzt wird die Akte neu gelesen und nur ihre
+  Fristenliste geschrieben. Gegentest: Mandant, Titel und übrige Inhalte unverändert.
+- **Listen brachen bei 100 Einträgen ab (Befund, behoben).** Die Engine liefert je Anfrage
+  höchstens 100 Zeilen, nicht 200 wie die Weboberfläche annahm. Mit 260 Kontakten und 230 Akten
+  im Test zeigte die Kontaktliste nur 100. Jetzt zeigen Kontaktliste 260 und Aktenliste 231.
+- **Kollisionsprüfung übersah alte Mandanten (Befund, behoben).** Eine neue Akte mit einem
+  Mandanten, der weit hinten in der Kontaktliste steht, lief vorher durch. Im Gegentest wird sie
+  jetzt mit Kollisionstreffer abgelehnt.
+- **Gleiche Ursache an weiteren Stellen behoben:** Rechnungsnummern-Vergabe (konnte eine alte
+  Nummer erneut vergeben), DocuSign-Zuordnung älterer Umschläge, Portal-Dokumentenanfragen,
+  Prüfeingang, Aktenblatt-Fristen, Fristen-Abgleich der Pipeline und vier Wartungsjobs.

@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { ENGINE_URL } from "@/lib/engine";
 import { createHandler } from "@/lib/api-handler";
-import { isTombstoned } from "@/lib/tombstone";
+import { listEnginePages } from "@/lib/engine-pages";
 
 const batchListSchema = z.object({
   types: z.array(z.string().min(1).max(64)).min(1).max(20),
-  limit: z.number().int().min(1).max(500).default(100),
+  /** Read in batches of 100; the engine returns no more per request. */
+  limit: z.number().int().min(1).max(50_000).default(100),
 });
 
 export const POST = createHandler(
@@ -22,23 +22,9 @@ export const POST = createHandler(
     await Promise.all(
       body.types.map(async (type) => {
         try {
-          const params = new URLSearchParams({
-            type,
-            limit: String(body.limit),
+          results[type] = await listEnginePages(ctx.headers, type, body.limit, {
+            timeoutMs: 20_000,
           });
-          const res = await fetch(`${ENGINE_URL}/api/pages?${params.toString()}`, {
-            headers: ctx.headers,
-            signal: AbortSignal.timeout(10_000),
-          });
-          if (!res.ok) {
-            errors.push(type);
-            return;
-          }
-          const data = await res.json();
-          const list = (Array.isArray(data) ? data : (data.items ?? [])) as Array<{
-            frontmatter?: Record<string, unknown>;
-          }>;
-          results[type] = list.filter((p) => !isTombstoned(p));
         } catch {
           errors.push(type);
         }

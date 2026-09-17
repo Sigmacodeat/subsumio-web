@@ -1,4 +1,4 @@
-import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { createHandler, apiSuccess } from "@/lib/api-handler";
 import type { BrainPage } from "@/lib/types";
 
@@ -46,20 +46,10 @@ async function fetchPages(
   type: string,
   limit: number
 ): Promise<BrainPage[]> {
-  try {
-    const params = new URLSearchParams();
-    params.set("type", type);
-    params.set("limit", String(limit));
-    const res = await fetch(`${ENGINE_URL}/api/pages?${params.toString()}`, {
-      headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return Array.isArray(data) ? (data as BrainPage[]) : [];
-  } catch {
-    return [];
-  }
+  // Batched: the engine returns at most 200 pages per request.
+  return (await listEnginePages(headers, type, limit, {
+    timeoutMs: 10_000,
+  })) as unknown as BrainPage[];
 }
 
 function fm(page: BrainPage): Record<string, unknown> {
@@ -81,10 +71,10 @@ export const GET = createHandler(
   },
   async (ctx, _body, _query, _req) => {
     const [docRequests, deadlines, submissions, casePages] = await Promise.all([
-      fetchPages(ctx.headers, "document_request", 200),
-      fetchPages(ctx.headers, "legal_deadline", 300),
-      fetchPages(ctx.headers, "client_submission", 200),
-      fetchPages(ctx.headers, "legal_case", 300),
+      fetchPages(ctx.headers, "document_request", 5_000),
+      fetchPages(ctx.headers, "legal_deadline", 10_000),
+      fetchPages(ctx.headers, "client_submission", 5_000),
+      fetchPages(ctx.headers, "legal_case", 10_000),
     ]);
 
     const items: ReviewInboxItem[] = [];

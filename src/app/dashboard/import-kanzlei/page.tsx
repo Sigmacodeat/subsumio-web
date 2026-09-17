@@ -57,7 +57,7 @@ import {
 
 const KIND_ORDER: ImportKind[] = ["cases", "contacts", "deadlines", "time_entries"];
 /** The engine returns at most this many pages per list request. */
-const LIST_PAGE_SIZE = 200;
+const LIST_PAGE_SIZE = 100;
 
 const ACTION_LABEL: Record<PlanAction, string> = {
   create: "Neu",

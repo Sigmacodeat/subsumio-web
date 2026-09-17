@@ -18,6 +18,7 @@
  * on-demand from the dashboard.
  */
 
+import { listEnginePages } from "@/lib/engine-pages";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { berechneFristAuto, type FristAutoErgebnis } from "@/lib/legal/frist-engine";
 import { computeVorfrist } from "@/lib/legal/vorfrist";
@@ -113,24 +114,32 @@ function guessFristKey(frist: string, rechtsgrundlage: string): string | null {
   // ZPO Fristen
   if (f.includes("klagebeantwortung") || f.includes("klageerwiderung")) return "klagebeantwortung";
   if (f.includes("berufung") && !f.includes("straf")) return "berufung";
-  if (f.includes("revision") && !r.includes("vwgh") && !r.includes("verwaltungsgericht")) return "revision";
+  if (f.includes("revision") && !r.includes("vwgh") && !r.includes("verwaltungsgericht"))
+    return "revision";
   if (f.includes("rekurs")) return "rekurs";
   if (f.includes("wiedereinsetzung")) return "wiedereinsetzung";
   if (f.includes("einspruch") && f.includes("zahlungsbefehl")) return "einspruch_zahlungsbefehl";
 
   // StPO Fristen
-  if (f.includes("beschwerde") && (r.includes("stpo") || f.includes("straf"))) return "beschwerde_stpo";
-  if (f.includes("berufung") && (r.includes("stpo") || f.includes("straf"))) return "berufungsanmeldung_stpo";
+  if (f.includes("beschwerde") && (r.includes("stpo") || f.includes("straf")))
+    return "beschwerde_stpo";
+  if (f.includes("berufung") && (r.includes("stpo") || f.includes("straf")))
+    return "berufungsanmeldung_stpo";
 
   // Verwaltungsverfahren
-  if (f.includes("bescheidbeschwerde") || (f.includes("beschwerde") && r.includes("vwgvg"))) return "beschwerde_vwgvg";
+  if (f.includes("bescheidbeschwerde") || (f.includes("beschwerde") && r.includes("vwgvg")))
+    return "beschwerde_vwgvg";
   if (f.includes("vorstellung")) return "vorstellung_avg";
-  if (f.includes("revision") && (r.includes("vwgh") || r.includes("verwaltungsgericht"))) return "revision_vwgh";
-  if (f.includes("beschwerde") && (r.includes("vfgh") || r.includes("verfassungsgericht"))) return "beschwerde_vfgh";
+  if (f.includes("revision") && (r.includes("vwgh") || r.includes("verwaltungsgericht")))
+    return "revision_vwgh";
+  if (f.includes("beschwerde") && (r.includes("vfgh") || r.includes("verfassungsgericht")))
+    return "beschwerde_vfgh";
 
   // Materiellrechtliche Fristen
-  if (f.includes("verjährung") && (f.includes("3 jahr") || f.includes("drei jahr"))) return "verjaehrung_kurz";
-  if (f.includes("verjährung") && (f.includes("30 jahr") || f.includes("dreißig jahr"))) return "verjaehrung_lang";
+  if (f.includes("verjährung") && (f.includes("3 jahr") || f.includes("drei jahr")))
+    return "verjaehrung_kurz";
+  if (f.includes("verjährung") && (f.includes("30 jahr") || f.includes("dreißig jahr")))
+    return "verjaehrung_lang";
   if (f.includes("verjährung")) return "verjaehrung_kurz"; // default: kurz
 
   return null;
@@ -138,14 +147,9 @@ function guessFristKey(frist: string, rechtsgrundlage: string): string | null {
 
 async function fetchDeadlineCalendarPages(brainId: string): Promise<DeadlineCalendarPage[]> {
   try {
-    const res = await fetch(`${ENGINE_URL}/api/pages?type=deadline_calendar&limit=500`, {
-      headers: engineHeadersForBrain(brainId),
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!res.ok) return [];
-    const data = (await res.json()) as unknown;
-    if (!Array.isArray(data)) return [];
-    return data as DeadlineCalendarPage[];
+    return (await listEnginePages(engineHeadersForBrain(brainId), "deadline_calendar", 50_000, {
+      timeoutMs: 30_000,
+    })) as unknown as DeadlineCalendarPage[];
   } catch {
     return [];
   }
@@ -153,15 +157,11 @@ async function fetchDeadlineCalendarPages(brainId: string): Promise<DeadlineCale
 
 async function fetchExistingDeadlines(brainId: string): Promise<Map<string, ExistingDeadlinePage>> {
   try {
-    const res = await fetch(`${ENGINE_URL}/api/pages?type=legal_deadline&limit=500`, {
-      headers: engineHeadersForBrain(brainId),
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!res.ok) return new Map();
-    const data = (await res.json()) as unknown;
-    if (!Array.isArray(data)) return new Map();
+    const data = (await listEnginePages(engineHeadersForBrain(brainId), "legal_deadline", 50_000, {
+      timeoutMs: 30_000,
+    })) as unknown as ExistingDeadlinePage[];
     const map = new Map<string, ExistingDeadlinePage>();
-    for (const page of data as ExistingDeadlinePage[]) {
+    for (const page of data) {
       const fm = page.frontmatter ?? {};
       const caseSlug = String(fm.case_slug ?? "");
       const dueDate = String(fm.due_date ?? fm.date ?? "");
@@ -278,18 +278,20 @@ export async function syncPipelineDeadlines(brainId: string): Promise<SyncResult
           pipeline_folge: row.folge,
           created_at: new Date().toISOString(),
           // Deterministisch berechnete Frist-Daten
-          ...(fristResult ? {
-            frist_art: fristResult.art.key,
-            frist_regime: fristResult.art.regime,
-            rechtsgrundlage: fristResult.art.rechtsgrundlage,
-            fristbeginn: fristResult.fristbeginn,
-            fristende: fristResult.fristende,
-            kalendertage: fristResult.kalendertage,
-            notfrist: fristResult.art.notfrist,
-            deterministic: true,
-          } : {
-            deterministic: false,
-          }),
+          ...(fristResult
+            ? {
+                frist_art: fristResult.art.key,
+                frist_regime: fristResult.art.regime,
+                rechtsgrundlage: fristResult.art.rechtsgrundlage,
+                fristbeginn: fristResult.fristbeginn,
+                fristende: fristResult.fristende,
+                kalendertage: fristResult.kalendertage,
+                notfrist: fristResult.art.notfrist,
+                deterministic: true,
+              }
+            : {
+                deterministic: false,
+              }),
         },
       });
 

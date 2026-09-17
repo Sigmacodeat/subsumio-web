@@ -49,7 +49,7 @@ export interface EnginePage {
 }
 
 /**
- * Up to `limit` pages of a type for a tenant, read in batches of 200, without
+ * Up to `limit` pages of a type for a tenant, read in batches of 100, without
  * deleted records unless asked for. See listEnginePages.
  */
 export async function fetchPages(

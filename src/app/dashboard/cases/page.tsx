@@ -162,7 +162,7 @@ export default function CasesPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
+      const pages = await api.brain.listAllPages({ type: "legal_case" });
       const items = pages
         .map(parseCase)
         .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());

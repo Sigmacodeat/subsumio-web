@@ -1,3 +1,4 @@
+import { listEnginePages } from "@/lib/engine-pages";
 import { NextRequest, NextResponse } from "next/server";
 import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { createCronHandler } from "@/lib/api-handler";
@@ -17,14 +18,10 @@ interface AutoPlaybookResponse {
 
 async function fetchExecutedContracts(brainId: string): Promise<EnginePage[]> {
   try {
-    const res = await fetch(`${ENGINE_URL}/api/pages?type=legal_contract&limit=200`, {
-      headers: engineHeadersForBrain(brainId),
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!res.ok) return [];
-    const data = await res.json();
-    if (!Array.isArray(data)) return [];
-    return (data as EnginePage[]).filter((p) => {
+    const data = (await listEnginePages(engineHeadersForBrain(brainId), "legal_contract", 50_000, {
+      timeoutMs: 30_000,
+    })) as unknown as EnginePage[];
+    return data.filter((p) => {
       const fm = p.frontmatter ?? {};
       return fm.status === "executed" && !fm.playbook_processed;
     });

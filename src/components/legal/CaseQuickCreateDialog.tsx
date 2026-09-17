@@ -242,7 +242,7 @@ export function CaseQuickCreateDialog({
   const { data: contacts, loading: loadingContacts } = useDialogFetch<ContactOption[]>(
     open,
     async () => {
-      const pages = await api.brain.listPages({ type: "legal_contact", limit: 500 });
+      const pages = await api.brain.listAllPages({ type: "legal_contact" });
       return pages.map((p: BrainPage) => {
         const fm = (p.frontmatter ?? {}) as ContactFrontmatter;
         return {

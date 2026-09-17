@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
+import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
 import nodemailer from "nodemailer";
 import { createCronHandler } from "@/lib/api-handler";
-import type { BrainPage } from "@/lib/types";
 import { fetchPages, getRecipientsByBrain } from "@/lib/cron-utils";
 import { generateTrackingId, injectTracking, logTrackingEvent } from "@/lib/email/tracking";
 import { createDeadlineNotification, createNotificationFailureNotification } from "@/lib/comments";
@@ -11,42 +10,71 @@ import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { getWhatsAppIdentityStore } from "@/lib/whatsapp/identity-store";
 import { normalizePhone } from "@/lib/whatsapp/types";
 import { sendPushToUser } from "@/lib/push-send";
-import { isVorfristReached } from "@/lib/legal/vorfrist";
+import {
+  collectDueReminders,
+  markCaseDeadlines,
+  sentFields,
+  type DueReminder,
+  type ReminderDeadline,
+} from "@/lib/deadline-reminders";
 
 export const dynamic = "force-dynamic";
 
-interface DeadlineItem {
-  title?: string;
-  due_date?: string;
-  date?: string;
-  reminder_sent_at?: string;
-  reminder_stages_sent?: number[];
-  vorfrist_date?: string;
-  vorfrist_reminder_sent_at?: string;
-  is_notfrist?: boolean;
-  erv_zustelldatum?: string;
+/** Stable id of one reminder, for the failure report. */
+function reminderId(item: DueReminder): string {
+  return item.ref.kind === "page"
+    ? item.ref.slug
+    : `${item.ref.caseSlug}_${item.title}_${item.dueDate}`;
 }
 
-// Gestaffelte Eskalation statt einer einzelnen "irgendwann in 3 Tagen"-Mail:
-// je näher die Frist rückt, desto häufiger erinnert das System.
-const REMINDER_STAGES_DAYS = [7, 3, 1, 0] as const;
-
-async function listCasePages(brainId: string): Promise<BrainPage[]> {
-  // All matters, read in batches: the engine returns at most 200 per request.
-  return (await fetchPages(brainId, "legal_case", 10_000)) as unknown as BrainPage[];
-}
-
-async function updatePageDeadlines(
+async function updateDeadlineRecords(
   brainId: string,
-  slug: string,
-  fm: Record<string, unknown>
+  groupItems: DueReminder[],
+  nowIso: string
 ): Promise<void> {
   const headers = engineHeadersForBrain(brainId);
-  // The engine has no PATCH/If-Match route — merge-update overlays just the
-  // frontmatter keys we send. Cron reminder-state writes are idempotent
-  // (reminder_sent flags), so last-writer-wins is fine here.
+  // Standalone deadline records: only the reminder fields change.
+  for (const item of groupItems) {
+    if (item.ref.kind !== "page") continue;
+    try {
+      const res = await fetch(
+        `${ENGINE_URL}/api/pages/${item.ref.slug.split("/").map(encodeURIComponent).join("/")}`,
+        { headers, signal: AbortSignal.timeout(15_000) }
+      );
+      if (!res.ok) continue;
+      const page = (await res.json()) as { frontmatter?: ReminderDeadline };
+      await enginePatchPage(
+        headers,
+        { slug: item.ref.slug, frontmatter: sentFields(page.frontmatter ?? {}, item, nowIso) },
+        { timeoutMs: 30_000 }
+      );
+    } catch {
+      // Einzelne Update-Fehler dürfen Cron nicht abbrechen
+    }
+  }
+  // Deadlines inside a matter: re-read the matter and write only its deadline list,
+  // so documents, time entries or edits saved since are not overwritten.
+  const caseItems = groupItems.filter((i) => i.ref.kind === "case");
+  const caseSlug = caseItems[0]?.ref.kind === "case" ? caseItems[0].ref.caseSlug : undefined;
+  if (!caseSlug) return;
   try {
-    await enginePatchPage(headers, { slug, frontmatter: fm }, { timeoutMs: 30_000 });
+    const res = await fetch(
+      `${ENGINE_URL}/api/pages/${caseSlug.split("/").map(encodeURIComponent).join("/")}`,
+      { headers, signal: AbortSignal.timeout(15_000) }
+    );
+    if (!res.ok) return;
+    const page = (await res.json()) as { frontmatter?: Record<string, unknown> };
+    const current = Array.isArray(page.frontmatter?.deadlines)
+      ? (page.frontmatter.deadlines as ReminderDeadline[])
+      : [];
+    const { deadlines, changed } = markCaseDeadlines(current, caseItems, nowIso);
+    if (changed) {
+      await enginePatchPage(
+        headers,
+        { slug: caseSlug, frontmatter: { deadlines } },
+        { timeoutMs: 30_000 }
+      );
+    }
   } catch {
     // Einzelne Update-Fehler dürfen Cron nicht abbrechen
   }
@@ -69,21 +97,6 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   const fromAddr = settings.emailFrom ?? settings.smtpUser ?? "noreply@subsumio.local";
   const now = new Date();
 
-  function daysUntil(dateStr: string): number {
-    const target = new Date(`${dateStr}T12:00:00Z`);
-    const diffMs = target.getTime() - now.getTime();
-    return Math.round(diffMs / (1000 * 60 * 60 * 24));
-  }
-
-  /** Höchste fällige, noch nicht versendete Eskalationsstufe für eine Frist. */
-  function nextDueStage(d: DeadlineItem, dd: string): number | undefined {
-    const remaining = daysUntil(dd);
-    if (remaining < 0) return undefined;
-    const sent = new Set(d.reminder_stages_sent ?? []);
-    const due = REMINDER_STAGES_DAYS.filter((stage) => remaining <= stage && !sent.has(stage));
-    return due.length > 0 ? Math.min(...due) : undefined;
-  }
-
   // Brain → Empfänger
   const recipientsByBrain = await getRecipientsByBrain();
   const identityStore = getWhatsAppIdentityStore();
@@ -104,8 +117,12 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
   for (const [brainId, recipients] of recipientsByBrain) {
     brainsChecked++;
-    const pages = await listCasePages(brainId);
-    if (pages.length === 0) continue;
+    const [casePages, deadlinePages] = await Promise.all([
+      fetchPages(brainId, "legal_case", 10_000),
+      fetchPages(brainId, "legal_deadline", 10_000),
+    ]);
+    const groups = collectDueReminders(casePages, deadlinePages, now);
+    if (groups.length === 0) continue;
 
     // P3-3: Send email to ALL recipients, not just the first one
     const emailRecipients = recipients.map((r) => r.email).filter((e): e is string => !!e);
@@ -131,29 +148,9 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       }
     }
 
-    for (const page of pages) {
-      const fm = page.frontmatter ?? {};
-      const deadlines = Array.isArray(fm.deadlines) ? (fm.deadlines as DeadlineItem[]) : [];
-      const due = deadlines
-        .map((d) => {
-          const dd = String(d.due_date ?? d.date ?? "");
-          if (!dd) return null;
-          const stage = nextDueStage(d, dd);
-          // B3: Check Vorfrist separately — if Vorfrist is reached but
-          // no vorfrist reminder has been sent yet, include it
-          const vfReached =
-            d.vorfrist_date && isVorfristReached(d.vorfrist_date) && !d.vorfrist_reminder_sent_at;
-          if (stage === undefined && !vfReached) return null;
-          return { d, dd, stage, vfReached: !!vfReached };
-        })
-        .filter(
-          (
-            x
-          ): x is { d: DeadlineItem; dd: string; stage: number | undefined; vfReached: boolean } =>
-            x !== null
-        );
-
-      if (due.length === 0) continue;
+    for (const group of groups) {
+      const due = group.items;
+      const caseSlugForNotif = group.caseSlug ?? "";
       total += due.length;
 
       const esc = (s: unknown) =>
@@ -161,7 +158,9 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
           /[&<>"']/g,
           (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!
         );
-      const subject = `Fristen-Erinnerung — Akte ${esc(fm.case_number ?? page.slug)}`;
+      const subject = group.caseSlug
+        ? `Fristen-Erinnerung — Akte ${esc(group.caseLabel)}`
+        : "Fristen-Erinnerung — Fristen ohne Akte";
       const stageLabel = (stage: number | undefined, vfReached: boolean) =>
         vfReached
           ? "Vorfrist erreicht"
@@ -174,9 +173,9 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       const rawHtml = `<p>Sehr geehrte/r ${esc(settings.anwaltName || "Anwalt")},</p>
 <p>folgende Fristen stehen an:</p>
 <ul>
-${due.map(({ d, dd, stage, vfReached }) => `<li><strong>${esc(d.title ?? "Frist")}</strong> — ${esc(dd)} (${stageLabel(stage, vfReached)})${d.is_notfrist ? " <strong>[Notfrist — Vier-Augen-Kontrolle]</strong>" : ""}${d.erv_zustelldatum ? ` <em>[ERV-Zustellung: ${esc(d.erv_zustelldatum)}]</em>` : ""}</li>`).join("\n")}
+${due.map((i) => `<li><strong>${esc(i.title)}</strong> — ${esc(i.dueDate)} (${stageLabel(i.stage, i.vorfristReached)})${i.isNotfrist ? " <strong>[Notfrist — Vier-Augen-Kontrolle]</strong>" : ""}${i.ervZustelldatum ? ` <em>[ERV-Zustellung: ${esc(i.ervZustelldatum)}]</em>` : ""}</li>`).join("\n")}
 </ul>
-<p>Akte: ${esc(fm.case_number ?? page.slug)} — ${esc(fm.title ?? page.title ?? "")}</p>
+<p>${group.caseSlug ? `Akte: ${esc(group.caseLabel)} — ${esc(group.caseTitle ?? "")}` : "Diese Fristen sind keiner Akte zugeordnet."}</p>
 <p>Subsumio Kanzlei-OS</p>`;
       const html = injectTracking(rawHtml, trackingId);
 
@@ -201,10 +200,10 @@ ${due.map(({ d, dd, stage, vfReached }) => `<li><strong>${esc(d.title ?? "Frist"
           } catch (err) {
             const reason = err instanceof Error ? err.message : String(err);
             errors.push(`Email deadline reminder failed: ${reason}`);
-            for (const { d, dd } of due) {
+            for (const item of due) {
               failed.push({
-                deadline_id: `${page.slug}_${d.title ?? "Frist"}_${dd}`,
-                case_slug: page.slug,
+                deadline_id: reminderId(item),
+                case_slug: caseSlugForNotif,
                 channels: ["email"],
                 reason,
               });
@@ -212,10 +211,10 @@ ${due.map(({ d, dd, stage, vfReached }) => `<li><strong>${esc(d.title ?? "Frist"
                 await createNotificationFailureNotification({
                   userId: recipient.id,
                   brainId,
-                  caseSlug: page.slug,
-                  caseTitle: String(fm.case_number ?? page.title ?? page.slug),
-                  deadlineTitle: d.title ?? "Frist",
-                  deadlineDate: dd,
+                  caseSlug: group.caseSlug,
+                  caseTitle: group.caseLabel,
+                  deadlineTitle: item.title,
+                  deadlineDate: item.dueDate,
                   channels: ["email"],
                   reason,
                 });
@@ -224,13 +223,12 @@ ${due.map(({ d, dd, stage, vfReached }) => `<li><strong>${esc(d.title ?? "Frist"
           }
         } else if (!smtpConfigured) {
           // SMTP not configured at all — visible warning per deadline
-          for (const { d, dd } of due) {
-            const reason = "smtp_not_configured";
+          for (const item of due) {
             failed.push({
-              deadline_id: `${page.slug}_${d.title ?? "Frist"}_${dd}`,
-              case_slug: page.slug,
+              deadline_id: reminderId(item),
+              case_slug: caseSlugForNotif,
               channels: ["email"],
-              reason,
+              reason: "smtp_not_configured",
             });
           }
         }
@@ -239,10 +237,10 @@ ${due.map(({ d, dd, stage, vfReached }) => `<li><strong>${esc(d.title ?? "Frist"
         const waBodyLines = [
           "⚖️ Fristen-Erinnerung:",
           ...due.map(
-            ({ d, dd, stage, vfReached }) =>
-              `• ${d.title ?? "Frist"} — ${dd} (${stageLabel(stage, vfReached)})${d.is_notfrist ? " [Notfrist]" : ""}${d.erv_zustelldatum ? ` [ERV: ${d.erv_zustelldatum}]` : ""}`
+            (i) =>
+              `• ${i.title} — ${i.dueDate} (${stageLabel(i.stage, i.vorfristReached)})${i.isNotfrist ? " [Notfrist]" : ""}${i.ervZustelldatum ? ` [ERV: ${i.ervZustelldatum}]` : ""}`
           ),
-          `Akte: ${fm.case_number ?? page.slug}`,
+          `Akte: ${group.caseLabel}`,
           "",
           "Bitte rechtzeitig prüfen.",
         ];
@@ -278,10 +276,10 @@ ${due.map(({ d, dd, stage, vfReached }) => `<li><strong>${esc(d.title ?? "Frist"
         }
         if (waSentAny) whatsapped++;
         if (waFailedAny) {
-          for (const { d, dd } of due) {
+          for (const item of due) {
             failed.push({
-              deadline_id: `${page.slug}_${d.title ?? "Frist"}_${dd}`,
-              case_slug: page.slug,
+              deadline_id: reminderId(item),
+              case_slug: caseSlugForNotif,
               channels: ["whatsapp"],
               reason: "send_failed_or_blocked",
             });
@@ -290,17 +288,16 @@ ${due.map(({ d, dd, stage, vfReached }) => `<li><strong>${esc(d.title ?? "Frist"
 
         // B2: Always create in-app notifications (dual-channel when SMTP is on, fallback when off)
         for (const recipient of recipients) {
-          for (const { dd, vfReached } of due) {
-            const remaining = daysUntil(dd);
+          for (const item of due) {
             await createDeadlineNotification({
               userId: recipient.id,
               brainId,
-              caseSlug: page.slug,
-              caseTitle: String(fm.case_number ?? page.title ?? page.slug),
-              deadlineDate: dd,
-              daysRemaining: remaining,
-              isOverdue: remaining < 0,
-              isVorfrist: vfReached,
+              caseSlug: group.caseSlug,
+              caseTitle: group.caseLabel,
+              deadlineDate: item.dueDate,
+              daysRemaining: item.daysRemaining,
+              isOverdue: false,
+              isVorfrist: item.vorfristReached,
             });
           }
           notificationSent = true;
@@ -308,15 +305,15 @@ ${due.map(({ d, dd, stage, vfReached }) => `<li><strong>${esc(d.title ?? "Frist"
         }
 
         // P1-4: Send push notification to all recipients with registered devices
-        const pushTitle = `⚖️ Frist: ${due[0].d.title ?? "Frist"} ${stageLabel(due[0].stage, due[0].vfReached)}`;
-        const pushBody = `Akte ${fm.case_number ?? page.slug} — ${due.length} Frist(en) anstehend`;
+        const pushTitle = `⚖️ Frist: ${due[0].title} ${stageLabel(due[0].stage, due[0].vorfristReached)}`;
+        const pushBody = `${group.caseSlug ? `Akte ${group.caseLabel}` : "Ohne Akte"} — ${due.length} Frist(en) anstehend`;
         let pushSentAny = false;
         for (const recipient of recipients) {
           try {
             const pushed = await sendPushToUser(recipient.id, {
               title: pushTitle,
               body: pushBody,
-              data: { case_slug: page.slug, type: "deadline_reminder" },
+              data: { case_slug: caseSlugForNotif, type: "deadline_reminder" },
             });
             if (pushed > 0) {
               notificationSent = true;
@@ -334,24 +331,7 @@ ${due.map(({ d, dd, stage, vfReached }) => `<li><strong>${esc(d.title ?? "Frist"
         // was actually delivered. Otherwise the reminder is silently lost.
         if (!notificationSent) continue;
 
-        const stageByDeadline = new Map(due.map(({ d, stage }) => [d, stage]));
-        const vfByDeadline = new Map(due.map(({ d, vfReached }) => [d, vfReached]));
-        const nowIso = now.toISOString();
-        const updatedDeadlines = deadlines.map((d) => {
-          const stage = stageByDeadline.get(d);
-          const vf = vfByDeadline.get(d);
-          return {
-            ...d,
-            reminder_sent_at: stage !== undefined ? nowIso : d.reminder_sent_at,
-            reminder_stages_sent:
-              stage !== undefined
-                ? [...(d.reminder_stages_sent ?? []), stage]
-                : d.reminder_stages_sent,
-            vorfrist_reminder_sent_at: vf ? nowIso : d.vorfrist_reminder_sent_at,
-          };
-        });
-
-        await updatePageDeadlines(brainId, page.slug, { ...fm, deadlines: updatedDeadlines });
+        await updateDeadlineRecords(brainId, due, now.toISOString());
       } catch (err) {
         errors.push(String(err instanceof Error ? err.message : err));
       }

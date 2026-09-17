@@ -1,3 +1,4 @@
+import { listEnginePages } from "@/lib/engine-pages";
 import { NextRequest } from "next/server";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { sendMail } from "@/lib/mail";
@@ -47,14 +48,9 @@ export const maxDuration = 300;
 
 async function fetchMonitorPages(brainId: string): Promise<BrainPage[]> {
   try {
-    const res = await fetch(`${ENGINE_URL}/api/pages?type=regulatory_monitor&limit=200`, {
-      headers: engineHeadersForBrain(brainId),
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!res.ok) return [];
-    const data = (await res.json()) as unknown;
-    if (!Array.isArray(data)) return [];
-    return data as BrainPage[];
+    return (await listEnginePages(engineHeadersForBrain(brainId), "regulatory_monitor", 50_000, {
+      timeoutMs: 30_000,
+    })) as unknown as BrainPage[];
   } catch {
     return [];
   }

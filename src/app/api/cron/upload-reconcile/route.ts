@@ -1,5 +1,6 @@
+import { listEnginePages } from "@/lib/engine-pages";
 import { NextRequest, NextResponse } from "next/server";
-import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
+import { engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { createCronHandler } from "@/lib/api-handler";
 import { getRecipientsByBrain, mapWithConcurrency } from "@/lib/cron-utils";
 import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
@@ -35,13 +36,9 @@ export const maxDuration = 120;
 
 async function listDocuments(brainId: string): Promise<DocPage[]> {
   try {
-    const res = await fetch(`${ENGINE_URL}/api/pages?type=document&limit=500`, {
-      headers: engineHeadersForBrain(brainId),
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return Array.isArray(data) ? (data as DocPage[]) : [];
+    return (await listEnginePages(engineHeadersForBrain(brainId), "document", 50_000, {
+      timeoutMs: 30_000,
+    })) as unknown as DocPage[];
   } catch {
     return [];
   }

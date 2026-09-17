@@ -59,7 +59,7 @@ describe("GET /api/legal/fristen", () => {
       },
       // The route fetches each page type separately (the real engine has no
       // batch-list endpoint).
-      "/api/pages?type=legal_case&limit=200&offset=0": [
+      "/api/pages?type=legal_case&limit=100&offset=0": [
         {
           slug: "cases/mueller",
           title: "Müller gegen Maier",
@@ -78,7 +78,7 @@ describe("GET /api/legal/fristen", () => {
           },
         },
       ],
-      "/api/pages?type=legal_deadline&limit=200&offset=0": [
+      "/api/pages?type=legal_deadline&limit=100&offset=0": [
         {
           slug: "legal/deadlines/2026-10-01-tagsatzung",
           title: "Tagsatzung",

@@ -1,3 +1,4 @@
+import { listEnginePages } from "@/lib/engine-pages";
 import { ENGINE_URL } from "@/lib/engine";
 
 /**
@@ -38,18 +39,8 @@ export function contactSlugFor(name: string, now = Date.now()): string {
 }
 
 async function listContacts(headers: Record<string, string>): Promise<ContactPage[]> {
-  const res = await fetch(`${ENGINE_URL}/api/pages?type=legal_contact&limit=500`, {
-    headers,
-    signal: AbortSignal.timeout(10_000),
-  });
-  if (!res.ok) return [];
-  const raw = (await res.json()) as unknown;
-  const arr = Array.isArray(raw)
-    ? raw
-    : Array.isArray((raw as { pages?: unknown[] })?.pages)
-      ? (raw as { pages: unknown[] }).pages
-      : [];
-  return arr.filter((p): p is ContactPage => !!p && typeof (p as ContactPage).slug === "string");
+  // All contacts, in batches: a partial list creates duplicates of existing ones.
+  return (await listEnginePages(headers, "legal_contact", 50_000)) as unknown as ContactPage[];
 }
 
 async function createContact(
