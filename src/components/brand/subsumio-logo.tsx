@@ -58,7 +58,7 @@ export function SubsumioMark({
 
 export function SubsumioLogo({
   size = 32,
-  subtitle = "LEGAL INTELLIGENCE",
+  subtitle = "KANZLEISOFTWARE MIT KI",
   className = "",
 }: {
   size?: number;

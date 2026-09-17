@@ -37,7 +37,7 @@ export function CompareSection({ t }: { t: SuperbrainCopyDe }) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <p className="mb-1 text-sm font-semibold [color:var(--mk-text-muted)]">
-                    {"Andere Kanzlei-KI"}
+                    {t.compareOthersLabel}
                   </p>
                   <div className="flex items-start gap-1.5 text-sm [color:var(--mk-text-muted)]">
                     <span className="shrink-0 text-[color:var(--ds-category-rose-text)]">✕</span>
@@ -65,13 +65,13 @@ export function CompareSection({ t }: { t: SuperbrainCopyDe }) {
         >
           <table
             className="w-full text-left text-sm"
-            aria-label="Vergleich: Subsumio SuperBrain vs. andere Kanzlei-KI"
+            aria-label={`Vergleich: Subsumio SuperBrain und ${t.compareOthersLabel}`}
           >
             <thead>
               <tr className="border-b [border-color:var(--mk-border)] [background:var(--mk-surface-2)]">
                 <th className="px-5 py-4 font-semibold [color:var(--mk-text)]">{"Eigenschaft"}</th>
                 <th className="px-5 py-4 font-semibold [color:var(--mk-text-muted)]">
-                  {"Andere Kanzlei-KI"}
+                  {t.compareOthersLabel}
                 </th>
                 <th className="brand-text px-5 py-4 font-semibold [background:color-mix(in_srgb,var(--brand-primary)_6%,transparent)]">
                   Subsumio SuperBrain
@@ -110,5 +110,3 @@ export function CompareSection({ t }: { t: SuperbrainCopyDe }) {
     </Section>
   );
 }
-
-// ── FINE-TUNING / LEGAL ENGINE ──

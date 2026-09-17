@@ -139,7 +139,7 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
         </article>
         <CTASection
           title="Bereit für belegte KI-Antworten?"
-          sub="Starte deine 14-tägige Testphase — keine Kreditkarte nötig."
+          sub="Starten Sie Ihre 14-tägige Testphase — keine Kreditkarte nötig."
           href="/at/signup"
           label="14 Tage testen"
         />

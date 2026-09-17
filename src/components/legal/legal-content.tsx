@@ -15,7 +15,7 @@ const T = {
   dpa: "AVV",
   draftNotice: "Entwurf — fachlich vollständig, vor Launch anwaltlich final prüfen.",
   imprintTitle: "Impressum",
-  imprintSubtitle: "Angaben gemäß § 5 DDG (DE) bzw. § 5 ECG (AT), Art. 3 UWG (CH)",
+  imprintSubtitle: "Angaben gemäß § 5 ECG und Offenlegung gemäß § 25 MedienG",
   privacyTitle: "Datenschutzerklärung",
   privacySubtitle: "Stand: Juni 2026",
   termsTitle: "Allgemeine Geschäftsbedingungen",
@@ -114,25 +114,13 @@ export function ImprintContent({ home, lang = "de" }: { home: string; lang?: Lan
       <p>Ismet Mesic — Gründer &amp; Präsident</p>
       <H2>Registereintrag</H2>
       <p>
-        Eingetragener Verein (Verein) — Zentralvereinsregister-Nummer: ZVR 1266935562.
-        Registerbehörde: Bezirkshauptmannschaft für den 1. und 5. Bezirk in Wien.
+        Verein nach dem Vereinsgesetz 2002 — Zentralvereinsregister-Nummer: ZVR 1266935562.
+        Vereinsbehörde: Landespolizeidirektion Wien.
       </p>
-      <H2>Umsatzsteuer-ID</H2>
-      <p>
-        ATU-Nummer gemäß § 48 UStG: wird bei Aufnahme umsatzsteuerpflichtiger Tätigkeit zugewiesen.
-      </p>
-      <H2>Verbraucherstreitbeilegung</H2>
-      <p>
-        Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer
-        Verbraucherschlichtungsstelle teilzunehmen (Angebot richtet sich an Unternehmer).
-      </p>
-      <H2>Hinweis zu DACH-Jurisdiktionen</H2>
-      <p>
-        Dieses Impressum wird gemäß § 5 DDG (Deutschland) bereitgestellt. Für Österreich gilt die
-        Anbieterkennzeichnung nach § 5 ECG; für die Schweiz besteht keine gesetzliche
-        Impressumspflicht, jedoch wird die Anbieterkennzeichnung nach Art. 3 UWG freiwillig
-        bereitgestellt.
-      </p>
+      <H2>Umsatzsteuer-Identifikationsnummer</H2>
+      <p>UID-Nummer: wird nach Zuteilung ergänzt.</p>
+      <H2>Zielgruppe</H2>
+      <p>Unser Angebot richtet sich ausschließlich an Unternehmer im Sinne des § 1 KSchG.</p>
       <LegalLinks home={home} exclude="imprint" lang={lang} />
     </Shell>
   );
@@ -159,7 +147,7 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
       <p className="mt-2">
         Es wurde aktuell kein Datenschutzbeauftragter bestellt. Eine Bestellpflicht besteht u. a.
         bei umfangreicher Verarbeitung besonderer Kategorien personenbezogener Daten (Art. 37 DSGVO
-        i. V. m. § 9 DSG). Datenschutz-Anfragen richten Sie bitte an help@rciid.at.
+        iVm § 5 DSG). Datenschutz-Anfragen richten Sie bitte an help@rciid.at.
       </p>
 
       <H2>2. Grundsatz: Datensparsamkeit und Betriebsmodelle</H2>
@@ -169,9 +157,9 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
       </p>
       <ul className="mt-2 list-disc space-y-1 pl-5">
         <li>
-          <strong className="[color:var(--mk-text)]">Self-Hosting:</strong> Die Engine läuft auf
-          Ihrer eigenen Infrastruktur. Inhalte werden nicht an uns übermittelt; wir haben keinen
-          Zugriff.
+          <strong className="[color:var(--mk-text)]">On-Premise (Enterprise):</strong> Subsumio
+          läuft auf Ihrer eigenen Infrastruktur. Inhalte werden nicht an uns übermittelt; wir haben
+          keinen Zugriff.
         </li>
         <li>
           <strong className="[color:var(--mk-text)]">Gehostete EU-Cloud:</strong> Wir verarbeiten
@@ -189,10 +177,11 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
 
       <H2>4. Konto, Authentifizierung, Abrechnung</H2>
       <p>
-        Zur Nutzung verarbeiten wir Bestandsdaten: E-Mail, Name, ein nicht umkehrbar gehashtes
-        Passwort (scrypt), Empfehlungscode — zur Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO).
-        Login-/Registrierungsversuche werden zur Missbrauchsabwehr ratenbegrenzt (Art. 6 Abs. 1 lit.
-        f DSGVO). Kostenpflichtige Pläne werden über einen Zahlungsdienstleister abgerechnet.
+        Zur Nutzung verarbeiten wir Bestandsdaten: E-Mail, Name, ein nicht rückrechenbar
+        gespeichertes Passwort, Empfehlungscode — zur Vertragserfüllung (Art. 6 Abs. 1 lit. b
+        DSGVO). Login-/Registrierungsversuche werden zur Missbrauchsabwehr ratenbegrenzt (Art. 6
+        Abs. 1 lit. f DSGVO). Kostenpflichtige Pläne werden über einen Zahlungsdienstleister
+        abgerechnet.
       </p>
 
       <H2>5. Inhalte und Mandantendaten — Auftragsverarbeitung</H2>
@@ -201,16 +190,16 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
         <strong className="[color:var(--mk-text)]">Sie der Verantwortliche</strong> und wir handeln
         als <strong className="[color:var(--mk-text)]">Auftragsverarbeiter</strong> (Art. 28 DSGVO).
         Vor einer solchen Nutzung ist ein AVV abzuschließen (Vorlage wird bereitgestellt).
-        Berufsgeheimnisträger (§ 9 Abs. 2 RAO) beachten zusätzlich die Anforderungen an mitwirkende
-        Personen — hierfür empfehlen wir Self-Hosting oder die EU-Cloud mit gesonderter
-        Verschwiegenheitsverpflichtung.
+        Rechtsanwältinnen und Rechtsanwälte beachten zusätzlich § 9 Abs. 2 RAO; wir unterzeichnen
+        dazu auf Wunsch eine gesonderte Verschwiegenheitsverpflichtung.
       </p>
 
       <H2>6. KI-Funktionen</H2>
       <p>
-        Für Synthese- und Agentenfunktionen werden relevante Inhaltsausschnitte an LLM-/Embedding-
-        Anbieter übermittelt, die weisungsgebunden verarbeiten und die Daten nicht zum Training
-        verwenden (Art. 6 Abs. 1 lit. b DSGVO bzw. AVV). Beim Self-Hosting wählen Sie Anbieter und
+        Für Synthese- und Agentenfunktionen werden relevante Inhaltsausschnitte an Anbieter von
+        KI-Sprachmodellen und Suchfunktionen übermittelt, die weisungsgebunden verarbeiten und die
+        Daten nicht zum Training verwenden (für Kontodaten Art. 6 Abs. 1 lit. b DSGVO; für
+        Mandantendaten im Auftrag nach Art. 28 DSGVO). Bei On-Premise wählen Sie Anbieter und
         Modelle frei oder betreiben ein lokales Modell.
       </p>
 
@@ -220,18 +209,20 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
         Drittland-Transfers nur auf Basis von EU-Standardvertragsklauseln, Art. 46 DSGVO):
       </p>
       <ul className="mt-2 list-disc space-y-1 pl-5">
-        <li>Hosting/Infrastruktur (Web-App und/oder Engine), vorrangig EU-Rechenzentren</li>
-        <li>LLM-Anbieter (Antworten/Agenten) und Embedding-Anbieter (Suche)</li>
+        <li>Hosting/Infrastruktur, vorrangig EU-Rechenzentren</li>
+        <li>Anbieter von KI-Sprachmodellen (Antworten) und Suchfunktionen</li>
         <li>Zahlungsdienstleister für kostenpflichtige Pläne</li>
         <li>
-          E-Mail-Versanddienst für transaktionale Nachrichten (Fristen-Digest, Passwort-Reset)
+          E-Mail-Versanddienst für transaktionale Nachrichten (Fristenübersicht, Passwort
+          zurücksetzen)
         </li>
         <li>Optional: Dienst zur verteilten Ratenbegrenzung</li>
       </ul>
       <p className="mt-2">
-        Aktuelle Anbieter: Hosting über EU-Rechenzentren (Hetzner, DE); LLM über OpenRouter (US,
-        EU-Standardvertragsklauseln); Embeddings über OpenRouter (US, SCCs); Zahlung über Stripe
-        (US, SCCs); E-Mail über Resend (US, SCCs). Alle Auftragsverarbeiter sind durch AVV gebunden.
+        Aktuelle Anbieter: Hosting über EU-Rechenzentren (Hetzner, DE); KI-Sprachmodelle und
+        Suchfunktionen über OpenRouter (US, EU-Standardvertragsklauseln); Zahlung über Stripe (US,
+        EU-Standardvertragsklauseln); E-Mail über Resend (US, EU-Standardvertragsklauseln). Alle
+        Auftragsverarbeiter sind durch AVV gebunden.
       </p>
 
       <H2>8. Speicherdauer</H2>
@@ -248,7 +239,8 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
         Einen vollständigen Export Ihrer Konto- und Kanzleiwissen-Daten als JSON können Sie selbst
         über{" "}
         <span className="[color:var(--mk-text)]">Einstellungen → Account → Daten exportieren</span>{" "}
-        auslösen. Es besteht ein Beschwerderecht bei einer Aufsichtsbehörde.
+        auslösen. Sie haben das Recht auf Beschwerde bei der Österreichischen Datenschutzbehörde,
+        Barichgasse 40–42, 1030 Wien, dsb.gv.at.
       </p>
 
       <H2>10. Änderungen</H2>
@@ -268,9 +260,8 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
         (1) Diese AGB gelten für die Nutzung des gehosteten Subsumio-Dienstes (&bdquo;Dienst&ldquo;)
         zwischen RCIID — Rocket Chain Investigation &amp; Intelligence Division
         (&bdquo;Anbieter&ldquo;) und dem Kunden. (2) Das Angebot richtet sich ausschließlich an
-        Unternehmer i. S. d. UGB, juristische Personen des öffentlichen Rechts und
-        öffentlich-rechtliche Sondervermögen (B2B). (3) Abweichende Bedingungen des Kunden gelten
-        nur bei ausdrücklicher schriftlicher Zustimmung.
+        Unternehmer i. S. d. UGB und juristische Personen des öffentlichen Rechts (B2B). (3)
+        Abweichende Bedingungen des Kunden gelten nur bei ausdrücklicher schriftlicher Zustimmung.
       </p>
 
       <H2>§ 2 Vertragsschluss</H2>
@@ -315,10 +306,11 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
       <H2>§ 6 Datenschutz und Verschwiegenheit</H2>
       <p>
         (1) Bei Verarbeitung personenbezogener Daten Dritter schließen die Parteien einen AVV (Art.
-        28 DSGVO), der diesen AGB im Konfliktfall vorgeht. (2) Für Berufsgeheimnisträger gilt eine
-        gesonderte Verschwiegenheitsverpflichtung (§ 9 Abs. 2 RAO). (3) Keine Nutzung von
-        Kundeninhalten zum KI-Training. (4) Bei Vertragsende kann der Kunde seine Daten selbst
-        exportieren; danach Löschung nach Maßgabe der Datenschutzerklärung.
+        28 DSGVO), der diesen AGB im Konfliktfall vorgeht. (2) Mit Rechtsanwältinnen und
+        Rechtsanwälten schließt der Anbieter auf Wunsch eine gesonderte
+        Verschwiegenheitsverpflichtung (§ 9 Abs. 2 RAO). (3) Keine Nutzung von Kundeninhalten zum
+        KI-Training. (4) Bei Vertragsende kann der Kunde seine Daten selbst exportieren; danach
+        Löschung nach Maßgabe der Datenschutzerklärung.
       </p>
 
       <H2>§ 7 KI-spezifische Hinweise</H2>
@@ -360,9 +352,9 @@ export function DpaContent({ home, lang = "de" }: { home: string; lang?: Lang })
   return (
     <Shell home={home} lang={lang} title={t.dpaTitle} subtitle={t.dpaSubtitle}>
       <p className="text-xs [color:var(--mk-text-subtle)]">
-        {t.draftNotice} Diese Vorlage implementiert Art. 28 DSGVO. Bitte fülle die Platzhalter aus,
-        unterzeichnen Sie mit dem Verantwortlichen und senden Sie sie an help@rciid.at, bevor Sie
-        personenbezogene Daten hochlädst.
+        {t.draftNotice} Diese Vorlage implementiert Art. 28 DSGVO. Bitte füllen Sie die Platzhalter
+        aus, unterzeichnen Sie die Vorlage und senden Sie sie an help@rciid.at, bevor Sie
+        personenbezogene Daten hochladen.
       </p>
 
       <H2>§ 1 Vertragsparteien</H2>
@@ -459,9 +451,11 @@ export function DpaContent({ home, lang = "de" }: { home: string; lang?: Lang })
         ersetzender Unterauftragsverarbeiter und gibt ihm die Möglichkeit zum Widerspruch.
       </p>
       <p>
-        (2) Aktuelle Unterauftragsverarbeiter: Hosting (Hetzner, DE/EU); LLM- und Embedding-Anbieter
-        (OpenRouter, US — EU-Standardvertragsklauseln); Zahlung (Stripe, US — SCCs); E-Mail (Resend,
-        US — SCCs); optionaler Dienst zur Ratenbegrenzung (Upstash, US — SCCs).
+        (2) Aktuelle Unterauftragsverarbeiter: Hosting (Hetzner, DE/EU); Anbieter von
+        KI-Sprachmodellen und Suchfunktionen (OpenRouter, US — EU-Standardvertragsklauseln); Zahlung
+        (Stripe, US — EU-Standardvertragsklauseln); E-Mail (Resend, US —
+        EU-Standardvertragsklauseln); optionaler Dienst zur Ratenbegrenzung (Upstash, US —
+        EU-Standardvertragsklauseln).
       </p>
       <p>
         (3) Bei Unterauftragsverarbeitern außerhalb des EWR erfolgen Übermittlungen auf Basis von
@@ -551,8 +545,8 @@ export function DpaContent({ home, lang = "de" }: { home: string; lang?: Lang })
         erforderlichen Informationen und Zugänge bereit.
       </p>
       <p>
-        (3) Audit-Berichte, Zertifizierungen (z. B. ISO 27001 soweit verfügbar) und das
-        unveränderliche Audit-Log können beim Auftragsverarbeiter angefordert werden.
+        (3) Audit-Berichte, etwaige Zertifizierungen und das unveränderliche Audit-Log können beim
+        Auftragsverarbeiter angefordert werden.
       </p>
 
       <H2>§ 9 Löschung bei Vertragsende</H2>

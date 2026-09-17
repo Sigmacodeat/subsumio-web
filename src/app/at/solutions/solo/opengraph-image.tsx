@@ -4,5 +4,5 @@ export const size = ogImageSize;
 export const contentType = ogImageContentType;
 
 export default function Image() {
-  return renderOgImage("Deine gesamte Praxis — ein Brain", "Für Einzelanwält:innen");
+  return renderOgImage("Ihre gesamte Kanzlei — eine Frage entfernt", "Für Einzelanwälte");
 }

@@ -4,7 +4,7 @@ import AuthForm from "@/components/auth/auth-form";
 export const metadata: Metadata = {
   title: "Anmelden",
   description:
-    "Bei Subsumio anmelden und mit Akten, Dokumenten, Fristen, belegten KI-Antworten und dem Kanzlei-Dashboard arbeiten.",
+    "Bei Subsumio anmelden und mit Akten, Dokumenten, Fristen, belegten KI-Antworten und der Kanzlei-Übersicht arbeiten.",
   robots: { index: false },
   alternates: {
     canonical: "/at/login",

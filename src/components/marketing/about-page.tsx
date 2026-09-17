@@ -11,45 +11,43 @@ const CONTENT = {
   badge: "Über Subsumio",
   h1a: "Aus Österreich",
   h1b: "für österreichische Kanzleien.",
-  sub: "Subsumio ist die Kanzleisoftware mit Assistent, gebaut für die Verschwiegenheit, Präzision und regulatorischen Anforderungen österreichischer Kanzleien.",
+  sub: "Subsumio ist die Kanzleisoftware mit Assistent, gebaut für die Verschwiegenheitspflicht, die Präzision und die berufsrechtlichen Anforderungen österreichischer Kanzleien.",
   missionTitle: "Unsere Mission",
   missionText:
-    "Jeder Kanzlei eine Wissensbasis geben, die nie vergisst — jede Akte, Frist und Schriftsatz indiziert und abfragbar, mit Zitaten, die Sie überprüfen können, bevor du dich darauf verlässt. Auf Infrastruktur, die du kontrollierst — nicht auf fremder Cloud.",
+    "Jeder Kanzlei eine Wissensbasis geben, in der jede Akte, jede Frist und jeder Schriftsatz durchsuchbar ist — mit Fundstellen, die Sie überprüfen können, bevor Sie sich darauf verlassen.",
   valuesTitle: "Woran wir glauben",
   values: [
     {
       icon: "Shield",
-      title: "Vertraulichkeit per Architektur",
-      desc: "Mandantendaten sind heilig. Self-hosted oder EU-gehostet, verschlüsselt und isoliert — nie zum Training geteilter Modelle, nie außerhalb Ihrer Kontrolle.",
+      title: "Vertraulichkeit zuerst",
+      desc: "EU-Cloud oder On-Premise (Enterprise), verschlüsselt und je Kanzlei getrennt verarbeitet. Kein Training von KI-Modellen mit Mandantendaten; alle Auftragsverarbeiter sind im AVV benannt.",
     },
     {
       icon: "Brain",
-      title: "Zitate, nicht Halluzinationen",
-      desc: "Jede Antwort des Assistenten nennt ihre Quelle. Anwälte verifizieren mit einem Klick. Keine halluzinierten Referenzen, keine Black-Box-Outputs.",
+      title: "Fundstellen statt Behauptungen",
+      desc: "Jede Antwort des Assistenten nennt ihre Quelle; Sie prüfen sie mit einem Klick. Was sich nicht belegen lässt, wird gekennzeichnet — die anwaltliche Prüfung bleibt bei Ihnen.",
     },
     {
       icon: "Globe",
-      title: "Österreich-first",
-      desc: "Gebaut für ZPO, ABGB, RAO, RATG und webERV. Der Startfokus ist bewusst Österreich — fachlich klar statt oberflächlich mehrsprachig.",
+      title: "Österreich zuerst",
+      desc: "Gebaut für ZPO, ABGB, EO, RAO und RATG — mit dem RIS als Rechtsquelle. Der Startfokus ist bewusst Österreich: lieber ein Rechtsraum richtig als drei halb.",
     },
     {
       icon: "Heart",
       title: "Für Anwälte gemacht",
-      desc: "Werkzeuge, die Ihre Anwältinnen und Anwälte täglich nutzen — WhatsApp-Copilot, Sprachnotizen, mobil. Nicht ein weiteres System, das sie meiden.",
+      desc: "Werkzeuge, die Ihre Anwältinnen und Anwälte täglich nutzen — WhatsApp-Assistent, Sprachnotizen, mobil. Kein weiteres System, das im Alltag gemieden wird.",
     },
   ],
   statsTitle: "In Zahlen",
   stats: [
-    { value: "14.713", label: "Gesetzesparagraphen, zitierbar" },
-    { value: "1", label: "Startjurisdiktion — Österreich" },
     {
       value: PROOF.recall8.value,
-      label: `${PROOF.recall8.metric} Retrieval-Benchmark (${PROOF.recall8.benchmark}, ${PROOF.recall8.sampleSize} Fragen)`,
+      label: `richtige Textstelle unter den ersten 8 Treffern (Test mit ${PROOF.recall8.sampleSize} Fragen, Methodik offen)`,
     },
-    { value: "0", label: "Mandantendaten-Leaks — garantiert" },
+    { value: "14", label: "Tage kostenlos testen — ohne Kreditkarte" },
   ],
-  ctaTitle: "Sprich mit uns",
-  ctaSub: "Ob Einzelanwalt oder Managing Partner — wir freuen uns, von Ihnen zu hören.",
+  ctaTitle: "Sprechen Sie mit uns",
+  ctaSub: "Ob Einzelanwältin oder Kanzleipartner — wir freuen uns, von Ihnen zu hören.",
   ctaButton: "Kontakt aufnehmen",
 } as const;
 
@@ -104,7 +102,7 @@ export default function AboutPage() {
       <Section tone="dark" className="relative overflow-hidden px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <SectionHeading title={c.statsTitle} tone="dark" />
-          <StaggerContainer className="grid grid-cols-2 gap-6 md:grid-cols-4" stagger={0.06}>
+          <StaggerContainer className="grid grid-cols-1 gap-6 sm:grid-cols-2" stagger={0.06}>
             {c.stats.map((s) => (
               <StaggerItem key={s.label} className="text-center">
                 <StatCard value={s.value} label={s.label} />

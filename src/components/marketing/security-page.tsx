@@ -109,7 +109,7 @@ export default function SecurityPage() {
               tone="light"
             />
           </Reveal>
-          <StaggerContainer className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-4" stagger={0.08}>
+          <StaggerContainer className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3" stagger={0.08}>
             {t.complianceBadges.map((b) => {
               const Icon = ICONS[b.icon] ?? Shield;
               return (
@@ -128,7 +128,7 @@ export default function SecurityPage() {
         </div>
       </Section>
 
-      {/* EU AI Act */}
+      {/* KI-Verordnung (EU AI Act) */}
       <Section tone="light" className="px-4 py-12 sm:px-6 lg:px-8">
         <Reveal
           variant="up"

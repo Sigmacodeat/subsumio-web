@@ -311,7 +311,7 @@ export function IllusPipeline({ progress }: { progress?: MotionValue<number> }) 
       {/* Stage labels — fade in last, monospace uppercase (technical brand voice) */}
       {[
         { x: 117, y: 288, label: "AKTE", at: 0.32 },
-        { x: 240, y: 288, label: "BRAIN", at: 0.72 },
+        { x: 240, y: 288, label: "KANZLEIWISSEN", at: 0.72 },
         { x: 373, y: 288, label: "ANTWORT", at: 0.95 },
       ].map((l) => (
         <StageLabel key={l.label} x={l.x} y={l.y} text={l.label} at={l.at} progress={progress} />

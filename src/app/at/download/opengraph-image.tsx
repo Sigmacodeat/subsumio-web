@@ -4,5 +4,5 @@ export const size = ogImageSize;
 export const contentType = ogImageContentType;
 
 export default function Image() {
-  return renderOgImage("Dein Brain, überall — Subsumio für Desktop und Mobil", "Download");
+  return renderOgImage("Ihr Kanzleiwissen, überall — Subsumio für Desktop und Mobil", "Download");
 }

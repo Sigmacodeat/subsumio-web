@@ -4,5 +4,5 @@ export const size = ogImageSize;
 export const contentType = ogImageContentType;
 
 export default function Image() {
-  return renderOgImage("Deine Rechtsabteilung — mit Antwortmaschine", "Für Rechtsabteilungen");
+  return renderOgImage("Ihre Rechtsabteilung — mit Gedächtnis", "Für Rechtsabteilungen");
 }

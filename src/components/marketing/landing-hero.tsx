@@ -26,7 +26,7 @@ import { Section } from "./primitives";
 import { EASE, MagneticButton, SplitTextReveal } from "./motion-system";
 import IndustryHeroMotif from "./industry-hero-motif";
 import RotatingBadge from "./rotating-badge";
-import HeroAnswerDemo from "./hero-answer-demo";
+import ProductDemo from "./product-demo";
 
 const TRUST_ICONS: Record<string, LucideIcon> = {
   CreditCard,
@@ -57,7 +57,7 @@ export default function LandingHero() {
     <Section
       tone="slate"
       noTopEdge
-      className="relative overflow-hidden px-6 pt-28 pb-20 md:pt-32 md:pb-24"
+      className="relative overflow-hidden px-6 pt-20 pb-20 md:pt-24 md:pb-24"
     >
       {/* Legal icon constellation — subtle parallax background motif */}
       <motion.div
@@ -68,7 +68,7 @@ export default function LandingHero() {
       </motion.div>
 
       {/* Centered column — constrained width keeps long lines readable */}
-      <div className="relative z-10 mx-auto max-w-4xl">
+      <div className="relative z-10 mx-auto max-w-5xl">
         <div className="text-center">
           {/* Rotating badge — crossfades through 3 differentiators */}
           <motion.div
@@ -167,7 +167,7 @@ export default function LandingHero() {
             transition={reduce ? { duration: 0 } : { duration: 0.6, ease: EASE.out, delay: 0.32 }}
             className="mb-10"
           >
-            <HeroAnswerDemo />
+            <ProductDemo className="mx-auto max-w-5xl" />
           </motion.div>
 
           {/* Trust pills — icon + text, staggered */}

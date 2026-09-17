@@ -24,6 +24,7 @@ import { AnimatedCounter, Reveal, StaggerContainer, StaggerItem } from "./motion
 export default function FeaturesPage() {
   const t = FEATURES_PAGE;
 
+  // One documented figure only — everything else was unsourced and removed.
   const stats = [
     {
       to: PROOF.recall8.numeric,
@@ -32,15 +33,6 @@ export default function FeaturesPage() {
       suffix: " %",
       label: PROOF.recall8.label,
     },
-    {
-      to: PROOF.recall5.numeric,
-      dec: PROOF.recall5.decimals,
-      prefix: "",
-      suffix: " %",
-      label: PROOF.recall5.label,
-    },
-    { to: 9, dec: 0, prefix: "", label: "native Daten-Konnektoren" },
-    { to: 66, dec: 0, prefix: "", label: "autonome Jobs im Produktivbetrieb" },
   ];
 
   return (
@@ -81,7 +73,7 @@ export default function FeaturesPage() {
 
       {/* Stats band */}
       <Section tone="light" className="px-4 pb-20 sm:px-6 lg:px-8">
-        <StaggerContainer className="grid grid-cols-2 gap-6 lg:grid-cols-4" stagger={0.08}>
+        <StaggerContainer className="mx-auto grid max-w-2xl grid-cols-1 gap-6" stagger={0.08}>
           {stats.map((s) => (
             <StaggerItem
               key={s.label}
@@ -92,18 +84,24 @@ export default function FeaturesPage() {
                 <AnimatedCounter to={s.to} decimals={s.dec} suffix={s.suffix ?? ""} />
               </div>
               <p className="text-sm leading-snug [color:var(--mk-text-muted)]">{s.label}</p>
+              <Link
+                href={p("/benchmark-methodology")}
+                className="brand-text mt-3 inline-flex items-center gap-1 text-sm font-medium underline-offset-4 hover:underline"
+              >
+                So wurde gemessen <ArrowRight size={14} />
+              </Link>
             </StaggerItem>
           ))}
         </StaggerContainer>
       </Section>
 
-      {/* How it works — sequential pipeline */}
+      {/* How it works — four sequential steps */}
       <HowItWorks />
 
       <FeatureCommandCenter />
 
       {/* On the Subsumio brand: the comprehensive law-firm feature set
-            (WhatsApp copilot spotlight + the full capability bento). */}
+            (WhatsApp assistant spotlight + the full capability bento). */}
       <SubsumioShowcase />
 
       <CategoryExplorer />

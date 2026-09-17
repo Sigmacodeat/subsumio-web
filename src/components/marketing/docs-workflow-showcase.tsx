@@ -6,7 +6,7 @@ import { Briefcase } from "lucide-react";
 import { UI_STRINGS } from "@/content/site";
 import { H2_CTA_CLASS, Section } from "./primitives";
 import { ICONS } from "./icons";
-import DashboardReel from "./dashboard-reel";
+import ProductDemo, { type DemoScene } from "./product-demo";
 import { EASE, VIEWPORT } from "./motion-system";
 
 interface DocsWorkflow {
@@ -18,33 +18,27 @@ interface DocsWorkflow {
   viewIndices: number[];
 }
 
+// Reel views map onto the scenes of the product replica.
+const SCENE_BY_VIEW: DemoScene[] = ["akte", "fundstelle", "fundstelle", "frist"];
+
 const WORKFLOWS: DocsWorkflow[] = [
   {
-    id: "matters-copilot",
+    id: "matters-assistant",
     icon: "Briefcase",
-    label: "Akten & Copilot",
-    title: "Akte öffnen, Frage ans Brain, Antwort mit Fundstellen.",
+    label: "Akten & Assistent",
+    title: "Akte öffnen, Assistent fragen, Antwort mit Fundstellen.",
     description:
-      "Der gesamte Aktenkontext — Dokumente, Fristen, Beteiligte — ist einen Klick entfernt. Stelle eine Frage in normaler Sprache und bekomme eine belegte Antwort mit Quellenangaben.",
+      "Der gesamte Aktenkontext — Dokumente, Fristen, Beteiligte — ist einen Klick entfernt. Stellen Sie eine Frage in normaler Sprache und erhalten Sie eine belegte Antwort mit Quellenangaben.",
     viewIndices: [0, 1],
   },
   {
     id: "deadlines-control",
     icon: "CalendarClock",
     label: "Fristen & Kontrolle",
-    title: "Fristen scannen, Kalender exportieren, Audit-Trail sichern.",
+    title: "Fristen erkennen, bestätigen, im Fristenbuch führen.",
     description:
-      "KI scannt automatisch alle Dokumente nach Fristen. Der Kalender zeigt alle Termine auf einen Blick — mit Aktenverknüpfung und Dringlichkeits-Code. Jede Aktion revisionssicher protokolliert.",
+      "Subsumio prüft Dokumente automatisch auf Fristen und schlägt sie mit Rechtsgrundlage vor. Sie bestätigen — erst dann steht die Frist im Fristenbuch. Jede Aktion wird protokolliert.",
     viewIndices: [2, 3],
-  },
-  {
-    id: "contract-review",
-    icon: "FileText",
-    label: "Vertrag & Review",
-    title: "Vertrag hochladen, KI analysiert, Freigabe mit Audit-Trail.",
-    description:
-      "Verträge werden automatisch auf Risiken geprüft — mit Klausel-Checkliste und Schweregrad-Markierung. Freigaben laufen über strukturierte Approval-Ketten mit vollständiger Audit-Spur.",
-    viewIndices: [4, 5],
   },
 ];
 
@@ -241,7 +235,7 @@ export default function DocsWorkflowShowcase() {
               className="relative"
               aria-hidden
             >
-              <DashboardReel controlledView={currentView} />
+              <ProductDemo scene={SCENE_BY_VIEW[currentView] ?? "fundstelle"} />
             </motion.div>
           </AnimatePresence>
 

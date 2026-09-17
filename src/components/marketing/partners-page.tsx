@@ -29,8 +29,8 @@ export default function PartnersPage() {
         actions={
           <>
             <Button size="lg" variant="primary" asChild>
-              <Link href={p("/signup")}>
-                {UI_STRINGS.startFree} <ArrowRight size={16} />
+              <Link href="mailto:partners@subsum.eu?subject=Partner-Bewerbung">
+                Als Partner bewerben <ArrowRight size={16} />
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
@@ -178,7 +178,7 @@ export default function PartnersPage() {
       <CTASection
         title={t.ctaTitle}
         sub={t.ctaSub}
-        href="mailto:partners@subsum.eu?subject=Partner%20application"
+        href="mailto:partners@subsum.eu?subject=Partner-Bewerbung"
         label={t.ctaButton}
         secondaryHref={p("/superbrain")}
         secondaryLabel={UI_STRINGS.watchDemo}

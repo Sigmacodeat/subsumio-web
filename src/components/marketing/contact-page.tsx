@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail, MessageSquare, FileText, ArrowRight } from "lucide-react";
+import { Mail, FileText, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { p, UI_STRINGS } from "@/content/site";
@@ -9,46 +9,39 @@ import { GlowCard, Reveal, StaggerContainer, StaggerItem } from "./motion-system
 
 const CONTENT = {
   badge: "Kontakt",
-  h1a: "Sprich mit unserem Team.",
-  h1b: "Wir sprechen Ihre Sprache.",
-  sub: "Fragen zu Subsumio, Self-Hosting, Enterprise-Plänen oder Partnerschaften? Erreich uns — wir antworten innerhalb eines Werktages.",
+  h1a: "Sprechen Sie mit unserem Team.",
+  h1b: "Wir antworten innerhalb eines Werktages.",
+  sub: "Fragen zu Subsumio, On-Premise, dem Enterprise-Tarif oder einer Partnerschaft? Schreiben Sie uns.",
   channelsTitle: "So erreichen Sie uns",
   channels: [
     {
       icon: "Mail",
       title: "E-Mail",
       value: "hello@subsum.eu",
-      desc: "Allgemeine Fragen, Verkauf, Partnerschaften. Wir antworten innerhalb eines Werktages.",
+      desc: "Allgemeine Fragen, Verkauf, Partnerschaften.",
       href: "mailto:hello@subsum.eu",
-    },
-    {
-      icon: "MessageSquare",
-      title: "WhatsApp",
-      value: "+43 …",
-      desc: "Kurze Fragen? Schreib uns auf WhatsApp — wir sind während der Geschäftszeiten da.",
-      href: "https://wa.me/43",
     },
     {
       icon: "FileText",
       title: "Datenschutz",
       value: "dsb@subsum.eu",
-      desc: "Für Ihren Datenschutzbeauftragten — AVV, technische-organisatorische Maßnahmen.",
+      desc: "Für Ihren Datenschutzbeauftragten — AVV, technische und organisatorische Maßnahmen.",
       href: "mailto:dsb@subsum.eu",
     },
   ],
-  formTitle: "Schreib uns eine Nachricht",
+  formTitle: "Schreiben Sie uns eine Nachricht",
   formName: "Ihr Name",
   formEmail: "Ihre E-Mail",
   formFirm: "Kanzleiname",
   formMessage: "Ihre Nachricht",
   formSubmit: "Nachricht senden",
-  formNote: "Wir melden uns innerhalb eines Werktages. Kein Spam, niemals.",
+  formNote: "Ihre Angaben verwenden wir nur zur Beantwortung Ihrer Anfrage.",
   ctaTitle: "Lieber erst ausprobieren?",
-  ctaSub: "Starte einen 14-Tage-Reverse-Trial — voller Zugriff, keine Kreditkarte.",
-  ctaButton: "Jetzt starten",
+  ctaSub: "Testen Sie Subsumio 14 Tage mit vollem Funktionsumfang — ohne Kreditkarte.",
+  ctaButton: "14 Tage kostenlos testen",
 } as const;
 
-const ICON_MAP = { Mail, MessageSquare, FileText };
+const ICON_MAP = { Mail, FileText };
 
 export default function ContactPage() {
   const c = CONTENT;
@@ -76,7 +69,7 @@ export default function ContactPage() {
       <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <SectionHeading title={c.channelsTitle} tone="light" />
-          <StaggerContainer className="grid gap-6 md:grid-cols-3" stagger={0.08}>
+          <StaggerContainer className="grid gap-6 md:grid-cols-2" stagger={0.08}>
             {c.channels.map((ch) => {
               const Icon = ICON_MAP[ch.icon as keyof typeof ICON_MAP] ?? Mail;
               return (
@@ -115,7 +108,7 @@ export default function ContactPage() {
                 const email = String(data.get("email") ?? "");
                 const firm = String(data.get("firm") ?? "");
                 const message = String(data.get("message") ?? "");
-                const subject = `Subsumio contact — ${name}${firm ? ` (${firm})` : ""}`;
+                const subject = `Kontaktanfrage — ${name}${firm ? ` (${firm})` : ""}`;
                 const body = [
                   `Name: ${name}`,
                   `E-Mail: ${email}`,

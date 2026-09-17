@@ -18,8 +18,8 @@ describe("audience packaging", () => {
 
   it("reserves team capabilities for Kanzlei", () => {
     const [solo, firm] = professionalPricing().tiers;
-    expect(solo.features.join(" ")).toContain("Ohne Massen-Ingest");
-    expect(firm.features.join(" ")).toContain("Massen-Ingest");
+    expect(solo.features.join(" ")).toContain("Ohne Massenimport");
+    expect(firm.features.join(" ")).toContain("Massenimport");
     expect(firm.features.join(" ")).toContain("WhatsApp");
   });
 

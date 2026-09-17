@@ -4,5 +4,5 @@ export const size = ogImageSize;
 export const contentType = ogImageContentType;
 
 export default function Image() {
-  return renderOgImage("Tarife für Kanzleien — Privat, Solo, Kanzlei und Enterprise", "Preise");
+  return renderOgImage("Tarife für Kanzleien — Solo, Kanzlei und Enterprise", "Preise");
 }

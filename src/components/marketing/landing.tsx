@@ -32,7 +32,6 @@ import {
   GradientMesh,
 } from "./motion-system";
 import { WhatsAppSpotlight } from "./subsumio-showcase";
-import ProductWorkflowShowcase from "./product-workflow-showcase";
 import LogoMarquee from "./logo-marquee";
 
 const PAIN_ICONS = [ICONS.Search, ICONS.AlertTriangle, ICONS.FileClock, ICONS.Users];
@@ -178,12 +177,7 @@ export default function LandingPage() {
         {/* Audience segments — early relevance: "this is for my firm type" */}
         <AudienceTabs />
 
-        {/* How it works — animated scroll-driven workflow showcase.
-            The single product visual on the page: one strong demo beats
-            three stacked showcases (scroll fatigue on a long page). */}
-        <ProductWorkflowShowcase industry="legal" />
-
-        {/* WhatsApp Copilot — dark spotlight with phone mockup */}
+        {/* Assistent auf WhatsApp — dark spotlight with phone mockup */}
         <WhatsAppSpotlight>
           <Button size="lg" variant="primary" asChild>
             <Link href={p("/whatsapp")}>

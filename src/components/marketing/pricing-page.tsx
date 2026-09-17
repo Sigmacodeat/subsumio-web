@@ -2,7 +2,7 @@
 // MotionConfig wraps the whole page; ScrollProgress shows reading position;
 // every section scroll-reveals; value-props use signal-colored tiles.
 
-import { Check, Shield, Clock, Globe, CreditCard, Coins, Zap } from "lucide-react";
+import { Check, Shield, Clock, Globe, Coins, Zap } from "lucide-react";
 import { professionalPricing } from "@/content/audiences";
 import { PRICING_FAQ, VALUE_PROPS, UI_STRINGS, p } from "@/content/site";
 import { CREDIT_PACKS, CREDIT_COSTS, type CreditOperation } from "@/lib/billing/credit-constants";
@@ -10,6 +10,21 @@ import { SectionHeading, CTASection, PageHero, Section } from "./primitives";
 import { AnimatedFaqList } from "./animated-faq";
 import { PricingGrid } from "./pricing-grid";
 import { Reveal, StaggerContainer, StaggerItem, GlowCard } from "./motion-system";
+
+// FACTS format: "1.499 €" / "79,8 Cent". The de-AT locale groups plain numbers
+// with a no-break space ("1 499"), so plain numbers are formatted with de-DE
+// rules, which yield the dot the rest of the site uses.
+const fmt = (n: number, maxFraction = 0) =>
+  n.toLocaleString("de-DE", { maximumFractionDigits: maxFraction });
+
+const OPERATION_LABELS: Record<CreditOperation, string> = {
+  think: "Frage an die Akte",
+  document_analysis: "Dokumentanalyse",
+  subsumption: "Subsumtion",
+  agent: "Mehrstufiger Auftrag an den Assistenten",
+  deadline_detect: "Fristenerkennung",
+  frist_engine: "Fristenrechner",
+};
 
 export default function PricingPage() {
   const pricing = professionalPricing();
@@ -21,7 +36,6 @@ export default function PricingPage() {
     { icon: Shield, label: UI_STRINGS.trustedBy },
     { icon: Clock, label: UI_STRINGS.trialDaysFree },
     { icon: Globe, label: UI_STRINGS.euHosted },
-    { icon: CreditCard, label: UI_STRINGS.noGamesTitle },
   ];
 
   return (
@@ -30,7 +44,7 @@ export default function PricingPage() {
       <PageHero
         badge={ui.transparentFair}
         h1a="Tarife für Kanzleien. Ein klarer Leistungsumfang."
-        sub="Solo, Kanzlei und Enterprise — Aktenarbeit, geteiltes Kanzleiwissen und kontrollierte Workflows."
+        sub="Solo, Kanzlei und Enterprise — Aktenarbeit, geteiltes Kanzleiwissen und Betrieb nach Ihren Vorgaben."
         icon="Check"
       />
 
@@ -47,13 +61,13 @@ export default function PricingPage() {
         </div>
       </Section>
 
-      {/* Credit Packs — consumption-based pricing for AI features */}
+      {/* KI-Guthaben — consumption-based pricing for AI features */}
       <Section tone="light" className="px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <Reveal variant="up">
             <SectionHeading
-              title="AI-Credits — zahle nach Verbrauch"
-              sub="Jede AI-Operation kostet eine feste Anzahl Credits. Kaufen Sie Pakete zusätzlich zu Ihrem Plan — keine Überraschungsrechnungen."
+              title="KI-Guthaben – zahlen Sie nach Verbrauch"
+              sub="Jeder KI-Vorgang kostet eine feste Anzahl Credits. Pakete kaufen Sie zusätzlich zu Ihrem Tarif."
             />
           </Reveal>
 
@@ -69,24 +83,24 @@ export default function PricingPage() {
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl border [border-color:var(--ds-success-border)] [background:var(--ds-success-bg)]">
                       <Coins size={18} className="[color:var(--ds-success-text)]" />
                     </div>
-                    {pack.savingsPct > 0 && (
+                    {pack.savingsPct >= 5 && (
                       <span className="rounded-full bg-[color:var(--ds-success-bg)] px-2 py-0.5 text-xs font-semibold [color:var(--ds-success-text)]">
-                        -{pack.savingsPct}%
+                        −{pack.savingsPct} %
                       </span>
                     )}
                   </div>
                   <h3 className="text-lg font-semibold [color:var(--mk-text)]">{pack.name}</h3>
                   <p className="mt-1 text-3xl font-bold [color:var(--mk-text)]">
-                    {pack.credits}
-                    <span className="ml-1 text-sm font-normal [color:var(--mk-text-muted)]">
+                    {fmt(pack.credits)}{" "}
+                    <span className="text-sm font-normal [color:var(--mk-text-muted)]">
                       Credits
                     </span>
                   </p>
                   <p className="mt-2 text-sm [color:var(--mk-text-muted)]">
-                    {pack.priceEur} € einmalig
+                    {fmt(pack.priceEur)} € einmalig
                   </p>
                   <p className="mt-1 text-xs [color:var(--mk-text-muted)]">
-                    {`${((pack.priceEur / pack.credits) * 100).toFixed(1)} ct pro Credit`}
+                    {`${fmt((pack.priceEur / pack.credits) * 100, 1)} Cent pro Credit`}
                   </p>
                 </GlowCard>
               </StaggerItem>
@@ -99,25 +113,19 @@ export default function PricingPage() {
               <div className="mb-4 flex items-center gap-2">
                 <Zap size={16} className="brand-text" />
                 <h3 className="text-sm font-semibold [color:var(--mk-text)]">
-                  Kosten pro AI-Operation
+                  Credits pro KI-Vorgang
                 </h3>
               </div>
-              <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {(Object.entries(CREDIT_COSTS) as [CreditOperation, number][]).map(([op, cost]) => {
-                  const opLabels: Record<CreditOperation, string> = {
-                    think: "Think (Q&A)",
-                    document_analysis: "Dokument-Analyse",
-                    subsumption: "Subsumption",
-                    agent: "Agent-Run",
-                    deadline_detect: "Fristen-Erkennung",
-                    frist_engine: "Fristenrechner",
-                  };
                   return (
                     <div
                       key={op}
                       className="flex items-center justify-between rounded-lg border [border-color:var(--mk-border)] px-3 py-2"
                     >
-                      <span className="text-xs [color:var(--mk-text-muted)]">{opLabels[op]}</span>
+                      <span className="text-xs [color:var(--mk-text-muted)]">
+                        {OPERATION_LABELS[op]}
+                      </span>
                       <span className="text-sm font-semibold [color:var(--mk-text)]">
                         {cost === 0 ? "gratis" : `${cost}`}
                       </span>
@@ -126,8 +134,9 @@ export default function PricingPage() {
                 })}
               </div>
               <p className="mt-4 text-xs [color:var(--mk-text-muted)]">
-                Credits werden nach erfolgreicher AI-Operation abgezogen. Fehlgeschlagene Anfragen
-                werden nicht berechnet. Auto-Reload in den Dashboard-Einstellungen verfügbar.
+                Credits werden erst nach einem erfolgreichen KI-Vorgang abgezogen. Fehlgeschlagene
+                Anfragen werden nicht berechnet. Das automatische Aufladen stellen Sie unter Plan
+                &amp; Abrechnung ein.
               </p>
             </div>
           </Reveal>
@@ -137,7 +146,7 @@ export default function PricingPage() {
       {/* Trust signals */}
       <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
-          <StaggerContainer className="grid grid-cols-2 gap-4 sm:grid-cols-4" stagger={0.06}>
+          <StaggerContainer className="grid grid-cols-1 gap-4 sm:grid-cols-3" stagger={0.06}>
             {trustSignals.map((sig) => {
               const Icon = sig.icon;
               return (
@@ -199,7 +208,7 @@ export default function PricingPage() {
       {/* CTA */}
       <CTASection
         title={ui.stillQuestions}
-        sub={ui.writeUs}
+        sub="14 Tage testen, keine Kreditkarte."
         href={p("/signup?plan=pro")}
         label="Solo starten"
         secondaryHref={p("/contact")}

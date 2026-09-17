@@ -22,11 +22,11 @@ const COPY = {
     eyebrow: "Komfort-Kanal für unterwegs",
     title: "Die Kanzlei",
     claim: "in der Hosentasche.",
-    sub: "Zeit buchen, Belege ablegen, Akten befragen — vom Handy, ohne App-Wechsel, ohne Schulung. Der Copilot versteht die Akte und legt alles bestätigungspflichtig ins Brain.",
+    sub: "Zeit buchen, Belege ablegen, Akten befragen — vom Handy, ohne App-Wechsel, ohne Schulung. Der Assistent erkennt die Akte und legt alles erst nach Ihrer Bestätigung ab.",
     flowsTitle: "Drei Handgriffe, die jeder Anwalt sofort versteht",
     ctaTitle: "Vom ersten Tag produktiv.",
     ctaSub: "Keine neue App, keine Schulung — die Nummer einspeichern und loslegen.",
-    ctaLabel: "Copilot ausprobieren",
+    ctaLabel: "Assistent ausprobieren",
   },
 } as const;
 

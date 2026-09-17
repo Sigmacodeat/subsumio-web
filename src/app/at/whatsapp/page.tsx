@@ -3,16 +3,16 @@ import { WhatsAppPage } from "@/components/marketing/subsumio-subpages";
 import { JsonLd, organizationLd, breadcrumbLd } from "@/components/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Subsumio WhatsApp-Copilot — die Kanzlei in der Hosentasche",
+  title: "Subsumio auf WhatsApp — die Kanzlei in der Hosentasche",
   description:
-    "Zeit buchen, Belege ablegen, Akten befragen — vom Handy, ohne App-Wechsel, ohne Schulung. Der Copilot versteht die Akte und legt alles bestätigungspflichtig ins Brain. GoBD-konform dokumentiert.",
+    "Zeit buchen, Belege ablegen, Akten befragen — vom Handy, ohne App-Wechsel, ohne Schulung. Der Assistent erkennt die Akte und legt alles erst nach Ihrer Bestätigung ab.",
   alternates: {
     canonical: "/at/whatsapp",
   },
   openGraph: {
-    title: "Subsumio WhatsApp-Copilot — die Kanzlei in der Hosentasche",
+    title: "Subsumio auf WhatsApp — die Kanzlei in der Hosentasche",
     description:
-      "Zeit buchen, Belege ablegen, Akten befragen — vom Handy, ohne App-Wechsel. Bestätigungspflichtig, nichts ungesehen. GoBD-konform.",
+      "Zeit buchen, Belege ablegen, Akten befragen — vom Handy, ohne App-Wechsel. Nichts wird ohne Ihre Bestätigung abgelegt.",
     url: "/at/whatsapp",
     type: "website",
   },
@@ -25,7 +25,7 @@ export default function Page() {
       <JsonLd
         data={breadcrumbLd([
           { name: "Subsumio", url: "/at" },
-          { name: "WhatsApp-Copilot", url: "/at/whatsapp" },
+          { name: "Assistent auf WhatsApp", url: "/at/whatsapp" },
         ])}
       />
       <WhatsAppPage />

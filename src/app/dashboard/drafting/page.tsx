@@ -61,7 +61,7 @@ const TEMPLATE_META: Record<
   klageerwiderung: {
     icon: Scale,
     prompt: (data) =>
-      `Entwirf eine Klageerwiderung für den Rechtsstreit: ${data.title}. Beklagter: ${data.beklagter}, Kläger: ${data.klaeger}. Verteidigung: ${data.facts}. Rechtsgrundlage: ${data.legalBasis}.`,
+      `Entwirf eine Klagebeantwortung für den Rechtsstreit: ${data.title}. Beklagter: ${data.beklagter}, Kläger: ${data.klaeger}. Verteidigung: ${data.facts}. Rechtsgrundlage: ${data.legalBasis}.`,
   },
   berufung: {
     icon: Scale,

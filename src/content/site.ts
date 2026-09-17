@@ -130,7 +130,7 @@ export const NAV: NavContent = {
   pricingLabel: "Preise",
   pricingHref: "/pricing",
   announcement: {
-    text: "Neu: 5-Layer-Qualitätsarchitektur für belegte Antworten",
+    text: "Neu: Jede Antwort wird fünffach gegen Akte und Rechtsquellen geprüft",
     href: "/superbrain",
     badge: "AI",
   },
@@ -148,13 +148,13 @@ export const NAV: NavContent = {
         {
           label: "SuperBrain",
           href: "/superbrain",
-          description: "Die KI-Engine — 5-Layer-Architektur, Dream Cycle",
+          description: "Wie Subsumio Antworten prüft und Kanzleiwissen aufbaut",
           icon: "Brain",
           badge: "AI",
           featured: true,
         },
         {
-          label: "Features",
+          label: "Funktionen",
           href: "/features",
           description: "Alle Funktionen auf einen Blick",
           icon: "Zap",
@@ -166,7 +166,7 @@ export const NAV: NavContent = {
           icon: "ShieldCheck",
         },
         {
-          label: "WhatsApp-Copilot",
+          label: "Assistent auf WhatsApp",
           href: "/whatsapp",
           description: "Zeiten buchen, Dokumente vom Handy",
           icon: "MessageSquare",
@@ -185,7 +185,7 @@ export const NAV: NavContent = {
       featuredContent: {
         title: "SuperBrain 2.0",
         description:
-          "Die nächste Generation KI — 5-Layer-Architektur, Dream Cycle, belegte Antworten ohne Halluzination",
+          "Wie Subsumio Antworten fünffach prüft und das Kanzleiwissen über Nacht ordnet — belegte Antworten statt Halluzination",
         href: "/superbrain",
         badge: "AI",
         icon: "Brain",
@@ -197,7 +197,7 @@ export const NAV: NavContent = {
         {
           label: "Für Kanzleien",
           href: "/solutions/law-firms",
-          description: "Gemeinsames Brain, Fristen und Kommunikation für Teams",
+          description: "Gemeinsames Kanzleiwissen, Fristen und Kommunikation für Teams",
           icon: "Landmark",
           featured: true,
         },
@@ -208,7 +208,7 @@ export const NAV: NavContent = {
           icon: "User",
         },
         {
-          label: "Für Justiziariate",
+          label: "Für Rechtsabteilungen",
           href: "/solutions/in-house",
           description: "Legal Ops mit nachvollziehbarer Wissensbasis",
           icon: "Building2",
@@ -302,7 +302,7 @@ export const FOOTER: {
   columns: { title: string; links: { label: string; href: string; external?: boolean }[] }[];
   note: string;
 } = {
-  tagline: "KI-Kanzleisoftware, die nie vergisst — das Kanzlei-Brain für Anwälte in Österreich.",
+  tagline: "KI-Kanzleisoftware, die nie vergisst — das Kanzleiwissen für Anwälte in Österreich.",
   columns: [
     {
       title: "Plattform",
@@ -316,7 +316,7 @@ export const FOOTER: {
           href: "/superbrain",
         },
         {
-          label: "Features",
+          label: "Funktionen",
           href: "/features",
         },
         {
@@ -324,7 +324,7 @@ export const FOOTER: {
           href: "/security",
         },
         {
-          label: "WhatsApp-Copilot",
+          label: "Assistent auf WhatsApp",
           href: "/whatsapp",
         },
         {
@@ -349,7 +349,7 @@ export const FOOTER: {
           href: "/solutions/solo",
         },
         {
-          label: "Für Justiziariate",
+          label: "Für Rechtsabteilungen",
           href: "/solutions/in-house",
         },
       ],
@@ -374,7 +374,7 @@ export const FOOTER: {
           href: "/partners",
         },
         {
-          label: "Dashboard",
+          label: "Zur Anwendung",
           href: "/dashboard",
           external: false,
         },
@@ -432,115 +432,16 @@ export interface PricingTier {
   highlight?: boolean;
 }
 
-export const PRICING: {
-  title: string;
-  sub: string;
-  tiers: PricingTier[];
-  footnote: string;
-} = {
-  title: "Kanzleisoftware Preise — pro Nutzer, kein Lock-in",
-  sub: "Pro Nutzer, jährliche Abrechnung. Ihr Kanzleiwissen auf Infrastruktur, die Sie kontrollieren — EU-gehostet oder On-Premise.",
-  tiers: [
-    {
-      id: "free",
-      name: "Community",
-      price: "0 €",
-      period: "für immer",
-      blurb:
-        "Für Einzelanwälte, die KI-gestützte Aktenarbeit erkunden. Kostenlos für immer, keine Kreditkarte nötig.",
-      features: [
-        "Self-hosted — eigener Server, eigene Schlüssel",
-        "100 KI-Anfragen/Mon. inklusive",
-        "5 GB lokaler Speicher",
-        "Akten-Q&A mit seitengenauen Zitaten",
-        "Fristenverwaltung (ZPO/ABGB)",
-        "Community-Support",
-      ],
-      cta: "Kostenlos starten",
-      href: "/signup",
-    },
-    {
-      id: "pro",
-      name: "Pro",
-      price: "890 €",
-      priceMonthly: "1.113 €",
-      period: "/Nutzer/Mon.",
-      periodMonthly: "/Nutzer/Mon.",
-      blurb:
-        "Für Anwälte, die es sich nicht leisten können, etwas zu übersehen. Jahreszahlung spart 20 %.",
-      features: [
-        "Voll verwaltet — keine API-Keys nötig",
-        "1.000 KI-Anfragen/Nutzer/Mon. inklusive",
-        "75 GB Cloud-Speicher pro Nutzer",
-        "300 WhatsApp-Nachrichten/Mon. inklusive",
-        "Nächtliche Konsolidierung: Duplikate, Zitate, Widersprüche",
-        "Live-Verbrauchsanzeige — transparente Mehrkosten",
-        "Priorisierter Support",
-        "Mehrverbrauch: 0,45 €/Anfrage · 0,25 €/WA",
-      ],
-      cta: "Pro starten",
-      href: "/signup",
-      highlight: true,
-    },
-    {
-      id: "team",
-      name: "Team",
-      price: "1.290 €",
-      priceMonthly: "1.613 €",
-      period: "/Nutzer/Mon.",
-      periodMonthly: "/Nutzer/Mon.",
-      blurb:
-        "Ein gemeinsames Brain — jede Akte jedes Anwalts, gemeinsam abfragbar. Ab 5 Nutzern. Jahreszahlung spart 20 %.",
-      features: [
-        "Alles aus Pro",
-        "Geteiltes Kanzleiwissen",
-        "4.000 KI-Anfragen/Nutzer/Mon. inklusive",
-        "200 GB Cloud-Speicher pro Nutzer",
-        "1.000 WhatsApp-Nachrichten/Mon. inklusive",
-        "Rollenbasierte Zugriffe pro Akte und Nutzer",
-        "Admin- und Nutzungsanalyse",
-        "Einrichtungstermin inklusive",
-        "Mehrverbrauch: 0,40 €/Anfrage · 0,20 €/WA",
-      ],
-      cta: "Team starten",
-      href: "/signup",
-    },
-    {
-      id: "ent",
-      name: "Enterprise",
-      price: "ab 1.890 €",
-      period: "/Nutzer/Mon.",
-      blurb:
-        "Compliance-Klasse für regulierte Kanzleien. Ab 20 Nutzern, auf Ihrer Infrastruktur oder in der EU-Cloud.",
-      features: [
-        "15.000 KI-Anfragen/Nutzer/Mon. (Fair Use darüber)",
-        "5.000 WhatsApp-Nachrichten/Nutzer/Mon.",
-        "500 GB Speicher pro Nutzer",
-        "EU-Cloud, S3-kompatibler Objektspeicher oder On-Prem",
-        "Individuelle Aufbewahrungsrichtlinie",
-        "AVV, SLA, SSO/SAML",
-        "Maximum-Recall-Suchmodus",
-        "Dedizierter CSM & Integrationshilfe",
-        "Mehrverbrauch: 0,35 €/Anfrage · 0,15 €/WA",
-      ],
-      cta: "Demo vereinbaren",
-      href: "mailto:hello@subsum.eu",
-    },
-  ],
-  footnote:
-    "Jahreszahlung −20 %. KI-Anfragen und Speicher-Kontingente sind je Plan inklusive. Mehrverbrauch wird zu transparenten Einheitspreisen am Monatsende abgerechnet — keine Überraschungsrechnung, kein stilles Drosseln. Zusatzpakete: 500 Anfragen für 199 €, 1.500 für 499 €, 5.000 für 1.499 €.",
-};
-
 export const PRICING_FAQ: { title: string; items: { q: string; a: string }[] } = {
   title: "Preisfragen",
   items: [
     {
       q: "Gibt es eine kostenlose Testversion?",
-      a: "Ja. Jeder gehostete Plan startet mit einem 14-Tage-Reverse-Trial — voller Zugriff, keine Kreditkarte. Wenn Subsumio nicht das Richtige für Sie ist, kündigen Sie innerhalb von 14 Tagen für eine volle Rückerstattung.",
+      a: "Ja. Solo und Kanzlei testen Sie 14 Tage mit vollem Funktionsumfang, ohne Kreditkarte. Wählen Sie danach keinen Tarif, endet der Test automatisch.",
     },
     {
       q: "Kann ich jederzeit den Plan wechseln?",
-      a: "Ja. Upgrade oder Downgrade aus dem Dashboard jederzeit möglich. Änderungen werden zum nächsten Abrechnungszeitraum wirksam — keine Strafgebühren, kein Lock-in.",
+      a: "Ja. Der Tarifwechsel ist jederzeit unter „Plan & Abrechnung“ möglich. Änderungen werden zum nächsten Abrechnungszeitraum wirksam — ohne Gebühren für den Wechsel.",
     },
     {
       q: "Wie funktioniert die monatliche Abrechnung?",
@@ -552,7 +453,7 @@ export const PRICING_FAQ: { title: string; items: { q: string; a: string }[] } =
     },
     {
       q: "Gibt es versteckte Gebühren?",
-      a: "Nein. Mehrverbrauch wird zu transparenten Einheitspreisen abgerechnet, die im Dashboard sichtbar sind. Sie sehen den Verbrauch live und wir fragen, bevor sich etwas ändert.",
+      a: "Nein. Mehrverbrauch entsteht nur über KI-Guthaben, das Sie selbst dazukaufen; die Preise stehen oben auf dieser Seite und unter „Plan & Abrechnung“. Sie sehen den Verbrauch live und wir fragen, bevor sich etwas ändert.",
     },
   ],
 };
@@ -560,7 +461,7 @@ export const PRICING_FAQ: { title: string; items: { q: string; a: string }[] } =
 export const LANDING = {
   badge: "KI-Kanzleisoftware & Anwaltssoftware für Österreich",
   heroBadges: [
-    `Neu: ${PROOF.recall8.value} Recall mit 5-Layer-Verifikation`,
+    "Jede Antwort mit geprüfter Fundstelle",
     "Verschwiegenheit nach § 9 Abs. 2 RAO im Systemdesign",
     "EU-Cloud oder On-Premise — Ihre Wahl",
   ],
@@ -589,11 +490,11 @@ export const LANDING = {
     },
     {
       icon: "BadgeCheck",
-      label: "SOC 2 Vorbereitung",
+      label: "AVV nach Art. 28 DSGVO",
     },
     {
       icon: "FileCheck",
-      label: "ISO 27001 geplant",
+      label: "Kein Training auf Ihren Daten",
     },
     {
       icon: "Globe",
@@ -609,20 +510,21 @@ export const LANDING = {
     "Jede Kanzlei verliert abrechenbare Zeit an Dinge, die eine Maschine besser macht — wenn sie für Anwälte gebaut ist.",
   pains: [
     {
-      value: "40 %",
-      label: "abrechenbare Zeit geht für Recherche und Wiederauffinden verloren",
+      value: "Suchen",
+      label: "In Ordnern, E-Mails und alten Schriftsätzen — Zeit, die niemand verrechnen kann",
     },
     {
       value: "1 Notfrist",
       label: "genügt für einen Haftpflichtfall — menschlich übersehen, maschinell vermeidbar",
     },
     {
-      value: "3 Std.",
-      label: "pro Schriftsatz für manuelle Quellenprüfung — Subsumio braucht Sekunden",
+      value: "Prüfen",
+      label: "Jede Fundstelle von Hand nachschlagen, bevor der Schriftsatz hinausgeht",
     },
     {
-      value: "Wochen",
-      label: "Einarbeitung neuer Mitarbeiter, bis sie das Kanzleiwissen selbständig finden",
+      value: "Einarbeiten",
+      label:
+        "Neue Kolleginnen und Kollegen brauchen Wochen, bis sie das Kanzleiwissen selbst finden",
     },
   ],
   ctaPrimary: "14 Tage kostenlos testen",
@@ -653,22 +555,22 @@ export const LANDING = {
         question: "Entwirf die Replik dafür.",
         answer:
           "Argument 1: Widerspruch S.3 vs S.7 — Beweiswert geschwächt. Argument 2: Vertragskenntnis nach S.7 begründet Leistungspflicht. Antrag: Beweiswürdigung auf Widerspruch stützen.",
-        sources: ["zpo/§520", "akten/bauer-hofer"],
+        sources: ["zpo/§272", "akten/bauer-hofer"],
       },
     ],
   },
   stats: [
     {
       value: PROOF.recall8.value,
-      label: `Retrieval-Trefferquote (${PROOF.recall8.metric}, ${PROOF.recall8.benchmark}, ${PROOF.recall8.sampleSize} Fragen)`,
+      label: `Trefferquote beim Wiederfinden der richtigen Stelle (${PROOF.recall8.benchmark}, ${PROOF.recall8.sampleSize} Fragen)`,
     },
     {
-      value: "3",
-      label: "Jurisdiktionen: AT, DE, CH",
+      value: "AT",
+      label: "Gebaut für österreichisches Recht: ABGB, ZPO, EO, UGB, RAO",
     },
     {
       value: "0",
-      label: "Mandantendaten-Lecks — by design",
+      label: "Training auf Ihren Mandantendaten — vertraglich ausgeschlossen",
     },
     {
       value: "14",
@@ -676,7 +578,7 @@ export const LANDING = {
     },
   ],
   statsNote:
-    "Engine-Klasse Retrieval, kein Chat-Wrapper. Jede Antwort nennt die Quelle — oder sagt ehrlich, wenn die Akte nichts hergibt.",
+    "Eigene Suchtechnik statt Chat-Aufsatz. Jede Antwort nennt die Quelle — oder sagt ehrlich, wenn die Akte nichts hergibt.",
   featuresTitle: "Was Ihre Kanzlei ab heute kann",
   featuresSub: "Sechs Fähigkeiten, gebaut für Anwälte — nicht nachträglich angepasst.",
   features: [
@@ -696,7 +598,7 @@ export const LANDING = {
       icon: "MessageSquare",
       color: "emerald",
       title: "Alles über WhatsApp — ohne App-Wechsel",
-      desc: "Zeiten buchen, Dokumente ablegen, Sprachnotizen vom Handy. Alles landet in der richtigen Akte — GoBD-konform.",
+      desc: "Zeiten buchen, Dokumente ablegen, Sprachnotizen vom Handy. Alles landet in der richtigen Akte — revisionssicher nach BAO.",
     },
     {
       icon: "ShieldAlert",
@@ -728,8 +630,8 @@ export const LANDING = {
     {
       step: "02",
       icon: "Network",
-      title: "Wissensgraph aufbauen",
-      desc: "Bei jedem Speichern erkennt die Engine Personen, Fristen und Beziehungen und baut daraus einen juristischen Wissensgraphen. Vollautomatisch, ohne manuelle Datenpflege.",
+      title: "Zusammenhänge erkennen",
+      desc: "Beim Speichern erkennt Subsumio Personen, Fristen und Zusammenhänge und verknüpft sie mit der Akte. Automatisch, ohne Datenpflege von Hand.",
     },
     {
       step: "03",
@@ -750,18 +652,18 @@ export const LANDING = {
   scenarios: [
     {
       role: "Morgen · 07:30",
-      text: "Sie trinken Kaffee. Subsumio hat schon alle Fristen für heute geprüft — eine Notfrist läuft um Mitternacht, markiert und mit der Akte verlinkt. Der tägliche Digest liegt im Posteingang. Du weißt, was heute wichtig ist, bevor du den ersten Schriftsatz öffnest.",
+      text: "Sie trinken Kaffee. Subsumio hat schon alle Fristen für heute geprüft — eine Notfrist läuft um Mitternacht, markiert und mit der Akte verlinkt. Der tägliche Digest liegt im Posteingang. Sie wissen, was heute wichtig ist, bevor Sie den ersten Schriftsatz öffnest.",
     },
     {
       role: "Mittag · 12:15",
-      text: "Auf dem Rückweg vom Gericht: „Zeit 0,5h Akte Müller, Widerspruch S.3 vs S.7 prüfen.“ Subsumio bucht die Zeit, findet den Widerspruch in den Schriftsätzen, legt alles in der Akte ab — während du noch unterwegs bist.",
+      text: "Auf dem Rückweg vom Gericht: „Zeit 0,5h Akte Müller, Widerspruch S.3 vs S.7 prüfen.“ Subsumio bucht die Zeit, findet den Widerspruch in den Schriftsätzen, legt alles in der Akte ab — während Sie noch unterwegs sind.",
     },
     {
       role: "Abend · 18:45",
       text: "„Entwirf die Replik dafür.“ Subsumio zieht die Argumente aus den Akten, zitiert S.3 und S.7, schlägt den Antrag vor. Sie prüfen die Fundstellen in einem Klick, bestätigst, fertig. Der Schriftsatz geht raus — mit Quellen, nicht mit Bauchgefühl.",
     },
   ],
-  comparisonTitle: "Warum nicht einfach ChatGPT, Notion AI oder eine Vektor-Datenbank?",
+  comparisonTitle: "Warum nicht einfach ein allgemeines KI-Werkzeug?",
   comparisonSub: "Allgemeine KI-Tools sind nicht für Anwälte gebaut. Subsumio ist es.",
   comparison: [
     {
@@ -793,8 +695,8 @@ export const LANDING = {
   faqTitle: "Häufige Fragen",
   faq: [
     {
-      q: "Was unterscheidet Subsumio von ChatGPT, Notion AI oder einer Vektor-Datenbank?",
-      a: 'Jene liefern Dokumente oder Textabschnitte. Subsumio liefert eine synthetisierte Antwort mit seitengenauen Zitaten, nutzt einen typisierten Wissensgraphen für Beziehungsfragen und zeigt explizit, was in der Akte noch fehlt (Gap-Analyse). Der Unterschied zwischen „irgendwo steht etwas" und „hier steht die Antwort, und hier fehlt noch etwas".',
+      q: "Was unterscheidet Subsumio von allgemeinen KI-Werkzeugen?",
+      a: "Allgemeine Werkzeuge kennen Ihre Akten nicht und belegen ihre Aussagen nicht. Subsumio antwortet aus Ihren Akten und dem RIS, nennt zu jeder Aussage Seite und Absatz, erkennt Zusammenhänge zwischen Personen, Fristen und Dokumenten und sagt ausdrücklich, was in der Akte noch fehlt.",
     },
     {
       q: "Wo liegen meine Daten — und wie unterstützt Subsumio die Verschwiegenheit?",
@@ -802,7 +704,7 @@ export const LANDING = {
     },
     {
       q: "Brauche ich IT-Kenntnisse oder eigene Server?",
-      a: "Nein. Bei gehosteten Plänen ist alles verwaltet — keine API-Keys, keine Infrastruktur. Sie laden Dokumente hoch, stellen Fragen, bekommen Antworten. Wenn Sie E-Mails schreiben kannst, kannst du Subsumio bedienen. Enterprise-On-Premise läuft auf deiner Hardware mit deinen Schlüsseln.",
+      a: "Nein. Bei gehosteten Plänen ist alles verwaltet — keine API-Keys, keine Infrastruktur. Sie laden Dokumente hoch, stellen Fragen, bekommen Antworten. Wenn Sie E-Mails schreiben können, können Sie Subsumio bedienen. Enterprise-On-Premise läuft auf Ihrer Hardware mit Ihren Schlüsseln.",
     },
     {
       q: "Trainiert Subsumio auf meinen Daten?",
@@ -810,7 +712,7 @@ export const LANDING = {
     },
     {
       q: "Funktioniert das mit unserer bestehenden Software?",
-      a: "Ja. Subsumio importiert aus gängigen Buchhaltungssystemen, RA-Micro, anwalt.at und jedem System, das Dokumente exportieren kann. E-Mails über IMAP, WhatsApp über Meta Business API. Subsumio ersetzt nichts — es ergänzt deine Software um ein Kanzlei-Brain.",
+      a: "Ja. Subsumio übernimmt Dokumente aus jedem System, das sie exportieren kann (PDF, Word, E-Mail-Archive), liest E-Mails über IMAP ein und bindet WhatsApp Business, DocuSign und Word an. Subsumio ersetzt Ihre Kanzleisoftware nicht — es macht deren Inhalte abfragbar.",
     },
     {
       q: "Was passiert, wenn eine Antwort falsch ist?",
@@ -822,12 +724,12 @@ export const LANDING = {
     },
     {
       q: "Was kostet Subsumio — und gibt es versteckte Gebühren?",
-      a: "Community kostenlos, Pro ab 890 €/Nutzer/Mon., Team ab 1.290 €, Enterprise ab 1.890 €. Jahreszahlung spart 20 %. Mehrverbrauch zu transparenten Einheitspreisen — sichtbar im Dashboard. 14 Tage gratis, keine Kreditkarte.",
+      a: "Solo 249 € pro Monat für einen Nutzer, Kanzlei 1.499 € pro Monat inklusive fünf Nutzern, Enterprise auf Anfrage. Beide Tarife sind monatlich kündbar. Nutzungslimits und Mehrverbrauch werden vor Abschluss ausgewiesen und sind in der Übersicht jederzeit sichtbar. 14 Tage gratis, keine Kreditkarte.",
     },
   ],
-  ctaTitle: "Hör auf zu suchen. Fang an zu fragen.",
+  ctaTitle: "Hören Sie auf zu suchen. Fragen Sie.",
   ctaSub:
-    "14 Tage volle Testversion. Keine Kreditkarte, kein IT-Aufwand. Dein Team ist morgen produktiver.",
+    "14 Tage volle Testversion. Keine Kreditkarte, kein IT-Aufwand. Ihr Team ist morgen produktiver.",
   ctaButton: "14 Tage kostenlos testen",
   relatedLinks: [
     {
@@ -839,7 +741,7 @@ export const LANDING = {
       href: "/security",
     },
     {
-      label: "Features im Überblick",
+      label: "Funktionen im Überblick",
       href: "/features",
     },
     {
@@ -875,17 +777,17 @@ export const UI_STRINGS: Record<string, string> = {
   seeFullPricing: "Alle Preisdetails ansehen",
   gdprReady: "DSGVO-konform",
   professionalSecrecy: "Berufsgeheimnis per Architektur",
-  transparentFair: "Transparent & fair",
+  transparentFair: "Preise",
   noGamesTitle: "Keine Spielchen bei den Preisen",
-  noGamesSub: "Kein Kleingedrucktes, keine Überraschungen auf der Rechnung.",
+  noGamesSub: "Fixer Monatspreis, monatlich kündbar, Export jederzeit.",
   stillQuestions: "Noch Fragen?",
-  writeUs: "Schreib uns — wir antworten persönlich.",
-  startFree: "Kostenlos starten",
+  writeUs: "Schreiben Sie uns — wir antworten persönlich.",
+  startFree: "14 Tage kostenlos testen",
   seePlans: "Pläne ansehen",
-  trustedBy: "Vertraut von Kanzleien in Österreich",
+  trustedBy: "Gebaut für Kanzleien in Österreich",
   watchDemo: "Demo ansehen",
   trySubsumio: "Subsumio testen",
-  ariaFeatures: "Features",
+  ariaFeatures: "Funktionen",
   ariaPricing: "Preise",
   ariaKeyMetrics: "Kennzahlen",
   ariaFaq: "FAQ",
@@ -900,8 +802,8 @@ export const UI_STRINGS: Record<string, string> = {
   comparisonTableLabel: "Vergleich: Subsumio vs. andere KI-Tools",
   comparisonFeature: "Funktion",
   comparisonOthers: "Andere KI-Tools",
-  exploreAllFeatures: "Alle Features ansehen",
-  readSecurityDetails: "Security-Details ansehen",
+  exploreAllFeatures: "Alle Funktionen ansehen",
+  readSecurityDetails: "Sicherheit im Detail",
   seePricingPlans: "Preise ansehen",
   faqSuperbrainTitle: "Häufig gestellte Fragen",
   faqSuperbrainSub:
@@ -920,52 +822,52 @@ export const UI_STRINGS: Record<string, string> = {
   navOverview: "Übersicht",
   navMatters: "Akten",
   navDeadlines: "Fristen",
-  navIntake: "Intake",
-  navChat: "Chat",
+  navIntake: "Posteingang",
+  navChat: "Assistent",
   workflowMatter: "Akte",
   workflowDoc: "Dok",
   workflowRisk: "Risiko",
   workflowTask: "Aufgabe",
-  featuresWorkflowTitle: "Jede Funktion läuft als Kanzlei-Workflow.",
+  featuresWorkflowTitle: "Jede Funktion folgt dem Arbeitsablauf der Kanzlei.",
   featuresWorkflowSub:
-    "Akte, Copilot, Frist, Quelle und Freigabe greifen ineinander. Deshalb beschreibt Subsumio jede Funktion im Kontext der Oberfläche, in der Anwälte sie wirklich benutzen.",
+    "Akte, Assistent, Frist, Quelle und Freigabe greifen ineinander. Deshalb beschreibt Subsumio jede Funktion im Kontext der Oberfläche, in der Anwälte sie wirklich benutzen.",
   featuresChecklist1: "Quelle geprüft",
   featuresChecklist2: "Berechtigung aktiv",
   featuresChecklist3: "Nächster Schritt vorbereitet",
-  featuresGraphCaption: "typisierte Kanten, bei jedem Speichern erkannt",
+  featuresGraphCaption: "Zusammenhänge, beim Speichern erkannt",
   featuresSecurityTitle: "Gebaut für vertrauliche Arbeit",
   featuresSecuritySub:
-    "On-Premise-Betrieb, getestete Isolation, EU-AI-Act-Compliance und eine ehrliche Roadmap. Die vollständige Sicherheits- und Datenschutzdarstellung hat eine eigene Seite.",
-  featuresGlanceTitle: "Fünf Funktionsbereiche, eine Engine",
+    "EU-Hosting, On-Premise im Enterprise-Tarif, getrennte Zugriffe je Akte und Kennzeichnung nach Art. 50 KI-VO. Die vollständige Darstellung hat eine eigene Seite.",
+  featuresGlanceTitle: "Fünf Bereiche im Detail",
   featuresEmptyState:
     "Durch Tests erzwungen, nicht durch Policy-Dokumente — deterministisches, prüfbares Verhalten.",
-  downloadHint: "3 offene Zusagen in 4 Meetings diese Woche —",
+  downloadHint: "2 Fristen diese Woche — Klagebeantwortung Müller am Do",
   verticalSeePricing: "Preise ansehen",
   verticalSeeLive: "Live ansehen",
   verticalTrialNote:
     "14 Tage Reverse Trial · 14 Tage Geld-zurück-Garantie · Keine Kreditkarte erforderlich",
-  verticalTrustNote: "Self-hosted · EU-Cloud · DSGVO-konform · § 9 Abs. 2 RAO im Blick",
+  verticalTrustNote: "EU-Cloud · On-Premise (Enterprise) · DSGVO · § 9 Abs. 2 RAO",
   verticalFeaturesSub:
-    "Von Fristenkontrolle bis Widerspruchserkennung — alles auf Ihrer Infrastruktur, jede Antwort mit Fundstelle.",
+    "Von Fristenkontrolle bis Widerspruchserkennung — jede Antwort mit Fundstelle.",
   subpagesConfirmationNote: "Alles bestätigungspflichtig — nichts landet ungesehen in der Akte.",
   typingLabel: "tippt…",
   todayLabel: "Heute",
   confirmedLabel: "Bestätigt",
   messageLabel: "Nachricht",
-  verificationLabel: "5-Layer verifiziert",
+  verificationLabel: "Fünffach geprüft",
   tryYourselfLabel: "Jetzt selbst fragen",
   replayLabel: "Nochmal ansehen",
   askLabel: "Fragen",
-  placeholderDemo: "Frag das Demo-Brain…",
+  placeholderDemo: "Fragen Sie die Demo-Akte…",
   liveLabel: "live",
-  liveDemoPrefix: "Live aus dem Demo-Brain:",
+  liveDemoPrefix: "Live aus der Demo-Akte:",
   ariaProductDemo: "Produkt-Demo Konversation",
-  ariaSubsumioEngine: "Die Subsumio-Engine",
+  ariaSubsumioEngine: "So arbeitet Subsumio",
   engineTraits: "abfragbar · belegt · isoliert",
   lawFirmLabel: "Rechtsanwälte",
   lawFirmName: "Kanzlei Müller",
   activeLabel: "Aktiv",
-  scriptedLabel: "Beispiel-Antwort · Live-Brain nach Deploy",
+  scriptedLabel: "Beispielantwort",
   rateLimitLabel: "Demo-Limit erreicht — später erneut.",
   noDemoMatches: "Keine Demo-Treffer — hier die Beispiel-Antwort.",
   demoReadOnlyNote: "Demo im Lesemodus · Ihre Daten bleiben bei Ihnen",
@@ -979,18 +881,18 @@ export const UI_STRINGS: Record<string, string> = {
     "„Zeit 0,5h Akte Müller, Telefonat“ → erfasst, der Akte zugeordnet, ein Tipp zum Bestätigen.",
   receiptPhoto: "Beleg-Foto → richtige Akte",
   receiptPhotoDesc:
-    "Dokument oder Foto mit Akten-Kürzel in der Caption landet revisionssicher im Vault.",
+    "Ein Foto oder Dokument mit Aktenkürzel in der Bildunterschrift wird in der richtigen Akte abgelegt.",
   voiceNote: "Sprachnotiz unterwegs",
   voiceNoteDesc:
     "Diktat nach dem Termin — transkribiert und der Akte angehängt, bevor Sie im Büro sind.",
-  dashboardNotDatasheet: "Dashboard statt Datenblatt",
+  dashboardNotDatasheet: "Das Produkt statt Datenblatt",
   docsTitle: "Jede Beschreibung zeigt auf einen echten Kanzlei-Workflow.",
   docsSub:
-    "Die Docs sind nicht als rohe API-Liste gedacht. Sie erklären, welche Funktion im Dashboard sichtbar ist, welchen Kanzlei-Prozess sie verbessert und welche Sicherheitsannahme dahintersteht.",
+    "Die Docs sind nicht als rohe API-Liste gedacht. Sie erklären, welche Funktion in Subsumio sichtbar ist, welchen Kanzlei-Prozess sie verbessert und welche Sicherheitsannahme dahintersteht.",
   backToTopAria: "Zurück nach oben",
-  docsSearchPlaceholder: "Features suchen…",
-  docsNoResults: "Keine Features gefunden für",
-  docsFeatureCount: "Features",
+  docsSearchPlaceholder: "Funktionen suchen…",
+  docsNoResults: "Keine Funktion gefunden für",
+  docsFeatureCount: "Funktionen",
   docsCategoryCount: "Kategorien",
   docsStatsBadge: "Komplett dokumentiert",
   docsClearSearch: "Suche zurücksetzen",
@@ -1001,7 +903,7 @@ export const UI_STRINGS: Record<string, string> = {
   readInGerman: "Auf Deutsch lesen",
   readInEnglish: "Read in English",
   pricingBadge: "Preise",
-  mostPopular: "Beliebteste Wahl",
+  mostPopular: "Empfohlen für Kanzleien ab 2 Personen",
   billingAnnual: "Jährlich",
   billingMonthly: "Monatlich",
   toggleBilling: "Abrechnung umschalten",
@@ -1018,24 +920,24 @@ export const UI_STRINGS: Record<string, string> = {
   signatureLabel: "Stärken",
   capabilitiesBadge: "Funktionen",
   seeAllCapabilities: "Alle Funktionen ansehen",
-  whatsappDetail: "WhatsApp-Copilot im Detail",
+  whatsappDetail: "Assistent auf WhatsApp im Detail",
   securityDetail: "Sicherheit & DSGVO im Detail",
   liveDemoRegion: "Live-Demo",
   matterLabel: "Akte",
-  copilotLabel: "Copilot",
+  copilotLabel: "Assistent",
   reviewLabel: "Freigabe",
-  inDashboard: "Im Dashboard",
-  commandCenter: "Command Center",
+  inDashboard: "In Subsumio",
+  commandCenter: "Übersicht",
   liveMatterContext: "Live-Aktenkontext",
   verifiableLabel: "prüfbar",
   exploreSecurity: "Sicherheit ansehen",
   exploreLabel: "Ansehen",
   askYourBrain: "Fragen Sie Ihr Kanzleiwissen…",
-  gapWarning: "⚠ Lücke: Do 14 Uhr ohne Notiz",
-  worksOffline: "Funktioniert offline",
+  gapWarning: "⚠ Tagsatzung Do 14 Uhr: Vollmacht fehlt in der Akte",
+  worksOffline: "Startet auch ohne Netz",
   installNow: "Subsumio jetzt installieren",
   getStarted: "14 Tage kostenlos testen",
-  seeFeatures: "Features ansehen",
+  seeFeatures: "Funktionen ansehen",
   pushNotifications: "Push-Benachrichtigungen",
   biometricUnlock: "Biometrische Entsperrung",
   sendToSubsumio: "„An Subsumio senden“",
@@ -1048,12 +950,12 @@ export const VALUE_PROPS: { title: string; desc: string }[] = [
     desc: "Was auf der Preisliste steht, das zahlen Sie. Keine Überraschungen bei der Rechnung.",
   },
   {
-    title: "Self-hosted oder Cloud",
-    desc: "Sie entscheiden, wo Ihre Daten liegen. EU-Cloud oder auf eigener Hardware.",
+    title: "EU-Cloud oder On-Premise",
+    desc: "EU-Cloud (Hetzner) in allen Tarifen, On-Premise im Enterprise-Tarif.",
   },
   {
-    title: "Open-Source Engine",
-    desc: "Die Engine ist Open Source. Kein Vendor Lock-in, volle Kontrolle.",
+    title: "Keine Bindung",
+    desc: "Vollständiger Datenexport jederzeit — Ihre Akten gehören Ihnen.",
   },
   {
     title: "Monatlich kündbar",
@@ -1062,25 +964,8 @@ export const VALUE_PROPS: { title: string; desc: string }[] = [
 ];
 
 /* ── Hero product demo + scroll story (AT, de) ─────────────────────────────
-   Real Austrian example: Klagebeantwortung binnen vier Wochen (§ 243 Abs. 1 ZPO).
+   Real Austrian example: Klagebeantwortung binnen vier Wochen (§ 230 ZPO).
    Dates are illustrative; the matter is fictional. */
-export const HERO_DEMO = {
-  matter: "Novak ./. Versicherung AG",
-  matterNumber: "2026-003",
-  question: "Bis wann muss die Klagebeantwortung eingebracht werden?",
-  answerLines: [
-    "Die Klagebeantwortung ist binnen vier Wochen ab Zustellung der Klage einzubringen.",
-    "Laut Zustellnachweis in der Akte wurde die Klage am 16.09.2026 zugestellt.",
-    "Fristende ist daher der 14.10.2026 (Notfrist, keine Verlängerung möglich).",
-  ],
-  citations: [
-    { label: "§ 243 Abs. 1 ZPO", source: "RIS, geltende Fassung", kind: "gesetz" as const },
-    { label: "Klage_Zustellnachweis.pdf, S. 2", source: "Akte 2026-003", kind: "akte" as const },
-  ],
-  deadline: { title: "Klagebeantwortung", date: "14.10.2026", note: "Vorfrist 07.10.2026" },
-  verified: "2 von 2 Fundstellen geprüft",
-} as const;
-
 export const SCROLL_STORY = {
   eyebrow: "So arbeitet Subsumio",
   title: "Von der Frage zur Frist in einem Durchgang",
@@ -1107,4 +992,86 @@ export const SCROLL_STORY = {
       text: "Erkannte Fristen werden mit Vorfrist vorgeschlagen. Sie prüfen, bestätigen, fertig. Nichts wird ohne Sie angelegt.",
     },
   ],
+} as const;
+
+/* ── Product demo (replica of the real dashboard) ─────────────────────────
+   One Austrian example, end to end. Dates are illustrative, the matter is
+   fictional. § 230 ZPO: Klagebeantwortung binnen vier Wochen. */
+export const PRODUCT_DEMO = {
+  ariaLabel:
+    "Beispiel aus Subsumio: Frage zur Klagebeantwortung, Antwort mit geprüften Fundstellen aus ZPO und Akte, Fristvorschlag im Fristenbuch.",
+  user: "Mag. Huber",
+  brainStats: "1.247 Seiten · 89 Einträge",
+  matter: "Novak gg. Versicherung AG",
+  matterNumber: "2026-003",
+  question: "Bis wann muss die Klagebeantwortung eingebracht werden?",
+  thinking: "Liest Zustellnachweis und ZPO …",
+  answer: [
+    "Die Klagebeantwortung ist binnen vier Wochen ab Zustellung der Klage einzubringen (§ 230 ZPO).",
+    "Laut Zustellnachweis in der Akte wurde die Klage am 16.09.2026 zugestellt.",
+    "Fristende ist daher der 14.10.2026. Die Frist ist nicht verlängerbar.",
+  ],
+  documents: [
+    {
+      name: "Klage_Zustellnachweis.pdf",
+      meta: "Zustellung 16.09.2026 · 2 Seiten",
+      hit: true,
+      kind: "pdf",
+    },
+    { name: "Klage_Novak_Versicherung.pdf", meta: "Klage · 14 Seiten", hit: true, kind: "pdf" },
+    { name: "Vollmacht_Novak.pdf", meta: "Vollmacht · 1 Seite", hit: false, kind: "pdf" },
+    {
+      name: "Korrespondenz Versicherung AG",
+      meta: "E-Mail · 4 Nachrichten",
+      hit: false,
+      kind: "mail",
+    },
+    { name: "Polizze_Auszug.pdf", meta: "Beilage ./B · 6 Seiten", hit: false, kind: "pdf" },
+  ],
+  deadline: {
+    title: "Klagebeantwortung",
+    date: "14.10.2026",
+    basis: "§ 230 ZPO, Zustellung 16.09.2026",
+  },
+  deadlineSummary: "3 Fristen aus allen Akten",
+  deadlines: [
+    {
+      key: "new",
+      title: "Klagebeantwortung",
+      matter: "Novak gg. Versicherung AG · 2026-003",
+      status: "Notfrist",
+      tone: "warning",
+      date: "14.10.2026",
+    },
+    {
+      key: "a",
+      title: "Vorfrist Klagebeantwortung",
+      matter: "Novak gg. Versicherung AG · 2026-003",
+      status: "Vorfrist",
+      tone: "info",
+      date: "07.10.2026",
+    },
+    {
+      key: "b",
+      title: "Berufung",
+      matter: "Gruber gg. Immo GmbH · 2026-004",
+      status: "Ausstehend",
+      tone: "default",
+      date: "21.10.2026",
+    },
+    {
+      key: "c",
+      title: "Vorbereitende Tagsatzung",
+      matter: "Maier gg. Stadt Wien · 2026-002",
+      status: "Termin",
+      tone: "default",
+      date: "03.12.2026",
+    },
+  ],
+  sceneLabels: {
+    frage: "Frage an den Assistenten",
+    akte: "Subsumio liest die Akte",
+    fundstelle: "Antwort mit Fundstellen",
+    frist: "Frist im Fristenbuch",
+  },
 } as const;

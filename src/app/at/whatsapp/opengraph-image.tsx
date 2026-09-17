@@ -6,6 +6,6 @@ export const contentType = ogImageContentType;
 export default function Image() {
   return renderOgImage(
     "Die Kanzlei in der Hosentasche — belegte Antworten per WhatsApp",
-    "WhatsApp-Copilot"
+    "Assistent auf WhatsApp"
   );
 }

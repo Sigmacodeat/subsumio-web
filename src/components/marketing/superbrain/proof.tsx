@@ -12,7 +12,7 @@ import { resolveIcon } from "../icons";
 
 export function PrivacySection({ t }: { t: SuperbrainCopyDe }) {
   return (
-    <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="Privacy & DSGVO">
+    <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="Datenschutz">
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
@@ -97,7 +97,7 @@ export function UseCasesSection({ t }: { t: SuperbrainCopyDe }) {
             href={p("/features")}
             className="brand-text inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
           >
-            {UI_STRINGS.exploreAllFeatures} <ArrowRight size={14} />
+            {t.useCasesLink} <ArrowRight size={14} />
           </Link>
         </motion.div>
       </div>
@@ -177,7 +177,7 @@ export function TrustSection({ t }: { t: SuperbrainCopyDe }) {
             href={p("/security")}
             className="brand-text inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
           >
-            {UI_STRINGS.readSecurityDetails} <ArrowRight size={14} />
+            {t.securityLink} <ArrowRight size={14} />
           </Link>
         </motion.div>
       </div>
@@ -192,13 +192,13 @@ export function FAQSection({ t }: { t: SuperbrainCopyDe }) {
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
-            <h2 className={`mb-4 ${H2_CTA_CLASS}`}>{UI_STRINGS.faqSuperbrainTitle}</h2>
+            <h2 className={`mb-4 ${H2_CTA_CLASS}`}>{t.faqTitle}</h2>
           </ClipReveal>
           <motion.p
             {...reveal}
             className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
           >
-            {UI_STRINGS.faqSuperbrainSub}
+            {t.faqSub}
           </motion.p>
         </div>
 
@@ -215,7 +215,7 @@ export function FAQSection({ t }: { t: SuperbrainCopyDe }) {
             href={p("/pricing")}
             className="brand-text inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
           >
-            {UI_STRINGS.seePricingPlans} <ArrowRight size={14} />
+            {t.pricingLink} <ArrowRight size={14} />
           </Link>
         </motion.div>
       </div>

@@ -5,14 +5,14 @@ import { JsonLd, breadcrumbLd } from "@/components/seo/jsonld";
 export const metadata: Metadata = {
   title: "Subsumio Handbuch — KI-Kanzleisoftware Funktionen",
   description:
-    "Produkt-Handbuch für Subsumio: Akten, Fristen, Dokumente, belegte KI-Antworten, Sicherheit, Integrationen und die Dashboard-Workflows dahinter.",
+    "Produkt-Handbuch für Subsumio: Akten, Fristen, Dokumente, belegte KI-Antworten, Sicherheit, Integrationen und die Arbeitsabläufe dahinter.",
   alternates: {
     canonical: "/at/docs",
   },
   openGraph: {
     title: "Subsumio Handbuch — KI-Kanzleisoftware Funktionen",
     description:
-      "Produkt-Handbuch für Subsumio: Akten, Fristen, Dokumente, belegte KI-Antworten, Sicherheit, Integrationen und die Dashboard-Workflows dahinter.",
+      "Produkt-Handbuch für Subsumio: Akten, Fristen, Dokumente, belegte KI-Antworten, Sicherheit, Integrationen und die Arbeitsabläufe dahinter.",
     url: "/at/docs",
     type: "website",
   },

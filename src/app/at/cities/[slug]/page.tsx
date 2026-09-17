@@ -104,7 +104,7 @@ export default function CityPage({ params }: { params: Promise<{ slug: string }>
 
             <section className="mb-10">
               <h2 className="mb-4 text-2xl font-bold [color:var(--mk-text)]">
-                Jurisdiktion: {city.country}
+                Rechtsordnung: {city.country}
               </h2>
               <p className="mb-4 leading-relaxed text-[color:var(--mk-text-muted)]">
                 {city.jurisdictionNote}
@@ -151,7 +151,7 @@ export default function CityPage({ params }: { params: Promise<{ slug: string }>
 
             <section className="mb-10 rounded-2xl border border-[color:var(--mk-border)] bg-[color:var(--mk-surface)] p-8 text-center">
               <h2 className="mb-3 text-2xl font-bold [color:var(--mk-text)]">
-                14 Tage testen — in {city.city} und überall
+                14 Tage kostenlos testen
               </h2>
               <p className="mb-6 text-[color:var(--mk-text-muted)]">
                 Keine Kreditkarte. Kein IT-Aufwand. Wenn Subsumio nicht in Woche 1 Zeit spart —

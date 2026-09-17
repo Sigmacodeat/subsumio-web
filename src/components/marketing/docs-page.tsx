@@ -140,7 +140,7 @@ function StickyCategoryNav({
             {search ? (
               <button
                 onClick={() => onSearch("")}
-                aria-label="Clear search"
+                aria-label={t.docsClearSearch ?? "Clear search"}
                 className="absolute right-2 flex h-5 w-5 items-center justify-center rounded-full text-[var(--mk-text-subtle)] transition-[background-color,border-color,color] hover:bg-[var(--mk-surface-2)] hover:text-[var(--mk-text)] active:scale-[0.97] motion-reduce:transition-none"
               >
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
@@ -378,7 +378,7 @@ export default function DocsPage() {
       <CTASection
         title={d.cta.title}
         sub={d.cta.sub}
-        href={p("/login")}
+        href={p("/signup")}
         label={d.cta.button}
         secondaryHref={p("/contact")}
         secondaryLabel={UI_STRINGS.writeUs}

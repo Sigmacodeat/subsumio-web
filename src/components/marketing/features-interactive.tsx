@@ -144,31 +144,31 @@ export function GraphHero() {
 
 const HOW = {
   title: "So funktioniert's — vom Dokument zur belegten Antwort",
-  sub: "Vier Schritte. Kein Tagging, keine Datenpflege — die Wissensbasis strukturiert sich automatisch.",
+  sub: "Vier Schritte. Sie müssen nichts verschlagworten — Subsumio ordnet die Unterlagen selbst.",
   steps: [
     {
       icon: "Database",
-      title: "Füttern",
-      desc: "Akten, Mails, PDFs, Sprachnotizen, WhatsApp — per Ordner, Upload oder Copilot. OCR holt Text auch aus Scans.",
-      tag: "Upload · OCR · Copilot",
+      title: "Einlesen",
+      desc: "Akten, E-Mails, PDFs, Sprachnotizen, WhatsApp-Nachrichten — per Upload oder über den Assistenten. Die Texterkennung liest auch Scans.",
+      tag: "Upload · Texterkennung · Assistent",
     },
     {
       icon: "Network",
       title: "Verstehen",
-      desc: "Bei jedem Speichervorgang erkennt die Engine Personen, Fristen und Beziehungen als juristischen Wissensgraph.",
-      tag: "Entitäten · Graph · Embeddings",
+      desc: "Beim Speichern erkennt Subsumio Personen, Fristen und Zusammenhänge und verknüpft sie mit der Akte.",
+      tag: "Beteiligte · Fristen · Zusammenhänge",
     },
     {
       icon: "Search",
       title: "Fragen",
-      desc: "Frag in normaler Sprache. Hybrid-Suche aus Vektor, Stichwort und Graph findet die entscheidenden Stellen.",
-      tag: "Hybrid-Suche · Reranking",
+      desc: "Fragen Sie in normaler Sprache. Subsumio sucht nach Sinn, nach exakten Begriffen und über Zusammenhänge — und findet die entscheidenden Stellen.",
+      tag: "Sinnsuche · Stichwortsuche",
     },
     {
       icon: "Brain",
       title: "Belegte Antwort",
-      desc: "Synthetisierte Antwort mit seitengenauen Zitaten — plus ehrlicher Hinweis, was in der Akte noch fehlt.",
-      tag: "Zitate · Lückenanalyse",
+      desc: "Ausformulierte Antwort mit seitengenauen Fundstellen — plus Hinweis, was in der Akte noch fehlt.",
+      tag: "Fundstellen · offene Lücken",
     },
   ],
 } as const;
@@ -242,16 +242,16 @@ export function FeatureCommandCenter() {
     },
     {
       icon: "MessageSquare",
-      label: "Copilot",
-      title: "Was fehlt vor der Replik?",
+      label: "Assistent",
+      title: "Was fehlt vor der Klagebeantwortung?",
       sub: "Antwort mit 4 Fundstellen und einer Lücke vorbereitet",
       tone: "blue",
     },
     {
       icon: "Shield",
       label: "Freigabe",
-      title: "Partner-Review erforderlich",
-      sub: "Schriftsatz-Entwurf wartet mit Audit-Trail",
+      title: "Freigabe durch Partner erforderlich",
+      sub: "Schriftsatz-Entwurf wartet, jede Änderung ist protokolliert",
       tone: "green",
     },
   ];
@@ -445,7 +445,7 @@ export function CategoryExplorer() {
       <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
         <div
           role="tablist"
-          aria-label="Feature categories"
+          aria-label="Funktionsbereiche"
           className="mb-12 flex flex-wrap justify-center gap-2"
         >
           {t.categories.map((c) => {
@@ -523,7 +523,7 @@ export function CategoryExplorer() {
               </div>
             </div>
 
-            {/* Right: terminal demo */}
+            {/* Right: demo window */}
             {cat.demo ? (
               <div className="lg:sticky lg:top-8">
                 <div className="overflow-hidden rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/50 [background:var(--mk-bg)]">
@@ -543,7 +543,7 @@ export function CategoryExplorer() {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.12 * i, duration: 0.25 }}
                         className={
-                          line.startsWith("$") || line.startsWith(">")
+                          line.startsWith("Frage:")
                             ? "[color:var(--mk-text)]"
                             : line.includes("⚠")
                               ? "[color:var(--ds-warning-text)]"
@@ -592,10 +592,10 @@ export function CategoryExplorer() {
                       {Icon && <Icon size={20} className="brand-text" />}
                     </div>
                     <h3 className="mb-1.5 text-lg font-semibold [color:var(--mk-text)]">
-                      {c.title}
+                      {c.label}
                     </h3>
                     <p className="line-clamp-3 text-sm leading-relaxed [color:var(--mk-text-muted)]">
-                      {c.intro}
+                      {c.glance}
                     </p>
                     <span className="brand-text mt-4 inline-flex items-center gap-1 text-sm opacity-0 transition-opacity group-hover:opacity-100">
                       {UI_STRINGS.exploreLabel} <ArrowRight size={12} />

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { Cpu, RefreshCw, TrendingUp } from "lucide-react";
+import { BookOpen, CheckCircle2, Info, RefreshCw } from "lucide-react";
 import { EASE, ClipReveal, GlowCard, VIEWPORT } from "../motion-system";
 import { Section, H2_CTA_CLASS } from "../primitives";
 import { accentTile } from "../icons";
@@ -11,7 +11,7 @@ import { resolveIcon } from "../icons";
 
 export function ArchitectureSection({ t }: { t: SuperbrainCopyDe }) {
   return (
-    <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="5-Ebenen-Architektur">
+    <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="Fünf Prüfschritte">
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
@@ -46,7 +46,7 @@ export function ArchitectureSection({ t }: { t: SuperbrainCopyDe }) {
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
                         <span className="brand-text font-mono text-sm tracking-wider uppercase">
-                          {String(i).padStart(2, "0")}
+                          {String(i + 1).padStart(2, "0")}
                         </span>
                         <h3 className="text-lg font-bold [color:var(--mk-text)] md:text-xl">
                           {layer.title}
@@ -56,7 +56,7 @@ export function ArchitectureSection({ t }: { t: SuperbrainCopyDe }) {
                         {layer.desc}
                       </p>
                       <div className="mt-3 inline-flex items-center gap-1.5 rounded-md border [border-color:var(--mk-border)] px-2.5 py-1 font-mono text-sm [color:var(--mk-text-muted)] [background:var(--mk-surface-2)]">
-                        <Cpu size={11} className="brand-text" />
+                        <CheckCircle2 size={11} className="brand-text" />
                         {layer.detail}
                       </div>
                     </div>
@@ -97,7 +97,7 @@ export function DreamCycleSection({ t }: { t: SuperbrainCopyDe }) {
   }, [reduce, t.cycleSteps.length]);
 
   return (
-    <Section tone="slate" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="Dream Cycle">
+    <Section tone="slate" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="Nächtliche Prüfung">
       <div className="relative z-10 mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
@@ -167,7 +167,7 @@ export function DreamCycleSection({ t }: { t: SuperbrainCopyDe }) {
           className="mt-12 flex items-center justify-center gap-3 text-sm [color:var(--mk-text-muted)]"
         >
           <RefreshCw size={16} className="brand-text" />
-          <span>{"Vollautomatisch · Nächtlich · Überwacht"}</span>
+          <span>{t.cycleNote}</span>
         </motion.div>
       </div>
     </Section>
@@ -176,7 +176,7 @@ export function DreamCycleSection({ t }: { t: SuperbrainCopyDe }) {
 
 export function FineTuneSection({ t }: { t: SuperbrainCopyDe }) {
   return (
-    <Section tone="slate" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="Subsumio Legal Engine">
+    <Section tone="slate" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="Rechtsquellen">
       <div className="relative z-10 mx-auto max-w-5xl">
         <div className="mb-16 text-center">
           <motion.div
@@ -186,9 +186,9 @@ export function FineTuneSection({ t }: { t: SuperbrainCopyDe }) {
             transition={{ duration: 0.4 }}
             className="brand-border brand-soft mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1.5"
           >
-            <Cpu size={14} className="brand-text" />
+            <BookOpen size={14} className="brand-text" />
             <span className="brand-text font-mono text-sm tracking-wider uppercase">
-              {"Proprietärer Moat"}
+              {t.finetuneBadge}
             </span>
           </motion.div>
           <ClipReveal>
@@ -237,9 +237,9 @@ export function FineTuneSection({ t }: { t: SuperbrainCopyDe }) {
         >
           <div className="brand-border brand-soft rounded-2xl border p-6 text-center">
             <div className="mb-2 flex items-center justify-center gap-2">
-              <TrendingUp size={18} className="brand-text" />
+              <Info size={18} className="brand-text" />
               <span className="brand-text font-mono text-sm tracking-wider uppercase">
-                {"Prognose"}
+                {t.finetuneResultLabel}
               </span>
             </div>
             <p className="text-sm leading-relaxed [color:var(--mk-text)] md:text-base">

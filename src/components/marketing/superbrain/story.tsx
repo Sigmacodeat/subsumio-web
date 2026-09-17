@@ -11,7 +11,7 @@ import { resolveIcon } from "../icons";
 export function StatsBand({ t }: { t: SuperbrainCopyDe }) {
   return (
     <Section tone="light" className="px-4 py-16 sm:px-6 lg:px-8">
-      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 md:grid-cols-4">
+      <div className="mx-auto grid max-w-4xl grid-cols-1 gap-10 sm:grid-cols-2">
         {t.stats.map((stat, i) => (
           <motion.div
             key={stat.label}
@@ -57,7 +57,7 @@ export function OthersSection({ t }: { t: SuperbrainCopyDe }) {
     <Section
       tone="light"
       className="px-4 py-24 sm:px-6 lg:px-8"
-      aria-label="Wie andere KI arbeitet"
+      aria-label="Wie allgemeine KI-Werkzeuge arbeiten"
     >
       <div className="mx-auto max-w-5xl">
         <div className="mb-16 text-center">
@@ -286,7 +286,7 @@ export function OursSection({ t }: { t: SuperbrainCopyDe }) {
                 </motion.div>
               </div>
               <p className="text-center text-sm leading-relaxed [color:var(--mk-text-muted)]">
-                {"Jede Nacht: 29 Phasen · 5 Ebenen · 1 Wissensgraph"}
+                {t.oursNote}
               </p>
             </div>
           </div>

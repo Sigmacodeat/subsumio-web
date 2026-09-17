@@ -107,3 +107,28 @@ Validierung on-touch, Routen-Audit ohne Befund.
   `src/content/site.ts` (`HERO_DEMO`, `SCROLL_STORY`).
 - Offen: Sektionschoreographie der restlichen Landing-Abschnitte, Cockpit-Signatur,
   Micro-Interaktionen, Marketing-Snapshots nach Logo-Entscheidung erneuern.
+
+## Etappe 3 — Inhalts-Audit der gesamten Website (17.09., Vormittag)
+
+Auslöser: Rückmeldung des Betreibers — Beispiel-Frontends sahen nicht wie das Produkt aus,
+Inhalte waren falsch („998 %“, „3 Jurisdiktionen: AT, DE, CH“).
+
+- Alle 22 öffentlichen Seiten gerendert, Text gegen ein Faktenblatt geprüft
+  (`docs/design/audit/WEBSITE_FAKTENBLATT.md`, Regeln in `WEBSITE_TEXTREGELN.md`).
+- Korrigiert: nur Österreich (kein DE/CH, kein deutsches Recht, korrekte ZPO-/RAO-/BAO-Zitate),
+  echte Preise überall (Solo 249 €, Kanzlei 1.499 €, Enterprise auf Anfrage; veralteter
+  Community/Pro/Team-Block entfernt), keine Modellnamen, Scores, Prognosen oder namentlichen
+  Mitbewerber, keine absoluten Versprechen, keine nicht vorhandenen Zertifikate oder
+  Integrationen, Sie-Form und Produktbegriffe durchgehend, Technik-Jargon aus Anwaltstexten.
+- Zahlen-Bug behoben: `StatCard` las „99,8 %“ als „998 %“ (Dezimalkomma); Zähler formatiert de-AT.
+- Erfundene Benchmark-Angaben (Hallucination-Rate, Latenz, „Austrian Legal Corpus“, CC-BY)
+  aus Seite, Metadaten und JSON-LD entfernt; eine belegte Kennzahl bleibt, mit Grenzen.
+- Produkt-Nachbau `product-demo.tsx`: rendert im Dashboard-Token-Scope mit echter Navigation,
+  echten UI-Bausteinen und dem echten `CitationPanel`; ersetzt Hero-Karte, Story-Visuals,
+  `dashboard-reel.tsx` und `product-workflow-showcase.tsx` (gelöscht).
+- Nachweis: erneuter Text-Scan aller Seiten = 0 Treffer in allen Kategorien; Vitest 6792/6792.
+
+Offene Betreiber-Entscheidungen: Logo-Richtung; Rechtsträger/Impressum (Verein, § 25 MedienG,
+UID, Telefon); eine E-Mail-Domain (subsum.eu vs. rciid.at); Auftragsverarbeiter-Liste (Meta,
+DocuSign, Upstash, Sentry fehlen); Partnerbedingungen als Dokument; deutsche Module im Produkt
+(beA, DATEV, RVG, GoBD-Panel) ausblenden oder behalten; AGB/AVV anwaltlich prüfen.

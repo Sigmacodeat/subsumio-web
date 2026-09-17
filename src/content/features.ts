@@ -1,6 +1,5 @@
-import { PROOF } from "./proof-points";
-// Features page — every engine capability, explained for buyers.
-// Grouped into interactive categories; each has an optional terminal demo.
+// Features page — what Subsumio does, explained for lawyers (de-AT, Sie-Form).
+// Grouped into interactive categories; each has an optional demo window.
 
 export interface FeatureCategory {
   id: string;
@@ -8,6 +7,9 @@ export interface FeatureCategory {
   label: string;
   title: string;
   intro: string;
+  /** One-line summary for the "at a glance" grid — deliberately different
+   *  from `intro`, so the active category never shows the same text twice. */
+  glance: string;
   items: { title: string; desc: string }[];
   demo?: { windowTitle: string; lines: string[] };
 }
@@ -28,219 +30,216 @@ export interface FeaturesContent {
 }
 
 export const FEATURES_PAGE: FeaturesContent = {
-  metaTitle: "Subsumio Features — KI-Kanzleisoftware Funktionen für Rechtsanwälte",
+  metaTitle: "Subsumio Funktionen — KI-Kanzleisoftware für Rechtsanwälte in Österreich",
   metaDesc:
-    "Belegte KI-Antworten mit Fundstellen, selbstverdrahtender Wissensgraph, Hybrid-Retrieval, WhatsApp-Copilot — jede Funktion im Produkt, keine Halluzination.",
+    "Antworten aus der Akte mit Fundstellen, Beteiligte und Zusammenhänge, Suche nach Sinn und Stichwort, nächtliche Prüfung, Assistent auf WhatsApp. Die anwaltliche Prüfung bleibt.",
   badge: "Alle Funktionen im Überblick",
-  h1a: "Jede Funktion im Überblick.",
-  h1b: "Jede Aussage belegt.",
-  sub: "Fünf Funktionsbereiche, eine Engine. Klick dich durch — jede Aussage steckt im Produkt, mit nachprüfbaren Zitaten an jeder Antwort.",
+  h1a: "Was Subsumio für Ihre Kanzlei erledigt.",
+  h1b: "Bereich für Bereich erklärt.",
+  sub: "Fünf Bereiche, ein System. Klicken Sie sich durch und sehen Sie, wie Subsumio im Kanzleialltag arbeitet.",
   categories: [
     {
       id: "synthesis",
       icon: "Brain",
-      label: "Antworten & Synthese",
+      label: "Antworten aus der Akte",
       title: "Eine Antwort statt zehn Dokumenten",
       intro:
-        "Die meisten Tools hören beim Retrieval auf: Hier sind deine Chunks, viel Glück. Subsumio liest sie für dich und schreibt die Antwort — und sagt dir, was es nicht finden konnte.",
+        "Eine Suche liefert Trefferlisten. Subsumio liest die Treffer und formuliert die Antwort — und sagt Ihnen, was es in den Unterlagen nicht gefunden hat.",
+      glance: "Ausformulierte Antworten über mehrere Dokumente hinweg — samt Hinweis, was fehlt.",
       items: [
         {
-          title: "Synthetisierte Prosa-Antworten",
-          desc: "Dokumentübergreifende Synthese über Personen, Firmen, Deals und Ideen — ausformuliert, nicht zusammengeklebt.",
+          title: "Ausformulierte Antworten",
+          desc: "Schriftsätze, Beilagen, Protokolle und Korrespondenz werden zu einer Antwort zusammengeführt — über mehrere Dokumente hinweg.",
         },
         {
-          title: "Zitate an jeder Behauptung",
-          desc: "Jede Aussage verlinkt ihre Quellseite. Ein Klick zur Verifikation, bevor du dich darauf verlässt.",
+          title: "Geprüfte Fundstellen",
+          desc: "Zitierte Normen und Entscheidungen gleicht Subsumio mit den Rechtsquellen ab und kennzeichnet, was sich nicht bestätigen ließ.",
         },
         {
-          title: "Gap-Analyse",
-          desc: "Die Antwort endet mit dem, was das Brain NICHT weiß — Schweigen tarnt sich nie als Gewissheit.",
+          title: "Was fehlt, steht dabei",
+          desc: "Jede Antwort endet mit dem, was die Unterlagen nicht hergeben. Schweigen wird nicht als Gewissheit ausgegeben.",
         },
         {
           title: "Verhandlungs- und Terminvorbereitung",
-          desc: "Frag vor dem Mandantengespräch oder der Verhandlung: letzter Kontakt, offene Zusagen, gefundene Widersprüche, was sich geändert hat. Vorbereitet in die Verhandlung, nicht suchend.",
+          desc: "Fragen Sie vor dem Mandantengespräch oder der Verhandlung: letzter Kontakt, offene Zusagen, gefundene Widersprüche, was sich geändert hat.",
         },
       ],
       demo: {
-        windowTitle: "subsumio — fragen",
+        windowTitle: "Subsumio — Frage an die Akte",
         lines: [
-          "$ was ist in der Akte Bauer noch offen?",
+          "Frage: Was ist in der Akte Bauer noch offen?",
           "→ 3 offene Punkte in 4 Dokumenten:",
-          "  1. Replik ans Gericht (entworfen, nicht eingebracht)",
+          "  1. Vorbereitender Schriftsatz (entworfen, nicht eingebracht)",
           "  2. Gutachten von Dr. Klein (angefordert, überfällig)",
           "  3. Vergleichsrahmen mit Mandant zu bestätigen",
-          "  ⚠ Lücke: keine Notiz zum Mandantengespräch Do",
+          "  ⚠ Lücke: keine Notiz zum Mandantengespräch am Donnerstag",
         ],
       },
     },
     {
       id: "graph",
       icon: "Network",
-      label: "Wissensgraph",
-      title: "Ein Graph, der sich selbst verdrahtet",
+      label: "Beteiligte & Zusammenhänge",
+      title: "Wer mit wem — ohne Datenpflege",
       intro:
-        "Jeder Seiten-Write extrahiert Entitäten und typisierte Beziehungen — ohne zusätzliche LLM-Calls. Beziehungsfragen bekommen Graph-Antworten, kein Keyword-Raten.",
+        "Beim Speichern erkennt Subsumio Personen, Firmen und ihre Rollen: wer wen vertritt, wer Gegner ist, wer als Sachverständiger bestellt wurde. Fragen nach Zusammenhängen beantwortet es aus diesen Verknüpfungen, nicht per Stichwortsuche.",
+      glance: "Personen, Firmen und ihre Rollen in der Akte werden beim Speichern erkannt.",
       items: [
         {
-          title: "Typisierte Kanten, automatisch",
-          desc: "invested_in, works_at, founded, attended, advises — beim Schreiben extrahiert, ohne Tagging, ohne Datenpflege.",
+          title: "Rollen automatisch erkannt",
+          desc: "Mandant, Gegner, Gegenvertreter, Sachverständige, Zeugen — beim Speichern erfasst, ohne Verschlagwortung.",
         },
         {
-          title: "Relationale Queries",
-          desc: "„Wer hat in X investiert?“ „Was verbindet A und B?“ werden über den Graphen beantwortet — Fragen, an denen Vektorsuche scheitert.",
+          title: "Fragen nach Zusammenhängen",
+          desc: "„Wer ist an der Akte Bauer beteiligt?“ „Was verbindet die Hofer GmbH und Dr. Klein?“ — beantwortet aus den erkannten Verknüpfungen.",
         },
         {
-          title: "Entitäten-Anreicherung",
-          desc: "Personen und Firmen sammeln Kontext über jede Erwähnung; das Brain konsolidiert über Nacht.",
-        },
-        {
-          title: "Benchmark-belegt",
-          desc: `${PROOF.recall8.full} — gemessen gegenüber reinem Vector-RAG mit Hybrid-Suche + Graph.`,
+          title: "Ein Eintrag je Person und Firma",
+          desc: "Jede Erwähnung ergänzt den Eintrag; die nächtliche Prüfung führt Doppeltes zusammen.",
         },
       ],
       demo: {
-        windowTitle: "subsumio — graph",
+        windowTitle: "Subsumio — Beteiligte",
         lines: [
-          "$ wer wirkt in der Akte Bauer mit?",
-          "→ 4 Beteiligte via vertritt / Gegenseite-Kanten:",
-          "  Dr. Weber (unser Anwalt, seit 2024)",
+          "Frage: Wer ist an der Akte Bauer beteiligt?",
+          "→ 4 Beteiligte:",
+          "  Dr. Weber (Rechtsvertreter, seit 2024)",
           "  Hofer GmbH (Gegenpartei) · 2 weitere",
-          "$ was verbindet Hofer GmbH und Dr. Klein?",
-          "→ Hofer GmbH —beauftragt→ Dr. Klein —gutachter_in→ Akte Bauer",
+          "Frage: Was verbindet die Hofer GmbH und Dr. Klein?",
+          "→ Die Hofer GmbH hat Dr. Klein als Privatgutachter beauftragt (Akte Bauer)",
         ],
       },
     },
     {
       id: "retrieval",
       icon: "Search",
-      label: "Hybrid-Retrieval",
-      title: "Findet, was Einzel-Methoden übersehen",
+      label: "Suche",
+      title: "Findet die Stelle, auch wenn das Wort nicht fällt",
       intro:
-        "Vektor-Ähnlichkeit, BM25-Keyword-Match und Graph-Traversal — fusioniert per Reciprocal Rank Fusion. Drei Recall-Arme, ein Ranking.",
+        "Subsumio sucht auf drei Wegen zugleich: nach dem Sinn Ihrer Frage, nach exakten Begriffen wie Geschäftszahlen oder Paragrafen und über die erkannten Zusammenhänge. Die Ergebnisse werden zu einer Reihung zusammengeführt.",
+      glance:
+        "Suche nach Sinn, nach exakten Begriffen und über Zusammenhänge — in einem Durchgang.",
       items: [
         {
-          title: "Vector + BM25 + Graph, fusioniert",
-          desc: "Semantik fängt Umschreibungen, Keywords fangen exakte Begriffe, der Graph fängt Beziehungen. Die Fusion schlägt jede Methode allein.",
+          title: "Sinn und Stichwort kombiniert",
+          desc: "Die Sinnsuche findet Umschreibungen, die Stichwortsuche exakte Begriffe. Zusammen finden sie mehr als jede für sich.",
         },
         {
-          title: "Drei Kosten-Modi",
-          desc: "conservative, balanced, tokenmax — wähl deinen Qualitäts-/Kostenpunkt. Token-Budgets werden durchgesetzt, kein Bauchgefühl.",
+          title: "Fragen nach Beziehungen",
+          desc: "Geht es um Beteiligte oder Verbindungen, zieht Subsumio die erkannten Zusammenhänge heran. Einfache Nachschlagefragen bleiben einfach.",
         },
         {
-          title: "Intelligentes Caching",
-          desc: "Ähnliche Queries treffen einen semantischen Cache (~50 % Kostenersparnis im Dauerbetrieb) — strikt isoliert, damit Einstellungsänderungen nie veraltete Ergebnisse liefern.",
-        },
-        {
-          title: "Intent-bewusstes Ranking",
-          desc: "Beziehungsfragen aktivieren Graph-Recall automatisch; einfache Lookups bleiben schlank. Die Engine passt sich pro Query an.",
+          title: "Nur, was Sie sehen dürfen",
+          desc: "Die Suche berücksichtigt ausschließlich Akten, für die Sie berechtigt sind.",
         },
       ],
       demo: {
-        windowTitle: "subsumio — search modes",
+        windowTitle: "Subsumio — Suche",
         lines: [
-          "$ subsumio search modes",
-          "→ Modus: balanced",
-          "  Cache: an (Hit-Rate 30 Tage: 47 %)",
-          "  Token-Budget: 12.000 · relationaler Recall: an",
-          "$ subsumio search stats --days 30",
-          "→ 1.204 Queries · 47 % gecacht · ø 9,2k Tokens",
+          "Frage: Wo ist von einer Mahnung die Rede?",
+          "→ 3 Fundstellen in 3 Dokumenten:",
+          "  Beilage B7, S. 2: „Zahlungserinnerung vom 3. Februar“",
+          "  Protokoll Zeuge K., S. 14: „wurde schriftlich aufgefordert“",
+          "  Klagebeantwortung, S. 6: Mahnung bestritten",
+          "  Zwei Treffer kommen ohne das Wort „Mahnung“ aus",
         ],
       },
     },
     {
       id: "dream",
       icon: "Zap",
-      label: "Dream Cycle",
-      title: "Dein Brain wird schlauer, während du schläfst",
+      label: "Nächtliche Prüfung",
+      title: "Ihr Kanzleiwissen bleibt über Nacht in Ordnung",
       intro:
-        "Ein 24/7-Hintergrund-Agent wartet das Brain, damit es sich verzinst statt zu verrotten. Du wachst jeden Tag mit einer saubereren, schärferen Wissensbasis auf.",
+        "Jede Nacht geht Subsumio die Wissensbasis durch: Dubletten, Verweise ins Leere, widersprüchliche Angaben. Morgens sehen Sie, was aufgefallen ist.",
+      glance: "Dubletten, fehlerhafte Verweise und Widersprüche werden über Nacht erkannt.",
       items: [
         {
-          title: "Deduplizierung",
-          desc: "Doppelte Personen- und Firmenseiten werden erkannt und gemerged — der Graph bleibt kanonisch.",
+          title: "Dubletten zusammenführen",
+          desc: "Doppelte Einträge zu Personen und Firmen werden erkannt und zusammengeführt.",
         },
         {
-          title: "Zitat-Reparatur",
-          desc: "Kaputte oder veraltete Zitate werden automatisch gefunden und neu verlinkt.",
+          title: "Verweise prüfen",
+          desc: "Verweise, die ins Leere zeigen oder veraltet sind, werden gefunden und korrigiert oder zur Prüfung markiert.",
         },
         {
-          title: "Widerspruchs-Erkennung",
-          desc: "Widersprüchliche Fakten über Dokumente hinweg werden mit beiden Quellen markiert — Gold für Akten und Due Diligence.",
+          title: "Widersprüche erkennen",
+          desc: "Widersprüchliche Angaben über Dokumente hinweg werden mit beiden Quellen markiert — etwa zwischen Schriftsatz und Zeugenaussage.",
         },
         {
-          title: "Automatisierte Nacht-Jobs",
-          desc: "Cron-basierte Aufnahme, Anreicherung und Reports. Das Produktions-Deployment fährt 66 autonome Jobs — das Brain ist aktuell, wenn du morgens den Rechner aufmachst.",
+          title: "Tägliche Übersicht",
+          desc: "Überfällige und kritische Fristen erhalten Sie jeden Morgen per E-Mail.",
         },
       ],
       demo: {
-        windowTitle: "subsumio — über nacht",
+        windowTitle: "Subsumio — über Nacht",
         lines: [
-          "03:00 Dream Cycle gestartet",
-          "  3 doppelte Personenseiten gemerged",
-          "  12 Zitate repariert",
+          "03:00 Nächtliche Prüfung gestartet",
+          "  3 doppelte Personeneinträge zusammengeführt",
+          "  12 Verweise geprüft und korrigiert",
           "  1 Widerspruch markiert (Lieferdatum: 12. März vs. „Ende April“)",
-          "  Morning Brief vorbereitet: 2 Meetings, 4 offene Punkte",
-          "03:19 fertig — das Brain ist schärfer als gestern",
+          "  Tägliche Übersicht vorbereitet: 2 Termine, 4 offene Punkte",
+          "03:19 abgeschlossen",
         ],
       },
     },
     {
       id: "integrations",
       icon: "GitBranch",
-      label: "Integrationen",
-      title: "Holt deine Tools dort ab, wo sie sind",
+      label: "Anbindungen",
+      title: "Arbeitet mit dem, was Sie schon nutzen",
       intro:
-        "Agent-first gebaut: Dein KI-Assistent, Claude oder Cursor nutzen das Brain direkt per MCP. Menschen bekommen ein Dashboard; Agenten bekommen ein Protokoll. Gleiche Daten, gleiche Zitate, gleiche Isolation.",
+        "E-Mail, Word, WhatsApp und elektronische Unterschrift sind angebunden. Subsumio ersetzt Ihre Kanzleisoftware nicht — es macht deren Inhalte abfragbar.",
+      glance: "E-Mail-Import, Word-Add-in, WhatsApp Business und DocuSign.",
       items: [
         {
-          title: "MCP-Server",
-          desc: "Natives Model Context Protocol — Claude Code, Claude Desktop, Cursor und jeder MCP-Client nutzen das Brain als Tool.",
+          title: "E-Mail-Import (IMAP)",
+          desc: "Nachrichten und Anhänge aus Ihrem Postfach werden eingelesen und durchsuchbar.",
         },
         {
-          title: "Vollständige CLI",
-          desc: "Jede Operation ist skriptbar. Bulk-Imports, Exports, Suche, Graph-Queries — automatisierungsbereit.",
+          title: "Word-Add-in",
+          desc: "Arbeiten Sie direkt im Dokument, ohne das Programm zu wechseln.",
         },
         {
-          title: "Bulk-Import",
-          desc: "Markdown, PDFs, Meeting-Notizen, E-Mail-Exporte. Jahre an Backlog in einem Durchlauf, mit Live-Fortschritt.",
+          title: "Assistent auf WhatsApp",
+          desc: "Zeiten, Notizen, Fotos und Sprachnotizen vom Handy in die Akte — über WhatsApp Business, abschaltbar.",
         },
         {
-          title: "Web-Dashboard & PWA",
-          desc: "Query, Graph-Explorer, Upload, Einstellungen — installierbar auf iOS, iPadOS und Android als App.",
+          title: "DocuSign",
+          desc: "Elektronische Unterschrift für Vollmachten und Vereinbarungen.",
         },
       ],
       demo: {
-        windowTitle: "claude code — mit subsumio",
+        windowTitle: "Subsumio — Posteingang",
         lines: [
-          "> claude: bevor ich refactore — was wissen wir über die Auth-Anforderungen dieses Kunden?",
-          "→ [subsumio MCP] 3 Seiten gefunden:",
-          "  meetings/2026-03-kickoff: SSO Pflicht (Okta)",
-          "  notes/security-review: keine PII in Logs",
-          "  Dein Agent erinnert sich jetzt an alles, was nicht Code ist.",
+          "09:12 E-Mail eingelesen: „Klagebeantwortung Hofer GmbH“",
+          "  2 Anhänge abgelegt (PDF, 14 Seiten)",
+          "  Zuordnung zur Akte Bauer vorgeschlagen",
+          "  ⚠ Wartet auf Ihre Bestätigung",
         ],
       },
     },
   ],
-  ctaTitle: "Bereit, es in deiner Kanzlei zu sehen?",
-  ctaSub: "In Minuten startklar. Erste belegte Antwort am selben Tag.",
+  ctaTitle: "Bereit, es in Ihrer Kanzlei zu sehen?",
+  ctaSub: "14 Tage testen, keine Kreditkarte.",
   ctaButton: "14 Tage kostenlos testen",
   faqTitle: "Fragen, beantwortet",
   faq: [
     {
-      q: "Muss ich ein Modell trainieren oder fine-tunen?",
-      a: "Nein. Subsumio nutzt Retrieval-augmented Generation mit deinem eigenen Wissensgraphen. Kein Modell-Training, kein Fine-Tuning — deine Daten bleiben deine Daten.",
+      q: "Muss ich etwas einrichten oder ein Modell trainieren?",
+      a: "Nein. Sie laden Ihre Unterlagen hoch, Subsumio liest sie ein und beantwortet Fragen aus Ihren eigenen Dokumenten. Ihre Daten werden nicht zum Training von Sprachmodellen verwendet.",
     },
     {
-      q: "Funktioniert es mit meinen bestehenden Tools?",
-      a: "Ja. Subsumio integriert sich über MCP (Model Context Protocol), REST-API und eine vollwertige CLI. Es arbeitet zusammen mit Claude, Cursor und jedem MCP-kompatiblen Agent.",
+      q: "Funktioniert es mit meinen bestehenden Programmen?",
+      a: "Subsumio übernimmt Dokumente als PDF, Word oder E-Mail-Export, liest E-Mails über IMAP ein und bindet WhatsApp Business, DocuSign und Word (Add-in) an. Ihre Kanzleisoftware bleibt, wie sie ist.",
     },
     {
-      q: "Wie genau sind die Zitate?",
-      a: "Jede Aussage in einer synthetisierten Antwort verlinkt direkt auf ihre Quellseite. Jede Behauptung mit einem Klick verifizierbar — keine Black-Box-Antworten.",
+      q: "Wie verlässlich sind die Antworten?",
+      a: "Subsumio antwortet aus Ihren Unterlagen und weist aus, wenn dort etwas fehlt. Fehler sind trotzdem möglich — deshalb sind KI-Antworten als solche gekennzeichnet, und die rechtliche Beurteilung bleibt bei Ihnen.",
     },
     {
       q: "Sind meine Daten sicher?",
-      a: "Alle Daten werden verschlüsselt at-rest und in-transit. Self-Hosting ist verfügbar. Keine Daten werden an Dritte weitergegeben oder für Modell-Training verwendet.",
+      a: "Ihre Daten werden verschlüsselt übertragen und gespeichert und liegen in der EU-Cloud (Hetzner); On-Premise gibt es im Enterprise-Tarif. Auftragsverarbeiter sind im AVV benannt. Ihre Inhalte werden nicht zum Training von Modellen verwendet.",
     },
   ],
 };

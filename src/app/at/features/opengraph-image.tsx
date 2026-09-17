@@ -5,7 +5,7 @@ export const contentType = ogImageContentType;
 
 export default function Image() {
   return renderOgImage(
-    "Jede Funktion im Überblick — Recherche, Akten, Fristen, Copilot",
-    "Features"
+    "Jede Funktion im Überblick — Recherche, Akten, Fristen, Assistent",
+    "Funktionen"
   );
 }

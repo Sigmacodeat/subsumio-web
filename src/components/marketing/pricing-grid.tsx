@@ -1,5 +1,5 @@
 // Shared pricing grid — used by the landing page section and /pricing page.
-// Includes a monthly/annual billing toggle. Annual is default (−20%).
+// Solo and Kanzlei are billed monthly; there is no annual discount.
 
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";

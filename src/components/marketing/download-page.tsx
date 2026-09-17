@@ -34,17 +34,17 @@ const PLATFORM_ICONS: Record<string, LucideIcon> = { Apple, Smartphone, Monitor 
 
 function NotifyMe() {
   const [email, setEmail] = useState("");
-  const label = "App-Launch Benachrichtigung";
+  const label = "Benachrichtigung zum Start der Store-Apps";
   const placeholder = "Ihre E-Mail-Adresse";
-  const button = "Benachrichtige mich";
-  const privacy = "Kein Spam. Wir melden uns, sobald die Store-Apps verfügbar sind.";
+  const button = "Benachrichtigung anfordern";
+  const privacy = "Ihre Adresse verwenden wir nur für diese eine Nachricht.";
   return (
     <form
       className="mx-auto max-w-md"
       onSubmit={(e) => {
         e.preventDefault();
         if (!email) return;
-        const subject = "App-Launch Benachrichtigung";
+        const subject = "Benachrichtigung zum Start der Store-Apps";
         window.location.href = `mailto:hello@subsum.eu?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(email)}`;
       }}
     >
@@ -171,7 +171,7 @@ function PhoneMockup() {
             className="absolute bottom-4 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 [background:var(--mk-surface)]"
           >
             <WifiOff size={10} className="text-[var(--brand-secondary)]" />
-            <span className="text-sm [color:var(--mk-text-muted)]">{UI_STRINGS.worksOffline}</span>
+            <span className="text-sm [color:var(--mk-text-muted)]">Startet auch ohne Netz</span>
           </motion.div>
         </div>
       </motion.div>

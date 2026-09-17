@@ -15,17 +15,14 @@ export const PROOF = {
     metric: "Recall@8",
     benchmark: "LongMemEval",
     sampleSize: 500,
-    /** Short stat-card label. */
-    label: "Recall@8 auf LongMemEval (500 Fragen)",
-    /** Canonical full phrase for prose embeddings. */
+    /** Short stat-card label — plain language, no metric jargon. */
+    label:
+      "der Fälle lag die richtige Textstelle unter den ersten acht Treffern — offen dokumentierter Test mit 500 Fragen. Gemessen wird das Auffinden, nicht die Qualität der Antwort.",
+    /** Technical phrase — only for /docs and /benchmark-methodology. */
     full: "99,8 % Recall@8 auf LongMemEval (500 Fragen)",
-  },
-  /** Recall@5 is the optimal-K result on the same benchmark. */
-  recall5: {
-    value: "100 %",
-    numeric: 100,
-    decimals: 0,
-    metric: "Recall@5",
-    label: "Recall@5 — optimales K bei LongMemEval",
+    /** Canonical plain-language sentence for lawyer-facing prose. Keep the
+     *  numbers in sync with `value` / `sampleSize` above. */
+    plain:
+      "In einem offen dokumentierten Test mit 500 Fragen lag die richtige Textstelle in 99,8 % der Fälle unter den ersten acht Treffern. Gemessen wird das Auffinden, nicht die Qualität der Antwort.",
   },
 } as const;

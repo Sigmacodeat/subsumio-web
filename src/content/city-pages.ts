@@ -1,6 +1,8 @@
 export interface CityPageContent {
   slug: string;
   city: string;
+  /** Bundesland — shown on the city index cards. */
+  state: string;
   country: string;
   countryCode: string;
   title: string;
@@ -18,6 +20,7 @@ const _cities: Record<string, CityPageContent> = {
   wien: {
     slug: "wien",
     city: "Wien",
+    state: "Wien",
     country: "Österreich",
     countryCode: "AT",
     title: "Subsumio für Rechtsanwälte in Wien",
@@ -26,9 +29,9 @@ const _cities: Record<string, CityPageContent> = {
       "KI-Kanzleisoftware für Anwälte in Wien: Akten nach österreichischem Recht (ABGB, ZPO, EO), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. EU-gehostet.",
     h1: "KI-Kanzleisoftware für Wiener Anwaltskanzleien",
     intro:
-      "Subsumio ist die KI-Kanzleisoftware für Rechtsanwälte in Wien, die mit österreichischem Recht arbeitet — ABGB, ZPO, EO und Bundesrecht. Jede KI-Antwort nennt die exakte Fundstelle. Keine Halluzinationen, keine Kompromisse bei der Schweigepflicht.",
+      "Subsumio ist die KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Wien, die mit österreichischem Recht arbeitet — ABGB, ZPO, EO und dem übrigen Bundesrecht aus dem RIS. Jede Antwort nennt ihre Fundstelle; nicht belegbare Aussagen werden gekennzeichnet, die anwaltliche Prüfung bleibt bei Ihnen.",
     jurisdictionNote:
-      "Subsumio berechnet Fristen nach österreichischer ZPO (§§ 5, 224, 510) und kennt Wiener Feiertage (z.B. 26. Oktober, Allerheiligen). Die Rechtsgebiete umfassen Zivilrecht (ABGB), Zivilprozessrecht (ZPO), Exekutionsrecht (EO) und Verwaltungsrecht.",
+      "Subsumio berechnet Fristen nach §§ 125, 126 ZPO, berücksichtigt die Fristenhemmung nach § 222 ZPO und alle gesetzlichen Feiertage. Das OLG Wien ist für Wien, Niederösterreich und das Burgenland zuständig. Rechtsgebiete: Zivilrecht (ABGB), Zivilprozessrecht (ZPO), Exekutionsrecht (EO) und Verwaltungsrecht.",
     courts: [
       "Oberlandesgericht Wien",
       "Landesgericht für Zivilrechtssachen Wien",
@@ -36,36 +39,37 @@ const _cities: Record<string, CityPageContent> = {
     ],
     features: [
       {
-        title: "ABGB-konforme Aktenverwaltung",
-        desc: "Aktenstruktur nach österreichischer Praxis — mit Parteienbezeichnung, Verfahren Nummer und Gerichtszweig.",
+        title: "Aktenführung nach österreichischer Praxis",
+        desc: "Akten mit Parteienbezeichnung, Geschäftszahl und Gericht.",
       },
       {
         title: "Fristen nach ZPO und EO",
-        desc: "Notfristen (14 Tage), Berufungsfristen (4 Wochen), Exekutionsfristen — automatisch mit Wiener Feiertagen.",
+        desc: "Rekurs (14 Tage), Berufung und Klagebeantwortung (4 Wochen), Fristen nach der EO — automatisch mit gesetzlichen Feiertagen und Fristenhemmung.",
       },
       {
         title: "DSGVO und § 9 Abs. 2 RAO",
-        desc: "EU-gehostet mit AVV oder On-Premise. Berufsgeheimnis nach § 9 Abs. 2 RAO durch Architektur.",
+        desc: "Hosting in der EU mit Auftragsverarbeitungsvertrag (AVV), On-Premise im Enterprise-Tarif. Zur Verschwiegenheit nach § 9 Abs. 2 RAO unterzeichnen wir auf Wunsch eine gesonderte Verpflichtung.",
       },
     ],
     faq: [
       {
-        q: "Kenne Subsumio das österreichische ABGB?",
-        a: "Ja. Subsumio indexiert ABGB, ZPO, EO und österreichisches Bundesrecht. Die KI-Antworten beziehen sich auf die korrekte Rechtsgrundlage — nicht auf deutsche Paragrafen.",
+        q: "Kennt Subsumio das österreichische ABGB?",
+        a: "Ja. Subsumio arbeitet mit ABGB, ZPO, EO und dem übrigen Bundesrecht; Quelle ist das RIS. Die Antworten stützen sich auf österreichische Rechtsgrundlagen — nicht auf deutsche Paragrafen.",
       },
       {
-        q: "Werden Wiener Feiertage bei der Fristenberechnung berücksichtigt?",
-        a: "Ja. Subsumio kennt alle österreichischen Bundesfeiertage und Wiener Landesfeiertage. Fristen, die auf einen Feiertag fallen, werden automatisch auf den nächsten Werktag verschoben.",
+        q: "Wie berücksichtigt Subsumio Feiertage bei der Fristenberechnung?",
+        a: "Fällt das Ende einer Frist auf einen Samstag, Sonntag, gesetzlichen Feiertag oder den Karfreitag, endet sie am nächsten Werktag. Landesfeiertage verschieben keine Fristen.",
       },
       {
-        q: "Ist Subsumio mit RA-Micro und anwalt.at kompatibel?",
-        a: "Ja. Subsumio importiert aus RA-Micro, anwalt.at und jedem System, das Dokumente exportieren kann. Es ersetzt nicht deine Anwaltssoftware — es ergänzt sie um ein Kanzlei-Brain.",
+        q: "Kann ich Subsumio neben meiner Kanzleisoftware nutzen?",
+        a: "Ja. Subsumio ersetzt Ihre Kanzleisoftware nicht. Dokumente kommen per Upload oder E-Mail-Import (IMAP) in Subsumio; Ihr bestehendes System bleibt unverändert.",
       },
     ],
   },
   graz: {
     slug: "graz",
     city: "Graz",
+    state: "Steiermark",
     country: "Österreich",
     countryCode: "AT",
     title: "Subsumio für Rechtsanwälte in Graz",
@@ -74,9 +78,9 @@ const _cities: Record<string, CityPageContent> = {
       "KI-Kanzleisoftware für Anwälte in Graz: Akten nach österreichischem Recht (ABGB, ZPO, EO), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. EU-gehostet.",
     h1: "KI-Kanzleisoftware für Grazer Anwaltskanzleien",
     intro:
-      "Subsumio ist die KI-Kanzleisoftware für Rechtsanwälte in Graz — von der Boutique-Kanzlei am Schlossberg bis zur Wirtschaftskanzlei in der Innenstadt. Österreichisches Recht statt generischer Übersetzungen: ABGB, ZPO, EO, mit belegten Antworten und Fundstellen.",
+      "Subsumio ist die KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Graz und der Steiermark — von der Einzelkanzlei bis zur Wirtschaftskanzlei. Österreichisches Recht (ABGB, ZPO, EO) mit belegten Antworten und Fundstellen.",
     jurisdictionNote:
-      "Subsumio berechnet Fristen nach österreichischer ZPO (§§ 5, 224, 510) und berücksichtigt steirische Feiertage — einschließlich des steirischen Landesfeiertags (26. Oktober) und aller Bundesfeiertage. Rechtsgebiete: Zivilrecht (ABGB), ZPO, EO und Verwaltungsrecht.",
+      "Subsumio berechnet Fristen nach §§ 125, 126 ZPO, berücksichtigt die Fristenhemmung nach § 222 ZPO und alle gesetzlichen Feiertage. Das OLG Graz ist für die Steiermark und Kärnten zuständig.",
     courts: [
       "Oberlandesgericht Graz",
       "Landesgericht für Zivilrechtssachen Graz",
@@ -84,36 +88,37 @@ const _cities: Record<string, CityPageContent> = {
     ],
     features: [
       {
-        title: "Akten nach steirischer Praxis",
-        desc: "Aktenstruktur nach österreichischer Konvention — Parteienbezeichnung, Gerichtszweig, Verfahrensnummer — egal ob LGZ Graz oder Bezirksgericht.",
+        title: "Aktenführung nach österreichischer Praxis",
+        desc: "Akten mit Parteienbezeichnung, Geschäftszahl und Gericht — ob Landesgericht für Zivilrechtssachen Graz oder Bezirksgericht.",
       },
       {
-        title: "Fristen mit Landesfeiertagen",
-        desc: "Notfristen und Berufungsfristen unter Berücksichtigung steirischer Feiertage und der ZPO-Monatsarithmetik — automatisch, ohne Excel.",
+        title: "Fristen nach ZPO und EO",
+        desc: "Rekurs (14 Tage), Berufung und Klagebeantwortung (4 Wochen), Fristen nach der EO — automatisch mit gesetzlichen Feiertagen und Fristenhemmung.",
       },
       {
-        title: "Berufsgeheimnis by Design",
-        desc: "EU-Hosting mit AVV oder Self-Hosting auf eigener Infrastruktur. § 9 Abs. 2 RAO ist kein Kleingedrucktes — es ist die Architektur.",
+        title: "Verschwiegenheit nach § 9 Abs. 2 RAO",
+        desc: "Hosting in der EU mit AVV, On-Premise im Enterprise-Tarif. Kein Training von KI-Modellen mit Mandantendaten.",
       },
     ],
     faq: [
       {
         q: "Funktioniert Subsumio auch für kleinere Grazer Kanzleien?",
-        a: "Ja. Der Solo-Tarif ist für Einzelanwältinnen und Einzelanwälte gedacht — derselbe Retrieval-Kern wie in großen Kanzleien, ohne Mindestnutzer und ohne Einrichtungsgebühr.",
+        a: "Ja. Der Solo-Tarif (249 €/Monat, 1 Nutzer) ist für Einzelanwältinnen und Einzelanwälte gedacht. Sie können 14 Tage kostenlos testen, ohne Kreditkarte.",
       },
       {
         q: "Kennt die KI die Unterschiede zum deutschen Recht?",
-        a: "Ja — das ist der Kern des Produkts. Subsumio indexiert österreichisches Bundesrecht (ABGB, ZPO, EO) und antwortet auf Basis deiner Akten und der korrekten österreichischen Rechtsgrundlage.",
+        a: "Ja. Subsumio arbeitet mit österreichischem Bundesrecht aus dem RIS (ABGB, ZPO, EO) und antwortet auf Basis Ihrer Akten und der österreichischen Rechtsgrundlage.",
       },
       {
         q: "Wie kommen meine bestehenden Akten in Subsumio?",
-        a: "Per Ordner-Import, Upload oder über die Copilot-Schnittstelle. Bestehende Systeme wie RA-Micro oder anwalt.at bleiben unverändert — Subsumio ergänzt sie um die Abfrageschicht.",
+        a: "Per Upload oder E-Mail-Import (IMAP). Ihre bestehende Kanzleisoftware bleibt unverändert — Subsumio ergänzt sie.",
       },
     ],
   },
   linz: {
     slug: "linz",
     city: "Linz",
+    state: "Oberösterreich",
     country: "Österreich",
     countryCode: "AT",
     title: "Subsumio für Rechtsanwälte in Linz",
@@ -122,42 +127,43 @@ const _cities: Record<string, CityPageContent> = {
       "KI-Kanzleisoftware für Anwälte in Linz: Akten nach österreichischem Recht (ABGB, ZPO, EO), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. EU-gehostet.",
     h1: "KI-Kanzleisoftware für Linzer Anwaltskanzleien",
     intro:
-      "Subsumio ist die KI-Kanzleisoftware für Rechtsanwälte in Linz und ganz Oberösterreich. Das OLG Linz ist auch für Salzburg zuständig — Subsumio kennt die oberösterreichische Justizlandschaft und arbeitet durchgehend mit österreichischem Recht.",
+      "Subsumio ist die KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Linz und ganz Oberösterreich — durchgehend mit österreichischem Recht, belegten Antworten und Fundstellen.",
     jurisdictionNote:
-      "Subsumio berechnet Fristen nach österreichischer ZPO (§§ 5, 224, 510) und berücksichtigt oberösterreichische Feiertage. Das OLG Linz deckt Oberösterreich und Salzburg ab — relevant für Berufungswege aus beiden Bundesländern.",
+      "Subsumio berechnet Fristen nach §§ 125, 126 ZPO, berücksichtigt die Fristenhemmung nach § 222 ZPO und alle gesetzlichen Feiertage. Das OLG Linz ist für Oberösterreich und Salzburg zuständig.",
     courts: ["Oberlandesgericht Linz", "Landesgericht Linz", "Bezirksgerichte Oberösterreich"],
     features: [
       {
         title: "Wirtschaftsrecht im Zentrum",
-        desc: "Linz ist Industriestandort — Subsumio strukturiert Gesellschaftsverträge, Liefervereinbarungen und Konzernakten so, dass du Querverbindungen sofort findest.",
+        desc: "Linz ist Industriestandort — Subsumio durchsucht Gesellschaftsverträge, Liefervereinbarungen und umfangreiche Akten und zeigt Ihnen die Fundstellen.",
       },
       {
         title: "Fristen nach ZPO und EO",
-        desc: "Automatische Fristenberechnung mit oberösterreichischen Feiertagen — inklusive Wochenend- und Feiertagsverschiebung nach ZPO.",
+        desc: "Rekurs (14 Tage), Berufung und Klagebeantwortung (4 Wochen), Fristen nach der EO — automatisch mit gesetzlichen Feiertagen und Fristenhemmung.",
       },
       {
         title: "DSGVO und § 9 Abs. 2 RAO",
-        desc: "EU-Cloud mit AVV oder komplett self-hosted. Mandantendaten bleiben, wo sie hingehören: unter deiner Kontrolle.",
+        desc: "Hosting in der EU mit AVV, On-Premise im Enterprise-Tarif. Alle Auftragsverarbeiter sind im AVV benannt.",
       },
     ],
     faq: [
       {
         q: "Ist Subsumio für Wirtschaftskanzleien geeignet?",
-        a: "Ja — gerade bei Transaktionsakten mit hunderten Dokumenten zahlt sich die semantische Suche aus: 'Alle Gewährleistungsklauseln in den SPA-Anhängen' liefert belegte Fundstellen statt Stichwort-Treffer.",
+        a: "Ja — gerade bei Transaktionsakten mit hunderten Dokumenten hilft die Suche nach Bedeutung statt nach Stichwort: „Alle Gewährleistungsklauseln in den Anhängen zum Anteilskaufvertrag“ liefert Fundstellen statt bloßer Stichwort-Treffer.",
       },
       {
-        q: "Gilt Subsumio auch für Salzburger Kanzleien?",
-        a: "Ja. Das OLG Linz ist für Salzburg zuständig — die Berufungswege sind im System abgebildet. Für Salzburg gibt es außerdem eine eigene Seite: /at/cities/salzburg.",
+        q: "Eignet sich Subsumio auch für Salzburger Kanzleien?",
+        a: "Ja. Subsumio funktioniert österreichweit; Salzburg gehört zum Sprengel des OLG Linz. Für Salzburg gibt es eine eigene Seite: /at/cities/salzburg.",
       },
       {
         q: "Kann ich Subsumio vorher testen?",
-        a: "Ja — 14 Tage kostenlos, ohne Kreditkarte. Du lädst eigene Akten hoch und prüfst die belegten Antworten an deinem echten Material.",
+        a: "Ja — 14 Tage kostenlos, ohne Kreditkarte. Sie laden eigene Akten hoch und prüfen die belegten Antworten an Ihrem echten Material.",
       },
     ],
   },
   salzburg: {
     slug: "salzburg",
     city: "Salzburg",
+    state: "Salzburg",
     country: "Österreich",
     countryCode: "AT",
     title: "Subsumio für Rechtsanwälte in Salzburg",
@@ -166,46 +172,47 @@ const _cities: Record<string, CityPageContent> = {
       "KI-Kanzleisoftware für Anwälte in Salzburg: Akten nach österreichischem Recht (ABGB, ZPO, EO), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. EU-gehostet.",
     h1: "KI-Kanzleisoftware für Salzburger Anwaltskanzleien",
     intro:
-      "Subsumio ist die KI-Kanzleisoftware für Rechtsanwälte in Salzburg — mit echtem österreichischem Recht statt angepasster deutscher Software. Belegte Antworten mit Fundstellen, Fristen nach ZPO und die Salzburger Feiertagslage inklusive.",
+      "Subsumio ist die KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Salzburg — mit österreichischem Recht statt angepasster deutscher Software: belegte Antworten mit Fundstellen und Fristen nach der ZPO.",
     jurisdictionNote:
-      "Subsumio berechnet Fristen nach österreichischer ZPO (§§ 5, 224, 510) mit Salzburger Feiertagen. Für Rechtsmittel ist das OLG Linz zuständig — die Berufungswege aus Salzburg sind im System korrekt abgebildet.",
+      "Subsumio berechnet Fristen nach §§ 125, 126 ZPO, berücksichtigt die Fristenhemmung nach § 222 ZPO und alle gesetzlichen Feiertage. Salzburg gehört zum Sprengel des OLG Linz.",
     courts: [
-      "Landesgericht Salzburg",
-      "Oberlandesgericht Linz (zuständige Berufungsinstanz)",
-      "Bezirksgerichte Salzburg",
+      "Landesgericht Salzburg · OLG-Sprengel Linz",
+      "Oberlandesgericht Linz",
+      "Bezirksgerichte im Land Salzburg",
     ],
     features: [
       {
-        title: "Grenzüberschreitende Mandate",
-        desc: "Salzburger Kanzleien arbeiten oft deutschland-nah. Subsumio trennt klar zwischen österreichischem und deutschem Recht — die Fundstellen zeigen dir, welche Rechtsgrundlage zählt.",
+        title: "Österreichisches Recht als Grundlage",
+        desc: "Die Rechtsrecherche stützt sich auf österreichisches Recht aus dem RIS. Jede Fundstelle zeigt, aus welcher Norm oder welchem Dokument eine Aussage stammt.",
       },
       {
-        title: "Fristen mit Salzburger Feiertagen",
-        desc: "Rupertikirtag, Bundes- und Landesfeiertage fließen in die Fristenberechnung ein — mit ZPO-korrekter Monatsarithmetik und Wochenendverschiebung.",
+        title: "Fristen nach ZPO und EO",
+        desc: "Rekurs (14 Tage), Berufung und Klagebeantwortung (4 Wochen), Fristen nach der EO — automatisch mit gesetzlichen Feiertagen und Fristenhemmung.",
       },
       {
-        title: "Mandantendaten unter Kontrolle",
-        desc: "EU-gehostet mit AVV oder Self-Hosting. Kein Training auf Mandantendaten, mandantenseparierte Verarbeitung — § 9 Abs. 2 RAO per Architektur.",
+        title: "Verschwiegenheit nach § 9 Abs. 2 RAO",
+        desc: "Hosting in der EU mit AVV, On-Premise im Enterprise-Tarif. Kein Training von KI-Modellen mit Mandantendaten, getrennte Verarbeitung je Kanzlei.",
       },
     ],
     faq: [
       {
-        q: "Kennt Subsumio den OLG-Zuständigkeitsbereich für Salzburg?",
-        a: "Ja. Berufungen aus Salzburg gehen an das OLG Linz — die Fristen- und Verfahrenslogik bildet das korrekt ab.",
+        q: "Kennt Subsumio den OLG-Sprengel für Salzburg?",
+        a: "Ja. Salzburg gehört zum Sprengel des OLG Linz; Berufungen gegen Urteile des Landesgerichts Salzburg gehen dorthin.",
       },
       {
-        q: "Funktioniert Subsumio mit Mandaten aus Deutschland?",
-        a: "Die KI arbeitet auf Basis deiner Akten — grenzüberschreitende Dokumente werden genauso indexiert. Die Fundstellen zeigen dir transparent, aus welchem Dokument und welcher Rechtsordnung eine Aussage stammt.",
+        q: "Funktioniert Subsumio mit Akten, die Auslandsbezug haben?",
+        a: "Subsumio arbeitet auf Basis Ihrer Akten — auch Dokumente mit Auslandsbezug werden durchsuchbar. Die Rechtsrecherche selbst deckt österreichisches Recht ab; die Fundstellen zeigen, aus welchem Dokument eine Aussage stammt.",
       },
       {
         q: "Brauche ich IT-Personal für den Betrieb?",
-        a: "Nein. Die EU-Cloud läuft ohne eigenen Server und ohne Wartung. Wer maximale Kontrolle will, kann Subsumio auch self-hosted betreiben — beides ist aus demselben Produkt wählbar.",
+        a: "Nein. In der EU-Cloud brauchen Sie weder einen eigenen Server noch Wartung. On-Premise auf eigener Infrastruktur gibt es im Enterprise-Tarif.",
       },
     ],
   },
   innsbruck: {
     slug: "innsbruck",
     city: "Innsbruck",
+    state: "Tirol",
     country: "Österreich",
     countryCode: "AT",
     title: "Subsumio für Rechtsanwälte in Innsbruck",
@@ -214,36 +221,36 @@ const _cities: Record<string, CityPageContent> = {
       "KI-Kanzleisoftware für Anwälte in Innsbruck: Akten nach österreichischem Recht (ABGB, ZPO, EO), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. EU-gehostet.",
     h1: "KI-Kanzleisoftware für Innsbrucker Anwaltskanzleien",
     intro:
-      "Subsumio ist die KI-Kanzleisoftware für Rechtsanwälte in Innsbruck und Tirol — von der Generalist-Kanzlei bis zur Spezialkanzlei für Baurecht und Tourismusrecht. Österreichisches Recht, belegte Antworten, Fristen nach ZPO.",
+      "Subsumio ist die KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Innsbruck und Tirol — von der Allgemeinkanzlei bis zur Spezialkanzlei für Bau- und Tourismusrecht. Österreichisches Recht, belegte Antworten, Fristen nach der ZPO.",
     jurisdictionNote:
-      "Subsumio berechnet Fristen nach österreichischer ZPO (§§ 5, 224, 510) und berücksichtigt Tiroler Feiertage — einschließlich Herz-Jesu (Landesfeiertag in Tirol). Das OLG Innsbruck ist die Berufungsinstanz für Tirol und Vorarlberg.",
+      "Subsumio berechnet Fristen nach §§ 125, 126 ZPO, berücksichtigt die Fristenhemmung nach § 222 ZPO und alle gesetzlichen Feiertage. Das OLG Innsbruck ist für Tirol und Vorarlberg zuständig.",
     courts: ["Oberlandesgericht Innsbruck", "Landesgericht Innsbruck", "Bezirksgerichte Tirol"],
     features: [
       {
-        title: "Baurecht und Tourismus im Griff",
-        desc: "Baubewilligungen, Widmungen, Beherbergungsverträge — Subsumio findet in langen Verwaltungsakten die entscheidenden Stellen und zitiert sie seitengenau.",
+        title: "Bau- und Tourismusrecht",
+        desc: "Baubewilligungen, Widmungen, Beherbergungsverträge — Subsumio findet in langen Verwaltungsakten die entscheidenden Stellen und nennt die Fundstelle.",
       },
       {
-        title: "Fristen mit Tiroler Feiertagen",
-        desc: "Herz-Jesu-Sonntag und alle Bundesfeiertage sind im Fristenkalender eingerechnet — Notfristen und Berufungsfristen mit korrekter Verschiebung.",
+        title: "Fristen nach ZPO und EO",
+        desc: "Rekurs (14 Tage), Berufung und Klagebeantwortung (4 Wochen), Fristen nach der EO — automatisch mit gesetzlichen Feiertagen und Fristenhemmung.",
       },
       {
         title: "Auch für kleine Kanzleien",
-        desc: "Solo-Tarif ohne Mindestabnahme. Dieselbe Engine wie für Großkanzleien — belegte Antworten, Kollisionsprüfung, Fristenradar.",
+        desc: "Solo-Tarif für 249 €/Monat (1 Nutzer) — Akten, Fristen und belegte Antworten mit Fundstellen.",
       },
     ],
     faq: [
       {
-        q: "Gilt Subsumio auch für Vorarlberger Kanzleien?",
-        a: "Ja. Das OLG Innsbruck ist für Tirol und Vorarlberg zuständig — die Berufungsinstanzen sind korrekt abgebildet. Subsumio funktioniert österreichweit.",
+        q: "Eignet sich Subsumio auch für Vorarlberger Kanzleien?",
+        a: "Ja. Subsumio funktioniert österreichweit; Vorarlberg gehört wie Tirol zum Sprengel des OLG Innsbruck.",
       },
       {
-        q: "Wie schnell ist Subsumio einsatzbereit?",
-        a: "In Minuten: registrieren, Akten hochladen oder Ordner verbinden — die erste belegte Antwort bekommst du am selben Tag. 14 Tage kostenlos, ohne Kreditkarte.",
+        q: "Wie komme ich zu meiner ersten Antwort?",
+        a: "Registrieren, Akten hochladen, erste Frage stellen — ohne Installation. 14 Tage kostenlos, ohne Kreditkarte.",
       },
       {
         q: "Bleiben Mandantendaten in Österreich?",
-        a: "Die EU-Cloud läuft in europäischen Rechenzentren mit AVV — oder komplett self-hosted auf deiner Infrastruktur. Kein Training auf Mandantendaten, keine Daten an Dritte.",
+        a: "Die EU-Cloud läuft in Rechenzentren in der EU, nicht ausschließlich in Österreich. Grundlage ist ein AVV, in dem alle Auftragsverarbeiter benannt sind. On-Premise auf Ihrer eigenen Infrastruktur gibt es im Enterprise-Tarif.",
       },
     ],
   },

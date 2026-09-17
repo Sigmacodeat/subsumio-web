@@ -11,26 +11,26 @@ import {
 import { keywordsFor } from "@/lib/seo-keywords";
 
 export const metadata: Metadata = {
-  title: "SuperBrain — Die KI-Engine hinter Subsumio | Legal AI mit 5-Ebenen-Architektur",
+  title: "SuperBrain – das Gedächtnis Ihrer Kanzlei | Subsumio",
   description:
-    "Das Subsumio SuperBrain: 29 Dream-Cycle-Phasen, 5 Korrektur-Ebenen, LEXam-validiert, 119 Sprachen. Eine lernende Wissensbasis für deine Kanzlei — mit belegten Antworten, nächtlicher Widerspruchsprüfung und Österreich-Recht Fine-Tuning.",
+    "Das Subsumio SuperBrain prüft jede Nacht die neuen Dokumente Ihrer Kanzlei. Am Morgen sehen Sie neue Widersprüche, anstehende Fristen und fehlende Unterlagen – mit Fundstellen. EU-Hosting, österreichisches Recht aus dem RIS.",
   keywords: keywordsFor("superbrain"),
   alternates: {
     canonical: "/at/superbrain",
   },
   openGraph: {
-    title: "SuperBrain — Die KI-Engine hinter Subsumio",
+    title: "SuperBrain – das Gedächtnis Ihrer Kanzlei",
     description:
-      "29 Dream-Cycle-Phasen, 5 Korrektur-Ebenen, LEXam-validiert, 119 Sprachen. Eine lernende Wissensbasis für deine Kanzlei.",
+      "Nächtliche Prüfung Ihrer Akten in fünf Schritten: Widersprüche, Fristen und fehlende Unterlagen liegen am Morgen in Ihrer Übersicht.",
     url: "/at/superbrain",
     type: "website",
     siteName: "Subsumio",
   },
   twitter: {
     card: "summary_large_image",
-    title: "SuperBrain — Die KI-Engine hinter Subsumio",
+    title: "SuperBrain – das Gedächtnis Ihrer Kanzlei",
     description:
-      "29 Dream-Cycle-Phasen, 5 Korrektur-Ebenen, LEXam-validiert, 119 Sprachen. Legal AI mit Wissensgraph.",
+      "Nächtliche Prüfung Ihrer Akten in fünf Schritten, Antworten mit Fundstellen, EU-Hosting.",
   },
 };
 

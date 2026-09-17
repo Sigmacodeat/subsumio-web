@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { p, UI_STRINGS } from "@/content/site";
+import { p } from "@/content/site";
 import { EASE, ClipReveal, MagneticButton, GradientMesh } from "../motion-system";
 import { Section, H2_CTA_CLASS } from "../primitives";
 import { reveal, type SuperbrainCopyDe } from "./shared";
@@ -42,7 +42,7 @@ export function StickyCTA({ t }: { t: SuperbrainCopyDe }) {
 
 export function CTASection({ t }: { t: SuperbrainCopyDe }) {
   return (
-    <Section tone="dark" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="Call to action">
+    <Section tone="dark" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="Jetzt testen">
       <GradientMesh className="z-0" />
       <div className="brand-glow-bg absolute inset-x-0 top-1/2 h-72 -translate-y-1/2 opacity-30 blur-3xl" />
       <div className="relative z-10 mx-auto max-w-3xl text-center">
@@ -81,7 +81,7 @@ export function CTASection({ t }: { t: SuperbrainCopyDe }) {
             </Button>
           </MagneticButton>
           <Button size="lg" variant="secondary" asChild>
-            <Link href={p("/contact")}>{UI_STRINGS.writeUs}</Link>
+            <Link href={p("/contact")}>{t.ctaContact}</Link>
           </Button>
         </motion.div>
       </div>

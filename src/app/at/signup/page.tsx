@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import AuthForm from "@/components/auth/auth-form";
 
 export const metadata: Metadata = {
-  title: "Kostenlos starten",
+  title: "14 Tage kostenlos testen",
   description:
     "Subsumio kostenlos starten: KI-Kanzleisoftware für Akten, Fristen, Dokumente und belegte Antworten ohne Kreditkarte testen.",
   robots: { index: false },

@@ -35,24 +35,24 @@ interface MarqueeItem {
 
 const ROW_TOP: MarqueeItem[] = [
   { icon: ShieldCheck, label: "DSGVO-konform" },
-  { icon: ScrollText, label: "§ 9 Abs. 2 RAO im Blick" },
-  { icon: BadgeCheck, label: "SOC 2 Vorbereitung" },
-  { icon: FileCheck, label: "ISO 27001 geplant" },
+  { icon: ScrollText, label: "Verschwiegenheit nach § 9 Abs. 2 RAO" },
+  { icon: BadgeCheck, label: "AVV nach Art. 28 DSGVO" },
+  { icon: FileCheck, label: "Aufbewahrung nach BAO" },
   { icon: Globe, label: "EU-Cloud" },
   { icon: Server, label: "On-Premise" },
   { icon: Lock, label: "Kein Training auf Ihren Daten" },
 ];
 
 const ROW_BOTTOM: MarqueeItem[] = [
-  { icon: Scale, label: "RAO-orientiert" },
-  { icon: Landmark, label: "RATG-/AHK-Workflows" },
+  { icon: Scale, label: "Kollisionsprüfung nach § 10 RAO" },
+  { icon: Landmark, label: "Honorar nach RATG und AHK" },
   { icon: FileSignature, label: "DocuSign-Integration" },
   { icon: MessageSquare, label: "WhatsApp Business" },
   { icon: Gavel, label: "Nachvollziehbarer Audit-Trail" },
-  { icon: Mail, label: "webERV-Workflows" },
+  { icon: Mail, label: "E-Mail-Import (IMAP)" },
   { icon: Cloud, label: "EU-Hosting mit AVV" },
-  { icon: Database, label: "Volltext-Indexierung" },
-  { icon: FileText, label: "Office-Integration" },
+  { icon: Database, label: "Rechtsquellen aus dem RIS" },
+  { icon: FileText, label: "Word-Add-in" },
 ];
 
 function MarqueeRow({

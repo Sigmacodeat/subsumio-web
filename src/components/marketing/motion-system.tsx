@@ -303,7 +303,12 @@ export function AnimatedCounter({
   return (
     <span ref={ref} className={className}>
       {prefix}
-      {val >= 1000 ? Math.floor(val).toLocaleString("de-AT") : val.toFixed(decimals)}
+      {val >= 1000
+        ? Math.floor(val).toLocaleString("de-AT")
+        : val.toLocaleString("de-AT", {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals,
+          })}
       {suffix}
     </span>
   );

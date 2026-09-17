@@ -1,5 +1,6 @@
 // /security — trust & data-protection page.
-// Only claims the engine/tests actually back.
+// Only claims the product and its tests actually back. No certificates, no
+// roadmap promises (SOC 2 / ISO 27001 do not exist).
 
 export interface SecurityContent {
   metaTitle: string;
@@ -31,164 +32,148 @@ export interface SecurityContent {
 }
 
 export const SECURITY: SecurityContent = {
-  metaTitle: "Subsumio Sicherheit — DSGVO-KI für Kanzleien",
+  metaTitle: "Subsumio Sicherheit — Datenschutz für Kanzleien in Österreich",
   metaDesc:
-    "Engine self-hosted auf deiner Hardware oder EU-Cloud mit AVV. Kein Training mit Mandantendaten, Zugriff pro Nutzer fuzz-getestet auf null Leaks.",
+    "EU-Cloud (Hetzner) mit AVV oder On-Premise im Enterprise-Tarif. Kein Training mit Mandantendaten, Zugriffsrechte pro Nutzer und Akte, automatisiert getestet.",
   badge: "Sicherheit & Datenschutz",
-  h1a: "Deine Daten sind der Wert des Produkts.",
-  h1b: "Deshalb bleiben sie unter deiner Kontrolle.",
-  sub: "Subsumio ist für Berufe gebaut, in denen Verschwiegenheit Gesetz ist, nicht Präferenz: Kanzleien in Österreich. Hier ist die Architektur — und was Enterprise-Kunden heute schon nutzen.",
+  h1a: "Mandantendaten gehören der Kanzlei.",
+  h1b: "Deshalb bleiben sie unter Ihrer Kontrolle.",
+  sub: "Subsumio ist für einen Beruf gebaut, in dem Verschwiegenheit Gesetz ist: Rechtsanwältinnen und Rechtsanwälte in Österreich. Hier steht, wie das System aufgebaut ist — das ist heute verfügbar.",
   pillars: [
     {
       icon: "Shield",
-      title: "Self-Hosting, vollständig",
-      desc: "Die komplette Engine läuft auf deiner Hardware — das volle Produkt, nichts zurückgehalten. Mandantendaten erreichen überhaupt keinen Dritten, und deine IT kontrolliert jedes System, das deine Akten berührt.",
+      title: "On-Premise (Enterprise)",
+      desc: "Im Enterprise-Tarif läuft Subsumio vollständig auf Ihrer Hardware. Mit eigenem Sprachmodell verlässt nichts Ihr Netzwerk, und Ihre IT kontrolliert jedes System, das Ihre Akten berührt.",
     },
     {
       icon: "Layers",
-      title: "Isolation, fuzz-getestet",
-      desc: "Zugriff pro Nutzer und pro Quelle wird auf jedem Lesepfad erzwungen und auf null Cross-Tenant-Leaks fuzz-getestet. Ein Nutzer sieht seinen Scope — nie den eines anderen.",
+      title: "Getrennte Zugriffe",
+      desc: "Zugriffsrechte gelten pro Nutzer und pro Akte und werden bei jedem Lesezugriff geprüft. Die Trennung zwischen Kanzleien und Teams testen wir automatisiert mit zufällig erzeugten Abfragen.",
     },
     {
       icon: "Lock",
-      title: "Kein Training mit deinen Daten",
-      desc: "Deine Inhalte trainieren weder unsere noch fremde Modelle. Synthese-Calls gehen an den LLM-Provider, den du konfigurierst; Self-Hosted-Setups wählen eigene Endpunkte oder Gateways.",
+      title: "Kein Training mit Ihren Daten",
+      desc: "Ihre Inhalte trainieren weder unsere noch fremde Modelle. Für KI-Antworten gehen Anfragen an ein Sprachmodell; dessen Anbieter ist im AVV als Auftragsverarbeiter benannt. On-Premise können Sie ein eigenes Modell betreiben.",
     },
     {
       icon: "Eye",
-      title: "Auditierbar per Architektur",
-      desc: "Deterministische Zitate in jeder Antwort, Request-Logging, und eine Trust-Boundary, die jeden Remote-Aufrufer standardmäßig als nicht vertrauenswürdig behandelt — prüft exakt, woher jede Aussage stammt.",
+      title: "Nachvollziehbar",
+      desc: "Antworten nennen ihre Fundstellen, Zugriffe werden protokolliert, und jede Anfrage von außen gilt zunächst als nicht vertrauenswürdig. So prüfen Sie, woher eine Aussage stammt.",
     },
   ],
   hostingTitle: "Zwei Betriebsarten",
-  hostingSub: "Beide lassen dir die Kontrolle. Wähle nach deiner Compliance-Lage.",
+  hostingSub: "Wählen Sie nach den Anforderungen Ihrer Kanzlei.",
   hostingOptions: [
     {
-      title: "Self-hosted / On-Premise (Enterprise)",
+      title: "On-Premise (Enterprise)",
       points: [
-        "Deine Hardware, deine Jurisdiktion, deine Keys",
-        "Kein Dritter verarbeitet Mandantendaten — relevant für § 9 Abs. 2 RAO: keine mitwirkende Person",
-        "Die komplette Engine, auditierbar, auf deiner Infrastruktur",
-        "Updates und Backups verwaltest du selbst",
+        "Ihre Hardware, Ihr Netzwerk, Ihre Schlüssel",
+        "Derselbe Funktionsumfang wie in der EU-Cloud",
+        "Kein Auftragsverarbeiter, wenn Sie ein eigenes Sprachmodell betreiben",
+        "Updates und Backups verwalten Sie selbst",
       ],
     },
     {
-      title: "Verwaltete EU-Cloud (Pro/Team/Enterprise)",
+      title: "Verwaltete EU-Cloud (Solo, Kanzlei, Enterprise)",
       points: [
-        "EU-Hosting mit Auftragsverarbeitungsvertrag (AVV, Art. 28 DSGVO)",
-        "Verschwiegenheitsverpflichtung nach § 9 Abs. 2 RAO für Berufsgeheimnisträger verfügbar",
+        "EU-Hosting (Hetzner) mit Auftragsverarbeitungsvertrag (AVV, Art. 28 DSGVO)",
+        "Auftragsverarbeiter sind im AVV benannt",
         "Verschlüsselung bei Übertragung und Speicherung",
         "Löschanfragen an einer Stelle erledigt",
       ],
     },
   ],
-  complianceTitle: "Was wir heute haben",
+  complianceTitle: "Was heute verfügbar ist",
   complianceItems: [
     {
-      title: "DSGVO-konforme Verarbeitung",
-      desc: "AVV für gehostete Pläne, EU-Datenstandort, dokumentierte Subprozessoren, Löschung auf Anfrage. Self-Hosted-Deployments verarbeiten auf unserer Seite gar nichts.",
+      title: "Verarbeitung nach DSGVO",
+      desc: "AVV für die gehosteten Tarife, Datenstandort EU, benannte Auftragsverarbeiter, Löschung auf Anfrage. On-Premise verarbeiten wir auf unserer Seite keine Mandantendaten.",
     },
     {
-      title: "Berufsgeheimnisschutz (§ 9 Abs. 2 RAO)",
-      desc: "Self-Hosting heißt: kein Dritter ist beteiligt — die sauberste Antwort auf die Verschwiegenheitspflicht nach § 9 Abs. 2 RAO, ganz ohne mitwirkende Person. Gehostete Pläne ergänzen die AVV um eine vertragliche Verschwiegenheitsverpflichtung.",
+      title: "Verschwiegenheit (§ 9 Abs. 2 RAO)",
+      desc: "Die Verschwiegenheitspflicht nach § 9 Abs. 2 RAO trifft Sie — auch dann, wenn Sie Dienstleister einsetzen. In den gehosteten Tarifen ergänzen wir den AVV deshalb um eine vertragliche Verschwiegenheitsverpflichtung. On-Premise mit eigenem Sprachmodell ist kein Dienstleister beteiligt.",
     },
     {
-      title: "Eingebaute Anonymisierung vor der Cloud",
-      desc: "Ein Klick schwärzt Mandantennamen, IBANs, Aktenzeichen und Kontaktdaten aus jedem Text, bevor er geteilt oder an ein Cloud-LLM gegeben wird — mit Re-Identifikations-Mapping, das nur der Berechtigte behält. Muster-basiert offline; Namens-Erkennung optional per LLM.",
-    },
-    {
-      title: "Getestete Isolation",
-      desc: "Multi-Tenant-Scoping wird in der Engine erzwungen und über jeden Lesepfad mit Fuzz-Tests gepinnt — keine Dashboard-Checkbox.",
+      title: "Anonymisierung vor der Weitergabe",
+      desc: "Ein Klick schwärzt Mandantennamen, IBANs, Geschäftszahlen und Kontaktdaten in einem Text, bevor er geteilt oder an ein Sprachmodell in der Cloud geschickt wird. Die Zuordnung zur Rückführung bleibt beim Berechtigten. Die Mustererkennung läuft ohne Internetverbindung; die Namenserkennung per Sprachmodell ist optional.",
     },
   ],
   complianceBadges: [
     {
       icon: "ShieldCheck",
-      label: "DSGVO / GDPR",
-      sub: "EU-Datenstandort & AVV",
-    },
-    {
-      icon: "Lock",
-      label: "§ 9 Abs. 2 RAO",
-      sub: "Berufsgeheimnisschutz",
-    },
-    {
-      icon: "FileCheck",
-      label: "EU AI Act",
-      sub: "Art. 50 Compliance",
+      label: "DSGVO",
+      sub: "AVV nach Art. 28",
     },
     {
       icon: "Server",
-      label: "ISO 27001",
-      sub: "Audit-Roadmap",
+      label: "EU-Hosting",
+      sub: "Rechenzentren in der EU (Hetzner)",
+    },
+    {
+      icon: "FileCheck",
+      label: "KI-Verordnung",
+      sub: "Kennzeichnung nach Art. 50",
     },
   ],
-  aiActTitle: "EU AI Act — wo wir stehen",
-  aiActText:
-    "Die Transparenzpflichten des AI Act (Art. 50) und die meisten Hochrisiko-Pflichten gelten ab dem 2. August 2026. Unsere ehrliche Position vor diesem Stichtag:",
+  aiActTitle: "KI-Verordnung der EU — wo wir stehen",
+  aiActText: "Die Transparenzpflichten nach Art. 50 KI-VO setzen wir so um:",
   aiActItems: [
     {
-      title: "KI-Output ist gekennzeichnet (Art. 50)",
-      desc: "Jeder KI-generierte Entwurf und jede KI-Antwort ist als KI-generiert markiert — sichtbar in der App und als maschinenlesbares Kennzeichen auf der API-Antwort und in gespeicherten Dokumenten. Ein Mensch zeichnet ab; die Maschine gibt sich nie als Urheber aus.",
+      title: "KI-Ergebnisse sind gekennzeichnet (Art. 50)",
+      desc: "Jeder KI-erzeugte Entwurf und jede KI-Antwort ist als solche markiert — sichtbar in der Anwendung und als maschinenlesbares Kennzeichen in gespeicherten Dokumenten. Ein Mensch zeichnet ab; die Maschine gibt sich nicht als Urheber aus.",
     },
     {
-      title: "Menschliche Aufsicht, immer",
-      desc: "Subsumio entwirft und schlägt vor — es reicht nichts ein, bucht nichts und versendet nichts von selbst. Eine qualifizierte Fachkraft prüft und gibt jeden Output frei: der vom Act geforderte Human-in-the-Loop für Hochrisiko-Nutzung.",
+      title: "Menschliche Aufsicht",
+      desc: "Subsumio entwirft und schlägt vor — es bringt nichts ein, bucht nichts und versendet nichts von selbst. Eine Anwältin oder ein Anwalt prüft jedes Ergebnis und gibt es frei.",
     },
     {
       title: "Risiko-Einstufung, dokumentiert",
-      desc: "Wir prüfen jedes Feature gegen Annex III, statt zu vermuten. Anwaltsunterstützung allein ist i. d. R. nicht hochrisiko; wo ein Feature Fristen oder Rechtsfolgen berührt, dokumentieren wir die Einstufung und führen das Audit-Log.",
+      desc: "Wir prüfen jede Funktion gegen Anhang III der KI-Verordnung, statt zu vermuten. Wo eine Funktion Fristen oder Rechtsfolgen berührt, dokumentieren wir die Einstufung und führen ein Protokoll.",
     },
   ],
-  enterpriseTitle: "Enterprise-ready — heute und morgen",
-  enterpriseText:
-    "Subsumio ist von Grund auf für Kanzleien gebaut, die höchste Sicherheitsanforderungen stellen. Was heute schon live ist und was als Nächstes kommt:",
+  enterpriseTitle: "Für Enterprise-Kunden",
+  enterpriseText: "Das ist im Enterprise-Tarif heute verfügbar:",
   enterpriseItems: [
     {
-      title: "Self-Hosting als direkter Compliance-Weg",
-      desc: "Die komplette Engine läuft auf deiner Hardware — kein Drittanbieter, keine Zertifizierung nötig. Für viele Beschaffungsprozesse ist das der schnellste Weg zur Freigabe.",
+      title: "Single Sign-On (SAML 2.0)",
+      desc: "Ihre Mitarbeiterinnen und Mitarbeiter melden sich über den Identitätsanbieter Ihrer Organisation an (Enterprise).",
     },
     {
-      title: "SSO/SAML über WorkOS",
-      desc: "Single Sign-On via SAML 2.0 ist für gehostete Team-Pläne integriert — Enterprise-Kunden authentifizieren über ihren eigenen Identity Provider. Self-Hosted-Setups legen die Engine hinter die eigene Auth.",
+      title: "Automatische Benutzerverwaltung (SCIM 2.0) und Informationsbarrieren",
+      desc: "Benutzer werden aus Ihrem Verzeichnisdienst angelegt und entfernt; Informationsbarrieren trennen Mandate innerhalb der Kanzlei (Enterprise).",
     },
     {
-      title: "SCIM 2.0 + Ethics Walls",
-      desc: "Automatisiertes User-Provisioning via SCIM 2.0 und Ethical Walls für Mandanten-Isolation sind implementiert — nicht Roadmap, sondern live.",
-    },
-    {
-      title: "Audit-Roadmap für SOC 2 / ISO 27001",
-      desc: "Die Engine-Architektur erfüllt die technischen Controls (Access Control, Audit Logging, Encryption at Rest, Isolation). Die formelle Zertifizierung läuft parallel zum Enterprise-Rollout — Self-Hosting macht sie für viele Käufer gegenstandslos.",
+      title: "Zertifizierungen",
+      desc: "Derzeit keine. Unsere technischen Maßnahmen legen wir im Security Review offen.",
     },
   ],
-  disclosureTitle: "Responsible Disclosure",
+  disclosureTitle: "Sicherheitslücke melden",
   disclosureText:
-    "Schwachstelle gefunden? E-Mail an security@subsum.eu. Wir bestätigen den Eingang innerhalb von 48 Stunden, halten dich auf dem Laufenden und nennen Researcher auf Wunsch namentlich. Bitte nicht gegen Systeme mit echten Kundendaten testen — hoste stattdessen eine Kopie selbst auf eigener Hardware.",
+    "Schwachstelle gefunden? E-Mail an security@subsum.eu. Wir bestätigen den Eingang innerhalb von 48 Stunden, halten Sie auf dem Laufenden und nennen Sie auf Wunsch namentlich. Bitte testen Sie nicht gegen Systeme mit echten Kundendaten — schreiben Sie uns vorab, dann stimmen wir den Rahmen ab.",
   faqTitle: "Sicherheitsfragen, klar beantwortet",
   faq: [
     {
       q: "Wo genau liegen meine Daten?",
-      a: "Self-hosted: auf deinen Maschinen, Punkt. Gehostet: in EU-Rechenzentren, Standort im AVV benannt. Synthese-Anfragen gehen an den für deinen Plan konfigurierten LLM-Provider — Enterprise-Setups können über EU-Endpunkte oder ein eigenes Gateway routen.",
+      a: "In der EU-Cloud: in Rechenzentren in der EU (Hetzner); der Standort ist im AVV benannt, ebenso der Anbieter des Sprachmodells, an den Anfragen für KI-Antworten gehen. On-Premise (Enterprise): auf Ihren eigenen Servern.",
     },
     {
-      q: "Können Subsumio-Mitarbeiter mein Brain lesen?",
-      a: "Self-hosted: nein, strukturell — es gibt keinen Zugriffspfad. Gehostet: Zugriff ist auf protokollierte Break-Glass-Betriebsprozeduren beschränkt und durch AVV plus Verschwiegenheitsverpflichtung gedeckt. Wir durchstöbern keine Kundeninhalte, und deine Inhalte trainieren keine Modelle.",
+      q: "Können Subsumio-Mitarbeiter meine Akten lesen?",
+      a: "On-Premise: nein, wir haben keinen Zugang zu Ihrem System. In der EU-Cloud ist der Zugriff auf protokollierte Notfallzugriffe im Betrieb beschränkt und durch AVV und Verschwiegenheitsverpflichtung gedeckt. Kundeninhalte sehen wir nicht ein.",
     },
     {
       q: "Was passiert mit meinen Daten, wenn ich kündige?",
-      a: "Export jederzeit (der Export der Engine ist ein vollwertiger Befehl, kein Support-Ticket). Gehostete Daten werden zum Vertragsende gemäß AVV gelöscht. Self-hosted: sie waren nie bei uns.",
+      a: "Sie können jederzeit alles exportieren. Nach Vertragsende 30 Tage Exportfrist, danach Löschung. On-Premise liegen die Daten ohnehin bei Ihnen.",
     },
     {
-      q: "Ist Self-Hosting unsicherer als eure Cloud?",
-      a: "Es ist dieselbe Engine. Sicherheitsrelevantes Verhalten — Scoping, Trust-Boundaries, Isolation — ist identisch und test-gepinnt. Der Unterschied ist, wer sie betreibt: du statt wir.",
+      q: "Ist On-Premise unsicherer als Ihre Cloud?",
+      a: "Es ist dieselbe Software. Zugriffsrechte, Trennung und Protokollierung verhalten sich gleich und sind durch dieselben Tests abgesichert. Der Unterschied ist, wer sie betreibt: Sie statt wir.",
     },
     {
-      q: "Wie verträgt sich der WhatsApp-Copilot mit § 9 Abs. 2 RAO?",
-      a: "WhatsApp ist ein optionaler Komfort-Kanal, kein Kernbestandteil. Der Copilot nutzt die Meta Business API mit Auftragsverarbeitungsvertrag (AVV). Für sensibelste Akteninhalte empfehlen wir die native Mobile-App oder Self-Hosting. Der Copilot ist so gebaut, dass jede Aktion bestätigungspflichtig ist — nichts landet ungesehen in der Akte. Kanzleien, die WhatsApp nicht nutzen möchten, verlieren keine Kernfunktionalität.",
+      q: "Wie verträgt sich der Assistent auf WhatsApp mit der Verschwiegenheitspflicht?",
+      a: "WhatsApp ist ein optionaler Zusatzkanal und lässt sich abschalten. Der Assistent läuft über WhatsApp Business von Meta — Nachrichten gehen also über Meta. Für sensible Inhalte empfehlen wir die Weboberfläche. Jede Aktion des Assistenten bestätigen Sie, bevor etwas in der Akte landet. Wer WhatsApp nicht nutzt, verliert keine Kernfunktion.",
     },
   ],
-  ctaTitle: "Bring deinen Datenschutzbeauftragten mit.",
-  ctaSub:
-    "Wir sprechen seine Sprache. Gehostet mit AVV — oder self-hosted, sodass sich die Frage gar nicht stellt.",
+  ctaTitle: "Bringen Sie Ihren Datenschutzbeauftragten mit.",
+  ctaSub: "Gehostet mit AVV – oder On-Premise ohne Auftragsverarbeiter.",
   ctaButton: "Demo vereinbaren",
 };

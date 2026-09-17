@@ -33,7 +33,7 @@ import { UI_STRINGS } from "@/content/site";
 
 const COPY = {
   waEyebrow: "Das Büro in der Hosentasche",
-  waTitle: "Immer dabei — nie eine Frist verpassen",
+  waTitle: "Immer dabei — Fristen im Blick, auch unterwegs",
   waSub:
     "Subsumio ist Ihr Sekretariat für unterwegs: Zeiten buchen, Belege ablegen, Fristen im Blick — alles über WhatsApp, ohne App-Wechsel.",
   waPoints: [
@@ -47,7 +47,7 @@ const COPY = {
       icon: Paperclip,
       color: "amber",
       t: "Beleg-Foto → richtige Akte",
-      d: "Dokument oder Foto mit Akten-Kürzel in der Caption landet revisionssicher im Vault.",
+      d: "Ein Foto oder Dokument mit Aktenkürzel in der Bildunterschrift wird in der richtigen Akte abgelegt.",
     },
     {
       icon: Mic,
@@ -59,10 +59,10 @@ const COPY = {
       icon: CalendarClock,
       color: "rose",
       t: "Fristen, die Sie nicht vergessen",
-      d: "Täglicher Digest, Feiertagsverschiebung, Notfristen automatisch berechnet. Sie schlafen ruhig — Subsumio wacht.",
+      d: "Tägliche Übersicht, Feiertage berücksichtigt, Fristen mit Rechtsgrundlage berechnet. Die Verantwortung bleibt bei Ihnen — Subsumio erinnert.",
     },
   ],
-  phoneHeader: "Subsumio-Copilot",
+  phoneHeader: "Subsumio-Assistent",
   phoneStatus: "online",
   chat: [
     { from: "user", text: "Zeit 0,5h Akte Müller, Telefonat Gegenseite" },
@@ -78,18 +78,17 @@ const COPY = {
     },
     {
       from: "bot",
-      text: "3 Widersprüche gefunden — mit Fundstellen (S. 14, B7, Protokoll K.). Antwort in der Akte abgelegt.",
+      text: "3 Widersprüche gefunden — mit Fundstellen (S. 14, Beilage ./7, Protokoll vom 12.03.). Antwort in der Akte abgelegt.",
     },
     { from: "user", text: "Welche Fristen laufen diese Woche ab?" },
     {
       from: "bot",
-      text: "3 Fristen: ⚠️ Replik Bauer heute 24:00 (Notfrist), Klageerwiderung Müller Do 16:00, Berufung Schmidt Fr 12:00. Alle verlinkt mit Akte.",
+      text: "3 Fristen: ⚠️ Rekurs Bauer heute, Klagebeantwortung Müller am Donnerstag, Berufung Schmidt am Freitag. Alle mit der Akte verknüpft.",
     },
   ],
   bentoEyebrow: "Alle Funktionen",
-  bentoTitle: "Alles, was die Kanzlei braucht — in einem Gehirn",
-  bentoSub:
-    "Self-hosted oder EU-Cloud. Jede Antwort mit Fundstelle. Jede Funktion auf Ihrer Infrastruktur.",
+  bentoTitle: "Alles, was die Kanzlei braucht — in einem System",
+  bentoSub: "EU-Cloud oder On-Premise im Enterprise-Tarif. Jede Antwort mit Fundstelle.",
 } as const;
 
 const reveal = (i: number, reduce = false) => ({
@@ -619,7 +618,7 @@ export function WhatsAppSpotlight({ children }: { children?: React.ReactNode }) 
     <Section
       tone="dark"
       className="relative overflow-hidden px-4 py-24 sm:px-6 lg:px-8"
-      aria-label="WhatsApp Copilot"
+      aria-label="Assistent auf WhatsApp"
     >
       <div className="relative mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2 lg:gap-16">
         <div>

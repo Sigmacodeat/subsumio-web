@@ -4,16 +4,15 @@ import { JsonLd, softwareApplicationLd, breadcrumbLd } from "@/components/seo/js
 import { professionalPricing } from "@/content/audiences";
 
 export const metadata: Metadata = {
-  title: "Subsumio Preise — Privat, Solo, Kanzlei und Enterprise",
+  title: "Subsumio Preise — Solo, Kanzlei und Enterprise",
   description:
-    "Getrennte Preise für Privatpersonen und professionelle Aktenarbeit. Solo 249 €/Monat, Kanzlei 1.499 €/Monat inklusive 5 Nutzern, monatlich kündbar.",
+    "Solo 249 €/Monat, Kanzlei 1.499 €/Monat inklusive 5 Nutzern, Enterprise auf Anfrage. Monatlich kündbar, 14 Tage kostenlos testen.",
   alternates: {
     canonical: "/at/pricing",
   },
   openGraph: {
-    title: "Subsumio Preise — Privat, Solo, Kanzlei und Enterprise",
-    description:
-      "Getrennte Preise für Privatpersonen und professionelle Aktenarbeit. Solo 249 €/Monat, monatlich kündbar.",
+    title: "Subsumio Preise — Solo, Kanzlei und Enterprise",
+    description: "Solo 249 €/Monat, Kanzlei 1.499 €/Monat inklusive 5 Nutzern. Monatlich kündbar.",
     url: "/at/pricing",
     type: "website",
   },

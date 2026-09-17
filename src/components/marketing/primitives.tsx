@@ -602,11 +602,16 @@ export function StatCard({
   suffix?: string;
   decimals?: number;
 }) {
-  const num = parseFloat(value.replace(/[^0-9.]/g, ""));
-  const extractedSuffix = suffix ?? value.replace(/[0-9.,]/g, "");
-  const extractedPrefix = prefix ?? value.match(/^[^0-9]*/)?.[0] ?? "";
-  const isNumeric = !isNaN(num) && num > 0;
-  const dec = decimals ?? (value.includes(".") ? 1 : 0);
+  // Values are written de-AT ("99,8 %", "1.499 €"): dot groups thousands,
+  // comma is the decimal separator. Parsing the comma away once rendered
+  // "99,8 %" as "998 %".
+  const numericPart = value.match(/[0-9][0-9.,]*/)?.[0] ?? "";
+  const normalized = numericPart.replace(/\./g, "").replace(",", ".");
+  const num = parseFloat(normalized);
+  const extractedSuffix = suffix ?? value.slice(value.indexOf(numericPart) + numericPart.length);
+  const extractedPrefix = prefix ?? (numericPart ? value.slice(0, value.indexOf(numericPart)) : "");
+  const isNumeric = numericPart !== "" && !isNaN(num) && num > 0;
+  const dec = decimals ?? (numericPart.includes(",") ? numericPart.split(",")[1].length : 0);
 
   return (
     <div className="text-center">

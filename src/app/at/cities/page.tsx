@@ -7,13 +7,13 @@ import { keywordsFor } from "@/lib/seo-keywords";
 export const metadata: Metadata = {
   title: "KI-Kanzleisoftware Österreich — Subsumio für Anwälte",
   description:
-    "KI-Kanzleisoftware für Rechtsanwälte in Österreich: österreichische Fristen nach ABGB und ZPO, belegte KI-Antworten und Berufsgeheimnis per Architektur — in Wien, Graz, Linz, Salzburg und Innsbruck.",
+    "KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Österreich: Fristen nach ZPO und ABGB, belegte KI-Antworten mit Fundstellen und Verschwiegenheit nach § 9 Abs. 2 RAO — in Wien, Graz, Linz, Salzburg und Innsbruck.",
   keywords: keywordsFor("cities"),
   alternates: { canonical: "/at/cities", languages: { "de-AT": "/at/cities" } },
   openGraph: {
     title: "KI-Kanzleisoftware Österreich — Subsumio für Anwälte",
     description:
-      "Österreichische Fristen, Fundstellen und Berufsgeheimnis für Kanzleien in ganz Österreich.",
+      "Fristen nach ZPO, belegte Antworten mit Fundstellen und Verschwiegenheit nach § 9 Abs. 2 RAO — für Kanzleien in ganz Österreich.",
     url: "/at/cities",
     type: "website",
   },
@@ -43,8 +43,9 @@ export default function CitiesPage() {
               KI-Kanzleisoftware für Österreich
             </h1>
             <p className="text-lg text-pretty [color:var(--mk-text-muted)]">
-              Subsumio arbeitet mit österreichischem Recht — von ABGB und ZPO bis EO — und kennt die
-              Landesfeiertage und Gerichtszüge jedes Bundeslands.
+              Subsumio arbeitet mit österreichischem Recht — von ABGB und ZPO bis EO — und
+              berücksichtigt gesetzliche Feiertage, die Fristenhemmung nach § 222 ZPO und den
+              zuständigen OLG-Sprengel.
             </p>
           </div>
 
@@ -58,7 +59,7 @@ export default function CitiesPage() {
                 <h2 className="mb-2 text-xl font-bold [color:var(--mk-text)] group-hover:text-[color:var(--brand-text)]">
                   {city.city}
                 </h2>
-                <p className="text-sm text-[color:var(--mk-text-muted)]">{city.country}</p>
+                <p className="text-sm text-[color:var(--mk-text-muted)]">{city.state}</p>
                 <p className="mt-3 text-sm text-[color:var(--mk-text-subtle)]">{city.courts[0]}</p>
               </Link>
             ))}
@@ -69,13 +70,13 @@ export default function CitiesPage() {
               href="/at/pricing"
               className="text-[color:var(--brand-text)] underline underline-offset-4 hover:text-[color:var(--mk-text)]"
             >
-              Preise & Pläne
+              Preise
             </Link>
             <Link
               href="/at/features"
               className="text-[color:var(--brand-text)] underline underline-offset-4 hover:text-[color:var(--mk-text)]"
             >
-              Features
+              Funktionen
             </Link>
             <Link
               href="/at/blog"

@@ -5,7 +5,7 @@ export const contentType = ogImageContentType;
 
 export default function Image() {
   return renderOgImage(
-    "Deine Daten sind der Wert des Produkts — EU-Hosting, DSGVO, On-Prem",
+    "Mandantendaten gehören der Kanzlei — EU-Hosting mit AVV, On-Premise im Enterprise-Tarif",
     "Sicherheit"
   );
 }
