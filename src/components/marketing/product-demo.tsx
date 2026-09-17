@@ -34,7 +34,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
-import { SubsumioMark } from "@/components/brand/subsumio-logo";
+import { SubsumioMark, SubsumioWordmark } from "@/components/brand/subsumio-logo";
 import { PRODUCT_DEMO } from "@/content/site";
 
 export type DemoScene = "frage" | "akte" | "fundstelle" | "frist";
@@ -123,10 +123,8 @@ export default function ProductDemo({
         {/* ── Sidebar (real labels, icons and active style) ── */}
         <aside className="hidden flex-col border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] sm:flex">
           <div className="flex items-center gap-2 border-b border-[color:var(--ds-border)] px-3 py-3">
-            <SubsumioMark size={22} />
-            <span className="font-display text-[13px] font-bold tracking-tight">
-              Subsum<span className="brand-text">•</span>io
-            </span>
+            <SubsumioMark size={22} animated={false} />
+            <SubsumioWordmark className="text-[14px]" />
           </div>
           <div className="mx-2.5 mt-2.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2.5 py-1.5">
             <div className="flex items-center justify-between">

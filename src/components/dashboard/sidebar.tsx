@@ -102,7 +102,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
-import { SubsumioMark } from "@/components/brand/subsumio-logo";
+import { SubsumioMark, SubsumioWordmark } from "@/components/brand/subsumio-logo";
 import { useNetworkStatus } from "@/lib/use-offline-sync";
 import { useLang } from "@/lib/use-lang";
 import { useIsDesktop } from "@/lib/use-media-query";
@@ -1639,12 +1639,12 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           <Link
             href="/dashboard"
             className={cn(
-              "font-display text-[13px] font-bold tracking-tight text-[color:var(--ds-text)] transition-[opacity] duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-smooth)] motion-reduce:transition-none",
+              "text-[15px] text-[color:var(--ds-text)] transition-[opacity] duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-smooth)] motion-reduce:transition-none",
               collapsed ? "pointer-events-none opacity-0" : "opacity-100"
             )}
             onClick={() => setMobileOpen(false)}
           >
-            Subsum<span className="brand-text">•io</span>
+            <SubsumioWordmark />
           </Link>
         </div>
 

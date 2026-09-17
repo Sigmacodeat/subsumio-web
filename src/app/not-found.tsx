@@ -14,27 +14,26 @@ export default function NotFound() {
         </div>
         <p className="mb-3 font-mono text-xs text-[var(--brand-primary)]">404</p>
         <h1 className="mb-3 text-[clamp(1.75rem,4vw,2.25rem)] leading-[1.12] font-bold tracking-tight text-balance [color:var(--mk-text)]">
-          Even the brain doesn&apos;t know this page.
+          Diese Seite gibt es nicht.
         </h1>
         <p className="mb-3 text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)]">
-          The page you&apos;re looking for doesn&apos;t exist — and unlike your knowledge, we
-          can&apos;t synthesize it from sources.
+          Die Adresse ist falsch oder die Seite wurde verschoben. Von der Startseite aus finden Sie
+          alles wieder.
         </p>
-        <p className="mb-10 text-xs [color:var(--mk-text-subtle)]">
-          Diese Seite existiert nicht. Zurück zur Startseite?
-        </p>
+        <div className="mb-10" />
         <div className="flex items-center justify-center gap-3">
           <Link
             href="/"
             className="inline-flex items-center gap-2 rounded-lg bg-[var(--brand-primary)] px-6 py-3 text-sm font-medium text-white shadow-lg ring-1 shadow-blue-950/40 ring-[var(--brand-primary)]/30 transition-[background-color,border-color,color] hover:bg-[var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
           >
-            <SubsumioMark size={15} tile={false} /> Home
+            <SubsumioMark size={15} tile={false} animated={false} className="text-white" /> Zur
+            Startseite
           </Link>
           <Link
-            href="/features"
+            href="/at/features"
             className="inline-flex items-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-6 py-3 text-sm [color:var(--mk-text-muted)] transition-[background-color,border-color,color] hover:[border-color:var(--mk-border-strong)] hover:[color:var(--mk-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
           >
-            <ArrowLeft size={14} /> Features
+            <ArrowLeft size={14} /> Funktionen
           </Link>
         </div>
       </div>

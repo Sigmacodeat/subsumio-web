@@ -32,28 +32,28 @@ export default function Error({
         <div className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-2xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]">
           <AlertCircle size={26} className="text-[color:var(--ds-danger-text)]" aria-hidden />
         </div>
-        <p className="mb-3 font-mono text-xs text-[color:var(--ds-danger-text)]">Error</p>
+        <p className="mb-3 font-mono text-xs text-[color:var(--ds-danger-text)]">Fehler</p>
         <h1 className="mb-3 text-[clamp(1.75rem,4vw,2.25rem)] leading-[1.12] font-bold tracking-tight text-balance [color:var(--mk-text)]">
-          Something went wrong.
+          Da ist etwas schiefgelaufen.
         </h1>
         <p className="mb-3 text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)]">
-          An unexpected error occurred. Try again — or head back to safety.
+          Ein unerwarteter Fehler ist aufgetreten. Versuchen Sie es erneut oder kehren Sie zur
+          Startseite zurück.
         </p>
-        <p className="mb-10 text-xs [color:var(--mk-text-subtle)]">
-          Ein Fehler ist aufgetreten. Zurück zur Startseite?
-        </p>
+        <div className="mb-10" />
         <div className="flex items-center justify-center gap-3">
           <button
             onClick={reset}
             className="inline-flex items-center gap-2 rounded-lg bg-[var(--brand-primary)] px-6 py-3 text-sm font-medium text-white shadow-lg ring-1 shadow-blue-950/40 ring-[var(--brand-primary)]/30 transition-[background-color,border-color,color] hover:bg-[var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
           >
-            <SubsumioMark size={15} tile={false} /> Try again
+            <SubsumioMark size={15} tile={false} animated={false} className="text-white" /> Erneut
+            versuchen
           </button>
           <Link
             href="/"
             className="inline-flex items-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-6 py-3 text-sm [color:var(--mk-text-muted)] transition-[background-color,border-color,color] hover:[border-color:var(--mk-border-strong)] hover:[color:var(--mk-text)] motion-reduce:transition-none"
           >
-            <ArrowLeft size={14} /> Home
+            <ArrowLeft size={14} /> Zur Startseite
           </Link>
         </div>
       </div>
