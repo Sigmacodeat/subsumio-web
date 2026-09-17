@@ -263,7 +263,7 @@ export const DOCS: DocsContent = {
         {
           icon: "FileText",
           title: "Honorarnoten",
-          desc: "Honorarnoten aus der Zeiterfassung erstellen. PDF-Vorlagen mit Logo und Bankverbindung.",
+          desc: "Honorarnoten aus Zeiterfassung und Tarifleistungen erstellen. PDF mit Bankverbindung, auf Wunsch als XRechnung oder ZUGFeRD.",
         },
         {
           icon: "Database",
@@ -273,17 +273,12 @@ export const DOCS: DocsContent = {
         {
           icon: "Calculator",
           title: "RATG-Berechnung",
-          desc: "Automatische Berechnung nach Rechtsanwaltstarifgesetz (RATG) und AHK: Tarifposten, Einheitssatz, Streitgenossenzuschlag, Barauslagen und USt.",
+          desc: "Tarifleistungen nach TP 1 bis 3 RATG in der Honorarnote berechnen: Entlohnung nach Bemessungsgrundlage, Einheitssatz, ERV- und Streitgenossenzuschlag. Beträge nach der geltenden Verordnung, als Vorschlag zur Prüfung.",
         },
         {
           icon: "Megaphone",
           title: "Mahnwesen",
-          desc: "Mahnungen für überfällige Honorarnoten. Eskalationsstufen, Zinsberechnung, E-Mail-Versand.",
-        },
-        {
-          icon: "Calculator",
-          title: "Kostenrechner",
-          desc: "Interaktiver Rechner für Mandanten: Prozesskosten, RATG-Vorschau, Kostenvoranschlag.",
+          desc: "Mahnungen für überfällige Honorarnoten in drei Stufen, per E-Mail.",
         },
         {
           icon: "Database",

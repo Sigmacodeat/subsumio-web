@@ -25,6 +25,8 @@ import { cn } from "@/lib/utils";
 import { caseFrontmatter, type DocumentEntry } from "@/lib/legal-types";
 import { AI_NOTICE, AI_BADGE_LABEL, AI_FRONTMATTER } from "@/lib/ai-act";
 import { CitationPanel } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
+import { answerProseOnly } from "@/lib/answer-sections";
 import type { Citation } from "@/lib/types";
 import { agentActionFrontmatter } from "@/lib/approval";
 import type { BrainPage } from "@/lib/types";
@@ -184,6 +186,9 @@ export default function DraftingPage() {
     }
   }
 
+  // Every AI text surface verifies its statute citations (CLAUDE.md invariant).
+  const { grounding, groundAnswer, reset: resetGrounding } = useGroundedAnswer();
+
   const form = useDashboardForm({
     schema: draftingSchema,
     defaultValues: {
@@ -199,6 +204,7 @@ export default function DraftingPage() {
       setResult(null);
       setResultCitations([]);
       setResultGaps([]);
+      resetGrounding();
       try {
         const res = await api.query.think(
           template.prompt(data as unknown as Record<string, string>),
@@ -208,7 +214,11 @@ export default function DraftingPage() {
             caseSlug: data.selectedCaseSlug || undefined,
           }
         );
-        setResult(res.answer);
+        // The brief itself: without the engine's "## Answer" heading and without
+        // the gaps section — open points are listed in the citation panel.
+        const draft = answerProseOnly(res.answer ?? "");
+        setResult(draft);
+        void groundAnswer(draft);
         setResultCitations(res.citations ?? []);
         setResultGaps(res.gaps ?? []);
         setDraftSaved(null);
@@ -253,15 +263,15 @@ export default function DraftingPage() {
   async function downloadDocx(text: string) {
     setDocxReady(false);
     try {
-      const draftSlug = draftSaved ?? null;
+      // The brief exactly as shown. No slug (the text is authoritative, and a
+      // null slug made the route reject every unsaved export) and no form
+      // fields: they are internal and would end up at the bottom of the brief.
       const res = await csrfFetch("/api/word-export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          slug: draftSlug,
           title: `${template.label}: ${formData.title || "Entwurf"}`,
           markdown: text,
-          formData,
         }),
       });
       if (!res.ok) {
@@ -645,6 +655,7 @@ export default function DraftingPage() {
             data={{
               citations: resultCitations,
               gaps: resultGaps,
+              grounding: grounding ?? null,
               isStreaming: false,
             }}
             compact

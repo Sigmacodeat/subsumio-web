@@ -485,3 +485,45 @@ eingeladenem Mitglied; Testkonten danach gelöscht. 16 von 16 Prüfungen bestand
   Antworten werden gegen die Rechtsquellen geprüft“.
 - Architektur und Prüfabfragen für die Produktionsdatenbank:
   `docs/architecture/TENANTS_AND_BILLING.md`.
+
+## Schriftsatz → Word → Zeit → Honorarnote nach RATG — Praxistest (17.09., abends)
+
+Durchgespielt über die echte Oberfläche mit dem echten Assistenten und einer frisch
+registrierten Einzelkanzlei. 20 von 20 Prüfungen bestanden (Testkonten danach gelöscht).
+
+- **RATG-Berechnung fehlte (Befund, behoben).** Einstellungen, Hilfe-Seite und Website
+  versprachen „automatische Berechnung nach RATG“; im Code gab es keine. Jetzt gebaut:
+  TP 1 bis 3, Einheitssatz, ERV- und Streitgenossenzuschlag, aus dem RIS-Text erzeugt und
+  gegen BGBl. II Nr. 131/2023 getestet (`docs/architecture/RATG.md`). Texte auf den
+  tatsächlichen Umfang gebracht; „Kostenrechner“ und „Zinsberechnung“ aus der Hilfe entfernt
+  (nicht vorhanden).
+- **Word-Export lieferte HTML (Befund, behoben).** Ohne gespeicherten Entwurf lehnte die
+  Route jeden Export ab und die Seite fiel still auf eine HTML-Datei mit Endung .doc zurück.
+  Zusätzlich landeten interne Formularfelder als „Metadaten“ im Schriftsatz. Jetzt echte .docx
+  mit nur dem Schriftsatz.
+- **Entwurf zeigte Engine-Überschriften (Befund, behoben).** „## Answer“ und „## Gaps“
+  standen im Schriftsatz; offene Punkte gehören ins Belege-Feld. Die Seite nutzt jetzt auch
+  die vorgeschriebene Fundstellen-Prüfung (`useGroundedAnswer`).
+- **E-Rechnung mit 0,2 % USt (Befund, behoben).** Der Steuersatz wurde als 0,2 übergeben und
+  als Prozent gelesen. Außerdem fehlten PLZ und Ort des Käufers immer (Land fest „DE“), sodass
+  jede automatische E-Rechnung aus dem Dialog an der Validierung scheiterte.
+- **Vorschau ≠ Rechnung (Befund, behoben).** Die Vorschau rechnete mit gerundetem
+  Kanzlei-Stundensatz, die Rechnung mit den Sätzen der Einträge; jetzt dieselbe Berechnung,
+  Beträge im österreichischen Format, Vorschau verdeckt die Eingaben nicht mehr.
+- **Nachweis:** Klage TP 3A (BG 10.000 €) 346,60 + Einheitssatz 207,96 + ERV 5,00; Tagsatzung
+  1,5 h 519,90 + Einheitssatz 311,94; Zeit 1,5 h × 250 € = 375,00; Netto 1.766,40, USt 353,28,
+  Summe 2.119,68 in Vorschau und gespeicherter Rechnung; Zeiteintrag als verrechnet markiert;
+  XRechnung mit 20 %.
+- **Lokal nicht prüfbar:** Der lokale Korpus enthält keine Gesetzestexte; der Assistent hat
+  korrekt keine Normen erfunden. Inhaltliche Qualität von Schriftsätzen mit Korpus nur auf dem
+  Server prüfbar.
+- **Offen (Produktentscheidung):** E-Rechnung kennt nur deutsche Formate (XRechnung,
+  Leitweg-ID) und ZUGFeRD; für Österreich wären ebInterface bzw. PEPPOL für e-Rechnung.gv.at
+  üblich.
+- **Doppelte Rechnungsnummern möglich (Befund, behoben).** Nummern wurden im Browser vergeben
+  (höchste bekannte + 1). Jetzt reserviert der Server sie atomar pro Kanzlei und Jahr
+  (`src/lib/invoice-numbering.ts`, `POST /api/invoices/number`) und setzt nach der höchsten
+  bestehenden Nummer fort. Gegentest gegen die Datenbank: 15 gleichzeitige Reservierungen,
+  15 verschiedene Nummern ab R-2026-0002. Offline bleibt eine vorläufige lokale Nummer.
+- **Wortwahl des Assistenten:** Antworten sprechen von „Rechtsquellen im Brain“; der
+  interne Begriff gehört durch „Kanzleiwissen“ ersetzt (Engine-Prompt, noch offen).

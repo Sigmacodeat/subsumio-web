@@ -19,6 +19,24 @@ import type {
 /**
  * Convert InvoiceFrontmatter + KanzleiSettings to EInvoiceData.
  */
+/** Street, postcode and city from a multi-line address block, if recognisable. */
+export function parsePostalAddress(block: string | undefined): {
+  street?: string;
+  zip?: string;
+  city?: string;
+} {
+  if (!block) return {};
+  const lines = block
+    .split(/\r?\n|,/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const m = lines[i].match(/^(?:[A-Z]{1,2}[- ])?(\d{4,5})\s+(.+)$/);
+    if (m) return { zip: m[1], city: m[2], street: i > 0 ? lines[i - 1] : undefined };
+  }
+  return {};
+}
+
 export function invoiceToEInvoiceData(
   invoice: InvoiceFrontmatter,
   settings: KanzleiSettings,
@@ -49,13 +67,16 @@ export function invoiceToEInvoiceData(
     phone: settings.kanzleiTelefon,
   };
 
-  // Build buyer from invoice client + optional address
+  // Build buyer from invoice client + optional address. Without an explicit
+  // address, read street, postcode and city from the stored address block
+  // ("Name\nFirma\nStraße 1\n1010 Wien").
+  const parsed = parsePostalAddress(invoice.client_address);
   const buyer: EInvoiceParty = {
     name: options?.buyerAddress?.name ?? invoice.client ?? "Mandant",
-    street: options?.buyerAddress?.street ?? invoice.client_address,
-    zip: options?.buyerAddress?.zip ?? "",
-    city: options?.buyerAddress?.city ?? "",
-    country: options?.buyerAddress?.country ?? "DE",
+    street: options?.buyerAddress?.street ?? parsed.street ?? invoice.client_address,
+    zip: options?.buyerAddress?.zip ?? parsed.zip ?? "",
+    city: options?.buyerAddress?.city ?? parsed.city ?? "",
+    country: options?.buyerAddress?.country ?? settings.country ?? "AT",
     vatId: options?.buyerAddress?.vatId,
     email: options?.buyerAddress?.email,
   };
@@ -64,7 +85,15 @@ export function invoiceToEInvoiceData(
   const isKleinunternehmer = settings.kleinunternehmer === true;
   const taxCategory: TaxCategoryCode = isKleinunternehmer ? "E" : "S";
   // Percent. Austrian standard rate when the invoice carries none (AT pilot).
-  const taxRate = isKleinunternehmer ? 0 : (invoice.vat_rate ?? 20);
+  // The invoicing UI stores the rate as a fraction (0.2), older data and the
+  // API as percent (20). A rate of at most 1 can only be a fraction — there is
+  // no 1 % VAT rate in Austria — so normalise instead of printing 0.2 %.
+  const rawRate = invoice.vat_rate ?? 20;
+  const taxRate = isKleinunternehmer
+    ? 0
+    : rawRate > 0 && rawRate <= 1
+      ? Math.round(rawRate * 10000) / 100
+      : rawRate;
 
   // Convert items
   const lineItems: EInvoiceLineItem[] = (invoice.items ?? []).map((item, idx) => ({

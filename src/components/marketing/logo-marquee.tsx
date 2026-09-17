@@ -45,7 +45,7 @@ const ROW_TOP: MarqueeItem[] = [
 
 const ROW_BOTTOM: MarqueeItem[] = [
   { icon: Scale, label: "Kollisionsprüfung nach § 10 RAO" },
-  { icon: Landmark, label: "Honorar nach RATG und AHK" },
+  { icon: Landmark, label: "Tarifleistungen nach RATG" },
   { icon: FileSignature, label: "DocuSign-Integration" },
   { icon: MessageSquare, label: "WhatsApp Business" },
   { icon: Gavel, label: "Nachvollziehbarer Audit-Trail" },

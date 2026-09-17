@@ -2101,8 +2101,8 @@ export const D = {
     en: "The previously selected fee model is no longer offered. Please choose RATG or a custom rate.",
   },
   "settings.ratg_info": {
-    de: "RATG-Gebühren werden automatisch nach dem Rechtsanwaltstarifgesetz (RATG) berechnet. Der Stundensatz ist nur für Beratungen relevant.",
-    en: "RATG fees are calculated automatically according to the Austrian Lawyers' Tariff Act (RATG). The hourly rate is only relevant for consultations.",
+    de: "Tarifleistungen nach TP 1 bis 3 RATG berechnen Sie beim Erstellen der Honorarnote. Der Stundensatz gilt für Leistungen, die Sie nach Zeit abrechnen.",
+    en: "Tariff services under items 1 to 3 of the RATG are calculated when you create the fee note. The hourly rate applies to work billed by time.",
   },
 
   // ── Layout ──

@@ -10,6 +10,7 @@ import {
   calculateQrReferenceCheckDigit,
   validateQrReference,
   invoiceToEInvoiceData,
+  parsePostalAddress,
   generateZugferdPdfFromScratch,
   extractZugferdXml,
 } from "./index";
@@ -488,6 +489,61 @@ describe("invoiceToEInvoiceData", () => {
     expect(data.leitwegId).toBe("991-51097-29");
     expect(data.caseReference).toBe("AZ-2026-42");
     expect(data.bank?.iban).toBe("DE89370400440532013000");
+  });
+
+  it("reads postcode, city and street from the stored address block; country from the firm", () => {
+    const settings = {
+      kanzleiName: "K",
+      anwaltName: "A",
+      country: "AT",
+    } as unknown as KanzleiSettings;
+    const data = invoiceToEInvoiceData(
+      {
+        invoice_number: "R-2026-0008",
+        client: "Muster Werk GmbH",
+        client_address: "Mag. Anna Berger\nMuster Werk GmbH\nMusterstraße 12\n1010 Wien",
+        date: "2026-09-17",
+        items: [],
+        expenses: [],
+      },
+      settings
+    );
+    expect(data.buyer).toMatchObject({
+      street: "Musterstraße 12",
+      zip: "1010",
+      city: "Wien",
+      country: "AT",
+    });
+    expect(parsePostalAddress("Hauptplatz 3, A-8010 Graz")).toEqual({
+      street: "Hauptplatz 3",
+      zip: "8010",
+      city: "Graz",
+    });
+    expect(parsePostalAddress("keine Adresse")).toEqual({});
+  });
+
+  it("reads a VAT rate stored as a fraction (0.2) as 20 %, and flat tariff items as one unit", () => {
+    const invoice = {
+      invoice_number: "R-2026-0007",
+      client: "Mandant GmbH",
+      date: "2026-09-17",
+      items: [
+        { description: "Klage (TP 3A)", date: "2026-09-17", hours: 0, rate: 0, amount: 346.6 },
+      ],
+      expenses: [],
+      vat_rate: 0.2,
+    };
+    const settings = {
+      kanzleiName: "K",
+      anwaltName: "A",
+      country: "AT",
+    } as unknown as KanzleiSettings;
+    const data = invoiceToEInvoiceData(invoice, settings);
+    expect(data.lineItems[0].taxRate).toBe(20);
+    expect(data.lineItems[0]).toMatchObject({ quantity: 1, unit: "C62", unitPrice: 346.6 });
+    expect(invoiceToEInvoiceData({ ...invoice, vat_rate: 20 }, settings).lineItems[0].taxRate).toBe(
+      20
+    );
   });
 
   it("converts expenses as additional line items", () => {

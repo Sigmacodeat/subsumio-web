@@ -127,8 +127,8 @@ export function generateInvoicePdf(data: InvoicePdfData): jsPDF {
   const itemRows = data.items.map((item) => [
     item.date,
     item.description,
-    item.hours.toFixed(2),
-    `${item.rate.toFixed(2)} €`,
+    item.hours > 0 ? item.hours.toFixed(2) : "—",
+    item.hours > 0 ? `${item.rate.toFixed(2)} €` : "—",
     `${item.amount.toFixed(2)} €`,
   ]);
 

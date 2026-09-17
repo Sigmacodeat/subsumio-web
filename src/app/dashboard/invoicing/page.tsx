@@ -40,7 +40,7 @@ import {
   type InvoiceExpenseEntry,
   type TimeEntry,
 } from "@/lib/legal-types";
-import { loadKanzleiSettings, type KanzleiSettings } from "@/lib/kanzlei-settings";
+import { loadKanzleiSettings, type KanzleiSettings, vatRateFor } from "@/lib/kanzlei-settings";
 import { OFFLINE_KEYS, enqueueMutation, getCache, isOnline, setCache } from "@/lib/offline-store";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -196,7 +196,7 @@ export default function InvoicingPage() {
           advancePayment: fm.advance_payment || 0,
           paidAmount: fm.paid_amount,
           paidAt: fm.paid_at,
-          vatRate: fm.vat_rate ?? 0.19,
+          vatRate: fm.vat_rate ?? 0.2,
           tax: fm.tax || 0,
           total: fm.total || 0,
           paymentTerms: fm.payment_terms,
@@ -279,7 +279,7 @@ export default function InvoicingPage() {
     if (!printWindow) return;
 
     const settings = kanzlei ?? (await loadKanzleiSettings());
-    const vatRate = inv.vatRate || (settings?.tarifModell === "ratg" ? 0.2 : 0.19);
+    const vatRate = inv.vatRate ?? vatRateFor(settings);
     const html = `
 <!DOCTYPE html>
 <html lang="de">
@@ -348,8 +348,8 @@ export default function InvoicingPage() {
         <tr>
           <td>${escapeHtml(item.date)}</td>
           <td>${escapeHtml(item.description)}</td>
-          <td class="right">${item.hours.toFixed(2)}</td>
-          <td class="right">${item.rate.toFixed(2)}</td>
+          <td class="right">${item.hours > 0 ? item.hours.toFixed(2) : "—"}</td>
+          <td class="right">${item.hours > 0 ? item.rate.toFixed(2) : "—"}</td>
           <td class="right">${item.amount.toFixed(2)}</td>
         </tr>
       `
