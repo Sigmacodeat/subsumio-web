@@ -1060,3 +1060,51 @@ export const VALUE_PROPS: { title: string; desc: string }[] = [
     desc: "Solo und Kanzlei werden monatlich abgerechnet. Enterprise wird individuell vereinbart.",
   },
 ];
+
+/* ── Hero product demo + scroll story (AT, de) ─────────────────────────────
+   Real Austrian example: Klagebeantwortung binnen vier Wochen (§ 243 Abs. 1 ZPO).
+   Dates are illustrative; the matter is fictional. */
+export const HERO_DEMO = {
+  matter: "Novak ./. Versicherung AG",
+  matterNumber: "2026-003",
+  question: "Bis wann muss die Klagebeantwortung eingebracht werden?",
+  answerLines: [
+    "Die Klagebeantwortung ist binnen vier Wochen ab Zustellung der Klage einzubringen.",
+    "Laut Zustellnachweis in der Akte wurde die Klage am 16.09.2026 zugestellt.",
+    "Fristende ist daher der 14.10.2026 (Notfrist, keine Verlängerung möglich).",
+  ],
+  citations: [
+    { label: "§ 243 Abs. 1 ZPO", source: "RIS, geltende Fassung", kind: "gesetz" as const },
+    { label: "Klage_Zustellnachweis.pdf, S. 2", source: "Akte 2026-003", kind: "akte" as const },
+  ],
+  deadline: { title: "Klagebeantwortung", date: "14.10.2026", note: "Vorfrist 07.10.2026" },
+  verified: "2 von 2 Fundstellen geprüft",
+} as const;
+
+export const SCROLL_STORY = {
+  eyebrow: "So arbeitet Subsumio",
+  title: "Von der Frage zur Frist in einem Durchgang",
+  sub: "Kein Suchen in Ordnern, kein Abtippen von Fristen. Jede Antwort zeigt die Stelle, aus der sie kommt.",
+  steps: [
+    {
+      key: "frage",
+      title: "Fragen Sie in normaler Sprache",
+      text: "Wie einer Kollegin. Subsumio versteht die Akte, die Parteien und das Verfahren, in dem Sie gerade arbeiten.",
+    },
+    {
+      key: "akte",
+      title: "Subsumio liest die Akte",
+      text: "Schriftsätze, Zustellnachweise, E-Mails und Beilagen werden durchsucht, nicht nur nach Wörtern, sondern nach Bedeutung.",
+    },
+    {
+      key: "fundstelle",
+      title: "Jede Aussage hat eine Fundstelle",
+      text: "Gesetz und Aktenseite werden zitiert und gegen den Rechtskorpus geprüft. Was nicht belegt ist, wird als solches markiert.",
+    },
+    {
+      key: "frist",
+      title: "Die Frist landet im Fristenbuch",
+      text: "Erkannte Fristen werden mit Vorfrist vorgeschlagen. Sie prüfen, bestätigen, fertig. Nichts wird ohne Sie angelegt.",
+    },
+  ],
+} as const;

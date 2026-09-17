@@ -92,5 +92,18 @@ erneuert, Screenshots in `docs/design/screenshots/` (hell/dunkel, Desktop/Handy)
 | P7 Website/Recht | 83 Strings Sie-Form (site.ts, superbrain, Rechtstexte, Kontakt, Preise, Download, Consent)                                                                                                                                                                                                                       | grep                                                                                                   |
 | P8 Marke         | Favicon navy/gold, Logo-Glow über Token, Playwright-Snapshots erneuert                                                                                                                                                                                                                                           | `marketing-visual.spec.ts --update-snapshots`                                                          |
 
-Offen: Filterchips auf dem Handy als Wischstreifen (derzeit 3–4 Zeilen), Priorität in der
-Aktenliste als deutsches Label (erledigt in P4-Nachlauf), Mobile-Durchgang Sekundärseiten.
+Nachlauf (17.09., früher Morgen): Filterchips als Wischstreifen, Prioritäten deutsch, Wizard-
+Validierung on-touch, Routen-Audit ohne Befund.
+
+## Etappe 2 — Marke und Produkt-Story (gestartet 17.09.)
+
+- Markenkern: drei Richtungen (Signet, Fundstelle, Waage reduziert) als Entscheidungsvorlage
+  gebaut; Empfehlung „Fundstelle“ (Goldmarkierung als Leitmotiv). Entscheidung offen.
+- Hero: animierte Beispielantwort (`hero-answer-demo.tsx`) — Frage, Antwort mit goldener
+  Markierung, Fundstellen (§ 243 Abs. 1 ZPO, Aktenseite), Prüfstatus, Fristvorschlag; spielt
+  einmal, Reduced Motion zeigt den Endzustand.
+- Scroll-Story (`scroll-story.tsx`): vier Schritte Frage → Akte → Fundstelle → Frist, Visual
+  gepinnt und vom Schritt in Bildschirmmitte gesteuert; auf Handy gestapelt. Inhalte in
+  `src/content/site.ts` (`HERO_DEMO`, `SCROLL_STORY`).
+- Offen: Sektionschoreographie der restlichen Landing-Abschnitte, Cockpit-Signatur,
+  Micro-Interaktionen, Marketing-Snapshots nach Logo-Entscheidung erneuern.

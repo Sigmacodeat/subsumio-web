@@ -26,6 +26,7 @@ import { Section } from "./primitives";
 import { EASE, MagneticButton, SplitTextReveal } from "./motion-system";
 import IndustryHeroMotif from "./industry-hero-motif";
 import RotatingBadge from "./rotating-badge";
+import HeroAnswerDemo from "./hero-answer-demo";
 
 const TRUST_ICONS: Record<string, LucideIcon> = {
   CreditCard,
@@ -157,6 +158,16 @@ export default function LandingHero() {
               <Play size={14} />
               {ui.seeFeatures}
             </a>
+          </motion.div>
+
+          {/* Product demo — the thesis of the page, shown before any trust claim */}
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={reduce ? { duration: 0 } : { duration: 0.6, ease: EASE.out, delay: 0.32 }}
+            className="mb-10"
+          >
+            <HeroAnswerDemo />
           </motion.div>
 
           {/* Trust pills — icon + text, staggered */}

@@ -31,7 +31,7 @@ export default function RotatingBadge({
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- hover only pauses the rotation; it exposes nothing a keyboard user cannot already reach, and reduced-motion users get a static first item anyway.
     <div
-      className="mb-6 inline-flex items-center gap-2 rounded-full border [border-color:var(--brand-border)] px-3 py-1.5 text-sm font-medium [color:var(--brand-text)] [background:var(--brand-soft)]"
+      className="mb-6 inline-flex max-w-full items-center gap-2 rounded-full border [border-color:var(--brand-border)] px-3 py-1.5 text-xs font-medium [color:var(--brand-text)] [background:var(--brand-soft)] sm:text-sm"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
@@ -42,7 +42,7 @@ export default function RotatingBadge({
       {/* h-5 (20px) matches text-sm's 20px line-height. At h-4 the box was 4px
           shorter than the line, and overflow-hidden — needed for the slide
           crossfade — clipped every descender ("p" in On-Premise, "g", "y"). */}
-      <div className="relative inline-block h-5 overflow-hidden">
+      <div className="relative inline-block h-5 max-w-[calc(100vw-7rem)] min-w-0 overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.span
             key={index}
@@ -50,7 +50,7 @@ export default function RotatingBadge({
             animate={{ opacity: 1, y: 0 }}
             exit={reduce ? undefined : { opacity: 0, y: -8 }}
             transition={{ duration: 0.35, ease: EASE.out }}
-            className="inline-block whitespace-nowrap"
+            className="block max-w-full truncate whitespace-nowrap"
           >
             {items[index]}
           </motion.span>

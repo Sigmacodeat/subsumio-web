@@ -15,6 +15,7 @@ import { LANDING, UI_STRINGS, p } from "@/content/site";
 import { professionalPricing } from "@/content/audiences";
 import { PricingGrid } from "./pricing-grid";
 import { TestimonialsSection } from "./testimonials";
+import ScrollStory from "./scroll-story";
 import AudienceTabs from "./audience-tabs";
 import LandingHero from "./landing-hero";
 import StickyCta from "./sticky-cta";
@@ -53,6 +54,9 @@ export default function LandingPage() {
 
         {/* Logo Marquee — certifications & integrations sliding from right to left */}
         <LogoMarquee />
+
+        {/* Product story — pinned visual driven by scroll */}
+        <ScrollStory />
 
         {/* Pain + Stats — merged: cost of inaction, then proof metrics in one section. */}
         {"pains" in t && t.pains && (
