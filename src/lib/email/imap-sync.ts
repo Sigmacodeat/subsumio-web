@@ -256,6 +256,7 @@ async function triageFor(
       deadlines = (
         await extractDeadlinesWithLLM(`${email.subject}\n${body}`.slice(0, 8000), {
           headers: engineHeadersForBrain(email.brainId),
+          referenceDate: email.receivedAt,
         })
       ).slice(0, 5);
     } catch {

@@ -41,6 +41,16 @@ Passwort, kein Geheimnis in der API-Antwort, Abruf, zweiter Abruf ohne Dubletten
 über die Aktenzahl im Betreff, Einstufung „kritisch / Frist“, Antwort über SMTP mit geerbter
 Akte. Unit-Tests: `src/lib/email/imap-sync.test.ts`.
 
+Zusätzlich über die echte Oberfläche als Kanzlei-Admin: Postfach im Formular verbinden (falsches
+Passwort ergibt eine verständliche Meldung, das richtige speichert und ruft sofort ab), manueller
+Abruf, Trennen. „Antwort vorschlagen“ gegen den echten Assistenten: Entwürfe in zwei bis vier
+Sekunden, förmliche Anrede; eine Mail mit eingeschleusten Anweisungen wurde als Inhalt behandelt
+und nicht befolgt. KI-Fristerkennung für Frist-Mails ohne auswertbares Datum: Das Modell erhält
+das Eingangsdatum der Mail als Bezugsdatum. Ein Datum zählt nur, wenn sein Jahr im Text steht
+oder das Bezugsjahr bzw. das Folgejahr ist; sonst bleibt der Vorschlag ohne Datum
+(`dropUngroundedDates` in `src/lib/llm-deadline-extract.ts`). Vage Angaben wie „übernächste
+Kalenderwoche“ bleiben ohne Datum, die Mail ist trotzdem als Fristsache markiert.
+
 ## Anhänge und Fristvorschläge
 
 Ist eine E-Mail einer Akte zugeordnet, gehen ihre Anhänge denselben Weg wie Portal-Uploads

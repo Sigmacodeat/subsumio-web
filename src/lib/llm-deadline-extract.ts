@@ -52,6 +52,7 @@ WICHTIG:
 - Bei ERV-Zustellung: das Einlangungsdatum angeben (die Engine berechnet den Folgewerktag).
 - Bei Verjährung: das Datum der Kenntniserlangung als "zustellungsdatum" angeben.
 - Wenn kein Datum extrahierbar ist, setze "zustellungsdatum" auf null.
+- Im Auftrag steht ein BEZUGSDATUM. Löse Angaben ohne Jahr oder mit relativem Bezug ("dieses Jahres", "nächsten Montag", "Monatsletzter") gegen dieses Bezugsdatum auf. Rate niemals ein Jahr. Lässt sich ein Datum nicht sicher bestimmen, setze es auf null.
 
 Output-Format: JSON-Array, jedes Element wie oben beschrieben.
 Gib "[]" zurück wenn keine Fristen im Text erwähnt werden.
@@ -81,6 +82,45 @@ interface LLMExtractedDeadline {
   confidence: "high" | "medium" | "low";
 }
 
+function isoDay(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const day = String(value).slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(day) && !Number.isNaN(Date.parse(day)) ? day : null;
+}
+
+/**
+ * A model that is not told the year will guess one. A date only counts when
+ * its year is written in the text, or is the reference year or the one after.
+ * Anything else is dropped to "no date" — a suggestion without a date is
+ * harmless, a deadline in the wrong year is not.
+ */
+export function dropUngroundedDates<
+  T extends {
+    zustellungsdatum: string | null;
+    absolutes_datum: string | null;
+    confidence: "high" | "medium" | "low";
+  },
+>(item: T, text: string, referenceDate: string): T {
+  const refYear = Number(referenceDate.slice(0, 4));
+  const grounded = (value: string | null): string | null => {
+    const day = isoDay(value);
+    if (!day) return null;
+    const year = Number(day.slice(0, 4));
+    if (year === refYear || year === refYear + 1) return day;
+    return text.includes(String(year)) ? day : null;
+  };
+  const zustellungsdatum = grounded(item.zustellungsdatum);
+  const absolutes_datum = grounded(item.absolutes_datum);
+  const dropped =
+    (item.zustellungsdatum && !zustellungsdatum) || (item.absolutes_datum && !absolutes_datum);
+  return {
+    ...item,
+    zustellungsdatum,
+    absolutes_datum,
+    confidence: dropped ? "low" : item.confidence,
+  };
+}
+
 /**
  * Check whether LLM-based deadline extraction is available (API key configured).
  */
@@ -89,17 +129,24 @@ export function isLLMDeadlineExtractionAvailable(): boolean {
 }
 
 /**
- * Extract deadlines from text using an LLM (DeepSeek V3.2 via OpenRouter).
+ * Extract deadlines from text through the engine's LLM gateway.
  *
  * @param text The full text to analyze (max 10,000 chars)
  * @returns Array of DetectedDeadline objects with optional fristResult
  */
 export async function extractDeadlinesWithLLM(
   text: string,
-  opts?: { ferialsache?: boolean; vorfristTage?: number; headers?: Record<string, string> }
+  opts?: {
+    ferialsache?: boolean;
+    vorfristTage?: number;
+    headers?: Record<string, string>;
+    /** Date the text was written or received (ISO). Defaults to today. */
+    referenceDate?: string;
+  }
 ): Promise<DetectedDeadline[]> {
   if (!opts?.headers || !isEngineLLMAvailable()) return [];
   const headers = opts.headers;
+  const referenceDate = isoDay(opts.referenceDate) ?? new Date().toISOString().slice(0, 10);
   const truncated =
     text.length > 10_000 ? text.slice(0, 10_000) + "\n\n[... text truncated]" : text;
 
@@ -108,7 +155,7 @@ export async function extractDeadlinesWithLLM(
       purpose: "deadline_extract",
       tier: "utility",
       system: SYSTEM_PROMPT,
-      prompt: `Text:\n${truncated}`,
+      prompt: `BEZUGSDATUM: ${referenceDate}\n\nText:\n${truncated}`,
       json: true,
       maxTokens: 800,
       timeoutMs: 15_000,
@@ -127,7 +174,8 @@ export async function extractDeadlinesWithLLM(
         ? (json as { deadlines: LLMExtractedDeadline[] }).deadlines
         : [];
     // Convert LLM results to DetectedDeadline with frist-engine enrichment
-    return parsed.map((item): DetectedDeadline => {
+    return parsed.map((raw): DetectedDeadline => {
+      const item = dropUngroundedDates(raw, truncated, referenceDate);
       const dd: DetectedDeadline = {
         type: "legal_deadline",
         description: item.frist_beschreibung || "LLM-extrahierte Frist",

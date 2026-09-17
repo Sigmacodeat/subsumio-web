@@ -2,6 +2,8 @@ import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   isLLMDeadlineExtractionAvailable,
   hybridDeadlineDetection,
+  extractDeadlinesWithLLM,
+  dropUngroundedDates,
 } from "@/lib/llm-deadline-extract";
 import { detectDeadlines, enrichAllDeadlines } from "@/lib/ai-deadline-detect";
 
@@ -205,6 +207,52 @@ describe("llm-deadline-extract", () => {
       expect(llmResult!.fristResult!.art.key).toBe("berufung");
       expect(llmResult!.fristResult!.fristende).toBe("2024-04-12");
       expect(llmResult!.confidence).toBe("high"); // Upgraded by frist-engine
+    });
+  });
+
+  describe("reference date", () => {
+    const item = (absolutes_datum: string | null, zustellungsdatum: string | null = null) => ({
+      frist_key: null,
+      frist_beschreibung: "Frist zur Stellungnahme",
+      zustellungsdatum,
+      absolutes_datum,
+      tage_relativ: null,
+      rechtsgrundlage: null,
+      snippet: "spätestens am dritten Oktober dieses Jahres",
+      confidence: "medium" as const,
+    });
+
+    test("the model is told the date the text refers to", async () => {
+      mockComplete.mockResolvedValue(stubResult("[]"));
+      await extractDeadlinesWithLLM("Frist bis dritten Oktober dieses Jahres", {
+        headers: HEADERS,
+        referenceDate: "2026-09-17T10:46:14.000Z",
+      });
+      expect(mockComplete.mock.calls[0][1].prompt).toContain("BEZUGSDATUM: 2026-09-17");
+    });
+
+    test("a guessed year is dropped instead of becoming a deadline", async () => {
+      mockComplete.mockResolvedValue(stubResult(JSON.stringify([item("2024-10-03")])));
+      const [d] = await extractDeadlinesWithLLM("spätestens am dritten Oktober dieses Jahres", {
+        headers: HEADERS,
+        referenceDate: "2026-09-17",
+      });
+      expect(d.date).toBeUndefined();
+      expect(d.confidence).toBe("low");
+    });
+
+    test("keeps the reference year, the following year and years written in the text", () => {
+      expect(dropUngroundedDates(item("2026-10-03"), "", "2026-09-17").absolutes_datum).toBe(
+        "2026-10-03"
+      );
+      expect(dropUngroundedDates(item("2027-01-15"), "", "2026-12-20").absolutes_datum).toBe(
+        "2027-01-15"
+      );
+      expect(
+        dropUngroundedDates(item(null, "2024-03-15"), "zugestellt am 15.03.2024", "2026-09-17")
+          .zustellungsdatum
+      ).toBe("2024-03-15");
+      expect(dropUngroundedDates(item("kein Datum"), "", "2026-09-17").absolutes_datum).toBeNull();
     });
   });
 });
