@@ -136,14 +136,11 @@ export function useUpdateAgentTemplate() {
   return useMutation({
     mutationFn: async ({ slug, ...input }: AgentTemplateInput & { slug: string }) => {
       const parts = slug.split("/");
-      const res = await csrfFetch(
-        `/api/agent-templates/${parts.map(encodeURIComponent).join("/")}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(input),
-        }
-      );
+      const res = await csrfFetch(`/api/agent-templates/${encodeURIComponent(parts.join("/"))}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error ?? "update_failed");
@@ -159,12 +156,9 @@ export function useDeleteAgentTemplate() {
   return useMutation({
     mutationFn: async (slug: string) => {
       const parts = slug.split("/");
-      const res = await csrfFetch(
-        `/api/agent-templates/${parts.map(encodeURIComponent).join("/")}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const res = await csrfFetch(`/api/agent-templates/${encodeURIComponent(parts.join("/"))}`, {
+        method: "DELETE",
+      });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error ?? "delete_failed");
@@ -180,7 +174,7 @@ export function useRunAgentTemplate() {
     mutationFn: async ({ slug, input }: { slug: string; input?: string }) => {
       const parts = slug.split("/");
       const res = await csrfFetch(
-        `/api/agent-templates/${parts.map(encodeURIComponent).join("/")}/run`,
+        `/api/agent-templates/${encodeURIComponent(parts.join("/"))}/run`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

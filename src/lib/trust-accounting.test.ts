@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { describe, test, expect } from "vitest";
+import { describe, test, it, expect } from "vitest";
 import {
   computeBalance,
   isOverdrawn,
@@ -12,6 +12,11 @@ import {
   ACCOUNT_STATUS_LABELS_DE,
   type TrustAccount,
   type TrustTransaction,
+  buildTrustBooking,
+  matterBalances,
+  validateTrustBooking,
+  type TrustBookingInput,
+  type TrustTransaction as LedgerTx,
 } from "./trust-accounting";
 
 const baseAccount = (overrides?: Partial<TrustAccount>): TrustAccount => ({
@@ -236,5 +241,140 @@ describe("labels", () => {
     for (const status of statuses) {
       expect(ACCOUNT_STATUS_LABELS_DE[status]).toBeDefined();
     }
+  });
+});
+
+describe("Treuhand-Buchungsregeln", () => {
+  const account = (transactions: LedgerTx[] = [], status: "active" | "frozen" = "active") => ({
+    status,
+    currency: "EUR",
+    transactions,
+  });
+  const book = (txs: LedgerTx[], input: Partial<TrustBookingInput>) => {
+    const full: TrustBookingInput = {
+      type: "deposit",
+      amount: 100,
+      date: "2026-09-17",
+      description: "Buchung",
+      matterSlug: "legal/cases/a",
+      ...input,
+    };
+    const check = validateTrustBooking(account(txs), full);
+    if (!check.ok) return { check, txs };
+    return { check, txs: [...txs, buildTrustBooking(account(txs), full, "anwalt@kanzlei.at")] };
+  };
+
+  it("numbers bookings consecutively and records who booked", () => {
+    let { txs } = book([], { amount: 5000 });
+    ({ txs } = book(txs, { type: "withdrawal", amount: 1200 }));
+    expect(txs.map((t) => t.number)).toEqual([1, 2]);
+    expect(txs[1].createdBy).toBe("anwalt@kanzlei.at");
+    expect(matterBalances(txs).get("legal/cases/a")).toBe(3800);
+  });
+
+  it("never pays out more than the matter holds, even if the account holds enough", () => {
+    let { txs } = book([], { amount: 10_000, matterSlug: "legal/cases/b" });
+    ({ txs } = book(txs, { amount: 500 }));
+    const r = book(txs, { type: "withdrawal", amount: 600 });
+    expect(r.check).toMatchObject({ ok: false, code: "exceeds_matter_balance" });
+    expect(book(txs, { type: "fee", amount: 500 }).check.ok).toBe(true);
+  });
+
+  it("rejects zero, negative and sub-cent amounts, bookings without a matter and on a frozen account", () => {
+    expect(book([], { amount: 0 }).check).toMatchObject({ ok: false, code: "amount_positive" });
+    expect(book([], { amount: -50 }).check).toMatchObject({ ok: false, code: "amount_positive" });
+    expect(book([], { amount: 10.005 }).check).toMatchObject({ ok: false, code: "amount_cents" });
+    expect(book([], { matterSlug: " " }).check).toMatchObject({
+      ok: false,
+      code: "matter_required",
+    });
+    expect(
+      validateTrustBooking(account([], "frozen"), {
+        type: "deposit",
+        amount: 1,
+        date: "x",
+        description: "d",
+        matterSlug: "m",
+      })
+    ).toMatchObject({ ok: false, code: "account_not_active" });
+  });
+
+  it("corrects by reversal: once, same matter, never a reversal of a reversal", () => {
+    let { txs } = book([], { amount: 2000 });
+    const depositId = txs[0].id;
+    ({ txs } = book(txs, { type: "reversal", reversesId: depositId, amount: 0 }));
+    expect(txs[1]).toMatchObject({
+      type: "reversal",
+      amount: 2000,
+      reversesId: depositId,
+      number: 2,
+    });
+    expect(matterBalances(txs).get("legal/cases/a")).toBe(0);
+    expect(book(txs, { type: "reversal", reversesId: depositId }).check).toMatchObject({
+      code: "already_reversed",
+    });
+    expect(book(txs, { type: "reversal", reversesId: txs[1].id }).check).toMatchObject({
+      code: "reversal_of_reversal",
+    });
+    expect(
+      book(txs, { type: "reversal", reversesId: depositId, matterSlug: "legal/cases/x" }).check.ok
+    ).toBe(false);
+  });
+
+  it("a reversal of a deposit that was already spent is refused", () => {
+    let { txs } = book([], { amount: 1000 });
+    ({ txs } = book(txs, { type: "withdrawal", amount: 800 }));
+    expect(book(txs, { type: "reversal", reversesId: txs[0].id }).check).toMatchObject({
+      code: "exceeds_matter_balance",
+    });
+  });
+
+  it("warns above 40.000 € per matter (§ 10a Abs. 2 RAO)", () => {
+    let { txs } = book([], { amount: 30_000 });
+    const below = book(txs, { amount: 10_000 });
+    expect(below.check.ok && below.check.warnings).toEqual([]);
+    ({ txs } = below);
+    const above = book(txs, { amount: 0.01 });
+    expect(above.check.ok && above.check.warnings[0]).toMatch(/§ 10a Abs\. 2 RAO/);
+  });
+});
+
+describe("Quartalsbericht mit Storno", () => {
+  it("leaves reversed bookings and their reversals out of the totals", () => {
+    const tx = (over: Partial<LedgerTx>): LedgerTx => ({
+      id: "x",
+      type: "deposit",
+      amount: 0,
+      currency: "EUR",
+      date: "2026-08-01",
+      description: "",
+      matterSlug: "m",
+      createdAt: "2026-08-01",
+      ...over,
+    });
+    const report = generateQuarterlyReport(
+      {
+        slug: "a",
+        accountName: "A",
+        accountNumber: "1",
+        status: "active",
+        currency: "EUR",
+        openingBalance: 0,
+        currentBalance: 0,
+        transactions: [
+          tx({ id: "d", amount: 50_000 }),
+          tx({ id: "w1", type: "withdrawal", amount: 10_000 }),
+          tx({ id: "w2", type: "withdrawal", amount: 10_000, reversedById: "r" }),
+          tx({ id: "r", type: "reversal", amount: 10_000, reversesId: "w2" }),
+        ],
+        reconciliations: [],
+        createdAt: "",
+        updatedAt: "",
+      },
+      3,
+      2026
+    );
+    expect(report.totalWithdrawals).toBe(10_000);
+    expect(report.closingBalance).toBe(40_000);
   });
 });

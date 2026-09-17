@@ -150,7 +150,11 @@ describe("POST /api/intake/convert", () => {
               updated_at: "2026-06-20T10:00:00.000Z",
               acceptance: {
                 conflict_check: { status: "clear" },
-                kyc: { required: true, status: "verified" },
+                kyc: {
+                  required: true,
+                  status: "verified",
+                  verification_slug: "legal/kyc/kyc-1",
+                },
                 poa: { required: true, status: "signed" },
                 engagement_letter: { status: "sent" },
               },
@@ -158,6 +162,10 @@ describe("POST /api/intake/convert", () => {
           }),
           { status: 200 }
         )
+      )
+      // the linked identification record
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ frontmatter: { status: "verified" } }), { status: 200 })
       )
       .mockResolvedValueOnce(new Response("not found", { status: 404 }))
       .mockResolvedValueOnce(new Response("{}", { status: 200 }))
@@ -175,5 +183,62 @@ describe("POST /api/intake/convert", () => {
     expect(body.ok).toBe(true);
     expect(body.case).toBeDefined();
     expect(body.case.type).toBe("legal_case");
+  });
+
+  test.each([
+    ["no acceptance at all", undefined, [], "acceptance_missing"],
+    [
+      "a verified status without a record",
+      {
+        conflict_check: { status: "clear" },
+        kyc: { required: true, status: "verified" },
+        poa: { required: false, status: "not_required" },
+        engagement_letter: { status: "sent" },
+      },
+      [],
+      "kyc_not_verified",
+    ],
+    [
+      "a linked record that is still open",
+      {
+        conflict_check: { status: "clear" },
+        kyc: { required: true, status: "verified", verification_slug: "legal/kyc/k2" },
+        poa: { required: false, status: "not_required" },
+        engagement_letter: { status: "sent" },
+      },
+      [new Response(JSON.stringify({ frontmatter: { status: "in_progress" } }), { status: 200 })],
+      "kyc_not_verified",
+    ],
+  ])("refuses conversion with %s", async (_label, acceptance, extra, code) => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          slug: "legal/intake/2026-06-20/max",
+          title: "Intake: Max Muster",
+          type: "intake_request",
+          frontmatter: {
+            type: "intake_request",
+            status: "accepted",
+            client_name: "Max Muster",
+            legal_area: "Arbeitsrecht",
+            summary: "Kündigung",
+            missing_documents: [],
+            created_at: "2026-06-20T10:00:00.000Z",
+            updated_at: "2026-06-20T10:00:00.000Z",
+            ...(acceptance ? { acceptance } : {}),
+          },
+        }),
+        { status: 200 }
+      )
+    );
+    for (const r of extra as Response[]) mockFetch.mockResolvedValueOnce(r);
+    const res = await POST(
+      new Request("http://localhost/api/intake/convert", {
+        method: "POST",
+        body: JSON.stringify({ slug: "legal/intake/2026-06-20/max" }),
+      })
+    );
+    expect(res.status).toBe(422);
+    expect((await res.json()).details?.code).toBe(code);
   });
 });

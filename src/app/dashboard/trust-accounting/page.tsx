@@ -41,10 +41,14 @@ import {
   RECONCILIATION_STATUS_LABELS_DE,
   exportTransactionsCsv,
   generateQuarterlyReport,
+  matterBalances,
+  signedAmount,
+  type BookableTrustType,
   type TrustTransaction,
-  type TrustTransactionType,
   type ReconciliationStatus,
 } from "@/lib/trust-accounting";
+import { caseFrontmatter } from "@/lib/legal-types";
+import type { BrainPage } from "@/lib/types";
 
 interface TrustAccount {
   slug: string;
@@ -69,13 +73,11 @@ interface TrustAccount {
   };
 }
 
-const TX_TYPES: TrustTransactionType[] = [
+const TX_TYPES: Exclude<BookableTrustType, "reversal">[] = [
   "deposit",
   "withdrawal",
-  "transfer",
   "fee",
   "interest",
-  "adjustment",
 ];
 
 function formatCurrency(amount: number, currency: string = "EUR"): string {
@@ -102,15 +104,18 @@ export default function TrustAccountingPage() {
   const [newBank, setNewBank] = useState("");
   const [newIban, setNewIban] = useState("");
   const [newBic, setNewBic] = useState("");
-  const [newOpening, setNewOpening] = useState(0);
   const [newClient, setNewClient] = useState("");
   const [newMatter, setNewMatter] = useState("");
 
   // Transaction form
-  const [txType, setTxType] = useState<TrustTransactionType>("deposit");
+  const [txType, setTxType] = useState<Exclude<BookableTrustType, "reversal">>("deposit");
   const [txAmount, setTxAmount] = useState(0);
   const [txDescription, setTxDescription] = useState("");
   const [txReference, setTxReference] = useState("");
+  const [txMatterSlug, setTxMatterSlug] = useState("");
+  const [txError, setTxError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [cases, setCases] = useState<BrainPage[]>([]);
 
   // Reconciliation form
   const [showReconcile, setShowReconcile] = useState(false);
@@ -139,6 +144,24 @@ export default function TrustAccountingPage() {
   useEffect(() => {
     loadAccounts();
   }, [loadAccounts]);
+
+  useEffect(() => {
+    api.brain
+      .listPages({ type: "legal_case", limit: 200 })
+      .then(setCases)
+      .catch(() => setCases([]));
+  }, []);
+
+  const caseTitle = useCallback(
+    (slug?: string) => {
+      if (!slug) return "Ohne Akte (Altbestand)";
+      const c = cases.find((x) => x.slug === slug);
+      if (!c) return slug;
+      const nr = caseFrontmatter(c).case_number;
+      return nr ? `${nr} – ${c.title}` : c.title;
+    },
+    [cases]
+  );
 
   const filtered = useMemo(() => {
     if (!search) return accounts;
@@ -174,7 +197,6 @@ export default function TrustAccountingPage() {
         bankName: newBank || undefined,
         iban: newIban || undefined,
         bic: newBic || undefined,
-        openingBalance: newOpening,
         clientName: newClient || undefined,
         matterTitle: newMatter || undefined,
       });
@@ -185,7 +207,6 @@ export default function TrustAccountingPage() {
       setNewBank("");
       setNewIban("");
       setNewBic("");
-      setNewOpening(0);
       setNewClient("");
       setNewMatter("");
       await loadAccounts();
@@ -197,21 +218,53 @@ export default function TrustAccountingPage() {
   }
 
   async function handleAddTransaction() {
-    if (!selectedAccount || !txDescription || txAmount === 0) return;
+    if (!selectedAccount || !txDescription.trim() || !txMatterSlug || !(txAmount > 0)) return;
     setSaving(true);
+    setTxError(null);
     try {
-      await api.legal.trustAccounts.addTransaction(selectedAccount.slug, {
+      const res = await api.legal.trustAccounts.addTransaction(selectedAccount.slug, {
         type: txType,
-        amount: txAmount,
-        description: txDescription,
-        reference: txReference || undefined,
+        amount: Math.round(txAmount * 100) / 100,
+        description: txDescription.trim(),
+        matterSlug: txMatterSlug,
+        matterTitle: caseTitle(txMatterSlug),
+        reference: txReference.trim() || undefined,
       });
       showToast(t("trust.success_saved" as DashboardKey));
+      setNotice(res.warnings?.[0] ?? null);
       setShowAddTx(false);
       setTxType("deposit");
       setTxAmount(0);
       setTxDescription("");
       setTxReference("");
+      await loadAccounts();
+    } catch (err) {
+      // Stay in the dialog and say why the booking was refused.
+      setTxError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleReverse(tx: TrustTransaction) {
+    if (!selectedAccount) return;
+    const ok = await confirm({
+      title: `Buchung Nr. ${tx.number ?? "–"} stornieren?`,
+      message: `Eine Gegenbuchung über ${formatCurrency(tx.amount, tx.currency)} wird erfasst. Die ursprüngliche Buchung bleibt sichtbar.`,
+      confirmLabel: "Stornieren",
+      variant: "danger",
+    });
+    if (!ok) return;
+    setSaving(true);
+    try {
+      await api.legal.trustAccounts.addTransaction(selectedAccount.slug, {
+        type: "reversal",
+        amount: tx.amount,
+        reversesId: tx.id,
+        matterSlug: tx.matterSlug ?? "",
+        description: `Storno zu Nr. ${tx.number ?? "–"}: ${tx.description}`,
+      });
+      showToast("Buchung storniert.");
       await loadAccounts();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -259,28 +312,14 @@ export default function TrustAccountingPage() {
     if (!selectedAccount) return;
     setSaving(true);
     try {
-      const now = new Date().toISOString();
-      const bookBalance = selectedAccount.frontmatter?.current_balance ?? 0;
-      const difference = reconcileBankBalance - bookBalance;
-      const status: ReconciliationStatus = Math.abs(difference) < 0.01 ? "balanced" : "discrepancy";
-      const newRec = {
-        id: `rec-${Date.now()}`,
-        date: now,
-        bankBalance: reconcileBankBalance,
-        bookBalance,
-        difference,
-        status,
-        reconciledBy: "kanzlei-os",
+      // The server computes the book balance and records who reconciled.
+      const { reconciliation } = await api.legal.trustAccounts.reconcile(selectedAccount.slug, {
+        bankBalance: Math.round(reconcileBankBalance * 100) / 100,
         notes: reconcileNotes || undefined,
-      };
-      const existingRecs = (selectedAccount.frontmatter as Record<string, unknown>)
-        .reconciliations as unknown[] | undefined;
-      const updatedRecs = [...(existingRecs ?? []), newRec];
-      await api.legal.trustAccounts.update(selectedAccount.slug, {
-        reconciliations: updatedRecs,
-      } as never);
+      });
+      const difference = Number(reconciliation.difference ?? 0);
       showToast(
-        status === "balanced"
+        difference === 0
           ? "Quartalsabstimmung erfolgreich — Saldo ausgeglichen."
           : `Quartalsabstimmung gespeichert — Differenz: ${formatCurrency(Math.abs(difference), selectedAccount.frontmatter?.currency)}`
       );
@@ -543,6 +582,42 @@ export default function TrustAccountingPage() {
               </Button>
             </div>
 
+            {notice && (
+              <div
+                role="status"
+                className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3 text-sm text-[color:var(--ds-warning-text)]"
+              >
+                <AlertCircle size={16} className="mt-0.5 shrink-0" aria-hidden />
+                <span>{notice}</span>
+              </div>
+            )}
+
+            {/* Guthaben je Akte */}
+            {sortedTxs.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                  Guthaben je Akte
+                </h4>
+                <ul className="divide-y divide-[color:var(--ds-border)] rounded-lg border border-[color:var(--ds-border)] text-sm">
+                  {[...matterBalances(sortedTxs).entries()].map(([slug, balance]) => (
+                    <li
+                      key={slug || "none"}
+                      className="flex items-center justify-between gap-3 px-3 py-2"
+                    >
+                      <span className="min-w-0 truncate text-[color:var(--ds-text)]">
+                        {caseTitle(slug || undefined)}
+                      </span>
+                      <span
+                        className={`shrink-0 font-medium tabular-nums ${balance < 0 ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-text)]"}`}
+                      >
+                        {formatCurrency(balance, selectedAccount.frontmatter?.currency)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {/* Transactions */}
             <div className="space-y-2">
               <h4 className="text-sm font-semibold text-[color:var(--ds-text)]">
@@ -553,50 +628,76 @@ export default function TrustAccountingPage() {
                   {t("trust.no_transactions" as DashboardKey)}
                 </p>
               ) : (
-                sortedTxs.map((tx) => (
-                  <div
-                    key={tx.id}
-                    className="flex items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3"
-                  >
-                    <div className="shrink-0">
-                      {tx.type === "deposit" || tx.type === "interest" ? (
-                        <ArrowDownCircle
-                          size={16}
-                          style={{ color: TRANSACTION_TYPE_COLORS[tx.type] }}
-                        />
-                      ) : (
-                        <ArrowUpCircle
-                          size={16}
-                          style={{ color: TRANSACTION_TYPE_COLORS[tx.type] }}
-                        />
+                sortedTxs.map((tx) => {
+                  const signed = signedAmount(tx, sortedTxs);
+                  const reversed = Boolean(tx.reversedById);
+                  return (
+                    <div
+                      key={tx.id}
+                      className="flex items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3"
+                    >
+                      <div className="shrink-0">
+                        {signed >= 0 ? (
+                          <ArrowDownCircle
+                            size={16}
+                            style={{ color: TRANSACTION_TYPE_COLORS[tx.type] }}
+                            aria-hidden
+                          />
+                        ) : (
+                          <ArrowUpCircle
+                            size={16}
+                            style={{ color: TRANSACTION_TYPE_COLORS[tx.type] }}
+                            aria-hidden
+                          />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div
+                          className={`text-sm font-medium text-[color:var(--ds-text)] ${reversed ? "line-through" : ""}`}
+                        >
+                          {tx.number ? `Nr. ${tx.number} · ` : ""}
+                          {tx.description}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-2 text-xs text-[color:var(--ds-text-muted)]">
+                          <span>{TRANSACTION_TYPE_LABELS_DE[tx.type]}</span>
+                          <span>
+                            ·{" "}
+                            {new Date(tx.date).toLocaleDateString(
+                              lang === "en" ? "en-GB" : "de-AT",
+                              {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              }
+                            )}
+                          </span>
+                          <span>· {caseTitle(tx.matterSlug)}</span>
+                          {tx.reference && <span>· {tx.reference}</span>}
+                          {tx.createdBy && <span>· {tx.createdBy}</span>}
+                          {reversed && <Badge variant="warning">storniert</Badge>}
+                        </div>
+                      </div>
+                      <div
+                        className="shrink-0 text-sm font-bold tabular-nums"
+                        style={{ color: TRANSACTION_TYPE_COLORS[tx.type] }}
+                      >
+                        {signed >= 0 ? "+" : "−"}
+                        {formatCurrency(Math.abs(signed), tx.currency)}
+                      </div>
+                      {tx.type !== "reversal" && !reversed && tx.number && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={saving}
+                          onClick={() => void handleReverse(tx)}
+                          aria-label={`Buchung Nr. ${tx.number} stornieren`}
+                        >
+                          Storno
+                        </Button>
                       )}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-[color:var(--ds-text)]">
-                        {tx.description}
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
-                        <span>{TRANSACTION_TYPE_LABELS_DE[tx.type]}</span>
-                        <span>
-                          ·{" "}
-                          {new Date(tx.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            year: "numeric",
-                          })}
-                        </span>
-                        {tx.reference && <span>· {tx.reference}</span>}
-                      </div>
-                    </div>
-                    <div
-                      className="shrink-0 text-sm font-bold"
-                      style={{ color: TRANSACTION_TYPE_COLORS[tx.type] }}
-                    >
-                      {tx.type === "withdrawal" || tx.type === "fee" ? "-" : "+"}
-                      {formatCurrency(tx.amount, tx.currency)}
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
@@ -771,12 +872,37 @@ export default function TrustAccountingPage() {
             </DialogHeader>
             <div className="space-y-3">
               <div>
-                <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+                <label
+                  htmlFor="trust-tx-matter"
+                  className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]"
+                >
+                  Akte *
+                </label>
+                <select
+                  id="trust-tx-matter"
+                  value={txMatterSlug}
+                  onChange={(e) => setTxMatterSlug(e.target.value)}
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm"
+                >
+                  <option value="">Akte wählen</option>
+                  {cases.map((c) => (
+                    <option key={c.slug} value={c.slug}>
+                      {caseTitle(c.slug)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor="trust-tx-type"
+                  className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]"
+                >
                   {t("trust.tx_type" as DashboardKey)}
                 </label>
                 <select
+                  id="trust-tx-type"
                   value={txType}
-                  onChange={(e) => setTxType(e.target.value as TrustTransactionType)}
+                  onChange={(e) => setTxType(e.target.value as (typeof TX_TYPES)[number])}
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm"
                 >
                   {TX_TYPES.map((tp) => (
@@ -787,29 +913,57 @@ export default function TrustAccountingPage() {
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+                <label
+                  htmlFor="trust-tx-amount"
+                  className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]"
+                >
                   {t("trust.tx_amount" as DashboardKey)} *
                 </label>
                 <Input
+                  id="trust-tx-amount"
                   type="number"
                   inputMode="decimal"
                   step="0.01"
+                  min={0.01}
                   value={txAmount}
                   onChange={(e) => setTxAmount(Number(e.target.value))}
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+                <label
+                  htmlFor="trust-tx-description"
+                  className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]"
+                >
                   {t("trust.tx_description" as DashboardKey)} *
                 </label>
-                <Input value={txDescription} onChange={(e) => setTxDescription(e.target.value)} />
+                <Input
+                  id="trust-tx-description"
+                  value={txDescription}
+                  onChange={(e) => setTxDescription(e.target.value)}
+                />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+                <label
+                  htmlFor="trust-tx-reference"
+                  className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]"
+                >
                   {t("trust.tx_reference" as DashboardKey)}
                 </label>
-                <Input value={txReference} onChange={(e) => setTxReference(e.target.value)} />
+                <Input
+                  id="trust-tx-reference"
+                  value={txReference}
+                  onChange={(e) => setTxReference(e.target.value)}
+                />
               </div>
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                Buchungen sind unveränderlich und fortlaufend nummeriert. Fehler korrigieren Sie mit
+                einem Storno.
+              </p>
+              {txError && (
+                <p role="alert" className="text-sm text-[color:var(--ds-danger-text)]">
+                  {txError}
+                </p>
+              )}
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setShowAddTx(false)}>
@@ -819,7 +973,7 @@ export default function TrustAccountingPage() {
                 variant="primary"
                 className="brand-bg text-white"
                 onClick={handleAddTransaction}
-                disabled={saving || !txDescription || txAmount === 0}
+                disabled={saving || !txDescription.trim() || !txMatterSlug || !(txAmount > 0)}
               >
                 {saving ? (
                   <Loader2 size={14} className="animate-spin" />
@@ -1099,7 +1253,7 @@ export default function TrustAccountingPage() {
                 <Input
                   value={newIban}
                   onChange={(e) => setNewIban(e.target.value)}
-                  placeholder="DE89..."
+                  placeholder="AT61 1904 3002 3457 3201"
                 />
               </div>
               <div>
@@ -1109,18 +1263,10 @@ export default function TrustAccountingPage() {
                 <Input value={newBic} onChange={(e) => setNewBic(e.target.value)} />
               </div>
             </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
-                {t("trust.opening_balance" as DashboardKey)}
-              </label>
-              <Input
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                value={newOpening}
-                onChange={(e) => setNewOpening(Number(e.target.value))}
-              />
-            </div>
+            <p className="text-xs text-[color:var(--ds-text-muted)]">
+              Vorhandenes Guthaben erfassen Sie nach dem Anlegen als Einzahlung je Akte. So bleibt
+              jedes Fremdgeld einer Akte zugeordnet.
+            </p>
             <div>
               <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
                 {t("trust.client" as DashboardKey)}

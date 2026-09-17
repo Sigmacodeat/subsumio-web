@@ -142,7 +142,7 @@ export function deriveMatterWorkflowActions(
       kind: "complete_acceptance",
       priority: "critical",
       title: "Mandatsannahme vervollständigen",
-      description: "Kollisionsprüfung, KYC/GwG, Vollmacht und Mandatsbrief fehlen noch.",
+      description: "Kollisionsprüfung, Identitätsprüfung, Vollmacht und Mandatsbrief fehlen noch.",
     });
   } else {
     const conflict = acceptance.conflict_check;
@@ -163,8 +163,8 @@ export function deriveMatterWorkflowActions(
         id: "verify-kyc",
         kind: "verify_kyc",
         priority: "high",
-        title: "KYC / GwG verifizieren",
-        description: "Identität und Risikoeinschätzung nach § 1 ff. GwG erfassen.",
+        title: "Identitätsprüfung abschließen",
+        description: "Identität, wirtschaftliche Eigentümer und Risiko nach §§ 8a ff. RAO prüfen.",
       });
     } else if (
       acceptance.poa.required &&

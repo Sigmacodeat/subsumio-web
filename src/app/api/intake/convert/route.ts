@@ -47,13 +47,41 @@ export const POST = createHandler(
     const intakePage = intakeFromPage((await getRes.json()) as BrainPage);
     if (!intakePage) return apiError("not_intake_request", "Die Seite ist kein Intake", 400);
 
+    // No matter without the acceptance checks (conflict, identification, POA).
     const workflow = intakePage.frontmatter.acceptance;
-    if (workflow) {
-      const validation = validateAcceptanceForConversion(workflow);
-      if (!validation.ok) {
-        return apiError("acceptance_incomplete", validation.error, 422, {
-          code: validation.code,
-        });
+    if (!workflow) {
+      return apiError(
+        "acceptance_incomplete",
+        "Mandatsannahme unvollständig: Kollisionsprüfung und Identitätsprüfung fehlen.",
+        422,
+        { code: "acceptance_missing" }
+      );
+    }
+    const validation = validateAcceptanceForConversion(workflow);
+    if (!validation.ok) {
+      return apiError("acceptance_incomplete", validation.error, 422, {
+        code: validation.code,
+      });
+    }
+    // "Verified" must be backed by a completed identification record, not a checkbox.
+    if (workflow.kyc.required && workflow.kyc.status === "verified") {
+      const kycSlug = workflow.kyc.verification_slug;
+      const kycRes = kycSlug
+        ? await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(kycSlug)}`, {
+            headers: ctx.headers,
+            signal: AbortSignal.timeout(10_000),
+          })
+        : null;
+      const kyc = kycRes?.ok
+        ? ((await kycRes.json()) as { frontmatter?: { status?: string } }).frontmatter
+        : null;
+      if (kyc?.status !== "verified") {
+        return apiError(
+          "acceptance_incomplete",
+          "Mandatsannahme unvollständig: Die Identitätsprüfung ist nicht abgeschlossen (§ 8b Abs. 7 RAO).",
+          422,
+          { code: "kyc_not_verified" }
+        );
       }
     }
 

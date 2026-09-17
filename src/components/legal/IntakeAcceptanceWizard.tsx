@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
+import type { KYCVerification } from "@/lib/kyc";
 import { encodeSlugPath } from "@/lib/utils";
 import {
   canAcceptMandate,
@@ -99,6 +100,7 @@ export function IntakeAcceptanceWizard({
   const [submitting, setSubmitting] = useState(false);
   const [generatingLetter, setGeneratingLetter] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [kycRecords, setKycRecords] = useState<KYCVerification[] | null>(null);
 
   useEffect(() => {
     setWorkflow(
@@ -114,6 +116,26 @@ export function IntakeAcceptanceWizard({
     setWaiverReason("");
     setDirty(false);
   }, [item, open]);
+
+  // Identification checks recorded for this intake (the KYC page stores them
+  // under the intake slug). Reloaded whenever the step is shown, so a check
+  // completed in the other tab appears here.
+  useEffect(() => {
+    if (!open || step !== "kyc") return;
+    let cancelled = false;
+    setKycRecords(null);
+    fetch(`/api/kyc?case_slug=${encodeURIComponent(item.slug)}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((json: { data?: { items?: KYCVerification[] } }) => {
+        if (!cancelled) setKycRecords(json.data?.items ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setKycRecords([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, step, item.slug]);
 
   const canProceed = useMemo(() => {
     switch (step) {
@@ -488,26 +510,67 @@ export function IntakeAcceptanceWizard({
                       }
                       className="rounded border-[color:var(--ds-border)]"
                     />
-                    KYC nicht erforderlich (z. B. bestehender Mandant)
+                    Keine Identitätsprüfung erforderlich (kein Geschäft nach § 8a RAO, z. B. reine
+                    Prozessvertretung)
                   </label>
                   {workflow.kyc.required && (
                     <>
-                      <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={workflow.kyc.status === "verified"}
-                          onChange={(e) =>
-                            updateWorkflow({
-                              kyc: {
-                                ...workflow.kyc,
-                                status: e.target.checked ? "verified" : "pending",
-                              },
-                            })
-                          }
-                          className="rounded border-[color:var(--ds-border)]"
-                        />
-                        KYC-Verifizierung abgeschlossen
-                      </label>
+                      {kycRecords === null ? (
+                        <p className="text-xs text-[color:var(--ds-text-muted)]">
+                          Prüfungen werden geladen…
+                        </p>
+                      ) : kycRecords.length === 0 ? (
+                        <p className="text-sm text-[color:var(--ds-warning-text)]">
+                          Für diese Anfrage gibt es noch keine Identitätsprüfung.
+                        </p>
+                      ) : (
+                        <ul className="space-y-2">
+                          {kycRecords.map((k) => {
+                            const slug = `legal/kyc/${k.id}`;
+                            const linked = workflow.kyc.verification_slug === slug;
+                            return (
+                              <li
+                                key={k.id}
+                                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm"
+                              >
+                                <span>
+                                  {k.client_name} ·{" "}
+                                  {k.status === "verified"
+                                    ? "abgeschlossen"
+                                    : k.status === "failed"
+                                      ? "nicht bestanden"
+                                      : "noch offen"}
+                                </span>
+                                {k.status === "verified" &&
+                                  (linked ? (
+                                    <span className="flex items-center gap-1 text-[color:var(--ds-success-text)]">
+                                      <CheckCircle2 size={14} aria-hidden /> verknüpft
+                                    </span>
+                                  ) : (
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="secondary"
+                                      onClick={() =>
+                                        updateWorkflow({
+                                          kyc: {
+                                            ...workflow.kyc,
+                                            status: "verified",
+                                            verification_slug: slug,
+                                            verified_at: k.verified_at,
+                                            risk_level: k.risk_level,
+                                          },
+                                        })
+                                      }
+                                    >
+                                      Mit dieser Prüfung annehmen
+                                    </Button>
+                                  ))}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
                       <Button
                         type="button"
                         variant="outline"
@@ -520,7 +583,7 @@ export function IntakeAcceptanceWizard({
                         className="gap-2"
                       >
                         <UserCheck size={14} />
-                        KYC-Seite öffnen
+                        Identitätsprüfung öffnen
                       </Button>
                     </>
                   )}

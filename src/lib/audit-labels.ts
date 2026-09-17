@@ -18,6 +18,15 @@ export type AuditAction =
   | "user.signup"
   | "case.create"
   | "case.update"
+  | "trust.booking"
+  | "trust.reversal"
+  | "trust.reconciliation"
+  | "trust.status"
+  | "kyc.create"
+  | "kyc.update"
+  | "kyc.verify"
+  | "kyc.fail"
+  | "kyc.mandate_end"
   | "case.delete"
   | "case.restore"
   | "case.view"
@@ -298,6 +307,15 @@ const ACTION_LABELS: Record<string, string> = {
   "user.signup": "Registrierung",
   "case.create": "Akte angelegt",
   "case.update": "Akte aktualisiert",
+  "trust.booking": "Treuhandbuchung erfasst",
+  "trust.reversal": "Treuhandbuchung storniert",
+  "trust.reconciliation": "Treuhandkonto abgeglichen",
+  "trust.status": "Status des Treuhandkontos geändert",
+  "kyc.create": "Identitätsprüfung angelegt",
+  "kyc.update": "Identitätsprüfung bearbeitet",
+  "kyc.verify": "Identitätsprüfung abgeschlossen",
+  "kyc.fail": "Identitätsprüfung nicht bestanden",
+  "kyc.mandate_end": "Mandatsende für Aufbewahrung erfasst",
   "case.delete": "Akte archiviert",
   "case.restore": "Akte wiederhergestellt",
   "case.view": "Akte geöffnet",

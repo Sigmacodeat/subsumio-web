@@ -154,13 +154,14 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
   {
     id: "compliance_check",
     label: "Compliance-Check",
-    description: "DSGVO, GwG, GoBD — Handlungsbedarf mit Priorisierung",
+    description:
+      "DSGVO, Geldwäscheprävention (§§ 8a ff. RAO), Aufbewahrung nach BAO — Handlungsbedarf mit Priorisierung",
     icon: "✅",
     prompt:
-      "Führe einen vollständigen Compliance-Check durch. Prüfe DSGVO-Konformität, GwG-Vorgaben, GOBD-Anforderungen, und identifiziere Handlungsbedarf.",
+      "Führe einen vollständigen Compliance-Check durch. Prüfe DSGVO-Konformität, Pflichten zur Geldwäscheprävention nach §§ 8a ff. RAO, Aufbewahrungspflichten nach §§ 131, 132 BAO, und identifiziere Handlungsbedarf.",
     steps: [
       { label: "DSGVO prüfen", action_type: "document_finalize" },
-      { label: "GwG prüfen", action_type: "document_finalize" },
+      { label: "Geldwäscheprävention prüfen", action_type: "document_finalize" },
       { label: "GoBD prüfen", action_type: "document_finalize" },
       { label: "Bericht versenden", action_type: "message_send" },
     ],

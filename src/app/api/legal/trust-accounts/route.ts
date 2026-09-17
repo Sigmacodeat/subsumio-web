@@ -77,8 +77,10 @@ export const POST = createHandler(
           bic: body.bic ?? null,
           status: "active",
           currency: body.currency,
-          opening_balance: body.openingBalance,
-          current_balance: body.openingBalance,
+          // Existing money is booked as a deposit per matter after creation,
+          // so no amount on a trust account belongs to no one.
+          opening_balance: 0,
+          current_balance: 0,
           matter_slug: body.matterSlug ?? null,
           matter_title: body.matterTitle ?? null,
           client_name: body.clientName ?? null,

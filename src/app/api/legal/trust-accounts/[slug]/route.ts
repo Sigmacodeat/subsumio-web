@@ -1,61 +1,37 @@
 import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
-import { computeBalance, type TrustTransaction } from "@/lib/trust-accounting";
+import { logAudit } from "@/lib/audit";
+import { withKeyedLock } from "@/lib/keyed-lock";
+import {
+  BOOKABLE_TRUST_TYPES,
+  buildTrustBooking,
+  computeBalance,
+  validateTrustBooking,
+  type TrustAccountStatus,
+  type TrustTransaction,
+} from "@/lib/trust-accounting";
 
 export const dynamic = "force-dynamic";
 
-const VALID_TX_TYPES = [
-  "deposit",
-  "withdrawal",
-  "transfer",
-  "fee",
-  "interest",
-  "adjustment",
-] as const;
-
-const transactionSchema = z.object({
-  id: z.string().max(200),
-  type: z.enum(VALID_TX_TYPES),
-  amount: z.number(),
-  currency: z.string().default("EUR"),
-  date: z.string().max(20),
-  description: z.string().max(5000),
-  matterSlug: z.string().optional(),
-  matterTitle: z.string().optional(),
-  reference: z.string().optional(),
-  createdBy: z.string().optional(),
-  createdAt: z.string().max(50),
-});
-
+// Bookings are immutable: PATCH changes the account status only; bookings are
+// added (and reversed) through POST, reconciliations through their own route.
 const updateSchema = z.object({
-  status: z.enum(["active", "frozen", "closed", "overdrawn"]).optional(),
-  transactions: z.array(transactionSchema).optional(),
-  reconciliations: z
-    .array(
-      z.object({
-        id: z.string().max(200),
-        date: z.string().max(20),
-        bankBalance: z.number(),
-        bookBalance: z.number(),
-        difference: z.number(),
-        status: z.enum(["balanced", "discrepancy", "pending"]),
-        reconciledBy: z.string().optional(),
-        notes: z.string().optional(),
-      })
-    )
-    .optional(),
+  status: z.enum(["active", "frozen", "closed"]),
 });
 
 const addTransactionSchema = z.object({
-  type: z.enum(VALID_TX_TYPES),
-  amount: z.number(),
-  currency: z.string().default("EUR"),
-  date: z.string().default(() => new Date().toISOString()),
-  description: z.string().min(1),
-  matterSlug: z.string().optional(),
-  matterTitle: z.string().optional(),
-  reference: z.string().optional(),
+  type: z.enum(BOOKABLE_TRUST_TYPES),
+  amount: z.number().default(0),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}/)
+    .default(() => new Date().toISOString().slice(0, 10)),
+  description: z.string().trim().min(1).max(2000),
+  matterSlug: z.string().trim().min(1, "matter_required").max(300),
+  matterTitle: z.string().max(300).optional(),
+  reference: z.string().max(200).optional(),
+  reversesId: z.string().max(200).optional(),
 });
 
 async function getAccount(slug: string, headers: Record<string, string>) {
@@ -83,49 +59,33 @@ export const PATCH = createHandler(
     action: "brain.write",
     rateTier: "standard",
     body: updateSchema,
-    audit: (ctx) => ({
-      action: "case.update" as const,
-      entityType: "trust_account",
-      details: { by: ctx.user.email },
-    }),
   },
   async (ctx, body, _query, req) => {
     const { slug } = await (req as unknown as { params: Promise<{ slug: string }> }).params;
     const decoded = decodeURIComponent(slug);
-
-    const existing = await getAccount(decoded, ctx.headers);
-    if (!existing) return apiError("not_found", "Trust account not found", 404);
-
-    const fm = (existing.frontmatter ?? {}) as Record<string, unknown>;
-    const now = new Date().toISOString();
-    const transactions = body.transactions ?? (fm.transactions as TrustTransaction[]) ?? [];
-    const openingBalance = (fm.opening_balance as number) ?? 0;
-
-    const updatedFm: Record<string, unknown> = {
-      ...fm,
-      ...(body.status !== undefined ? { status: body.status } : {}),
-      ...(body.transactions !== undefined ? { transactions } : {}),
-      ...(body.reconciliations !== undefined ? { reconciliations: body.reconciliations } : {}),
-      current_balance: computeBalance(openingBalance, transactions),
-      updated_at: now,
-    };
-
-    const res = await enginePatchPage(
-      ctx.headers,
-      {
-        slug: decoded,
-        frontmatter: updatedFm,
-        content: existing.content ?? "",
-      },
-      { timeoutMs: 15_000 }
-    );
-
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      return apiError("engine_error", `Update failed: ${text.slice(0, 200)}`, 502);
-    }
-    const result = await res.json();
-    return Response.json(result);
+    return withKeyedLock(`trust:${ctx.brainId}:${decoded}`, async () => {
+      const existing = await getAccount(decoded, ctx.headers);
+      if (!existing) return apiError("not_found", "Treuhandkonto nicht gefunden", 404);
+      const fm = (existing.frontmatter ?? {}) as Record<string, unknown>;
+      const res = await enginePatchPage(
+        ctx.headers,
+        {
+          slug: decoded,
+          frontmatter: { ...fm, status: body.status, updated_at: new Date().toISOString() },
+          content: existing.content ?? "",
+        },
+        { timeoutMs: 15_000 }
+      );
+      if (!res.ok) return apiError("engine_error", "Status konnte nicht gespeichert werden", 502);
+      void logAudit("trust.status", "trust_account", {
+        entityId: decoded,
+        brainId: ctx.brainId,
+        userId: ctx.user.id,
+        userEmail: ctx.user.email,
+        details: { from: fm.status, to: body.status },
+      });
+      return Response.json(await res.json());
+    });
   }
 );
 
@@ -169,62 +129,79 @@ export const POST = createHandler(
     action: "brain.write",
     rateTier: "standard",
     body: addTransactionSchema,
-    audit: (ctx) => ({
-      action: "case.update" as const,
-      entityType: "trust_account",
-      details: { by: ctx.user.email, type: "add_transaction" },
-    }),
   },
   async (ctx, body, _query, req) => {
     const { slug } = await (req as unknown as { params: Promise<{ slug: string }> }).params;
     const decoded = decodeURIComponent(slug);
 
-    const existing = await getAccount(decoded, ctx.headers);
-    if (!existing) return apiError("not_found", "Trust account not found", 404);
+    // One booking at a time per account: validation reads the balance, so two
+    // concurrent payouts must not both see the same balance.
+    return withKeyedLock(`trust:${ctx.brainId}:${decoded}`, async () => {
+      const existing = await getAccount(decoded, ctx.headers);
+      if (!existing) return apiError("not_found", "Treuhandkonto nicht gefunden", 404);
 
-    const fm = (existing.frontmatter ?? {}) as Record<string, unknown>;
-    const transactions = (fm.transactions as TrustTransaction[]) ?? [];
-    const now = new Date().toISOString();
+      const fm = (existing.frontmatter ?? {}) as Record<string, unknown>;
+      const transactions = (fm.transactions as TrustTransaction[]) ?? [];
+      const account = {
+        status: ((fm.status as TrustAccountStatus) ?? "active") as TrustAccountStatus,
+        currency: (fm.currency as string) ?? "EUR",
+        transactions,
+      };
+      const check = validateTrustBooking(account, body);
+      if (!check.ok) return apiError(check.code, check.message, 422);
 
-    const newTx: TrustTransaction = {
-      id: `tx_${Date.now()}`,
-      type: body.type,
-      amount: body.amount,
-      currency: body.currency,
-      date: body.date,
-      description: body.description,
-      matterSlug: body.matterSlug,
-      matterTitle: body.matterTitle,
-      reference: body.reference,
-      createdBy: ctx.user.email,
-      createdAt: now,
-    };
+      const booking = buildTrustBooking(account, body, ctx.user.email);
+      const allTxs = [
+        ...transactions.map((t) =>
+          booking.reversesId && t.id === booking.reversesId ? { ...t, reversedById: booking.id } : t
+        ),
+        booking,
+      ];
+      const openingBalance = (fm.opening_balance as number) ?? 0;
+      const now = new Date().toISOString();
 
-    const allTxs = [...transactions, newTx];
-    const openingBalance = (fm.opening_balance as number) ?? 0;
+      const res = await enginePatchPage(
+        ctx.headers,
+        {
+          slug: decoded,
+          frontmatter: {
+            ...fm,
+            transactions: allTxs,
+            current_balance: computeBalance(openingBalance, allTxs),
+            updated_at: now,
+          },
+          content: existing.content ?? "",
+        },
+        { timeoutMs: 15_000 }
+      );
+      if (!res.ok) {
+        return apiError("engine_error", "Die Buchung konnte nicht gespeichert werden", 502);
+      }
 
-    const updatedFm: Record<string, unknown> = {
-      ...fm,
-      transactions: allTxs,
-      current_balance: computeBalance(openingBalance, allTxs),
-      updated_at: now,
-    };
-
-    const res = await enginePatchPage(
-      ctx.headers,
-      {
-        slug: decoded,
-        frontmatter: updatedFm,
-        content: existing.content ?? "",
-      },
-      { timeoutMs: 15_000 }
-    );
-
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      return apiError("engine_error", `Transaction failed: ${text.slice(0, 200)}`, 502);
-    }
-    const result = await res.json();
-    return Response.json({ ...result, transaction: newTx }, { status: 201 });
+      void logAudit(
+        booking.type === "reversal" ? "trust.reversal" : "trust.booking",
+        "trust_account",
+        {
+          entityId: decoded,
+          brainId: ctx.brainId,
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          details: {
+            number: booking.number,
+            type: booking.type,
+            amount: booking.amount,
+            signed: check.signed,
+            matter: booking.matterSlug,
+            reverses: booking.reversesId,
+            reference: booking.reference,
+          },
+        }
+      );
+      const result = await res.json();
+      return Response.json(
+        { ...result, transaction: booking, warnings: check.warnings },
+        { status: 201 }
+      );
+    });
   }
 );

@@ -527,3 +527,31 @@ registrierten Einzelkanzlei. 20 von 20 Prüfungen bestanden (Testkonten danach g
   15 verschiedene Nummern ab R-2026-0002. Offline bleibt eine vorläufige lokale Nummer.
 - **Wortwahl des Assistenten:** Antworten sprechen von „Rechtsquellen im Brain“; der
   interne Begriff gehört durch „Kanzleiwissen“ ersetzt (Engine-Prompt, noch offen).
+
+## Treuhandkonto und Identitätsprüfung — Praxistest (17.09., nachts)
+
+Über die echte Oberfläche und Datenbank durchgespielt. 22 von 22 Prüfungen bestanden.
+Details: `docs/architecture/TRUST_AND_AML.md`.
+
+- **Treuhand-Buchungen über die Oberfläche unmöglich (Befund, behoben).** Konto-IDs enthalten
+  einen Schrägstrich, die Routen nehmen nur ein Pfadsegment; Buchen, Abgleichen und Löschen
+  endeten immer mit 404. Derselbe Fehler betraf Vorlagen, Playbooks, Review-Sets,
+  Prozessführung und Agenten-Vorlagen (Öffnen, Ändern, Löschen einzelner Einträge). Behoben,
+  Regressionstest `src/lib/api-slug-routes.test.ts`.
+- **Treuhand-Buchungen überschreibbar, negativ, ohne Aktenbezug (Befund, behoben).** Jetzt
+  unveränderlich, fortlaufend nummeriert, Storno statt Überschreiben, Pflicht-Akte, keine
+  Auszahlung über das Aktenguthaben, Sperre gegen gleichzeitige Buchungen, Hinweis nach
+  § 10a Abs. 2 RAO ab 40.000 €, Abgleich serverseitig mit Prüfer. Rechtsgrundlagen im Code
+  waren deutsches Recht (BRAO) und sind auf die RAO umgestellt.
+- **Identitätsprüfung ließ sich nicht abschließen (Befund, behoben).** Kein Weg zum Status
+  „verifiziert“, die Anlage speicherte ohne CSRF-Schutz und meldete Erfolg auch ohne
+  Speicherung; die Mandatsannahme vertraute einem Häkchen. Jetzt Datenmodell nach
+  §§ 8b, 8d, 8f, 12 RAO, Abschluss nur bei Vollständigkeit, Verlauf, Aufbewahrungsfrist,
+  und die Umwandlung in eine Akte verlangt eine verknüpfte abgeschlossene Prüfung.
+- **Nachweise:** Auszahlung aus einer Akte ohne Guthaben abgelehnt, obwohl das Konto 50.000 €
+  hält; 10 gleichzeitige Auszahlungen → genau 5 gebucht, Saldo 0; Storno über die Liste;
+  Identitätsprüfung erst nach Ausweis, Zweck, PEP- und Sanktionsprüfung abgeschlossen;
+  Mandatsannahme mit bloßem Häkchen abgelehnt, mit verknüpfter Prüfung angenommen.
+- **Offen (Produktentscheidung):** automatische Abfrage von Sanktions- und PEP-Listen
+  (z. B. EU-Finanzsanktionsdatei), Anbindung an die Treuhandeinrichtung der Kammer,
+  Hochladen der Ausweiskopie direkt in die Prüfung.

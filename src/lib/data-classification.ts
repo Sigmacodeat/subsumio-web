@@ -123,7 +123,8 @@ export const DATA_CLASSIFICATIONS: Record<EntityClass, DataEntityClassification>
     retention: {
       retention: "indefinite",
       action: "keep",
-      legal_basis: "Mandatsbezogene Aufbewahrungspflicht (§ 43 BRAO / § 18 StBerG)",
+      legal_basis:
+        "Mandatsbezogene Aufbewahrung (§ 12 Abs. 2 RAO: Handakten fünf Jahre nach Ende der Vertretung)",
     },
     tenant_isolation: true,
     pii_fields: [
@@ -183,7 +184,8 @@ export const DATA_CLASSIFICATIONS: Record<EntityClass, DataEntityClassification>
     retention: {
       retention: "P10Y",
       action: "archive",
-      legal_basis: "§ 147 Abs. 1 AO / § 43 BRAO (10 Jahre)",
+      legal_basis:
+        "§§ 131, 132 BAO (sieben Jahre) und § 12 RAO; zehn Jahre als vorsichtige Obergrenze",
     },
     tenant_isolation: true,
     pii_fields: [

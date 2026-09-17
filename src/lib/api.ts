@@ -999,7 +999,7 @@ export const api = {
       },
 
       get(slug: string): Promise<BrainPage> {
-        const path = slug.split("/").map(encodeURIComponent).join("/");
+        const path = encodeURIComponent(slug);
         return request(`/api/legal/playbooks/${path}`);
       },
 
@@ -1026,7 +1026,7 @@ export const api = {
           description: string;
         }>
       ): Promise<{ slug: string; success: boolean }> {
-        const path = slug.split("/").map(encodeURIComponent).join("/");
+        const path = encodeURIComponent(slug);
         return request(`/api/legal/playbooks/${path}`, {
           method: "PATCH",
           body: JSON.stringify(input),
@@ -1034,7 +1034,7 @@ export const api = {
       },
 
       delete(slug: string): Promise<{ ok: boolean }> {
-        const path = slug.split("/").map(encodeURIComponent).join("/");
+        const path = encodeURIComponent(slug);
         return request(`/api/legal/playbooks/${path}`, { method: "DELETE" });
       },
     },
@@ -1054,7 +1054,7 @@ export const api = {
       },
 
       get(slug: string): Promise<BrainPage> {
-        const path = slug.split("/").map(encodeURIComponent).join("/");
+        const path = encodeURIComponent(slug);
         return request(`/api/legal/templates/${path}`);
       },
 
@@ -1083,7 +1083,7 @@ export const api = {
           variables?: Array<{ key: string; label: string; required: boolean }>;
         }
       ): Promise<{ slug: string; success: boolean }> {
-        const path = slug.split("/").map(encodeURIComponent).join("/");
+        const path = encodeURIComponent(slug);
         return request(`/api/legal/templates/${path}`, {
           method: "PATCH",
           body: JSON.stringify(input),
@@ -1091,7 +1091,7 @@ export const api = {
       },
 
       delete(slug: string): Promise<{ ok: boolean }> {
-        const path = slug.split("/").map(encodeURIComponent).join("/");
+        const path = encodeURIComponent(slug);
         return request(`/api/legal/templates/${path}`, { method: "DELETE" });
       },
     },
@@ -1107,7 +1107,7 @@ export const api = {
       },
 
       get(slug: string): Promise<BrainPage> {
-        const path = slug.split("/").map(encodeURIComponent).join("/");
+        const path = encodeURIComponent(slug);
         return request(`/api/legal/litigation/${path}`);
       },
 
@@ -1130,7 +1130,7 @@ export const api = {
         slug: string,
         input: Record<string, unknown>
       ): Promise<{ slug: string; success: boolean }> {
-        const path = slug.split("/").map(encodeURIComponent).join("/");
+        const path = encodeURIComponent(slug);
         return request(`/api/legal/litigation/${path}`, {
           method: "PATCH",
           body: JSON.stringify(input),
@@ -1138,7 +1138,7 @@ export const api = {
       },
 
       delete(slug: string): Promise<{ ok: boolean }> {
-        const path = slug.split("/").map(encodeURIComponent).join("/");
+        const path = encodeURIComponent(slug);
         return request(`/api/legal/litigation/${path}`, { method: "DELETE" });
       },
     },
@@ -1154,7 +1154,7 @@ export const api = {
       },
 
       get(slug: string): Promise<BrainPage> {
-        const path = slug.split("/").map(encodeURIComponent).join("/");
+        const path = encodeURIComponent(slug);
         return request(`/api/legal/review-sets/${path}`);
       },
 
@@ -1176,7 +1176,7 @@ export const api = {
         slug: string,
         input: Record<string, unknown>
       ): Promise<{ slug: string; success: boolean }> {
-        const path = slug.split("/").map(encodeURIComponent).join("/");
+        const path = encodeURIComponent(slug);
         return request(`/api/legal/review-sets/${path}`, {
           method: "PATCH",
           body: JSON.stringify(input),
@@ -1184,7 +1184,7 @@ export const api = {
       },
 
       delete(slug: string): Promise<{ ok: boolean }> {
-        const path = slug.split("/").map(encodeURIComponent).join("/");
+        const path = encodeURIComponent(slug);
         return request(`/api/legal/review-sets/${path}`, { method: "DELETE" });
       },
     },
@@ -1204,7 +1204,8 @@ export const api = {
       },
 
       get(slug: string): Promise<BrainPage> {
-        const path = slug.split("/").map(encodeURIComponent).join("/");
+        // The route takes the id as ONE segment ("trust-accounts/123" → %2F).
+        const path = encodeURIComponent(slug);
         return request(`/api/legal/trust-accounts/${path}`);
       },
 
@@ -1226,37 +1227,56 @@ export const api = {
         });
       },
 
+      /** Status only — bookings are immutable. */
       update(
         slug: string,
-        input: Record<string, unknown>
+        input: { status: "active" | "frozen" | "closed" }
       ): Promise<{ slug: string; success: boolean }> {
-        const path = slug.split("/").map(encodeURIComponent).join("/");
+        // The route takes the id as ONE segment ("trust-accounts/123" → %2F).
+        const path = encodeURIComponent(slug);
         return request(`/api/legal/trust-accounts/${path}`, {
           method: "PATCH",
           body: JSON.stringify(input),
         });
       },
 
+      /** Books an entry or, with type "reversal" and reversesId, reverses one. */
       addTransaction(
         slug: string,
         input: {
-          type: string;
+          type: "deposit" | "withdrawal" | "fee" | "interest" | "reversal";
           amount: number;
           description: string;
+          matterSlug: string;
+          matterTitle?: string;
           date?: string;
-          matterSlug?: string;
           reference?: string;
+          reversesId?: string;
         }
-      ): Promise<{ transaction: Record<string, unknown> }> {
-        const path = slug.split("/").map(encodeURIComponent).join("/");
+      ): Promise<{ transaction: Record<string, unknown>; warnings?: string[] }> {
+        // The route takes the id as ONE segment ("trust-accounts/123" → %2F).
+        const path = encodeURIComponent(slug);
         return request(`/api/legal/trust-accounts/${path}`, {
           method: "POST",
           body: JSON.stringify(input),
         });
       },
 
+      reconcile(
+        slug: string,
+        input: { bankBalance: number; notes?: string; date?: string }
+      ): Promise<{ reconciliation: Record<string, unknown> }> {
+        // The route takes the id as ONE segment ("trust-accounts/123" → %2F).
+        const path = encodeURIComponent(slug);
+        return request(`/api/legal/trust-accounts/${path}/reconciliations`, {
+          method: "POST",
+          body: JSON.stringify(input),
+        });
+      },
+
       delete(slug: string): Promise<{ ok: boolean }> {
-        const path = slug.split("/").map(encodeURIComponent).join("/");
+        // The route takes the id as ONE segment ("trust-accounts/123" → %2F).
+        const path = encodeURIComponent(slug);
         return request(`/api/legal/trust-accounts/${path}`, { method: "DELETE" });
       },
     },
@@ -1280,7 +1300,7 @@ export const api = {
       },
 
       get(slug: string): Promise<BrainPage> {
-        const path = slug.split("/").map(encodeURIComponent).join("/");
+        const path = encodeURIComponent(slug);
         return request(`/api/legal/analytics/${path}`);
       },
 
@@ -1310,7 +1330,7 @@ export const api = {
         slug: string,
         input: Record<string, unknown>
       ): Promise<{ slug: string; success: boolean }> {
-        const path = slug.split("/").map(encodeURIComponent).join("/");
+        const path = encodeURIComponent(slug);
         return request(`/api/legal/analytics/${path}`, {
           method: "PATCH",
           body: JSON.stringify(input),
@@ -1318,7 +1338,7 @@ export const api = {
       },
 
       delete(slug: string): Promise<{ ok: boolean }> {
-        const path = slug.split("/").map(encodeURIComponent).join("/");
+        const path = encodeURIComponent(slug);
         return request(`/api/legal/analytics/${path}`, { method: "DELETE" });
       },
     },
