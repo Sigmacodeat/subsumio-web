@@ -249,7 +249,7 @@ export default function ScimSettingsPage() {
     );
   }
 
-  const scimBaseUrl = `${typeof window !== "undefined" ? window.location.origin : "https://subsum.eu"}/api/scim`;
+  const scimBaseUrl = `${typeof window !== "undefined" ? window.location.origin : "https://subsum.io"}/api/scim`;
   const bearerTokenConfigured = status?.configured ?? false;
   const workosConfigured = status?.workosDirectorySyncConfigured ?? false;
 
@@ -359,7 +359,7 @@ export default function ScimSettingsPage() {
               <CopyableField
                 label="SCIM Base URL"
                 value={scimBaseUrl}
-                placeholder="https://subsum.eu/api/scim"
+                placeholder="https://subsum.io/api/scim"
               />
               <CopyableField
                 label="SCIM Bearer Token"

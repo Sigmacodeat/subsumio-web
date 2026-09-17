@@ -19,7 +19,7 @@ export const GET = createPublicHandler(
   async (_req, _body, query) => {
     const { token } = query;
     const payload = await verifyActionToken(token, "verify");
-    const appUrl = env("NEXT_PUBLIC_APP_URL") || "https://subsum.eu";
+    const appUrl = env("NEXT_PUBLIC_APP_URL") || "https://subsum.io";
     if (!payload) {
       return Response.redirect(new URL("/login?verify=invalid", appUrl));
     }

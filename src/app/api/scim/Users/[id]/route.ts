@@ -20,7 +20,7 @@ const log = logger("api/scim/Users/[id]");
 
 export const dynamic = "force-dynamic";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu";
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://subsum.io";
 
 const updateUserSchema = z.object({
   schemas: z.array(z.string().max(200)).max(20),

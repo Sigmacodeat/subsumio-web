@@ -156,7 +156,7 @@ function renderDigest(items: DeadlineItem[], appUrl: string): { subject: string;
 const alreadyNotifiedToday = createDailyDedup("subsumio_notify_log");
 
 export const GET = createCronHandler(async (_req: NextRequest) => {
-  const appUrl = env("NEXT_PUBLIC_APP_URL") || "https://subsum.eu";
+  const appUrl = env("NEXT_PUBLIC_APP_URL") || "https://subsum.io";
 
   const recipientsByBrain = await getRecipientsByBrain();
 

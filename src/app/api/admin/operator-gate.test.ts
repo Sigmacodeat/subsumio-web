@@ -31,7 +31,7 @@ function ctx(email: string, twoFactorEnabled = true) {
   };
 }
 
-function request(host = "ops.subsum.eu") {
+function request(host = "ops.subsum.io") {
   return new NextRequest("http://localhost:3000/api/admin/saas-usage", {
     headers: { host },
   });
@@ -62,6 +62,6 @@ describe("operator gate on /api/admin/saas-usage", () => {
   it("is not served outside the ops host in production", async () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.mocked(requireEngineContext).mockResolvedValue(ctx(OPERATOR) as any);
-    expect((await saasUsage(request("subsum.eu"))).status).toBe(404);
+    expect((await saasUsage(request("subsum.io"))).status).toBe(404);
   });
 });

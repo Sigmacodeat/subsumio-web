@@ -45,7 +45,7 @@ function NotifyMe() {
         e.preventDefault();
         if (!email) return;
         const subject = "Benachrichtigung zum Start der Store-Apps";
-        window.location.href = `mailto:hello@subsum.eu?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(email)}`;
+        window.location.href = `mailto:hello@subsum.io?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(email)}`;
       }}
     >
       <label

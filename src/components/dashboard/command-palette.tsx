@@ -420,7 +420,7 @@ export function CommandPalette({
       label: t("cmd.action.help.support"),
       icon: LifeBuoy,
       action: () => {
-        window.location.href = "mailto:support@subsumio.com";
+        window.location.href = "mailto:support@subsum.io";
       },
       section: t("cmd.section.admin"),
       keywords: "help contact support hilfe kontakt",

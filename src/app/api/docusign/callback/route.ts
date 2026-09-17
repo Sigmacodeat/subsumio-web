@@ -46,7 +46,7 @@ export const GET = createHandler(
       return apiError("docusign_not_configured", "Docusign not configured", 503);
     }
 
-    const redirectUri = `${env("NEXT_PUBLIC_APP_URL") || "https://subsum.eu"}/api/docusign/callback`;
+    const redirectUri = `${env("NEXT_PUBLIC_APP_URL") || "https://subsum.io"}/api/docusign/callback`;
     const tokenRes = await fetch("https://account-d.docusign.com/oauth/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },

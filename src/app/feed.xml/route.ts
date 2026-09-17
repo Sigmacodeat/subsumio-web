@@ -1,6 +1,6 @@
 import { getAllPosts } from "@/content/blog";
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu";
+const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.io";
 
 export const dynamic = "force-static";
 
@@ -33,7 +33,7 @@ export async function GET() {
       <guid isPermaLink="true">${url}</guid>
       <pubDate>${pubDate}</pubDate>
       <description>${description}</description>
-      <author>hello@subsum.eu (Subsumio Team)</author>${categories ? "\n" + categories : ""}
+      <author>hello@subsum.io (Subsumio Team)</author>${categories ? "\n" + categories : ""}
     </item>`;
     })
     .join("\n");
@@ -48,8 +48,8 @@ export async function GET() {
     <lastBuildDate>${lastBuildDate}</lastBuildDate>
     <atom:link href="${BASE}/feed.xml" rel="self" type="application/rss+xml" />
     <copyright>Subsumio</copyright>
-    <managingEditor>hello@subsum.eu (Subsumio Team)</managingEditor>
-    <webMaster>hello@subsum.eu (Subsumio Team)</webMaster>
+    <managingEditor>hello@subsum.io (Subsumio Team)</managingEditor>
+    <webMaster>hello@subsum.io (Subsumio Team)</webMaster>
     <ttl>60</ttl>
 ${items}
   </channel>

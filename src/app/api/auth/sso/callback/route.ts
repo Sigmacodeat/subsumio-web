@@ -54,7 +54,7 @@ export const GET = createPublicHandler(
     // Clear the state cookie — single use
     jar.delete(SSO_STATE_COOKIE);
 
-    const redirectUri = `${env("NEXT_PUBLIC_APP_URL") || "https://subsum.eu"}/api/auth/sso/callback`;
+    const redirectUri = `${env("NEXT_PUBLIC_APP_URL") || "https://subsum.io"}/api/auth/sso/callback`;
 
     try {
       const auth = await authenticateWithCode(code, redirectUri);
@@ -95,7 +95,7 @@ export const GET = createPublicHandler(
 
       // Redirect to dashboard
       return Response.redirect(
-        `${env("NEXT_PUBLIC_APP_URL") || "https://subsum.eu"}/dashboard`,
+        `${env("NEXT_PUBLIC_APP_URL") || "https://subsum.io"}/dashboard`,
         302
       );
     } catch (err) {

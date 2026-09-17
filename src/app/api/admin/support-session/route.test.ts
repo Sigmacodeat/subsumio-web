@@ -44,7 +44,7 @@ function opCtx() {
   return { headers: {}, brainId: "brain_operator", plan: "team", user: OPERATOR };
 }
 
-function postRequest(body: unknown, host = "ops.subsum.eu") {
+function postRequest(body: unknown, host = "ops.subsum.io") {
   return new NextRequest("http://localhost:3000/api/admin/support-session", {
     method: "POST",
     headers: {
@@ -57,7 +57,7 @@ function postRequest(body: unknown, host = "ops.subsum.eu") {
   });
 }
 
-function getRequest(host = "ops.subsum.eu") {
+function getRequest(host = "ops.subsum.io") {
   return new NextRequest("http://localhost:3000/api/admin/support-session", { headers: { host } });
 }
 
@@ -120,7 +120,7 @@ describe("POST /api/admin/support-session (start)", () => {
   it("is blocked outside the ops host in production (same lock as other operator routes)", async () => {
     vi.stubEnv("NODE_ENV", "production");
     const res = await POST(
-      postRequest({ orgId: ORG.id, reason: "gültiger Grund-Text" }, "subsum.eu")
+      postRequest({ orgId: ORG.id, reason: "gültiger Grund-Text" }, "subsum.io")
     );
     expect(res.status).toBe(404);
     expect(startSupportSession).not.toHaveBeenCalled();

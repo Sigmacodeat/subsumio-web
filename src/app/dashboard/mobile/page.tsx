@@ -63,7 +63,7 @@ export default function MobilePage() {
     await nativeShare({
       title: "Subsumio",
       text: "Mein Kanzlei-OS für rechtliche Intelligenz.",
-      url: "https://subsum.eu",
+      url: "https://subsum.io",
     });
   }
 

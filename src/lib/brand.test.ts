@@ -8,7 +8,7 @@ describe("Subsumio brand configuration", () => {
   });
 
   test("contains the canonical Subsumio hosts", () => {
-    expect(SUBSUMIO_HOSTS).toContain("subsum.eu");
+    expect(SUBSUMIO_HOSTS).toContain("subsum.io");
     expect(SUBSUMIO_HOSTS).toContain("subsum.io");
   });
 
@@ -18,13 +18,13 @@ describe("Subsumio brand configuration", () => {
   });
 
   test("detects external URLs", () => {
-    expect(isExternalUrl("https://subsum.eu")).toBe(true);
+    expect(isExternalUrl("https://subsum.io")).toBe(true);
     expect(isExternalUrl("/")).toBe(false);
   });
 
   test("builds the default Subsumio canonical URLs", () => {
-    expect(subsumioCanonical("at")).toBe("https://subsum.eu/at");
-    expect(subsumioCanonical("en")).toBe("https://subsum.eu/at");
+    expect(subsumioCanonical("at")).toBe("https://subsum.io/at");
+    expect(subsumioCanonical("en")).toBe("https://subsum.io/at");
   });
 
   test("supports a relative local Subsumio URL", async () => {

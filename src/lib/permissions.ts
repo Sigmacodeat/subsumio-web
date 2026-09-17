@@ -121,7 +121,7 @@ export type RouteAction =
   | "admin.data_delete"
   | "admin.data_export"
   | "admin.audit_export" // nur admin
-  | "platform.operator" // Subsumio-Betreiber (ops.subsum.eu), nie über KanzleiRole
+  | "platform.operator" // Subsumio-Betreiber (ops.subsum.io), nie über KanzleiRole
   | "platform.support_session"; // Support-Sitzung beenden — wie platform.operator, aber ohne Ops-Host-Bindung (Banner läuft auf der Kanzlei-App)
 
 const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {

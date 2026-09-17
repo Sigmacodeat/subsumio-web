@@ -12,7 +12,7 @@ interface CaseSuggestion {
   title: string;
 }
 
-const API_BASE = "https://subsum.eu";
+const API_BASE = "https://subsum.io";
 let token = "";
 const _tokenName = "";
 let _connected = false;

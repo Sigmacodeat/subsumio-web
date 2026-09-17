@@ -63,7 +63,7 @@ const APP_HOSTS = new Set(
 const LEGACY_PRODUCT_HOSTS = new Set(LEGACY_TAXUMIO_HOSTS.map((host) => host.toLowerCase()));
 
 // --- Operator console host split ---
-// The ops host (OPS_HOSTS, production: ops.subsum.eu) serves only the operator
+// The ops host (OPS_HOSTS, production: ops.subsum.io) serves only the operator
 // console plus what it needs to sign in; /ops is invisible on every other host.
 const OPS_HOST_PASSTHROUGH_PREFIXES = ["/ops", "/api/", "/login", "/forgot", "/reset"];
 

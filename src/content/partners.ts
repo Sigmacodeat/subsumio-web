@@ -52,7 +52,7 @@ export const PARTNERS: PartnersContent = {
         "Unterlagen für Ihre Empfehlung auf Anfrage",
       ],
       cta: "Als Empfehlungspartner bewerben",
-      href: "mailto:partners@subsum.eu?subject=Affiliate-Bewerbung",
+      href: "mailto:partners@subsum.io?subject=Affiliate-Bewerbung",
       highlight: true,
     },
     {
@@ -83,7 +83,7 @@ export const PARTNERS: PartnersContent = {
         "Direkter Kontakt zu unserer Entwicklung bei Fragen zur Anbindung",
       ],
       cta: "Als Partner bewerben",
-      href: "mailto:partners@subsum.eu?subject=Partner-Bewerbung",
+      href: "mailto:partners@subsum.io?subject=Partner-Bewerbung",
     },
   ],
   calcTitle: "Ein Rechenbeispiel",

@@ -6,7 +6,7 @@ import { getAllPosts, getPostBySlug } from "@/content/blog";
 import { BadgePill, CTASection } from "@/components/marketing/primitives";
 import { H2_CTA_CLASS } from "@/components/marketing/typography";
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu";
+const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.io";
 
 export function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }));

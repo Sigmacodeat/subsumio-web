@@ -119,7 +119,7 @@ function renderDigest(
 }
 
 export const GET = createCronHandler(async (_req: NextRequest) => {
-  const appUrl = env("NEXT_PUBLIC_APP_URL") || "https://subsum.eu";
+  const appUrl = env("NEXT_PUBLIC_APP_URL") || "https://subsum.io";
   const from = new Date(Date.now() - 7 * 86400_000).toISOString().slice(0, 10);
 
   const recipientsByBrain = await getRecipientsByBrain();

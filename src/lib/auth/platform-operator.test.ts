@@ -47,9 +47,9 @@ describe("platform operator", () => {
 
   it("serves the console only on ops hosts", () => {
     vi.stubEnv("NODE_ENV", "production");
-    expect(isOpsHost("ops.subsum.eu")).toBe(true);
-    expect(isOpsHost("OPS.subsum.eu")).toBe(true);
-    expect(isOpsHost("subsum.eu")).toBe(false);
+    expect(isOpsHost("ops.subsum.io")).toBe(true);
+    expect(isOpsHost("OPS.subsum.io")).toBe(true);
+    expect(isOpsHost("subsum.io")).toBe(false);
     expect(isOpsHost("ops.localhost:3000")).toBe(false);
     expect(isOpsHost(null)).toBe(false);
   });
@@ -57,8 +57,8 @@ describe("platform operator", () => {
   it("allows ops.localhost in development and honours OPS_HOSTS overrides", () => {
     vi.stubEnv("NODE_ENV", "development");
     expect(isOpsHost("ops.localhost:3000")).toBe(true);
-    vi.stubEnv("OPS_HOSTS", "ops.staging.subsum.eu");
-    expect(isOpsHost("ops.staging.subsum.eu")).toBe(true);
-    expect(isOpsHost("ops.subsum.eu")).toBe(false);
+    vi.stubEnv("OPS_HOSTS", "ops.staging.subsum.io");
+    expect(isOpsHost("ops.staging.subsum.io")).toBe(true);
+    expect(isOpsHost("ops.subsum.io")).toBe(false);
   });
 });

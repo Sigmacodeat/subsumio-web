@@ -433,7 +433,7 @@ export function createHandler<
     // exception: it only ends the caller's own support session (see
     // src/lib/support-session.ts) and must be callable from the Kanzlei
     // dashboard the operator is browsing during that session, not just from
-    // ops.subsum.eu — so it skips the host lock but keeps the identity check.
+    // ops.subsum.io — so it skips the host lock but keeps the identity check.
     if (
       (options.action === "platform.operator" || options.action === "platform.support_session") &&
       !internalContext

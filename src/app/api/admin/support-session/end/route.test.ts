@@ -75,7 +75,7 @@ describe("POST /api/admin/support-session/end", () => {
     };
     endSupportSession.mockResolvedValue(ended);
 
-    const res = await POST(request("ops.subsum.eu"));
+    const res = await POST(request("ops.subsum.io"));
     expect(res.status).toBe(200);
     expect((await res.json()).data.session).toBeNull();
     expect(endSupportSession).toHaveBeenCalledWith(OPERATOR.id);
@@ -94,13 +94,13 @@ describe("POST /api/admin/support-session/end", () => {
   it("also works from the firm's own app host, in production — unlike platform.operator routes", async () => {
     vi.stubEnv("NODE_ENV", "production");
     endSupportSession.mockResolvedValue(null);
-    const res = await POST(request("subsum.eu"));
+    const res = await POST(request("subsum.io"));
     expect(res.status).toBe(200);
   });
 
   it("is a no-op (200, no audit writes) when the operator has nothing active", async () => {
     endSupportSession.mockResolvedValue(null);
-    const res = await POST(request("ops.subsum.eu"));
+    const res = await POST(request("ops.subsum.io"));
     expect(res.status).toBe(200);
     expect((await res.json()).data.session).toBeNull();
     expect(logAudit).not.toHaveBeenCalled();
@@ -112,7 +112,7 @@ describe("POST /api/admin/support-session/end", () => {
       ...opCtx(),
       user: { id: "u2", email: "partner@kanzlei.example", role: "admin", twoFactorEnabled: true },
     } as any);
-    const res = await POST(request("subsum.eu"));
+    const res = await POST(request("subsum.io"));
     expect(res.status).toBe(403);
     expect(endSupportSession).not.toHaveBeenCalled();
   });

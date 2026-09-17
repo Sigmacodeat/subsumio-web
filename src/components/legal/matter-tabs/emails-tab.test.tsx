@@ -32,7 +32,7 @@ const filedMail = {
   status: "received",
   fromEmail: "mandant@example.com",
   fromName: "Maria Mandantin",
-  toEmails: ["hello+org_a@subsum.eu"],
+  toEmails: ["hello+org_a@subsum.io"],
   subject: "Unterlagen zur Klage",
   text: null,
   html: '<p>Anbei die Unterlagen.</p><script>window.__pwned = true</script><img src=x onerror="window.__pwned=true">',
@@ -57,7 +57,7 @@ beforeEach(() => {
     vi.fn(async (url: string) => {
       if (url.includes("case=")) {
         return new Response(
-          JSON.stringify({ messages: [filedMail], address: "hello+org_a@subsum.eu" }),
+          JSON.stringify({ messages: [filedMail], address: "hello+org_a@subsum.io" }),
           { status: 200 }
         );
       }
@@ -77,7 +77,7 @@ describe("EmailsTab", () => {
     expect(await screen.findByText("Unterlagen zur Klage")).toBeInTheDocument();
     expect(screen.getByText("Neue Anfrage")).toBeInTheDocument();
     expect(screen.getByText("Vergleichsangebot")).toBeInTheDocument();
-    expect(screen.getByText("hello+org_a@subsum.eu")).toBeInTheDocument();
+    expect(screen.getByText("hello+org_a@subsum.io")).toBeInTheDocument();
   });
 
   it("renders HTML mail as plain text only", async () => {

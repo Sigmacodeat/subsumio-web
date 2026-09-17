@@ -94,7 +94,7 @@ export const metadata: Metadata = {
     // Brand
     "Subsumio",
   ],
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.io"),
   openGraph: {
     title: "Subsumio — KI-Kanzleisoftware für Österreich",
     description:

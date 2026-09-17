@@ -21,7 +21,7 @@ export interface User {
   role: KanzleiRole;
   plan: Plan;
   locale: "en" | "de";
-  /** This user's own referral code (subsum.eu/?ref=CODE). */
+  /** This user's own referral code (subsum.io/?ref=CODE). */
   referralCode: string;
   /** Referral code of the user who referred this one, if any. */
   referredBy: string | null;

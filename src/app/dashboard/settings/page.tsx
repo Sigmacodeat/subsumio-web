@@ -1245,7 +1245,7 @@ function SettingsPageInner() {
               <div className="divide-y divide-[color:var(--ds-border)] px-6">
                 <Field label={t("settings.scim_endpoint")} desc={t("settings.scim_endpoint_desc")}>
                   <code className="block rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 font-mono text-xs text-[color:var(--ds-text-muted)]">
-                    {typeof window !== "undefined" ? window.location.origin : "https://subsum.eu"}
+                    {typeof window !== "undefined" ? window.location.origin : "https://subsum.io"}
                     /api/scim
                   </code>
                 </Field>

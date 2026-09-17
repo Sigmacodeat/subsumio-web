@@ -18,7 +18,7 @@ const log = logger("api/scim/Users");
 
 export const dynamic = "force-dynamic";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu";
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://subsum.io";
 
 const listQuerySchema = z.object({
   startIndex: z.string().optional(),

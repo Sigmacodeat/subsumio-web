@@ -559,7 +559,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
             await sendMail({
               to: user.email,
               subject: "Aktion erforderlich: Zahlung bestätigen",
-              text: `Ihre Zahlung erfordert eine 3D-Secure-Authentifizierung.\n\nBitte bestätigen Sie die Zahlung unter: ${hostedInvoiceUrl ?? "https://app.subsumio.com/dashboard/billing"}\n\nOhne Bestätigung wird Ihr Abonnement pausiert.`,
+              text: `Ihre Zahlung erfordert eine 3D-Secure-Authentifizierung.\n\nBitte bestätigen Sie die Zahlung unter: ${hostedInvoiceUrl ?? "https://app.subsum.io/dashboard/billing"}\n\nOhne Bestätigung wird Ihr Abonnement pausiert.`,
             });
           }
         } catch (err) {
@@ -580,7 +580,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
             await sendMail({
               to: user.email,
               subject: "Ihre Zahlungsmethode läuft bald ab",
-              text: "Ihre hinterlegte Kreditkarte läuft in Kürze ab. Bitte aktualisieren Sie Ihre Zahlungsmethode im Abrechnungsportal, um Service-Unterbrechungen zu vermeiden.\n\nPortal: https://app.subsumio.com/dashboard/billing",
+              text: "Ihre hinterlegte Kreditkarte läuft in Kürze ab. Bitte aktualisieren Sie Ihre Zahlungsmethode im Abrechnungsportal, um Service-Unterbrechungen zu vermeiden.\n\nPortal: https://app.subsum.io/dashboard/billing",
             });
           }
         } catch (err) {
@@ -600,7 +600,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
             await sendMail({
               to: user.email,
               subject: "Ihr Testzeitraum endet bald",
-              text: "Ihr Testzeitraum endet in 3 Tagen. Um Ihren Service ohne Unterbrechung fortzusetzen, schließen Sie bitte Ihr Abonnement ab.\n\nUpgrade: https://app.subsumio.com/dashboard/billing",
+              text: "Ihr Testzeitraum endet in 3 Tagen. Um Ihren Service ohne Unterbrechung fortzusetzen, schließen Sie bitte Ihr Abonnement ab.\n\nUpgrade: https://app.subsum.io/dashboard/billing",
             });
           }
         } catch (err) {

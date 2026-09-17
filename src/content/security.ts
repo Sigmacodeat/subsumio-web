@@ -149,7 +149,7 @@ export const SECURITY: SecurityContent = {
   ],
   disclosureTitle: "Sicherheitslücke melden",
   disclosureText:
-    "Schwachstelle gefunden? E-Mail an security@subsum.eu. Wir bestätigen den Eingang innerhalb von 48 Stunden, halten Sie auf dem Laufenden und nennen Sie auf Wunsch namentlich. Bitte testen Sie nicht gegen Systeme mit echten Kundendaten — schreiben Sie uns vorab, dann stimmen wir den Rahmen ab.",
+    "Schwachstelle gefunden? E-Mail an security@subsum.io. Wir bestätigen den Eingang innerhalb von 48 Stunden, halten Sie auf dem Laufenden und nennen Sie auf Wunsch namentlich. Bitte testen Sie nicht gegen Systeme mit echten Kundendaten — schreiben Sie uns vorab, dann stimmen wir den Rahmen ab.",
   faqTitle: "Sicherheitsfragen, klar beantwortet",
   faq: [
     {

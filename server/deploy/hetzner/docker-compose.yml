@@ -156,7 +156,7 @@ services:
       NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES: ${NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES:-524288000}
       NEXT_PUBLIC_ENGINE_URL: "https://${ENGINE_DOMAIN:?set ENGINE_DOMAIN in .env}"
       # Operator console (/ops) and operator APIs are served only on this host.
-      OPS_HOSTS: ${OPS_DOMAIN:-ops.subsum.eu}
+      OPS_HOSTS: ${OPS_DOMAIN:-ops.subsum.io}
     volumes:
       # Corpus read-only mount so the dashboard can enumerate local disk files.
       # Mounted at /app/law-corpus to match src/lib/corpus-index.ts (NORMALIZED_ROOT).
@@ -191,7 +191,7 @@ services:
     environment:
       APP_DOMAIN: ${APP_DOMAIN:?set APP_DOMAIN in .env}
       ENGINE_DOMAIN: ${ENGINE_DOMAIN:?set ENGINE_DOMAIN in .env}
-      OPS_DOMAIN: ${OPS_DOMAIN:-ops.subsum.eu}
+      OPS_DOMAIN: ${OPS_DOMAIN:-ops.subsum.io}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data

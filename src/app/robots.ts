@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu";
+const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.io";
 
 export default function robots(): MetadataRoute.Robots {
   return {

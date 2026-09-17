@@ -40,7 +40,7 @@ export const DOWNLOAD: DownloadContent = {
       name: "iPhone & iPad",
       tagline: "Über Safari installieren",
       steps: [
-        "Öffnen Sie subsum.eu in Safari",
+        "Öffnen Sie subsum.io in Safari",
         "Tippen Sie auf das Teilen-Symbol (Quadrat mit Pfeil)",
         "Tippen Sie auf „Zum Home-Bildschirm“",
         "Tippen Sie auf „Hinzufügen“ — fertig. Subsumio erscheint mit dem Σ-Symbol.",
@@ -53,7 +53,7 @@ export const DOWNLOAD: DownloadContent = {
       name: "Android",
       tagline: "Chrome bietet Ihnen die Installation an",
       steps: [
-        "Öffnen Sie subsum.eu in Chrome",
+        "Öffnen Sie subsum.io in Chrome",
         "Tippen Sie auf „App installieren“ (oder Menü ⋮ → „Zum Startbildschirm“)",
         "Bestätigen Sie — Subsumio erscheint in Ihrer App-Übersicht",
         "Startet im Vollbild wie jede andere App.",
@@ -66,7 +66,7 @@ export const DOWNLOAD: DownloadContent = {
       name: "Desktop (Mac, Windows, Linux)",
       tagline: "Ein Klick in Chrome oder Edge",
       steps: [
-        "Öffnen Sie subsum.eu in Chrome oder Edge",
+        "Öffnen Sie subsum.io in Chrome oder Edge",
         "Klicken Sie auf das Installieren-Symbol in der Adressleiste (⊕ Bildschirm)",
         "Bestätigen Sie — Subsumio öffnet sich im eigenen Fenster",
         "Heften Sie es ans Dock oder an die Taskleiste.",

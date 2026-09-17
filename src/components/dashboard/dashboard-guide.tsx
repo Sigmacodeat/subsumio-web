@@ -460,7 +460,7 @@ export function DashboardGuide({
                 {t("guide.restart_tour")}
               </button>
               <a
-                href="mailto:support@subsumio.com"
+                href="mailto:support@subsum.io"
                 className="flex items-center justify-center gap-2 rounded-lg border border-[color:var(--ds-border)] px-3 py-2.5 text-sm font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 motion-reduce:transition-none"
               >
                 <LifeBuoy size={15} />

@@ -1804,7 +1804,7 @@ function billingUrl(): string {
   const base = (
     env("NEXT_PUBLIC_APP_URL") ||
     env("NEXT_PUBLIC_SUBSUMIO_URL") ||
-    "https://subsum.eu"
+    "https://subsum.io"
   )
     .trim()
     .replace(/\/$/, "");

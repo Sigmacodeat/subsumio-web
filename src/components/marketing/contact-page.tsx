@@ -17,16 +17,16 @@ const CONTENT = {
     {
       icon: "Mail",
       title: "E-Mail",
-      value: "hello@subsum.eu",
+      value: "hello@subsum.io",
       desc: "Allgemeine Fragen, Verkauf, Partnerschaften.",
-      href: "mailto:hello@subsum.eu",
+      href: "mailto:hello@subsum.io",
     },
     {
       icon: "FileText",
       title: "Datenschutz",
-      value: "dsb@subsum.eu",
+      value: "dsb@subsum.io",
       desc: "Für Ihren Datenschutzbeauftragten — AVV, technische und organisatorische Maßnahmen.",
-      href: "mailto:dsb@subsum.eu",
+      href: "mailto:dsb@subsum.io",
     },
   ],
   formTitle: "Schreiben Sie uns eine Nachricht",
@@ -118,7 +118,7 @@ export default function ContactPage() {
                 ]
                   .filter(Boolean)
                   .join("\n");
-                window.location.href = `mailto:hello@subsum.eu?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                window.location.href = `mailto:hello@subsum.io?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
               }}
             >
               <div className="grid gap-6 sm:grid-cols-2">

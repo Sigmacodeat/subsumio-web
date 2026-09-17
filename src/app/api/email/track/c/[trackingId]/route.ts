@@ -52,7 +52,7 @@ export const GET = createPublicHandler(
 
     // Verify HMAC signature to prevent open redirect attacks
     if (!encodedUrl || !signature || !verifyUrlSignature(encodedUrl, signature)) {
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu"}/`, {
+      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || "https://subsum.io"}/`, {
         status: 302,
       });
     }

@@ -10,12 +10,12 @@
 //   - Betreiber brauchen aktive 2FA.
 //   - Deaktivierte Konten sind nie Betreiber.
 //   - Die Konsole und ihre APIs laufen nur auf OPS_HOSTS (Produktion:
-//     ops.subsum.eu). Der Session-Cookie ist host-gebunden, eine Anmeldung in
+//     ops.subsum.io). Der Session-Cookie ist host-gebunden, eine Anmeldung in
 //     der Kanzlei-App gilt dort also nicht.
 //
 // Edge-safe: nur process.env, keine Node-APIs (wird auch von der Middleware genutzt).
 
-export const DEFAULT_OPS_HOSTS = ["ops.subsum.eu"] as const;
+export const DEFAULT_OPS_HOSTS = ["ops.subsum.io"] as const;
 const DEV_OPS_HOSTS = ["ops.localhost"] as const;
 
 export interface OperatorCandidate {
@@ -24,7 +24,7 @@ export interface OperatorCandidate {
   deactivatedAt?: string | null;
 }
 
-/** Hostname without port, lowercased ("OPS.subsum.eu:443" → "ops.subsum.eu"). */
+/** Hostname without port, lowercased ("OPS.subsum.io:443" → "ops.subsum.io"). */
 function hostname(host: string): string {
   return host.trim().toLowerCase().replace(/:\d+$/, "");
 }

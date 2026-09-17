@@ -10,10 +10,10 @@
   <DefaultLocale>de-DE</DefaultLocale>
   <DisplayName DefaultValue="Subsumio für Outlook"/>
   <Description DefaultValue="E-Mails in Subsumio-Akten importieren und Brain-Query direkt aus Outlook ausführen."/>
-  <IconUrl DefaultValue="https://subsum.eu/icon-192.png"/>
-  <SupportUrl DefaultValue="https://subsum.eu/support"/>
+  <IconUrl DefaultValue="https://subsum.io/icon-192.png"/>
+  <SupportUrl DefaultValue="https://subsum.io/support"/>
   <AppDomains>
-    <AppDomain>https://subsum.eu</AppDomain>
+    <AppDomain>https://subsum.io</AppDomain>
   </AppDomains>
   <Hosts>
     <Host Name="Mailbox"/>
@@ -26,13 +26,13 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://subsum.eu/outlook-addin/taskpane.html"/>
+        <SourceLocation DefaultValue="https://subsum.io/outlook-addin/taskpane.html"/>
         <RequestedHeight>450</RequestedHeight>
       </DesktopSettings>
     </Form>
     <Form xsi:type="ItemEdit">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://subsum.eu/outlook-addin/taskpane.html"/>
+        <SourceLocation DefaultValue="https://subsum.io/outlook-addin/taskpane.html"/>
         <RequestedHeight>450</RequestedHeight>
       </DesktopSettings>
     </Form>
@@ -128,12 +128,12 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16" DefaultValue="https://subsum.eu/icon-192.png"/>
-        <bt:Image id="Icon.32" DefaultValue="https://subsum.eu/icon-192.png"/>
-        <bt:Image id="Icon.80" DefaultValue="https://subsum.eu/icon-192.png"/>
+        <bt:Image id="Icon.16" DefaultValue="https://subsum.io/icon-192.png"/>
+        <bt:Image id="Icon.32" DefaultValue="https://subsum.io/icon-192.png"/>
+        <bt:Image id="Icon.80" DefaultValue="https://subsum.io/icon-192.png"/>
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://subsum.eu/outlook-addin/taskpane.html"/>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://subsum.io/outlook-addin/taskpane.html"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="Group.Label" DefaultValue="Subsumio"/>

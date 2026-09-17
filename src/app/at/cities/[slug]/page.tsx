@@ -10,7 +10,7 @@ import {
 } from "@/components/seo/jsonld";
 import { getCityBySlug, getAllCitySlugs, type CityPageContent } from "@/content/city-pages";
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu";
+const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.io";
 
 export function generateStaticParams() {
   return getAllCitySlugs().map((slug) => ({ slug }));

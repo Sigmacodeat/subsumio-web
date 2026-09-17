@@ -438,7 +438,7 @@ function BillingInner() {
 
       <p className="text-xs text-[color:var(--ds-text-muted)]">
         {t("billing.enterprise_q")}{" "}
-        <a href="mailto:hello@subsum.eu" className="brand-text hover:underline">
+        <a href="mailto:hello@subsum.io" className="brand-text hover:underline">
           {t("billing.contact_us")}
         </a>
         . {t("billing.annual_note")}

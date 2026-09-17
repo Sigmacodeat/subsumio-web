@@ -4,12 +4,12 @@
 import type { Lang } from "@/content/site";
 
 const DEFAULT_SUBSUMIO_HOSTS = [
-  "subsum.eu",
-  "www.subsum.eu",
   "subsum.io",
   "www.subsum.io",
-  "subsumio.com",
-  "www.subsumio.com",
+  "subsum.io",
+  "www.subsum.io",
+  "subsum.io",
+  "www.subsum.io",
 ];
 
 export const LEGACY_TAXUMIO_HOSTS = [
@@ -25,7 +25,7 @@ export const SUBSUMIO_HOSTS: string[] = (() => {
   return list.map((host) => host.trim().toLowerCase()).filter(Boolean);
 })();
 
-export const SUBSUMIO_SITE_URL = process.env.NEXT_PUBLIC_SUBSUMIO_URL || "https://subsum.eu";
+export const SUBSUMIO_SITE_URL = process.env.NEXT_PUBLIC_SUBSUMIO_URL || "https://subsum.io";
 
 export function isExternalUrl(url: string): boolean {
   return /^https?:\/\//.test(url);

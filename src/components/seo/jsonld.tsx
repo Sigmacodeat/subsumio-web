@@ -9,7 +9,7 @@ export function JsonLd({ data }: { data: object }) {
   );
 }
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu";
+const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.io";
 
 export function organizationLd() {
   return {

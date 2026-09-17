@@ -34,7 +34,7 @@ export const GET = createPublicHandler(
 
     const { provider, orgId: organizationId } = query;
 
-    const redirectUri = `${env("NEXT_PUBLIC_APP_URL") || "https://subsum.eu"}/api/auth/sso/callback`;
+    const redirectUri = `${env("NEXT_PUBLIC_APP_URL") || "https://subsum.io"}/api/auth/sso/callback`;
 
     // State token to prevent CSRF — stored as httpOnly cookie for callback validation
     const state = crypto.randomUUID();

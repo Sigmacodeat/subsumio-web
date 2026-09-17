@@ -16,7 +16,7 @@ vi.mock("@/lib/email/mailbox", () => ({
   sendMailboxMessage: vi.fn(),
   listMailMessages: vi.fn(),
   getUnreadCounts: vi.fn().mockResolvedValue({ inbox: 0, sent: 0, archive: 0, spam: 0, trash: 0 }),
-  mailboxAddressForBrain: (brainId: string) => `hello+${brainId}@subsum.eu`,
+  mailboxAddressForBrain: (brainId: string) => `hello+${brainId}@subsum.io`,
   supportMailboxBrainId: () => "subsumio-support",
 }));
 
@@ -66,7 +66,7 @@ describe("GET /api/email/messages", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.messages.map((m: { id: string }) => m.id)).toEqual(["m1", "m3"]);
-    expect(body.address).toBe("hello+org_firma@subsum.eu");
+    expect(body.address).toBe("hello+org_firma@subsum.io");
     expect(vi.mocked(listMailMessages).mock.calls[0][0]).toEqual({
       userId: "lawyer_walled",
       brainId: "org_firma",

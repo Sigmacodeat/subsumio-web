@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * /ops/* — Subsumio platform operator console (ops.subsum.eu).
+ * /ops/* — Subsumio platform operator console (ops.subsum.io).
  *
  * Defense in depth:
  *   1. Middleware: /ops only on the ops host, session required

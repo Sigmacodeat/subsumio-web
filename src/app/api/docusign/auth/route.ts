@@ -15,7 +15,7 @@ export const GET = createHandler(
   },
   async () => {
     try {
-      const redirectUri = `${env("NEXT_PUBLIC_APP_URL") || "https://subsum.eu"}/api/docusign/callback`;
+      const redirectUri = `${env("NEXT_PUBLIC_APP_URL") || "https://subsum.io"}/api/docusign/callback`;
       const state = randomBytes(32).toString("hex");
       const authUrl = getAuthUrl(redirectUri, state);
 

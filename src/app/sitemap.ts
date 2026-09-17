@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { getAllPosts } from "@/content/blog";
 import { getAllCitySlugs } from "@/content/city-pages";
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu";
+const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.io";
 
 // Public marketing routes for the Austria-only pilot. Every entry is served
 // canonically under /at — the root variants 308 to these URLs.

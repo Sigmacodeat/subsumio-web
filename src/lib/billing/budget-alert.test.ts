@@ -49,7 +49,7 @@ describe("checkAndSendBudgetAlert", () => {
     recorded.length = 0;
     mail.mockClear();
     peak = 100;
-    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://app.subsum.eu");
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://app.subsum.io");
   });
 
   it("sends the most severe threshold first on a sudden drop and covers milder ones", async () => {
@@ -68,8 +68,8 @@ describe("checkAndSendBudgetAlert", () => {
     expect(recipients).toEqual(["office@kanzlei.example", "partner@kanzlei.example"]);
     const [first] = mail.mock.calls[0];
     expect(first.subject).toContain("nur noch 10 %");
-    expect(first.text).toContain("https://app.subsum.eu/dashboard/billing");
-    expect(first.text).not.toContain("subsumio.com");
+    expect(first.text).toContain("https://app.subsum.io/dashboard/billing");
+    expect(first.text).not.toContain("subsum.io");
   });
 
   it("does not alert above the first threshold", async () => {

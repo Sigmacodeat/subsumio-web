@@ -24,7 +24,7 @@ beforeEach(async () => {
   dataDir = mkdtempSync(path.join(tmpdir(), "mailbox-test-"));
   vi.stubEnv("SUBSUMIO_DATA_DIR", dataDir);
   vi.stubEnv("RESEND_API_KEY", "re_test_key");
-  vi.stubEnv("MAIL_FROM", "Subsumio <hello@subsum.eu>");
+  vi.stubEnv("MAIL_FROM", "Subsumio <hello@subsum.io>");
   vi.stubEnv("MAIL_REPLY_TO", "");
   vi.stubEnv("EMAIL_INBOUND_DEFAULT_BRAIN_ID", "");
   sentPayloads = [];
@@ -67,13 +67,13 @@ describe("mailbox firm isolation", () => {
   it("routes plus-addressed inbound mail to the firm brain", async () => {
     await receive("in_1", {
       from: "Mandant <mandant@example.com>",
-      to: ["hello+org_firma@subsum.eu"],
+      to: ["hello+org_firma@subsum.io"],
       subject: "Unterlagen",
       text: "Anbei",
     });
     await receive("in_2", {
       from: "someone@example.com",
-      to: ["hello@subsum.eu"],
+      to: ["hello@subsum.io"],
       subject: "Allgemeine Frage",
       text: "?",
     });
@@ -93,7 +93,7 @@ describe("mailbox firm isolation", () => {
   it("never exposes another firm's message by id", async () => {
     const msg = await receive("in_3", {
       from: "mandant@example.com",
-      to: ["hello+org_firma@subsum.eu"],
+      to: ["hello+org_firma@subsum.io"],
       subject: "Vertraulich",
       text: "…",
     });
@@ -107,7 +107,7 @@ describe("mailbox matter filing", () => {
   it("files messages under a matter and filters by it", async () => {
     const msg = await receive("in_4", {
       from: "mandant@example.com",
-      to: ["hello+org_firma@subsum.eu"],
+      to: ["hello+org_firma@subsum.io"],
       subject: "Klage",
       text: "…",
     });
@@ -127,11 +127,11 @@ describe("mailbox matter filing", () => {
       caseSlug: "cases/mueller",
     });
     expect(sent.caseSlug).toBe("cases/mueller");
-    expect(JSON.stringify(sentPayloads[0])).toContain("hello+org_firma@subsum.eu");
+    expect(JSON.stringify(sentPayloads[0])).toContain("hello+org_firma@subsum.io");
 
     const reply = await receive("in_5", {
       from: "mandant@example.com",
-      to: ["hello+org_firma@subsum.eu"],
+      to: ["hello+org_firma@subsum.io"],
       subject: "Re: Terminbestätigung",
       text: "Danke",
       headers: { "In-Reply-To": `<${sent.providerId}@resend.dev>` },
@@ -142,7 +142,7 @@ describe("mailbox matter filing", () => {
   it("replies inherit the parent's matter and refuse foreign parents", async () => {
     const inbound = await receive("in_6", {
       from: "mandant@example.com",
-      to: ["hello+org_firma@subsum.eu"],
+      to: ["hello+org_firma@subsum.io"],
       subject: "Frage",
       text: "…",
     });
@@ -170,7 +170,7 @@ describe("mailbox matter filing", () => {
 
 describe("mailboxAddressForBrain", () => {
   it("builds the plus address and keeps the base for the support mailbox", () => {
-    expect(mailbox.mailboxAddressForBrain("org_firma")).toBe("hello+org_firma@subsum.eu");
-    expect(mailbox.mailboxAddressForBrain(mailbox.supportMailboxBrainId())).toBe("hello@subsum.eu");
+    expect(mailbox.mailboxAddressForBrain("org_firma")).toBe("hello+org_firma@subsum.io");
+    expect(mailbox.mailboxAddressForBrain(mailbox.supportMailboxBrainId())).toBe("hello@subsum.io");
   });
 });
