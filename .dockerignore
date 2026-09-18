@@ -18,6 +18,7 @@ server/deploy/hetzner/.env
 
 # Heavy server dirs not needed by the Next.js web build
 server/node_modules/
+**/node_modules
 server/data/
 server/dist/
 server/.pglite/
@@ -28,12 +29,12 @@ law-corpus/
 # Build-irrelevant directories
 docs/
 scripts/
+# The web build bundles the Office add-ins into public/ (package.json "build").
+!scripts/build-office-addins.ts
 tests/
 test/
 test-results/
 evals/
-outlook-addin/
-word-addin/
 mobile/
 plugins/
 research/
