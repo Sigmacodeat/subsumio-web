@@ -20,7 +20,7 @@ sich daran. Deshalb Startreihenfolge: Sanicura → Subsumio → Caddy.
 
 ## 0. Vorbereitung (einmalig)
 
-1. netcup SCP: Ubuntu 24.04 installieren, SSH-Schlüssel `subsumio-engine` für root hinterlegen.
+1. SSH-Schlüssel `subsumio-engine` für root hinterlegen (netcup liefert Debian 13 minimal; das Skript unterstützt Debian und Ubuntu).
 2. Vom Mac: `ssh root@<neue-ip> 'sh -s' < server/deploy/netcup/bootstrap.sh`
 3. Vom alten Server zum neuen einen eigenen Umzugsschlüssel einrichten (nur für den Umzug,
    danach entfernen):

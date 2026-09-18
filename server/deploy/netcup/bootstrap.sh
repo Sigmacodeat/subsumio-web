@@ -1,21 +1,26 @@
 #!/bin/sh
-# One-time setup of a fresh netcup root server (Ubuntu 24.04) for Subsumio and
-# Sanicura. Idempotent: safe to run again. Run as root on the NEW server.
+# One-time setup of a fresh netcup root server for Subsumio and Sanicura.
+# Works on Debian 12/13 and Ubuntu 22.04/24.04 (netcup ships Debian 13 minimal).
+# Idempotent: safe to run again. Run as root on the NEW server.
 set -eu
 
 echo "[bootstrap] Pakete aktualisieren"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 apt-get -y -qq upgrade
-apt-get -y -qq install ca-certificates curl gnupg ufw fail2ban unattended-upgrades rsync jq htop
+apt-get -y -qq install ca-certificates curl gnupg ufw fail2ban unattended-upgrades rsync jq htop openssh-server
 
 echo "[bootstrap] Docker aus dem offiziellen Repository"
 if ! command -v docker >/dev/null 2>&1; then
   install -m 0755 -d /etc/apt/keyrings
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  . /etc/os-release
+  curl -fsSL "https://download.docker.com/linux/${ID}/gpg" -o /etc/apt/keyrings/docker.asc
   chmod a+r /etc/apt/keyrings/docker.asc
   . /etc/os-release
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu ${VERSION_CODENAME} stable" \
+  # Docker publishes separate repositories for Debian and Ubuntu.
+  distro="$ID"
+  case "$distro" in debian | ubuntu) ;; *) echo "Nicht unterstützt: $distro" >&2; exit 1 ;; esac
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/${distro} ${VERSION_CODENAME} stable" \
     >/etc/apt/sources.list.d/docker.list
   apt-get update -qq
   apt-get -y -qq install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
