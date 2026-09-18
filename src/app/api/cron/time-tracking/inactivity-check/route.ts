@@ -80,3 +80,6 @@ async function getActiveUsers(): Promise<Array<{ userId: string; brainId: string
     return [];
   }
 }
+
+// The server crontab calls every job with a plain GET (curl -fsS).
+export const GET = POST;

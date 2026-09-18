@@ -98,80 +98,105 @@ export function createActivityEvent(input: {
   };
 }
 
+const VIENNA = "Europe/Vienna";
+const dateFmt = new Intl.DateTimeFormat("en-CA", {
+  timeZone: VIENNA,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+const timeFmt = new Intl.DateTimeFormat("de-AT", {
+  timeZone: VIENNA,
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+/** Minutes are billed in started tenths of an hour. */
+export const BILLING_UNIT_MINUTES = 6;
+
 /**
  * Groups activities into time suggestion blocks.
- * Activities within 15 minutes of each other for the same case are merged.
+ *
+ * Activities of the same matter that are no more than 15 minutes apart form
+ * one block; different matters never share a block (each becomes its own time
+ * entry). Dates and clock times are Austrian local time. The id comes from the
+ * block's first activity, so running the job twice updates the same
+ * suggestion instead of creating a copy.
  */
 export function generateTimeSuggestions(
   activities: ActivityEvent[],
   userEmail: string
 ): TimeSuggestion[] {
-  const sorted = [...activities]
-    .filter((a) => a.user_email === userEmail)
-    .sort((a, b) => new Date(a.started_at).getTime() - new Date(b.started_at).getTime());
+  const byCase = new Map<string, ActivityEvent[]>();
+  for (const a of activities) {
+    if (a.user_email !== userEmail) continue;
+    const key = a.case_slug ?? "";
+    const list = byCase.get(key) ?? [];
+    list.push(a);
+    byCase.set(key, list);
+  }
 
   const groups: ActivityEvent[][] = [];
-  let currentGroup: ActivityEvent[] = [];
-  let lastEnd: Date | null = null;
-
-  for (const activity of sorted) {
-    const start = new Date(activity.started_at);
-    if (lastEnd && start.getTime() - lastEnd.getTime() > 15 * 60 * 1000) {
-      if (currentGroup.length > 0) groups.push(currentGroup);
-      currentGroup = [];
-    }
-    currentGroup.push(activity);
-    const end = new Date(activity.ended_at);
-    if (!lastEnd || end > lastEnd) lastEnd = end;
-  }
-  if (currentGroup.length > 0) groups.push(currentGroup);
-
-  return groups.map((group) => {
-    const first = group[0]!;
-    const last = group[group.length - 1]!;
-    const start = new Date(first.started_at);
-    const end = new Date(last.ended_at);
-    const durationMinutes = Math.max(1, Math.round((end.getTime() - start.getTime()) / 60000));
-
-    const primaryType = group.reduce<Record<ActivityType, number>>(
-      (acc, a) => {
-        acc[a.type] = (acc[a.type] ?? 0) + 1;
-        return acc;
-      },
-      {} as Record<ActivityType, number>
+  for (const list of byCase.values()) {
+    const sorted = [...list].sort(
+      (a, b) => new Date(a.started_at).getTime() - new Date(b.started_at).getTime()
     );
+    let current: ActivityEvent[] = [];
+    let lastEnd: Date | null = null;
+    for (const activity of sorted) {
+      const start = new Date(activity.started_at);
+      if (lastEnd && start.getTime() - lastEnd.getTime() > 15 * 60 * 1000) {
+        groups.push(current);
+        current = [];
+        lastEnd = null;
+      }
+      current.push(activity);
+      const end = new Date(activity.ended_at);
+      if (!lastEnd || end > lastEnd) lastEnd = end;
+    }
+    if (current.length > 0) groups.push(current);
+  }
 
-    const dominantType = Object.entries(primaryType).sort(
-      ([, a], [, b]) => b - a
-    )[0]?.[0] as ActivityType;
+  return groups
+    .map((group) => {
+      const first = group[0]!;
+      const start = new Date(first.started_at);
+      const end = new Date(Math.max(...group.map((a) => new Date(a.ended_at).getTime())));
+      const rawMinutes = Math.max(1, (end.getTime() - start.getTime()) / 60000);
+      const durationMinutes = Math.ceil(rawMinutes / BILLING_UNIT_MINUTES) * BILLING_UNIT_MINUTES;
 
-    const descriptions = group.map((a) => a.description).filter(Boolean);
-    const description =
-      descriptions.length === 1
-        ? descriptions[0]!
-        : `${descriptions.length} Aktivitäten: ${descriptions.slice(0, 3).join(", ")}${descriptions.length > 3 ? "..." : ""}`;
+      const counts = new Map<ActivityType, number>();
+      for (const a of group) counts.set(a.type, (counts.get(a.type) ?? 0) + 1);
+      const dominantType = [...counts.entries()].sort(([, a], [, b]) => b - a)[0]![0];
 
-    const date = start.toISOString().split("T")[0] ?? "";
-    const startTime = start.toTimeString().slice(0, 5);
-    const endTime = end.toTimeString().slice(0, 5);
+      const descriptions = [...new Set(group.map((a) => a.description).filter(Boolean))];
+      const description =
+        descriptions.length === 1
+          ? descriptions[0]!
+          : `${descriptions.length} Tätigkeiten: ${descriptions.slice(0, 3).join(", ")}${descriptions.length > 3 ? " …" : ""}`;
 
-    return {
-      id: `ts-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      user_email: userEmail,
-      case_slug: first.case_slug,
-      date,
-      start_time: startTime,
-      end_time: endTime,
-      duration_minutes: durationMinutes,
-      description,
-      activity_type: dominantType,
-      activity_ids: group.map((a) => a.id),
-      rvg_area: getRvgAreaForActivity(dominantType),
-      status: "suggested",
-      confidence: group.length > 3 ? "high" : group.length > 1 ? "medium" : "low",
-      created_at: new Date().toISOString(),
-    };
-  });
+      return {
+        id: `ts-${first.id}`,
+        user_email: userEmail,
+        case_slug: first.case_slug,
+        date: dateFmt.format(start),
+        start_time: timeFmt.format(start),
+        end_time: timeFmt.format(end),
+        duration_minutes: durationMinutes,
+        description,
+        activity_type: dominantType,
+        activity_ids: group.map((a) => a.id),
+        rvg_area: getRvgAreaForActivity(dominantType),
+        status: "suggested" as const,
+        confidence: (group.length > 3 ? "high" : group.length > 1 ? "medium" : "low") as
+          | "high"
+          | "medium"
+          | "low",
+        created_at: new Date().toISOString(),
+      };
+    })
+    .sort((a, b) => (a.date + a.start_time).localeCompare(b.date + b.start_time));
 }
 
 export function formatDuration(minutes: number): string {

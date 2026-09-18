@@ -198,6 +198,9 @@ export const POST = createHandler(
       details: {
         title: body.title,
         type: body.type,
+        // The matter the page belongs to; passive time capture reads it.
+        case_slug:
+          typeof body.frontmatter?.case_slug === "string" ? body.frontmatter.case_slug : undefined,
         conflict_status: body.frontmatter?.conflict_status,
         conflict_waiver_reason: body.frontmatter?.conflict_waiver_reason,
         conflict_waived_by: body.frontmatter?.conflict_waived_by,
