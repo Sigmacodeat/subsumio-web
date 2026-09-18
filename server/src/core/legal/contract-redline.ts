@@ -19,7 +19,7 @@ import {
   type WorkProductReceipt,
   buildWorkProductReceipt,
   type BuildReceiptOptions,
-} from "@/lib/work-product-receipts.ts";
+} from "./work-product-receipts.ts";
 
 export type RedlineChange = "add" | "remove" | "modify";
 

@@ -8,7 +8,7 @@
  */
 
 import { createHash } from "node:crypto";
-import type { ReceiptCheck } from "@/lib/work-product-receipts.ts";
+import type { ReceiptCheck } from "./work-product-receipts.ts";
 import type { Jurisdiction } from "./corpus-receipt.ts";
 import type { EvidenceSpan, EvidenceVerification, LegalIssue } from "./issues/types.ts";
 import type { MatchedParagraphResult, VerifiedGroundingEntry } from "./grounding-map-validator.ts";

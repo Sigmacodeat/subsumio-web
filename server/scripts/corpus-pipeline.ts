@@ -69,7 +69,6 @@ import { join, dirname } from "path";
 import { createHash } from "crypto";
 import { fileURLToPath } from "url";
 import { spawn, execSync } from "child_process";
-import { getSharedPgPool } from "@/lib/auth/store";
 
 const _dir = dirname(fileURLToPath(import.meta.url));
 const SERVER_DIR = join(_dir, "..");
@@ -409,6 +408,11 @@ interface DBPipelineState {
   alert_flags: Array<{ type: string; severity: string; message: string; raised_at: string }>;
   stage_history: Array<{ stage: string; action: string; ts: string }>;
   last_cycle_at: string | null;
+}
+
+/** A single-quoted SQL string literal; standard_conforming_strings is on. */
+function sqlLiteral(value: string): string {
+  return `'${value.replace(/'/g, "''")}'`;
 }
 
 function psqlQuery(query: string): string {
@@ -1210,46 +1214,40 @@ async function runDeltaWatcher(state: CycleState): Promise<void> {
           const appMatch = details.match(/applikationen:\s*([^\s,]+)/);
           if (appMatch) applikationen.push(...appMatch[1].split(","));
         }
-        // Write notification via DB directly (pipeline runs as Node script, not Next.js)
+        // Write the notification with psql: this script runs in the engine
+        // image, which does not contain the web app's database helpers.
         try {
-          const pool = getSharedPgPool();
-          if (pool) {
-            // Ensure notifications table exists (pipeline may run before any web request)
-            await pool.query(
-              `CREATE TABLE IF NOT EXISTS subsumio_notifications (
-                id text NOT NULL PRIMARY KEY,
-                user_id text NOT NULL,
-                brain_id text NOT NULL,
-                type text NOT NULL,
-                data jsonb NOT NULL DEFAULT '{}'::jsonb,
-                read_at timestamptz,
-                created_at timestamptz NOT NULL DEFAULT now()
-              )`
-            );
-            const today = new Date().toISOString().slice(0, 10);
-            const notifId = `notif_corpus_delta_${today}`;
-            const total = newCount + changedCount;
-            const data = {
-              title:
-                total > 0
-                  ? `${total} ${total === 1 ? "neues/geändertes Dokument" : "neue/geänderte Dokumente"} im RIS`
-                  : "RIS Delta-Sync abgeschlossen — keine Änderungen",
-              newCount,
-              changedCount,
-              failedCount,
-              applikationen: applikationen.length > 0 ? applikationen : ["all"],
-              total,
-              url: "/dashboard/admin/corpus",
-              syncDate: today,
-            };
-            await pool.query(
-              `INSERT INTO subsumio_notifications (id, user_id, brain_id, type, data, read_at, created_at)
-               VALUES ($1, 'system', 'system', 'corpus_delta', $2, NULL, now())
-               ON CONFLICT (id) DO UPDATE SET data = $2, read_at = NULL`,
-              [notifId, JSON.stringify(data)]
-            );
-            console.log(`  [ris-delta] Notification geschrieben: ${total} Dokumente`);
-          }
+          const today = new Date().toISOString().slice(0, 10);
+          const notifId = `notif_corpus_delta_${today}`;
+          const total = newCount + changedCount;
+          const data = {
+            title:
+              total > 0
+                ? `${total} ${total === 1 ? "neues/geändertes Dokument" : "neue/geänderte Dokumente"} im RIS`
+                : "RIS Delta-Sync abgeschlossen — keine Änderungen",
+            newCount,
+            changedCount,
+            failedCount,
+            applikationen: applikationen.length > 0 ? applikationen : ["all"],
+            total,
+            url: "/dashboard/admin/corpus",
+            syncDate: today,
+          };
+          psqlQuery(
+            `CREATE TABLE IF NOT EXISTS subsumio_notifications (
+               id text NOT NULL PRIMARY KEY,
+               user_id text NOT NULL,
+               brain_id text NOT NULL,
+               type text NOT NULL,
+               data jsonb NOT NULL DEFAULT '{}'::jsonb,
+               read_at timestamptz,
+               created_at timestamptz NOT NULL DEFAULT now()
+             );
+             INSERT INTO subsumio_notifications (id, user_id, brain_id, type, data, read_at, created_at)
+             VALUES (${sqlLiteral(notifId)}, 'system', 'system', 'corpus_delta', ${sqlLiteral(JSON.stringify(data))}::jsonb, NULL, now())
+             ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, read_at = NULL;`
+          );
+          console.log(`  [ris-delta] Notification geschrieben: ${total} Dokumente`);
         } catch (err) {
           console.error(`  [ris-delta] Notification fehlgeschlagen: ${err}`);
         }
@@ -1273,12 +1271,7 @@ async function runDeltaWatcher(state: CycleState): Promise<void> {
   // Clear the trigger so it doesn't re-fire on every cycle
   if (manualTrigger) {
     try {
-      const pool = getSharedPgPool();
-      if (pool) {
-        await pool.query("DELETE FROM pipeline_config WHERE key = 'delta_sync_triggered'");
-      } else {
-        psqlQuery("DELETE FROM pipeline_config WHERE key = 'delta_sync_triggered'");
-      }
+      psqlQuery("DELETE FROM pipeline_config WHERE key = 'delta_sync_triggered'");
     } catch {
       // Non-fatal — trigger will be re-read next cycle but delta-watcher
       // won't re-run due to the 24h interval guard.

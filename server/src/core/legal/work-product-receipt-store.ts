@@ -6,14 +6,14 @@
  * same table.
  */
 
-import { getConnection } from "@/core/db.ts";
+import { getConnection } from "../db.ts";
 import {
   type WorkProductReceipt,
   type WorkProductType,
   invalidateReceipt,
   buildWorkProductReceipt,
   type BuildReceiptOptions,
-} from "@/lib/work-product-receipts.ts";
+} from "./work-product-receipts.ts";
 
 async function ensureSchema(): Promise<void> {
   const sql = getConnection();

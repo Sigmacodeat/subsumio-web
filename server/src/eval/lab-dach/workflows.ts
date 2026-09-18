@@ -28,7 +28,7 @@ import {
   type WorkProductType,
   buildWorkProductReceipt,
   type ReceiptCheck,
-} from "@/lib/work-product-receipts.ts";
+} from "../../core/legal/work-product-receipts.ts";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -556,9 +556,11 @@ Regeln:
     opts
   );
 
-  const inputTokens3 = (chatResult.usage?.input_tokens ?? Math.round(context.length / 4)) +
+  const inputTokens3 =
+    (chatResult.usage?.input_tokens ?? Math.round(context.length / 4)) +
     (regenResult ? (regenResult.usage?.input_tokens ?? Math.round(context.length / 4)) : 0);
-  const outputTokens3 = (chatResult.usage?.output_tokens ?? Math.round(output.length / 4)) +
+  const outputTokens3 =
+    (chatResult.usage?.output_tokens ?? Math.round(output.length / 4)) +
     (regenResult ? (regenResult.usage?.output_tokens ?? Math.round(output.length / 4)) : 0);
 
   return {
@@ -721,11 +723,7 @@ function computeJudgeStatusCounts(results: CriterionResult[]): Record<JudgeStatu
   return counts;
 }
 
-function computeWorkflowCost(
-  modelId: string,
-  inputTokens: number,
-  outputTokens: number
-): number {
+function computeWorkflowCost(modelId: string, inputTokens: number, outputTokens: number): number {
   return computeTurnCost(modelId, { input: inputTokens, output: outputTokens });
 }
 
