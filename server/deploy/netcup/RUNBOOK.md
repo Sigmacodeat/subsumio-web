@@ -15,8 +15,9 @@ der Rückweg ist jederzeit: alte Dienste starten, DNS zurück.
 | Sanicura      | `/opt/sanicura` | Compose-Projekt `hetzner`, Volumes `hetzner_sanicura-*`                                                                                                                 |
 | Subsumio      | `/opt/subsumio` | Compose-Projekt `subsumio-engine`, Datenbank `hetzner_db-data` (≈ 76 GB), Originaldateien `hetzner_engine-data`, Sicherungen, Korpus `/opt/subsumio/law-corpus` (21 GB) |
 
-Das Netzwerk `hetzner_default` entsteht mit dem Sanicura-Projekt; Subsumio und Caddy hängen
-sich daran. Deshalb Startreihenfolge: Sanicura → Subsumio → Caddy.
+Alle drei Projekte erwarten das Netzwerk `hetzner_default` als vorhanden (`external: true`).
+Auf dem neuen Server einmal anlegen: `docker network create hetzner_default`. Startreihenfolge:
+Sanicura → Subsumio → Caddy.
 
 ## 0. Vorbereitung (einmalig)
 
