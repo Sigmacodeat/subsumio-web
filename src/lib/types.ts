@@ -421,6 +421,10 @@ export interface GroundedCitation {
   verified: boolean;
   source_text?: string;
   source_file?: string;
+  /** Official text of the norm / decision (AT: RIS). */
+  source_url?: string;
+  /** RIS search for a citation we could not resolve (case law). */
+  search_url?: string;
   unverifiable_reason?: string;
   category?:
     | "statute"
@@ -428,7 +432,8 @@ export interface GroundedCitation {
     | "state_law"
     | "materialien"
     | "literatur"
-    | "verlags_literatur";
+    | "verlags_literatur"
+    | "judikatur";
   jurisdiction?: "at" | "de" | "ch" | "eu";
 }
 

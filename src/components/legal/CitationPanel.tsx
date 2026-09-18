@@ -23,6 +23,8 @@ import { assessGroundedness } from "@/lib/groundedness";
 import { formatCitationTitle } from "@/lib/ogh-format";
 import type { GroundedCitation } from "@/lib/types";
 import { useLang } from "@/lib/use-lang";
+import { extractStatuteCitations } from "@/lib/citation-gate-client";
+import { openNormReader, readerJurisdiction } from "@/lib/norm-reader-events";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -215,7 +217,13 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
                           {gc.source_text}
                         </p>
                       )}
-                      {!gc.verified && (
+                      {!gc.verified && gc.category === "judikatur" && (
+                        <p className="mt-0.5 text-xs text-[color:var(--ds-warning-text)]">
+                          Nicht in unserem Entscheidungskorpus — Geschäftszahl bitte im RIS prüfen
+                          (Link oben).
+                        </p>
+                      )}
+                      {!gc.verified && gc.category !== "judikatur" && (
                         <p className="mt-0.5 text-xs text-[color:var(--ds-warning-text)]">
                           Nicht im Corpus gefunden — möglicherweise erfunden oder außerhalb des
                           abgedeckten Rechtskreises.
@@ -238,19 +246,46 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
                 </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {data.citations!.map((c) => (
-                  <a
-                    key={c.slug}
-                    href={`/dashboard/brain/${encodeURIComponent(c.slug)}`}
-                    className="hover:brand-text hover:brand-border inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={c.title}
-                  >
-                    <BookOpen size={9} />
-                    {formatCitationTitle(c.title, c.slug)}
-                  </a>
-                ))}
+                {data.citations!.map((c) => {
+                  // Norm citations ("legal/norms/…") are not brain pages — they
+                  // open the norm reader with the corpus text instead of a 404.
+                  const norm = c.slug.startsWith("legal/norms/")
+                    ? extractStatuteCitations(c.title)[0]
+                    : undefined;
+                  if (norm?.code && norm.paragraph) {
+                    return (
+                      <button
+                        key={c.slug}
+                        type="button"
+                        onClick={() =>
+                          openNormReader({
+                            code: norm.code!,
+                            paragraph: norm.paragraph!,
+                            jurisdiction: readerJurisdiction(data.jurisdiction),
+                          })
+                        }
+                        className="hover:brand-text hover:brand-border inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
+                        title={`${c.title}: Normtext anzeigen`}
+                      >
+                        <BookOpen size={9} />
+                        {c.title}
+                      </button>
+                    );
+                  }
+                  return (
+                    <a
+                      key={c.slug}
+                      href={`/dashboard/brain/${encodeURIComponent(c.slug)}`}
+                      className="hover:brand-text hover:brand-border inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={c.title}
+                    >
+                      <BookOpen size={9} />
+                      {formatCitationTitle(c.title, c.slug)}
+                    </a>
+                  );
+                })}
               </div>
             </div>
           )}

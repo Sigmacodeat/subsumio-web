@@ -36,6 +36,7 @@ function describeChatError(err: unknown, t: (key: DashboardKey) => string): stri
   return t("chat.error_generic");
 }
 import { csrfFetch } from "@/lib/csrf";
+import { buildChatExportMarkdown } from "@/components/chat/chat-export";
 import {
   buildPromptContext,
   processStreamingChunk,
@@ -1980,32 +1981,41 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     [refreshSessions]
   );
 
-  // Export chat
-  const handleExport = useCallback(() => {
-    const lines = messages.map((m) => {
-      const prefix =
-        m.role === "user" ? `**👤 ${t("chat.export_user")}:**` : `**🤖 ${t("chat.export_ai")}:**`;
-      const meta = [
-        m.tokensUsed
-          ? ` (${m.tokensUsed.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} tokens)`
-          : "",
-        m.latencyMs ? ` · ${(m.latencyMs / 1000).toFixed(1)}s` : "",
-        m.model ? ` · ${m.model}` : "",
-      ].join("");
-      const citations = m.citations?.length
-        ? `\n\n> **${t("chat.export_sources")}:** ${m.citations.map((c) => c.title).join(", ")}`
-        : "";
-      const gaps = m.gaps?.length ? `\n\n> **${t("chat.export_gaps")}:** ${m.gaps.join("; ")}` : "";
-      return `${prefix}${meta}\n\n${m.content}${citations}${gaps}\n`;
+  // Export chat — Word document with the checked citations and the AI notice;
+  // falls back to Markdown if the DOCX endpoint is unavailable.
+  const handleExport = useCallback(async () => {
+    const docTitle = title ?? t("chat.title");
+    const markdown = buildChatExportMarkdown(messages, {
+      user: t("chat.export_user"),
+      ai: t("chat.export_ai"),
+      date: t("chat.export_date"),
+      sources: t("chat.export_sources"),
+      gaps: t("chat.export_gaps"),
+      locale: lang === "en" ? "en-GB" : "de-DE",
     });
-    const content = `# ${title ?? t("chat.title")}\n\n${t("chat.export_date")} ${new Date().toLocaleString(lang === "en" ? "en-GB" : "de-DE")}\n\n---\n\n${lines.join("\n---\n\n")}`;
-    const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `chat-${new Date().toISOString().slice(0, 10)}.md`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    const stamp = new Date().toISOString().slice(0, 10);
+    const download = (blob: Blob, name: string) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+    try {
+      const res = await csrfFetch("/api/word-export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: docTitle, markdown }),
+      });
+      if (!res.ok) throw new Error(`word-export ${res.status}`);
+      download(await res.blob(), `chat-${stamp}.docx`);
+    } catch {
+      download(
+        new Blob([`# ${docTitle}\n\n${markdown}`], { type: "text/markdown;charset=utf-8" }),
+        `chat-${stamp}.md`
+      );
+    }
   }, [messages, title, t, lang]);
 
   // Share chat (read-only link via base64 encoding)

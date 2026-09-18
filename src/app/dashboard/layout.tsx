@@ -41,6 +41,10 @@ const ContractQuickCreateDialog = dynamic(() =>
 const PracticeQuickCreateDialogs = dynamic(() =>
   import("@/components/legal/PracticeQuickCreateDialogs").then((m) => m.PracticeQuickCreateDialogs)
 );
+const NormReaderPanel = dynamic(
+  () => import("@/components/legal/NormReaderPanel").then((m) => m.NormReaderPanel),
+  { ssr: false }
+);
 const CopilotSidebar = dynamic(
   () => import("@/components/chat/copilot-sidebar").then((m) => m.CopilotSidebar),
   {
@@ -787,6 +791,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         />
       )}
       <CopilotSidebar open={copilotVisible} onToggle={() => setCopilotOpen((v) => !v)} />
+      <NormReaderPanel />
 
       {/* Push notification toast (native app only) */}
       {nativeFeatures.pushNotification && (

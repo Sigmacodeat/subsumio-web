@@ -70,20 +70,20 @@ describe("Specialist model-tier routing", () => {
 });
 
 describe("TIER_DEFAULTS routing correctness", () => {
-  it("deep tier resolves to Grok 4.3", () => {
-    expect(TIER_DEFAULTS.deep).toBe("openrouter:xai/grok-4.3");
+  it("deep tier resolves to Claude Fable 5.1", () => {
+    expect(TIER_DEFAULTS.deep).toBe("anthropic:claude-fable-5-1");
   });
 
-  it("reasoning tier resolves to Claude Sonnet 4.6 (v0.43.1 upgrade)", () => {
-    expect(TIER_DEFAULTS.reasoning).toBe("anthropic:claude-sonnet-4-6");
+  it("reasoning tier resolves to Claude Opus 5", () => {
+    expect(TIER_DEFAULTS.reasoning).toBe("anthropic:claude-opus-5");
   });
 
-  it("utility tier resolves to DeepSeek V4 Flash", () => {
-    expect(TIER_DEFAULTS.utility).toBe("openrouter:deepseek/deepseek-chat");
+  it("utility tier resolves to Claude Sonnet 5", () => {
+    expect(TIER_DEFAULTS.utility).toBe("anthropic:claude-sonnet-5");
   });
 
-  it("subagent tier resolves to Claude Haiku 4.5 (Anthropic-required)", () => {
-    expect(TIER_DEFAULTS.subagent).toBe("anthropic:claude-haiku-4-5");
+  it("subagent tier resolves to Claude Sonnet 5 (Anthropic-required)", () => {
+    expect(TIER_DEFAULTS.subagent).toBe("anthropic:claude-sonnet-5");
     // The subagent loop uses Anthropic Messages API — non-Anthropic models
     // throw at runtime unless agent.use_gateway_loop=true.
     expect(isAnthropicProvider(TIER_DEFAULTS.subagent)).toBe(true);
@@ -107,40 +107,40 @@ describe("Specialist resolution + tier chain", () => {
     }
   });
 
-  it("subsumption-checker routes to deep tier (Grok 4.3)", () => {
+  it("subsumption-checker routes to deep tier (Claude Fable 5.1)", () => {
     const def = resolveSpecialist("subsumption-checker");
     expect(def).not.toBeNull();
     expect(def!.modelTier).toBe("deep");
     // The model that this tier resolves to
-    expect(TIER_DEFAULTS[def!.modelTier!]).toBe("openrouter:xai/grok-4.3");
+    expect(TIER_DEFAULTS[def!.modelTier!]).toBe("anthropic:claude-fable-5-1");
   });
 
-  it("opponent-simulator routes to deep tier (Grok 4.3)", () => {
+  it("opponent-simulator routes to deep tier (Claude Fable 5.1)", () => {
     const def = resolveSpecialist("opponent-simulator");
     expect(def).not.toBeNull();
     expect(def!.modelTier).toBe("deep");
-    expect(TIER_DEFAULTS[def!.modelTier!]).toBe("openrouter:xai/grok-4.3");
+    expect(TIER_DEFAULTS[def!.modelTier!]).toBe("anthropic:claude-fable-5-1");
   });
 
-  it("legal-critic routes to deep tier (Grok 4.3)", () => {
+  it("legal-critic routes to deep tier (Claude Fable 5.1)", () => {
     const def = resolveSpecialist("legal-critic");
     expect(def).not.toBeNull();
     expect(def!.modelTier).toBe("deep");
-    expect(TIER_DEFAULTS[def!.modelTier!]).toBe("openrouter:xai/grok-4.3");
+    expect(TIER_DEFAULTS[def!.modelTier!]).toBe("anthropic:claude-fable-5-1");
   });
 
-  it("legal-researcher routes to reasoning tier (Claude Sonnet 4.6)", () => {
+  it("legal-researcher routes to reasoning tier (Claude Opus 5)", () => {
     const def = resolveSpecialist("legal-researcher");
     expect(def).not.toBeNull();
     expect(def!.modelTier).toBe("reasoning");
-    expect(TIER_DEFAULTS[def!.modelTier!]).toBe("anthropic:claude-sonnet-4-6");
+    expect(TIER_DEFAULTS[def!.modelTier!]).toBe("anthropic:claude-opus-5");
   });
 
-  it("on-scanner routes to utility tier (DeepSeek V4 Flash)", () => {
+  it("on-scanner routes to utility tier (Claude Sonnet 5)", () => {
     const def = resolveSpecialist("on-scanner");
     expect(def).not.toBeNull();
     expect(def!.modelTier).toBe("utility");
-    expect(TIER_DEFAULTS[def!.modelTier!]).toBe("openrouter:deepseek/deepseek-chat");
+    expect(TIER_DEFAULTS[def!.modelTier!]).toBe("anthropic:claude-sonnet-5");
   });
 });
 
@@ -161,5 +161,28 @@ describe("Specialist count integrity", () => {
     for (const name of DEEP_SPECIALISTS) {
       expect(UTILITY_SPECIALISTS.has(name)).toBe(false);
     }
+  });
+});
+
+describe("thinking-model output floor", () => {
+  it("raises small caps for models that think by default", async () => {
+    const { effectiveMaxOutputTokens, THINKING_MODEL_OUTPUT_FLOOR } =
+      await import("../src/core/ai/gateway.ts");
+    expect(effectiveMaxOutputTokens("openrouter:anthropic/claude-fable-5.1", 1500)).toBe(
+      THINKING_MODEL_OUTPUT_FLOOR
+    );
+    expect(effectiveMaxOutputTokens("anthropic:claude-opus-5", 400)).toBe(
+      THINKING_MODEL_OUTPUT_FLOOR
+    );
+    expect(effectiveMaxOutputTokens("openrouter:anthropic/claude-sonnet-5", undefined)).toBe(
+      THINKING_MODEL_OUTPUT_FLOOR
+    );
+    expect(effectiveMaxOutputTokens("anthropic:claude-opus-5", 64_000)).toBe(64_000);
+  });
+
+  it("leaves other models untouched", async () => {
+    const { effectiveMaxOutputTokens } = await import("../src/core/ai/gateway.ts");
+    expect(effectiveMaxOutputTokens("anthropic:claude-haiku-4-5", 200)).toBe(200);
+    expect(effectiveMaxOutputTokens("anthropic:claude-sonnet-4-6", undefined)).toBe(4096);
   });
 });

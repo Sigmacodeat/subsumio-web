@@ -2989,6 +2989,26 @@ async function classifyGatewayGuardrail(input: {
   }
 }
 
+/**
+ * Claude Opus 5, Sonnet 5 and Fable 5.x think by default (Fable always), and
+ * thinking tokens count against max_tokens. Callers written for non-thinking
+ * models pass small caps (query planner 400, agentic retrieval 200, cross-verify
+ * 1500) that would leave these models with an empty or truncated answer. For
+ * those models the cap is raised to a floor; only generated tokens are billed,
+ * so the floor costs nothing unless the model actually needs the room.
+ */
+export const THINKING_MODEL_OUTPUT_FLOOR = 16_000;
+const THINKS_BY_DEFAULT = /claude-(opus-5|sonnet-5|fable-5)/;
+
+export function effectiveMaxOutputTokens(
+  model: string | undefined,
+  requested: number | undefined
+): number {
+  const base = requested ?? 4096;
+  if (model && THINKS_BY_DEFAULT.test(model)) return Math.max(base, THINKING_MODEL_OUTPUT_FLOOR);
+  return base;
+}
+
 export async function chat(opts: ChatOpts): Promise<ChatResult> {
   const tracker = __budgetStore.getStore() ?? null;
   const modelStrEarly = opts.model ?? getChatModel();
@@ -3010,7 +3030,7 @@ export async function chat(opts: ChatOpts): Promise<ChatResult> {
     }
   }
   const estimatedInputTokens = estimateChatInputTokens(opts);
-  const maxOutputTokens = opts.maxTokens ?? 4096;
+  const maxOutputTokens = effectiveMaxOutputTokens(modelStrEarly, opts.maxTokens);
 
   // TX5: reserve BEFORE the provider call. Throws BudgetExhausted on cost,
   // runtime, or no_pricing (when cap is set). Pre-resolution model id is
@@ -3191,7 +3211,7 @@ export async function chat(opts: ChatOpts): Promise<ChatResult> {
       system: systemForSdk,
       messages: modelMessages as any,
       tools: opts.tools && opts.tools.length > 0 ? tools : undefined,
-      maxOutputTokens: opts.maxTokens ?? 4096,
+      maxOutputTokens,
       // v0.42.20.0 — default a chat timeout (composes with the caller's signal,
       // shorter wins). Covers native-anthropic (the default provider + facts Haiku).
       abortSignal: withDefaultTimeout(opts.abortSignal, AI_CHAT_TIMEOUT_MS),
@@ -3381,7 +3401,7 @@ export async function* chatStream(
   }
 
   const estimatedInputTokens = estimateChatInputTokens(opts);
-  const maxOutputTokens = opts.maxTokens ?? 4096;
+  const maxOutputTokens = effectiveMaxOutputTokens(modelStr, opts.maxTokens);
 
   if (tracker) {
     tracker.reserve({

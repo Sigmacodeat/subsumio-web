@@ -9,6 +9,7 @@ import {
   recordCreditConsumption,
 } from "@/lib/api-handler";
 import { createCitationGateStream } from "@/lib/citation-gate";
+import { userJurisdiction } from "@/lib/citation-gate-client";
 import { interceptGuardrailStream } from "@/lib/guardrail-stream-interceptor";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
 import { mapQueryModeToEngineMode } from "@/lib/matter-context";
@@ -91,10 +92,15 @@ export const POST = createHandler(
         query: safeBody.query,
       });
 
-      return apiStream(createCitationGateStream(intercepted), {
-        contentType: upstream.headers.get("Content-Type") || "text/event-stream",
-        aiGenerated: true,
-      });
+      return apiStream(
+        createCitationGateStream(intercepted, {
+          fallbackJurisdiction: userJurisdiction(jurisdiction),
+        }),
+        {
+          contentType: upstream.headers.get("Content-Type") || "text/event-stream",
+          aiGenerated: true,
+        }
+      );
     } catch (err) {
       log.error("[think] engine unreachable:", err instanceof Error ? err.message : String(err));
       return apiError("service_unavailable", "Engine nicht erreichbar", 503);

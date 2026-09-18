@@ -1,13 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, CheckCircle2, AlertCircle, FileText, ShieldAlert, Gauge } from "lucide-react";
+import {
+  BookOpen,
+  CheckCircle2,
+  AlertCircle,
+  FileText,
+  ShieldAlert,
+  Gauge,
+  ExternalLink,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AI_BADGE_LABEL, AI_NOTICE } from "@/lib/ai-act";
 import { assessGroundedness, type Groundedness } from "@/lib/groundedness";
 import type { GroundedCitation } from "@/lib/types";
+import { normReaderClick } from "@/lib/norm-reader-events";
+import { isOfficialUrl, officialSourceIn, officialSourceLabel } from "@/lib/citation-gate-client";
 
 interface CitationLinkProps {
   citation: string;
@@ -16,12 +26,20 @@ interface CitationLinkProps {
 }
 
 export function CitationLink({ citation, className, grounding }: CitationLinkProps) {
+  if (grounding?.category === "judikatur") {
+    return <CaseCitationLink className={className} grounding={grounding} />;
+  }
   const normalized = normalizeCitation(citation);
   const isVerified = grounding?.verified ?? null;
 
   const linkContent = (
     <Link
       href={`/dashboard/research?tab=normen&citation=${encodeURIComponent(normalized)}`}
+      onClick={
+        grounding?.verified
+          ? normReaderClick(grounding.code, grounding.paragraph, grounding.jurisdiction)
+          : undefined
+      }
       className={cn(
         "brand-text hover:brand-text inline-flex cursor-pointer items-center gap-1 underline decoration-[color:var(--brand-primary)]/30 underline-offset-2 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:decoration-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none",
         className
@@ -38,25 +56,96 @@ export function CitationLink({ citation, className, grounding }: CitationLinkPro
     </Link>
   );
 
+  const officialUrl =
+    grounding?.verified && isOfficialUrl(grounding.source_url) ? grounding.source_url : null;
+  const officialLabel = officialSourceLabel(officialUrl);
+  const officialLink = officialUrl ? (
+    <a
+      href={officialUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={`Amtliche Fassung ${officialSourceIn(officialUrl)} öffnen`}
+      aria-label={`${citation}: amtliche Fassung ${officialSourceIn(officialUrl)} öffnen`}
+      className="ml-1.5 inline-flex items-center gap-0.5 rounded border border-[color:var(--ds-border)] px-1 py-px text-[10px] font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:border-[color:var(--brand-primary)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
+    >
+      {officialLabel}
+      <ExternalLink size={9} aria-hidden="true" />
+    </a>
+  ) : null;
+
   if (!grounding || !grounding.source_text) {
-    return linkContent;
+    if (!officialLink) return linkContent;
+    return (
+      <span className="inline-flex items-center">
+        {linkContent}
+        {officialLink}
+      </span>
+    );
   }
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-        <TooltipContent side="top" className="max-w-md text-xs leading-relaxed whitespace-pre-wrap">
-          <div className="mb-1 flex items-center gap-1.5 font-semibold">
-            <FileText size={12} />
-            Corpus-Quelltext
-          </div>
-          <div className="line-clamp-6 text-[color:var(--ds-text-muted)]">
-            {grounding.source_text}
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <span className="inline-flex items-center">
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+          <TooltipContent
+            side="top"
+            className="max-w-md text-xs leading-relaxed whitespace-pre-wrap"
+          >
+            <div className="mb-1 flex items-center gap-1.5 font-semibold">
+              <FileText size={12} />
+              Corpus-Quelltext
+            </div>
+            <div className="line-clamp-6 text-[color:var(--ds-text-muted)]">
+              {grounding.source_text}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      {officialLink}
+    </span>
+  );
+}
+
+/** A decision (OGH/VwGH/VfGH, RIS-Justiz): verified → the RIS document; otherwise a RIS search. */
+function CaseCitationLink({
+  className,
+  grounding,
+}: {
+  className?: string;
+  grounding: GroundedCitation;
+}) {
+  const url = grounding.verified ? grounding.source_url : grounding.search_url;
+  // "OGH 1 Ob 49/01i", "RIS-Justiz RS0115754" — court first, as lawyers cite it.
+  const label = `${grounding.code} ${grounding.paragraph}`;
+  const content = (
+    <>
+      <BookOpen size={10} />
+      {label}
+      {grounding.verified ? (
+        <CheckCircle2 size={10} className="text-[color:var(--ds-success-text)]" />
+      ) : (
+        <AlertCircle size={10} className="text-[color:var(--ds-warning-text)]" />
+      )}
+    </>
+  );
+  if (!isOfficialUrl(url)) {
+    return <span className={cn("inline-flex items-center gap-1", className)}>{content}</span>;
+  }
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={grounding.verified ? "Im RIS öffnen" : "Im RIS suchen"}
+      className={cn(
+        "brand-text inline-flex items-center gap-1 underline decoration-[color:var(--brand-primary)]/30 underline-offset-2 hover:decoration-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none",
+        className
+      )}
+    >
+      {content}
+      <ExternalLink size={9} aria-hidden="true" />
+    </a>
   );
 }
 

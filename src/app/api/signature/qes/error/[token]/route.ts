@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { logAudit } from "@/lib/audit";
 import { appBase } from "@/lib/qes/config";
 import { getQesSession, updateQesSession } from "@/lib/qes/sessions";
+import { clientIp, hit } from "@/lib/auth/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 /** PDF-AS-WEB sends the signer here when signing failed or was cancelled. */
 export async function GET(req: NextRequest, context: { params: Promise<{ token: string }> }) {
+  // No user session on this callback — the token is the credential; cap guessing.
+  const limited = await hit(`qes:error:${clientIp(req.headers)}`, 30, 60_000);
+  if (!limited.ok) return new Response("Too many requests", { status: 429 });
   const { token } = await context.params;
   const session = await getQesSession(token);
   if (!session)

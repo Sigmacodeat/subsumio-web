@@ -66,12 +66,19 @@ export const CANONICAL_PRICING: Record<string, ModelPricing> = {
   // Fable 5: top-tier model with adaptive reasoning + Opus 4.8 fallback.
   // $10 in / $50 out — premium above Opus. Harvey LAB #1 at 16.91% all-pass.
   "anthropic:claude-fable-5": { input: 10.0, output: 50.0 },
+  // Opus 5 / Fable 5.1 (verified 2026-09-18 against the Anthropic model table
+  // and OpenRouter's catalog — same rates on both routes).
+  "anthropic:claude-opus-5": { input: 5.0, output: 25.0 },
+  "anthropic:claude-fable-5-1": { input: 10.0, output: 50.0 },
   // Haiku 4.5 — both the dateless canonical id and the dated snapshot.
   "anthropic:claude-haiku-4-5": { input: 1.0, output: 5.0 },
   // OpenRouter-routed variants use explicit catalog prices. They must never
   // silently inherit a native-provider price because billing differs by route.
   "openrouter:anthropic/claude-haiku-4.5": { input: 1.0, output: 5.0 },
   "openrouter:anthropic/claude-sonnet-4.6": { input: 3.0, output: 15.0 },
+  "openrouter:anthropic/claude-sonnet-5": { input: 2.0, output: 10.0 },
+  "openrouter:anthropic/claude-opus-5": { input: 5.0, output: 25.0 },
+  "openrouter:anthropic/claude-fable-5.1": { input: 10.0, output: 50.0 },
   "anthropic:claude-haiku-4-5-20251001": { input: 1.0, output: 5.0 },
   "anthropic:claude-3-5-sonnet-20241022": { input: 3.0, output: 15.0 },
   "anthropic:claude-3-5-haiku-20241022": { input: 0.8, output: 4.0 },

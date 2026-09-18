@@ -41,31 +41,25 @@ function markdownToDocxParagraphs(md: string): string[] {
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&apos;");
 
+  const run = (text: string, rPr = ""): string =>
+    `<w:r>${rPr ? `<w:rPr>${rPr}</w:rPr>` : ""}<w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r>`;
+
+  // Every piece of text must sit in its own <w:r> — bare text inside <w:p>
+  // is invalid OOXML (Word reports unreadable content or drops the text).
   const formatInline = (text: string): string => {
-    let result = escapeXml(text);
-    // Bold: **text** or __text__
-    result = result.replace(
-      /\*\*(.+?)\*\*/g,
-      '<w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">$1</w:t></w:r>'
-    );
-    result = result.replace(
-      /__(.+?)__/g,
-      '<w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">$1</w:t></w:r>'
-    );
-    // Italic: *text* or _text_
-    result = result.replace(
-      /\*(.+?)\*/g,
-      '<w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">$1</w:t></w:r>'
-    );
-    result = result.replace(
-      /(?<!\w)_(.+?)_(?!\w)/g,
-      '<w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">$1</w:t></w:r>'
-    );
-    // If no formatting was applied, wrap in a plain run
-    if (!result.includes("<w:r>")) {
-      result = `<w:r><w:t xml:space="preserve">${result}</w:t></w:r>`;
+    // Links keep their target visible in print: "[§ 1295 ABGB](url)" → "§ 1295 ABGB (url)".
+    const src = text.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, "$1 ($2)");
+    const rx = /\*\*(.+?)\*\*|__(.+?)__|\*(.+?)\*|(?<!\w)_(.+?)_(?!\w)/g;
+    const runs: string[] = [];
+    let last = 0;
+    for (const m of src.matchAll(rx)) {
+      if (m.index! > last) runs.push(run(src.slice(last, m.index)));
+      const bold = m[1] ?? m[2];
+      runs.push(bold !== undefined ? run(bold, "<w:b/>") : run((m[3] ?? m[4])!, "<w:i/>"));
+      last = m.index! + m[0].length;
     }
-    return result;
+    if (last < src.length) runs.push(run(src.slice(last)));
+    return runs.join("") || run("");
   };
 
   const closeList = () => {

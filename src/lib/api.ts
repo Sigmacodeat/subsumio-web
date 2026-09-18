@@ -25,6 +25,7 @@ import type {
   TabularReviewStartResponse,
 } from "./types";
 import type { GroundingMetadata } from "./citation-gate-client";
+import type { NormReading } from "./legal-grounding";
 import type { SourceRegistryResponse } from "./source-registry";
 import type { QueryMode } from "./matter-context-types";
 import type { WorkProductReceipt } from "./work-product-receipts";
@@ -751,6 +752,7 @@ export const api = {
         context: string;
         verified: boolean;
         source_text?: string;
+        source_url?: string;
       }>;
       analyzed_at: string;
       has_unverified: boolean;
@@ -760,6 +762,12 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ text }),
       });
+    },
+
+    norm(code: string, paragraph: string, jurisdiction?: "at" | "de" | "ch"): Promise<NormReading> {
+      const params = new URLSearchParams({ code, paragraph });
+      if (jurisdiction) params.set("jurisdiction", jurisdiction);
+      return request(`/api/legal/norm?${params.toString()}`);
     },
 
     anonymize(text: string, types?: string[]): Promise<AnonymizeResponse> {

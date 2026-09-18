@@ -13,6 +13,7 @@ import {
 } from "@/lib/qes/pdf-as";
 import { appBase, pdfAsBase } from "@/lib/qes/config";
 import { getQesSession, updateQesSession } from "@/lib/qes/sessions";
+import { clientIp, hit } from "@/lib/auth/rate-limit";
 import { logger } from "@/lib/logger";
 
 const log = logger("api/signature/qes/done");
@@ -35,6 +36,9 @@ function backToMatter(caseSlug: string, params: Record<string, string>): NextRes
  * and stored as a new document of the matter.
  */
 export async function GET(req: NextRequest, context: { params: Promise<{ token: string }> }) {
+  // No user session on this callback — the token is the credential; cap guessing.
+  const limited = await hit(`qes:done:${clientIp(req.headers)}`, 30, 60_000);
+  if (!limited.ok) return new Response("Too many requests", { status: 429 });
   const { token } = await context.params;
   const session = await getQesSession(token);
   if (!session)

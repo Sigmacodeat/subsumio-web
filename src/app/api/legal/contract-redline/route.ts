@@ -10,6 +10,7 @@ import {
 } from "@/lib/api-handler";
 import { groundRedlineCitations } from "@/lib/citation-gate";
 import { createCitationGateStream } from "@/lib/citation-gate";
+import { userJurisdiction } from "@/lib/citation-gate-client";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
 import { storeReceipt, type WorkProductReceipt } from "@/lib/work-product-receipt-store";
 
@@ -84,10 +85,15 @@ export const POST = createHandler(
 
       // If engine returns SSE stream, wrap with citation gate
       if (contentType.includes("text/event-stream")) {
-        return apiStream(createCitationGateStream(upstream.body!), {
-          contentType,
-          aiGenerated: true,
-        });
+        return apiStream(
+          createCitationGateStream(upstream.body!, {
+            fallbackJurisdiction: userJurisdiction(ctx.user.jurisdiction),
+          }),
+          {
+            contentType,
+            aiGenerated: true,
+          }
+        );
       }
 
       // Engine returns JSON — parse, ground statute citations, inject _grounding
@@ -126,7 +132,8 @@ export const POST = createHandler(
       try {
         const grounding = await groundRedlineCitations(
           redlines,
-          typeof result.summary === "string" ? result.summary : undefined
+          typeof result.summary === "string" ? result.summary : undefined,
+          { fallbackJurisdiction: userJurisdiction(ctx.user.jurisdiction) }
         );
         result._grounding = grounding;
       } catch (err) {

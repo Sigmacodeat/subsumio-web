@@ -53,7 +53,7 @@ import { validateCsrf, CSRF_COOKIE_NAME } from "@/lib/csrf";
 import { logAudit, type AuditAction } from "@/lib/audit";
 import { apiError, apiStream } from "@/lib/api-response";
 import { isAppError } from "@/lib/errors";
-import { emptyGroundingMetadata } from "@/lib/citation-gate-client";
+import { emptyGroundingMetadata, userJurisdiction } from "@/lib/citation-gate-client";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
 import { validateCronAuth } from "@/lib/cron-auth";
 import { timingSafeCompare } from "@/lib/crypto-utils";
@@ -1039,7 +1039,9 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
           let baseStream: ReadableStream<Uint8Array> = upstream.body as ReadableStream<Uint8Array>;
           if (options.citationGate) {
             const { createCitationGateStream } = await loadCitationGate();
-            baseStream = createCitationGateStream(baseStream);
+            baseStream = createCitationGateStream(baseStream, {
+              fallbackJurisdiction: userJurisdiction(ctx.user?.jurisdiction),
+            });
           }
           if (options.receiptProductType) {
             baseStream = createReceiptExtractingStream(baseStream, persistReceipt);
@@ -1068,7 +1070,9 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
         if (options.citationGate) {
           try {
             const { groundJsonResponse } = await loadCitationGate();
-            const grounding = await groundJsonResponse(result);
+            const grounding = await groundJsonResponse(result, {
+              fallbackJurisdiction: userJurisdiction(ctx.user?.jurisdiction),
+            });
             result._grounding = grounding;
           } catch (err) {
             log.error(

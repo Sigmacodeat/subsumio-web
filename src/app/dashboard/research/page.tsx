@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import { api } from "@/lib/api";
 import { renderMarkdown } from "@/lib/markdown";
+import { linkCitationsInHtml } from "@/lib/citation-gate-client";
 import type { BrainPage } from "@/lib/types";
 import { OFFLINE_KEYS, enqueueMutation, getCache, isOnline, setCache } from "@/lib/offline-store";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -771,7 +772,12 @@ function ResearchPageInner() {
               </div>
               <div
                 className="prose prose-invert prose-sm max-w-none leading-relaxed text-[color:var(--ds-text-muted)]"
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(currentAnswer) }}
+                dangerouslySetInnerHTML={{
+                  __html: linkCitationsInHtml(
+                    renderMarkdown(currentAnswer),
+                    currentGrounding?.grounded_citations ?? []
+                  ),
+                }}
               />
               <CitationPanel
                 data={{

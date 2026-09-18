@@ -4,7 +4,14 @@
  * Client code MUST NOT import from this file — use citation-gate-client.ts instead.
  */
 
-import { groundCitations, groundLiteratureCitations } from "@/lib/legal-grounding";
+import {
+  groundCitations,
+  groundLiteratureCitations,
+  inferAnswerJurisdiction,
+  type GroundingJurisdiction,
+} from "@/lib/legal-grounding";
+import { extractCaseCitations } from "@/lib/case-citations";
+import { groundCaseCitations } from "@/lib/case-grounding";
 
 // Re-export client-safe functions and types for server-side convenience
 export {
@@ -32,14 +39,25 @@ import type { GroundingMetadata } from "@/lib/citation-gate-client";
  * for their text, and the answer must carry the warning instead of silently
  * presenting them as grounded.
  */
-export async function groundAnswerCitations(answerText: string): Promise<GroundingMetadata> {
+export async function groundAnswerCitations(
+  answerText: string,
+  opts: {
+    /** Forces the jurisdiction (caller knows it). */
+    jurisdiction?: GroundingJurisdiction | null;
+    /** Used only when the answer text itself is not decisive (e.g. the user's profile). */
+    fallbackJurisdiction?: GroundingJurisdiction | null;
+  } = {}
+): Promise<GroundingMetadata> {
   const rawCitations = extractStatuteCitations(answerText);
   const rawLiterature = extractLiteratureCitations(answerText);
-  const [statuteGrounded, literatureGrounded] = await Promise.all([
-    groundCitations(rawCitations),
+  const jurisdiction =
+    opts.jurisdiction ?? inferAnswerJurisdiction(answerText, opts.fallbackJurisdiction);
+  const [statuteGrounded, literatureGrounded, caseGrounded] = await Promise.all([
+    groundCitations(rawCitations, { jurisdiction }),
     groundLiteratureCitations(rawLiterature),
+    groundCaseCitations(extractCaseCitations(answerText)),
   ]);
-  const grounded = [...statuteGrounded, ...literatureGrounded];
+  const grounded = [...statuteGrounded, ...literatureGrounded, ...caseGrounded];
   const verified = grounded.filter((c) => c.verified).length;
   const unverified = grounded.filter((c) => !c.verified).length;
   const hasUnverified = unverified > 0;
@@ -57,6 +75,11 @@ export async function groundAnswerCitations(answerText: string): Promise<Groundi
   };
 }
 
+/** Jurisdiction hint for the gate wrappers: the user's profile, used when the text is not decisive. */
+export interface GateJurisdictionOpts {
+  fallbackJurisdiction?: GroundingJurisdiction | null;
+}
+
 // ── JSON response grounding ────────────────────────────────────────────
 
 /**
@@ -65,12 +88,15 @@ export async function groundAnswerCitations(answerText: string): Promise<Groundi
  * law corpus, and returns grounding metadata suitable for injection as
  * `_grounding` on the response.
  */
-export async function groundJsonResponse(obj: Record<string, unknown>): Promise<GroundingMetadata> {
+export async function groundJsonResponse(
+  obj: Record<string, unknown>,
+  opts: GateJurisdictionOpts = {}
+): Promise<GroundingMetadata> {
   const textParts = extractTextFromJsonResponse(obj);
   if (textParts.length === 0) {
     return emptyGroundingMetadata();
   }
-  return groundAnswerCitations(textParts.join(" "));
+  return groundAnswerCitations(textParts.join(" "), opts);
 }
 
 // ── SSE stream transformation ─────────────────────────────────────────
@@ -83,7 +109,8 @@ export async function groundJsonResponse(obj: Record<string, unknown>): Promise<
  */
 export async function groundRedlineCitations(
   redlines: Array<{ legal_basis?: string; reason?: string }>,
-  summary?: string
+  summary?: string,
+  opts: GateJurisdictionOpts = {}
 ): Promise<GroundingMetadata> {
   const textParts: string[] = [];
   if (typeof summary === "string" && summary.trim()) {
@@ -98,7 +125,7 @@ export async function groundRedlineCitations(
     }
   }
   const combinedText = textParts.join(" ");
-  return groundAnswerCitations(combinedText);
+  return groundAnswerCitations(combinedText, opts);
 }
 
 /**
@@ -116,7 +143,8 @@ export async function groundRedlineCitations(
  *   data: [DONE]
  */
 export function createCitationGateStream(
-  upstream: ReadableStream<Uint8Array>
+  upstream: ReadableStream<Uint8Array>,
+  opts: GateJurisdictionOpts = {}
 ): ReadableStream<Uint8Array> {
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
@@ -193,7 +221,7 @@ export function createCitationGateStream(
                   );
                 }
                 try {
-                  const grounding = await groundAnswerCitations(answerText);
+                  const grounding = await groundAnswerCitations(answerText, opts);
                   parsed.grounding = grounding;
                 } catch (err) {
                   console.error(

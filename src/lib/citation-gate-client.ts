@@ -17,8 +17,18 @@ import type { RawCitation, GroundedCitation } from "@/lib/types";
  *   § 12 Abs. 3 ZPO
  *   §§ 433, 434 BGB
  *   § 1 StGB
+ *   § 5 Abs 1 StGB          (Austrian style, no dot after "Abs")
+ *   § 1 AußStrG, § 1 B-VG   (ß, umlauts, hyphen in the abbreviation)
+ *   § 16 EStG 1988          (year in the title)
+ *   Art. 7 B-VG, Art 8 EMRK (articles)
  */
-const STATUTE_RX = /§+\s*(\d+[a-z]?(?:\s*(?:Abs\.|Absatz)\s*\d+)?)\s+([A-Z][A-Za-zÄÖÜ]{1,10})/g;
+const PARA_PART = String.raw`(\d+[a-z]?(?:\s*(?:Abs\.?|Absatz)\s*\d+)?)`;
+const CODE_PART = String.raw`([A-ZÄÖÜ](?:[A-Za-zÄÖÜäöüß]{1,12}(?:-[A-ZÄÖÜ][A-Za-zÄÖÜäöüß]{0,8})?|-[A-ZÄÖÜ][A-Za-zÄÖÜäöüß]{0,8})(?:\s(?:18|19|20)\d{2}(?!\d))?)`;
+const STATUTE_RX = new RegExp(String.raw`§+\s*${PARA_PART}\s+${CODE_PART}`, "g");
+const ARTICLE_RX = new RegExp(
+  String.raw`(?<![A-Za-zÄÖÜäöüß])(?:Art\.?|Artikel)\s*${PARA_PART}\s+${CODE_PART}`,
+  "g"
+);
 
 /**
  * Extract statute citations from free-text answer.
@@ -27,27 +37,141 @@ const STATUTE_RX = /§+\s*(\d+[a-z]?(?:\s*(?:Abs\.|Absatz)\s*\d+)?)\s+([A-Z][A-Z
 export function extractStatuteCitations(text: string): RawCitation[] {
   const citations: RawCitation[] = [];
   const seen = new Set<string>();
-  let match: RegExpExecArray | null;
+  for (const [rx, prefix] of [
+    [STATUTE_RX, "§"],
+    [ARTICLE_RX, "Art."],
+  ] as const) {
+    rx.lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = rx.exec(text)) !== null) {
+      const paragraph = `${prefix} ${match[1].trim()}`;
+      const code = match[2].trim();
+      const key = `${code}#${paragraph}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
 
-  while ((match = STATUTE_RX.exec(text)) !== null) {
-    const paragraph = match[1].trim();
-    const code = match[2].trim();
-    const key = `${code}#${paragraph}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
+      const start = Math.max(0, match.index - 60);
+      const end = Math.min(text.length, match.index + match[0].length + 60);
+      const context = text.slice(start, end).replace(/\s+/g, " ").trim();
 
-    const start = Math.max(0, match.index - 60);
-    const end = Math.min(text.length, match.index + match[0].length + 60);
-    const context = text.slice(start, end).replace(/\s+/g, " ").trim();
-
-    citations.push({
-      code,
-      paragraph: `§ ${paragraph}`,
-      context,
-    });
+      citations.push({ code, paragraph, context });
+    }
   }
 
   return citations;
+}
+
+/** The user's profile jurisdiction ("AT" | "DE" | "CH") as a grounding preference. */
+export function userJurisdiction(j: string | null | undefined): "at" | "de" | "ch" | null {
+  const v = (j ?? "").toLowerCase();
+  return v === "at" || v === "de" || v === "ch" ? v : null;
+}
+
+// ── Inline links to the official text ────────────────────────────────
+
+const OFFICIAL_URL_RX = /^https:\/\/(www\.ris\.bka\.gv\.at|eur-lex\.europa\.eu)\/[^"'<>\s]*$/;
+
+/** Official publication hosts only (RIS, EUR-Lex) — anything else is never linked. */
+export function isOfficialUrl(url: string | undefined | null): url is string {
+  return !!url && OFFICIAL_URL_RX.test(url);
+}
+
+/** "im RIS" / "in EUR-Lex" — the source with its German preposition, for sentences. */
+export function officialSourceIn(url: string | undefined | null): string {
+  return officialSourceLabel(url) === "EUR-Lex" ? "in EUR-Lex" : "im RIS";
+}
+
+/** Short name of the official source behind a URL, for button labels. */
+export function officialSourceLabel(url: string | undefined | null): "RIS" | "EUR-Lex" {
+  return url && url.startsWith("https://eur-lex.europa.eu/") ? "EUR-Lex" : "RIS";
+}
+
+function escapeAttr(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+}
+
+/**
+ * Apply `replace` to the text between tags only — never attributes, and never
+ * text already inside <a>, <code> or <pre>. Each pass re-splits the HTML, so a
+ * link inserted by an earlier pass is skipped by the next one.
+ */
+function replaceInText(
+  html: string,
+  rx: RegExp,
+  replace: (match: string, ...groups: (string | undefined)[]) => string
+): string {
+  let skipDepth = 0;
+  return html
+    .split(/(<[^>]+>)/)
+    .map((part) => {
+      if (part.startsWith("<")) {
+        const tag = part.match(/^<\/?\s*(a|code|pre)\b/i);
+        if (tag) skipDepth += part.startsWith("</") ? -1 : 1;
+        if (skipDepth < 0) skipDepth = 0;
+        return part;
+      }
+      if (skipDepth > 0 || !part) return part;
+      return part.replace(new RegExp(rx.source, rx.flags), replace);
+    })
+    .join("");
+}
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
+}
+
+/** "1 Ob 49/01i" → matches "1 Ob 49/01i", "1Ob49/01i"; "RS0115754" → also "RS 0115754". */
+function flexibleCaseRx(cited: string): string {
+  return cited
+    .replace(/\s+/g, " ")
+    .split(/(?<=[A-Za-z])(?=\d)|(?<=\d)(?=[A-Za-z])| /)
+    .map(escapeRegex)
+    .join("\\s?");
+}
+
+/**
+ * Wrap every grounded, verified citation in already-rendered answer HTML with
+ * a link to its official text (RIS, EUR-Lex). Statutes carry data-* so a plain click
+ * opens the norm reader; decisions link straight to the RIS document.
+ * Citations without a verified official URL stay plain text.
+ */
+export function linkCitationsInHtml(html: string, grounded: GroundedCitation[]): string {
+  const statutes = new Map<string, GroundedCitation>();
+  const cases: GroundedCitation[] = [];
+  for (const gc of grounded) {
+    if (!gc.verified || !isOfficialUrl(gc.source_url)) continue;
+    if (gc.category === "judikatur") cases.push(gc);
+    else statutes.set(`${gc.code}#${gc.paragraph}`, gc);
+  }
+  if ((statutes.size === 0 && cases.length === 0) || !html) return html;
+
+  let out = html;
+  if (statutes.size > 0) {
+    const statuteRx = new RegExp(`${STATUTE_RX.source}|${ARTICLE_RX.source}`, "g");
+    out = replaceInText(out, statuteRx, (m, sPara, sCode, aPara, aCode) => {
+      const key = sPara
+        ? `${sCode!.trim()}#§ ${sPara.trim()}`
+        : `${aCode!.trim()}#Art. ${aPara!.trim()}`;
+      const gc = statutes.get(key);
+      if (!gc) return m;
+      // data-* lets the norm reader open in place on a plain click; the
+      // href stays the RIS page for cmd/middle click and no-JS.
+      const data =
+        ` data-code="${escapeAttr(gc.code)}" data-paragraph="${escapeAttr(gc.paragraph)}"` +
+        (gc.jurisdiction ? ` data-jurisdiction="${escapeAttr(gc.jurisdiction)}"` : "");
+      return `<a href="${escapeAttr(gc.source_url!)}" target="_blank" rel="noopener noreferrer" class="citation-official"${data} title="Normtext anzeigen">${m}</a>`;
+    });
+  }
+  for (const gc of cases) {
+    const rx = new RegExp(`(?<![\\p{L}\\d])${flexibleCaseRx(gc.paragraph)}(?![\\p{L}\\d])`, "gu");
+    out = replaceInText(
+      out,
+      rx,
+      (m) =>
+        `<a href="${escapeAttr(gc.source_url!)}" target="_blank" rel="noopener noreferrer" class="citation-official" title="${gc.code === "RIS-Justiz" ? "Rechtssatz" : `${escapeAttr(gc.code)}-Entscheidung`} im RIS öffnen">${m}</a>`
+    );
+  }
+  return out;
 }
 
 // ── Literature / Materialien extraction ───────────────────────────────

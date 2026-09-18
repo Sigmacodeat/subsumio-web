@@ -123,18 +123,20 @@
 
   /* ── Brand scale (Legal) — perceptually tuned, HSL output from OKLCH refs ──
      Reference OKLCH: hue 260°, chroma 0.13-0.15. Light primary ~ oklch(0.55 0.15 260).
-     Contrast: brand-500 on white ≈ 7.2:1 (AAA), brand-700 on white ≈ 11.5:1. */
+     Action tones (400–900) are deliberately less saturated than the tints:
+     a law-firm navy, not a neon SaaS blue. White on brand-500 ≈ 6.2:1,
+     on brand-600 ≈ 8.0:1 (AAA), on brand-700 ≈ 10.4:1. */
   --brand-50: hsl(222, 80%, 97%); /* Sapphire — #f1f5fd */
   --brand-100: hsl(222, 78%, 94%); /* #e4ebfc */
   --brand-200: hsl(222, 76%, 88%); /* #c9d7f8 */
   --brand-300: hsl(222, 74%, 78%); /* #9db6f0 */
-  --brand-350: hsl(222, 73%, 70%);
-  --brand-400: hsl(222, 72%, 62%); /* #5882e4 */
-  --brand-500: hsl(222, 74%, 52%); /* #2a60df */
-  --brand-600: hsl(222, 72%, 44%); /* #1f50c1 — Hauptaktion hell */
-  --brand-700: hsl(222, 68%, 36%); /* #1d439a */
-  --brand-800: hsl(222, 62%, 27%); /* #1a3470 — Navy */
-  --brand-900: hsl(222, 56%, 18%); /* #142448 */
+  --brand-350: hsl(222, 68%, 70%);
+  --brand-400: hsl(222, 64%, 62%); /* #6085dc */
+  --brand-500: hsl(222, 60%, 47%); /* #305bc0 */
+  --brand-600: hsl(222, 58%, 39%); /* #2a4c9d — Hauptaktion hell */
+  --brand-700: hsl(222, 56%, 31%); /* #233d7b */
+  --brand-800: hsl(222, 52%, 24%); /* #1d305d — Navy */
+  --brand-900: hsl(222, 48%, 16%); /* #15213c */
   --brand-950: hsl(222, 50%, 11%);
 
   /* Signet-Gold — Komplementär (Hue 42), nur Marke/Premium/Hervorhebung, kein Text < 700 */
@@ -2179,6 +2181,35 @@
 }
 .prose-chat a:hover {
   opacity: 0.8;
+}
+/* Verified citation → official text (RIS). Quieter than a normal link so a
+   norm-dense answer stays readable; the ↗ marks that it leaves the app. */
+a.citation-official {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--brand-primary) 45%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+a.citation-official::after {
+  content: "\2197";
+  margin-left: 0.15em;
+  font-size: 0.8em;
+  color: var(--brand-primary);
+}
+/* Norm reader open → the page makes room for it on wide screens, so the answer
+   and the norm sit side by side instead of the panel covering the answer. */
+@media (min-width: 1280px) {
+  html[data-norm-reader="open"] #main-content {
+    padding-right: 440px;
+  }
+}
+a.citation-official:hover,
+a.citation-official:focus-visible {
+  color: var(--brand-primary);
+  text-decoration-color: var(--brand-primary);
+  opacity: 1;
 }
 .prose-chat code {
   font-family: ui-monospace, monospace;

@@ -6,6 +6,8 @@ import {
   groundCitations,
   findCodeKey,
   detectUnverifiableCitation,
+  inferAnswerJurisdiction,
+  lookupAtNormFile,
   CORPUS_META,
 } from "@/lib/legal-grounding";
 import type { RawCitation } from "@/lib/types";
@@ -361,11 +363,14 @@ describe("groundCitations — unverifiable citations", () => {
   });
 
   it("marks regional law citations as unverifiable with reason when paragraph not found", async () => {
-    vi.mocked(fs.readFile)
-      .mockRejectedValueOnce(new Error("ENOENT"))
-      .mockResolvedValueOnce(
-        "---\ntype: landesgesetz\n---\n§ 1. Geltungsbereich.\n§ 2. Begriffsbestimmungen."
-      );
+    // Only the law's corpus file exists; per-§ and split files are missing.
+    const lawFile = CORPUS_META[findCodeKey("Bodenseefischereigesetz")!].file;
+    vi.mocked(fs.readFile).mockImplementation((async (p: unknown) => {
+      if (String(p).endsWith(lawFile)) {
+        return "---\ntype: landesgesetz\n---\n§ 1. Geltungsbereich.\n§ 2. Begriffsbestimmungen.";
+      }
+      throw new Error("ENOENT");
+    }) as never);
     const result = await groundCitations([
       { code: "Bodenseefischereigesetz", paragraph: "§ 12", context: "Landesrecht" },
     ]);
@@ -518,5 +523,56 @@ describe("CORPUS_META — CI guard", () => {
   it("contains DE flagship codes", () => {
     expect(CORPUS_META["bgb"].jurisdiction).toBe("de");
     expect(CORPUS_META["bgb"].label).toBe("BGB");
+  });
+});
+
+describe("Austrian answers — jurisdiction preference", () => {
+  it("bare DE/AT twins resolve to the AT code when the answer is Austrian", () => {
+    expect(findCodeKey("ZPO", "at")).toBe("zpo_at");
+    expect(findCodeKey("StGB", "at")).toBe("stgb_at");
+    expect(findCodeKey("EStG", "at")).toBe("estg_at");
+  });
+
+  it("without a preference nothing changes for DE", () => {
+    expect(CORPUS_META[findCodeKey("ZPO")!].jurisdiction).toBe("de");
+  });
+
+  it("infers the answer jurisdiction from court/statute markers", () => {
+    expect(inferAnswerJurisdiction("Laut OGH ist § 1295 ABGB anwendbar.")).toBe("at");
+    expect(inferAnswerJurisdiction("Der BGH wendet § 823 BGB an.")).toBe("de");
+  });
+
+  it("AT answer: § 1295 ABGB is verified from its per-§ file and links to RIS", async () => {
+    vi.mocked(fs.readFile).mockReset();
+    vi.mocked(fs.readFile).mockResolvedValueOnce(
+      [
+        "---",
+        'title: "§ 1295 ABGB"',
+        'gesetzesnummer: "10001622"',
+        'nor_id: "NOR12019037"',
+        "---",
+        "",
+        "# § 1295 ABGB",
+        "",
+        "Jedermann ist berechtigt, von dem Beschädiger den Ersatz des Schadens zu fordern.",
+      ].join("\n") as never
+    );
+    const [c] = await groundCitations([{ code: "ABGB", paragraph: "§ 1295", context: "" }], {
+      jurisdiction: "at",
+    });
+    expect(c.verified).toBe(true);
+    expect(c.source_text).toContain("Beschädiger");
+    expect(c.source_url).toBe(
+      "https://www.ris.bka.gv.at/NormDokument.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10001622&Paragraf=1295"
+    );
+  });
+
+  it("a per-§ file with only a heading does not verify", async () => {
+    vi.mocked(fs.readFile).mockReset();
+    vi.mocked(fs.readFile).mockResolvedValueOnce(
+      '---\ngesetzesnummer: "10001622"\n---\n# § 1295 ABGB\n' as never
+    );
+    const r = await lookupAtNormFile(CORPUS_META["abgb"], "§ 1295");
+    expect(r?.text).toBeNull();
   });
 });

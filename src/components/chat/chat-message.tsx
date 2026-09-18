@@ -20,6 +20,7 @@ import {
 import { CopilotExplanationPanel } from "@/components/copilot/copilot-explanation-panel";
 import { cn } from "@/lib/utils";
 import { renderMarkdown } from "@/lib/markdown";
+import { linkCitationsInHtml } from "@/lib/citation-gate-client";
 import { useLang } from "@/lib/use-lang";
 import { AIBadge, GroundingStatus } from "@/components/legal/CitationLink";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
@@ -121,7 +122,12 @@ function ChatMessageBubbleInner({
   }, [message.content, isUser, followUps]);
 
   const displayRendered =
-    features?.markdownRendering !== false && !isUser ? renderMarkdown(displayContent) : null;
+    features?.markdownRendering !== false && !isUser
+      ? linkCitationsInHtml(
+          renderMarkdown(displayContent),
+          message.grounding?.grounded_citations ?? []
+        )
+      : null;
 
   return (
     <div

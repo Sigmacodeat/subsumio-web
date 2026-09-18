@@ -69,3 +69,25 @@ describe("generateDocx", () => {
     expect(Object.keys(files)).toContain("word/styles.xml");
   });
 });
+
+describe("generateDocx — inline formatting stays valid OOXML", () => {
+  test("text around bold/italic is wrapped in runs, never bare inside <w:p>", async () => {
+    const files = await extractDocxFiles(
+      await generateDocx("Der Kläger begehrt **Schadenersatz** und *Zinsen*.", { title: "T" })
+    );
+    const para = files["word/document.xml"].match(/<w:p>(?:(?!<\/w:p>).)*Kläger.*?<\/w:p>/s)![0];
+    // Strip all runs; nothing but paragraph properties may remain.
+    const outside = para.replace(/<w:pPr>.*?<\/w:pPr>/s, "").replace(/<w:r>.*?<\/w:r>/gs, "");
+    expect(outside).toBe("<w:p></w:p>");
+    expect(para).toContain('<w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Schadenersatz</w:t>');
+  });
+
+  test("markdown links keep their URL visible, XML-escaped", async () => {
+    const files = await extractDocxFiles(
+      await generateDocx("[§ 1295 ABGB](https://www.ris.bka.gv.at/x?a=1&b=2)", { title: "T" })
+    );
+    expect(files["word/document.xml"]).toContain(
+      "§ 1295 ABGB (https://www.ris.bka.gv.at/x?a=1&amp;b=2)"
+    );
+  });
+});

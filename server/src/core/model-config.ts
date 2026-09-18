@@ -100,8 +100,13 @@ export const DEFAULT_ALIASES: Record<string, string> = {
  * Users override via `gbrain config set models.tier.<tier> <model>`.
  * Per-specialist override: `gbrain config set models.specialist.<name> <model>`.
  */
+// 2026-09-18: Subsumio runs every tier on current Claude models (quality first;
+// provider/residency decision is deferred and stays swappable via
+// `gbrain config set models.tier.<tier>`). Utility = Sonnet 5 because email
+// drafts and deadline extraction are client-facing legal work, not throwaway
+// classification.
 const NATIVE_TIER_DEFAULTS: Record<ModelTier, string> = {
-  utility: "openrouter:deepseek/deepseek-chat",
+  utility: "anthropic:claude-sonnet-5",
   // v0.43.1: Reasoning tier upgraded from DeepSeek to Sonnet 4.6.
   // DeepSeek-chat is a utility-tier model (classification, extraction) — it
   // lacks the multi-step reasoning needed for legal subsumption, cross-document
@@ -110,9 +115,9 @@ const NATIVE_TIER_DEFAULTS: Record<ModelTier, string> = {
   // silently wrong. Research (BenGER 2026, LegalGraphRAG ACL 2026, TruPath Labs
   // 2026) confirms Sonnet-class is required for legal reasoning tasks.
   // Users who prefer DeepSeek: `gbrain config set models.tier.reasoning openrouter:deepseek/deepseek-chat`
-  reasoning: "anthropic:claude-sonnet-4-6",
-  deep: "openrouter:xai/grok-4.3",
-  subagent: "anthropic:claude-haiku-4-5",
+  reasoning: "anthropic:claude-opus-5",
+  deep: "anthropic:claude-fable-5-1",
+  subagent: "anthropic:claude-sonnet-5",
 };
 
 /** The production SaaS can deliberately use one billed gateway only. */
@@ -121,10 +126,10 @@ export function isOpenRouterOnlyDeployment(): boolean {
 }
 
 const OPENROUTER_TIER_DEFAULTS: Record<ModelTier, string> = {
-  utility: "openrouter:deepseek/deepseek-chat",
-  reasoning: "openrouter:anthropic/claude-sonnet-4.6",
-  deep: "openrouter:x-ai/grok-4.3",
-  subagent: "openrouter:anthropic/claude-haiku-4.5",
+  utility: "openrouter:anthropic/claude-sonnet-5",
+  reasoning: "openrouter:anthropic/claude-opus-5",
+  deep: "openrouter:anthropic/claude-fable-5.1",
+  subagent: "openrouter:anthropic/claude-sonnet-5",
 };
 
 export const TIER_DEFAULTS: Record<ModelTier, string> = isOpenRouterOnlyDeployment()

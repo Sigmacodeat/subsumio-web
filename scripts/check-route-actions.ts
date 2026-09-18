@@ -67,6 +67,13 @@ function checkRouteFile(filePath: string): void {
   // Skip realtime/SSE — uses custom streaming auth
   if (filePath.includes("/api/realtime/")) return;
 
+  // Skip QES callbacks — the external signature server (A-Trust PDF-AS) calls
+  // them without a user session; the one-time [token] is the credential and
+  // each handler looks up its session + rate-limits. Only [token] routes.
+  if (/\/api\/signature\/qes\/[^/]+\/\[token\]\/route\.tsx?$/.test(filePath)) {
+    if (content.includes("getQesSession(") && content.includes("hit(")) return;
+  }
+
   // Check if file exports any HTTP method handlers
   const hasHttpExport = HTTP_METHODS.some((method) =>
     new RegExp(`export\\s+(const|async\\s+function)\\s+${method}\\b`).test(content)
