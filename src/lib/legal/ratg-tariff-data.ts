@@ -372,3 +372,94 @@ export const RATG_TARIFF: Record<"TP1" | "TP2" | "TP3A" | "TP3B" | "TP3C", RatgT
     hourCap: 15578,
   },
 };
+
+/** TP 4 Abschnitt I Z 1: Entlohnung für Anklagen; alle anderen Leistungen der TP 4 leiten sich davon ab. */
+export const RATG_TP4 = {
+  anklageBezirksgericht: 184.6,
+  anklageSonstige: 307.6,
+} as const;
+
+/** TP 5: einfache Schreiben, nach Bemessungsgrundlage. */
+export const RATG_TP5 = {
+  bands: [
+    {
+      upTo: 70,
+      amount: 4.2,
+    },
+    {
+      upTo: 180,
+      amount: 5.6,
+    },
+    {
+      upTo: 360,
+      amount: 6.3,
+    },
+    {
+      upTo: 730,
+      amount: 7.5,
+    },
+    {
+      upTo: 1820,
+      amount: 9.2,
+    },
+    {
+      upTo: 2910,
+      amount: 10.8,
+    },
+  ],
+  stepFrom: 2910,
+  stepEvery: 1450,
+  stepAmount: 3.3,
+  cap: 104.6,
+} as const;
+
+/** TP 6: das Doppelte der TP 5, höchstens dieser Betrag. */
+export const RATG_TP6_CAP = 208.2;
+
+/** TP 7: je begonnene halbe Stunde; Höchstbeträge für Kanzleikraft bzw. Rechtsanwalt. */
+export const RATG_TP7 = {
+  capGehilfe: 208.2,
+  capAnwalt: 416.1,
+} as const;
+
+/** TP 8: Besprechungen je begonnene halbe Stunde, nach Bemessungsgrundlage. */
+export const RATG_TP8 = {
+  bands: [
+    {
+      upTo: 70,
+      amount: 14.8,
+    },
+    {
+      upTo: 180,
+      amount: 21.5,
+    },
+    {
+      upTo: 360,
+      amount: 28.5,
+    },
+    {
+      upTo: 730,
+      amount: 35.1,
+    },
+    {
+      upTo: 1820,
+      amount: 52.5,
+    },
+  ],
+  stepFrom: 1820,
+  stepTo: 20670,
+  stepEvery: 1450,
+  stepAmount: 11.1,
+  extraStepTo: 21800,
+  step2Every: 1450,
+  step2Amount: 5.9,
+  cap: 692.9,
+  shortFactor: 0.4,
+  shortCap: 277.4,
+} as const;
+
+/** TP 9: je begonnene Stunde. */
+export const RATG_TP9 = {
+  wegentschaedigungStunde: 17.9,
+  zeitversaeumnisStunde: 33.9,
+} as const;

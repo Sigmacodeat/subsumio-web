@@ -2,8 +2,15 @@ import { describe, expect, it } from "vitest";
 import { RATG_TARIFF } from "@/lib/legal/ratg-tariff-data";
 import {
   RatgInputError,
+  calculateRatgNebenleistung,
   calculateRatgService,
+  calculateRatgTp4,
+  calculateRatgTp7,
+  calculateRatgTp9,
   ratgBaseFee,
+  ratgTp5Fee,
+  ratgTp6Fee,
+  ratgTp8Fee,
   streitgenossenPercent,
 } from "@/lib/legal/ratg";
 
@@ -144,5 +151,110 @@ describe("Leistung mit Nebenleistungen", () => {
     expect(() =>
       calculateRatgService({ item: "TP1", kind: "verhandlung", bemessungsgrundlage: 500 })
     ).toThrow(RatgInputError);
+  });
+});
+
+// ── TP 4 bis 9 — Erwartungswerte von Hand aus Anl. 1 RATG idF BGBl. II Nr. 131/2023 ──
+
+describe("TP 5 und 6 (Schreiben, Briefe)", () => {
+  it("TP 5 nach Wertstufe und Steigerung über 2 910 €", () => {
+    expect(ratgTp5Fee(70)).toBe(4.2);
+    expect(ratgTp5Fee(1000)).toBe(9.2);
+    // 10,80 + 2 angefangene 1 450 € × 3,30
+    expect(ratgTp5Fee(5000)).toBe(17.4);
+    expect(ratgTp5Fee(10_000_000)).toBe(104.6);
+  });
+
+  it("TP 6 ist das Doppelte, höchstens 208,20 €", () => {
+    expect(ratgTp6Fee(1000)).toBe(18.4);
+    expect(ratgTp6Fee(100_000)).toBe(208.2);
+  });
+
+  it("rechnet die Information aus den Akten mit der Hälfte dazu", () => {
+    const r = calculateRatgNebenleistung({
+      art: "brief",
+      bemessungsgrundlage: 1000,
+      anzahl: 2,
+      information: true,
+    });
+    expect(r.lines.map((l) => l.amount)).toEqual([36.8, 18.4]);
+    expect(r.net).toBe(55.2);
+  });
+});
+
+describe("TP 8 (Besprechungen)", () => {
+  it("Wertstufen und beide Steigerungsbereiche", () => {
+    expect(ratgTp8Fee(1820)).toBe(52.5);
+    // 52,50 + 6 × 11,10
+    expect(ratgTp8Fee(10_000)).toBe(119.1);
+    // 52,50 + 13 × 11,10 + 11,10 (20 670 bis 21 800)
+    expect(ratgTp8Fee(21_000)).toBe(207.9);
+    // wie oben + 6 × 5,90 über 21 800
+    expect(ratgTp8Fee(30_000)).toBe(243.3);
+    expect(ratgTp8Fee(50_000_000)).toBe(692.9);
+  });
+
+  it("zählt jede begonnene halbe Stunde", () => {
+    const r = calculateRatgNebenleistung({
+      art: "besprechung",
+      bemessungsgrundlage: 10_000,
+      hours: 0.75,
+    });
+    expect(r.net).toBe(238.2);
+  });
+
+  it("kurze Besprechung: vier Zehntel", () => {
+    const r = calculateRatgNebenleistung({ art: "besprechung_kurz", bemessungsgrundlage: 10_000 });
+    expect(r.net).toBe(47.64);
+  });
+});
+
+describe("TP 4 (Strafsachen)", () => {
+  it("Hauptverhandlung wegen sonstiger Vergehen, 1,5 Stunden", () => {
+    const r = calculateRatgTp4({
+      verfahren: "privatanklage_sonstige",
+      leistung: "hauptverhandlung",
+      hours: 1.5,
+    });
+    // 307,60 + 2 × 153,80; Einheitssatz 50 % (BG 11 000 € nach § 10 Z 7 lit b)
+    expect(r.lines.map((l) => l.amount)).toEqual([615.2, 307.6]);
+  });
+
+  it("Privatbeteiligte erhalten die Hälfte", () => {
+    const r = calculateRatgTp4({
+      verfahren: "privatbeteiligter_bezirksgericht",
+      leistung: "berufungsausfuehrung",
+      erv: "weiterer",
+    });
+    // 1,5 × (184,60 / 2); Einheitssatz 60 % (BG 3 000 €); ERV 2,60
+    expect(r.lines.map((l) => l.amount)).toEqual([138.45, 83.07, 2.6]);
+  });
+
+  it("Rechtsmittelanmeldung ist ein Zehntel", () => {
+    const r = calculateRatgTp4({
+      verfahren: "privatanklage_bezirksgericht",
+      leistung: "rechtsmittelanmeldung",
+      einheitssatzFactor: 0,
+    });
+    expect(r.net).toBe(18.46);
+  });
+
+  it("lehnt eine Anklage durch Privatbeteiligte ab", () => {
+    expect(() =>
+      calculateRatgTp4({ verfahren: "privatbeteiligter_sonstige", leistung: "anklage" })
+    ).toThrow(/Privatbeteiligte/);
+  });
+});
+
+describe("TP 7 und 9", () => {
+  it("TP 7 durch den Rechtsanwalt: doppelte TP 6 je halbe Stunde, mit Einheitssatz", () => {
+    const r = calculateRatgTp7({ bemessungsgrundlage: 1000, hours: 1, durch: "anwalt" });
+    expect(r.lines.map((l) => l.amount)).toEqual([73.6, 44.16]);
+  });
+
+  it("TP 9 Zeitversäumnis je begonnene Stunde, ohne Einheitssatz", () => {
+    const r = calculateRatgTp9({ zeitversaeumnisHours: 2.5 });
+    expect(r.lines).toHaveLength(1);
+    expect(r.net).toBe(101.7);
   });
 });
