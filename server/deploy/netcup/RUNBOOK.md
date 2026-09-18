@@ -1,6 +1,6 @@
 # Umzug Hetzner → netcup (Subsumio und Sanicura)
 
-Ziel: netcup RS 8000 G12 (16 dedizierte Kerne, 64 GB RAM, 2 TB NVMe), Ubuntu 24.04.
+Ziel: netcup RS 8000 G12 (16 dedizierte Kerne, 64 GB RAM, 2 TB NVMe), Debian 13, 159.195.113.101 (ssh-Alias `subsumio-netcup`).
 Quelle: Hetzner CX43 `subsumio-fresh`, 46.224.0.141 (ssh-Alias `subsumio-hetzner`).
 
 Grundsatz: Zuerst wird **identisch** umgezogen (gleiche Abbilder, gleiche Daten), erst danach
@@ -79,11 +79,42 @@ Auf dem alten Server die drei Projekte wieder starten (Reihenfolge wie oben) und
 auf 46.224.0.141 zurücksetzen. Da der alte Server nach `final` nicht mehr geschrieben wurde,
 gehen dabei nur Änderungen verloren, die seit dem Umschalten auf dem neuen Server entstanden.
 
-## 4. Danach
+## 4. Ordner auf dem Server (Stand nach dem Umzug)
 
-1. Neuen Code auf dem neuen Server bauen und ausrollen (2 TB Platte, genug Platz).
-2. Datenbank auf 64 GB abstimmen, damit der 14-GB-Suchindex im Speicher bleibt. In
-   `/opt/subsumio/server/deploy/hetzner/.env` auf dem neuen Server:
+| Pfad                                  | Inhalt                                                                                                                                                                     |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/opt/subsumio`                       | Code genau eines Commits (`DEPLOYED_COMMIT`), kein Git-Checkout, keine Altdateien. Server-eigen sind nur `server/deploy/hetzner/.env` und `server/deploy/hetzner/imports/` |
+| `/opt/subsumio-prev`                  | die vorige Version, für den schnellen Rückweg                                                                                                                              |
+| `/opt/subsumio-data/law-corpus`       | der Gesetzes- und Judikaturkorpus. Web, Engine und Korpus-Pipeline binden ihn über `LAW_CORPUS_HOST_DIR` ein                                                               |
+| `/opt/subsumio-data/law-corpus-split` | Altbestand, von keinem Dienst gelesen                                                                                                                                      |
+| Docker-Volumes `hetzner_*`            | Datenbank, Originaldateien, Sicherungen                                                                                                                                    |
+
+Der Korpus lag auf dem alten Server im Code-Ordner (`/opt/subsumio/law-corpus`), die Compose-Datei
+bindet aber `/opt/subsumio-data/law-corpus` ein. Seit dem Tausch der Compose-Datei am 17.09. sahen
+die Dienste deshalb ein leeres Verzeichnis. Beim Umzug wurde er an den richtigen Ort verschoben.
+
+## 5. Neuen Code ausrollen
+
+Vom Mac aus dem Repository, rollt genau den committeten Stand (HEAD) aus:
+
+```sh
+sh server/deploy/netcup/deploy-code.sh --build   # nur bauen, Dienste laufen weiter
+sh server/deploy/netcup/deploy-code.sh           # bauen und umschalten
+```
+
+Das Skript lädt ein `git archive` hoch, übernimmt `.env` und `imports/`, baut web, engine und
+corpus-pipeline und schaltet dann `/opt/subsumio` → `/opt/subsumio-prev` um. Die Engine spielt
+ausstehende Datenbank-Migrationen beim Start ein. Schwere Migrationen (große Tabellen umschreiben)
+vorher gestückelt von Hand einspielen, wie bei v124 (`content_chunks.source_id`, 4 Mio. Zeilen in
+Stapeln zu 100 000, danach `CREATE INDEX CONCURRENTLY`).
+
+Der Dienst `caddy` in dieser Compose-Datei ist Altbestand und wird nie gestartet; der gemeinsame
+Proxy läuft aus `/opt/caddy`.
+
+## 6. Danach
+
+1. Datenbank auf 64 GB abstimmen, damit der 14-GB-Suchindex im Speicher bleibt (erledigt). In
+   `/opt/subsumio/server/deploy/hetzner/.env`:
    ```
    PG_SHARED_BUFFERS=16GB
    PG_EFFECTIVE_CACHE_SIZE=44GB
@@ -94,7 +125,6 @@ gehen dabei nur Änderungen verloren, die seit dem Umschalten auf dem neuen Serv
    PG_MAX_PARALLEL_MAINTENANCE_WORKERS=4
    PG_SHM_SIZE=4gb
    ```
-   Danach nur die Datenbank neu starten: `docker compose ... up -d db`.
-3. Offsite-Backup-Ziel eintragen.
-4. Umzugsschlüssel auf dem neuen Server aus `authorized_keys` entfernen.
-5. Alten Hetzner-Server nach zwei Wochen ohne Befund löschen.
+2. Offsite-Backup-Ziel eintragen.
+3. Umzugsschlüssel auf dem neuen Server aus `authorized_keys` entfernen.
+4. Alten Hetzner-Server nach zwei Wochen ohne Befund löschen, ebenso `/opt/subsumio-old-2026-09-18`.
