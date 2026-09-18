@@ -48,7 +48,7 @@ async function connect() {
 
   const btn = document.getElementById("connectBtn") as HTMLButtonElement;
   btn.disabled = true;
-  btn.innerHTML = '<div class="spinner"></div> Verbinde…';
+  btn.innerHTML = '<div class="spinner"></div> Wird verbunden…';
 
   try {
     const res = await fetch(`${API_BASE}/api/brains`, {

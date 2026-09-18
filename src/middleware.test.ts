@@ -179,6 +179,30 @@ describe("middleware CSRF webhook exemptions", () => {
     expect(res.status).not.toBe(403);
   });
 
+  it("lets API-key requests without a session cookie through to the key check", async () => {
+    const headers = new Headers({ authorization: "Bearer sk_live_example" });
+    const res = await run("/api/legal/analyze", { method: "POST", headers });
+
+    expect(res.status).not.toBe(403);
+  });
+
+  it("still requires CSRF when an API-key header comes with a session cookie", async () => {
+    const headers = new Headers({
+      authorization: "Bearer sk_live_example",
+      cookie: "sb_session=anything",
+    });
+    const res = await run("/api/legal/analyze", { method: "POST", headers });
+
+    expect(res.status).toBe(403);
+  });
+
+  it("does not exempt other bearer tokens", async () => {
+    const headers = new Headers({ authorization: "Bearer something_else" });
+    const res = await run("/api/legal/analyze", { method: "POST", headers });
+
+    expect(res.status).toBe(403);
+  });
+
   it("allows normal state-changing API requests with a matching CSRF token", async () => {
     const token = "csrf_test_token";
     const headers = new Headers({

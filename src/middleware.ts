@@ -208,6 +208,21 @@ function isWebhookCsrfExempt(pathname: string): boolean {
  */
 // hasValidInternalSecret is imported at the top of this file from @/lib/auth/internal.
 
+/**
+ * Requests authenticated with a firm API key (`Authorization: Bearer
+ * sk_live_…`, used by the Word/Outlook add-ins and customer integrations)
+ * carry no CSRF cookie. CSRF abuses a cookie the browser attaches on its own;
+ * a request WITHOUT a session cookie has nothing to abuse, and createHandler
+ * authenticates it by the key (or rejects it). A request that has a session
+ * cookie still needs the CSRF token, so adding a fake Authorization header
+ * does not unlock cookie-authenticated calls.
+ */
+function isApiKeyCsrfExempt(req: NextRequest): boolean {
+  const auth = req.headers.get("authorization");
+  if (!auth?.startsWith("Bearer sk_live_")) return false;
+  return !req.cookies.get(SESSION_COOKIE)?.value;
+}
+
 const RETIRED_PUBLIC_LOCALE_PREFIXES = ["/de", "/ch", "/en"] as const;
 const AUSTRIA_PUBLIC_ALIASES = new Set([
   "/",
@@ -411,6 +426,7 @@ export async function middleware(req: NextRequest) {
       pathname.startsWith("/api/portal/") ||
       API_CSRF_EXEMPT_PATHS.has(pathname) ||
       isWebhookCsrfExempt(pathname) ||
+      isApiKeyCsrfExempt(req) ||
       hasValidInternalSecret(req);
 
     if (!isExempt) {

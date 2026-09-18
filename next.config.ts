@@ -96,7 +96,27 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/(.*)",
+        // Office add-in task panes (built by scripts/build-office-addins.ts)
+        // run inside Word/Outlook, and Office on the web embeds them in an
+        // iframe — so they allow the Office hosts as frame ancestors instead
+        // of X-Frame-Options: DENY. Each taskpane.html keeps its own CSP.
+        source: "/:addin(word-addin|outlook-addin)/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value:
+              "frame-ancestors 'self' https://*.office.com https://*.office365.com https://*.officeapps.live.com https://*.microsoft.com https://*.sharepoint.com https://outlook.live.com https://*.outlook.com https://*.cloud.microsoft",
+          },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=31536000; includeSubDomains; preload",
+          },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+      {
+        source: "/((?!word-addin/|outlook-addin/).*)",
         headers: [
           { key: "X-Frame-Options", value: "DENY" },
           {

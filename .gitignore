@@ -69,5 +69,10 @@ SERVER_INVENTORY.md
 # Local verification builds + ad-hoc QA artefacts (never commit)
 .next-verify/
 .next-e2e/
+.next-isolated/
 tests/screenshots/
 tests/e2e-playwright/marketing-visual.spec.ts-snapshots/
+
+# Office add-ins, built by scripts/build-office-addins.ts during `bun run build`
+/public/word-addin/
+/public/outlook-addin/

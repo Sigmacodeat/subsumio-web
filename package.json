@@ -16,7 +16,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "NODE_OPTIONS=--max-old-space-size=16384 next build --turbopack",
+    "build": "bun scripts/build-office-addins.ts && NODE_OPTIONS=--max-old-space-size=16384 next build --turbopack",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
@@ -50,7 +50,8 @@
     "cap:android": "cap open android",
     "prepare": "if [ \"$NODE_ENV\" != \"production\" ]; then bunx husky; fi",
     "word-addin:build": "cd word-addin && npm install && npm run build",
-    "mobile:build": "next build && cap sync"
+    "mobile:build": "next build && cap sync",
+    "build:addins": "bun scripts/build-office-addins.ts"
   },
   "dependencies": {
     "@capacitor/app": "^7.0.0",
