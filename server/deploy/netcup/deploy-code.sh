@@ -20,8 +20,8 @@ HOST="${DEPLOY_HOST:-subsumio-netcup}"
 APP=/opt/subsumio
 H=server/deploy/hetzner
 # The compose file also defines a legacy caddy service; the shared proxy lives
-# in /opt/caddy. Start only these.
-SERVICES="db clamav engine web cron backup corpus-pipeline"
+# in /opt/caddy. Start only db, clamav and these.
+APP_SERVICES="engine web cron backup corpus-pipeline"
 BUILD="web engine corpus-pipeline"
 
 build_only=0
@@ -57,13 +57,16 @@ if [ "$build_only" = 1 ]; then
 fi
 
 echo "[deploy] umschalten …"
-ssh "$HOST" "APP=$APP H=$H SERVICES='$SERVICES'" 'sh -s' <<'REMOTE'
+ssh "$HOST" "APP=$APP H=$H APP_SERVICES='$APP_SERVICES'" 'sh -s' <<'REMOTE'
 set -eu
 rm -rf "$APP-prev"
 mv "$APP" "$APP-prev"
 mv "$APP-new" "$APP"
 cd "$APP/$H"
-docker compose -p subsumio-engine up -d --no-build $SERVICES
+# Recreate everything that bind-mounts files from the code folder, even when
+# its image did not change — otherwise it keeps reading $APP-prev.
+docker compose -p subsumio-engine up -d --no-build db clamav
+docker compose -p subsumio-engine up -d --no-build --force-recreate $APP_SERVICES
 REMOTE
 
 echo "[deploy] Warte auf Gesundheit …"
