@@ -62,20 +62,23 @@ services:
       dockerfile: Dockerfile.db
     image: subsumio-engine-db:latest
     restart: unless-stopped
-    shm_size: 1gb
+    # Memory settings come from .env so one compose file fits both boxes. The
+    # defaults suit 16 GB; on the 64 GB server the 14 GB vector index and the
+    # text indexes must stay in memory (see server/deploy/netcup/RUNBOOK.md).
+    shm_size: ${PG_SHM_SIZE:-1gb}
     command: >
       postgres
-      -c shared_buffers=512MB
-      -c effective_cache_size=2GB
-      -c work_mem=16MB
-      -c maintenance_work_mem=512MB
+      -c shared_buffers=${PG_SHARED_BUFFERS:-512MB}
+      -c effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE:-2GB}
+      -c work_mem=${PG_WORK_MEM:-16MB}
+      -c maintenance_work_mem=${PG_MAINTENANCE_WORK_MEM:-512MB}
       -c effective_io_concurrency=200
       -c wal_buffers=16MB
       -c checkpoint_completion_target=0.9
       -c random_page_cost=1.1
-      -c max_parallel_workers=2
-      -c max_parallel_workers_per_gather=1
-      -c max_parallel_maintenance_workers=2
+      -c max_parallel_workers=${PG_MAX_PARALLEL_WORKERS:-2}
+      -c max_parallel_workers_per_gather=${PG_MAX_PARALLEL_WORKERS_PER_GATHER:-1}
+      -c max_parallel_maintenance_workers=${PG_MAX_PARALLEL_MAINTENANCE_WORKERS:-2}
       -c autovacuum=on
       -c autovacuum_naptime=30s
       -c shared_preload_libraries=pg_search

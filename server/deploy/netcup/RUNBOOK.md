@@ -81,8 +81,19 @@ gehen dabei nur Änderungen verloren, die seit dem Umschalten auf dem neuen Serv
 ## 4. Danach
 
 1. Neuen Code auf dem neuen Server bauen und ausrollen (2 TB Platte, genug Platz).
-2. Datenbank auf 64 GB abstimmen (`shared_buffers`, `effective_cache_size`), damit der
-   14-GB-Suchindex im Speicher bleibt.
+2. Datenbank auf 64 GB abstimmen, damit der 14-GB-Suchindex im Speicher bleibt. In
+   `/opt/subsumio/server/deploy/hetzner/.env` auf dem neuen Server:
+   ```
+   PG_SHARED_BUFFERS=16GB
+   PG_EFFECTIVE_CACHE_SIZE=44GB
+   PG_WORK_MEM=64MB
+   PG_MAINTENANCE_WORK_MEM=2GB
+   PG_MAX_PARALLEL_WORKERS=8
+   PG_MAX_PARALLEL_WORKERS_PER_GATHER=4
+   PG_MAX_PARALLEL_MAINTENANCE_WORKERS=4
+   PG_SHM_SIZE=4gb
+   ```
+   Danach nur die Datenbank neu starten: `docker compose ... up -d db`.
 3. Offsite-Backup-Ziel eintragen.
 4. Umzugsschlüssel auf dem neuen Server aus `authorized_keys` entfernen.
 5. Alten Hetzner-Server nach zwei Wochen ohne Befund löschen.

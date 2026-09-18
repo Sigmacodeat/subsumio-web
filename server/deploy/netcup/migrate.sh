@@ -29,9 +29,29 @@ volumes() {
 
 case "$PHASE" in
   images)
-    for image in $(docker ps --format '{{.Image}}' | sort -u); do
-      echo "[images] $image"
-      docker save "$image" | gzip -1 | $SSH "$NEW_HOST" 'gunzip | docker load'
+    # Move exactly what runs now. Per container: the tags of its image, so the
+    # compose files find them by name. When a container runs an image whose tag
+    # has since moved (a newer build waiting, or a re-pulled base image), that
+    # image has no tag left; it is committed under "<name>:migrated" and tagged
+    # back to the compose name on the new host.
+    for c in $(docker ps --format '{{.Names}}'); do
+      id="$(docker inspect --format '{{.Image}}' "$c")"
+      want="$(docker inspect --format '{{.Config.Image}}' "$c")"
+      case "$want" in *:*) ;; *) want="$want:latest" ;; esac
+      tags="$(docker image inspect --format '{{join .RepoTags " "}}' "$id" 2>/dev/null || true)"
+      retag=""
+      if [ -z "$tags" ]; then
+        tags="${want%%:*}:migrated"
+        echo "[images] $c läuft auf einem nicht mehr benannten Abbild, sichere es als $tags"
+        docker commit "$c" "$tags" >/dev/null
+        retag="$tags"
+      fi
+      echo "[images] $c -> $tags"
+      # shellcheck disable=SC2086
+      docker save $tags | gzip -1 | $SSH "$NEW_HOST" 'gunzip | docker load'
+      if [ -n "$retag" ]; then
+        $SSH "$NEW_HOST" "docker tag $retag $want"
+      fi
     done
     ;;
 
