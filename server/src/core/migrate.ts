@@ -5783,7 +5783,7 @@ export const MIGRATIONS: Migration[] = [
           SET stage_history = (
             SELECT jsonb_agg(elem ORDER BY idx ASC)
             FROM (
-              SELECT elem
+              SELECT elem, idx
               FROM jsonb_array_elements(
                 stage_history || jsonb_build_array(jsonb_build_object('stage', p_stage, 'action', p_action, 'ts', NOW()))
               ) WITH ORDINALITY AS t(elem, idx)
@@ -6375,6 +6375,40 @@ export const MIGRATIONS: Migration[] = [
       );
       CREATE INDEX IF NOT EXISTS idx_connector_instances_tenant
         ON connector_instances (tenant_source_id, service);
+    `,
+  },
+  {
+    version: 140,
+    name: "append_stage_history_keeps_order",
+    // v125 shipped append_stage_history with an inner query that did not
+    // return the ordinal it sorts by, so every call failed with
+    // "column idx does not exist" and pipeline_state.stage_history stayed
+    // empty. v125's text is corrected for fresh installs; this replaces the
+    // function where v125 already ran.
+    idempotent: true,
+    sql: `
+      CREATE OR REPLACE FUNCTION append_stage_history(
+        p_source_key   TEXT,
+        p_stage        TEXT,
+        p_action       TEXT
+      ) RETURNS VOID AS $$
+      BEGIN
+        UPDATE pipeline_state
+          SET stage_history = (
+            SELECT jsonb_agg(elem ORDER BY idx ASC)
+            FROM (
+              SELECT elem, idx
+              FROM jsonb_array_elements(
+                stage_history || jsonb_build_array(jsonb_build_object('stage', p_stage, 'action', p_action, 'ts', NOW()))
+              ) WITH ORDINALITY AS t(elem, idx)
+              ORDER BY idx DESC
+              LIMIT 20
+            ) sub
+          ),
+          updated_at = NOW()
+          WHERE source_key = p_source_key;
+      END;
+      $$ LANGUAGE plpgsql;
     `,
   },
 ];
