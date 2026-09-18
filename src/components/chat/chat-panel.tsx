@@ -1,5 +1,8 @@
 "use client";
 
+// grounding-exempt: answers are grounded here (stream gate or useGroundedAnswer) and
+// rendered with CitationPanel in ChatMessageBubble (chat-message.tsx).
+
 import {
   useState,
   useRef,
@@ -1166,8 +1169,10 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         // Run corpus grounding on the answer text after the response is displayed.
         // This is non-blocking — the user sees the answer immediately, and the
         // grounding metadata (verified/unverified citations) appears shortly after.
-        // Uses the /api/legal/ground server route via useGroundedAnswer hook.
-        groundAnswer(cleanAnswer)
+        // Uses the stream gate's result, else /api/legal/ground via useGroundedAnswer.
+        // The stream's citation gate usually grounded it already (one pass on
+        // the server); only fall back to the ground route when it did not.
+        (result._grounding ? Promise.resolve(result._grounding) : groundAnswer(cleanAnswer))
           .then((grounding) => {
             if (!grounding) return;
             setMessages((m) => {
@@ -1757,7 +1762,9 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         // answer surface must carry grounding metadata, regenerated answers
         // included (a regenerated answer is a first-class new answer, not a
         // variant that inherits the original's grounding).
-        groundAnswer(cleanRegenAnswer)
+        // The stream's citation gate usually grounded it already (one pass on
+        // the server); only fall back to the ground route when it did not.
+        (result._grounding ? Promise.resolve(result._grounding) : groundAnswer(cleanRegenAnswer))
           .then((grounding) => {
             if (!grounding) return;
             setMessages((m) => {

@@ -23,6 +23,7 @@ import { generateDraftPdf } from "@/lib/legal-draft-pdf";
 import { CertificationStamp } from "@/components/legal/certification-stamp";
 import { createCertification, type AICertification } from "@/lib/ai-certification";
 import { DraftReviewPanel } from "@/components/copilot/draft-review-panel";
+import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 
 export interface DraftInfo {
   slug: string;
@@ -355,6 +356,9 @@ export function DraftEditor({
           placeholder="Schriftsatz bearbeiten..."
         />
       )}
+
+      {/* The generated draft is grounded as generated; edits are the lawyer's own. */}
+      <GroundedOutputPanel text={draft.content} />
 
       {/* Email Dialog */}
       {showEmailDialog && (

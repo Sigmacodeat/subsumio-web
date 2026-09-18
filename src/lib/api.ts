@@ -600,6 +600,11 @@ export const api = {
         }
         if (Array.isArray(parsed.citations)) result.citations = parsed.citations;
         if (Array.isArray(parsed.gaps)) result.gaps = parsed.gaps;
+        // The server-side citation gate already grounded this answer — keep it,
+        // so the client does not ground the same text a second time.
+        if (parsed.grounding && typeof parsed.grounding === "object") {
+          result._grounding = parsed.grounding as GroundingMetadata;
+        }
         if (typeof parsed.tokens_used === "number") result.tokens_used = parsed.tokens_used;
         if (typeof parsed.latency_ms === "number") result.latency_ms = parsed.latency_ms;
       });

@@ -7,6 +7,7 @@ import { AI_MODELS, formatCost } from "@/lib/model-config";
 import { ModelSelector } from "@/components/dashboard/model-selector";
 import type { QueryResponse } from "@/lib/types";
 import { useLang } from "@/lib/use-lang";
+import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 
 interface ModelResult {
   modelId: string;
@@ -229,9 +230,12 @@ export function ModelComparison() {
                   ) : result.error ? (
                     <div className="text-sm text-[color:var(--ds-danger-text)]">{result.error}</div>
                   ) : (
-                    <div className="prose-chat text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
-                      {result.answer}
-                    </div>
+                    <>
+                      <div className="prose-chat text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
+                        {result.answer}
+                      </div>
+                      <GroundedOutputPanel text={result.answer} className="mt-3" />
+                    </>
                   )}
                 </div>
 

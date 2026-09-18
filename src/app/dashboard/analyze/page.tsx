@@ -328,8 +328,10 @@ export default function AnalyzePage() {
                     citations_verified: result._grounding.citations_verified,
                     citations_unverified: result._grounding.citations_unverified,
                     corpus_checked: result._grounding.corpus_checked,
-                    grounded_citations: [],
+                    grounded_citations: result._grounding.grounded_citations ?? [],
                     analyzed_at: result._grounding.analyzed_at,
+                    has_unverified: result._grounding.has_unverified,
+                    warning: result._grounding.warning,
                   }
                 : null,
               isStreaming: false,

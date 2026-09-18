@@ -1,5 +1,7 @@
 "use client";
 
+// grounding-exempt: this page only starts the run and redirects; the run page ([runId]) renders the grounded result.
+
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Scale, AlertCircle } from "lucide-react";

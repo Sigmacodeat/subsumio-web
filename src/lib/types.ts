@@ -339,6 +339,9 @@ export interface DocumentAnalysisResult {
     citations_unverified: number;
     corpus_checked: boolean;
     analyzed_at: string;
+    grounded_citations?: GroundedCitation[];
+    has_unverified?: boolean;
+    warning?: string;
   };
   _warnings?: string[];
   _degraded?: boolean;

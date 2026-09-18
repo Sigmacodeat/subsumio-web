@@ -20,7 +20,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "verify": "tsc --noEmit && npx tsx scripts/check-route-actions.ts && npx tsx scripts/check-design-tokens.ts && npx tsx scripts/check-canonical-links.ts && npx tsx scripts/check-nested-interactive.ts",
+    "verify": "tsc --noEmit && npx tsx scripts/check-route-actions.ts && npx tsx scripts/check-grounding-invariant.ts && npx tsx scripts/check-design-tokens.ts && npx tsx scripts/check-canonical-links.ts && npx tsx scripts/check-nested-interactive.ts",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test:scripts": "npx vitest run --config vitest.config.scripts.ts",

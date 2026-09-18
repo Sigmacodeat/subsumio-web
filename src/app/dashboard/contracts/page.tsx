@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { renderMarkdown } from "@/lib/markdown";
-import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 import type { BrainPage, TabularReviewResponse } from "@/lib/types";
 import { OFFLINE_KEYS, enqueueMutation, getCache, isOnline, setCache } from "@/lib/offline-store";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -833,14 +833,10 @@ export default function ContractsPage() {
                       className="prose prose-invert prose-sm max-h-[400px] max-w-none overflow-auto text-[color:var(--ds-text-muted)]"
                       dangerouslySetInnerHTML={{ __html: renderMarkdown(analysisResult) }}
                     />
-                    <CitationPanel
-                      data={
-                        {
-                          citations: analysisCitations,
-                          gaps: analysisGaps,
-                        } satisfies CitationPanelData
-                      }
-                      compact
+                    <GroundedOutputPanel
+                      text={analysisResult}
+                      citations={analysisCitations}
+                      gaps={analysisGaps}
                     />
                   </div>
                 )}

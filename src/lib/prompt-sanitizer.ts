@@ -13,7 +13,9 @@ const INJECTION_PATTERNS = [
   /disregard\s+(all\s+)?(previous|prior|above)\s+instructions?/gi,
   /forget\s+(all\s+)?(previous|prior|above)\s+instructions?/gi,
   /you\s+are\s+now\s+(a|an)\s+/gi,
-  /system\s*:\s*/gi,
+  // Role marker "system:" as a word of its own — never the end of a compound
+  // ("Betriebssystem:", "Buchungs-System:"), which is ordinary legal/tech prose.
+  /(?<![\p{L}\d-])system\s*:\s*/giu,
   /\[SYSTEM\]/gi,
   /\<\/?system\>/gi,
   /\<\/?instruction\>/gi,
@@ -23,9 +25,6 @@ const INJECTION_PATTERNS = [
   /missacht(?:e|en)\s+(?:alle\s+)?(?:vorherigen|bisherigen|obigen)\s+anweisungen?/gi,
   /vergiss\s+(?:alle\s+)?(?:vorherigen|bisherigen|obigen)\s+anweisungen?/gi,
   /du\s+bist\s+jetzt\s+(?:ein|eine)\s+/gi,
-  /system\s*:\s*/gi,
-  /\[SYSTEM\]/gi,
-  /\<\/?system\>/gi,
   /\<\/?anweisung\>/gi,
   /überschreib(?:e|en)\s+(?:system|sicherheit|inhalt)\s+/gi,
 ];

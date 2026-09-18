@@ -1,5 +1,7 @@
 "use client";
 
+// grounding-exempt: this page only queues the scan job and shows its id/parameters; the findings are grounded where they are reviewed (review inbox).
+
 import { useState } from "react";
 import { Radar, Loader2, AlertTriangle, CheckCircle2, Clock, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";

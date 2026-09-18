@@ -26,6 +26,7 @@ import type { BrainPage } from "@/lib/types";
 import type { MatterContextBundle, MatterUnderstandingPanel } from "@/lib/matter-context-types";
 import type { DeadlineEntry } from "@/lib/legal-types";
 import { unwrapApiBody } from "@/lib/api-body";
+import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 
 type ReviewItemKind =
   | "client_submission"
@@ -544,6 +545,19 @@ export function MatterReviewInbox({
         )}
       </div>
 
+      {/* AI-proposed deadlines, parties and facts, grounded in one pass. */}
+      <GroundedOutputPanel
+        className="mt-3"
+        text={visibleItems
+          .filter(
+            (item) =>
+              item.kind === "suggested_deadline" ||
+              item.kind === "suggested_party" ||
+              item.kind === "pending_fact"
+          )
+          .map((item) => [item.title, item.statement, item.description].filter(Boolean).join(" — "))
+          .join("\n\n")}
+      />
       <div className="mt-3 space-y-2">
         {!loading && visibleItems.length === 0 ? (
           <div className="flex items-center gap-2 rounded-lg bg-[color:var(--ds-success-bg)] p-3 text-sm text-[color:var(--ds-success-text)]">

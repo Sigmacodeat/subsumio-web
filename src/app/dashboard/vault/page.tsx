@@ -53,6 +53,7 @@ import { OcrErrorBanner } from "@/components/documents/ocr-error-banner";
 import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import type { DashboardKey } from "@/content/dashboard";
+import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 
 const DOCS_LIMIT = 200;
 
@@ -602,46 +603,55 @@ export default function VaultPage() {
             )}
           </div>
           {reviewResult && reviewResult.rows.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[color:var(--ds-border)]">
-                    <th className="px-3 py-2 text-left font-medium text-[color:var(--ds-text-muted)]">
-                      {t("vault.col_document")}
-                    </th>
-                    {reviewResult.questions.map((q, i) => (
-                      <th
-                        key={i}
-                        className="min-w-[200px] px-3 py-2 text-left font-medium text-[color:var(--ds-text-muted)]"
-                      >
-                        {q}
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[color:var(--ds-border)]">
+                      <th className="px-3 py-2 text-left font-medium text-[color:var(--ds-text-muted)]">
+                        {t("vault.col_document")}
                       </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {reviewResult.rows.map((row, i) => (
-                    <tr
-                      key={i}
-                      className="border-b border-[color:var(--ds-border)]/50 hover:bg-[color:var(--ds-hover)]"
-                    >
-                      <td className="px-3 py-2 whitespace-nowrap text-[color:var(--ds-text)]">
-                        {row.title}
-                      </td>
-                      {row.cells.map((cell, j) => (
-                        <td
-                          key={j}
-                          className="max-w-xs truncate px-3 py-2 text-[color:var(--ds-text-muted)]"
-                          title={cell.answer}
+                      {reviewResult.questions.map((q, i) => (
+                        <th
+                          key={i}
+                          className="min-w-[200px] px-3 py-2 text-left font-medium text-[color:var(--ds-text-muted)]"
                         >
-                          {cell.answer}
-                        </td>
+                          {q}
+                        </th>
                       ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {reviewResult.rows.map((row, i) => (
+                      <tr
+                        key={i}
+                        className="border-b border-[color:var(--ds-border)]/50 hover:bg-[color:var(--ds-hover)]"
+                      >
+                        <td className="px-3 py-2 whitespace-nowrap text-[color:var(--ds-text)]">
+                          {row.title}
+                        </td>
+                        {row.cells.map((cell, j) => (
+                          <td
+                            key={j}
+                            className="max-w-xs truncate px-3 py-2 text-[color:var(--ds-text-muted)]"
+                            title={cell.answer}
+                          >
+                            {cell.answer}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <GroundedOutputPanel
+                text={reviewResult.rows
+                  .flatMap((r) => r.cells.map((cell) => cell.answer))
+                  .join("\n\n")}
+                citations={reviewResult.rows.flatMap((r) => r.cells.flatMap((c) => c.citations))}
+                className="mt-3"
+              />
+            </>
           )}
         </form>
       )}
@@ -779,6 +789,17 @@ export default function VaultPage() {
                   </p>
                 </div>
               )}
+
+              <GroundedOutputPanel
+                text={[
+                  deepAnalysisResult.executive_summary,
+                  ...deepAnalysisResult.findings.map((f) => `${f.theme}: ${f.description}`),
+                  ...deepAnalysisResult.cross_document_patterns,
+                ].join("\n\n")}
+                citations={deepAnalysisResult.findings.flatMap((f) =>
+                  f.citations.map((c) => ({ slug: c.slug, title: c.title }))
+                )}
+              />
 
               {/* Findings */}
               {deepAnalysisResult.findings.length > 0 && (

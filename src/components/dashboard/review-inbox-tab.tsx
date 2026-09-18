@@ -26,6 +26,7 @@ import { useRealtime } from "@/lib/realtime";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
+import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 
 type ReviewType =
   | "all"
@@ -490,6 +491,13 @@ export function ReviewInboxTab() {
       {/* Review items list */}
       {!loading && !error && filtered.length > 0 && (
         <div className="space-y-2">
+          {/* One grounding pass over every AI suggestion in view (not one call per row). */}
+          <GroundedOutputPanel
+            text={filtered
+              .filter((item) => item.confidence)
+              .map((item) => [item.title, item.law, item.description].filter(Boolean).join(" — "))
+              .join("\n\n")}
+          />
           {filtered.map((item) => {
             const Icon = TYPE_ICON[item.type];
             const typeLabel = TYPE_LABEL[item.type];

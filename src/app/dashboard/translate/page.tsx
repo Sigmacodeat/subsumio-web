@@ -10,6 +10,7 @@ import type { DocumentTranslation } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
+import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 
 const LANGUAGES = [
   { code: "de", labelKey: "translate.lang_de" },
@@ -221,6 +222,7 @@ export default function TranslatePage() {
             <div className="prose prose-sm max-w-none leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
               {result.translated_text}
             </div>
+            <GroundedOutputPanel text={result.translated_text} className="mt-3" />
           </div>
 
           {/* Glossary */}

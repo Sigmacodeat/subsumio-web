@@ -24,6 +24,7 @@ import { useLang } from "@/lib/use-lang";
 import { useMatterDetail } from "@/lib/matter-detail-context";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 
 interface MailItem {
   id: string;
@@ -154,6 +155,8 @@ export function EmailsTab() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [composer, setComposer] = useState<Composer | null>(null);
   const [drafting, setDrafting] = useState(false);
+  // The AI draft as generated — grounded as such, even after the lawyer edits it.
+  const [aiDraft, setAiDraft] = useState<string | null>(null);
 
   // AI draft for the lawyer to edit — nothing is sent until they press "Senden".
   async function draftReply() {
@@ -168,6 +171,7 @@ export function EmailsTab() {
       const draft = (data?.data?.draft ?? data?.draft) as string | undefined;
       if (!res.ok || !draft) throw new Error(data?.message ?? "draft_failed");
       setComposer((c) => (c ? { ...c, text: draft } : c));
+      setAiDraft(draft);
     } catch {
       setError("Der Antwortentwurf konnte nicht erstellt werden.");
     } finally {
@@ -242,6 +246,7 @@ export function EmailsTab() {
   }
 
   function startReply(mail: MailItem) {
+    setAiDraft(null);
     setComposer({
       mode: "reply",
       replyToId: mail.id,
@@ -252,6 +257,7 @@ export function EmailsTab() {
   }
 
   function startNew() {
+    setAiDraft(null);
     setComposer({
       mode: "new",
       to: "",
@@ -294,6 +300,7 @@ export function EmailsTab() {
         title: data.message?.status === "sent" ? copy.sent : copy.queued,
       });
       setComposer(null);
+      setAiDraft(null);
       await load();
     } catch (err) {
       addToast({ type: "error", title: err instanceof Error ? err.message : copy.failed });
@@ -480,6 +487,7 @@ export function EmailsTab() {
               value={composer.text}
               onChange={(e) => setComposer({ ...composer, text: e.target.value })}
             />
+            {aiDraft && <GroundedOutputPanel text={aiDraft} className="mt-2" />}
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
             {composer.mode === "reply" && composer.replyToId && (

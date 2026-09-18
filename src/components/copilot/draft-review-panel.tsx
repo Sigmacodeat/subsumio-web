@@ -21,6 +21,7 @@ import {
 import { useLang } from "@/lib/use-lang";
 import { csrfFetch } from "@/lib/csrf";
 import { cn } from "@/lib/utils";
+import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 
 interface DraftReviewIssue {
   id: string;
@@ -298,6 +299,15 @@ export function DraftReviewPanel({
           {review.summary}
         </p>
       </div>
+
+      <GroundedOutputPanel
+        text={[
+          review.summary,
+          ...review.issues.map((i) =>
+            [i.title, i.description, i.suggestion, i.legalBasis].filter(Boolean).join(" — ")
+          ),
+        ].join("\n\n")}
+      />
 
       {/* Issues */}
       {review.issues.length === 0 ? (
