@@ -58,8 +58,12 @@ case "$PHASE" in
   files)
     for dir in /opt/caddy /opt/sanicura /opt/subsumio; do
       echo "[files] $dir"
-      eval "$RSYNC --delete --exclude '.claude/' $dir/ $NEW_HOST:$dir/"
+      # The law corpus is left out here: the new host also receives the more
+      # complete corpus from the developer machine, and --delete would remove it.
+      eval "$RSYNC --delete --exclude '.claude/' --exclude 'law-corpus/' $dir/ $NEW_HOST:$dir/"
     done
+    echo "[files] /opt/subsumio/law-corpus (nur ergänzen, nichts löschen)"
+    eval "$RSYNC /opt/subsumio/law-corpus/ $NEW_HOST:/opt/subsumio/law-corpus/"
     ;;
 
   presync | final)
