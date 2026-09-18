@@ -444,14 +444,15 @@ export default function InvoicingPage() {
     pdf.save(`Rechnung_${inv.number}.pdf`);
   }
 
-  async function downloadXRechnung(inv: Invoice) {
+  async function downloadXmlInvoice(inv: Invoice, format: "ebinterface" | "xrechnung") {
+    const label = format === "ebinterface" ? "ebInterface" : "XRechnung";
     const settings = kanzlei ?? (await loadKanzleiSettings());
     try {
       const res = await csrfFetch("/api/e-invoice/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          format: "xrechnung",
+          format,
           invoice: {
             invoice_number: inv.number,
             client: inv.client,
@@ -496,7 +497,7 @@ export default function InvoicingPage() {
       a.download = data.filename;
       a.click();
       URL.revokeObjectURL(url);
-      setStatusMessage("XRechnung XML heruntergeladen");
+      setStatusMessage(`${label} XML heruntergeladen`);
       setTimeout(() => setStatusMessage(null), 3000);
     } catch (err) {
       setStatusMessage("E-Rechnung Generierung fehlgeschlagen");
@@ -1108,7 +1109,14 @@ export default function InvoicingPage() {
                         {t("inv.download_pdf")}
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => void downloadXRechnung(inv)}
+                        onClick={() => void downloadXmlInvoice(inv, "ebinterface")}
+                        className="gap-2 text-xs"
+                      >
+                        <FileCode2 size={13} />
+                        ebInterface XML (e-Rechnung.gv.at)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => void downloadXmlInvoice(inv, "xrechnung")}
                         className="gap-2 text-xs"
                       >
                         <FileCode2 size={13} />

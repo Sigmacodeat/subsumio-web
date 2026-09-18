@@ -20,6 +20,7 @@
 
 export * from "./types";
 export * from "./xrechnung";
+export * from "./ebinterface";
 export * from "./zugferd";
 export * from "./qr-bill";
 export * from "./validator";

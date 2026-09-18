@@ -61,7 +61,7 @@ export function invoiceToEInvoiceData(
     street: settings.street,
     zip: settings.zip ?? "",
     city: settings.city ?? "",
-    country: settings.country ?? "DE",
+    country: settings.country ?? "AT",
     vatId: settings.ustId,
     email: settings.kanzleiEmail,
     phone: settings.kanzleiTelefon,

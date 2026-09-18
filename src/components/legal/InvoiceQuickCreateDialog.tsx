@@ -168,7 +168,9 @@ export function InvoiceQuickCreateDialog({
   const [kanzlei, setKanzlei] = useState<KanzleiSettings | null>(null);
   const [loadingCases, setLoadingCases] = useState(false);
   const [leitwegId, setLeitwegId] = useState("");
-  const [eInvoiceFormat, setEInvoiceFormat] = useState<"none" | "xrechnung" | "zugferd">("none");
+  const [eInvoiceFormat, setEInvoiceFormat] = useState<
+    "none" | "ebinterface" | "xrechnung" | "zugferd"
+  >("none");
   const [tariffLines, setTariffLines] = useState<TariffInvoiceLine[]>([]);
 
   const resetForm = useCallback(() => {
@@ -477,7 +479,9 @@ export function InvoiceQuickCreateDialog({
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              format: eInvoiceFormat,
+              // "zugferd" needs the PDF bytes of an existing invoice; the
+              // dialog has none, so it asks the server to build the PDF.
+              format: eInvoiceFormat === "zugferd" ? "zugferd_scratch" : eInvoiceFormat,
               invoice: {
                 invoice_number: invoice.number,
                 client: invoice.client,
@@ -506,14 +510,14 @@ export function InvoiceQuickCreateDialog({
             }),
           });
           if (res.ok) {
-            if (eInvoiceFormat === "xrechnung") {
+            if (eInvoiceFormat === "xrechnung" || eInvoiceFormat === "ebinterface") {
               const data = await res.json();
               if (data.ok && data.xml) {
                 const blob = new Blob([data.xml], { type: "application/xml" });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
                 a.href = url;
-                a.download = data.filename || `xrechnung_${invoice.number}.xml`;
+                a.download = data.filename || `${eInvoiceFormat}_${invoice.number}.xml`;
                 a.click();
                 URL.revokeObjectURL(url);
               }
@@ -690,6 +694,7 @@ export function InvoiceQuickCreateDialog({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">{t("inv.e_invoice_none" as DashboardKey)}</SelectItem>
+                    <SelectItem value="ebinterface">ebInterface XML (e-Rechnung.gv.at)</SelectItem>
                     <SelectItem value="xrechnung">XRechnung XML</SelectItem>
                     <SelectItem value="zugferd">ZUGFeRD PDF</SelectItem>
                   </SelectContent>

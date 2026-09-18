@@ -1413,7 +1413,10 @@ export const D = {
     de: "Rechnung konnte nicht erstellt werden",
     en: "Invoice could not be created",
   },
-  "inv.leitweg_id": { de: "Leitweg-ID", en: "Leitweg ID" },
+  "inv.leitweg_id": {
+    de: "Auftragsreferenz / Leitweg-ID",
+    en: "Order reference / Leitweg ID",
+  },
   "inv.e_invoice_format": { de: "E-Rechnung Format", en: "E-invoice format" },
   "inv.e_invoice_none": { de: "Keine (nur klassisch)", en: "None (classic only)" },
   "inv.e_invoice_auto_generated": {

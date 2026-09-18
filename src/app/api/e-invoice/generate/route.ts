@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createHandler } from "@/lib/api-handler";
 import {
+  generateEbInterfaceXml,
   generateXRechnungXml,
   generateZugferdPdf,
   generateZugferdPdfFromScratch,
@@ -13,7 +14,7 @@ import type { KanzleiSettings } from "@/lib/kanzlei-settings";
 export const dynamic = "force-dynamic";
 
 const generateSchema = z.object({
-  format: z.enum(["xrechnung", "zugferd", "zugferd_scratch"]).default("xrechnung"),
+  format: z.enum(["ebinterface", "xrechnung", "zugferd", "zugferd_scratch"]).default("xrechnung"),
   invoice: z.custom<InvoiceFrontmatter>((v) => typeof v === "object" && v !== null),
   settings: z.custom<KanzleiSettings>((v) => typeof v === "object" && v !== null),
   options: z
@@ -67,6 +68,18 @@ export const POST = createHandler(
         },
         { status: 400 }
       );
+    }
+
+    if (format === "ebinterface") {
+      const result = generateEbInterfaceXml(eInvoiceData);
+      return Response.json({
+        ok: true,
+        format: "ebinterface",
+        filename: result.filename,
+        xml: result.xml,
+        profile: result.profile,
+        validation,
+      });
     }
 
     if (format === "xrechnung") {
