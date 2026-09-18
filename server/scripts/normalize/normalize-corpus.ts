@@ -21,9 +21,16 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, statSy
 import { join, dirname, relative } from "path";
 import { createHash } from "crypto";
 import {
-  SCHEMA_VERSION, NORMALIZER_VERSION, FIELD_ORDER,
-  serializeCanonical, validateCanonical, validateBody,
-  type CanonicalFrontmatter, type DocClass, type SourceFormat, type ValidationIssue,
+  SCHEMA_VERSION,
+  NORMALIZER_VERSION,
+  FIELD_ORDER,
+  serializeCanonical,
+  validateCanonical,
+  validateBody,
+  type CanonicalFrontmatter,
+  type DocClass,
+  type SourceFormat,
+  type ValidationIssue,
 } from "./canonical-schema.ts";
 
 // ---------------------------------------------------------------------------
@@ -53,11 +60,13 @@ const RESUME = args.includes("--resume");
  */
 const FILE_LIST = arg("--file-list");
 
-const CORPUS_ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "..", "law-corpus");
+const CORPUS_ROOT =
+  process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "..", "law-corpus");
 const OUT_ROOT = process.env.NORMALIZED_ROOT ?? join(CORPUS_ROOT, "_normalized");
 const STATE_DIR = join(OUT_ROOT, "_state");
 
-if (!CORPUS) {
+// Only when run as a script — tests import the pure mapping functions.
+if (import.meta.main && !CORPUS) {
   console.error("--corpus <name> erforderlich");
   process.exit(1);
 }
@@ -66,8 +75,15 @@ if (!CORPUS) {
 // Wert-Reinigung
 // ---------------------------------------------------------------------------
 const ENTITIES: Record<string, string> = {
-  "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&apos;": "'",
-  "&nbsp;": " ", "&#160;": " ", "&#8217;": "'", "&shy;": "",
+  "&amp;": "&",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": '"',
+  "&apos;": "'",
+  "&nbsp;": " ",
+  "&#160;": " ",
+  "&#8217;": "'",
+  "&shy;": "",
 };
 
 /** Entfernt NBSP, Mehrfach-Leerzeichen, HTML-Entities, Rand-Whitespace. */
@@ -76,7 +92,7 @@ export function clean(v: string | null | undefined): string | null {
   let s = String(v);
   s = s.replace(/&(amp|lt|gt|quot|apos|nbsp|shy|#160|#8217);/g, (m) => ENTITIES[m] ?? m);
   s = s.replace(/&#(\d+);/g, (_, d) => String.fromCharCode(parseInt(d, 10)));
-  s = s.replace(/ /g, " ");        // NBSP
+  s = s.replace(/ /g, " "); // NBSP
   s = s.replace(/[​-‍﻿]/g, ""); // Zero-Width
   // Jeden Whitespace-Lauf auf EIN Leerzeichen bringen — auch einzelne
   // Tabulatoren und Zeilenumbrüche. Die frühere Fassung fasste nur
@@ -92,11 +108,11 @@ export function clean(v: string | null | undefined): string | null {
 export function toIsoDate(v: string | null | undefined): string | null {
   const s = clean(v);
   if (!s) return null;
-  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);           // ISO / ISO-TS
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); // ISO / ISO-TS
   if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-  m = s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);            // 26.10.2018
+  m = s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/); // 26.10.2018
   if (m) return `${m[3]}-${m[2]}-${m[1]}`;
-  m = s.match(/^(\d{4})$/);                              // nur Jahr → nicht verwertbar
+  m = s.match(/^(\d{4})$/); // nur Jahr → nicht verwertbar
   return null;
 }
 
@@ -117,7 +133,11 @@ const RE_ECLI = /^ECLI:[A-Z]{2}:[A-Za-z0-9._:-]+$/;
 // ---------------------------------------------------------------------------
 // Roh-Frontmatter lesen (tolerant — die Rohdaten sind kein sauberes YAML)
 // ---------------------------------------------------------------------------
-interface Raw { fm: Record<string, string>; list: Record<string, string[]>; body: string }
+interface Raw {
+  fm: Record<string, string>;
+  list: Record<string, string[]>;
+  body: string;
+}
 
 export function parseRaw(text: string): Raw {
   const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
@@ -184,7 +204,11 @@ function docIdOf(fm: Record<string, string>, url: string): string {
   // Gesetze zu einer ID — bei at-gemeinden betrifft das 177 Dateien.
   const m = url.match(/Dokumentnummer=([^&"'\s]+)/) ?? url.match(/\/Dokumente\/[^/]+\/([^/]+)\//);
   if (m) {
-    try { return decodeURIComponent(m[1]); } catch { return m[1]; }
+    try {
+      return decodeURIComponent(m[1]);
+    } catch {
+      return m[1];
+    }
   }
   const eli = clean(fm.eli);
   if (eli) {
@@ -203,7 +227,9 @@ function docIdOf(fm: Record<string, string>, url: string): string {
       const last = u.pathname.split("/").filter(Boolean).pop() ?? "doc";
       const short = createHash("sha256").update(url).digest("hex").slice(0, 6);
       return `${host}-${last}-${short}`.replace(/[^A-Za-z0-9_.-]+/g, "-");
-    } catch { /* keine gültige URL */ }
+    } catch {
+      /* keine gültige URL */
+    }
   }
   return "";
 }
@@ -225,7 +251,16 @@ export function mapToCanonical(raw: Raw, fallbackTitle: string): CanonicalFrontm
 
   const ecliRaw = pick(fm, "ecli");
   const ids = new Set<string>();
-  for (const k of ["document_id", "dokumentnummer", "doc_id", "nor_id", "celex", "id", "alte_dokumentnummer", "oai_identifier"]) {
+  for (const k of [
+    "document_id",
+    "dokumentnummer",
+    "doc_id",
+    "nor_id",
+    "celex",
+    "id",
+    "alte_dokumentnummer",
+    "oai_identifier",
+  ]) {
     const v = clean(fm[k]);
     if (v) ids.add(v.replace(/^ris-/, ""));
   }
@@ -233,7 +268,7 @@ export function mapToCanonical(raw: Raw, fallbackTitle: string): CanonicalFrontm
   ids.delete(docId);
 
   const keywords = [
-    ...(list.keywords ?? []).map((x) => clean(x)).filter(Boolean) as string[],
+    ...((list.keywords ?? []).map((x) => clean(x)).filter(Boolean) as string[]),
     ...toList(fm.keywords),
     ...toList(fm.schlagworte),
   ];
@@ -269,13 +304,18 @@ export function mapToCanonical(raw: Raw, fallbackTitle: string): CanonicalFrontm
 
     court: cls === "decision" ? pick(fm, "court", "gericht") : null,
     court_code: cls === "decision" ? pick(fm, "court_type") : null,
-    case_number: cls === "decision" ? pick(fm, "case_number", "geschaeftszahl", "Zahl", "Zl", "AZ") : null,
+    case_number:
+      cls === "decision" ? pick(fm, "case_number", "geschaeftszahl", "Zahl", "Zl", "AZ") : null,
     ecli: ecliRaw && RE_ECLI.test(ecliRaw) ? ecliRaw : null,
-    decision_date: cls === "decision"
-      ? toIsoDate(fm.decision_date) ?? toIsoDate(fm.date) ?? toIsoDate(fm.entscheidungsdatum)
-      : null,
-    decision_type: cls === "decision" ? pick(fm, "entscheidungsart", "decision_type", "dokumenttyp") : null,
-    cited_norms: [...toList(fm.normen), ...toList(fm.norms), ...(list.normen ?? [])].filter(Boolean),
+    decision_date:
+      cls === "decision"
+        ? (toIsoDate(fm.decision_date) ?? toIsoDate(fm.date) ?? toIsoDate(fm.entscheidungsdatum))
+        : null,
+    decision_type:
+      cls === "decision" ? pick(fm, "entscheidungsart", "decision_type", "dokumenttyp") : null,
+    cited_norms: [...toList(fm.normen), ...toList(fm.norms), ...(list.normen ?? [])].filter(
+      Boolean
+    ),
 
     legal_area: [...toList(fm.legal_area, /[;,]/), ...toList(fm.indizes, /;/)],
     keywords: [...new Set(keywords)],
@@ -286,7 +326,7 @@ export function mapToCanonical(raw: Raw, fallbackTitle: string): CanonicalFrontm
     retrieved_at: toIsoDate(fm.retrieved_at) ?? toIsoDate(fm.version_date),
     license: clean(fm.license),
     content_hash: clean(fm.content_hash) ?? "",
-    body_hash: "",           // unten gesetzt
+    body_hash: "", // unten gesetzt
     normalized_at: new Date().toISOString().slice(0, 10),
     normalizer_version: NORMALIZER_VERSION,
   };
@@ -296,15 +336,15 @@ export function mapToCanonical(raw: Raw, fallbackTitle: string): CanonicalFrontm
 // Body: NUR Überschriften vereinheitlichen. Normtext bleibt unangetastet.
 // ---------------------------------------------------------------------------
 const SECTION_ALIASES: Record<string, string> = {
-  "entscheidungsgruende": "Entscheidungsgründe",
-  "begründung": "Entscheidungsgründe",
-  "begruendung": "Entscheidungsgründe",
-  "entscheidungstext": "Entscheidungstexte",
-  "geschaeftszahl": "Geschäftszahl",
-  "stammrechtssatz": "Rechtssatz",
-  "leitsatz": "Leitsatz",
-  "ausspruch": "Spruch",
-  "tatbestand": "Sachverhalt",
+  entscheidungsgruende: "Entscheidungsgründe",
+  begründung: "Entscheidungsgründe",
+  begruendung: "Entscheidungsgründe",
+  entscheidungstext: "Entscheidungstexte",
+  geschaeftszahl: "Geschäftszahl",
+  stammrechtssatz: "Rechtssatz",
+  leitsatz: "Leitsatz",
+  ausspruch: "Spruch",
+  tatbestand: "Sachverhalt",
 };
 
 export function normalizeBody(body: string): string {
@@ -315,7 +355,12 @@ export function normalizeBody(body: string): string {
     const canon = SECTION_ALIASES[key];
     return canon ? `${m[1]} ${canon}` : `${m[1]} ${m[2].replace(/\s+/g, " ").trim()}`;
   });
-  return out.join("\n").replace(/\n{4,}/g, "\n\n\n").trimEnd() + "\n";
+  return (
+    out
+      .join("\n")
+      .replace(/\n{4,}/g, "\n\n\n")
+      .trimEnd() + "\n"
+  );
 }
 
 /**
@@ -324,7 +369,12 @@ export function normalizeBody(body: string): string {
  */
 export function assertBodyUnchanged(before: string, after: string): string | null {
   const textOf = (s: string) =>
-    s.split("\n").filter((l) => !/^#{1,6}\s/.test(l)).join("\n").replace(/\s+/g, " ").trim();
+    s
+      .split("\n")
+      .filter((l) => !/^#{1,6}\s/.test(l))
+      .join("\n")
+      .replace(/\s+/g, " ")
+      .trim();
   const a = textOf(before);
   const b = textOf(after);
   if (a === b) return null;
@@ -361,15 +411,25 @@ function walk(dir: string): string[] {
 // in `_normalized/` landet pro Dokument genau die beste Fassung. Ohne
 // unwiderrufliche Aktion — der Rohbestand ist nicht in git.
 // ---------------------------------------------------------------------------
-interface Quality { path: string; chrome: boolean; stub: boolean; substance: number; fields: number }
+interface Quality {
+  path: string;
+  chrome: boolean;
+  stub: boolean;
+  substance: number;
+  fields: number;
+}
 
 const RE_CHROME_Q = /Accesskey \d|Seitenbereiche:|Zur Navigationsleiste|Zum Seitenanfang/;
 const RE_STUB_Q = /Volltext nicht abrufbar/;
 
 function qualityOf(path: string, raw: Raw): Quality {
   const substance = raw.body
-    .split("\n").filter((l) => !/^#{1,6}\s/.test(l)).join(" ")
-    .replace(/https?:\/\/\S+/g, " ").replace(/\s+/g, " ").trim().length;
+    .split("\n")
+    .filter((l) => !/^#{1,6}\s/.test(l))
+    .join(" ")
+    .replace(/https?:\/\/\S+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim().length;
   return {
     path,
     chrome: RE_CHROME_Q.test(raw.body),
@@ -396,22 +456,33 @@ function selectWinners(files: string[]): { winners: Set<string>; dropped: number
   const noId: string[] = [];
   for (const f of files) {
     let raw: Raw;
-    try { raw = parseRaw(readFileSync(f, "utf8")); } catch { continue; }
+    try {
+      raw = parseRaw(readFileSync(f, "utf8"));
+    } catch {
+      continue;
+    }
     const url = clean(raw.fm.source_url) ?? "";
     const id = docIdOf(raw.fm, url);
-    if (!id) { noId.push(f); continue; }
+    if (!id) {
+      noId.push(f);
+      continue;
+    }
     const q = qualityOf(f, raw);
     const cur = best.get(id);
     best.set(id, cur ? betterQ(cur, q) : q);
   }
-  const winners = new Set<string>([...best.values()].map((q) => q.path), );
-  for (const f of noId) winners.add(f);   // ohne ID: nicht gruppierbar, durchlassen
+  const winners = new Set<string>([...best.values()].map((q) => q.path));
+  for (const f of noId) winners.add(f); // ohne ID: nicht gruppierbar, durchlassen
   return { winners, dropped: files.length - winners.size };
 }
 
 interface BatchReport {
-  batch: number; files: number; ok: number; rejected: number;
-  issues: Record<string, number>; samples: { file: string; issues: ValidationIssue[] }[];
+  batch: number;
+  files: number;
+  ok: number;
+  rejected: number;
+  issues: Record<string, number>;
+  samples: { file: string; issues: ValidationIssue[] }[];
 }
 
 function main() {
@@ -435,7 +506,10 @@ function main() {
   // Defekte, die vorher auf null standen. Zwei Implementierungen desselben
   // Vertrags driften auseinander; deshalb gibt es nur noch eine.
   let files = FILE_LIST
-    ? readFileSync(FILE_LIST, "utf8").split("\n").map((l) => l.trim()).filter(Boolean)
+    ? readFileSync(FILE_LIST, "utf8")
+        .split("\n")
+        .map((l) => l.trim())
+        .filter(Boolean)
         .map((p) => (p.startsWith("/") ? p : join(process.cwd(), p)))
         .filter((p) => existsSync(p))
     : walk(srcDir).sort();
@@ -458,28 +532,46 @@ function main() {
   const vorher = files.length;
   files = files.filter((f) => winners.has(f));
   if (FILE_LIST && files.length < vorher) {
-    console.log(`[file-list] ${vorher - files.length} Doubletten der Liste verworfen (Auswahl über den Gesamtkorpus)`);
+    console.log(
+      `[file-list] ${vorher - files.length} Doubletten der Liste verworfen (Auswahl über den Gesamtkorpus)`
+    );
   }
 
   console.log(`Korpus: ${CORPUS}`);
-  console.log(`Dateien: ${totalFiles}   Doubletten übersprungen: ${dropped}   zu normalisieren: ${files.length}`);
+  console.log(
+    `Dateien: ${totalFiles}   Doubletten übersprungen: ${dropped}   zu normalisieren: ${files.length}`
+  );
   console.log(`Batchgröße: ${BATCH}   ${DRY ? "[DRY-RUN — nichts wird geschrieben]" : ""}`);
   console.log("─".repeat(78));
 
-  let processed = 0, totalOk = 0, totalRejected = 0, batchNo = 0;
+  let processed = 0,
+    totalOk = 0,
+    totalRejected = 0,
+    batchNo = 0;
   const globalIssues: Record<string, number> = {};
   const rejects: { file: string; issues: ValidationIssue[] }[] = [];
 
   for (let start = 0; start < files.length; start += BATCH) {
     const slice = files.slice(start, start + BATCH);
     batchNo++;
-    const rep: BatchReport = { batch: batchNo, files: slice.length, ok: 0, rejected: 0, issues: {}, samples: [] };
+    const rep: BatchReport = {
+      batch: batchNo,
+      files: slice.length,
+      ok: 0,
+      rejected: 0,
+      issues: {},
+      samples: [],
+    };
 
     for (const f of slice) {
       const rel = relative(srcDir, f);
       let text: string;
-      try { text = readFileSync(f, "utf8"); }
-      catch { rep.rejected++; continue; }
+      try {
+        text = readFileSync(f, "utf8");
+      } catch {
+        rep.rejected++;
+        continue;
+      }
 
       const raw = parseRaw(text);
       const fallback = rel.replace(/\.md$/, "").replace(/[-/]/g, " ");
@@ -491,7 +583,11 @@ function main() {
       if (drift) {
         rep.rejected++;
         rep.issues["body_drift"] = (rep.issues["body_drift"] ?? 0) + 1;
-        if (rejects.length < 50) rejects.push({ file: rel, issues: [{ field: "body", code: "body_drift", detail: drift }] });
+        if (rejects.length < 50)
+          rejects.push({
+            file: rel,
+            issues: [{ field: "body", code: "body_drift", detail: drift }],
+          });
         continue;
       }
 
@@ -501,8 +597,8 @@ function main() {
       // OGH-Dateien passte kein einziger gespeicherter Hash mehr zum Inhalt
       // (weder Body, Body.trim noch Gesamtdatei). Übernähmen wir sie, trüge
       // das kanonische Format eine Integritätslüge weiter.
-      fm.content_hash = hash16(text.trim());   // Hash der Quelldatei, contentHash()-Semantik
-      fm.body_hash = hash16(newBody);          // Hash des Normtextes
+      fm.content_hash = hash16(text.trim()); // Hash der Quelldatei, contentHash()-Semantik
+      fm.body_hash = hash16(newBody); // Hash des Normtextes
 
       const issues = [...validateCanonical(fm), ...validateBody(newBody, fm.doc_class)];
       if (issues.length) {
@@ -529,9 +625,14 @@ function main() {
     totalRejected += rep.rejected;
 
     const pct = ((rep.ok / rep.files) * 100).toFixed(1);
-    const top = Object.entries(rep.issues).sort((a, b) => b[1] - a[1]).slice(0, 3)
-      .map(([k, n]) => `${k}=${n}`).join("  ");
-    console.log(`Batch ${String(batchNo).padStart(4)}  ${String(rep.ok).padStart(5)}/${String(rep.files).padEnd(5)} ok (${pct.padStart(5)}%)  ${top}`);
+    const top = Object.entries(rep.issues)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([k, n]) => `${k}=${n}`)
+      .join("  ");
+    console.log(
+      `Batch ${String(batchNo).padStart(4)}  ${String(rep.ok).padStart(5)}/${String(rep.files).padEnd(5)} ok (${pct.padStart(5)}%)  ${top}`
+    );
 
     if (!DRY) {
       mkdirSync(STATE_DIR, { recursive: true });
@@ -540,10 +641,14 @@ function main() {
   }
 
   console.log("─".repeat(78));
-  console.log(`GESAMT: ${totalOk}/${processed} normalisiert (${((totalOk / Math.max(processed, 1)) * 100).toFixed(1)}%), ${totalRejected} abgelehnt`);
+  console.log(
+    `GESAMT: ${totalOk}/${processed} normalisiert (${((totalOk / Math.max(processed, 1)) * 100).toFixed(1)}%), ${totalRejected} abgelehnt`
+  );
   if (Object.keys(globalIssues).length) {
     console.log("\nAblehnungsgründe:");
-    for (const [k, n] of Object.entries(globalIssues).sort((a, b) => b[1] - a[1]).slice(0, 20)) {
+    for (const [k, n] of Object.entries(globalIssues)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20)) {
       console.log(`  ${String(n).padStart(7)}  ${k}`);
     }
   }
@@ -551,7 +656,8 @@ function main() {
     console.log("\nBeispiele:");
     for (const r of rejects.slice(0, 5)) {
       console.log(`  ${r.file}`);
-      for (const i of r.issues) console.log(`      ${i.field} · ${i.code} · ${i.detail.slice(0, 90)}`);
+      for (const i of r.issues)
+        console.log(`      ${i.field} · ${i.code} · ${i.detail.slice(0, 90)}`);
     }
   }
 }

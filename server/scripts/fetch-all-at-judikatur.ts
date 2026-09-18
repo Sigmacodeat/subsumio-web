@@ -22,7 +22,6 @@
 import { mkdirSync, writeFileSync, existsSync, readdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
-import { dump as yamlDump } from "js-yaml";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { proxyFetchOptions, getUserAgent } from "./ris-proxy";
 import {
@@ -31,6 +30,14 @@ import {
   stripHtml,
 } from "../src/core/ingestion/connectors/legal-judgements.ts";
 import { stripHtmlComplete } from "./backfill-utils";
+import {
+  buildMarkdown,
+  decisionTypeOf,
+  isAlreadyOnDisk,
+  loadExistingDocs,
+  rememberOnDisk,
+  type JudikaturDoc,
+} from "./judikatur-file";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 const MAX_RETRIES = 3;
@@ -176,19 +183,6 @@ const COURT_CONFIGS: Record<string, CourtConfig> = {
     knownTotal: 742,
   },
 };
-
-interface JudikaturDoc {
-  id: string;
-  court: string;
-  date: string;
-  az: string;
-  ecli?: string;
-  legalArea: string;
-  keywords: string[];
-  text: string;
-  url: string;
-  title: string;
-}
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -380,56 +374,9 @@ function slugify(s: string): string {
   );
 }
 
-function buildMarkdown(doc: JudikaturDoc, courtKey: string): string {
-  const title = `${doc.court} — ${doc.az || "Entscheidung"}`;
-  const frontmatter = yamlDump(
-    {
-      type: "court_decision",
-      jurisdiction: "at",
-      court_type: courtKey,
-      title,
-      court: doc.court,
-      date: doc.date,
-      decision_date: doc.date,
-      ecli: doc.ecli ?? "",
-      case_number: doc.az,
-      legal_area: doc.legalArea,
-      keywords: doc.keywords,
-      source: "ris-ogd",
-      source_url: doc.url,
-    },
-    { lineWidth: -1, noRefs: true }
-  ).trimEnd();
-
-  const text = doc.text || "*Volltext nicht abrufbar — siehe Quelle.*";
-
-  return `---
-${frontmatter}
----
-
-# ${title}
-
-${text}
-
----
-*Quelle: [RIS-OGD](${doc.url})*
-`;
-}
-
 function countExistingFiles(outDir: string): number {
   if (!existsSync(outDir)) return 0;
   return readdirSync(outDir).filter((f) => f.endsWith(".md")).length;
-}
-
-function loadExistingIds(outDir: string): Set<string> {
-  const ids = new Set<string>();
-  if (!existsSync(outDir)) return ids;
-  for (const file of readdirSync(outDir)) {
-    if (!file.endsWith(".md")) continue;
-    // Extract ID from filename: YYYY-MM-DD-slug.md → use full filename as dedup key
-    ids.add(file.replace(".md", ""));
-  }
-  return ids;
 }
 
 // ── Fetch total hits from API ──────────────────────────────────────────
@@ -463,8 +410,10 @@ async function fullScanCourt(
   const outDir = join(CORPUS_ROOT, court.outDir);
   mkdirSync(outDir, { recursive: true });
 
-  const existingIds = loadExistingIds(outDir);
-  const existingCount = existingIds.size;
+  // Recognises every naming generation on disk (see judikatur-file.ts), so a
+  // full scan never fetches a decision a second time under a new file name.
+  const existing = loadExistingDocs(outDir);
+  const existingCount = existing.fileKeys.size;
   const toYear = new Date().getFullYear();
   const years: number[] = [];
   for (let y = toYear; y >= fromYear; y--) years.push(y);
@@ -524,12 +473,12 @@ async function fullScanCourt(
         const slugAz = slugify(item.az || id);
         const fileKey = `${slugDate}-${slugAz}`;
 
-        if (existingIds.has(fileKey)) {
+        if (isAlreadyOnDisk(existing, id, item.url, fileKey, slugAz)) {
           totalSkipped++;
           yearSkipped++;
           continue;
         }
-        existingIds.add(fileKey);
+        rememberOnDisk(existing, id, item.url, fileKey, slugAz);
         totalFetched++;
         yearCount++;
 
@@ -547,6 +496,8 @@ async function fullScanCourt(
           ecli: item.ecli,
           legalArea: item.legalArea,
           keywords: item.keywords,
+          normen: item.normen ?? [],
+          decisionType: decisionTypeOf(ref),
           text: fullText,
           url: item.url,
           title: item.title,
