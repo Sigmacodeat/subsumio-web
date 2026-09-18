@@ -34,6 +34,7 @@
  *   - SIGINT handler saves cursor before exit
  */
 
+import { docIdFromContent, loadActiveDocSlugs, resolveSlug } from "./doc-identity.ts";
 import { parseArgs } from "util";
 import { readdirSync, readFileSync, existsSync, statSync } from "fs";
 import { join, extname, resolve } from "path";
@@ -435,6 +436,10 @@ async function main() {
   );
   console.log(`Source '${SOURCE_ID}' ensured (jurisdiction: ${jurisdiction}).`);
 
+  // A document already in the brain under another file name keeps its page.
+  const knownDocs = await loadActiveDocSlugs(engine, SOURCE_ID);
+  console.log(`${knownDocs.size} bekannte Dokumente in '${SOURCE_ID}'.`);
+
   // SIGINT handler — save cursor before exit
   let interrupted = false;
   const sigintHandler = async () => {
@@ -462,7 +467,7 @@ async function main() {
     if (interrupted) break;
 
     const filePath = toImport[i];
-    const slug = deriveSlug(filePath, SOURCE_ID, SLUG_PREFIX, diskPath);
+    let slug = deriveSlug(filePath, SOURCE_ID, SLUG_PREFIX, diskPath);
 
     try {
       const stats = statSync(filePath);
@@ -477,6 +482,9 @@ async function main() {
         continue;
       }
       const content = readFileSync(filePath, "utf-8");
+      const docId = docIdFromContent(content);
+      slug = resolveSlug(knownDocs, docId, slug);
+      if (docId && !knownDocs.has(docId)) knownDocs.set(docId, slug);
       if (content.trim().length === 0) {
         batchSkipped++;
         cursor.totalSkipped++;

@@ -130,7 +130,31 @@ interface SimpleSource {
   key: string;
   dir: string;
   sourceId: string;
-  importCmd: string[]; // argv after "bun"
+  /** argv after "bun"; null = never imported automatically. */
+  importCmd: string[] | null;
+}
+
+/**
+ * Every import goes through the normalization gate: raw → _normalized (with
+ * validator) → database. The import command must read from _normalized.
+ */
+function viaNormalized(corpus: string, importArgv: string[]): string[] {
+  return ["scripts/normalized-import.ts", "--corpus", corpus, "--", ...importArgv];
+}
+
+/**
+ * Only these jurisdictions are imported automatically. The DE/CH/EU pages were
+ * deliberately soft-deleted (Austria first); importing their files again would
+ * silently bring them back. Override with PIPELINE_JURISDICTIONS=at,de,…
+ */
+const IMPORT_JURISDICTIONS = (process.env.PIPELINE_JURISDICTIONS ?? "at")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+function importAllowed(sourceId: string): boolean {
+  return IMPORT_JURISDICTIONS.some(
+    (j) => sourceId === `law-${j}` || sourceId.startsWith(`law-${j}-`)
+  );
 }
 
 const JUDIKATUR: JudikaturSource[] = [
@@ -233,7 +257,10 @@ const SIMPLE: SimpleSource[] = [
     key: "statutes-at",
     dir: "at",
     sourceId: "law-at",
-    importCmd: ["scripts/import-statutes-split.ts", "--auto-at", "--no-embed"],
+    // Federal law comes paragraph by paragraph from at-normen (normen-at).
+    // Splitting the 83 whole-statute files here again produced raw-format
+    // duplicates of those paragraphs.
+    importCmd: null,
   },
   {
     // at-normen: Bundesrecht konsolidiert (BrKons) — 10.467 Dateien in
@@ -246,16 +273,18 @@ const SIMPLE: SimpleSource[] = [
     kind: "dirimport",
     key: "normen-at",
     dir: "at-normen",
-    sourceId: "law-at",
-    importCmd: [
+    // The paragraphs live in law-at-normen (147k pages). Importing them into
+    // law-at created a second copy of each one.
+    sourceId: "law-at-normen",
+    importCmd: viaNormalized("at-normen", [
       "scripts/batch-import-from-disk.ts",
       "--source",
-      "law-at",
+      "law-at-normen",
       "--disk-dir",
-      "law-corpus/at-normen",
+      "law-corpus/_normalized/at-normen",
       "--slug-from-path",
       "--no-embed",
-    ],
+    ]),
   },
   {
     kind: "statutes",
@@ -276,28 +305,28 @@ const SIMPLE: SimpleSource[] = [
     key: "landesrecht",
     dir: "at-landesrecht",
     sourceId: "law-at-landesrecht",
-    importCmd: [
+    importCmd: viaNormalized("at-landesrecht", [
       "src/cli.ts",
       "import",
-      "../law-corpus/at-landesrecht",
+      "../law-corpus/_normalized/at-landesrecht",
       "--source-id",
       "law-at-landesrecht",
       "--no-embed",
-    ],
+    ]),
   },
   {
     kind: "dirimport",
     key: "staatsvertraege",
     dir: "at-staatsvertraege",
     sourceId: "law-at-staatsvertraege",
-    importCmd: [
+    importCmd: viaNormalized("at-staatsvertraege", [
       "src/cli.ts",
       "import",
-      "../law-corpus/at-staatsvertraege",
+      "../law-corpus/_normalized/at-staatsvertraege",
       "--source-id",
       "law-at-staatsvertraege",
       "--no-embed",
-    ],
+    ]),
   },
   // Literatur + Gesetzesmaterialien (Phase 1: freie/CC-lizenzierte Quellen;
   // Lizenzgates leben in den fetch-Scripts via checkStaticCompliance).
@@ -1702,7 +1731,9 @@ async function cycle(): Promise<void> {
       const { stage, action } =
         stats.files === 0
           ? { stage: "empty", action: "kein Korpus auf Disk — fetch zuerst" }
-          : importStage(src.key, src.dir, src.importCmd);
+          : !src.importCmd || !importAllowed(src.sourceId)
+            ? { stage: "done", action: "kein automatischer Import" }
+            : importStage(src.key, src.dir, src.importCmd);
 
       // Update DB with measurements
       updateSourceState(src.key, {
@@ -1894,7 +1925,14 @@ async function cycle(): Promise<void> {
         const r = importStage(
           judKey,
           src.dir,
-          ["scripts/import-judikatur.ts", "--source", src.key, "--no-embed", "--skip-placeholders"],
+          viaNormalized(src.dir, [
+            "scripts/import-judikatur.ts",
+            "--source",
+            src.key,
+            "--no-embed",
+            "--skip-placeholders",
+            "--from-normalized",
+          ]),
           7200
         );
         stage = r.stage;

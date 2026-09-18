@@ -141,11 +141,11 @@ async function main() {
   if (DRY_RUN) {
     const countResult = SOURCE_FILTER
       ? await engine.executeRaw(
-          `SELECT count(*) as cnt FROM content_chunks c JOIN pages p ON c.page_id = p.id WHERE c.embedding IS NULL AND p.source_id = $1`,
+          `SELECT count(*) as cnt FROM content_chunks c JOIN pages p ON c.page_id = p.id WHERE c.embedding IS NULL AND p.deleted_at IS NULL AND p.source_id = $1`,
           [SOURCE_FILTER]
         )
       : await engine.executeRaw(
-          `SELECT count(*) as cnt FROM content_chunks WHERE embedding IS NULL`
+          `SELECT count(*) as cnt FROM content_chunks c JOIN pages p ON c.page_id = p.id WHERE c.embedding IS NULL AND p.deleted_at IS NULL`
         );
     const pendingCount = Number((countResult[0] as { cnt: number }).cnt);
     console.log(
@@ -175,13 +175,14 @@ async function main() {
              JOIN pages p ON c.page_id = p.id
              WHERE c.embedding IS NULL
                AND p.source_id = $4
+               AND p.deleted_at IS NULL
                AND (
                  c.model NOT LIKE 'embedding-claim:%'
                  OR c.embedded_at IS NULL
                  OR c.embedded_at < now() - ($3::int * interval '1 minute')
                )
              ORDER BY c.id
-             FOR UPDATE SKIP LOCKED
+             FOR UPDATE OF c SKIP LOCKED
              LIMIT $1
            )
            UPDATE content_chunks AS c
@@ -193,16 +194,20 @@ async function main() {
         )
       : await engine.executeRaw(
           `WITH candidates AS (
-             SELECT id
-             FROM content_chunks
-             WHERE embedding IS NULL
+             -- Chunks of deleted pages are never searched; embedding them is
+             -- paid work thrown away.
+             SELECT c.id
+             FROM content_chunks c
+             JOIN pages p ON c.page_id = p.id
+             WHERE c.embedding IS NULL
+               AND p.deleted_at IS NULL
                AND (
-                 model NOT LIKE 'embedding-claim:%'
-                 OR embedded_at IS NULL
-                 OR embedded_at < now() - ($3::int * interval '1 minute')
+                 c.model NOT LIKE 'embedding-claim:%'
+                 OR c.embedded_at IS NULL
+                 OR c.embedded_at < now() - ($3::int * interval '1 minute')
                )
-             ORDER BY id
-             FOR UPDATE SKIP LOCKED
+             ORDER BY c.id
+             FOR UPDATE OF c SKIP LOCKED
              LIMIT $1
            )
            UPDATE content_chunks AS c

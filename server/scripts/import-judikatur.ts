@@ -35,6 +35,7 @@ import { join } from "path";
 import { extractAllNormReferences } from "../src/core/legal/judikatur-citations.ts";
 import { extractMultiJurisdictionNormReferences } from "../src/core/legal/multi-jurisdiction-citations.ts";
 import { createProgress } from "../src/core/progress.ts";
+import { docIdFromContent, loadActiveDocSlugs, resolveSlug } from "./doc-identity.ts";
 
 const args = process.argv.slice(2);
 const DRY = args.includes("--dry-run");
@@ -51,6 +52,9 @@ const sourceKey = sourceIdx >= 0 ? args[sourceIdx + 1] : "ogh";
 // noise and block the content-hash update path. The --skip-placeholders flag is
 // kept for backwards compatibility but is now a no-op (default: true).
 const SKIP_PLACEHOLDERS = true;
+// Read the canonical-schema files from law-corpus/_normalized/<dir> instead of
+// the raw fetch output. The corpus pipeline always passes this.
+const FROM_NORMALIZED = args.includes("--from-normalized");
 
 interface SourceConfig {
   dir: string;
@@ -262,6 +266,8 @@ const JUDIKATUR_CODE_MAP: Record<string, string> = {
 
 interface ParsedDecision {
   slug: string;
+  /** RIS document number; the page that already carries it gets updated. */
+  docId: string | null;
   content: string;
   normRefs: Array<{ code: string; ref: string; statuteSlug?: string }>;
 }
@@ -271,9 +277,8 @@ function loadDecisions(srcCfg: SourceConfig): ParsedDecision[] {
   // The old server/law-corpus/ fallback was removed — it was a stale duplicate
   // that caused ~30k orphaned DB pages with non-standard slugs.
   const corpusRoot = process.env.LAW_CORPUS_ROOT;
-  const dir = corpusRoot
-    ? join(corpusRoot, srcCfg.dir)
-    : join(import.meta.dir, "..", "..", "law-corpus", srcCfg.dir);
+  const root = corpusRoot ?? join(import.meta.dir, "..", "..", "law-corpus");
+  const dir = FROM_NORMALIZED ? join(root, "_normalized", srcCfg.dir) : join(root, srcCfg.dir);
   const files = readdirSync(dir)
     .filter((f) => f.endsWith(".md"))
     .slice(OFFSET, OFFSET + LIMIT);
@@ -308,9 +313,11 @@ function loadDecisions(srcCfg: SourceConfig): ParsedDecision[] {
     } else {
       normRefs = extractMultiJurisdictionNormReferences(content, jurisdiction);
     }
-    decisions.push({ slug, content, normRefs });
+    decisions.push({ slug, docId: docIdFromContent(content), content, normRefs });
     if ((fi + 1) % 500 === 0 || fi + 1 === files.length) {
-      process.stderr.write(`\r  [${srcCfg.label}] ${fi + 1}/${files.length} geladen (${decisions.length} gültig, ${skippedPlaceholders} Platzhalter)`);
+      process.stderr.write(
+        `\r  [${srcCfg.label}] ${fi + 1}/${files.length} geladen (${decisions.length} gültig, ${skippedPlaceholders} Platzhalter)`
+      );
     }
   }
   process.stderr.write(`\n`);
@@ -383,11 +390,22 @@ async function main() {
   console.log("  Engine verbunden ✅");
   console.log("");
 
-  for (const { srcCfg } of allDecisions) {
+  for (const { srcCfg, decisions } of allDecisions) {
     await engine.executeRaw(
       `INSERT INTO sources (id, name) VALUES ($1, $1) ON CONFLICT (id) DO NOTHING`,
       [srcCfg.sourceId]
     );
+    // A decision already in the brain under another file name keeps its page.
+    const known = await loadActiveDocSlugs(engine, srcCfg.sourceId);
+    let reused = 0;
+    for (const d of decisions) {
+      const slug = resolveSlug(known, d.docId, d.slug);
+      if (slug !== d.slug) reused++;
+      d.slug = slug;
+      // A second file for the same document in this run lands on the same page.
+      if (d.docId && !known.has(d.docId)) known.set(d.docId, slug);
+    }
+    console.log(`  [${srcCfg.label}] ${reused} Entscheidungen auf bestehende Seiten abgebildet`);
   }
 
   const progress = createProgress({ mode: (process.env.PROGRESS_MODE as any) || "human" });
@@ -477,7 +495,9 @@ async function main() {
         progress.tick(1, `${srcCfg.label} ${pagesOk}`);
         if (globalIdx % 10 === 0 || globalIdx === decisions.length) {
           const pct = ((globalIdx / decisions.length) * 100).toFixed(1);
-          process.stderr.write(`\r  📊 ${srcCfg.label}: ${globalIdx}/${decisions.length} (${pct}%) | ✅ ${pagesOk} | ❌ ${pagesErr} | 🔗 ${linksWritten}          `);
+          process.stderr.write(
+            `\r  📊 ${srcCfg.label}: ${globalIdx}/${decisions.length} (${pct}%) | ✅ ${pagesOk} | ❌ ${pagesErr} | 🔗 ${linksWritten}          `
+          );
         }
       }
 
