@@ -24,7 +24,7 @@ import type {
   TabularReviewStartRequest,
   TabularReviewStartResponse,
 } from "./types";
-import type { GroundingMetadata } from "./citation-gate-client";
+import type { CitationSupportResult, GroundingMetadata } from "./citation-gate-client";
 import type { NormReading } from "./legal-grounding";
 import type { SourceRegistryResponse } from "./source-registry";
 import type { QueryMode } from "./matter-context-types";
@@ -766,6 +766,17 @@ export const api = {
       return request("/api/legal/ground", {
         method: "POST",
         body: JSON.stringify({ text }),
+      });
+    },
+
+    /** Second grounding stage: does each verified source carry its statement? */
+    support(
+      text: string,
+      jurisdiction?: "at" | "de" | "ch"
+    ): Promise<{ results: CitationSupportResult[]; checked_at: string }> {
+      return request("/api/legal/support", {
+        method: "POST",
+        body: JSON.stringify({ text, ...(jurisdiction ? { jurisdiction } : {}) }),
       });
     },
 

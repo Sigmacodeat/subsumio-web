@@ -60,6 +60,21 @@ interface CitationPanelProps {
 
 // ── Main Component ────────────────────────────────────────────────────
 
+const SUPPORT_STYLE: Record<
+  "supported" | "partial" | "unsupported",
+  { label: string; cls: string }
+> = {
+  supported: { label: "Trägt die Aussage", cls: "text-[color:var(--ds-success-text)]" },
+  partial: {
+    label: "Trägt die Aussage nur teilweise",
+    cls: "text-[color:var(--ds-warning-text)]",
+  },
+  unsupported: {
+    label: "Trägt die Aussage nicht",
+    cls: "text-[color:var(--ds-danger-text)]",
+  },
+};
+
 export function CitationPanel({ data, compact = false, className }: CitationPanelProps) {
   const { lang } = useLang();
   const [expanded, setExpanded] = useState(!compact);
@@ -74,6 +89,11 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
   const hasCitations = (data.citations?.length ?? 0) > 0;
   const hasGaps = (data.gaps?.length ?? 0) > 0;
   const hasGroundedCitations = (data.grounding?.grounded_citations?.length ?? 0) > 0;
+  const misgrounded = (data.grounding?.grounded_citations ?? [])
+    .filter((gc) => gc.verified && gc.support === "unsupported")
+    .map((gc) =>
+      gc.category === "judikatur" ? `${gc.code} ${gc.paragraph}` : `${gc.paragraph} ${gc.code}`
+    );
   const showAnything = hasCitations || hasGaps || hasGroundingData || !data.isStreaming;
 
   if (!showAnything && data.isStreaming) return null;
@@ -169,6 +189,22 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
         )}
       </div>
 
+      {/* Misgrounded: a real source cited for a statement it does not carry. */}
+      {misgrounded.length > 0 && (
+        <div
+          role="alert"
+          className="mx-4 mt-2 flex items-start gap-2 rounded-md border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2 text-xs text-[color:var(--ds-danger-text)]"
+        >
+          <ShieldAlert size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <span>
+            {misgrounded.length === 1
+              ? "Eine zitierte Quelle trägt die Aussage nicht, für die sie angeführt wird: "
+              : `${misgrounded.length} zitierte Quellen tragen die Aussage nicht, für die sie angeführt werden: `}
+            <strong>{misgrounded.join(", ")}</strong>. Diese Stellen vor Verwendung prüfen.
+          </span>
+        </div>
+      )}
+
       {/* Unverified citation warning */}
       {data.grounding?.has_unverified && data.grounding.warning && (
         <div className="mt-2 flex items-start gap-2 rounded-md border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]">
@@ -212,6 +248,19 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
                         grounding={gc}
                         className="text-xs"
                       />
+                      {gc.verified && gc.support && gc.support !== "unchecked" && (
+                        <p
+                          className={cn(
+                            "mt-0.5 text-xs font-medium",
+                            SUPPORT_STYLE[gc.support].cls
+                          )}
+                        >
+                          {SUPPORT_STYLE[gc.support].label}
+                          {gc.support_reason && (
+                            <span className="font-normal"> — {gc.support_reason}</span>
+                          )}
+                        </p>
+                      )}
                       {gc.verified && gc.source_text && (
                         <p className="mt-0.5 line-clamp-2 text-xs text-[color:var(--ds-text-subtle)]">
                           {gc.source_text}

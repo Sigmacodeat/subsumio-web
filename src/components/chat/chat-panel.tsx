@@ -84,7 +84,8 @@ import { ChatInput } from "@/components/chat/chat-input";
 import { SubsumptionPanel } from "@/components/chat/subsumption-panel";
 import { ChatMessageBubble } from "@/components/chat/chat-message";
 import { ChatEmptyState } from "@/components/chat/chat-empty-state";
-import { useGroundedAnswer } from "@/lib/use-grounded-answer";
+import { useGroundedAnswer, withSupportCheck } from "@/lib/use-grounded-answer";
+import type { GroundingMetadata } from "@/lib/citation-gate-client";
 import type { TFunc } from "@/content/dashboard";
 import type { ReactNode } from "react";
 
@@ -1172,23 +1173,28 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         // Uses the stream gate's result, else /api/legal/ground via useGroundedAnswer.
         // The stream's citation gate usually grounded it already (one pass on
         // the server); only fall back to the ground route when it did not.
-        (result._grounding ? Promise.resolve(result._grounding) : groundAnswer(cleanAnswer))
-          .then((grounding) => {
-            if (!grounding) return;
+        const applyGrounding = (grounding: GroundingMetadata) => {
+          setMessages((m) => {
+            const last = m[m.length - 1];
+            if (!last || last.role !== "assistant" || last.id !== assistantMsg.id) return m;
+            return [...m.slice(0, -1), { ...last, grounding }];
+          });
+          if (persistHistory && activeSessionId) {
             setMessages((m) => {
               const last = m[m.length - 1];
-              if (!last || last.role !== "assistant" || last.id !== assistantMsg.id) return m;
-              const updated = { ...last, grounding };
-              return [...m.slice(0, -1), updated];
+              if (!last || last.id !== assistantMsg.id) return m;
+              saveMessage(activeSessionId, { ...last, grounding });
+              return m;
             });
-            if (persistHistory && activeSessionId) {
-              setMessages((m) => {
-                const last = m[m.length - 1];
-                if (!last || last.id !== assistantMsg.id) return m;
-                saveMessage(activeSessionId, { ...last, grounding });
-                return m;
-              });
-            }
+          }
+        };
+        (result._grounding ? Promise.resolve(result._grounding) : groundAnswer(cleanAnswer))
+          .then(async (grounding) => {
+            if (!grounding) return;
+            applyGrounding(grounding);
+            // Second stage: does each verified source carry its statement?
+            const checked = await withSupportCheck(cleanAnswer, grounding);
+            if (checked !== grounding) applyGrounding(checked);
           })
           .catch(() => {
             // Grounding failure is non-fatal — the answer is still displayed
@@ -1764,23 +1770,28 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         // variant that inherits the original's grounding).
         // The stream's citation gate usually grounded it already (one pass on
         // the server); only fall back to the ground route when it did not.
-        (result._grounding ? Promise.resolve(result._grounding) : groundAnswer(cleanRegenAnswer))
-          .then((grounding) => {
-            if (!grounding) return;
+        const applyGrounding = (grounding: GroundingMetadata) => {
+          setMessages((m) => {
+            const last = m[m.length - 1];
+            if (!last || last.role !== "assistant" || last.id !== assistantMsg.id) return m;
+            return [...m.slice(0, -1), { ...last, grounding }];
+          });
+          if (persistHistory && activeSessionId) {
             setMessages((m) => {
               const last = m[m.length - 1];
-              if (!last || last.role !== "assistant" || last.id !== assistantMsg.id) return m;
-              const updated = { ...last, grounding };
-              return [...m.slice(0, -1), updated];
+              if (!last || last.id !== assistantMsg.id) return m;
+              saveMessage(activeSessionId, { ...last, grounding });
+              return m;
             });
-            if (persistHistory && activeSessionId) {
-              setMessages((m) => {
-                const last = m[m.length - 1];
-                if (!last || last.id !== assistantMsg.id) return m;
-                saveMessage(activeSessionId, { ...last, grounding });
-                return m;
-              });
-            }
+          }
+        };
+        (result._grounding ? Promise.resolve(result._grounding) : groundAnswer(cleanRegenAnswer))
+          .then(async (grounding) => {
+            if (!grounding) return;
+            applyGrounding(grounding);
+            // Second stage: does each verified source carry its statement?
+            const checked = await withSupportCheck(cleanRegenAnswer, grounding);
+            if (checked !== grounding) applyGrounding(checked);
           })
           .catch(() => {
             // Grounding failure is non-fatal — the answer is still displayed

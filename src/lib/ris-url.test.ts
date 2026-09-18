@@ -144,3 +144,20 @@ describe("EUR-Lex links", () => {
     expect(isOfficialUrl("https://example.com/")).toBe(false);
   });
 });
+
+describe("linkCitationsInHtml — misgrounded citations", () => {
+  test("keeps the link but marks it and says why in the title", async () => {
+    const { linkCitationsInHtml } = await import("@/lib/citation-gate-client");
+    const out = linkCitationsInHtml("<p>Nach § 879 ABGB verjährt es.</p>", [
+      {
+        code: "ABGB",
+        paragraph: "§ 879",
+        verified: true,
+        support: "unsupported",
+        source_url: "https://www.ris.bka.gv.at/NormDokument.wxe?Paragraf=879",
+      },
+    ]);
+    expect(out).toContain('class="citation-official citation-misgrounded"');
+    expect(out).toContain('title="Achtung: diese Norm trägt die Aussage nicht"');
+  });
+});

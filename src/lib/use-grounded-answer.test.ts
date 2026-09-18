@@ -7,6 +7,7 @@ vi.mock("@/lib/api", () => ({
   api: {
     legal: {
       ground: vi.fn(),
+      support: vi.fn().mockResolvedValue({ results: [], checked_at: "" }),
     },
   },
 }));
@@ -29,6 +30,7 @@ vi.mock("react", () => {
       return [stateRef.current, setState];
     },
     useCallback: <T extends (...args: unknown[]) => unknown>(fn: T): T => fn,
+    useRef: <T>(initial: T) => ({ current: initial }),
   };
 });
 
@@ -107,5 +109,47 @@ describe("useGroundedAnswer", () => {
     const result = await groundAnswer("§ 433 BGB");
 
     expect(result).toBeNull();
+  });
+});
+
+describe("withSupportCheck (second grounding stage)", () => {
+  const base: GroundingMetadata = {
+    citations_verified: 1,
+    citations_unverified: 1,
+    corpus_checked: true,
+    analyzed_at: "",
+    has_unverified: true,
+    grounded_citations: [
+      { code: "ABGB", paragraph: "§ 1295", verified: true },
+      { code: "ABGB", paragraph: "§ 9999", verified: false },
+    ],
+  };
+
+  test("folds the verdicts into the verified citations and counts misgrounded ones", async () => {
+    const { withSupportCheck } = await import("@/lib/use-grounded-answer");
+    vi.mocked(api.legal.support).mockResolvedValueOnce({
+      results: [
+        { code: "ABGB", paragraph: "§ 1295", support: "unsupported", support_reason: "regelt X" },
+      ],
+      checked_at: "",
+    });
+    const out = await withSupportCheck("Nach § 1295 ABGB …", base);
+    expect(out.support_checked).toBe(true);
+    expect(out.citations_misgrounded).toBe(1);
+    expect(out.grounded_citations[0]).toMatchObject({
+      support: "unsupported",
+      support_reason: "regelt X",
+    });
+    expect(out.grounded_citations[1].support).toBeUndefined();
+  });
+
+  test("skips the call when nothing is verified, and never throws", async () => {
+    const { withSupportCheck } = await import("@/lib/use-grounded-answer");
+    const none = { ...base, grounded_citations: [base.grounded_citations[1]] };
+    vi.mocked(api.legal.support).mockClear();
+    expect(await withSupportCheck("x", none)).toBe(none);
+    expect(api.legal.support).not.toHaveBeenCalled();
+    vi.mocked(api.legal.support).mockRejectedValueOnce(new Error("down"));
+    expect(await withSupportCheck("x", base)).toBe(base);
   });
 });

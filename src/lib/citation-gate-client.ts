@@ -116,6 +116,13 @@ function replaceInText(
     .join("");
 }
 
+/** Misgrounded citations keep their link but are marked in the text itself. */
+function citationClass(gc: GroundedCitation): string {
+  return gc.support === "unsupported"
+    ? "citation-official citation-misgrounded"
+    : "citation-official";
+}
+
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
 }
@@ -159,7 +166,7 @@ export function linkCitationsInHtml(html: string, grounded: GroundedCitation[]):
       const data =
         ` data-code="${escapeAttr(gc.code)}" data-paragraph="${escapeAttr(gc.paragraph)}"` +
         (gc.jurisdiction ? ` data-jurisdiction="${escapeAttr(gc.jurisdiction)}"` : "");
-      return `<a href="${escapeAttr(gc.source_url!)}" target="_blank" rel="noopener noreferrer" class="citation-official"${data} title="Normtext anzeigen">${m}</a>`;
+      return `<a href="${escapeAttr(gc.source_url!)}" target="_blank" rel="noopener noreferrer" class="${citationClass(gc)}"${data} title="${gc.support === "unsupported" ? "Achtung: diese Norm trägt die Aussage nicht" : "Normtext anzeigen"}">${m}</a>`;
     });
   }
   for (const gc of cases) {
@@ -168,7 +175,7 @@ export function linkCitationsInHtml(html: string, grounded: GroundedCitation[]):
       out,
       rx,
       (m) =>
-        `<a href="${escapeAttr(gc.source_url!)}" target="_blank" rel="noopener noreferrer" class="citation-official" title="${gc.code === "RIS-Justiz" ? "Rechtssatz" : `${escapeAttr(gc.code)}-Entscheidung`} im RIS öffnen">${m}</a>`
+        `<a href="${escapeAttr(gc.source_url!)}" target="_blank" rel="noopener noreferrer" class="${citationClass(gc)}" title="${gc.support === "unsupported" ? "Achtung: diese Entscheidung trägt die Aussage nicht" : `${gc.code === "RIS-Justiz" ? "Rechtssatz" : `${escapeAttr(gc.code)}-Entscheidung`} im RIS öffnen`}">${m}</a>`
     );
   }
   return out;
@@ -303,6 +310,35 @@ export interface GroundingMetadata {
   analyzed_at: string;
   has_unverified: boolean;
   warning?: string;
+  /** Second stage ran: each verified citation carries a `support` verdict. */
+  support_checked?: boolean;
+  /** Verified sources that do NOT carry the statement they are cited for. */
+  citations_misgrounded?: number;
+}
+
+export interface CitationSupportResult {
+  code: string;
+  paragraph: string;
+  support: NonNullable<GroundedCitation["support"]>;
+  support_reason?: string;
+}
+
+/** Fold the support-check verdicts into grounding metadata (pure, keyed by code + paragraph). */
+export function mergeSupport(
+  grounding: GroundingMetadata,
+  results: CitationSupportResult[]
+): GroundingMetadata {
+  const byKey = new Map(results.map((r) => [`${r.code}#${r.paragraph}`, r]));
+  const grounded_citations = grounding.grounded_citations.map((gc) => {
+    const r = gc.verified ? byKey.get(`${gc.code}#${gc.paragraph}`) : undefined;
+    return r ? { ...gc, support: r.support, support_reason: r.support_reason } : gc;
+  });
+  return {
+    ...grounding,
+    grounded_citations,
+    support_checked: true,
+    citations_misgrounded: grounded_citations.filter((gc) => gc.support === "unsupported").length,
+  };
 }
 
 // ── JSON response text extraction ─────────────────────────────────────

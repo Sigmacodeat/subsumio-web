@@ -24,7 +24,15 @@ function citationLine(
     gc.category === "judikatur" ? `${gc.code} ${gc.paragraph}` : `${gc.paragraph} ${gc.code}`;
   if (gc.verified) {
     const link = isOfficialUrl(gc.source_url) ? ` — [amtliche Quelle](${gc.source_url})` : "";
-    return `- ✓ ${name} (im Rechtskorpus verifiziert)${link}`;
+    const why = gc.support_reason ? `: ${gc.support_reason}` : "";
+    if (gc.support === "unsupported") {
+      return `- ✗ ${name} (existiert, trägt die Aussage aber nicht${why} — bitte prüfen)${link}`;
+    }
+    if (gc.support === "partial") {
+      return `- ◐ ${name} (existiert, trägt die Aussage nur teilweise${why})${link}`;
+    }
+    const carries = gc.support === "supported" ? ", trägt die Aussage" : "";
+    return `- ✓ ${name} (im Rechtskorpus verifiziert${carries})${link}`;
   }
   const search = isOfficialUrl(gc.search_url) ? ` — [im RIS suchen](${gc.search_url})` : "";
   return `- ⚠ ${name} (nicht verifiziert — bitte prüfen)${search}`;

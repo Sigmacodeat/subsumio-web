@@ -2205,6 +2205,16 @@ a.citation-official::after {
     padding-right: 440px;
   }
 }
+/* A real source cited for a statement it does not carry: stay readable,
+   but impossible to miss. */
+a.citation-official.citation-misgrounded {
+  text-decoration-style: wavy;
+  text-decoration-color: var(--ds-danger-text);
+}
+a.citation-official.citation-misgrounded::after {
+  content: "\26A0";
+  color: var(--ds-danger-text);
+}
 a.citation-official:hover,
 a.citation-official:focus-visible {
   color: var(--brand-primary);

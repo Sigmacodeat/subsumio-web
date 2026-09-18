@@ -428,6 +428,10 @@ export interface GroundedCitation {
   source_url?: string;
   /** RIS search for a citation we could not resolve (case law). */
   search_url?: string;
+  /** Does the source carry the statement it is cited for? (second grounding stage) */
+  support?: "supported" | "partial" | "unsupported" | "unchecked";
+  /** One-sentence reason for the support verdict. */
+  support_reason?: string;
   unverifiable_reason?: string;
   category?:
     | "statute"
