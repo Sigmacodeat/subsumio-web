@@ -337,6 +337,9 @@ services:
     volumes:
       # law-corpus — bind mount to host directory where fetch scripts placed files
       - ${LAW_CORPUS_HOST_DIR:-/opt/subsumio-data/law-corpus}:/law-corpus
+      # The import and backfill jobs the pipeline starts get relative paths
+      # (law-corpus/<dir>) and run from /app, so the corpus is needed here too.
+      - ${LAW_CORPUS_HOST_DIR:-/opt/subsumio-data/law-corpus}:/app/law-corpus
       # Pipeline logs
       - corpus-logs:/root/subsumio-pipeline-logs
       # Engine data (for gbrain config.json at /data/.gbrain/config.json)
