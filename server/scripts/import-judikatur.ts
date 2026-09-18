@@ -285,6 +285,7 @@ function loadDecisions(srcCfg: SourceConfig): ParsedDecision[] {
   console.log(`  [${srcCfg.label}] ${files.length} Dateien gefunden, lade...`);
   const decisions: ParsedDecision[] = [];
   let skippedPlaceholders = 0;
+  let skippedScreenreader = 0;
   for (let fi = 0; fi < files.length; fi++) {
     const f = files[fi];
     const content = readFileSync(join(dir, f), "utf-8");
@@ -295,6 +296,14 @@ function loadDecisions(srcCfg: SourceConfig): ParsedDecision[] {
     // the text in, so skipping here loses nothing.
     if (SKIP_PLACEHOLDERS && content.includes("Volltext nicht abrufbar")) {
       skippedPlaceholders++;
+      continue;
+    }
+    // Same rule as the normalizer's screenreader_copy gate, for canonical files
+    // written before that rule existed: the whole decision a second time in
+    // spoken form. Importing it would overwrite the clean page for the same
+    // document. It waits for its XML refetch instead.
+    if (/\brömisch 40\b/.test(content)) {
+      skippedScreenreader++;
       continue;
     }
     const slug = `${srcCfg.slugPrefix}/${f.replace(/\.md$/, "")}`;
@@ -321,6 +330,11 @@ function loadDecisions(srcCfg: SourceConfig): ParsedDecision[] {
     }
   }
   process.stderr.write(`\n`);
+  if (skippedScreenreader > 0) {
+    console.log(
+      `  [${srcCfg.label}] ${skippedScreenreader} Dateien mit Sprachausgabe-Kopie übersprungen (warten auf XML-Neuabruf)`
+    );
+  }
   if (skippedPlaceholders > 0) {
     console.log(
       `  [${srcCfg.label}] ${skippedPlaceholders} Platzhalter-Dateien übersprungen (kein Volltext)`

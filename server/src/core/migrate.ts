@@ -6411,6 +6411,50 @@ export const MIGRATIONS: Migration[] = [
       $$ LANGUAGE plpgsql;
     `,
   },
+  {
+    version: 141,
+    name: "pages_law_doc_id_unique",
+    // One active page per RIS document and source. Successive fetchers and
+    // the normalizer named the same document differently, and the importer
+    // derived the slug from the file name — each naming generation added a
+    // second page for the same decision (56 258 on 2026-09-18, cleaned up and
+    // logged in corpus_dedupe_log). Importers now resolve the slug by doc_id;
+    // this index makes a second active copy impossible instead of unlikely.
+    //
+    // Keyed on doc_id, not body text: identical text under different document
+    // numbers is legitimate (empty cover sheets, parallel decisions).
+    sql: "",
+    handler: async (engine) => {
+      const where = `deleted_at IS NULL AND source_id LIKE 'law-%' AND (frontmatter->>'doc_id') IS NOT NULL`;
+      if (engine.kind === "postgres") {
+        await engine.runMigration(
+          141,
+          `
+          DO $$ BEGIN
+            IF EXISTS (
+              SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid
+              WHERE c.relname = 'pages_law_doc_id_uniq' AND NOT i.indisvalid
+            ) THEN
+              EXECUTE 'DROP INDEX IF EXISTS pages_law_doc_id_uniq';
+            END IF;
+          END $$;
+        `
+        );
+        await engine.runMigration(
+          141,
+          `CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS pages_law_doc_id_uniq
+             ON pages (source_id, (frontmatter->>'doc_id')) WHERE ${where};`
+        );
+      } else {
+        await engine.runMigration(
+          141,
+          `CREATE UNIQUE INDEX IF NOT EXISTS pages_law_doc_id_uniq
+             ON pages (source_id, (frontmatter->>'doc_id')) WHERE ${where};`
+        );
+      }
+    },
+    transaction: false,
+  },
 ];
 
 export const LATEST_VERSION =

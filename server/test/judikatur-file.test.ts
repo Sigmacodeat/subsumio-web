@@ -106,3 +106,24 @@ describe("judikatur-file", () => {
     expect(isAlreadyOnDisk(existing, "BVWGT_OTHER", "", "z", "z")).toBe(true);
   });
 });
+
+describe("validateBody: screenreader copies", () => {
+  test('a decision containing the spoken form "römisch 40" is rejected', async () => {
+    const { validateBody } = await import("../scripts/normalize/canonical-schema.ts");
+    const dirty =
+      "über die Beschwerde des XXXX, geb. XXXX, zu Recht erkannt:" +
+      "Das Bundesverwaltungsgericht hat über die Beschwerde des römisch 40 , geb. römisch 40 , zu Recht erkannt. ".repeat(
+        3
+      );
+    expect(validateBody(dirty, "decision").map((i) => i.code)).toContain("screenreader_copy");
+  });
+
+  test("clean anonymised text passes that rule", async () => {
+    const { validateBody } = await import("../scripts/normalize/canonical-schema.ts");
+    const clean =
+      "Das Bundesverwaltungsgericht hat über die Beschwerde des XXXX, geb. XXXX, zu Recht erkannt. ".repeat(
+        5
+      );
+    expect(validateBody(clean, "decision").map((i) => i.code)).not.toContain("screenreader_copy");
+  });
+});

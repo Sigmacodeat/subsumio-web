@@ -39,71 +39,105 @@ export type SourceFormat = "xml" | "html" | "api" | "pdf" | "unknown";
 export interface CanonicalFrontmatter {
   // --- Identität -----------------------------------------------------------
   schema_version: number;
-  doc_id: string;                 // kanonische ID (RIS-Dokumentnummer, NOR-ID, CELEX)
-  doc_id_alt: string[];           // alle weiteren bekannten IDs
+  doc_id: string; // kanonische ID (RIS-Dokumentnummer, NOR-ID, CELEX)
+  doc_id_alt: string[]; // alle weiteren bekannten IDs
   doc_class: DocClass;
-  doc_subtype: string | null;     // "Bundesgesetz" | "Verordnung" | "Erkenntnis" | "Rechtssatz" | ...
-  jurisdiction: string;           // at | de | ch | eu
-  language: string;               // de | fr | it
+  doc_subtype: string | null; // "Bundesgesetz" | "Verordnung" | "Erkenntnis" | "Rechtssatz" | ...
+  jurisdiction: string; // at | de | ch | eu
+  language: string; // de | fr | it
 
   // --- Benennung -----------------------------------------------------------
-  title: string;                  // Langtitel — NIE eine ECLI
-  short_title: string | null;     // Kurztitel
-  abbr: string | null;            // Abkürzung (ABGB, UGB)
+  title: string; // Langtitel — NIE eine ECLI
+  short_title: string | null; // Kurztitel
+  abbr: string | null; // Abkürzung (ABGB, UGB)
 
   // --- Gesetz --------------------------------------------------------------
-  statute_id: string | null;      // Gesetzesnummer
-  paragraph_ref: string | null;   // "§ 1044" | "Art. 4" | "Anl. 3"
+  statute_id: string | null; // Gesetzesnummer
+  paragraph_ref: string | null; // "§ 1044" | "Art. 4" | "Anl. 3"
   promulgation_organ: string | null; // "BGBl. I Nr. 16/2020"
-  in_force_from: string | null;   // ISO-Datum, IMMER YYYY-MM-DD
-  in_force_to: string | null;     // ISO-Datum
+  in_force_from: string | null; // ISO-Datum, IMMER YYYY-MM-DD
+  in_force_to: string | null; // ISO-Datum
   eli: string | null;
-  region: string | null;          // Bundesland / Kanton
+  region: string | null; // Bundesland / Kanton
 
   // --- Entscheidung --------------------------------------------------------
   court: string | null;
-  court_code: string | null;      // ogh | vwgh | vfgh | bvwg | ...
+  court_code: string | null; // ogh | vwgh | vfgh | bvwg | ...
   case_number: string | null;
-  ecli: string | null;            // NUR wenn echte ECLI
-  decision_date: string | null;   // ISO-Datum, IMMER YYYY-MM-DD
-  decision_type: string | null;   // Erkenntnis | Beschluss | Urteil | Rechtssatz
-  cited_norms: string[];          // aus normen/norms, aufgetrennt
+  ecli: string | null; // NUR wenn echte ECLI
+  decision_date: string | null; // ISO-Datum, IMMER YYYY-MM-DD
+  decision_type: string | null; // Erkenntnis | Beschluss | Urteil | Rechtssatz
+  cited_norms: string[]; // aus normen/norms, aufgetrennt
 
   // --- Klassifikation ------------------------------------------------------
-  legal_area: string[];           // aus legal_area + indizes
-  keywords: string[];             // aus keywords + schlagworte
+  legal_area: string[]; // aus legal_area + indizes
+  keywords: string[]; // aus keywords + schlagworte
 
   // --- Provenienz ----------------------------------------------------------
-  source: string;                 // ris-ogd | rechtsprechung-im-internet | ...
+  source: string; // ris-ogd | rechtsprechung-im-internet | ...
   source_url: string;
   source_format: SourceFormat;
-  retrieved_at: string | null;    // ISO-Datum
+  retrieved_at: string | null; // ISO-Datum
   license: string | null;
-  content_hash: string;           // Hash der GESAMTEN Datei (bestehende Semantik)
-  body_hash: string;              // Hash NUR des Normtextes — Beweis der Unversehrtheit
+  content_hash: string; // Hash der GESAMTEN Datei (bestehende Semantik)
+  body_hash: string; // Hash NUR des Normtextes — Beweis der Unversehrtheit
   normalized_at: string;
   normalizer_version: number;
 }
 
 /** Feldreihenfolge — fixiert, damit Diffs lesbar bleiben und Dateien stabil sind. */
 export const FIELD_ORDER: (keyof CanonicalFrontmatter)[] = [
-  "schema_version", "doc_id", "doc_id_alt", "doc_class", "doc_subtype",
-  "jurisdiction", "language",
-  "title", "short_title", "abbr",
-  "statute_id", "paragraph_ref", "promulgation_organ", "in_force_from",
-  "in_force_to", "eli", "region",
-  "court", "court_code", "case_number", "ecli", "decision_date",
-  "decision_type", "cited_norms",
-  "legal_area", "keywords",
-  "source", "source_url", "source_format", "retrieved_at", "license",
-  "content_hash", "body_hash", "normalized_at", "normalizer_version",
+  "schema_version",
+  "doc_id",
+  "doc_id_alt",
+  "doc_class",
+  "doc_subtype",
+  "jurisdiction",
+  "language",
+  "title",
+  "short_title",
+  "abbr",
+  "statute_id",
+  "paragraph_ref",
+  "promulgation_organ",
+  "in_force_from",
+  "in_force_to",
+  "eli",
+  "region",
+  "court",
+  "court_code",
+  "case_number",
+  "ecli",
+  "decision_date",
+  "decision_type",
+  "cited_norms",
+  "legal_area",
+  "keywords",
+  "source",
+  "source_url",
+  "source_format",
+  "retrieved_at",
+  "license",
+  "content_hash",
+  "body_hash",
+  "normalized_at",
+  "normalizer_version",
 ];
 
 /** Kontrolliertes Vokabular der Abschnitts-Überschriften im Body. */
 export const CANONICAL_SECTIONS = [
-  "Norm", "Rechtssatz", "Leitsatz", "Spruch", "Tenor",
-  "Sachverhalt", "Entscheidungsgründe", "Entscheidungstexte", "Text",
-  "Anmerkung", "Schlagworte", "Index",
+  "Norm",
+  "Rechtssatz",
+  "Leitsatz",
+  "Spruch",
+  "Tenor",
+  "Sachverhalt",
+  "Entscheidungsgründe",
+  "Entscheidungstexte",
+  "Text",
+  "Anmerkung",
+  "Schlagworte",
+  "Index",
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -127,8 +161,7 @@ const RE_DIRTY = / |\s{2,}|&(#\d+|amp|nbsp|quot|lt|gt);/;
  */
 export function validateCanonical(fm: Partial<CanonicalFrontmatter>): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-  const bad = (field: string, code: string, detail: string) =>
-    issues.push({ field, code, detail });
+  const bad = (field: string, code: string, detail: string) => issues.push({ field, code, detail });
 
   // 1. Vollständigkeit — jedes Feld MUSS existieren (auch als null).
   for (const key of FIELD_ORDER) {
@@ -157,13 +190,11 @@ export function validateCanonical(fm: Partial<CanonicalFrontmatter>): Validation
   // 4. Datumsformate — genau EIN Format, sonst sortiert und filtert die DB falsch.
   for (const f of ["in_force_from", "in_force_to", "decision_date", "retrieved_at"] as const) {
     const v = fm[f];
-    if (v != null && !RE_ISO_DATE.test(v))
-      bad(f, "bad_date", `erwartet YYYY-MM-DD, bekam "${v}"`);
+    if (v != null && !RE_ISO_DATE.test(v)) bad(f, "bad_date", `erwartet YYYY-MM-DD, bekam "${v}"`);
   }
 
   // 5. ECLI — entweder echt oder null. Kein Freitext im ECLI-Feld.
-  if (fm.ecli != null && !RE_ECLI.test(fm.ecli))
-    bad("ecli", "not_an_ecli", `"${fm.ecli}"`);
+  if (fm.ecli != null && !RE_ECLI.test(fm.ecli)) bad("ecli", "not_an_ecli", `"${fm.ecli}"`);
 
   // 6. title darf keine ECLI sein (112.728 Altfälle)
   if (fm.title && RE_ECLI.test(fm.title))
@@ -205,11 +236,14 @@ export function validateCanonical(fm: Partial<CanonicalFrontmatter>): Validation
 // ---------------------------------------------------------------------------
 
 /** Reste der RIS-Weboberfläche — beweist, dass die HTML-Seite statt des Dokuments geholt wurde. */
-const RE_CHROME = /Accesskey \d|Seitenbereiche:|Zur Navigationsleiste|Zum Seitenanfang|Druckansicht|Navigation im Suchergebnis/;
+const RE_CHROME =
+  /Accesskey \d|Seitenbereiche:|Zur Navigationsleiste|Zum Seitenanfang|Druckansicht|Navigation im Suchergebnis/;
 /** Screenreader-Dopplung aus dem HTML — jede Abkürzung steht doppelt da. */
-const RE_SR_ONLY = /römisch\s+[IVXLC]|Paragraph (eins|zwei|drei|vier|fünf)\b|Absatz (eins|zwei|drei)\b|Bundesgesetzblatt Teil (eins|zwei)\b/;
+const RE_SR_ONLY =
+  /römisch\s+[IVXLC]|Paragraph (eins|zwei|drei|vier|fünf)\b|Absatz (eins|zwei|drei)\b|Bundesgesetzblatt Teil (eins|zwei)\b/;
 /** Body enthält nur die RIS-Metadatentabelle, keinen Normtext. */
-const RE_META_DUMP = /Landesgesetzblatt Nr\.|Gesetzgebungsperiode|Datum des Landtagsbeschlusses|Begleitende Dokumente/;
+const RE_META_DUMP =
+  /Landesgesetzblatt Nr\.|Gesetzgebungsperiode|Datum des Landtagsbeschlusses|Begleitende Dokumente/;
 /** Platzhalter statt Inhalt. */
 const RE_STUB = /Volltext nicht abrufbar|nicht abrufbar — siehe Quelle/;
 
@@ -228,7 +262,8 @@ const RE_STUB = /Volltext nicht abrufbar|nicht abrufbar — siehe Quelle/;
  * Dokumente müssen als XML neu geholt werden — dort trennt RIS Kopf- und
  * Fußzeilen in <kzinhalt>/<fzinhalt> ab.
  */
-const RE_PDF_PAGEBREAK = /www\.ris\.bka\.gv\.at\s*Seite \d+ von \d+|Seite \d+ von \d+\s*www\.ris\.bka\.gv\.at/;
+const RE_PDF_PAGEBREAK =
+  /www\.ris\.bka\.gv\.at\s*Seite \d+ von \d+|Seite \d+ von \d+\s*www\.ris\.bka\.gv\.at/;
 /** Behördlicher Briefkopf aus der Druckfassung. */
 const RE_LETTERHEAD = /DVR:\s*\d{7}|UID:\s*ATU\d+|P\.b\.b\. Erscheinungsort/;
 /** Body besteht nur aus einem Bildverweis — in RIS nicht digitalisierte Anlagen. */
@@ -254,7 +289,8 @@ function substanceText(body: string): string {
 }
 
 /** Inhaltliche Überschriften, die belegen, dass eine Entscheidung Substanz hat. */
-const DECISION_CONTENT_SECTIONS = /^##\s+(Rechtssatz|Leitsatz|Spruch|Tenor|Text|Entscheidungsgründe|Entscheidungstexte|Sachverhalt)\s*$/m;
+const DECISION_CONTENT_SECTIONS =
+  /^##\s+(Rechtssatz|Leitsatz|Spruch|Tenor|Text|Entscheidungsgründe|Entscheidungstexte|Sachverhalt)\s*$/m;
 
 /**
  * Prüft den Body. Diese Schleuse entscheidet, ob überhaupt Recht in der
@@ -267,8 +303,13 @@ export function validateBody(body: string, docClass: DocClass): ValidationIssue[
 
   if (text.length === 0) return [{ field: "body", code: "empty_body", detail: "kein Inhalt" }];
   if (RE_STUB.test(text)) bad("stub", "Platzhalter statt Volltext");
-  if (RE_CHROME.test(text)) bad("website_chrome", "RIS-Seitennavigation im Body — HTML-Seite statt Dokument geholt");
-  if (RE_PDF_PAGEBREAK.test(text)) bad("pdf_pagebreak", "Kopf-/Fußzeile der Druckfassung im Fließtext — Seitenreihenfolge unzuverlässig");
+  if (RE_CHROME.test(text))
+    bad("website_chrome", "RIS-Seitennavigation im Body — HTML-Seite statt Dokument geholt");
+  if (RE_PDF_PAGEBREAK.test(text))
+    bad(
+      "pdf_pagebreak",
+      "Kopf-/Fußzeile der Druckfassung im Fließtext — Seitenreihenfolge unzuverlässig"
+    );
   if (RE_LETTERHEAD.test(text)) bad("letterhead", "behördlicher Briefkopf im Fließtext");
   // Sprachausgabe-Dopplung: verwerfen NUR bei hoher Dichte.
   //
@@ -294,26 +335,33 @@ export function validateBody(body: string, docClass: DocClass): ValidationIssue[
       bad("screenreader_dupes", `sr-only-Dopplung durchgehend (${dichte.toFixed(2)}/1000 Zeichen)`);
     }
   }
+  // Die Vorlese-Fassung liest die Anonymisierung "XXXX" als "römisch 40".
+  // In echtem Rechtstext kommt das nie vor; wo es steht, wurde die ganze
+  // Entscheidung ein zweites Mal als Sprachausgabe eingefügt (ältere
+  // BVwG-Abrufe über HTML). Solche Dateien bleiben draußen, bis sie über
+  // XML neu geholt sind — sonst überschreiben sie die saubere Fassung.
+  if (docClass === "decision" && /\brömisch 40\b/.test(text)) {
+    bad("screenreader_copy", 'Sprachausgabe-Kopie im Text ("römisch 40" statt "XXXX")');
+  }
   if (/^RIS Dokument/m.test(text)) bad("ris_prefix", '"RIS Dokument"-Präfix');
 
   const substance = substanceText(body);
 
   // Nicht digitalisierte Anlage: RIS führt nur ein Bild. Kein Defekt der
   // Pipeline, aber auch nichts, was man sinnvoll einbetten kann.
-  if (RE_IMAGE_ONLY.test(text) || (substance.length < 20 && /\/Dokumente\/\S+\.(png|jpg|gif|pdf)/.test(text)))
+  if (
+    RE_IMAGE_ONLY.test(text) ||
+    (substance.length < 20 && /\/Dokumente\/\S+\.(png|jpg|gif|pdf)/.test(text))
+  )
     bad("image_only", "Anlage liegt in RIS nur als Bild vor — nicht einbettbar");
-
   // Nur-Metadaten-Dump: RIS-Tabellenlabels ohne jeden Normtext
   else if (RE_META_DUMP.test(text) && substance.length < 400)
     bad("meta_dump_only", "nur RIS-Metadatentabelle, kein Normtext");
-
   else if (docClass === "statute") {
     // at-normen hat legitime Kurzparagraphen — § 1044 ABGB sind 128 Zeichen.
     // Gemessen wird deshalb nur, ob überhaupt Substanztext vorhanden ist.
     if (substance.length < 40) bad("too_short", `${substance.length} Zeichen Substanztext`);
-  }
-
-  else if (docClass === "decision") {
+  } else if (docClass === "decision") {
     if (!DECISION_CONTENT_SECTIONS.test(body))
       bad("no_content_section", "keine inhaltliche Sektion (Rechtssatz/Spruch/Text/…)");
     // Ein Rechtssatz ist ein verdichteter Satz — Kürze ist sein Wesensmerkmal,
@@ -335,7 +383,10 @@ export function validateBody(body: string, docClass: DocClass): ValidationIssue[
       const istRechtssatz = /^##\s+(Rechtssatz|Stammrechtssatz|Leitsatz)\s*$/m.test(body);
       const mindest = istRechtssatz ? 40 : 200;
       if (substance.length < mindest)
-        bad("too_short", `${substance.length} Zeichen Substanztext${istRechtssatz ? " (Rechtssatz)" : ""}`);
+        bad(
+          "too_short",
+          `${substance.length} Zeichen Substanztext${istRechtssatz ? " (Rechtssatz)" : ""}`
+        );
     }
   }
 
