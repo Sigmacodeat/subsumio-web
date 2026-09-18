@@ -1,0 +1,150 @@
+/**
+ * frist-options.ts — one list of selectable deadline types and one compute
+ * call for every manual deadline UI (quick-create dialog, deadline calculator).
+ *
+ * Austria uses the deterministic frist-engine registry (ZPO, StPO, AVG,
+ * VwGVG, VwGG, VfGG, ABGB, BAO) with § 222 ZPO, § 89a GOG and the Austrian
+ * holiday calendar. DE/CH keep the generic `DEADLINE_RULES` table. A firm
+ * without a configured Rechtsraum is treated as Austrian: the product
+ * launches in Austria, and silently falling back to German rules put a
+ * "§ 517 ZPO" (DE) Berufungsfrist into Austrian matters.
+ */
+
+import {
+  FRISTEN_REGISTRY,
+  berechneFristAuto,
+  resolveFristArt,
+  zustellungERV,
+  type FristArt,
+} from "@/lib/legal/frist-engine";
+import {
+  DEADLINE_RULES,
+  computeDueDate,
+  type Bundesland,
+  type Canton,
+} from "@/lib/legal-deadlines";
+
+export type FristCountry = "AT" | "DE" | "CH";
+
+export interface FristOption {
+  key: string;
+  label: string;
+  law: string;
+  description: string;
+  group: string;
+  notfrist: boolean;
+}
+
+export interface FristComputation {
+  key: string;
+  label: string;
+  law: string;
+  /** Day the period starts from (after any service fiction). */
+  fristbeginn: string;
+  dueDate: string;
+  /** Only the AT engine computes a Vorfrist; callers fall back to their own. */
+  vorfrist?: string;
+  notfrist: boolean;
+  hinweise: string[];
+}
+
+const VERFAHREN_LABEL: Record<FristArt["verfahrenstyp"], string> = {
+  zivil: "Zivilverfahren",
+  straf: "Strafverfahren",
+  verwaltungsrecht: "Verwaltungsverfahren",
+  arbeitsrecht: "Arbeitsrecht",
+  alle: "Materielles Recht und Abgaben",
+};
+
+/** Registry entries that belong to another jurisdiction (e.g. `steuer_einspruch_de`). */
+function isForeignArt(art: FristArt): boolean {
+  return /_(de|ch)$/.test(art.key);
+}
+
+export function resolveFristCountry(country?: string): FristCountry {
+  return country === "DE" || country === "CH" ? country : "AT";
+}
+
+export function fristOptionsFor(country?: string): FristOption[] {
+  if (resolveFristCountry(country) === "AT") {
+    return FRISTEN_REGISTRY.filter((art) => !isForeignArt(art)).map((art) => ({
+      key: art.key,
+      label: art.bezeichnung,
+      law: art.rechtsgrundlage,
+      description: art.hinweis ?? "",
+      group: art.regime === "materiell" ? VERFAHREN_LABEL.alle : VERFAHREN_LABEL[art.verfahrenstyp],
+      notfrist: art.notfrist,
+    }));
+  }
+  return DEADLINE_RULES.map((rule) => ({
+    key: rule.key,
+    label: rule.label,
+    law: rule.law,
+    description: rule.description,
+    group: "",
+    notfrist: false,
+  }));
+}
+
+/**
+ * Computes the deadline for `key` from `startIso`.
+ *
+ * `ervEinlangen`: the date is the day the document arrived in the ERV
+ * mailbox. For Austria § 89a Abs 2 GOG moves service to the next working
+ * day (Saturday does not count); the engine applies it unless the Fristart
+ * already carries its own service trigger.
+ *
+ * Throws for an unknown key — callers must show the error instead of
+ * falling back to a different rule set.
+ */
+export function computeFrist(
+  key: string,
+  startIso: string,
+  opts: { country?: string; state?: string; ervEinlangen?: boolean } = {}
+): FristComputation {
+  const country = resolveFristCountry(opts.country);
+  if (country === "AT") {
+    const art = resolveFristArt(key);
+    if (!art || isForeignArt(art)) {
+      throw new Error(`Unbekannte österreichische Fristart „${key}“`);
+    }
+    const applyErv = opts.ervEinlangen && !art.zustellungs_trigger;
+    const zustellung = applyErv ? zustellungERV(startIso) : startIso;
+    const result = berechneFristAuto(key, zustellung);
+    const hinweise = applyErv
+      ? [
+          `ERV-Zustellungsfiktion (§ 89a Abs 2 GOG): zugestellt am ${zustellung}`,
+          ...result.hinweise,
+        ]
+      : result.hinweise;
+    return {
+      key,
+      label: art.bezeichnung,
+      law: art.rechtsgrundlage,
+      fristbeginn: result.fristbeginn,
+      dueDate: result.fristende,
+      vorfrist: result.vorfrist,
+      notfrist: art.notfrist,
+      hinweise: art.hinweis ? [...hinweise, art.hinweis] : hinweise,
+    };
+  }
+
+  const rule = DEADLINE_RULES.find((r) => r.key === key);
+  if (!rule) throw new Error(`Unknown deadline rule "${key}"`);
+  const { dueDate, note } = computeDueDate(
+    rule,
+    startIso,
+    opts.state as Bundesland | Canton | undefined,
+    country,
+    opts.ervEinlangen ? startIso : undefined
+  );
+  return {
+    key,
+    label: rule.label,
+    law: rule.law,
+    fristbeginn: startIso,
+    dueDate,
+    notfrist: false,
+    hinweise: note ? [note] : [],
+  };
+}

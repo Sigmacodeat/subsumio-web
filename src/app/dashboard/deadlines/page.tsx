@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   CalendarClock,
@@ -36,12 +36,8 @@ import { csrfFetch } from "@/lib/csrf";
 import { cn, encodeSlugPath } from "@/lib/utils";
 import { STATUS_TEXT, STATUS_BG, STATUS_BORDER, type StatusColor } from "@/lib/status-colors";
 import { OFFLINE_KEYS, getCache, setCache } from "@/lib/offline-store";
-import {
-  DEADLINE_RULES,
-  computeDeadlineStatus,
-  computeDueDate,
-  type DeadlineRule,
-} from "@/lib/legal-deadlines";
+import { computeDeadlineStatus } from "@/lib/legal-deadlines";
+import { computeFrist, fristOptionsFor } from "@/lib/legal/frist-options";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { FilterChip } from "@/components/dashboard/filter-chip";
@@ -105,13 +101,18 @@ function getDaysUntil(dateStr: string): number {
 }
 
 function calculateDeadline(
-  rule: DeadlineRule,
+  key: string,
   startDate: string,
   state?: string,
   country?: string
 ): { dueDate: Date; label: string; law: string; note: string } {
-  const { dueDate, note } = computeDueDate(rule, startDate, state as never, country as never);
-  return { dueDate: new Date(`${dueDate}T12:00:00Z`), label: rule.label, law: rule.law, note };
+  const r = computeFrist(key, startDate, { state, country });
+  return {
+    dueDate: new Date(`${r.dueDate}T12:00:00Z`),
+    label: r.label,
+    law: r.law,
+    note: r.hinweise.join(" · "),
+  };
 }
 
 export default function DeadlinesPage() {
@@ -127,6 +128,7 @@ export default function DeadlinesPage() {
   const [filter, setFilter] = useState<string>("all");
   const [caseFilter, setCaseFilter] = useState<string | null>(null);
   const [rechtsraum, setRechtsraum] = useState<{ state?: string; country?: string }>({});
+  const calcOptions = useMemo(() => fristOptionsFor(rechtsraum.country), [rechtsraum.country]);
   const [secondCheckTarget, setSecondCheckTarget] = useState<DeadlineItem | null>(null);
   const [secondCheckBusy, setSecondCheckBusy] = useState(false);
   const secondCheckConfirmRef = useRef<HTMLButtonElement | null>(null);
@@ -185,7 +187,9 @@ export default function DeadlinesPage() {
   }, [secondCheckTarget]);
   const [showCalc, setShowCalc] = useState(false);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
-  const [calcTemplate, setCalcTemplate] = useState<DeadlineRule>(DEADLINE_RULES[0]);
+  const [calcKey, setCalcKey] = useState("");
+  const [calcError, setCalcError] = useState<string | null>(null);
+  const calcOption = calcOptions.find((o) => o.key === calcKey) ?? calcOptions[0];
   const [calcDate, setCalcDate] = useState(new Date().toISOString().split("T")[0]);
   const [calcResult, setCalcResult] = useState<{
     dueDate: Date;
@@ -826,25 +830,26 @@ export default function DeadlinesPage() {
                 {t("deadlines.calc_type")}
               </Label>
               <Select
-                value={calcTemplate.key}
-                onValueChange={(v) =>
-                  setCalcTemplate(DEADLINE_RULES.find((r) => r.key === v) || DEADLINE_RULES[0])
-                }
+                value={calcOption.key}
+                onValueChange={(v) => {
+                  setCalcKey(v);
+                  setCalcResult(null);
+                  setCalcError(null);
+                }}
               >
                 <SelectTrigger id="calc-template">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {DEADLINE_RULES.map((rule) => (
-                    <SelectItem key={rule.key} value={rule.key}>
-                      {rule.label} ({rule.law})
+                  {calcOptions.map((option) => (
+                    <SelectItem key={option.key} value={option.key}>
+                      {option.group ? `${option.group}: ` : ""}
+                      {option.label} ({option.law})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-[color:var(--ds-text-muted)]">
-                {calcTemplate.description}
-              </p>
+              <p className="text-xs text-[color:var(--ds-text-muted)]">{calcOption.description}</p>
             </div>
             <div className="space-y-1">
               <Label htmlFor="calc-date" className="text-xs text-[color:var(--ds-text-muted)]">
@@ -859,11 +864,22 @@ export default function DeadlinesPage() {
             </div>
             <div className="flex items-end">
               <button
-                onClick={() =>
-                  setCalcResult(
-                    calculateDeadline(calcTemplate, calcDate, rechtsraum.state, rechtsraum.country)
-                  )
-                }
+                onClick={() => {
+                  try {
+                    setCalcResult(
+                      calculateDeadline(
+                        calcOption.key,
+                        calcDate,
+                        rechtsraum.state,
+                        rechtsraum.country
+                      )
+                    );
+                    setCalcError(null);
+                  } catch (err) {
+                    setCalcResult(null);
+                    setCalcError(err instanceof Error ? err.message : String(err));
+                  }
+                }}
                 className="brand-bg flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white transition-[background-color,transform] duration-[var(--ds-duration-fast)] hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] focus-visible:outline-none active:scale-[0.98] motion-reduce:transition-none"
               >
                 <Calculator size={14} />
@@ -871,6 +887,14 @@ export default function DeadlinesPage() {
               </button>
             </div>
           </div>
+          {calcError && (
+            <div
+              role="alert"
+              className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]"
+            >
+              {t("deadlines.at_engine_error")} {calcError}
+            </div>
+          )}
           {calcResult && (
             <div className="brand-border brand-soft rounded-lg border p-3">
               <div className="flex items-center justify-between">

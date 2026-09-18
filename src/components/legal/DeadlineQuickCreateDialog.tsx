@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { emitDeadlineCreated } from "@/lib/matter-events";
 import { useDialogFetch } from "@/lib/use-dialog-fetch";
 import {
@@ -37,26 +37,12 @@ import type { DashboardKey } from "@/content/dashboard";
 import { api } from "@/lib/api";
 import { isOnline, enqueueMutation } from "@/lib/offline-store";
 import { useToast } from "@/components/ui/toast";
-import { DEADLINE_RULES, computeDueDate, type DeadlineRule } from "@/lib/legal-deadlines";
+import { computeFrist, fristOptionsFor, type FristComputation } from "@/lib/legal/frist-options";
 import { computeVorfrist, DEFAULT_VORFRIST_DAYS } from "@/lib/legal/vorfrist";
 import { getRechtsraumParams } from "@/lib/legal/rechtsraum";
 import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
 import type { BrainPage } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { csrfFetch } from "@/lib/csrf";
-
-interface ATFristResult {
-  fristbeginn: string;
-  fristende: string;
-  vorfrist: string;
-  hinweise: string[];
-  art: { key: string; bezeichnung: string; rechtsgrundlage: string; is_notfrist: boolean };
-}
-interface ATFristResponse {
-  ok: boolean;
-  result: ATFristResult;
-  availableArts: Array<{ key: string; bezeichnung: string; rechtsgrundlage: string }>;
-}
 
 interface DeadlineQuickCreateDialogProps {
   open: boolean;
@@ -100,9 +86,9 @@ export function DeadlineQuickCreateDialog({
   const [vorfristPreview, setVorfristPreview] = useState<string | null>(null);
   const [rechtsraum, setRechtsraum] = useState<{ state?: string; country?: string }>({});
   const [isErvDate, setIsErvDate] = useState(false);
-  const [atFristResult, setAtFristResult] = useState<ATFristResult | null>(null);
-  const [atFristLoading, setAtFristLoading] = useState(false);
-  const [atFristError, setAtFristError] = useState<string | null>(null);
+  const [fristCalc, setFristCalc] = useState<FristComputation | null>(null);
+  const [fristError, setFristError] = useState<string | null>(null);
+  const fristOptions = useMemo(() => fristOptionsFor(rechtsraum.country), [rechtsraum.country]);
 
   const { data: cases, loading: loadingCases } = useDialogFetch<CaseOption[]>(open, async () => {
     const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
@@ -120,68 +106,41 @@ export function DeadlineQuickCreateDialog({
       .catch(() => {});
   }, [open]);
 
-  // C2: When Rechtsraum is AT, delegate to the engine's frist-engine for
-  // correct Zustellfiktionen, verhandlungsfreie Zeit, AVG rules, etc.
+  // Every manual deadline goes through computeFrist: Austrian firms (and
+  // firms without a Rechtsraum) get the deterministic frist-engine with
+  // § 222 ZPO and § 89a GOG; an unknown key is shown as an error, never
+  // recomputed with another country's rules.
   useEffect(() => {
     if (!ruleKey || !date) {
       setCalcPreview(null);
-      setAtFristResult(null);
+      setFristCalc(null);
+      setFristError(null);
       return;
     }
-    if (rechtsraum.country === "AT") {
-      const abort = new AbortController();
-      setAtFristLoading(true);
-      setAtFristError(null);
-      const artKey = ruleKey;
-      csrfFetch("/api/legal/frist/compute", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ artKey, zustellungIso: date }),
-        signal: abort.signal,
-      })
-        .then(async (res) => {
-          if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.message || "Engine not reachable");
-          }
-          const data = (await res.json()) as ATFristResponse;
-          setAtFristResult(data.result);
-          setCalcPreview(data.result.fristende);
-          // Auto-set Notfrist flag from engine result — ensures Vier-Augen
-          // enforcement and 7-day Vorfrist are applied for statutory deadlines.
-          if (data.result.art.is_notfrist) setIsNotfrist(true);
-        })
-        .catch((err) => {
-          if (err instanceof Error && err.name === "AbortError") return;
-          setAtFristError(err instanceof Error ? err.message : "Engine error");
-          // Fallback to web-lib calculation
-          const rule = DEADLINE_RULES.find((r) => r.key === ruleKey);
-          if (rule) {
-            const { dueDate } = computeDueDate(rule, date, undefined, "AT");
-            setCalcPreview(dueDate);
-          }
-        })
-        .finally(() => setAtFristLoading(false));
-      return () => abort.abort();
-    }
-    // Non-AT: use web-lib
-    setAtFristResult(null);
-    const rule = DEADLINE_RULES.find((r) => r.key === ruleKey);
-    if (!rule) {
+    try {
+      const result = computeFrist(ruleKey, date, {
+        country: rechtsraum.country,
+        state: rechtsraum.state,
+        ervEinlangen: isErvDate,
+      });
+      setFristCalc(result);
+      setFristError(null);
+      setCalcPreview(result.dueDate);
+      // Statutory Notfristen always get the Vier-Augen check.
+      if (result.notfrist) setIsNotfrist(true);
+    } catch (err) {
+      setFristCalc(null);
       setCalcPreview(null);
-      return;
+      setFristError(err instanceof Error ? err.message : String(err));
     }
-    const { dueDate } = computeDueDate(
-      rule,
-      date,
-      rechtsraum.state as never,
-      rechtsraum.country as never
-    );
-    setCalcPreview(dueDate);
-  }, [ruleKey, date, rechtsraum]);
+  }, [ruleKey, date, rechtsraum, isErvDate]);
 
   // Auto-compute Vorfrist from the final deadline date
   useEffect(() => {
+    if (fristCalc?.vorfrist) {
+      setVorfristPreview(fristCalc.vorfrist);
+      return;
+    }
     const finalDate = calcPreview || date;
     if (!finalDate) {
       setVorfristPreview(null);
@@ -197,7 +156,7 @@ export function DeadlineQuickCreateDialog({
       rechtsraum.country as never
     );
     setVorfristPreview(vf);
-  }, [calcPreview, date, isNotfrist, rechtsraum.country, rechtsraum.state]);
+  }, [calcPreview, date, fristCalc, rechtsraum.country, rechtsraum.state]);
 
   const resetForm = useCallback(() => {
     setDescription("");
@@ -211,6 +170,8 @@ export function DeadlineQuickCreateDialog({
     setIsNotfrist(false);
     setVorfristPreview(null);
     setIsErvDate(false);
+    setFristCalc(null);
+    setFristError(null);
   }, [presetCaseSlug]);
 
   useEffect(() => {
@@ -231,7 +192,7 @@ export function DeadlineQuickCreateDialog({
     setSubmitting(true);
 
     const selectedCase = (cases ?? []).find((c) => c.slug === caseSlug);
-    const rule = DEADLINE_RULES.find((r) => r.key === ruleKey);
+    const rule = fristCalc;
     const now = new Date();
     const titlePart = description
       .toLowerCase()
@@ -246,7 +207,7 @@ export function DeadlineQuickCreateDialog({
       title: description.trim(),
       type: "legal_deadline" as const,
       content: rule
-        ? `${rule.label}\n${rule.description}\n${rule.law}`
+        ? [`${rule.label} (${rule.law})`, ...rule.hinweise].join("\n")
         : t("deadlines.manual_content" as DashboardKey),
       frontmatter: {
         type: "legal_deadline",
@@ -263,6 +224,7 @@ export function DeadlineQuickCreateDialog({
         source: "manual",
         law: law.trim() || rule?.law,
         rule_key: rule?.key,
+        fristbeginn: rule?.fristbeginn,
         erv_zustelldatum: isErvDate ? date : undefined,
         created_at: now.toISOString(),
       },
@@ -410,8 +372,8 @@ export function DeadlineQuickCreateDialog({
                       value={ruleKey}
                       onValueChange={(v) => {
                         setRuleKey(v);
-                        const rule = DEADLINE_RULES.find((r) => r.key === v);
-                        if (rule) setLaw(rule.law);
+                        const option = fristOptions.find((o) => o.key === v);
+                        if (option) setLaw(option.law);
                       }}
                     >
                       <SelectTrigger id="quick-deadline-rule">
@@ -423,9 +385,10 @@ export function DeadlineQuickCreateDialog({
                         <SelectItem value="">
                           {t("deadlines.create_rule_none" as DashboardKey)}
                         </SelectItem>
-                        {DEADLINE_RULES.map((rule: DeadlineRule) => (
-                          <SelectItem key={rule.key} value={rule.key}>
-                            {rule.label} ({rule.law})
+                        {fristOptions.map((option) => (
+                          <SelectItem key={option.key} value={option.key}>
+                            {option.group ? `${option.group}: ` : ""}
+                            {option.label} ({option.law})
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -466,35 +429,27 @@ export function DeadlineQuickCreateDialog({
                   </div>
                 )}
 
-                {/* C2: AT frist-engine hints */}
-                {atFristLoading && (
+                {fristError && (
                   <div
-                    className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]"
-                    role="status"
-                    aria-live="polite"
+                    role="alert"
+                    className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]"
                   >
-                    <Loader2 size={12} className="animate-spin" />
-                    {t("deadlines.at_engine_loading")}
+                    {t("deadlines.at_engine_error")} {fristError}
                   </div>
                 )}
-                {atFristError && (
-                  <div className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]">
-                    {t("deadlines.at_engine_error")}
-                  </div>
-                )}
-                {atFristResult && atFristResult.hinweise.length > 0 && (
+                {fristCalc && fristCalc.hinweise.length > 0 && (
                   <div className="rounded-lg border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-3 py-2">
                     <p className="mb-1 text-xs font-medium text-[color:var(--ds-info-text)]">
                       {t("deadlines.at_engine_hints")}
                     </p>
                     <ul className="space-y-0.5 text-xs text-[color:var(--ds-info-text)]">
-                      {atFristResult.hinweise.map((h, i) => (
+                      {fristCalc.hinweise.map((h, i) => (
                         <li key={i}>• {h}</li>
                       ))}
                     </ul>
-                    {atFristResult.vorfrist && (
+                    {fristCalc.vorfrist && (
                       <p className="mt-1.5 text-xs font-medium text-[color:var(--ds-info-text)]">
-                        {t("deadlines.at_engine_vorfrist")}: {atFristResult.vorfrist}
+                        {t("deadlines.at_engine_vorfrist")}: {fristCalc.vorfrist}
                       </p>
                     )}
                   </div>

@@ -8402,15 +8402,14 @@ export const D = {
   },
   "cockpit.stat_signatures": { de: "Signaturen", en: "Signatures" },
   "cockpit.action_needed": { de: "Handlungsbedarf", en: "Action needed" },
-  "deadlines.at_engine_loading": { de: "Fristenrechner wird befragt…", en: "Querying AT Engine…" },
   "deadlines.at_engine_error": {
-    de: "⚠ Fristenrechner nicht erreichbar — Web-Lib als Fallback genutzt",
-    en: "⚠ AT Engine unavailable — using the web library as fallback",
+    de: "Diese Frist lässt sich nicht berechnen. Bitte das Fristende selbst eintragen.",
+    en: "This deadline cannot be calculated. Please enter the due date yourself.",
   },
-  "deadlines.at_engine_hints": { de: "Fristenrechner-Hinweise:", en: "AT Engine notes:" },
+  "deadlines.at_engine_hints": { de: "Berechnung:", en: "Calculation:" },
   "deadlines.at_engine_vorfrist": {
-    de: "Vorfrist (Subsumio-Dienst)",
-    en: "Advance deadline (engine)",
+    de: "Vorfrist",
+    en: "Advance deadline",
   },
   "deadlines.notfrist_label": {
     de: "Notfrist (Vier-Augen-Kontrolle)",
