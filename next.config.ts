@@ -138,8 +138,28 @@ const nextConfig: NextConfig = {
   // to avoid scanning the ~772k files (18 GB) under law-corpus/ and server/,
   // which OOMs at 8 GB (node::fs::AfterScanDir). Re-enable with `output: 'standalone'`
   // and validated `outputFileTracingExcludes` once the deployment setup requires it.
+  // Both forms of each pattern: relative to the tracing root and anywhere in the
+  // tree. Tracing stays off (see above), so these only matter if it is enabled.
   outputFileTracingExcludes: {
     "*": [
+      "server/**",
+      "tests/**",
+      "backups/**",
+      "law-corpus/**",
+      "docs/**",
+      "scripts/**",
+      "evals/**",
+      "research/**",
+      "mobile/**",
+      "plugins/**",
+      "tools/**",
+      "outlook-addin/**",
+      "word-addin/**",
+      "test-results/**",
+      "coverage/**",
+      "storybook-static/**",
+      ".next-e2e/**",
+      ".next-standalone/**",
       "**/law-corpus/**",
       "**/server/**",
       "**/.source-registry-diff/**",

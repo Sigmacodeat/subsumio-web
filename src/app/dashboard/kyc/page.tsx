@@ -219,7 +219,7 @@ export default function KYCPage() {
     return true;
   }
 
-  async function act(kind: "save" | "verify" | "fail" | "mandate_end") {
+  async function act(kind: "save" | "verify" | "fail" | "mandate_end" | "sanctions_check") {
     if (!draft) return;
     setSaving(true);
     try {
@@ -230,6 +230,27 @@ export default function KYCPage() {
         if (!locked) await saveDraft();
         await send(`/api/kyc/${encodeURIComponent(draft.id)}`, "PATCH", { action: "verify" });
         addToast({ type: "success", title: "Identitätsprüfung abgeschlossen" });
+        await load();
+      } else if (kind === "sanctions_check") {
+        if (!locked) await saveDraft();
+        const res = (await send(`/api/kyc/${encodeURIComponent(draft.id)}`, "PATCH", {
+          action: "sanctions_check",
+        })) as { data?: { verification?: KYCVerification } };
+        const updated = res?.data?.verification;
+        addToast(
+          updated?.sanctions_hit
+            ? {
+                type: "error",
+                title: "Treffer auf der Sanktionsliste",
+                description:
+                  "Bitte jeden Treffer prüfen. Ohne Klärung darf das Mandat nicht angenommen werden.",
+              }
+            : {
+                type: "success",
+                title: "Sanktionsabgleich ohne Treffer",
+                description: updated?.sanctions_source,
+              }
+        );
         await load();
       } else if (kind === "fail") {
         await send(`/api/kyc/${encodeURIComponent(draft.id)}`, "PATCH", {
@@ -529,6 +550,17 @@ export default function KYCPage() {
                       onChange={(e) => setId({ document_valid_until: e.target.value || undefined })}
                     />
                   </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="kyc-birth-date" className="text-xs">
+                      Geburtsdatum{draft.party_type === "legal" ? "" : " *"}
+                    </Label>
+                    <Input
+                      id="kyc-birth-date"
+                      type="date"
+                      value={draft.identification?.birth_date ?? ""}
+                      onChange={(e) => setId({ birth_date: e.target.value || undefined })}
+                    />
+                  </div>
                   <div className="flex flex-col justify-end gap-2 text-sm">
                     <label className="flex items-center gap-2">
                       <input
@@ -699,6 +731,42 @@ export default function KYCPage() {
                     Treffer auf einer Sanktionsliste
                   </label>
                 </div>
+                <div className="space-y-2 rounded-lg border border-[color:var(--ds-border)] p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-[color:var(--ds-text)]">
+                      Abgleich mit der EU-Finanzsanktionsliste
+                    </span>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      disabled={saving || locked || !draft.client_name?.trim()}
+                      onClick={() => void act("sanctions_check")}
+                    >
+                      {saving ? "Prüfe…" : "Jetzt abgleichen"}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-[color:var(--ds-text-muted)]">
+                    Geprüft werden der Mandant und die wirtschaftlichen Eigentümer, mit
+                    Schreibvarianten und Geburtsdatum. Das Ergebnis wird mit Listenstand
+                    festgehalten.
+                  </p>
+                  {draft.sanctions_matches && draft.sanctions_matches.length > 0 && (
+                    <ul className="space-y-1">
+                      {draft.sanctions_matches.map((hit) => (
+                        <li key={hit.name} className="text-xs text-[color:var(--ds-danger-text)]">
+                          <strong>{hit.name}</strong>:{" "}
+                          {hit.matches
+                            .map(
+                              (m) =>
+                                `${m.primaryName} (${m.programmes.join(", ") || "ohne Programm"}, Übereinstimmung ${Math.round(m.score * 100)} %)`
+                            )
+                            .join("; ")}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
                 <div className="space-y-1">
                   <Label htmlFor="kyc-sanctions-source" className="text-xs">
                     Geprüfte Liste und Datum *
@@ -707,7 +775,7 @@ export default function KYCPage() {
                     id="kyc-sanctions-source"
                     value={draft.sanctions_source ?? ""}
                     onChange={(e) => setDraft({ ...draft, sanctions_source: e.target.value })}
-                    placeholder="z. B. EU-Finanzsanktionsliste, abgerufen am 17.09.2026"
+                    placeholder="wird vom Abgleich gefüllt"
                   />
                 </div>
               </div>

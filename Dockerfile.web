@@ -31,6 +31,10 @@ COPY . .
 
 RUN bun --smol run build
 
+# The build cache is only useful for the NEXT build, never at runtime. Copying
+# it into the image added ~2.9 GB per release and filled the server's disk.
+RUN rm -rf .next/cache
+
 # Prune dev dependencies for the runner stage
 RUN bun install --frozen-lockfile --production
 

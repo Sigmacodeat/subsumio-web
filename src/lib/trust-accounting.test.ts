@@ -123,8 +123,18 @@ describe("getRecentTransactions", () => {
       tx({ id: "a", date: "2026-06-20", type: "deposit", amount: 100 }),
       tx({ id: "b", date: "2026-06-25", type: "deposit", amount: 200 }),
     ];
-    const recent = getRecentTransactions(transactions, 90);
+    const recent = getRecentTransactions(transactions, 90, new Date("2026-09-01T12:00:00Z"));
     expect(recent.map((t) => t.id)).toEqual(["b", "a"]);
+  });
+
+  test("keeps a booking dated exactly at the edge of the window", () => {
+    const transactions: TrustTransaction[] = [
+      tx({ id: "edge", date: "2026-06-20", type: "deposit", amount: 100 }),
+      tx({ id: "older", date: "2026-06-19", type: "deposit", amount: 100 }),
+    ];
+    // 2026-09-18 minus 90 days is 2026-06-20; the run must not depend on the clock.
+    const recent = getRecentTransactions(transactions, 90, new Date("2026-09-18T01:00:00Z"));
+    expect(recent.map((t) => t.id)).toEqual(["edge"]);
   });
 });
 

@@ -1,3 +1,4 @@
+import { applyCheckResult, runSanctionsCheck } from "@/lib/sanctions/check";
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
@@ -62,6 +63,7 @@ const fieldsSchema = z.object({
 const bodySchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("update"), fields: fieldsSchema }),
   z.object({ action: z.literal("verify") }),
+  z.object({ action: z.literal("sanctions_check") }),
   z.object({ action: z.literal("fail"), reason: z.string().trim().min(10).max(2000) }),
   z.object({
     action: z.literal("mandate_end"),
@@ -154,6 +156,27 @@ export const PATCH = createHandler(
         next = { ...next, status: "verified", verified_at: now, verified_by: ctx.user.email };
         entry = { at: now, by: ctx.user.email, action: "verified" };
         auditAction = "kyc.verify";
+      } else if (body.action === "sanctions_check") {
+        const result = await runSanctionsCheck(current, {
+          birthDate: current.identification?.birth_date,
+        });
+        if (!result) {
+          return apiError(
+            "sanctions_list_missing",
+            "Die Sanktionsliste wurde noch nicht geladen. Der Abgleich läuft wöchentlich; bis dahin bitte manuell prüfen.",
+            503
+          );
+        }
+        next = { ...next, ...applyCheckResult(result) };
+        entry = {
+          at: now,
+          by: ctx.user.email,
+          action: "updated",
+          note: result.hits.length
+            ? `Sanktionsabgleich: ${result.hits.length} Treffer zu prüfen (${result.source})`
+            : `Sanktionsabgleich ohne Treffer (${result.source})`,
+        };
+        auditAction = "kyc.update";
       } else if (body.action === "fail") {
         next = { ...next, status: "failed", failed_reason: body.reason };
         entry = { at: now, by: ctx.user.email, action: "failed", note: body.reason };

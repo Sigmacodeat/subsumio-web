@@ -296,15 +296,22 @@ export function isOverdrawn(account: TrustAccount): boolean {
   return account.currentBalance < 0;
 }
 
+/**
+ * Bookings of the last `days` days, newest first. Compared by day, not by the
+ * time of the call: a booking dated exactly `days` ago belongs in the window,
+ * whatever time it is now.
+ */
 export function getRecentTransactions(
   transactions: TrustTransaction[],
-  days: number = 90
+  days: number = 90,
+  now: Date = new Date()
 ): TrustTransaction[] {
-  const cutoff = new Date();
+  const cutoff = new Date(now);
   cutoff.setDate(cutoff.getDate() - days);
+  const cutoffDay = cutoff.toISOString().slice(0, 10);
   return transactions
-    .filter((tx) => new Date(tx.date) >= cutoff)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    .filter((tx) => String(tx.date).slice(0, 10) >= cutoffDay)
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)));
 }
 
 export function generateQuarterlyReport(

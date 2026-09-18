@@ -139,6 +139,7 @@ describe("Vollständigkeit der Identifizierung (§§ 8b, 8d, 8f RAO)", () => {
       document_number: "P1234567",
       issuing_authority: "BH Mödling",
       document_valid_until: "2030-01-31",
+      birth_date: "1979-03-14",
       copy_retained: true,
     },
     pep_check: true,
@@ -158,7 +159,7 @@ describe("Vollständigkeit der Identifizierung (§§ 8b, 8d, 8f RAO)", () => {
       today
     );
     expect(missing.join(" | ")).toMatch(
-      /Zweck.*Lichtbildausweis.*Gültigkeit.*Kopie.*politisch exponierte.*Sanktionsliste/
+      /Zweck.*Lichtbildausweis.*Gültigkeit.*Kopie.*Geburtsdatum.*politisch exponierte.*Sanktionsliste/
     );
   });
 
@@ -209,6 +210,25 @@ describe("Vollständigkeit der Identifizierung (§§ 8b, 8d, 8f RAO)", () => {
 
   test("a sanctions hit can never be completed", () => {
     expect(missingForVerification(complete({ sanctions_hit: true }), today)).toHaveLength(1);
+  });
+
+  test("a natural person without a date of birth is incomplete (§ 8b Abs. 2 RAO)", () => {
+    const withoutDob = complete({
+      identification: { ...complete().identification, birth_date: undefined },
+    });
+    expect(missingForVerification(withoutDob, today)).toEqual(["Geburtsdatum (§ 8b Abs. 2 RAO)"]);
+    // A legal person is identified by its register extract, not by a birth date.
+    expect(
+      missingForVerification(
+        {
+          ...withoutDob,
+          party_type: "legal",
+          wiereg_extract_obtained: true,
+          beneficial_owners: [{ name: "Dr. Karl Muster", verified: true }],
+        },
+        today
+      )
+    ).toEqual([]);
   });
 
   test("records are kept five years after the engagement ends (§ 12 Abs. 3 RAO)", () => {

@@ -658,3 +658,23 @@ Beides gegen die lokale Datenbank durchgespielt: Erinnerungen 13 von 13, Listen 
 - **Gleiche Ursache an weiteren Stellen behoben:** Rechnungsnummern-Vergabe (konnte eine alte
   Nummer erneut vergeben), DocuSign-Zuordnung älterer Umschläge, Portal-Dokumentenanfragen,
   Prüfeingang, Aktenblatt-Fristen, Fristen-Abgleich der Pipeline und vier Wartungsjobs.
+
+## Sanktionsabgleich — Praxistest (18.09.)
+
+Über die echte Oberfläche gegen die echte EU-Liste durchgespielt, 9 von 9 Prüfungen bestanden.
+
+- **Neu:** Die Identitätsprüfung gleicht Mandant und wirtschaftliche Eigentümer auf Knopfdruck
+  gegen die konsolidierte EU-Finanzsanktionsliste ab. Vorher war „Sanktionslisten geprüft“ nur
+  ein Häkchen mit einem Textfeld.
+- **Nachweise:** Ein unbedenklicher Mandant erzeugt keinen Treffer, die Quelle wird mit
+  Listenstand und Prüfdatum eingetragen. Ein gelisteter Mandant wird gefunden, der Treffer steht
+  mit Programm und Übereinstimmung in der Akte, und der Abschluss der Prüfung wird mit 422
+  verweigert. Zwölf typische Kanzleinamen erzeugen gegen alle 6.234 Listungen keinen Fehlalarm.
+- **Geburtsdatum ergänzt (Befund, behoben).** Die Identifizierung kannte kein Geburtsdatum,
+  obwohl § 8b Abs. 2 RAO es verlangt und der Abgleich es zur Unterscheidung braucht.
+- **Zeitabhängiger Test (Befund, behoben).** Die Liste der jüngsten Treuhandbuchungen schnitt
+  eine Buchung genau am Rand des 90-Tage-Fensters ab, je nach Uhrzeit des Testlaufs. Jetzt
+  tagesgenau und unabhängig von der Uhr.
+- **Nebenbei:** Das Server-Abbild ist von 5,38 GB auf 2,25 GB geschrumpft, weil der
+  Build-Zwischenspeicher nicht mehr mitkopiert wird. Das spart 3,1 GB je Version und ist die
+  Voraussetzung dafür, auf der vollen Platte überhaupt wieder ausrollen zu können.

@@ -48,3 +48,25 @@ Code: `src/lib/kyc.ts`, Routen `/api/kyc` und `/api/kyc/[id]`, Seite `/dashboard
 - **Mandatsannahme:** Umwandlung einer Anfrage in eine Akte nur mit Annahmeprüfung. Ist
   eine Identitätsprüfung erforderlich, muss eine abgeschlossene Prüfung verknüpft sein
   (`/api/intake/convert`). „Nicht erforderlich“ bleibt für Aufträge außerhalb des § 8a RAO.
+
+## Sanktionsabgleich (§ 8c RAO)
+
+- **Liste:** konsolidierte EU-Finanzsanktionsliste (FSF), öffentlich, ohne Schlüssel.
+  Wöchentlich montags 04:20 UTC über `/api/cron/sanctions-sync` geladen und in
+  `subsumio_sanctions_entries` gespeichert (6.234 Listungen, 30.739 Schreibweisen,
+  Ladezeit rund vier Sekunden). Der Stand der Datei wird mitgespeichert.
+- **Abgleich:** Knopf „Jetzt abgleichen“ in der Identitätsprüfung. Geprüft werden Mandant und
+  wirtschaftliche Eigentümer. Verglichen wird wortweise, unabhängig von der Reihenfolge, ohne
+  Titel und Rechtsformzusätze, mit Umlaut- und Akzentauflösung und einem Tippfehler je längerem
+  Wort. Ein einzelner Nachname trifft nur eine gleichnamige Listung.
+- **Geburtsdatum:** bestätigt einen Treffer oder schwächt ihn ab, entfernt ihn aber nie —
+  die Listendaten sind oft unvollständig. Das Geburtsdatum ist Pflichtfeld der Identifizierung
+  (§ 8b Abs. 2 RAO).
+- **Ergebnis:** `sanctions_checked`, `sanctions_source` (Liste, Stand, Umfang, Prüfdatum),
+  `sanctions_hit` und die Fundstellen mit Programm und Übereinstimmung in Prozent. Ein Treffer
+  ist ein Prüfauftrag, kein Urteil; der Abschluss der Prüfung bleibt gesperrt, solange er steht.
+- **Ohne geladene Liste** antwortet der Abgleich mit 503 und dem Hinweis, manuell zu prüfen —
+  niemals mit „keine Treffer“.
+- **Gegenprobe:** zwölf typische Kanzleinamen erzeugen gegen die echte Liste keinen Treffer;
+  eine gelistete Person wird auch mit Tippfehler und in anderer Schreibweise gefunden
+  (60 ms je Abfrage).

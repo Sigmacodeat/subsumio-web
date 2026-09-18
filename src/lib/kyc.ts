@@ -26,6 +26,8 @@ export interface KYCIdentification {
   document_number?: string;
   issuing_authority?: string;
   document_valid_until?: string;
+  /** § 8b Abs. 2 RAO: date of birth of the natural person, also used for the sanctions check. */
+  birth_date?: string;
   /** § 8b Abs. 5: copy of the document retained. */
   copy_retained?: boolean;
   /** § 8b Abs. 3: party not physically present. */
@@ -72,6 +74,20 @@ export interface KYCVerification {
   sanctions_checked?: boolean;
   sanctions_source?: string;
   sanctions_hit?: boolean;
+  sanctions_checked_at?: string;
+  /** Candidates of the last automatic run; a lawyer decides on each. */
+  sanctions_matches?: Array<{
+    name: string;
+    matches: Array<{
+      reference: string;
+      matchedName: string;
+      primaryName: string;
+      programmes: string[];
+      birthDates: string[];
+      score: number;
+      kind: string;
+    }>;
+  }>;
   risk_level: KYCRiskLevel;
   risk_factors: string[];
   verified_at?: string;
@@ -170,6 +186,9 @@ export function missingForVerification(v: KYCVerification, today = new Date()): 
     missing.push("Der Ausweis ist abgelaufen");
   }
   if (!id.copy_retained) missing.push("Kopie des Ausweises aufbewahrt (§ 8b Abs. 5 RAO)");
+  if (v.party_type !== "legal" && !id.birth_date) {
+    missing.push("Geburtsdatum (§ 8b Abs. 2 RAO)");
+  }
   if (id.remote && !id.additional_measures?.trim()) {
     missing.push("Zusätzliche Maßnahmen beim Ferngeschäft (§ 8b Abs. 3 RAO)");
   }

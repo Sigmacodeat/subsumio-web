@@ -48,3 +48,10 @@ Alle übrigen 17 Einträge stimmen überein. Der Crontab enthält 35 Jobs, `verc
    liefern; Uptime-Check darauf zeigen lassen.
 3. Zeitzone: Container laufen in UTC; die Fristen-Jobs (06:00/07:00 UTC) treffen im Winter
    07:00/08:00 Wien, im Sommer 08:00/09:00 — akzeptiert.
+
+## Wöchentlich
+
+| Zeit         | Endpunkt                   | Zweck                                        |
+| ------------ | -------------------------- | -------------------------------------------- |
+| Mo 04:20 UTC | `/api/cron/sanctions-sync` | EU-Finanzsanktionsliste neu laden (§ 8c RAO) |
+| So 03:00 UTC | `backup/verify.sh`         | Rückspielprobe der jüngsten Sicherung        |
