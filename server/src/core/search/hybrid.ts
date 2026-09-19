@@ -1378,6 +1378,46 @@ export function applyCitationValidityBoost(
   }
 }
 
+/**
+ * Statute validity: a lawyer asking a question wants the law in force.
+ * Repealed provisions (in_force_to before today) drop to ×0.7 so the current
+ * version wins whenever both match; they stay in the results, marked, because
+ * "which version applied at the time" is a legitimate question. Provisions not
+ * yet in force get ×0.9. Floor-ratio-gated like the other post-fusion stages.
+ */
+export const STATUTE_VALIDITY_FACTORS = { repealed: 0.7, not_yet_in_force: 0.9 } as const;
+
+export function applyStatuteValidityBoost(
+  results: SearchResult[],
+  validity: Map<number, { in_force_from: string | null; in_force_to: string | null }>,
+  today: string,
+  floorThreshold?: number
+): void {
+  for (const r of results) {
+    if (!Number.isFinite(r.score)) continue;
+    if (floorThreshold !== undefined && r.score < floorThreshold) continue;
+    const v = validity.get(r.page_id);
+    if (!v) continue;
+    const to = v.in_force_to?.slice(0, 10) ?? null;
+    const from = v.in_force_from?.slice(0, 10) ?? null;
+    let status: "repealed" | "not_yet_in_force" | null = null;
+    if (to && to < today) status = "repealed";
+    else if (from && from > today) status = "not_yet_in_force";
+    if (to) r.in_force_to = to;
+    if (from) r.in_force_from = from;
+    if (!status) continue;
+    const factor = STATUTE_VALIDITY_FACTORS[status];
+    r.score *= factor;
+    r.statute_validity = status;
+    r.statute_validity_boost = factor;
+  }
+}
+
+/** Today's date in Vienna as YYYY-MM-DD (validity dates are Austrian calendar days). */
+export function viennaToday(now: Date = new Date()): string {
+  return now.toLocaleDateString("sv-SE", { timeZone: "Europe/Vienna" });
+}
+
 export interface PostFusionOpts {
   applyBacklinks: boolean;
   salience: "off" | "on" | "strong";
@@ -1716,6 +1756,12 @@ export async function runPostFusionStages(
       const statusMap = await engine.getCitationStatuses(pageIds);
       if (statusMap.size > 0) {
         applyCitationValidityBoost(results, statusMap, floorThreshold);
+      }
+      if (engine.getStatuteValidity) {
+        const validity = await engine.getStatuteValidity(pageIds);
+        if (validity.size > 0) {
+          applyStatuteValidityBoost(results, validity, viennaToday(), floorThreshold);
+        }
       }
     } catch {
       // Non-fatal; preserves the per-stage contract.

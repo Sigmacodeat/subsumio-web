@@ -3845,6 +3845,25 @@ export class PostgresEngine implements BrainEngine {
     return result;
   }
 
+  async getStatuteValidity(
+    pageIds: number[]
+  ): Promise<Map<number, { in_force_from: string | null; in_force_to: string | null }>> {
+    const result = new Map<number, { in_force_from: string | null; in_force_to: string | null }>();
+    if (pageIds.length === 0) return result;
+    const sql = this.sql;
+    const rows = await sql`
+      SELECT id, frontmatter ->> 'in_force_from' AS f, frontmatter ->> 'in_force_to' AS t
+      FROM pages
+      WHERE id = ANY(${pageIds}::int[])
+        AND (frontmatter ->> 'doc_class' = 'statute' OR frontmatter ->> 'type' IN ('law', 'statute'))
+        AND (frontmatter ->> 'in_force_from' IS NOT NULL OR frontmatter ->> 'in_force_to' IS NOT NULL)
+    `;
+    for (const r of rows as unknown as { id: number; f: string | null; t: string | null }[]) {
+      result.set(Number(r.id), { in_force_from: r.f, in_force_to: r.t });
+    }
+    return result;
+  }
+
   async getPageTimestamps(slugs: string[]): Promise<Map<string, Date>> {
     if (slugs.length === 0) return new Map();
     const sql = this.sql;
