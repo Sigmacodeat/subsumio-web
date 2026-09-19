@@ -29,6 +29,9 @@ step() {
   echo "=== $(date -u +%FT%TZ) exit $? — $1 $2" >> "$LOG"
 }
 
+# Measure first: where do we stand against RIS? (corpus_reconciliation)
+step bun scripts/reconcile-ris.ts
+
 step bun scripts/backfill-judikatur-normen.ts \
   --court vwgh,ogh,vfgh,dok,lvwg,bvwg,dsk,umse,uvs,asylgh,gbk,pvak,ubas
 
@@ -51,5 +54,8 @@ done
 # Decision → norm links for everything that arrived. Idempotent; run again
 # after the pipeline has imported the new files.
 step bun scripts/build-citation-links.ts --apply
+
+# Measure again after everything arrived.
+step bun scripts/reconcile-ris.ts
 
 echo "=== $(date -u +%FT%TZ) RIS_COMPLETE_DONE" >> "$LOG"

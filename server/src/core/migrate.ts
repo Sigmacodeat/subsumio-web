@@ -6455,6 +6455,48 @@ export const MIGRATIONS: Migration[] = [
     },
     transaction: false,
   },
+  {
+    version: 142,
+    name: "corpus_ingest_log_and_reconciliation",
+    // Operator view of the law corpus. corpus_ingest_log records every
+    // document an import added or changed (which day, which source, which RIS
+    // document number) — before this only daily counts existed. The
+    // reconciliation table holds each measurement of "RIS has / we have /
+    // missing / extra" per source, so completeness is a number with a date,
+    // not a belief.
+    idempotent: true,
+    sql: `
+      CREATE TABLE IF NOT EXISTS corpus_ingest_log (
+        id           BIGSERIAL PRIMARY KEY,
+        occurred_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+        source_id    TEXT NOT NULL,
+        doc_id       TEXT,
+        slug         TEXT,
+        title        TEXT,
+        action       TEXT NOT NULL CHECK (action IN ('added', 'updated', 'removed', 'rejected')),
+        origin       TEXT NOT NULL,
+        detail       JSONB NOT NULL DEFAULT '{}'::jsonb
+      );
+      CREATE INDEX IF NOT EXISTS idx_corpus_ingest_log_time ON corpus_ingest_log (occurred_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_corpus_ingest_log_source ON corpus_ingest_log (source_id, occurred_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_corpus_ingest_log_doc ON corpus_ingest_log (doc_id);
+
+      CREATE TABLE IF NOT EXISTS corpus_reconciliation (
+        id              BIGSERIAL PRIMARY KEY,
+        measured_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+        source_id       TEXT NOT NULL,
+        method          TEXT NOT NULL CHECK (method IN ('doc-ids', 'counts')),
+        ris_total       INTEGER,
+        db_total        INTEGER NOT NULL,
+        missing         INTEGER,
+        extra           INTEGER,
+        sample_missing  JSONB NOT NULL DEFAULT '[]'::jsonb,
+        sample_extra    JSONB NOT NULL DEFAULT '[]'::jsonb,
+        note            TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_corpus_reconciliation_source ON corpus_reconciliation (source_id, measured_at DESC);
+    `,
+  },
 ];
 
 export const LATEST_VERSION =
