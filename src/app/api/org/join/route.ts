@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { getStore, getOrgStore } from "@/lib/auth/store";
+import { effectivePlan } from "@/lib/billing/trial";
 import { verifyActionToken, bindFragment } from "@/lib/auth/tokens";
 import { limitsFor } from "@/lib/plans";
 import { createHandler, apiError } from "@/lib/api-handler";
@@ -50,7 +51,7 @@ export const POST = createHandler(
 
     const store = getStore();
     const owner = await store.getById(org.ownerId);
-    const seats = limitsFor(owner?.plan ?? "free").seats;
+    const seats = limitsFor(owner ? effectivePlan(owner) : "free").seats;
     const members = await store.listByOrg(org.id);
     if (members.length >= seats) {
       return apiError("no_seats_left", "Keine freien Plätze", 409);

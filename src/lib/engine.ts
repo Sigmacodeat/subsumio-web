@@ -6,6 +6,7 @@
 // is added server-to-server only; the browser can never choose a tenant.
 
 import { cookies } from "next/headers";
+import { effectivePlan } from "@/lib/billing/trial";
 import { verifySession, SESSION_COOKIE } from "@/lib/auth/session";
 import { getStore, getOrgStore, type Plan, type User } from "@/lib/auth/store";
 import { can, forbidden, type RouteAction } from "@/lib/permissions";
@@ -146,7 +147,7 @@ export async function engineContext(): Promise<EngineContext | null> {
   if (user.deactivatedAt) return null;
 
   let brainId = user.brainId;
-  let plan: Plan = user.plan;
+  let plan: Plan = effectivePlan(user);
   let effectiveUser = user;
   let supportSession: SupportSession | undefined;
   let billing = billingAccountFor(user, null);
@@ -160,7 +161,7 @@ export async function engineContext(): Promise<EngineContext | null> {
         brainId = tenant.brainId;
         billing = { ownerId: tenant.billing.ownerId, ownerType: tenant.billing.ownerType };
         const payer = await getStore().getById(tenant.billing.ownerId);
-        if (payer) plan = payer.plan;
+        if (payer) plan = effectivePlan(payer);
         supportSession = active;
         effectiveUser = { ...user, role: "admin", orgId: tenant.org?.id ?? null };
       }
@@ -175,7 +176,7 @@ export async function engineContext(): Promise<EngineContext | null> {
       brainId = org.brainId;
       billing = billingAccountFor(user, org);
       const payer = await getStore().getById(billing.ownerId);
-      if (payer) plan = payer.plan;
+      if (payer) plan = effectivePlan(payer);
     } else {
       // `orgId` without a firm behind it (older Stripe checkouts wrote their
       // billing id here). The person works alone; repair the record.

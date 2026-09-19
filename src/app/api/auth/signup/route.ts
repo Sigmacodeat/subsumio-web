@@ -70,6 +70,7 @@ export const POST = createPublicHandler(
         // Austria-only pilot market — every new tenant scopes to the AT
         // corpus and sees AT surfaces. Onboarding may refine this.
         jurisdiction: "AT",
+        startTrial: true,
       })
     );
 
