@@ -69,6 +69,12 @@ export interface User {
   onboardingCompletedAt?: string | null;
   /** Per-step setup progress for the dashboard guide / checklist. */
   onboardingProgress?: OnboardingProgress;
+  /**
+   * "Kanzlei-Gehirn lernt mit" for a lawyer working alone (no org). The org's
+   * value applies to team members instead. undefined = on (default).
+   * See src/lib/brain-learning.ts.
+   */
+  brainLearning?: boolean;
   createdAt: string;
 }
 
@@ -88,6 +94,13 @@ export interface Org {
    * undefined = "any" (no restriction, prior behavior for every existing org).
    */
   modelPolicy?: "any" | "eu_only";
+  /**
+   * Firm-wide "Kanzlei-Gehirn lernt mit". false = the firm's brain is not
+   * extended automatically (no derived facts/takes, no auto-captured
+   * assistant memories, no auto-playbook updates). undefined = on (default).
+   * Admin-only setting, audit-logged; see src/lib/brain-learning.ts.
+   */
+  brainLearning?: boolean;
   /** The user who holds the subscription and whose credits the team uses.
    *  Defaults to ownerId; stays put when ownership is handed over. */
   billingUserId?: string | null;

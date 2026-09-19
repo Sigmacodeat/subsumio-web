@@ -98,6 +98,7 @@ export type AuditAction =
   | "legal.ground"
   | "settings.update"
   | "settings.jurisdiction"
+  | "settings.brain_learning"
   | "billing.upgrade"
   | "billing.credit_purchase"
   | "billing.credit_consumption"
@@ -383,6 +384,7 @@ const ACTION_LABELS: Record<string, string> = {
   "legal.ground": "Citation Grounding",
   "settings.update": "Einstellungen geändert",
   "settings.jurisdiction": "Rechtsraum geändert",
+  "settings.brain_learning": "Kanzlei-Gehirn lernt mit: geändert",
   "billing.upgrade": "Plan geändert",
   "billing.credit_purchase": "Credits gekauft",
   "billing.credit_consumption": "Credits verbraucht",

@@ -9202,16 +9202,82 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   });
 
-  app.post("/api/admin/dream", async (req: Request, res: Response) => {
+  // Firm setting "Kanzlei-Gehirn lernt mit" (core/brain-learning.ts). The web
+  // server calls this with the firm's own server-set x-subsumio-source when
+  // an admin flips the switch; the flag is persisted on that source and read
+  // by every learning chokepoint (cycle, post-upload consolidation, facts).
+  app.get("/api/brain/learning", async (req: Request, res: Response) => {
     try {
-      const { runDream } = await import("../commands/dream.ts");
-      const report = await runDream(engine, ["--json"]);
-      res.json(report);
+      const { isLearningDisabledForSource } = await import("../core/brain-learning.ts");
+      const sourceId = requestSourceId(req);
+      res.json({
+        source_id: sourceId,
+        enabled: !(await isLearningDisabledForSource(engine, sourceId)),
+      });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
-      res.status(500).json({ error: "dream_failed", message: msg });
+      res.status(500).json({ error: "learning_read_failed", message: msg });
     }
   });
+
+  app.put(
+    "/api/brain/learning",
+    express.json({ limit: "16kb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const enabled = (req.body as { enabled?: unknown } | undefined)?.enabled;
+        if (typeof enabled !== "boolean") {
+          apiError(res, 400, "invalid_body", "enabled (boolean) is required");
+          return;
+        }
+        const sourceId = requestSourceId(req);
+        // Shared law sources and the host 'default' source are not a firm.
+        if (sourceId === "default" || sourceId.startsWith("law-")) {
+          apiError(res, 400, "not_a_firm_source");
+          return;
+        }
+        const { setSourceLearning } = await import("../core/brain-learning.ts");
+        await setSourceLearning(engine, sourceId, enabled);
+        res.json({ source_id: sourceId, enabled });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "unknown";
+        res.status(500).json({ error: "learning_update_failed", message: msg });
+      }
+    }
+  );
+
+  app.post(
+    "/api/admin/dream",
+    express.json({ limit: "1mb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const { runDream } = await import("../commands/dream.ts");
+        // The nightly web cron sends the COMPLETE list of firms that switched
+        // "Kanzlei-Gehirn lernt mit" off. Reconcile the persisted flags to it
+        // first (self-heals a lost single update), then run the cycle — which
+        // skips learning phases for every flagged source.
+        const rawList = (req.body as { learning_excluded_sources?: unknown } | undefined)
+          ?.learning_excluded_sources;
+        let learningExcludedSourceIds: string[] = [];
+        let learningReconcile: { disabled: number; cleared: number } | undefined;
+        if (Array.isArray(rawList)) {
+          const { parseLearningExcludedSources, reconcileLearningDisabled } =
+            await import("../core/brain-learning.ts");
+          learningExcludedSourceIds = parseLearningExcludedSources(rawList);
+          learningReconcile = await reconcileLearningDisabled(engine, learningExcludedSourceIds);
+        }
+        const report = await runDream(engine, ["--json"], { learningExcludedSourceIds });
+        res.json(
+          learningReconcile && report && typeof report === "object"
+            ? { ...report, learning_reconcile: learningReconcile }
+            : report
+        );
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "unknown";
+        res.status(500).json({ error: "dream_failed", message: msg });
+      }
+    }
+  );
 
   // Latest contradiction-probe findings, source-scoped. Web callers
   // (contradiction-probe route, daily briefing) used to POST a pseudo-prompt

@@ -15,7 +15,7 @@ import type { PhaseResult } from "../cycle.ts";
 
 export async function runPhaseReconsolidationSweep(
   engine: BrainEngine,
-  opts: { dryRun: boolean; signal?: AbortSignal }
+  opts: { dryRun: boolean; signal?: AbortSignal; excludedSources?: ReadonlySet<string> }
 ): Promise<PhaseResult> {
   if (opts.dryRun) {
     return {
@@ -29,7 +29,8 @@ export async function runPhaseReconsolidationSweep(
 
   try {
     const { listSources } = await import("../sources-ops.ts");
-    const sources = await listSources(engine);
+    const { withoutExcluded } = await import("../brain-learning.ts");
+    const sources = withoutExcluded(await listSources(engine), opts.excludedSources);
 
     let totalSwept = 0;
     let totalStillLabile = 0;

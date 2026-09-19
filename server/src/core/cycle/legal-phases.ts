@@ -26,6 +26,7 @@ import type { BrainEngine } from "../engine.ts";
 import type { PhaseResult, PhaseStatus } from "../cycle.ts";
 import { parseDeadlineTable, parseDeadlineDate } from "../legal/fristenbuch.ts";
 import { klassifiziereFrist, type FristStatus } from "../legal/frist-engine.ts";
+import { excludedSourcesClause } from "../brain-learning.ts";
 
 export interface LegalPhaseOpts {
   dryRun?: boolean;
@@ -37,6 +38,8 @@ export interface LegalPhaseOpts {
    * date so the deterministic Werktag/Vorfrist classification is reproducible.
    */
   today?: string;
+  /** Firm setting "Kanzlei-Gehirn lernt mit": sources this phase must skip (core/brain-learning.ts). */
+  excludedSources?: ReadonlySet<string>;
 }
 
 // ─── Phase 1: Statute Currency Check ──────────────────────────────
@@ -407,8 +410,14 @@ export async function runPhaseLegalPrecedentLinkage(
       };
     }
 
-    const sourceFilter = opts.sourceId ? `AND source_id = $1` : "";
-    const sourceParams = opts.sourceId ? [opts.sourceId] : [];
+    // Firm setting "Kanzlei-Gehirn lernt mit": in a brain-wide run (no
+    // sourceId) skip every source that switched learning off. A run scoped to
+    // such a source never reaches this phase (cycle.ts drops it).
+    const excl = opts.sourceId
+      ? { clause: "", params: [] as string[][] }
+      : excludedSourcesClause(opts.excludedSources, 1);
+    const sourceFilter = opts.sourceId ? `AND source_id = $1` : excl.clause;
+    const sourceParams: unknown[] = opts.sourceId ? [opts.sourceId] : excl.params;
 
     // Find legal_case + court_decision pages (case law) for statute linking.
     // court_decision covers AT/DE/CH Judikatur imports (type set by frontmatter).

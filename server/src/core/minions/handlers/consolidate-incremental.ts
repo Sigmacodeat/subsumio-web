@@ -41,7 +41,7 @@ export interface ConsolidateIncrementalJobData {
 }
 
 export interface ConsolidateIncrementalResult {
-  status: "success" | "no_work" | "aborted";
+  status: "success" | "no_work" | "aborted" | "learning_disabled";
   affectedSlugs: string[];
   factsExtracted: number;
   factsConsolidated: number;
@@ -55,7 +55,15 @@ function parseParams(data: Record<string, unknown>): ConsolidateIncrementalJobDa
       "consolidate-incremental: data.affectedSlugs is required and must be a non-empty array"
     );
   }
-  const sourceId = typeof data.sourceId === "string" ? data.sourceId : undefined;
+  // Submitters in web-api.ts / ingest-capture.ts write `source_id`; older
+  // callers and tests write `sourceId`. Accept both so the job runs against
+  // the tenant's source instead of silently falling back to 'default'.
+  const sourceId =
+    typeof data.sourceId === "string"
+      ? data.sourceId
+      : typeof data.source_id === "string"
+        ? data.source_id
+        : undefined;
   const brainDir = typeof data.brainDir === "string" ? data.brainDir : undefined;
   const reason = typeof data.reason === "string" ? data.reason : undefined;
   return { affectedSlugs, sourceId, brainDir, reason };
@@ -67,6 +75,20 @@ export function makeConsolidateIncrementalHandler(engine: BrainEngine) {
   ): Promise<ConsolidateIncrementalResult> {
     const { affectedSlugs, sourceId, brainDir, reason } = parseParams(job.data);
     const effectiveSourceId = sourceId ?? "default";
+
+    // Firm setting "Kanzlei-Gehirn lernt mit" switched off: the uploaded
+    // document is already stored, chunked and embedded — derive nothing more.
+    const { learningDisabledSources } = await import("../../brain-learning.ts");
+    const learningOff = await learningDisabledSources(engine);
+    if (learningOff.has(effectiveSourceId)) {
+      return {
+        status: "learning_disabled",
+        affectedSlugs,
+        factsExtracted: 0,
+        factsConsolidated: 0,
+        takesWritten: 0,
+      };
+    }
 
     // Phase 1: extract_facts for the affected slugs only.
     // Reconciles `## Facts` fences on the newly imported pages into the
@@ -101,6 +123,9 @@ export function makeConsolidateIncrementalHandler(engine: BrainEngine) {
       const result = await runPhaseConsolidate(engine, {
         affectedSlugs,
         signal: job.signal,
+        // Incremental mode buckets by entity slug across sources; never touch
+        // a source whose firm switched learning off.
+        excludedSources: learningOff,
       });
       if (result.status === "ok" && result.details) {
         factsConsolidated =

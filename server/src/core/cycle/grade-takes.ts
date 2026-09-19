@@ -430,12 +430,23 @@ class GradeTakesPhase extends BaseCyclePhase {
     };
 
     // Load unresolved active takes, oldest-first.
-    const takes = await engine.listTakes({
+    const allTakes = await engine.listTakes({
       resolved: false,
       active: true,
       sortBy: "since_date",
       limit: takeLimit,
     });
+    // Firm setting "Kanzlei-Gehirn lernt mit": drop takes whose page lives in
+    // a source that switched learning off. Takes carry page_id, not source_id.
+    let takes = allTakes;
+    if (opts.excludedSources && opts.excludedSources.size > 0 && allTakes.length > 0) {
+      const rows = await engine.executeRaw<{ id: number }>(
+        `SELECT id FROM pages WHERE id = ANY($1::bigint[]) AND source_id = ANY($2::text[])`,
+        [allTakes.map((t) => t.page_id), [...opts.excludedSources]]
+      );
+      const excludedPageIds = new Set(rows.map((r) => Number(r.id)));
+      takes = allTakes.filter((t) => !excludedPageIds.has(t.page_id));
+    }
 
     if (opts.reporter) {
       opts.reporter.start("grade_takes.takes" as never, takes.length);

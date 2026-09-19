@@ -26,6 +26,7 @@ import type { BrainEngine, FactRow } from "../../engine.ts";
 import type { PhaseResult } from "../../cycle.ts";
 import { cosineSimilarity } from "../../facts/classify.ts";
 import { isAborted } from "../../abort-check.ts";
+import { excludedSourcesClause } from "../../brain-learning.ts";
 
 export interface ConsolidatePhaseOpts {
   dryRun?: boolean;
@@ -51,6 +52,11 @@ export interface ConsolidatePhaseOpts {
    * entities touched by a recent import without scanning the entire brain.
    */
   affectedSlugs?: string[];
+  /**
+   * Firm setting "Kanzlei-Gehirn lernt mit": sources whose facts must not be
+   * consolidated into takes (see core/brain-learning.ts).
+   */
+  excludedSources?: ReadonlySet<string>;
 }
 
 export async function runPhaseConsolidate(
@@ -74,6 +80,8 @@ export async function runPhaseConsolidate(
   // Uses the partial idx_facts_unconsolidated index.
   // v0.46: in incremental mode, filter to affectedSlugs via ANY($1).
   let buckets: Array<{ source_id: string; entity_slug: string; count: number }>;
+  const incExcl = excludedSourcesClause(opts.excludedSources, 2);
+  const fullExcl = excludedSourcesClause(opts.excludedSources, 1);
   try {
     if (isIncremental) {
       buckets = await engine.executeRaw<{
@@ -88,25 +96,30 @@ export async function runPhaseConsolidate(
           AND expired_at IS NULL
           AND entity_slug IS NOT NULL
           AND entity_slug = ANY($1)
+          ${incExcl.clause}
         GROUP BY source_id, entity_slug
         HAVING COUNT(*) >= ${minPerBucket}
         `,
-        [opts.affectedSlugs!]
+        [opts.affectedSlugs!, ...incExcl.params]
       );
     } else {
       buckets = await engine.executeRaw<{
         source_id: string;
         entity_slug: string;
         count: number;
-      }>(`
+      }>(
+        `
         SELECT source_id, entity_slug, COUNT(*)::int AS count
         FROM facts
         WHERE consolidated_at IS NULL
           AND expired_at IS NULL
           AND entity_slug IS NOT NULL
+          ${fullExcl.clause}
         GROUP BY source_id, entity_slug
         HAVING COUNT(*) >= ${minPerBucket}
-      `);
+      `,
+        fullExcl.params
+      );
     }
   } catch (err) {
     return {

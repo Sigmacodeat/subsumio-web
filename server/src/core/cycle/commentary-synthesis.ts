@@ -31,6 +31,7 @@
 import type { BrainEngine } from "../engine.ts";
 import type { PhaseResult, PhaseStatus } from "../cycle.ts";
 import { chat as gatewayChat, isAvailable } from "../ai/gateway.ts";
+import { excludedSourcesClause } from "../brain-learning.ts";
 
 export interface CommentarySynthesisOpts {
   dryRun?: boolean;
@@ -39,6 +40,8 @@ export interface CommentarySynthesisOpts {
   maxSectionsPerCycle?: number;
   maxCostUsd?: number;
   staleHours?: number;
+  /** Firm setting "Kanzlei-Gehirn lernt mit": sources this phase must skip (core/brain-learning.ts). */
+  excludedSources?: ReadonlySet<string>;
   /** Test seam: alternative chat function (bypasses real LLM calls). */
   _chat?: typeof gatewayChat;
 }
@@ -105,6 +108,11 @@ export async function runPhaseLegalCommentarySynthesis(
     // ── 1. Find statute sections with ≥2 linked cases ──────────
     const sourceFilter = opts.sourceId ? `AND source_id = $1` : "";
     const sourceParams = opts.sourceId ? [opts.sourceId] : [];
+    // Firm setting "Kanzlei-Gehirn lernt mit": brain-wide runs skip edges
+    // and case material from sources that switched learning off.
+    const exclEdges = opts.sourceId
+      ? { clause: "", params: [] as string[][] }
+      : excludedSourcesClause(opts.excludedSources, 2);
 
     // Query case_to_statute edges grouped by target statute slug
     const edges = await engine.executeRaw<{
@@ -116,11 +124,12 @@ export async function runPhaseLegalCommentarySynthesis(
        WHERE link_type = 'case_to_statute'
          AND target_slug LIKE 'legal/statutes/%'
          ${sourceFilter}
+         ${exclEdges.clause}
        GROUP BY target_slug
        HAVING COUNT(*) >= 2
        ORDER BY edge_count DESC
        LIMIT $${opts.sourceId ? 2 : 1}`,
-      opts.sourceId ? [opts.sourceId, maxSections] : [maxSections]
+      opts.sourceId ? [opts.sourceId, maxSections] : [maxSections, ...exclEdges.params]
     );
 
     if (edges.length === 0) {
@@ -218,7 +227,12 @@ export async function runPhaseLegalCommentarySynthesis(
 
       try {
         // Fetch linked cases via engine search
-        const linkedCases = await fetchLinkedCases(engine, section.slug, opts.sourceId);
+        const linkedCases = await fetchLinkedCases(
+          engine,
+          section.slug,
+          opts.sourceId,
+          opts.excludedSources
+        );
 
         if (linkedCases.length < 2) {
           skipped++;
@@ -329,7 +343,8 @@ export async function runPhaseLegalCommentarySynthesis(
 async function fetchLinkedCases(
   engine: BrainEngine,
   statuteSlug: string,
-  sourceId?: string
+  sourceId?: string,
+  excludedSources?: ReadonlySet<string>
 ): Promise<LinkedCase[]> {
   // Get case slugs from links
   const links = await engine.executeRaw<{ from_slug: string }>(
@@ -343,7 +358,9 @@ async function fetchLinkedCases(
 
   const caseSlugs = links.map((l) => l.from_slug);
 
-  // Fetch case details from pages
+  // Fetch case details from pages. Case material from a source whose firm
+  // switched learning off never feeds a commentary.
+  const excl = excludedSourcesClause(excludedSources, 2);
   const cases = await engine.executeRaw<{
     slug: string;
     title: string;
@@ -352,8 +369,9 @@ async function fetchLinkedCases(
   }>(
     `SELECT slug, title, compiled_truth as body, frontmatter FROM pages
      WHERE slug = ANY($1::text[]) AND deleted_at IS NULL
+       ${excl.clause}
      LIMIT 20`,
-    [caseSlugs]
+    [caseSlugs, ...excl.params]
   );
 
   return cases.map((c) => {
