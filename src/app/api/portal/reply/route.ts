@@ -3,6 +3,7 @@ import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { portalMessageSlugPrefix } from "@/lib/portal-messages";
+import { notifyPortalClients } from "@/lib/portal-push";
 
 const replySchema = z.object({
   case_slug: z.string().min(1).max(300),
@@ -62,6 +63,12 @@ export const POST = createHandler(
       signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok) return apiError("save_failed", "Antwort konnte nicht gespeichert werden", 502);
-    return Response.json({ ok: true, created_at: now });
+    // Devices that turned on notifications in the portal hear about it —
+    // without the reply's content (lib/portal-push.ts).
+    const notified = await notifyPortalClients(ctx.brainId, body.case_slug, {
+      title: "Neue Nachricht Ihrer Kanzlei",
+      body: "Ihre Kanzlei hat Ihnen im Mandantenportal geantwortet.",
+    }).catch(() => 0);
+    return Response.json({ ok: true, created_at: now, notified });
   }
 );

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
+import { PortalAppBar } from "@/components/portal/portal-app-bar";
 import {
   FileText,
   Users,
@@ -514,6 +515,7 @@ export default function PortalPage() {
       </header>
 
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-6">
+        <PortalAppBar token={token} />
         {/* Tab Navigation */}
         <div className="flex gap-1 rounded-xl border [border-color:var(--mk-border)] p-1 [background:var(--mk-surface)]">
           <button
@@ -802,9 +804,14 @@ export default function PortalPage() {
                         <div className="truncate [color:var(--mk-text)]">
                           {doc.name || t("portal.document_default")}
                         </div>
-                        {doc.url && (doc.url.startsWith("http") || doc.url.startsWith("/")) && (
+                        {(doc.slug ||
+                          (doc.url && (doc.url.startsWith("http") || doc.url.startsWith("/")))) && (
                           <a
-                            href={doc.url}
+                            href={
+                              doc.slug
+                                ? `/api/portal/document?token=${encodeURIComponent(token)}&slug=${encodeURIComponent(doc.slug)}`
+                                : doc.url
+                            }
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-xs text-[color:var(--brand-text)] hover:underline"
@@ -1104,6 +1111,16 @@ export default function PortalPage() {
                       </div>
                     )}
                   </div>
+                  {doc.slug && (
+                    <a
+                      href={`/api/portal/document?token=${encodeURIComponent(token)}&slug=${encodeURIComponent(doc.slug)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="shrink-0 text-xs font-medium text-[color:var(--brand-text)] hover:underline"
+                    >
+                      {t("portal.download")}
+                    </a>
+                  )}
                 </div>
               ))}
             </div>
