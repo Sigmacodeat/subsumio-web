@@ -28,6 +28,7 @@ import { getUserAgent, proxyFetchOptions } from "./ris-proxy";
 import { atomicWrite, contentMatchesDocument, risXmlToText } from "./backfill-utils";
 import { extractRisReferences } from "../src/core/ingestion/connectors/legal-judgements.ts";
 import { dokumentnummerOf } from "./judikatur-file";
+import { risBulkPause } from "./ris-policy.ts";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 
@@ -45,15 +46,6 @@ const courts = (arg("--court") ?? "ogh").split(",");
 const ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
 const STATE = join(ROOT, "_normalized", "_state", "fetch-entscheidungstexte.json");
 
-/** RIS OGD: 2 s during business hours, 1 s otherwise (Vienna time). */
-export function politeDelayMs(): number {
-  const now = new Date();
-  const hour = parseInt(
-    now.toLocaleTimeString("de-AT", { timeZone: "Europe/Vienna", hour: "2-digit", hour12: false })
-  );
-  const day = now.toLocaleDateString("en-US", { timeZone: "Europe/Vienna", weekday: "short" });
-  return day !== "Sat" && day !== "Sun" && hour >= 8 && hour < 18 ? 2000 : 1000;
-}
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function risGet(url: string): Promise<Response | null> {
@@ -183,7 +175,7 @@ async function main() {
           url.searchParams.set("EntscheidungsdatumBis", `${year}-12-31`);
           const res = await risGet(url.toString());
           requests++;
-          await sleep(politeDelayMs());
+          await risBulkPause();
           if (!res) break;
           const refs = extractRisReferences((await res.json()) as Record<string, unknown>);
           for (const ref of refs)
@@ -197,7 +189,7 @@ async function main() {
             `https://www.ris.bka.gv.at/Dokumente/${cfg.applikation}/${t.dokNr}/${t.dokNr}.xml`
           );
           requests++;
-          await sleep(politeDelayMs());
+          await risBulkPause();
           const xml = xmlRes ? await xmlRes.text() : "";
           const text = xml ? risXmlToText(xml) : "";
           // Identity guard: the text must name its own case number.

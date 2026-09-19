@@ -24,7 +24,6 @@ import { tmpdir } from "os";
 
 const LOCK_DIR = join(tmpdir(), "subsumio-ris-lock");
 const LOCK_FILE = "lock";
-const STALE_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes — RIS backfills can run long
 const POLL_MS = 2000;
 const LOG_EVERY_MS = 30_000;
 
@@ -60,7 +59,10 @@ function clearStaleLockIfAny(): void {
     }
     return;
   }
-  const stale = !isProcessAlive(data.pid) || Date.now() - data.acquired_at > STALE_THRESHOLD_MS;
+  // Only a dead holder frees the lock. An age limit let every run longer than
+  // the limit lose it to the next waiting job, so several jobs ran against
+  // RIS in parallel — which the OGD rules forbid (ris-policy.ts).
+  const stale = !isProcessAlive(data.pid);
   if (stale) {
     try {
       rmSync(LOCK_DIR, { recursive: true, force: true });
@@ -73,8 +75,8 @@ function clearStaleLockIfAny(): void {
 /**
  * Block until the RIS lock is acquired by this process. Polls indefinitely
  * (no timeout) — RIS backfills are expected to queue behind each other
- * rather than fail. Stale locks (dead PID, or held past `STALE_THRESHOLD_MS`)
- * are cleaned up automatically.
+ * rather than fail. A lock whose holder process has died is cleaned up
+ * automatically.
  */
 export async function acquireRisLock(): Promise<void> {
   let lastLog = 0;

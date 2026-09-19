@@ -43,8 +43,8 @@ const XML_BASE = "https://www.ris.bka.gv.at/Dokumente/Landesnormen";
 
 // RIS OGD: one connection, ~1 s between requests. Was 5 parallel workers
 // without the shared lock.
-const CONCURRENCY = Number(arg("concurrency", "1"));
-const THROTTLE_MS = Number(arg("throttle-ms", "1000"));
+// RIS OGD: no parallel connections (ris-policy.ts). The flag is gone on purpose.
+const CONCURRENCY = 1;
 const REQUEST_TIMEOUT_MS = Number(arg("timeout-ms", "20000"));
 const MAX_CONSECUTIVE_503 = Number(arg("max-503", "25"));
 const PAGE_SIZE = "OneHundred";
@@ -166,7 +166,7 @@ async function fetchXmlFromUrl(url: string, attempt = 0): Promise<string | null>
     return body;
   } catch {
     if (attempt < 5) {
-      await new Promise((r) => setTimeout(r, 600 * 2 ** attempt));
+      await new Promise((r) => setTimeout(r, 2000 * 2 ** attempt));
       return fetchXmlFromUrl(url, attempt + 1);
     }
     return null;
@@ -344,7 +344,7 @@ async function main() {
   console.log(`  Strategy: Skip Norm docs (38%), only fetch Paragraph docs (62%)`);
   console.log(`  Existing files: ${existing.size}`);
   console.log(`  Start page: ${START_PAGE}`);
-  console.log(`  Concurrency: ${CONCURRENCY} | Throttle: ${THROTTLE_MS}ms`);
+  console.log(`  Eine Verbindung, 2 s Pause, nur im RIS-Zeitfenster (ris-policy.ts)`);
   console.log(`  Output: ${OUT_DIR}`);
   if (LIMIT > 0) console.log(`  Limit: ${LIMIT} files (test mode)`);
   console.log(`═══════════════════════════════════════════════════════════\n`);
@@ -536,7 +536,7 @@ async function main() {
               );
             }
 
-            await new Promise((r) => setTimeout(r, THROTTLE_MS));
+            await risBulkPause();
           }
         })()
       );
@@ -550,8 +550,8 @@ async function main() {
       );
     }
 
-    // Pause between search pages (RIS OGD: 1–2 s between requests)
-    await new Promise((r) => setTimeout(r, 1000));
+    // Pause between search pages (ris-policy.ts)
+    await risBulkPause();
   }
 
   if (reachedEnd && START_PAGE === 1 && LIMIT === 0 && !aborted) {

@@ -14,16 +14,8 @@ import { acquireRisLock, releaseRisLock } from "./ris-lock";
 
 const API = "https://data.bka.gv.at/ris/api/v2.6/Bundesrecht";
 const UA = { "User-Agent": "subsumio-law-corpus/1.0 (corpus audit; contact: hello@subsum.io)" };
-// RIS OGD: one connection, 1–2 s between requests. Was 4 parallel workers.
+// RIS OGD: one connection, 2 s between requests, bulk window (ris-policy.ts).
 const CONCURRENCY = 1;
-function politeDelayMs(): number {
-  const now = new Date();
-  const hour = parseInt(
-    now.toLocaleTimeString("de-AT", { timeZone: "Europe/Vienna", hour: "2-digit", hour12: false })
-  );
-  const day = now.toLocaleDateString("en-US", { timeZone: "Europe/Vienna", weekday: "short" });
-  return day !== "Sat" && day !== "Sun" && hour >= 8 && hour < 18 ? 2000 : 1000;
-}
 const PAGE_SIZE = 100;
 
 const outArg = process.argv.indexOf("--out");
@@ -100,7 +92,7 @@ async function fetchPage(seite: number, attempt = 0): Promise<Norm[]> {
     });
   } catch (err) {
     if (attempt < 4) {
-      await new Promise((r) => setTimeout(r, 500 * 2 ** attempt));
+      await new Promise((r) => setTimeout(r, 2000 * 2 ** attempt));
       return fetchPage(seite, attempt + 1);
     }
     console.error(`  ! Seite ${seite} nach 5 Versuchen aufgegeben: ${String(err)}`);
@@ -132,7 +124,7 @@ async function main() {
       const seite = next++;
       if (seite > pages) return;
       const norms = await fetchPage(seite);
-      await new Promise((r) => setTimeout(r, politeDelayMs()));
+      await risBulkPause();
       for (const n of norms) {
         buf.push(JSON.stringify(n));
         written++;

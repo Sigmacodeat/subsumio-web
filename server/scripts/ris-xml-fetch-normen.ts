@@ -62,9 +62,9 @@ const FROM_XML = arg("from-xml");
  * Etwa 6 Anfragen/Sekunde laufen stabil; der Vollbestand braucht damit ~7h.
  */
 // RIS OGD: one connection. Earlier default was 3 parallel workers.
-const CONCURRENCY = Number(arg("concurrency", "1"));
+// RIS OGD: no parallel connections (ris-policy.ts). The flag is gone on purpose.
+const CONCURRENCY = 1;
 const REQUEST_TIMEOUT_MS = Number(arg("timeout-ms", "20000"));
-const THROTTLE_MS = Number(arg("throttle-ms", "1000"));
 /** Nach so vielen aufeinanderfolgenden 503 wird der Lauf abgebrochen. */
 const MAX_CONSECUTIVE_503 = Number(arg("max-503", "25"));
 const UA = { "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)" };
@@ -235,7 +235,7 @@ async function fetchXml(nor: string, attempt = 0): Promise<string | null> {
     return body;
   } catch {
     if (attempt < 5) {
-      await new Promise((r) => setTimeout(r, 600 * 2 ** attempt));
+      await new Promise((r) => setTimeout(r, 2000 * 2 ** attempt));
       return fetchXml(nor, attempt + 1);
     }
     return null;
@@ -487,7 +487,7 @@ async function main() {
         }
         xml = readFileSync(p, "utf8");
       } else {
-        if (THROTTLE_MS > 0) await new Promise((r) => setTimeout(r, THROTTLE_MS));
+        await risBulkPause();
         xml = await fetchXml(n.nor);
       }
       if (!xml) {
