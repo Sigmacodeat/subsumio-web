@@ -226,4 +226,18 @@ describe("canonical schema v1 pages", () => {
       "<context>AT Verwaltungsgerichtshof (VwGH) 2012/03/0069 2012-10-22\n</context>\n"
     );
   });
+  it("state law names its state", () => {
+    const p = buildLegalContextualPrefix(
+      "Steiermärkisches Feuerwehrgesetz",
+      {
+        jurisdiction: "at",
+        region: "Steiermark",
+        abbr: "StFWG",
+        paragraph_ref: "§ 39",
+        doc_class: "statute",
+      },
+      null
+    );
+    expect(p).toContain("AT Steiermark StFWG § 39");
+  });
 });
