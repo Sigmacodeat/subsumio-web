@@ -165,4 +165,65 @@ describe("canonical schema v1 pages", () => {
     );
     expect(p).not.toContain("null");
   });
+  it("keeps the abbreviation's spelling", () => {
+    const p = buildLegalContextualPrefix(
+      "Steiermärkisches Feuerwehrgesetz",
+      { jurisdiction: "at", abbr: "StFWG", paragraph_ref: "§ 39", doc_class: "statute" },
+      null
+    );
+    expect(p).toContain("AT StFWG § 39");
+    expect(p).not.toContain("STFWG");
+  });
+
+  it("takes the law name from legal_area and drops a title that repeats the header", () => {
+    const p = buildLegalContextualPrefix(
+      "§ 403 ABGB",
+      {
+        jurisdiction: "at",
+        abbr: "ABGB",
+        paragraph_ref: "§ 403",
+        short_title: null,
+        legal_area: ["20/01 Allgemeines bürgerliches Gesetzbuch (ABGB)"],
+        doc_class: "statute",
+      },
+      null
+    );
+    expect(p).toBe(
+      "<context>AT ABGB § 403 | Allgemeines bürgerliches Gesetzbuch (ABGB)\n</context>\n"
+    );
+  });
+
+  it("norm without abbreviation still names its law area", () => {
+    const p = buildLegalContextualPrefix(
+      "Übertragung von Aufgaben",
+      {
+        jurisdiction: "at",
+        abbr: null,
+        paragraph_ref: "§ 2",
+        legal_area: ["31/01 Allgemeines Haushaltsrecht, Bundesbudget"],
+        doc_class: "statute",
+      },
+      null
+    );
+    expect(p).toContain(
+      "AT § 2 | Übertragung von Aufgaben | Allgemeines Haushaltsrecht, Bundesbudget"
+    );
+  });
+  it("ignores the placeholder area RIS sets on decisions", () => {
+    const p = buildLegalContextualPrefix(
+      "Verwaltungsgerichtshof (VwGH) — 2012/03/0069",
+      {
+        jurisdiction: "at",
+        court: "Verwaltungsgerichtshof (VwGH)",
+        case_number: "2012/03/0069",
+        decision_date: "2012-10-22",
+        legal_area: ["Allgemein"],
+        doc_class: "decision",
+      },
+      null
+    );
+    expect(p).toBe(
+      "<context>AT Verwaltungsgerichtshof (VwGH) 2012/03/0069 2012-10-22\n</context>\n"
+    );
+  });
 });

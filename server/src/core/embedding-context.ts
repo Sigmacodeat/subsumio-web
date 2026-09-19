@@ -228,9 +228,17 @@ export function buildLegalContextualPrefix(
     return buildContextualPrefix(title, synopsis);
   }
 
+  // RIS files every norm under an index entry like "20/01 Allgemeines
+  // bürgerliches Gesetzbuch (ABGB)". It is the only place the full law name
+  // lives when a page has no short_title, and for norms without an
+  // abbreviation it is the only hint which law they belong to.
+  const legalArea = firstLegalArea(frontmatter.legal_area);
+
   const parts: string[] = [];
   if (jurisdiction) parts.push(jurisdiction.toUpperCase());
-  if (abbreviation) parts.push(abbreviation.toUpperCase());
+  // Abbreviations keep their spelling: lawyers write and search "StFWG",
+  // "GewO", "EStG", never "STFWG".
+  if (abbreviation) parts.push(abbreviation);
   if (!abbreviation && !paragraph) {
     if (court) parts.push(court);
     if (caseNumber) parts.push(caseNumber);
@@ -251,10 +259,13 @@ export function buildLegalContextualPrefix(
 
   const contextLines: string[] = [];
   if (header) contextLines.push(header);
-  if (safeTitle && safeTitle !== header) contextLines.push(safeTitle);
-  if (statute) {
-    const safeStatute = sanitizeTitle(statute);
-    if (safeStatute && safeStatute !== safeTitle) contextLines.push(safeStatute);
+  // Canonical titles often just restate the header ("§ 403 ABGB",
+  // "VwGH — 2012/03/0069"); repeating them adds tokens, not signal.
+  if (safeTitle && !wordsCoveredBy(safeTitle, header)) contextLines.push(safeTitle);
+  const lawName = statute ?? legalArea;
+  if (lawName) {
+    const safeLawName = sanitizeTitle(lawName);
+    if (safeLawName && safeLawName !== safeTitle) contextLines.push(safeLawName);
   }
   if (safeSynopsis) contextLines.push(safeSynopsis);
 
@@ -265,6 +276,23 @@ export function buildLegalContextualPrefix(
   const body = rest ? `${first} | ${rest}` : first;
 
   return `<context>${body}\n</context>\n`;
+}
+
+/** First `legal_area` entry without its RIS index number ("20/01 "). */
+function firstLegalArea(value: unknown): string | null {
+  const first = Array.isArray(value) ? value.find((v) => typeof v === "string") : value;
+  if (typeof first !== "string") return null;
+  const cleaned = first.replace(/^\d+(\/\d+)*\s+/, "").trim();
+  // Decisions carry "Allgemein" when RIS has no subject; that says nothing.
+  return cleaned && !/^(allgemein|sonstige[s]?)$/i.test(cleaned) ? cleaned : null;
+}
+
+/** True when every word of `text` already appears in `header`. */
+function wordsCoveredBy(text: string, header: string): boolean {
+  const words = (s: string) => s.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
+  const headerWords = new Set(words(header));
+  const textWords = words(text);
+  return textWords.length > 0 && textWords.every((w) => headerWords.has(w));
 }
 
 /**
