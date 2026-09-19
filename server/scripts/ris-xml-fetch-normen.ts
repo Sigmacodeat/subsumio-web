@@ -20,6 +20,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from "fs";
 import { join } from "path";
 import { createHash } from "crypto";
+import { acquireRisLock, releaseRisLock } from "./ris-lock";
 
 function arg(name: string, fb?: string) {
   const i = process.argv.indexOf(`--${name}`);
@@ -60,19 +61,28 @@ const FROM_XML = arg("from-xml");
  * data.bka.gv.at ist davon nicht betroffen — das ist ein anderer Host.
  * Etwa 6 Anfragen/Sekunde laufen stabil; der Vollbestand braucht damit ~7h.
  */
-const CONCURRENCY = Number(arg("concurrency", "3"));
+// RIS OGD: one connection. Earlier default was 3 parallel workers.
+const CONCURRENCY = Number(arg("concurrency", "1"));
 const REQUEST_TIMEOUT_MS = Number(arg("timeout-ms", "20000"));
-const THROTTLE_MS = Number(arg("throttle-ms", "400"));
+const THROTTLE_MS = Number(arg("throttle-ms", "1000"));
 /** Nach so vielen aufeinanderfolgenden 503 wird der Lauf abgebrochen. */
 const MAX_CONSECUTIVE_503 = Number(arg("max-503", "25"));
 const UA = { "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)" };
 const NS = "{http://www.bka.gv.at}";
 
 type Norm = {
-  nor: string; gnr: string; kurztitel: string; abk: string | null;
-  typ: string | null; apa: string | null; inkraft: string | null;
-  ausserkraft: string | null; kundmachungsorgan: string | null;
-  eli: string | null; url: string | null; indizes: string[];
+  nor: string;
+  gnr: string;
+  kurztitel: string;
+  abk: string | null;
+  typ: string | null;
+  apa: string | null;
+  inkraft: string | null;
+  ausserkraft: string | null;
+  kundmachungsorgan: string | null;
+  eli: string | null;
+  url: string | null;
+  indizes: string[];
 };
 
 /**
@@ -105,7 +115,10 @@ function normKey(apa: string | null): string | null {
 function slugify(s: string): string {
   return s
     .toLowerCase()
-    .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 80);
@@ -163,8 +176,12 @@ function extractText(xml: string): { text: string; meta: Record<string, string> 
     const plain = inner
       .replace(/<[^>]+>/g, " ")
       .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(Number(d)))
-      .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-      .replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'")
+      .replace(/&nbsp;/g, " ")
       .replace(/\s+/g, " ")
       .trim();
     if (!plain) continue;
@@ -308,15 +325,42 @@ function buildMarkdown(n: Norm, key: string, text: string, meta: Record<string, 
   if (meta.gbeachte) koerper += `\n\n## Beachte\n\n${meta.gbeachte}`;
   if (meta.anmerkung) koerper += `\n\n## Anmerkung\n\n${meta.anmerkung}`;
 
-  fm.push(`content_hash: "${createHash("sha256").update(koerper.trim()).digest("hex").slice(0, 16)}"`);
+  fm.push(
+    `content_hash: "${createHash("sha256").update(koerper.trim()).digest("hex").slice(0, 16)}"`
+  );
 
   return `---\n${fm.join("\n")}\n---\n\n# ${titel}\n\n${koerper}\n`;
 }
 
+/** NOR ids that passed the normalizer, read from _normalized/at-normen. */
+function loadValidatedNor(root: string): Set<string> {
+  const out = new Set<string>();
+  const walk = (dir: string) => {
+    if (!existsSync(dir)) return;
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (e.name.endsWith(".md")) {
+        const id = readFileSync(p, "utf8")
+          .slice(0, 800)
+          .match(/^doc_id:\s*["']?(NOR\d+)/m)?.[1];
+        if (id) out.add(id);
+      }
+    }
+  };
+  walk(root);
+  return out;
+}
+const validatedNor = loadValidatedNor(join(OUT_ROOT, "..", "_normalized", "at-normen"));
+
 async function main() {
+  if (!FROM_XML) await acquireRisLock();
+  console.log(`${validatedNor.size} Normen bereits geprüft vorhanden (_normalized).`);
   console.log(`Lade Normliste aus ${RIS_FILE} …`);
   let norms = readFileSync(RIS_FILE, "utf-8")
-    .split("\n").filter(Boolean).map((l) => JSON.parse(l) as Norm)
+    .split("\n")
+    .filter(Boolean)
+    .map((l) => JSON.parse(l) as Norm)
     .filter((n) => n.nor && n.gnr);
   // Die Kollisionstabelle MUSS aus dem vollen Bestand kommen. Würde sie erst
   // nach --gnr/--only-named/--limit gebaut, sähe ein gefilterter Lauf nur ein
@@ -385,10 +429,17 @@ async function main() {
   };
   const kollidierend = [...abkZuGnrs.entries()].filter(([, v]) => v.size > 1);
   if (kollidierend.length > 0) {
-    console.log(`  ${kollidierend.length} mehrfach belegte Abkürzungen → Verzeichnis mit Gesetzesnummer`);
+    console.log(
+      `  ${kollidierend.length} mehrfach belegte Abkürzungen → Verzeichnis mit Gesetzesnummer`
+    );
   }
 
-  let done = 0, written = 0, skipped = 0, failed = 0, empty = 0, excluded = 0;
+  let done = 0,
+    written = 0,
+    skipped = 0,
+    failed = 0,
+    empty = 0,
+    excluded = 0;
   let next = 0;
 
   async function worker() {
@@ -398,7 +449,11 @@ async function main() {
       if (i >= norms.length) return;
       const n = norms[i];
       const basisKey = normKey(n.apa);
-      if (!basisKey) { done++; excluded++; continue; }
+      if (!basisKey) {
+        done++;
+        excluded++;
+        continue;
+      }
       // Mehrfach belegter Schlüssel → NOR-ID anhängen, damit beide Normen
       // erhalten bleiben (siehe mehrfachSchluessel oben).
       const key = mehrfachSchluessel.has(`${n.gnr}|${basisKey}`)
@@ -408,7 +463,14 @@ async function main() {
       const dir = join(OUT_ROOT, dirFor(n));
       const path = join(dir, `${key}.md`);
 
-      if (existsSync(path) && !FORCE) { done++; skipped++; continue; }
+      // Present = passed the normalizer (its NOR id is in _normalized), in
+      // whatever folder an earlier run put it. A raw file the gate rejected
+      // does not count and is fetched again as XML.
+      if (!FORCE && validatedNor.has(n.nor)) {
+        done++;
+        skipped++;
+        continue;
+      }
 
       // --from-xml: aus dem lokal abgelegten Roh-XML neu ableiten statt zu
       // holen. Genau wofür --keep-xml existiert — eine Extraktor-Korrektur
@@ -418,16 +480,28 @@ async function main() {
       let xml: string | null;
       if (FROM_XML) {
         const p = join(FROM_XML, dirFor(n), `${n.nor}.xml`);
-        if (!existsSync(p)) { done++; skipped++; continue; }
+        if (!existsSync(p)) {
+          done++;
+          skipped++;
+          continue;
+        }
         xml = readFileSync(p, "utf8");
       } else {
         if (THROTTLE_MS > 0) await new Promise((r) => setTimeout(r, THROTTLE_MS));
         xml = await fetchXml(n.nor);
       }
-      if (!xml) { done++; failed++; continue; }
+      if (!xml) {
+        done++;
+        failed++;
+        continue;
+      }
 
       const { text, meta } = extractText(xml);
-      if (!text.trim()) { done++; empty++; continue; }
+      if (!text.trim()) {
+        done++;
+        empty++;
+        continue;
+      }
 
       if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
       // XML ablegen, bevor der Text daraus gewonnen wird — dann ist die
@@ -438,7 +512,8 @@ async function main() {
         writeFileSync(join(xmlDir, `${n.nor}.xml`), xml);
       }
       writeFileSync(path, buildMarkdown(n, key, text, meta));
-      done++; written++;
+      done++;
+      written++;
 
       if (done % 200 === 0) {
         process.stderr.write(
@@ -462,17 +537,27 @@ async function main() {
   // Wenn die Summe nicht aufgeht, sind Normen stillschweigend verloren gegangen.
   const accountedFor = written + skipped + empty + failed + excluded;
   const complete = accountedFor === norms.length;
-  console.log(`✓ ${written} neu · ${skipped} bereits vorhanden · ${excluded} ausgeschlossen (§ 0) · ${empty} ohne Text · ${failed} fehlgeschlagen`);
+  console.log(
+    `✓ ${written} neu · ${skipped} bereits vorhanden · ${excluded} ausgeschlossen (§ 0) · ${empty} ohne Text · ${failed} fehlgeschlagen`
+  );
   console.log(`  Ziel: ${OUT_ROOT} (${readdirSync(OUT_ROOT).length} Gesetzesordner)`);
   console.log(
     `  Vollständigkeit: ${accountedFor}/${norms.length} ` +
       (complete ? "✓ 1:1" : `✗ ${norms.length - accountedFor} FEHLEN`)
   );
   if (!complete && !aborted) {
-    console.error(`! FEHLER: ${norms.length - accountedFor} Normen nicht zugeordnet — das ist ein Bug.`);
+    console.error(
+      `! FEHLER: ${norms.length - accountedFor} Normen nicht zugeordnet — das ist ein Bug.`
+    );
     process.exit(1);
   }
   if (aborted) process.exit(2);
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main()
+  .then(() => releaseRisLock())
+  .catch((e) => {
+    console.error(e);
+    releaseRisLock();
+    process.exit(1);
+  });

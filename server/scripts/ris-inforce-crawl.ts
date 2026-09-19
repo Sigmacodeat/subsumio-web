@@ -10,10 +10,20 @@
  */
 import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { dirname } from "path";
+import { acquireRisLock, releaseRisLock } from "./ris-lock";
 
 const API = "https://data.bka.gv.at/ris/api/v2.6/Bundesrecht";
 const UA = { "User-Agent": "subsumio-law-corpus/1.0 (corpus audit; contact: hello@subsum.io)" };
-const CONCURRENCY = 4;
+// RIS OGD: one connection, 1–2 s between requests. Was 4 parallel workers.
+const CONCURRENCY = 1;
+function politeDelayMs(): number {
+  const now = new Date();
+  const hour = parseInt(
+    now.toLocaleTimeString("de-AT", { timeZone: "Europe/Vienna", hour: "2-digit", hour12: false })
+  );
+  const day = now.toLocaleDateString("en-US", { timeZone: "Europe/Vienna", weekday: "short" });
+  return day !== "Sat" && day !== "Sun" && hour >= 8 && hour < 18 ? 2000 : 1000;
+}
 const PAGE_SIZE = 100;
 
 const outArg = process.argv.indexOf("--out");
@@ -47,7 +57,8 @@ function asArray<T>(v: T | T[] | undefined | null): T[] {
 function str(v: unknown): string | null {
   if (v == null) return null;
   if (typeof v === "string") return v.trim() || null;
-  if (typeof v === "object" && "#text" in (v as any)) return String((v as any)["#text"]).trim() || null;
+  if (typeof v === "object" && "#text" in (v as any))
+    return String((v as any)["#text"]).trim() || null;
   return null;
 }
 
@@ -82,7 +93,9 @@ async function fetchPage(seite: number, attempt = 0): Promise<Norm[]> {
         kundmachungsorgan: str(bk.Kundmachungsorgan),
         eli: str(bund.Eli),
         url: str(md.Allgemein?.DokumentUrl),
-        indizes: asArray(bk.Indizes?.item).map((i) => str(i) ?? "").filter(Boolean),
+        indizes: asArray(bk.Indizes?.item)
+          .map((i) => str(i) ?? "")
+          .filter(Boolean),
       };
     });
   } catch (err) {
@@ -96,10 +109,14 @@ async function fetchPage(seite: number, attempt = 0): Promise<Norm[]> {
 }
 
 async function main() {
+  await acquireRisLock();
   // Gesamtzahl ermitteln
   const probe = await fetch(pageUrl(1), { headers: UA });
   const probeData = (await probe.json()) as any;
-  const total = parseInt(probeData?.OgdSearchResult?.OgdDocumentResults?.Hits?.["#text"] ?? "0", 10);
+  const total = parseInt(
+    probeData?.OgdSearchResult?.OgdDocumentResults?.Hits?.["#text"] ?? "0",
+    10
+  );
   const pages = Math.ceil(total / PAGE_SIZE);
   console.log(`RIS BrKons, Fassung vom ${FASSUNG}: ${total} geltende Normen auf ${pages} Seiten`);
 
@@ -115,6 +132,7 @@ async function main() {
       const seite = next++;
       if (seite > pages) return;
       const norms = await fetchPage(seite);
+      await new Promise((r) => setTimeout(r, politeDelayMs()));
       for (const n of norms) {
         buf.push(JSON.stringify(n));
         written++;
@@ -136,7 +154,10 @@ async function main() {
   }
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+main()
+  .then(() => releaseRisLock())
+  .catch((e) => {
+    console.error(e);
+    releaseRisLock();
+    process.exit(1);
+  });
