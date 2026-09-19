@@ -201,7 +201,11 @@ function ChatMessageBubbleInner({
           <CitationPanel
             data={
               {
-                citations: message.citations?.map((c) => ({ slug: c.slug, title: c.title })),
+                citations: message.citations?.map((c) => ({
+                  slug: c.slug,
+                  title: c.title,
+                  quote: c.quote,
+                })),
                 gaps: message.gaps,
                 grounding: message.grounding,
                 isStreaming: false,

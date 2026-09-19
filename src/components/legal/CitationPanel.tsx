@@ -29,8 +29,8 @@ import { openNormReader, readerJurisdiction } from "@/lib/norm-reader-events";
 // ── Types ─────────────────────────────────────────────────────────────
 
 export interface CitationPanelData {
-  /** Brain citations (slug + title) from the engine. */
-  citations?: Array<{ slug: string; title: string }>;
+  /** Brain citations (slug + title) from the engine; `quote` opens the page at that passage. */
+  citations?: Array<{ slug: string; title: string; quote?: string }>;
   /** Gaps reported by the engine. */
   gaps?: string[];
   /** Corpus grounding metadata from citation-gate. */
@@ -324,7 +324,9 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
                   return (
                     <a
                       key={c.slug}
-                      href={`/dashboard/brain/${encodeURIComponent(c.slug)}`}
+                      href={`/dashboard/brain/${encodeURIComponent(c.slug)}${
+                        c.quote ? `?hl=${encodeURIComponent(c.quote.slice(0, 300))}` : ""
+                      }`}
                       className="hover:brand-text hover:brand-border inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
                       target="_blank"
                       rel="noopener noreferrer"

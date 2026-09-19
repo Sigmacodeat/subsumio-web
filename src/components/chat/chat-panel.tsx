@@ -39,6 +39,7 @@ function describeChatError(err: unknown, t: (key: DashboardKey) => string): stri
   return t("chat.error_generic");
 }
 import { csrfFetch } from "@/lib/csrf";
+import { synthesisInput } from "@/components/chat/tool-synthesis";
 import { fetchServerSession, saveSessionToServer, shareSession } from "@/lib/chat-server-sync";
 import { buildChatExportMarkdown } from "@/components/chat/chat-export";
 import {
@@ -1280,6 +1281,65 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
             if (route) {
               // Small delay so the user sees the card before the page transitions
               window.setTimeout(() => router.push(route), 400);
+            }
+          }
+
+          // Results of read-only tools go back to the model once, so the
+          // answer is built on them (tool-synthesis.ts).
+          const followUpQuery = navCall ? null : synthesisInput(text, toolCalls);
+          if (followUpQuery && !controller.signal.aborted) {
+            const followMsg: ChatMessage = {
+              id: generateMessageId(),
+              role: "assistant",
+              content: "",
+              isStreaming: true,
+              createdAt: new Date().toISOString(),
+            };
+            const patchFollow = (patch: Partial<ChatMessage>) =>
+              setMessages((m) => m.map((x) => (x.id === followMsg.id ? { ...x, ...patch } : x)));
+            setMessages((m) => [...m, followMsg]);
+            let streamed = "";
+            try {
+              const follow = await api.query.think(buildSafePrompt("", followUpQuery).trim(), {
+                instructions: systemPrompt,
+                mode: queryModeToThinkMode(queryMode),
+                queryMode,
+                caseSlug: selectedCaseSlug || context.caseSlug || undefined,
+                signal: controller.signal,
+                onChunk: (chunk) => {
+                  streamed += chunk;
+                  patchFollow({ content: streamed.replace(/\[TOOL:[^\]]*\]?/gi, "") });
+                },
+              });
+              const followClean = localizeAnswerSections(
+                follow.answer.replace(/\[TOOL:[^\]]+\]/gi, "").trim(),
+                lang === "en" ? "en" : "de"
+              );
+              const followDone: ChatMessage = {
+                ...followMsg,
+                content: followClean || "[Keine Auswertung erhalten]",
+                isStreaming: false,
+                citations: follow.citations,
+                gaps: follow.gaps,
+                ...(followClean ? {} : { error: "empty_response" }),
+              };
+              patchFollow(followDone);
+              if (persistHistory && activeSessionId) await saveMessage(activeSessionId, followDone);
+              if (followClean) {
+                (follow._grounding ? Promise.resolve(follow._grounding) : groundAnswer(followClean))
+                  .then((grounding) => {
+                    if (grounding) patchFollow({ grounding });
+                  })
+                  .catch(() => {
+                    // Grounding failure is non-fatal
+                  });
+              }
+            } catch {
+              patchFollow({
+                isStreaming: false,
+                content: streamed || "[Auswertung der Werkzeugergebnisse fehlgeschlagen]",
+                error: "tool_synthesis_failed",
+              });
             }
           }
         }

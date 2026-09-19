@@ -3277,3 +3277,9 @@ pre {
     animation: none;
   }
 }
+
+/* Cited passage a citation link jumped to (src/lib/highlight-quote.ts). */
+::highlight(subsumio-citation) {
+  background-color: var(--brand-glow);
+  color: var(--ds-text);
+}

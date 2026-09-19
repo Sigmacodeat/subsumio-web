@@ -38,6 +38,7 @@ const ChatPanel = lazy(() =>
 import { MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 import { useProvideCopilotFocus } from "@/lib/copilot-focus";
+import { useHighlightQuoteFromUrl } from "@/lib/highlight-quote";
 
 // Erweiterte Felder, die die Detail-API zusätzlich zur BrainPage liefert.
 interface PageGraphExtras {
@@ -107,6 +108,8 @@ export default function BrainDetailPage() {
   useProvideCopilotFocus(
     page ? { slug, title: page.title, caseSlug: caseSlug || undefined, kind: "document" } : null
   );
+  // A citation link opens the page at the cited passage (?hl=…).
+  useHighlightQuoteFromUrl(!!page && !loading);
   const sourceFormat = typeof fm.source_format === "string" ? fm.source_format.toLowerCase() : "";
   const fileHref = `/api/files/${encodeSlugPath(slug)}`;
   const canPreview = isDocument && sourceFormat === "pdf";
