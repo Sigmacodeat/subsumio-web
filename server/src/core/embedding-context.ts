@@ -207,25 +207,42 @@ export function buildLegalContextualPrefix(
   frontmatter: Record<string, unknown>,
   synopsis: string | null | undefined
 ): string | null {
-  const jurisdiction =
-    typeof frontmatter.jurisdiction === "string" ? frontmatter.jurisdiction : null;
-  const abbreviation =
-    typeof frontmatter.abbreviation === "string" ? frontmatter.abbreviation : null;
-  const statute = typeof frontmatter.statute === "string" ? frontmatter.statute : null;
-  const paragraph = typeof frontmatter.paragraph === "string" ? frontmatter.paragraph : null;
+  const str = (key: string): string | null => {
+    const v = frontmatter[key];
+    return typeof v === "string" && v.trim() ? v.trim() : null;
+  };
+  // Raw fetch output and canonical schema v1 name the same facts differently
+  // (abbreviation/abbr, paragraph/paragraph_ref, statute/short_title). Reading
+  // only the raw names left every normalized page with a bare "AT" prefix.
+  const jurisdiction = str("jurisdiction");
+  const abbreviation = str("abbreviation") ?? str("abbr");
+  const statute = str("statute") ?? str("short_title");
+  const paragraph = str("paragraph") ?? str("paragraph_ref");
+  // Decisions: court, case number and date identify the document the way a
+  // lawyer cites it ("VwGH Ra 2019/12/0005").
+  const court = str("court");
+  const caseNumber = str("case_number");
+  const decisionDate = str("decision_date");
 
-  if (!jurisdiction && !abbreviation && !statute && !paragraph) {
+  if (!jurisdiction && !abbreviation && !statute && !paragraph && !court && !caseNumber) {
     return buildContextualPrefix(title, synopsis);
   }
 
   const parts: string[] = [];
   if (jurisdiction) parts.push(jurisdiction.toUpperCase());
   if (abbreviation) parts.push(abbreviation.toUpperCase());
+  if (!abbreviation && !paragraph) {
+    if (court) parts.push(court);
+    if (caseNumber) parts.push(caseNumber);
+    if (decisionDate) parts.push(decisionDate.slice(0, 10));
+  }
   if (paragraph) {
     // RIS XML norm files store the full designation in `paragraph` ("§ 1",
     // "Art. 5", "Anl. 2"). Don't prepend another § — that produces "§ § 1".
     // Match markers with or without trailing whitespace (§ 1, §1, Art. 5).
-    parts.push(/^(§+|Art\.?|Anl\.?)(\s|\d|[a-zA-Z])/i.test(paragraph) ? paragraph : `§ ${paragraph}`);
+    parts.push(
+      /^(§+|Art\.?|Anl\.?)(\s|\d|[a-zA-Z])/i.test(paragraph) ? paragraph : `§ ${paragraph}`
+    );
   }
 
   const header = sanitizeTitle(parts.join(" "));

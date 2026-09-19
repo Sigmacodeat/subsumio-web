@@ -31,7 +31,11 @@ describe("buildLegalContextualPrefix", () => {
       paragraph: "138",
       statute: "Bürgerliches Gesetzbuch",
     };
-    const prefix = buildLegalContextualPrefix("§ 138 BGB — Sittenwidrige Rechtsgeschäfte", fm, null);
+    const prefix = buildLegalContextualPrefix(
+      "§ 138 BGB — Sittenwidrige Rechtsgeschäfte",
+      fm,
+      null
+    );
     expect(prefix).toContain("DE");
     expect(prefix).toContain("BGB");
     expect(prefix).toContain("§ 138");
@@ -62,7 +66,11 @@ describe("buildLegalContextualPrefix", () => {
       paragraph: "13",
       statute: "Strafgesetzbuch",
     };
-    const prefix = buildLegalContextualPrefix("§ 13 StGB — Begehen durch Unterlassen", fm, "Synopsis text here");
+    const prefix = buildLegalContextualPrefix(
+      "§ 13 StGB — Begehen durch Unterlassen",
+      fm,
+      "Synopsis text here"
+    );
     expect(prefix).toContain("Synopsis text here");
   });
 
@@ -112,5 +120,49 @@ describe("buildLegalContextualPrefix", () => {
     };
     const prefix = buildLegalContextualPrefix("Test", fm, null);
     expect(prefix).not.toContain("</context>BGB");
+  });
+});
+
+describe("canonical schema v1 pages", () => {
+  it("statute: abbr, paragraph_ref and short_title build the citation context", () => {
+    const p = buildLegalContextualPrefix(
+      "Allgemeines bürgerliches Gesetzbuch",
+      {
+        jurisdiction: "at",
+        abbr: "ABGB",
+        paragraph_ref: "§ 1295",
+        short_title: "Allgemeines bürgerliches Gesetzbuch",
+        doc_class: "statute",
+      },
+      null
+    );
+    expect(p).toContain("AT ABGB § 1295");
+    expect(p).toContain("Allgemeines bürgerliches Gesetzbuch");
+  });
+
+  it("decision: court, case number and date identify it", () => {
+    const p = buildLegalContextualPrefix(
+      "Verwaltungsgerichtshof — Ra 2019/12/0005",
+      {
+        jurisdiction: "at",
+        court: "Verwaltungsgerichtshof",
+        case_number: "Ra 2019/12/0005",
+        decision_date: "2019-05-02",
+        doc_class: "decision",
+        abbr: null,
+        paragraph_ref: null,
+      },
+      null
+    );
+    expect(p).toContain("AT Verwaltungsgerichtshof Ra 2019/12/0005 2019-05-02");
+  });
+
+  it("null canonical fields are ignored, not printed", () => {
+    const p = buildLegalContextualPrefix(
+      "Titel",
+      { jurisdiction: "at", abbr: null, paragraph_ref: null, short_title: null },
+      null
+    );
+    expect(p).not.toContain("null");
   });
 });

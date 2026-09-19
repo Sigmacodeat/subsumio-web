@@ -17,6 +17,14 @@ import { createEngine } from "../src/core/engine-factory.ts";
 import { buildGatewayConfig } from "../src/core/ai/build-gateway-config.ts";
 import { configureGateway } from "../src/core/ai/gateway.ts";
 import { embedBatch, currentEmbeddingSignature } from "../src/core/embedding.ts";
+import {
+  buildContextualPrefix,
+  buildLegalContextualPrefix,
+  isCourtDecisionPage,
+  isLegalPage,
+  sanitizeTitle,
+  wrapChunkForEmbedding,
+} from "../src/core/embedding-context.ts";
 import { assertChunkModelConsistency } from "../src/core/embedding-consistency-guard.ts";
 import { randomUUID } from "node:crypto";
 
@@ -87,6 +95,8 @@ function logError(msg: string): void {
 interface PendingChunk {
   id: number;
   chunk_text: string;
+  chunk_source: string | null;
+  page_id: number;
 }
 
 async function releaseClaim(
@@ -101,6 +111,46 @@ async function releaseClaim(
      SET model = $3, embedded_at = NULL
      WHERE id = ANY($1::int[]) AND model = $2 AND embedding IS NULL`,
     [ids, claim, targetSignature]
+  );
+}
+
+/**
+ * The same page context the import path puts in front of every chunk
+ * ("<context>AT ABGB § 1295 | Allgemeines bürgerliches Gesetzbuch</context>").
+ * Without it § 138 ABGB and § 138 BGB, or two VwGH decisions with identical
+ * boilerplate, embed to nearly the same vector.
+ */
+async function wrapWithPageContext(
+  engine: { executeRaw(sql: string, params?: unknown[]): Promise<unknown[]> },
+  chunks: PendingChunk[]
+): Promise<string[]> {
+  const pageIds = [...new Set(chunks.map((c) => c.page_id))];
+  const rows = (await engine.executeRaw(
+    `SELECT id, title, type, frontmatter FROM pages WHERE id = ANY($1::int[])`,
+    [pageIds]
+  )) as Array<{
+    id: number;
+    title: string | null;
+    type: string | null;
+    frontmatter: Record<string, unknown> | null;
+  }>;
+  const prefixByPage = new Map<number, string | null>();
+  for (const p of rows) {
+    const fm = p.frontmatter ?? {};
+    const safeTitle = sanitizeTitle(p.title ?? "");
+    const legal =
+      isLegalPage(fm) ||
+      isCourtDecisionPage(fm) ||
+      ["law", "statute", "court_decision", "judgement"].includes(p.type ?? "");
+    prefixByPage.set(
+      p.id,
+      legal
+        ? buildLegalContextualPrefix(safeTitle, fm, null)
+        : buildContextualPrefix(safeTitle, null)
+    );
+  }
+  return chunks.map((c) =>
+    wrapChunkForEmbedding(c.chunk_text, prefixByPage.get(c.page_id) ?? null, c.chunk_source)
   );
 }
 
@@ -189,7 +239,7 @@ async function main() {
            SET model = $2, embedded_at = now()
            FROM candidates
            WHERE c.id = candidates.id
-           RETURNING c.id, c.chunk_text`,
+           RETURNING c.id, c.chunk_text, c.chunk_source, c.page_id`,
           [BATCH_SIZE, claim, CLAIM_TTL_MINUTES, SOURCE_FILTER]
         )
       : await engine.executeRaw(
@@ -214,7 +264,7 @@ async function main() {
            SET model = $2, embedded_at = now()
            FROM candidates
            WHERE c.id = candidates.id
-           RETURNING c.id, c.chunk_text`,
+           RETURNING c.id, c.chunk_text, c.chunk_source, c.page_id`,
           [BATCH_SIZE, claim, CLAIM_TTL_MINUTES]
         );
     const chunks = rows as unknown as PendingChunk[];
@@ -232,7 +282,7 @@ async function main() {
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        const texts = chunks.map((c) => c.chunk_text);
+        const texts = await wrapWithPageContext(engine, chunks);
         const embeddings = await embedBatch(texts);
         const ids = chunks.map((c) => c.id);
         const vectors = embeddings.map((e) => toVectorStr(e));
