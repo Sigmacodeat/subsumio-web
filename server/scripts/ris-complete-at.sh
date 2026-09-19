@@ -14,7 +14,8 @@
 #   1. cited norms for decisions already on disk (100 decisions per request)
 #   2. inventory of all federal norms in force, then fetch missing ones as XML
 #   3. consolidated state law as XML (missing or rejected)
-#   4. missing decisions per court, largest gaps first
+#   4. full decision texts of OGH, VfGH, VwGH (only Rechtssätze were on disk)
+#   5. missing decisions per court, largest gaps first
 # The corpus pipeline normalizes and imports whatever lands on disk.
 set -u
 cd /app || exit 1
@@ -38,6 +39,10 @@ step bun scripts/ris-xml-fetch-normen.ts --ris "$STATE/ris-inforce.jsonl" \
 # Consolidated state law as XML; replaces the older state-folder/HTML files
 # the validator rejected.
 step bun scripts/fetch-at-landesrecht-xml.ts --keep-xml /law-corpus/_xml/at-landesrecht
+
+# Full decision texts of the supreme courts: OGH (plus OLG/LG in "Justiz"),
+# VfGH, VwGH. The corpus held their Rechtssätze but almost no decisions.
+step bun scripts/fetch-entscheidungstexte.ts --court ogh,vfgh,vwgh
 
 for court in bvwg vwgh ogh lvwg dok vfgh gbk umse uvs dsk asylgh pvak ubas; do
   step bun scripts/fetch-all-at-judikatur.ts --court "$court" --from 1900
