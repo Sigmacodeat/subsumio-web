@@ -14,22 +14,24 @@ const start = new Date("2026-09-19T10:00:00Z");
 const DAY = 24 * 60 * 60 * 1000;
 const at = (days: number) => new Date(start.getTime() + days * DAY);
 const trialUser = { plan: "free" as const, trialEndsAt: trialEndsAtFrom(start) };
+const END = TRIAL_DAYS;
 
 describe("free trial", () => {
-  test("lasts 14 days from signup", () => {
+  test("lasts TRIAL_DAYS (30) from signup", () => {
+    expect(TRIAL_DAYS).toBe(30);
     expect(Date.parse(trialEndsAtFrom(start)) - start.getTime()).toBe(TRIAL_DAYS * DAY);
   });
 
   test("runs on the full Kanzlei plan while active", () => {
     expect(isTrialActive(trialUser, at(1))).toBe(true);
-    expect(effectivePlan(trialUser, at(13.9))).toBe(TRIAL_PLAN);
+    expect(effectivePlan(trialUser, at(END - 0.1))).toBe(TRIAL_PLAN);
     expect(TRIAL_PLAN).toBe("team");
   });
 
   test("ends by itself: back to the stored plan after the end date", () => {
-    expect(isTrialActive(trialUser, at(14))).toBe(false);
-    expect(effectivePlan(trialUser, at(20))).toBe("free");
-    expect(trialDaysLeft(trialUser, at(20))).toBe(0);
+    expect(isTrialActive(trialUser, at(END))).toBe(false);
+    expect(effectivePlan(trialUser, at(END + 6))).toBe("free");
+    expect(trialDaysLeft(trialUser, at(END + 6))).toBe(0);
   });
 
   test("a paid plan always wins over the trial", () => {
@@ -43,8 +45,8 @@ describe("free trial", () => {
   });
 
   test("counts remaining days rounded up", () => {
-    expect(trialDaysLeft(trialUser, start)).toBe(14);
-    expect(trialDaysLeft(trialUser, at(13.5))).toBe(1);
+    expect(trialDaysLeft(trialUser, start)).toBe(END);
+    expect(trialDaysLeft(trialUser, at(END - 0.5))).toBe(1);
   });
 
   test("buying during the trial starts billing at trial end", () => {
@@ -54,8 +56,8 @@ describe("free trial", () => {
   });
 
   test("no Stripe trial when less than 48 hours are left or none is active", () => {
-    expect(stripeTrialEnd(trialUser, at(12.5))).toBeNull();
-    expect(stripeTrialEnd(trialUser, at(15))).toBeNull();
+    expect(stripeTrialEnd(trialUser, at(END - 1.5))).toBeNull();
+    expect(stripeTrialEnd(trialUser, at(END + 1))).toBeNull();
     expect(stripeTrialEnd({ plan: "pro", trialEndsAt: trialUser.trialEndsAt }, at(1))).toBeNull();
   });
 

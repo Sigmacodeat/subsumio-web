@@ -141,7 +141,7 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
           title="Bereit für belegte KI-Antworten?"
           sub="Starten Sie Ihre 14-tägige Testphase — keine Kreditkarte nötig."
           href="/at/signup"
-          label="14 Tage testen"
+          label="30 Tage testen"
         />
       </>
     );

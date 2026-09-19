@@ -22,7 +22,7 @@ export const CREDIT_COSTS: Record<CreditOperation, number> = {
 };
 
 /**
- * Startguthaben der 14-Tage-Testphase. The marketing promise is "14 Tage voller
+ * Startguthaben der 30-Tage-Testphase. The marketing promise is "30 Tage voller
  * Zugriff, keine Kreditkarte" — a fresh account must be able to ask the
  * assistant, analyse a document and run the deadline detector without buying
  * a pack first. 100 credits ≈ the "Standard" pack; every credit-gated
@@ -30,7 +30,9 @@ export const CREDIT_COSTS: Record<CreditOperation, number> = {
  * (see ensureTrialCredits) and expires after TRIAL_DAYS.
  */
 export const TRIAL_CREDITS = 100;
-export const TRIAL_DAYS = 14;
+/** Length of the free trial — the single source; src/lib/billing/trial.ts and
+ *  every "30 Tage" in the website copy follow it (checked by price-drift.test.ts). */
+export const TRIAL_DAYS = 30;
 
 export interface CreditPack {
   id: string;

@@ -223,7 +223,7 @@ Mensch, Freigabe in der Ops-Konsole, Versand als Stripe Invoice mit Zahlungslink
 
 ### 7.3 Was heute im Code fehlt (vor Phase 3 zu schließen)
 - ~~**Testphase ist nicht implementiert.**~~ Erledigt 2026-09-19: `src/lib/billing/trial.ts`
-  (`trialEndsAt` bei Selbst-Registrierung, `effectivePlan` = Kanzlei-Umfang bis Testende, danach
+  (`trialEndsAt` bei Selbst-Registrierung, seit 19.09. 30 Tage, `effectivePlan` = Kanzlei-Umfang bis Testende, danach
   automatisch Community; Kauf während des Tests rechnet erst ab Testende ab).
 - **Checkout nur für eingeloggte Nutzer** und mit Weiterleitung; für den Chat braucht es
   `ui_mode: embedded`, Stripe Tax, UID-Erfassung, SEPA/EPS.

@@ -38,8 +38,8 @@ const CONTENT = {
   formSubmit: "Nachricht senden",
   formNote: "Ihre Angaben verwenden wir nur zur Beantwortung Ihrer Anfrage.",
   ctaTitle: "Lieber erst ausprobieren?",
-  ctaSub: "Testen Sie Subsumio 14 Tage mit vollem Funktionsumfang — ohne Kreditkarte.",
-  ctaButton: "14 Tage kostenlos testen",
+  ctaSub: "Testen Sie Subsumio 30 Tage mit vollem Funktionsumfang — ohne Kreditkarte.",
+  ctaButton: "30 Tage kostenlos testen",
 } as const;
 
 const ICON_MAP = { Mail, FileText };

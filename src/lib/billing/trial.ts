@@ -1,6 +1,6 @@
 // Free trial for self-service signups.
 //
-// The website promises: "Solo und Kanzlei testen Sie 14 Tage mit vollem
+// The website promises: "Solo und Kanzlei testen Sie 30 Tage mit vollem
 // Funktionsumfang, ohne Kreditkarte. Wählen Sie danach keinen Tarif, endet der
 // Test automatisch." (src/content/site.ts PRICING_FAQ). This module is what
 // keeps that promise:
@@ -14,8 +14,9 @@
 // - A paid plan always wins over the trial.
 
 import type { Plan, User } from "@/lib/auth/store";
+import { TRIAL_DAYS } from "@/lib/billing/credit-constants";
 
-export const TRIAL_DAYS = 14;
+export { TRIAL_DAYS };
 
 /** The plan a trial runs on: the full Kanzlei feature set. */
 export const TRIAL_PLAN: Exclude<Plan, "free" | "enterprise"> = "team";

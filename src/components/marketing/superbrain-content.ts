@@ -6,7 +6,7 @@ export const copy = {
       eyebrow: "Das Subsumio SuperBrain",
       title: "Über Nacht geprüft.\nAm Morgen wissen Sie, was sich in Ihren Akten geändert hat.",
       sub: "Das SuperBrain ist das Gedächtnis hinter Subsumio. Jede Nacht geht es die neuen Dokumente Ihrer Kanzlei durch und führt sie mit dem bestehenden Kanzleiwissen zusammen. Am Morgen sehen Sie in Ihrer Übersicht, was aufgefallen ist: neue Widersprüche, anstehende Fristen, fehlende Unterlagen.",
-      cta: "14 Tage kostenlos testen",
+      cta: "30 Tage kostenlos testen",
       ctaSecondary: "Funktionen ansehen",
     },
     stats: [
@@ -317,7 +317,7 @@ export const copy = {
       },
       {
         q: "Was kostet es?",
-        a: "Das SuperBrain ist in jedem Tarif enthalten: Solo 249 €/Monat (1 Nutzer), Kanzlei 1.499 €/Monat inkl. 5 Nutzer, Enterprise auf Anfrage. Mehrverbrauch wird vorab ausgewiesen. Sie können 14 Tage kostenlos testen, ohne Kreditkarte.",
+        a: "Das SuperBrain ist in jedem Tarif enthalten: Solo 249 €/Monat (1 Nutzer), Kanzlei 1.499 €/Monat inkl. 5 Nutzer, Enterprise auf Anfrage. Mehrverbrauch wird vorab ausgewiesen. Sie können 30 Tage kostenlos testen, ohne Kreditkarte.",
       },
       {
         q: "Was, wenn Subsumio sich irrt?",
@@ -326,12 +326,12 @@ export const copy = {
     ],
     pricingLink: "Preise ansehen",
     // ── STICKY CTA ──
-    stickyCtaText: "14 Tage kostenlos testen",
+    stickyCtaText: "30 Tage kostenlos testen",
     stickyCtaHint: "Ohne Kreditkarte",
     ctaTitle: "Testen Sie das SuperBrain mit Ihren eigenen Akten",
     ctaSub:
       "Ab der ersten Akte baut sich Ihr Kanzleiwissen auf. Nach der ersten Nacht sehen Sie, was dem SuperBrain aufgefallen ist.",
-    ctaButton: "14 Tage kostenlos testen",
+    ctaButton: "30 Tage kostenlos testen",
     ctaContact: "Schreiben Sie uns – wir antworten persönlich.",
   },
 };

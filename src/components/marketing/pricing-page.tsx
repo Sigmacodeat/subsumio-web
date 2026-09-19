@@ -202,7 +202,7 @@ export default function PricingPage() {
       {/* CTA */}
       <CTASection
         title={ui.stillQuestions}
-        sub="14 Tage testen, keine Kreditkarte."
+        sub="30 Tage testen, keine Kreditkarte."
         href={p("/signup?plan=pro")}
         label="Solo starten"
         secondaryHref={p("/contact")}

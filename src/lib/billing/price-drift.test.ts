@@ -43,3 +43,29 @@ describe("marketing prices match the billing source", () => {
     expect(src).toContain(`Kanzlei ${kanzlei}`);
   });
 });
+
+describe("trial length in the copy matches the trial the product grants", () => {
+  test("every 'N Tage testen/kostenlos/gratis' on the site says TRIAL_DAYS", async () => {
+    const { execFileSync } = await import("node:child_process");
+    const { TRIAL_DAYS } = await import("./trial");
+    const out = execFileSync(
+      "grep",
+      ["-rnoE", '[0-9]+[ -]Tage?[^"`]{0,40}(testen|kostenlos|gratis|Testversion|Testphase)', "src"],
+      { cwd: process.cwd(), encoding: "utf8" }
+    );
+    const hits = out
+      .split("\n")
+      .filter((l) => l && !l.includes(".test.") && !/Rekurs|Frist/.test(l));
+    expect(hits.length).toBeGreaterThan(10);
+    for (const line of hits) {
+      const days = Number(
+        line
+          .split(":")
+          .slice(2)
+          .join(":")
+          .match(/^(\d+)/)?.[1]
+      );
+      expect(days, line).toBe(TRIAL_DAYS);
+    }
+  });
+});

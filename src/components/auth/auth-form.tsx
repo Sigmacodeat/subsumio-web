@@ -38,11 +38,11 @@ const COPY = {
     sub: "Melden Sie sich an, um Akten, Fristen und Posteingang zu öffnen.",
     cta: "Anmelden",
     switchText: "Noch kein Konto?",
-    switchCta: "14 Tage kostenlos testen",
+    switchCta: "30 Tage kostenlos testen",
   },
   signup: {
     title: "Subsumio starten",
-    sub: "Kanzleisoftware für Akten, Fristen und belegte Antworten mit Fundstellen. 14 Tage kostenlos, ohne Kreditkarte.",
+    sub: "Kanzleisoftware für Akten, Fristen und belegte Antworten mit Fundstellen. 30 Tage kostenlos, ohne Kreditkarte.",
     cta: "Konto erstellen",
     switchText: "Schon ein Konto?",
     switchCta: "Anmelden",

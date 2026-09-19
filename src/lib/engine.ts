@@ -448,7 +448,7 @@ export async function requireEngineContext(
   if (creditOp && CREDIT_COSTS[creditOp] > 0 && !e2eBypass) {
     const ownerType: OwnerType = ctx.billing.ownerType;
     const ownerId = ctx.billing.ownerId;
-    // New accounts start with the 14-day trial balance (idempotent, one-time).
+    // New accounts start with the 30-day trial balance (idempotent, one-time).
     await ensureTrialCredits(ownerId, ownerType);
     const creditCheck = await checkCredits(ownerId, ownerType, CREDIT_COSTS[creditOp]);
     if (!creditCheck.ok) {
