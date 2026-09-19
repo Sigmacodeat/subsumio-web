@@ -9,6 +9,18 @@
 import { useEffect } from "react";
 
 const HIGHLIGHT_NAME = "subsumio-citation";
+/** Fired by the PDF viewer once its text layers are in place. */
+const DOCUMENT_TEXT_READY_EVENT = "subsumio:document-text-ready";
+const HIGHLIGHT_STYLE_ID = "subsumio-citation-highlight-style";
+
+/** Injects the ::highlight() rule once (kept out of globals.css, see there). */
+function ensureHighlightStyle(): void {
+  if (document.getElementById(HIGHLIGHT_STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = HIGHLIGHT_STYLE_ID;
+  style.textContent = `::highlight(${HIGHLIGHT_NAME}) { background-color: var(--brand-glow); color: var(--ds-text); }`;
+  document.head.appendChild(style);
+}
 
 function normalize(text: string): string {
   return text.replace(/\s+/g, " ").trim().toLowerCase();
@@ -77,20 +89,30 @@ export function findQuoteRange(root: Element, quote: string): Range | null {
 export function useHighlightQuote(quote: string | null | undefined, ready: boolean): void {
   useEffect(() => {
     if (!quote || !ready) return;
-    const timer = window.setTimeout(() => {
+    let found = false;
+    const locate = () => {
+      if (found) return;
       const root = document.getElementById("main-content");
       if (!root) return;
       const range = findQuoteRange(root, quote);
       if (!range) return;
+      found = true;
       const highlights = (CSS as unknown as { highlights?: Map<string, unknown> }).highlights;
       const HighlightCtor = (window as unknown as { Highlight?: new (r: Range) => unknown })
         .Highlight;
-      if (highlights && HighlightCtor) highlights.set(HIGHLIGHT_NAME, new HighlightCtor(range));
+      if (highlights && HighlightCtor) {
+        ensureHighlightStyle();
+        highlights.set(HIGHLIGHT_NAME, new HighlightCtor(range));
+      }
       const el = range.startContainer.parentElement;
       el?.scrollIntoView({ block: "center", behavior: "smooth" });
-    }, 150);
+    };
+    const timer = window.setTimeout(locate, 150);
+    // A PDF's text arrives later than the page (pdf-document-viewer.tsx).
+    window.addEventListener(DOCUMENT_TEXT_READY_EVENT, locate);
     return () => {
       window.clearTimeout(timer);
+      window.removeEventListener(DOCUMENT_TEXT_READY_EVENT, locate);
       (CSS as unknown as { highlights?: Map<string, unknown> }).highlights?.delete(HIGHLIGHT_NAME);
     };
   }, [quote, ready]);

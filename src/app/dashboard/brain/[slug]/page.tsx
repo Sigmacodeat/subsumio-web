@@ -35,6 +35,12 @@ import { GobdIntegrityPanel } from "@/components/gobd-integrity-panel";
 const ChatPanel = lazy(() =>
   import("@/components/chat/chat-panel").then((m) => ({ default: m.ChatPanel }))
 );
+// The original PDF with a selectable text layer (pdf.js, loaded on demand).
+const PdfDocumentViewer = lazy(() =>
+  import("@/components/documents/pdf-document-viewer").then((m) => ({
+    default: m.PdfDocumentViewer,
+  }))
+);
 import { MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 import { useProvideCopilotFocus } from "@/lib/copilot-focus";
@@ -353,11 +359,9 @@ export default function BrainDetailPage() {
             )}
 
             {canPreview && showPreview && !editMode && (
-              <iframe
-                src={`${fileHref}?inline=1`}
-                title={t("braindetail.doc_preview_title")}
-                className="h-[70vh] w-full rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
-              />
+              <Suspense fallback={null}>
+                <PdfDocumentViewer url={`${fileHref}?inline=1`} title={page?.title} />
+              </Suspense>
             )}
 
             {/* Content */}
