@@ -6497,6 +6497,33 @@ export const MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_corpus_reconciliation_source ON corpus_reconciliation (source_id, measured_at DESC);
     `,
   },
+  {
+    version: 143,
+    name: "corpus_inventory_snapshot",
+    // Hourly inventory of the law corpus per source (pages, statutes,
+    // Rechtssätze vs. decision texts, repealed provisions, chunks, embedded).
+    // Counting 4 M chunks live took minutes under import load; the operator
+    // dashboard reads the latest snapshot instead and shows its time.
+    idempotent: true,
+    sql: `
+      CREATE TABLE IF NOT EXISTS corpus_inventory_snapshot (
+        id            BIGSERIAL PRIMARY KEY,
+        measured_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+        source_id     TEXT NOT NULL,
+        kind          TEXT NOT NULL CHECK (kind IN ('statute', 'decision', 'other')),
+        pages         INTEGER NOT NULL,
+        statutes      INTEGER NOT NULL DEFAULT 0,
+        rechtssaetze  INTEGER NOT NULL DEFAULT 0,
+        texte         INTEGER NOT NULL DEFAULT 0,
+        repealed      INTEGER NOT NULL DEFAULT 0,
+        chunks        INTEGER NOT NULL DEFAULT 0,
+        embedded      INTEGER NOT NULL DEFAULT 0,
+        last_updated  TIMESTAMPTZ
+      );
+      CREATE INDEX IF NOT EXISTS idx_corpus_inventory_snapshot_source
+        ON corpus_inventory_snapshot (source_id, measured_at DESC);
+    `,
+  },
 ];
 
 export const LATEST_VERSION =

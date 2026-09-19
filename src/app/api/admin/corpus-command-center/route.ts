@@ -240,7 +240,9 @@ export const GET = createHandler(
     //   (statutes-at vs normen-at).
     const CORPUS_TO_SOURCE_ID: Record<string, string> = {
       at: "law-at",
-      "at-normen": "law-at",
+      // Federal paragraphs are imported into law-at-normen (147k pages); law-at
+      // holds only the old whole-statute split.
+      "at-normen": "law-at-normen",
       "at-landesrecht": "law-at-landesrecht",
       "at-staatsvertraege": "law-at-staatsvertraege",
       "at-literatur": "law-at-literatur",
