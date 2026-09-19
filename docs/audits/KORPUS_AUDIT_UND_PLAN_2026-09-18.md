@@ -124,3 +124,26 @@ Muss zeigen: 0 aktive Duplikate je Dokumentnummer und Text, 100 % RIS-Links,
 0 Platzhalter, 0 Abschnitte gelöschter Seiten in der Warteschlange, Metadaten-Quote
 je Quelle, Deckung gegen RIS je Gericht (mit Fassungsfilter für Normen), plus eine
 Stichprobe von 50 Datensätzen je Quelle gegen den RIS-Originaltext.
+
+## 7. Arbeitsliste (Stand 19.09.2026, Auftrag „alles systematisch und lückenlos“)
+
+Erledigt seit dem Audit: Duplikate bereinigt (59 563 markiert), doc_id-Sperre (Migration 141),
+Import nur aus `_normalized`, zitierte Normen nachgetragen (VwGH 207 008), Urteil→Norm-Verknüpfung
+neu (448 472), Gesetzes-Metadaten aus RIS-Abschnitten, Embedding-Kontext repariert, RIS-Warteschlange
+(`ris-complete-at.sh`) inkl. Urteilstexte OGH/VfGH/VwGH.
+
+Offen, in dieser Reihenfolge:
+
+| #   | Punkt                       | Befund                                                                                                                                                                  |
+| --- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A1  | Inhalt ↔ Datensatz          | Geschäftszahl im eigenen Text: 20 Abweichungen (LVwG 4, UVS 16) prüfen                                                                                                  |
+| A2  | RIS-Link ↔ Dokumentnummer   | ~1 700 Links nennen eine andere Nummer (law-at 1 131, UVS 224, LVwG 97 …)                                                                                               |
+| A3  | Täglicher RIS-Abgleich      | Stage-Werte, die der CHECK ablehnt; Gültigkeitsdaten gehen verloren; Benachrichtigung ohne Wirkung; Cursor als „letzter Sync“ angezeigt                                 |
+| A4  | Protokoll je Dokument       | Keine dauerhafte Aufzeichnung „welches Dokument wann neu/geändert“ — Tabelle + Anzeige                                                                                  |
+| A5  | 1:1-Abgleich mit RIS        | Inventar (Dokumentnummer + Änderungsdatum) gegen DB: zu wenig / zu viel / veraltet, je Quelle                                                                           |
+| A6  | Dashboard `/ops/corpus`     | Kennzahlen je Rechtsgebiet (Gesetze, Normen, Urteile je Gericht, Seiten, Abschnitte, eingebettet), Protokoll, Abgleich; Zuordnung at-normen → law-at-normen korrigieren |
+| A7  | Abschnitte                  | VwGH 46 % Mini-Abschnitte (Kopfzeilen), BVwG 46 % am 1 500-Token-Limit → vor dem Embedding neu schneiden                                                                |
+| A8  | Suche: geltendes Recht vorn | in_force_to/in_force_from in der Rangfolge und Kennzeichnung                                                                                                            |
+| A9  | Qualitätstest               | Fester Satz echter Rechtsfragen mit erwarteter Norm/Entscheidung, vorher/nachher gemessen                                                                               |
+| A10 | Lokale Docker-DB            | Server ist die einzige Quelle; lokale Kopie entfernen (durch den Inhaber)                                                                                               |
+| A11 | Endaudit + Embedding        | Erst wenn A1–A9 grün sind                                                                                                                                               |
