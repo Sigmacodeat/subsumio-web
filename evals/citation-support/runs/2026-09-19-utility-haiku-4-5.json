@@ -1,0 +1,506 @@
+{
+  "eval": "citation-support",
+  "ts": "2026-09-19T10:33:19.406Z",
+  "gold_version": 2,
+  "gold_hash": "825972096c019a4d",
+  "code_sha": "4a75ef9295-dirty",
+  "models": [
+    "anthropic:claude-haiku-4-5-20251001"
+  ],
+  "tier": "utility",
+  "all": {
+    "n": 46,
+    "metrics": {
+      "exact_accuracy": 0.8913043478260869,
+      "lenient_accuracy": 0.9565217391304348,
+      "misgrounding_recall": 1,
+      "misgrounding_precision": 0.8421052631578947,
+      "dangerous_miss_rate": 0,
+      "false_alarm_rate": 0,
+      "pipeline_failure_rate": 0
+    },
+    "confusion": {
+      "supported": {
+        "supported": 23,
+        "partial": 2,
+        "unsupported": 0,
+        "unchecked": 0,
+        "not_grounded": 0
+      },
+      "partial": {
+        "supported": 0,
+        "partial": 2,
+        "unsupported": 3,
+        "unchecked": 0,
+        "not_grounded": 0
+      },
+      "unsupported": {
+        "supported": 0,
+        "partial": 0,
+        "unsupported": 16,
+        "unchecked": 0,
+        "not_grounded": 0
+      }
+    }
+  },
+  "dev": {
+    "n": 31,
+    "metrics": {
+      "exact_accuracy": 0.9354838709677419,
+      "lenient_accuracy": 1,
+      "misgrounding_recall": 1,
+      "misgrounding_precision": 0.8461538461538461,
+      "dangerous_miss_rate": 0,
+      "false_alarm_rate": 0,
+      "pipeline_failure_rate": 0
+    },
+    "confusion": {
+      "supported": {
+        "supported": 16,
+        "partial": 0,
+        "unsupported": 0,
+        "unchecked": 0,
+        "not_grounded": 0
+      },
+      "partial": {
+        "supported": 0,
+        "partial": 2,
+        "unsupported": 2,
+        "unchecked": 0,
+        "not_grounded": 0
+      },
+      "unsupported": {
+        "supported": 0,
+        "partial": 0,
+        "unsupported": 11,
+        "unchecked": 0,
+        "not_grounded": 0
+      }
+    }
+  },
+  "holdout": {
+    "n": 15,
+    "metrics": {
+      "exact_accuracy": 0.8,
+      "lenient_accuracy": 0.8666666666666667,
+      "misgrounding_recall": 1,
+      "misgrounding_precision": 0.8333333333333334,
+      "dangerous_miss_rate": 0,
+      "false_alarm_rate": 0,
+      "pipeline_failure_rate": 0
+    },
+    "confusion": {
+      "supported": {
+        "supported": 7,
+        "partial": 2,
+        "unsupported": 0,
+        "unchecked": 0,
+        "not_grounded": 0
+      },
+      "partial": {
+        "supported": 0,
+        "partial": 0,
+        "unsupported": 1,
+        "unchecked": 0,
+        "not_grounded": 0
+      },
+      "unsupported": {
+        "supported": 0,
+        "partial": 0,
+        "unsupported": 5,
+        "unchecked": 0,
+        "not_grounded": 0
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "vj-1489-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt in § 1489 ABGB explizit, dass Entschädigungsklagen in drei Jahren von der Zeit an verjähren, zu welcher der Schade und die Person des Beschädigers dem Beschädigten bekannt wurde, was die Aussage vollständig trägt.",
+      "ms": 1254
+    },
+    {
+      "id": "vj-879-wrongnorm",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "§ 879 ABGB regelt die Nichtigkeit von Verträgen, nicht die Verjährung von Schadenersatzansprüchen; die Aussage betrifft eine völlig andere Rechtsmaterie.",
+      "ms": 965
+    },
+    {
+      "id": "vj-1489-overreach",
+      "split": "dev",
+      "expected": "partial",
+      "acceptable": [
+        "partial",
+        "unsupported"
+      ],
+      "predicted": "unsupported",
+      "reason": "Der Quelltext regelt grundsätzlich eine dreijährige Verjährung ab Kenntnis und eine 30-jährige Verjährung in bestimmten Fällen, enthält aber keine Sonderregelung für Verbraucher mit fünfjähriger Verjährung.",
+      "ms": 1167
+    },
+    {
+      "id": "sr-1295-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt in § 1295 Abs 1 ABGB genau das: Der Geschädigte kann vom Beschädiger Ersatz des Schadens fordern, welchen dieser ihm aus Verschulden zugefügt hat.",
+      "ms": 1018
+    },
+    {
+      "id": "sr-1295-strict",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "§ 1295 ABGB regelt Haftung aus Verschulden (Schadensersatz für vom Beschädiger zugefügten Schaden); eine Haftung des Kraftfahrzeughalters ohne jedes Verschulden wird darin nicht normiert.",
+      "ms": 1166
+    },
+    {
+      "id": "mi-1096-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext § 1096 Abs. 1 ABGB regelt ausdrücklich, dass der Bestandnehmer (Mieter) 'für die Dauer und in dem Maße der Unbrauchbarkeit von der Entrichtung des Zinses befreit' ist, wenn das Bestandstück mangelhaft ist – die Aussage wird vo",
+      "ms": 1414
+    },
+    {
+      "id": "mi-1096-wrongnorm",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "Der Quelltext regelt die Verpflichtungen des Vermieters zur Erhaltung und Gebrauchstauglichkeit des Mietobjekts sowie Rechte des Mieters bei Mängeln, enthält aber keine Regelung zum Kündigungsrecht des Vermieters bei Zahlungsverzug des Miet",
+      "ms": 1320
+    },
+    {
+      "id": "mi-1096-overreach",
+      "split": "dev",
+      "expected": "partial",
+      "acceptable": [
+        "partial",
+        "unsupported"
+      ],
+      "predicted": "partial",
+      "reason": "Der Quelltext regelt die Zinsbefreiung bei Unbrauchbarkeit, sagt aber nichts über einen zusätzlichen Schadensersatzanspruch, der darin behauptet wird.",
+      "ms": 1215
+    },
+    {
+      "id": "mi-1117-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt in seinem zweiten Satz ausdrücklich, dass der Mieter bei Gesundheitsschädlichkeit von Wohnräumen auch dann ohne Kündigung abstehen kann, wenn er im Vertrag darauf verzichtet hat, was die Aussage exakt widerspiegelt.",
+      "ms": 1240
+    },
+    {
+      "id": "mi-1118-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt in § 1118 ABGB, dass der Bestandgeber (Vermieter) die frühere Aufhebung des Vertrages fordern kann, wenn der Bestandnehmer (Mieter) nach geschehener Einmahnung (Mahnung) mit der Bezahlung des Zinses dergestalt säumig is",
+      "ms": 1381
+    },
+    {
+      "id": "nb-364-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext § 364 Abs 2 ABGB regelt ausdrücklich, dass der Eigentümer eines Grundstückes dem Nachbarn Einwirkungen durch Geräusch (Lärm) untersagen kann, soweit sie das nach den örtlichen Verhältnissen gewöhnliche Maß überschreiten und di",
+      "ms": 1492
+    },
+    {
+      "id": "nb-364-wrongnorm",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "§ 364 ABGB regelt das Nachbarrecht und Unterlassungsansprüche gegen übermäßige Einwirkungen, enthält aber keine Regelung zur Mietpreisminderung des Mieters.",
+      "ms": 1267
+    },
+    {
+      "id": "wh-1319a-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt in § 1319a Abs. 1 und Abs. 3 ausdrücklich, dass der Wegehalter und seine Leute nur bei Vorsatz oder grober Fahrlässigkeit haften, was die Aussage vollständig trägt.",
+      "ms": 1283
+    },
+    {
+      "id": "wh-1319a-contra",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "§ 1319a Abs. 1 ABGB verlangt Vorsatz oder grobe Fahrlässigkeit, nicht bereits leichte Fahrlässigkeit.",
+      "ms": 1002
+    },
+    {
+      "id": "gw-933-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext § 933 Abs. 1 ABGB regelt explizit, dass der Übergeber Gewähr für Mängel innerhalb von zwei Jahren bei beweglichen Sachen und innerhalb von drei Jahren bei unbeweglichen Sachen leistet, was der Aussage vollständig entspricht.",
+      "ms": 1204
+    },
+    {
+      "id": "gw-933-contra",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "Der Quelltext regelt für unbewegliche Sachen eine Gewährleistungsfrist von drei Jahren (nicht fünf Jahren), wie in § 933 Abs. 1 ABGB explizit festgehalten ist.",
+      "ms": 1058
+    },
+    {
+      "id": "gw-933-overreach",
+      "split": "dev",
+      "expected": "partial",
+      "acceptable": [
+        "partial",
+        "unsupported"
+      ],
+      "predicted": "partial",
+      "reason": "Die Aussage ist teilweise richtig: § 933 ABGB regelt tatsächlich eine Gewährleistungsfrist von zwei Jahren bei beweglichen Sachen, aber die Aussage zur 14-Tage-Rügefrist wird durch den Quelltext nicht gestützt – dieser enthält keine solche ",
+      "ms": 1560
+    },
+    {
+      "id": "gw-932-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "§ 932 Abs. 2 ABGB regelt ausdrücklich, dass der Übernehmer zunächst nur die Verbesserung oder den Austausch der Sache verlangen kann, mit Ausnahmen für Unmöglichkeit oder unverhältnismäßig hohen Aufwand.",
+      "ms": 1075
+    },
+    {
+      "id": "gw-932-contra",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "§ 932 ABGB regelt nicht, dass der Käufer bei jedem Mangel sofort den Vertrag auflösen kann, sondern sieht ein gestaffeltes System vor: zunächst Verbesserung oder Austausch (Abs. 2), die Auflösung ist erst zulässig, wenn diese unmöglich/unve",
+      "ms": 1812
+    },
+    {
+      "id": "bl-1298-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt in der ersten Bestimmung, dass derjenige, der vorgibt, ohne sein Verschulden an der Erfüllung verhindert worden zu sein, den Beweis dafür tragen muss (\"dem liegt der Beweis ob\"), was die Aussage vollumfänglich trägt.",
+      "ms": 1315
+    },
+    {
+      "id": "kv-1325-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt ausdrücklich alle drei Komponenten: Heilungskosten, Verdienstentgang (entgangenen und künftig entgehenden Verdienst) und angemessenes Schmerzengeld bei Körperverletzung.",
+      "ms": 1089
+    },
+    {
+      "id": "kv-1325-contra",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "Der Quelltext regelt das Schmerzengeld als 'den Umständen angemessen', nennt aber keine konkrete Euro-Obergrenze von 20.000 Euro.",
+      "ms": 1116
+    },
+    {
+      "id": "kv-1325-overreach",
+      "split": "dev",
+      "expected": "partial",
+      "acceptable": [
+        "partial",
+        "unsupported"
+      ],
+      "predicted": "unsupported",
+      "reason": "Der Quelltext regelt keine Beschränkung des Schmerzengeldanspruchs auf Fälle groben Verschuldens, sondern gewährt Schmerzengeld ohne Verschuldensabstufung.",
+      "ms": 1274
+    },
+    {
+      "id": "vf-bvg7-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt in Absatz 1 Satz 1 wörtlich: 'Alle Staatsbürger sind vor dem Gesetz gleich', was die Aussage vollständig trägt.",
+      "ms": 1210
+    },
+    {
+      "id": "vf-bvg7-wrongnorm",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "Art. 7 B-VG regelt die Gleichheit vor dem Gesetz und Geschlechtergleichstellung, nicht das Grundrecht auf Datenschutz.",
+      "ms": 1238
+    },
+    {
+      "id": "mrg-1-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext § 1 Abs. 1 MRG regelt ausdrücklich, dass das Bundesgesetz für die Miete von Wohnungen und Geschäftsräumlichkeiten gilt, was der Aussage vollständig entspricht.",
+      "ms": 1611
+    },
+    {
+      "id": "zpo-226-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "§ 226 Abs. 1 ZPO regelt, dass die Klage ein bestimmtes Begehren zu enthalten hat, was die Aussage vollständig trägt.",
+      "ms": 1226
+    },
+    {
+      "id": "zpo-226-wrong",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "Der Quelltext regelt die formalen Anforderungen an die Klage (Begehren, Tatsachen, Beweismittel), enthält aber keine Regelung einer Vier-Wochen-Frist für die Klageeinbringung nach Zustellung.",
+      "ms": 1206
+    },
+    {
+      "id": "stgb-5-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext § 5 Abs. 1 StGB regelt genau, dass vorsätzlich handelt, wer die Tatbildverwirklichung ernstlich für möglich hält und sich damit abfindet – dies entspricht exakt der Aussage.",
+      "ms": 1003
+    },
+    {
+      "id": "eu-dsgvo6-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt in Art. 6 Abs. 1 Buchstabe a, dass die Verarbeitung rechtmäßig ist, wenn die betroffene Person ihre Einwilligung gegeben hat; die Aussage trägt den rechtlichen Kern dieser Regelung.",
+      "ms": 1524
+    },
+    {
+      "id": "eu-dsgvo6-wrongnorm",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "Art. 6 DSGVO regelt die Rechtmäßigkeit der Verarbeitung, nicht das Recht auf Löschung; das Löschungsrecht ist in Art. 17 DSGVO geregelt.",
+      "ms": 1379
+    },
+    {
+      "id": "h-1311-ok",
+      "split": "holdout",
+      "expected": "supported",
+      "predicted": "partial",
+      "reason": "Der Quelltext regelt, dass der bloße Zufall denjenigen trifft, in dessen Vermögen ODER Person er sich ereignet; die Aussage beschränkt dies nur auf das Vermögen.",
+      "ms": 1081
+    },
+    {
+      "id": "h-1311-wrongnorm",
+      "split": "holdout",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "§ 1311 ABGB regelt die Haftung für Zufall und Verschulden im Allgemeinen, nicht spezifisch die Tierhalterhaftung; eine generelle Haftung des Tierhalters für Tierschäden wird in diesem Paragraphen nicht normiert.",
+      "ms": 1813
+    },
+    {
+      "id": "h-1313a-ok",
+      "split": "holdout",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt ausdrücklich, dass der Schuldner für das Verschulden der Personen, deren er sich zur Erfüllung bedient (Erfüllungsgehilfen), wie für sein eigenes Verschulden haftet.",
+      "ms": 986
+    },
+    {
+      "id": "h-1313a-wrong",
+      "split": "holdout",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "Der Quelltext regelt Haftung nur für Personen, deren sich jemand 'zur Erfüllung' einer Leistungspflicht bedient, also im Kontext eines Vertragsverhältnisses, nicht für jedes Delikt außerhalb vertraglicher Verpflichtungen.",
+      "ms": 1249
+    },
+    {
+      "id": "h-1320-ok",
+      "split": "holdout",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt in § 1320 Abs. 1 Satz 2 ABGB genau, dass der Tierhalter verantwortlich ist, wenn er nicht beweist, dass er für die erforderliche Verwahrung gesorgt hatte.",
+      "ms": 1127
+    },
+    {
+      "id": "h-1320-overreach",
+      "split": "holdout",
+      "expected": "partial",
+      "acceptable": [
+        "partial",
+        "unsupported"
+      ],
+      "predicted": "unsupported",
+      "reason": "Der Quelltext enthält keine Regelung zu einer Haftungsobergrenze von 50.000 Euro; er regelt nur die Haftungsverantwortung des Tierhalters und die Beweislastumkehr.",
+      "ms": 1282
+    },
+    {
+      "id": "h-kschg1-ok",
+      "split": "holdout",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt in § 1 Abs. 1 KSchG explizit, dass das Hauptstück (das Konsumentenschutzgesetz) für Rechtsgeschäfte zwischen Unternehmern und Verbrauchern gilt, was der Aussage vollständig entspricht.",
+      "ms": 1159
+    },
+    {
+      "id": "h-dsgvo17-ok",
+      "split": "holdout",
+      "expected": "supported",
+      "predicted": "partial",
+      "reason": "Die Aussage ist verkürzt: Art. 17 Abs. 1 DSGVO gewährt das Löschungsrecht nur unter bestimmten Voraussetzungen (Gründe a–f), nicht bedingungslos, und Abs. 3 sieht wichtige Ausnahmen vor.",
+      "ms": 1743
+    },
+    {
+      "id": "h-dsgvo17-wrongnorm",
+      "split": "holdout",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "Art. 17 DSGVO regelt das Recht auf Löschung (Recht auf Vergessenwerden), nicht die Benennung eines Datenschutzbeauftragten; letztere ist in Art. 37 DSGVO vorgesehen.",
+      "ms": 1972
+    },
+    {
+      "id": "h-dsgvo82-ok",
+      "split": "holdout",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Art. 82 Abs. 1 DSGVO regelt genau, dass jede Person, der wegen eines Verstoßes gegen die Verordnung ein Schaden entstanden ist, Anspruch auf Schadenersatz hat; die Aussage gibt den Kerngehalt der Norm korrekt wieder.",
+      "ms": 1198
+    },
+    {
+      "id": "h-emrk8-ok",
+      "split": "holdout",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext von Art. 8 EMRK regelt ausdrücklich den Anspruch auf Achtung des Privat- und Familienlebens (Abs. 1), und die Beachte-Notiz bestätigt, dass die EMRK gemäß BVG mit Verfassungsrang in Österreich ausgestattet ist, somit auch in Ö",
+      "ms": 1542
+    },
+    {
+      "id": "h-emrk8-wrongnorm",
+      "split": "holdout",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "Art. 8 EMRK schützt das Recht auf Achtung des Privat- und Familienlebens, der Wohnung und des Briefverkehrs, nicht das Recht auf ein faires Verfahren (letzteres regelt Art. 6 EMRK).",
+      "ms": 1154
+    },
+    {
+      "id": "h-1431-ok",
+      "split": "holdout",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt ausdrücklich die Rückforderung einer Sache, die aus Irrtum (einschließlich Rechtsirrtum) als Nichtschuld gezahlt wurde, und bestätigt damit den Kerngehalt der Aussage.",
+      "ms": 1254
+    },
+    {
+      "id": "h-ugb377-ok",
+      "split": "holdout",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt in § 377 Abs. 1 UGB genau die Aussage: Wenn der Kauf für beide Teile ein unternehmensbezogenes Geschäft ist, muss der Käufer dem Verkäufer Mängel der Ware binnen angemessener Frist anzeigen.",
+      "ms": 1086
+    },
+    {
+      "id": "h-ugb377-contra",
+      "split": "holdout",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "§ 377 UGB gilt nur für unternehmensbezogene Geschäfte (Abs. 1), nicht für Verbraucher; Verbraucher sind von dieser Vorschrift ausdrücklich nicht erfasst.",
+      "ms": 1055
+    }
+  ]
+}

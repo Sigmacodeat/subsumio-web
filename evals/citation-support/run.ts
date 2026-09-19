@@ -21,6 +21,7 @@ type Predicted = Verdict | "unchecked" | "not_grounded";
 
 interface GoldCase {
   id: string;
+  split?: "dev" | "holdout";
   citation: { code: string; paragraph: string };
   expected: Verdict;
   acceptable?: Verdict[];
@@ -35,9 +36,13 @@ async function runCase(c: GoldCase, headers: Record<string, string>) {
     (g) => g.code === c.citation.code && g.paragraph.startsWith(c.citation.paragraph)
   );
   if (!gc?.verified) {
-    return { predicted: "not_grounded" as Predicted, reason: gc?.unverifiable_reason ?? "not extracted" };
+    return {
+      predicted: "not_grounded" as Predicted,
+      reason: gc?.unverifiable_reason ?? "not extracted",
+    };
   }
-  const meta: SupportCheckMeta = {};
+  const tier = process.env.EVAL_TIER as SupportCheckMeta["tier"] | undefined;
+  const meta: SupportCheckMeta = tier ? { tier } : {};
   const [r] = await checkSupport(headers, c.answer, [gc], meta);
   return { predicted: (r?.support ?? "unchecked") as Predicted, reason: r?.support_reason, meta };
 }
@@ -50,33 +55,51 @@ async function main() {
     const t0 = Date.now();
     const out = await runCase(c, headers);
     rows.push({ ...c, ...out, ms: Date.now() - t0 });
-    const ok = out.predicted === c.expected ? "✓" : c.acceptable?.includes(out.predicted as Verdict) ? "~" : "✗";
+    const ok =
+      out.predicted === c.expected
+        ? "✓"
+        : c.acceptable?.includes(out.predicted as Verdict)
+          ? "~"
+          : "✗";
     console.error(`${ok} ${c.id.padEnd(22)} gold=${c.expected.padEnd(11)} got=${out.predicted}`);
   }
 
-  const n = rows.length;
-  const count = (f: (r: (typeof rows)[number]) => boolean) => rows.filter(f).length;
-  const confusion: Record<string, Record<string, number>> = {};
-  for (const g of LABELS) {
-    confusion[g] = {};
-    for (const p of [...LABELS, "unchecked", "not_grounded"]) {
-      confusion[g][p] = count((r) => r.expected === g && r.predicted === p);
+  type Row = (typeof rows)[number];
+  const score = (subset: Row[]) => {
+    const n = subset.length;
+    const count = (f: (r: Row) => boolean) => subset.filter(f).length;
+    const confusion: Record<string, Record<string, number>> = {};
+    for (const g of LABELS) {
+      confusion[g] = {};
+      for (const p of [...LABELS, "unchecked", "not_grounded"]) {
+        confusion[g][p] = count((r) => r.expected === g && r.predicted === p);
+      }
     }
-  }
-  const goldU = count((r) => r.expected === "unsupported");
-  const goldS = count((r) => r.expected === "supported");
-  const predU = count((r) => r.predicted === "unsupported");
-  const tpU = confusion.unsupported.unsupported;
-  const metrics = {
-    exact_accuracy: count((r) => r.predicted === r.expected) / n,
-    lenient_accuracy:
-      count((r) => r.predicted === r.expected || !!r.acceptable?.includes(r.predicted as Verdict)) / n,
-    misgrounding_recall: goldU ? tpU / goldU : null,
-    misgrounding_precision: predU ? tpU / predU : null,
-    dangerous_miss_rate: goldU ? confusion.unsupported.supported / goldU : null,
-    false_alarm_rate: goldS ? confusion.supported.unsupported / goldS : null,
-    pipeline_failure_rate: count((r) => r.predicted === "unchecked" || r.predicted === "not_grounded") / n,
+    const goldU = count((r) => r.expected === "unsupported");
+    const goldS = count((r) => r.expected === "supported");
+    const predU = count((r) => r.predicted === "unsupported");
+    const tpU = confusion.unsupported.unsupported;
+    return {
+      n,
+      metrics: {
+        exact_accuracy: count((r) => r.predicted === r.expected) / n,
+        lenient_accuracy:
+          count(
+            (r) => r.predicted === r.expected || !!r.acceptable?.includes(r.predicted as Verdict)
+          ) / n,
+        misgrounding_recall: goldU ? tpU / goldU : null,
+        misgrounding_precision: predU ? tpU / predU : null,
+        dangerous_miss_rate: goldU ? confusion.unsupported.supported / goldU : null,
+        false_alarm_rate: goldS ? confusion.supported.unsupported / goldS : null,
+        pipeline_failure_rate:
+          count((r) => r.predicted === "unchecked" || r.predicted === "not_grounded") / n,
+      },
+      confusion,
+    };
   };
+  const all = score(rows);
+  const dev = score(rows.filter((r) => (r.split ?? "dev") === "dev"));
+  const holdout = score(rows.filter((r) => r.split === "holdout"));
   const models = [...new Set(rows.map((r) => r.meta?.model).filter(Boolean))];
   const receipt = {
     eval: "citation-support",
@@ -85,11 +108,13 @@ async function main() {
     gold_hash: createHash("sha256").update(JSON.stringify(gold)).digest("hex").slice(0, 16),
     code_sha: process.env.EVAL_CODE_SHA ?? null,
     models,
-    n,
-    metrics,
-    confusion,
+    tier: process.env.EVAL_TIER ?? "utility",
+    all,
+    dev,
+    holdout,
     cases: rows.map((r) => ({
       id: r.id,
+      split: r.split ?? "dev",
       expected: r.expected,
       acceptable: r.acceptable,
       predicted: r.predicted,
