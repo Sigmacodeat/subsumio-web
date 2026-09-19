@@ -30,7 +30,7 @@ import { hybridSearch } from "../search/hybrid.ts";
 import { chat as gatewayChat } from "../ai/gateway.ts";
 import { expandLegalQuery } from "./legal-query-expand.ts";
 import { expandConceptQuery } from "../legal/concept-map.ts";
-import { LEGAL_SOURCE_BY_JURISDICTION } from "../legal/jurisdiction.ts";
+import { AT_LAW_SOURCES_STATUTES, LEGAL_SOURCE_BY_JURISDICTION } from "../legal/jurisdiction.ts";
 
 export type QueryIntent =
   | "statute_lookup"
@@ -156,22 +156,36 @@ export async function executeQueryPlan(
 
   const allResults: SearchResult[] = [];
   const seen = new Set<number>();
+  let attempted = 0;
+  let failed = 0;
+  let lastError: unknown;
 
   for (const sq of plan.sub_queries) {
+    // The caller's jurisdiction (case / attorney) is BINDING. The planner LLM
+    // may only fill it in when the caller set none — otherwise a question in
+    // an Austrian matter could be answered from German law because the model
+    // guessed "de" from the wording.
+    const jurisdiction = bindingJurisdiction(opts.jurisdiction, sq.jurisdiction);
+
     // Expand the sub-query with legal synonyms + concept-map §-hints
     const expanded = expandConceptQuery(
       expandLegalQuery(sq.query),
-      (sq.jurisdiction ?? opts.jurisdiction) as "de" | "at" | undefined,
+      jurisdiction as "de" | "at" | undefined,
     );
 
     // Determine source scoping based on source_type
-    const sourceOpts = resolveSourceScope(sq.source_type, sq.jurisdiction ?? opts.jurisdiction, opts);
+    const sourceOpts = resolveSourceScope(sq.source_type, jurisdiction, opts);
+    // An EMPTY source list means "no source may be searched" here. Passed
+    // through, the engine would read it as "no filter" and search every
+    // tenant's pages.
+    if (Array.isArray(sourceOpts.sourceIds) && sourceOpts.sourceIds.length === 0) continue;
 
+    attempted++;
     try {
       const results = await hybridSearch(engine, expanded, {
         limit: perSubQuery,
         expansion: false,
-        jurisdiction: sq.jurisdiction ?? opts.jurisdiction,
+        jurisdiction,
         ...sourceOpts,
       });
 
@@ -181,9 +195,20 @@ export async function executeQueryPlan(
           allResults.push(r);
         }
       }
-    } catch {
-      // Fail-open: skip this sub-query
+    } catch (e) {
+      // One failing sub-query is tolerated; the others still answer.
+      failed++;
+      lastError = e;
+      process.stderr.write(
+        `[query-planner] sub-query failed: ${e instanceof Error ? e.message : String(e)}\n`
+      );
     }
+  }
+  // If EVERY sub-query failed, retrieval is down — surface it instead of
+  // returning [] (which reads as "nothing in the corpus" and lets the model
+  // answer unsupported).
+  if (attempted > 0 && failed === attempted) {
+    throw lastError instanceof Error ? lastError : new Error("all planner sub-queries failed");
   }
 
   // Sort by score descending
@@ -217,6 +242,30 @@ export function fallbackPlan(opts: QueryPlannerOpts): QueryPlan {
     ],
     decomposed: false,
   };
+}
+
+/**
+ * Statute sources for a jurisdiction. AT statutes live in granular sources
+ * (law-at-normen, law-at-landesrecht, …); the legacy "law-at" source alone is
+ * empty, so a "statutes" sub-query scoped to it found nothing in production.
+ * EU law applies in every DACH jurisdiction.
+ */
+export function statuteSourcesFor(jurisdiction: string): string[] | undefined {
+  const j = jurisdiction.toLowerCase();
+  if (j === "at") return [...AT_LAW_SOURCES_STATUTES, LEGAL_SOURCE_BY_JURISDICTION.eu];
+  const single = LEGAL_SOURCE_BY_JURISDICTION[j as keyof typeof LEGAL_SOURCE_BY_JURISDICTION];
+  if (!single) return undefined;
+  return j === "eu" ? [single] : [single, LEGAL_SOURCE_BY_JURISDICTION.eu];
+}
+
+/** Caller jurisdiction wins; the planner's guess only fills a gap. */
+export function bindingJurisdiction(
+  callerJurisdiction: string | undefined,
+  plannerJurisdiction: string | undefined
+): string | undefined {
+  const caller = callerJurisdiction?.trim().toLowerCase();
+  if (caller && caller !== "all" && caller !== "unbekannt") return caller;
+  return plannerJurisdiction ?? callerJurisdiction;
 }
 
 export function validateIntent(value: unknown): QueryIntent {
@@ -275,9 +324,9 @@ function resolveSourceScope(
   opts: QueryPlannerOpts
 ): { sourceId?: string; sourceIds?: string[] } {
   if (sourceType === "statutes" && jurisdiction) {
-    const lawSource = LEGAL_SOURCE_BY_JURISDICTION[jurisdiction as keyof typeof LEGAL_SOURCE_BY_JURISDICTION];
-    if (lawSource) {
-      return { sourceIds: [lawSource] };
+    const lawSources = statuteSourcesFor(jurisdiction);
+    if (lawSources) {
+      return { sourceIds: lawSources };
     }
   }
 

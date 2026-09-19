@@ -6,6 +6,7 @@
  * use (default bind 127.0.0.1). Optional GBRAIN_WEB_API_KEY gates access.
  */
 
+import { installProcessErrorReporting, reportError } from "../core/error-report.ts";
 import express from "express";
 import type { Application, Request, Response, NextFunction } from "express";
 import { z } from "zod";
@@ -1336,11 +1337,21 @@ export async function persistEnginePostUploadTasks(
 ): Promise<void> {
   const taskTypes: EnginePostUploadTaskType[] = ["analyze"];
   if (input.case_slug) taskTypes.push("reconcile_case", "contradiction");
+  const docPage = await engine.getPage(input.doc_slug, { sourceId }).catch(() => null);
+  const docContentHash =
+    (docPage as { content_hash?: string | null } | null)?.content_hash ?? undefined;
   await Promise.all(
     taskTypes.map(async (taskType) => {
       const safe = input.doc_slug.replace(/[^a-z0-9-]/gi, "-").slice(0, 48);
       const hash = createHash("sha256").update(input.doc_slug).digest("hex").slice(0, 16);
       const slug = `legal/post-upload-tasks/${taskType}/${safe}-${hash}`;
+      // Idempotent per document CONTENT: the upload route and the async
+      // extraction handler both call this. Overwriting an already
+      // done/exhausted task for unchanged content revived it (attempts 0) and
+      // re-ran the paid analysis. Only changed content re-enqueues.
+      const existing = await engine.getPage(slug, { sourceId }).catch(() => null);
+      const existingFm = (existing?.frontmatter ?? {}) as Record<string, unknown>;
+      if (existing && docContentHash && existingFm.doc_content_hash === docContentHash) return;
       // G16 fix: set next_attempt_at 30s in the future to avoid a hot
       // retry loop. Pre-fix, next_attempt_at = now meant the outbox worker
       // could immediately re-process the task before the upload response
@@ -1354,6 +1365,7 @@ export async function persistEnginePostUploadTasks(
         attempts: 0,
         next_attempt_at: nextAttempt,
         status: "pending",
+        ...(docContentHash ? { doc_content_hash: docContentHash } : {}),
       });
       await importFromContent(engine, slug, markdown, {
         noEmbed: true,
@@ -2267,6 +2279,8 @@ function engineCorsMiddleware(allowlist: Set<string> | null) {
 }
 
 export function mountWebApi(app: Application, engine: BrainEngine, options: WebApiOptions = {}) {
+  // Sentry (no-op without SENTRY_DSN): uncaught exceptions / rejections.
+  installProcessErrorReporting();
   // G25 fix: consistent error-response helper that always includes `message`.
   // Defined at the top of mountWebApi so all route handlers can use it.
   const apiError = (res: Response, status: number, code: string, message?: string): void => {
@@ -2907,6 +2921,42 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
   // API key guard — applied AFTER the direct-upload route so that
   // direct uploads bypass API key auth (they use upload tokens instead).
+  // Correlation with the web app (src/lib/request-context.ts): echo the
+  // caller's x-request-id and log slow or failed requests with it, so a web
+  // log line and the engine's work for the same request can be joined.
+  app.use("/api", (req: Request, res: Response, next: NextFunction) => {
+    const raw = req.header("x-request-id");
+    const requestId = raw && /^[A-Za-z0-9._-]{8,80}$/.test(raw) ? raw : undefined;
+    if (!requestId) return next();
+    res.setHeader("x-request-id", requestId);
+    const started = Date.now();
+    res.on("finish", () => {
+      const ms = Date.now() - started;
+      if (res.statusCode >= 500) {
+        reportError(new Error(`HTTP ${res.statusCode} ${req.method} ${req.path}`), {
+          kind: "http_5xx",
+          request_id: requestId,
+          status: res.statusCode,
+        });
+      }
+      if (res.statusCode >= 500 || ms > 20_000) {
+        console.error(
+          JSON.stringify({
+            ts: new Date().toISOString(),
+            level: res.statusCode >= 500 ? "error" : "warn",
+            module: "engine/web-api",
+            msg: "request",
+            requestId,
+            method: req.method,
+            path: req.path,
+            status: res.statusCode,
+            ms,
+          })
+        );
+      }
+    });
+    next();
+  });
   app.use("/api", guard);
 
   // Fail-closed tenant gate: in SaaS mode a missing/invalid tenant header
@@ -3331,7 +3381,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   );
 
-  app.post("/api/think", express.json({ limit: "1mb" }), async (req: Request, res: Response) => {
+  const thinkHandler = async (req: Request, res: Response) => {
     const body = req.body as Record<string, unknown>;
     const rawQuery = String(body?.query ?? body?.question ?? "");
     if (!rawQuery.trim()) {
@@ -3403,6 +3453,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const jurisdiction = (caseJurHeader ?? userJurHeader)?.toUpperCase();
 
       const thinkStartTime = Date.now();
+      // What the browser has already seen. The citation guardrail and
+      // cross-verify may REPLACE the answer after streaming finished; the
+      // final event then carries the verified text (see finalAnswerEvent).
+      let streamedAnswer = "";
       const result = await runThink(engine, {
         question: query,
         ...(instructions ? { instructions } : {}),
@@ -3422,6 +3476,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         jurisdiction,
         // Real-time token streaming: each text delta fires an SSE chunk event.
         onStreamChunk: (text) => {
+          streamedAnswer += text;
           res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
         },
       });
@@ -3478,8 +3533,17 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       // the trace for attorney feedback / calibration.
       const warnings = result.warnings ?? [];
       const traceId = result.reasoningTrace?.trace_id;
+      const { finalAnswerEvent } = await import("../core/think/final-answer.ts");
       res.write(
-        `data: ${JSON.stringify({ citations, gaps, provenance, documentConfidence, warnings, trace_id: traceId })}\n\n`
+        `data: ${JSON.stringify({
+          citations,
+          gaps,
+          provenance,
+          documentConfidence,
+          warnings,
+          trace_id: traceId,
+          ...finalAnswerEvent(streamedAnswer, result.answer, warnings),
+        })}\n\n`
       );
       res.write("data: [DONE]\n\n");
       res.end();
@@ -3505,7 +3569,29 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         res.status(500).json({ error: "think_failed", message: msg });
       }
     }
-  });
+  };
+  app.post("/api/think", express.json({ limit: "1mb" }), thinkHandler);
+
+  // Schriftsatz draft (Berufungs-Agent "Entwurf" step, /dashboard drafting).
+  // The web proxy called this path but the engine never registered it, so the
+  // drafting step silently failed. It runs the full think pipeline — matter-
+  // scoped retrieval, citation guardrail, cross-verify, final_answer — with
+  // drafting instructions instead of a Q&A persona.
+  app.post(
+    "/api/legal/schriftsatz",
+    express.json({ limit: "256kb" }),
+    async (req: Request, res: Response) => {
+      const b = (req.body ?? {}) as Record<string, unknown>;
+      const { buildSchriftsatzRequest } = await import("../core/legal/schriftsatz-request.ts");
+      const built = buildSchriftsatzRequest(b);
+      if ("error" in built) {
+        apiError(res, 400, built.error);
+        return;
+      }
+      req.body = built;
+      await thinkHandler(req, res);
+    }
+  );
 
   // Proactive issue-spotting over one uploaded document. The brain reads the
   // document and returns a structured brief (type, parties, dates, issues with
@@ -3524,13 +3610,23 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         }
         const pageForScope = await engine.getPage(slug, { sourceId: requestSourceId(req) });
         assertMatterScope(req.matterScope, slug, readCaseSlug(pageForScope));
-        const { analyzeDocument } = await import("../core/legal/analyze-document.ts");
+        const { analyzeDocument, isAnalysisFailed } =
+          await import("../core/legal/analyze-document.ts");
         const federated = readSourcesFor(req);
         const analysis = await analyzeDocument(engine, {
           slug,
           sourceId: requestSourceId(req),
           ...(federated ? { sourceIds: federated } : {}),
         });
+        // An empty result caused by a model failure must not reach the caller
+        // as a 200 — it would be stored as "analysed, no deadlines found".
+        if (isAnalysisFailed(analysis)) {
+          res.status(502).json({
+            error: "analysis_llm_failed",
+            message: analysis.warnings.join("; ").slice(0, 500),
+          });
+          return;
+        }
         res.json(analysis);
       } catch (e) {
         const msg = e instanceof Error ? e.message : "unknown";
@@ -6899,6 +6995,38 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     return rows.length > 0;
   }
 
+  // Legal-pipeline runs of the caller's tenant (web: /api/pipeline/list).
+  // Jobs carry the tenant in data.source_id (minion_jobs has no column).
+  app.get("/api/legal-pipeline/list", async (req: Request, res: Response) => {
+    try {
+      const sourceId = requestSourceId(req);
+      const scoped = sourceId !== "default";
+      const rows = await engine.executeRaw<{
+        id: number;
+        status: string;
+        created_at: string;
+        finished_at: string | null;
+        case_slug: string | null;
+        workflow_id: string | null;
+        error_text: string | null;
+      }>(
+        `SELECT id, status, created_at, finished_at,
+                data->>'case_slug' AS case_slug,
+                data->>'workflow_id' AS workflow_id,
+                error_text
+           FROM minion_jobs
+          WHERE name = 'legal-pipeline'${scoped ? " AND data->>'source_id' = $1" : ""}
+          ORDER BY created_at DESC
+          LIMIT 100`,
+        scoped ? [sourceId] : []
+      );
+      res.json({ pipelines: rows });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "pipeline_list_failed", message: msg });
+    }
+  });
+
   app.get("/api/agents", async (req: Request, res: Response) => {
     try {
       const sourceId = requestSourceId(req);
@@ -7139,17 +7267,32 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         // the source row exists before the first child put_page fires.
         await ensureSource(sourceId);
         const data: Record<string, unknown> = { prompt: sanitizedPrompt, _source_id: sourceId };
-        if (body.supervisor_model) data.supervisor_model = String(body.supervisor_model);
-        if (body.skip_critic) data.skip_critic = true;
-        if (Array.isArray(body.force_specialists)) data.force_specialists = body.force_specialists;
+        // Caller-controlled knobs are validated, never passed through raw:
+        // the model must be a catalogue choice (no arbitrary / non-EU vendor
+        // ids), and specialists must exist (max 4, like the planner's cap).
+        const { resolveUserModelChoice } = await import("../core/model-config.ts");
+        const pickedSupervisorModel = resolveUserModelChoice(body.supervisor_model);
+        if (pickedSupervisorModel) data.supervisor_model = pickedSupervisorModel;
+        if (body.skip_critic === true) data.skip_critic = true;
+        if (Array.isArray(body.force_specialists)) {
+          const { resolveSpecialist } = await import("../core/minions/specialist-defs.ts");
+          const known = body.force_specialists
+            .filter((n): n is string => typeof n === "string" && resolveSpecialist(n) !== null)
+            .slice(0, 4);
+          if (known.length > 0) data.force_specialists = known;
+        }
 
-        // Pass through budget_remaining_cents (in cents) so the supervisor
-        // handler can enforce it via setOwnerBudget. Without this, the cap
-        // sent by callers (e.g. cron/rundown) was silently ignored.
+        // Every run gets a spend cap. Callers may set a smaller or larger one
+        // (bounded); without it the default applies — an uncapped supervisor
+        // tree can fan out into dozens of paid model turns.
+        const DEFAULT_AGENT_BUDGET_CENTS = Number(
+          process.env.SUBSUMIO_AGENT_DEFAULT_BUDGET_CENTS ?? 300
+        );
+        const MAX_AGENT_BUDGET_CENTS = 5_000;
         const budgetCents =
           typeof body.budget_remaining_cents === "number" && body.budget_remaining_cents > 0
-            ? body.budget_remaining_cents
-            : undefined;
+            ? Math.min(body.budget_remaining_cents, MAX_AGENT_BUDGET_CENTS)
+            : DEFAULT_AGENT_BUDGET_CENTS;
 
         const job = await queue.add(
           "supervisor",
@@ -7162,7 +7305,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
         // Set the spendable balance on the owner job row so subagent
         // reserveBudget() calls will actually check against it.
-        if (budgetCents !== undefined) {
+        {
           const { setOwnerBudget } = await import("../core/minions/budget-tracker.ts");
           await setOwnerBudget(engine, job.id, budgetCents / 100);
         }
@@ -8984,6 +9127,70 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     return { success: true, sources: result };
   }
 
+  // Nightly statute currency check (cron/statute-currency). The cron used to
+  // POST a pseudo-dispatch to a non-existent /api/operations route and failed
+  // every night. Runs the statute_currency_check op per jurisdiction as a
+  // trusted server-to-server call (API-key guarded like every /api route) and
+  // compares against the corpus reference; live sources stay opt-in.
+  app.post("/api/admin/statute-currency", express.json(), async (req: Request, res: Response) => {
+    try {
+      const { operations } = await import("../core/operations.ts");
+      const op = operations.find((o) => o.name === "statute_currency_check");
+      if (!op) {
+        apiError(res, 500, "statute_currency_check_missing");
+        return;
+      }
+      const body = (req.body ?? {}) as { jurisdictions?: unknown; compare_live?: unknown };
+      const wanted = Array.isArray(body.jurisdictions)
+        ? body.jurisdictions.filter((j): j is "at" | "de" | "ch" => j === "at" || j === "de" || j === "ch")
+        : (["at", "de", "ch"] as const);
+      const { LEGAL_SOURCE_BY_JURISDICTION, AT_LAW_SOURCES_STATUTES } = await import(
+        "../core/legal/jurisdiction.ts"
+      );
+      const jurisdictions: Record<string, unknown> = {};
+      for (const jurisdiction of wanted) {
+        // Statutes live in the law sources, not in "default" (AT is split
+        // into granular statute sources).
+        const lawSources =
+          jurisdiction === "at"
+            ? [LEGAL_SOURCE_BY_JURISDICTION.at, ...AT_LAW_SOURCES_STATUTES]
+            : [LEGAL_SOURCE_BY_JURISDICTION[jurisdiction]];
+        const opCtx = buildOperationContext(
+          engine,
+          {},
+          {
+            remote: false,
+            sourceId: LEGAL_SOURCE_BY_JURISDICTION[jurisdiction],
+            allowedSources: lawSources,
+          }
+        );
+        const r = (await op.handler(opCtx, {
+          jurisdiction,
+          compare_corpus: true,
+          compare_live: body.compare_live === true,
+        })) as { statutes?: Array<{ statute_id: string; status: string; brain_version_date?: string | null; corpus_version_date?: string | null; live_version_date?: string | null }> };
+        const statutes = r.statutes ?? [];
+        jurisdictions[jurisdiction] = {
+          checked: statutes.length,
+          current: statutes.filter((x) => x.status === "current").length,
+          outdated: statutes.filter((x) => x.status === "outdated").length,
+          unknown: statutes.filter((x) => x.status === "unknown").length,
+          outdated_laws: statutes
+            .filter((x) => x.status === "outdated")
+            .map((x) => ({
+              statute: x.statute_id,
+              db_version: x.brain_version_date ?? "",
+              live_version: x.live_version_date ?? x.corpus_version_date ?? "",
+            })),
+        };
+      }
+      res.json({ result: { jurisdictions } });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "statute_currency_failed", message: msg });
+    }
+  });
+
   app.post("/api/admin/law-sync", async (req: Request, res: Response) => {
     if (rejectSharedSourceActionInTenantMode(req, res)) return;
     try {
@@ -9003,6 +9210,47 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
       res.status(500).json({ error: "dream_failed", message: msg });
+    }
+  });
+
+  // Latest contradiction-probe findings, source-scoped. Web callers
+  // (contradiction-probe route, daily briefing) used to POST a pseudo-prompt
+  // to /api/think, which answered 400 — the feature was silently dead.
+  app.get("/api/legal/contradictions/latest", async (req: Request, res: Response) => {
+    try {
+      const { operations } = await import("../core/operations.ts");
+      const op = operations.find((o) => o.name === "find_contradictions");
+      if (!op) {
+        apiError(res, 500, "find_contradictions_missing");
+        return;
+      }
+      const opCtx = buildOperationContext(
+        engine,
+        {},
+        {
+          remote: true,
+          sourceId: requestSourceId(req),
+          ...(readSourcesFor(req) ? { allowedSources: readSourcesFor(req) } : {}),
+        }
+      );
+      const q = req.query as Record<string, string | undefined>;
+      const limit = Math.min(Math.max(Number(q.limit ?? 20) || 20, 1), 100);
+      const result = (await op.handler(opCtx, {
+        ...(q.slug ? { slug: q.slug } : {}),
+        ...(q.severity ? { severity: q.severity } : {}),
+        limit,
+      })) as {
+        contradictions?: unknown[];
+        run_id?: string;
+        ran_at?: string;
+      };
+      res.json({
+        findings: result.contradictions ?? [],
+        last_run: result.run_id ? { run_id: result.run_id, ran_at: result.ran_at ?? null } : null,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "contradictions_failed", message: msg });
     }
   });
 

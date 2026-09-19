@@ -17,10 +17,12 @@ const CAL_MD = [
   "| o.D. | gruen | unklar | | prüfen | ON 9 |",
 ].join("\n");
 
-function fakeEngine(pages: Array<{ slug: string; compiled_truth: string }>): FristenbuchEngine {
+function fakeEngine(
+  pages: Array<{ slug: string; compiled_truth: string; frontmatter?: Record<string, unknown> }>
+): FristenbuchEngine {
   return {
     async executeRaw<T>(): Promise<T[]> {
-      return pages.map((p) => ({ ...p, frontmatter: {} })) as T[];
+      return pages.map((p) => ({ ...p, frontmatter: p.frontmatter ?? {} })) as T[];
     },
   };
 }
@@ -150,5 +152,30 @@ describe("baueIcs", () => {
     for (const line of ics.split("\r\n")) {
       expect(line.length).toBeLessThanOrEqual(75);
     }
+  });
+});
+
+describe("approval gate for AI-extracted calendars", () => {
+  it("flags pipeline rows as unreviewed until the calendar is approved", async () => {
+    const buch = await ladeFristenbuch(
+      fakeEngine([{ slug: "deadline-calendars/akte-1", compiled_truth: CAL_MD }]),
+      { heute: "2026-07-02" }
+    );
+    expect(buch.eintraege.every((e) => e.review_status === "unreviewed")).toBe(true);
+    expect(buch.eintraege[0]!.source_slug).toBe("deadline-calendars/akte-1");
+    expect(baueIcs(buch, { dtstamp: "2026-07-02T120000Z" })).toContain("[KI · UNGEPRÜFT]");
+
+    const approved = await ladeFristenbuch(
+      fakeEngine([
+        {
+          slug: "deadline-calendars/akte-1",
+          compiled_truth: CAL_MD,
+          frontmatter: { review_status: "approved" },
+        },
+      ]),
+      { heute: "2026-07-02" }
+    );
+    expect(approved.eintraege.every((e) => e.review_status === "approved")).toBe(true);
+    expect(baueIcs(approved, { dtstamp: "2026-07-02T120000Z" })).not.toContain("UNGEPRÜFT");
   });
 });

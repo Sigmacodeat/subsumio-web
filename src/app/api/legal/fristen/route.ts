@@ -76,6 +76,7 @@ interface FristenbuchEintrag {
   status: DeadlineStatus;
   vorfrist: string;
   eskalation: boolean;
+  review_status?: "approved" | "unreviewed";
 }
 
 interface FristenbuchResponse {
@@ -109,8 +110,13 @@ function str(value: unknown): string | undefined {
  */
 function mergeFrist(existing: Frist, incoming: Frist): void {
   const target = existing as unknown as Record<string, unknown>;
+  // An explicit deadline page beats the AI-extracted pipeline calendar: once a
+  // lawyer approved a calendar row (→ approved legal_deadline), that page's
+  // slug, review and completion state are authoritative.
+  const incomingWins = existing.source === "fristenbuch" && incoming.source !== "fristenbuch";
   for (const [key, value] of Object.entries(incoming)) {
-    if (value !== undefined && target[key] === undefined) target[key] = value;
+    if (value === undefined) continue;
+    if (incomingWins || target[key] === undefined) target[key] = value;
   }
   if (incoming.status === "done") existing.status = "done";
 }
@@ -167,6 +173,9 @@ export const GET = createHandler(
               law: e.rechtsgrundlage,
               source: "fristenbuch",
               vorfrist_date: e.vorfrist || undefined,
+              // Pipeline calendars are AI-extracted: "unreviewed" until a
+              // lawyer approves the row (older engines omit the field).
+              review_status: e.review_status ?? "unreviewed",
             };
             addFrist(f);
           }
@@ -196,6 +205,8 @@ export const GET = createHandler(
         const fm = page.frontmatter ?? {};
         const dueDate = String(fm.due_date ?? fm.date ?? "");
         if (!dueDate) continue;
+        // A discarded AI suggestion must not linger in the Fristenbuch.
+        if (fm.review_status === "rejected") continue;
         if (caseFilter && fm.case_slug !== caseFilter) continue;
 
         const f: Frist = {

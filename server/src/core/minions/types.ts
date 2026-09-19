@@ -644,4 +644,6 @@ export interface SubagentResult {
     cache_read: number;
     cache_create: number;
   };
+  /** Resolved model that ran the loop (cost accounting). */
+  model?: string;
 }

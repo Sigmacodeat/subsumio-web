@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ENGINE_URL, engineHeadersWithCaseJurisdiction } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { mapContradictionFinding } from "@/lib/cron-utils";
 
 export const maxDuration = 30;
 
@@ -27,49 +28,46 @@ export const GET = createHandler(
     query: schema,
   },
   async (ctx, _body, query) => {
-    const headers: Record<string, string> = {};
-    if (ctx.headers["x-subsumio-api-key"]) {
-      headers["x-subsumio-api-key"] = ctx.headers["x-subsumio-api-key"];
-    }
-    headers["x-subsumio-source"] = ctx.headers["x-subsumio-source"] ?? "law-de";
-    // Inject case jurisdiction so readSourcesFor() scopes law corpus correctly.
+    // Full request headers (tenant source, API key, identity token) plus the
+    // matter's jurisdiction — never a hardcoded fallback source.
     const caseScopedHeaders = await engineHeadersWithCaseJurisdiction(
-      headers,
+      ctx.headers,
       query?.case_slug
     );
 
-    // Call the engine's find_contradictions operation via the think API
-    // The engine reads eval_contradictions_runs and filters by slug
-    const res = await fetch(`${ENGINE_URL}/api/think`, {
-      method: "POST",
-      headers: { ...caseScopedHeaders, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        prompt: `find_contradictions slug=${query?.case_slug ?? ""}`,
-        tools: ["find_contradictions"],
-        tool_choice: "find_contradictions",
-      }),
-      signal: AbortSignal.timeout(25_000),
-    });
+    // Source-scoped probe findings (only pairs whose pages this firm owns).
+    const res = await fetch(
+      `${ENGINE_URL}/api/legal/contradictions/latest?slug=${encodeURIComponent(
+        query?.case_slug ?? ""
+      )}&limit=50`,
+      { headers: caseScopedHeaders, signal: AbortSignal.timeout(25_000) }
+    );
 
     if (!res.ok) {
-      const text = await res.text();
-      return apiError("engine_error", `Engine returned ${res.status}: ${text}`, res.status);
+      return apiError(
+        "engine_error",
+        "Widerspruchsprüfung derzeit nicht verfügbar. Bitte später erneut versuchen.",
+        502
+      );
     }
 
-    const data = await res.json();
-
-    // The engine returns findings from the latest probe run
-    const findings = Array.isArray(data.findings) ? data.findings : [];
+    const data = (await res.json()) as {
+      findings?: Array<Record<string, unknown>>;
+      last_run?: { run_id?: string; ran_at?: string | null } | null;
+    };
     const lastRun = data.last_run ?? null;
+    const findings = (Array.isArray(data.findings) ? data.findings : []).map((f) =>
+      mapContradictionFinding(f, lastRun?.ran_at ?? new Date().toISOString())
+    );
 
     return Response.json({
-      findings: findings.map((f: Record<string, unknown>) => ({
-        chunk_a: f.a ?? f.chunk_a ?? "",
-        chunk_b: f.b ?? f.chunk_b ?? "",
-        severity: f.severity ?? "medium",
-        axis: f.axis ?? null,
-        explanation: f.explanation ?? f.reasoning ?? "",
-        slug: f.slug ?? query?.case_slug ?? "",
+      findings: findings.map((f) => ({
+        chunk_a: f.chunk_a,
+        chunk_b: f.chunk_b,
+        severity: f.severity,
+        axis: f.explanation ?? null,
+        explanation: f.explanation ?? "",
+        slug: f.case_slug || (query?.case_slug ?? ""),
       })),
       total: findings.length,
       last_run: lastRun,

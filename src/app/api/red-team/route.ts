@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { createHandler, apiSuccess } from "@/lib/api-handler";
+import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
+import { engineThink } from "@/lib/engine-think";
 import { ENGINE_URL } from "@/lib/engine";
 import { createRedTeamPrompt, parseRedTeamOutput } from "@/lib/red-team-agent";
 
@@ -31,22 +32,27 @@ export const POST = createHandler(
     const prompt = createRedTeamPrompt(body);
     const headers = ctx.headers;
 
-    const engineRes = await fetch(`${ENGINE_URL}/api/think`, {
-      method: "POST",
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        prompt,
-        context: { type: "case", caseSlug: body.case_slug },
-        grounding: true,
-        max_tokens: 4000,
-      }),
-      signal: AbortSignal.timeout(45_000),
-    });
-
-    let rawOutput = "";
-    if (engineRes.ok) {
-      const data = await engineRes.json();
-      rawOutput = data.answer ?? data.output ?? data.text ?? "";
+    // A failed engine call must surface as an error — it used to fall back to
+    // "" and store an empty red-team result as if the draft had no weaknesses.
+    let rawOutput: string;
+    try {
+      rawOutput = (
+        await engineThink(headers, {
+          query: prompt,
+          caseSlug: body.case_slug,
+          mode: "balanced",
+          timeoutMs: 55_000,
+        })
+      ).answer;
+    } catch {
+      return apiError(
+        "engine_unavailable",
+        "Die Red-Team-Analyse konnte nicht erstellt werden. Bitte erneut versuchen.",
+        502
+      );
+    }
+    if (!rawOutput.trim()) {
+      return apiError("empty_analysis", "Die KI hat keine Analyse geliefert.", 502);
     }
 
     const result = parseRedTeamOutput(rawOutput, body.case_slug);

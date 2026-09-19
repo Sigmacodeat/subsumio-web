@@ -48,6 +48,8 @@ export interface QueryResponse {
   latency_ms?: number;
   mode?: "conservative" | "balanced" | "tokenmax";
   _grounding?: GroundingMetadata;
+  /** True when verification replaced the streamed draft with `answer`. */
+  answer_revised?: boolean;
 }
 
 export interface Citation {

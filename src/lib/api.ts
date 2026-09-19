@@ -89,6 +89,8 @@ interface ThinkOptions {
   model?: string;
   signal?: AbortSignal;
   onChunk?: (chunk: string) => void;
+  /** Verification replaced the streamed draft; the argument is the final text. */
+  onRevised?: (finalAnswer: string) => void;
 }
 
 // Auth endpoints are consumed by older UI code with shape-specific property access.
@@ -541,7 +543,9 @@ export const api = {
       onChunk?: (chunk: string) => void
     ): Promise<QueryResponse> {
       const options =
-        typeof modeOrOptions === "string" ? { mode: modeOrOptions, onChunk } : modeOrOptions;
+        typeof modeOrOptions === "string"
+          ? ({ mode: modeOrOptions, onChunk } as ThinkOptions)
+          : modeOrOptions;
       const mode = options.mode ?? "balanced";
       const res = await csrfFetch(`${BASE_URL}/api/think`, {
         method: "POST",
@@ -597,6 +601,13 @@ export const api = {
         if (typeof parsed.chunk === "string") {
           result.answer += parsed.chunk;
           options.onChunk?.(parsed.chunk);
+        }
+        // Verification regenerated the answer after streaming: the final text
+        // replaces the streamed draft (callers render result.answer at the end).
+        if (typeof parsed.final_answer === "string" && parsed.final_answer) {
+          result.answer = parsed.final_answer;
+          result.answer_revised = true;
+          options.onRevised?.(result.answer);
         }
         if (Array.isArray(parsed.citations)) result.citations = parsed.citations;
         if (Array.isArray(parsed.gaps)) result.gaps = parsed.gaps;
@@ -1526,6 +1537,11 @@ export const api = {
             if (typeof parsed.chunk === "string") {
               content += parsed.chunk;
               input.onChunk?.(parsed.chunk);
+            }
+            // Verification regenerated the draft after streaming — the final
+            // text replaces what was streamed.
+            if (typeof parsed.final_answer === "string" && parsed.final_answer) {
+              content = parsed.final_answer;
             }
             // The citation gate (createEngineProxy citationGate:true) attaches
             // `grounding` to the same SSE event that carries `citations`.

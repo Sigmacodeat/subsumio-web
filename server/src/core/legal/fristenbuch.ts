@@ -49,6 +49,11 @@ export interface FristenbuchEintrag {
   vorfrist: string;
   /** true → Vier-Augen-Eskalation fällig (kritisch/ueberfaellig). */
   eskalation: boolean;
+  /** "approved" only when a lawyer approved the calendar; pipeline output
+   *  is AI-extracted and therefore "unreviewed" by default. */
+  review_status: "approved" | "unreviewed";
+  /** The deadline-calendar page this row comes from. */
+  source_slug: string;
 }
 
 export interface Fristenbuch {
@@ -177,6 +182,7 @@ export async function ladeFristenbuch(
 
   for (const page of pages) {
     const caseSlug = page.slug.replace(/^deadline-calendars\//, "");
+    const reviewStatus = page.frontmatter?.review_status === "approved" ? "approved" : "unreviewed";
     const rows = parseDeadlineTable(page.compiled_truth ?? "");
     for (const row of rows) {
       const iso = parseDeadlineDate(row.datum);
@@ -198,6 +204,8 @@ export async function ladeFristenbuch(
         status,
         vorfrist,
         eskalation: status === "kritisch" || status === "ueberfaellig",
+        review_status: reviewStatus,
+        source_slug: page.slug,
       });
     }
   }
@@ -282,7 +290,8 @@ export function baueIcs(
           : e.status === "vorfrist"
             ? "VORFRIST ERREICHT"
             : "";
-    const summary = `${statusTag ? `[${statusTag}] ` : ""}FRIST: ${e.frist} (${e.case_slug})`;
+    const reviewTag = e.review_status === "approved" ? "" : "[KI · UNGEPRÜFT] ";
+    const summary = `${reviewTag}${statusTag ? `[${statusTag}] ` : ""}FRIST: ${e.frist} (${e.case_slug})`;
     const description =
       `Akte: ${e.case_slug}\nRechtsgrundlage: ${e.rechtsgrundlage}\n` +
       `Folge bei Versäumnis: ${e.folge_bei_versaeumnis}\nBeleg: ${e.beleg_on}\n` +

@@ -2606,10 +2606,19 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
         const sourceUri = (
           req.header("x-gbrain-source-uri") || `mcp-webhook:${authInfo.clientId}:${Date.now()}`
         ).slice(0, 1024);
-        const sourceId = (req.header("x-gbrain-source-id") || `webhook-${authInfo.clientId}`).slice(
-          0,
-          256
-        );
+        // The target source is the client's WRITE authority, never a
+        // self-asserted header: a header naming another source would let any
+        // write-scoped client file content into a foreign tenant's brain.
+        const requestedSource = req.header("x-gbrain-source-id");
+        const writeSource = authInfo.sourceId || `webhook-${authInfo.clientId}`;
+        if (requestedSource && requestedSource !== writeSource) {
+          res.status(403).json({
+            error: "source_forbidden",
+            message: `client may only ingest into source '${writeSource}'`,
+          });
+          return;
+        }
+        const sourceId = writeSource.slice(0, 256);
         const callerSlug = req.header("x-gbrain-slug");
 
         const event: IngestionEvent = {

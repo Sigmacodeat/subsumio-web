@@ -11,6 +11,7 @@
  *   await worker.start(); // polls until SIGTERM
  */
 
+import { reportError } from "../error-report.ts";
 import type { BrainEngine } from "../engine.ts";
 import type {
   MinionJob,
@@ -1065,6 +1066,17 @@ export class MinionWorker extends EventEmitter {
             `stall detector will requeue (no attempt burned)`
         );
         return;
+      }
+
+      // Real job failures reach Sentry (no-op without SENTRY_DSN). Lease-full
+      // bounces are back-pressure, not defects.
+      if (!(err instanceof Error && err.name === "RateLeaseUnavailableError")) {
+        reportError(err, {
+          kind: "job_failed",
+          job_name: job.name,
+          job_id: job.id,
+          ...(abortReason ? { abort_reason: abortReason } : {}),
+        });
       }
 
       // v0.41 Bug 2: lease-full bounces don't burn attempts.

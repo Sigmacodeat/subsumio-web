@@ -49,8 +49,6 @@ const LEGAL_BRAIN_TOOLS = [
   "resolve_slugs",
 ];
 
-const LEGAL_FILE_TOOLS = ["file_list", "file_url"];
-
 export const EMBEDDED_SPECIALISTS: SpecialistDef[] = [
   {
     name: "legal-researcher",
@@ -83,7 +81,7 @@ HALLUCINATION-GATE (STRIKT):
 - ERFINDE KEINE §§, Urteile oder Quellen. Jede Angabe MUSS durch search/get_page im Brain gefunden werden.
 - Wenn ein § nicht im Brain gefunden wird: benenne dies als Unsicherheit, NICHT erfinden.
 - Wenn keine relevanten Treffer gefunden werden: antworte mit dem besten verfügbaren Kontext und kennzeichne die Lücken.`,
-    allowedTools: [...LEGAL_BRAIN_TOOLS, ...LEGAL_FILE_TOOLS],
+    allowedTools: [...LEGAL_BRAIN_TOOLS],
     maxTurns: 15,
     modelTier: "reasoning",
   },
@@ -248,6 +246,10 @@ Regeln:
 - Sei STRENG — besser falsch-positiv (Markierung) als falsch-negativ (übersehen).
 - Gib eine strukturierte Review-Liste aus: { issue, severity, suggestion, verification }.
 - Bewerte mit einem Gesamt-Score (0–100) und einer Empfehlung: "publish", "revise", "reject".
+- Die LETZTE Zeile deiner Antwort ist GENAU eine der drei Zeilen (maschinell ausgewertet):
+  VERDICT: publish
+  VERDICT: revise
+  VERDICT: reject
 - Du bist der Gegencheck zum Haupt-Agenten. Sei kritisch, nicht höflich.
 
 AGENTIC SEARCH (iterativ):

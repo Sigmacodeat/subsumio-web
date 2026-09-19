@@ -24,7 +24,6 @@ import { useMatterDetail } from "@/lib/matter-detail-context";
 import { DocumentRequestComposer } from "@/components/legal/DocumentRequestComposer";
 import type { BrainPage } from "@/lib/types";
 import type { MatterContextBundle, MatterUnderstandingPanel } from "@/lib/matter-context-types";
-import type { DeadlineEntry } from "@/lib/legal-types";
 import { unwrapApiBody } from "@/lib/api-body";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 
@@ -310,24 +309,8 @@ export function MatterReviewInbox({
 
   async function acceptSuggestedDeadline(item: ReviewItem) {
     if (typeof item.index !== "number" || !matter?.suggestedDeadlines?.[item.index]) return;
-    const suggestion = matter.suggestedDeadlines[item.index];
     setUpdating(item.id);
     try {
-      const entry: DeadlineEntry = {
-        id: `dl-${Date.now()}`,
-        title: suggestion.title,
-        due_date: suggestion.due_date,
-        status: "pending",
-        type: "deadline",
-        source: suggestion.source,
-        description: suggestion.source_quote,
-        review_status: "approved",
-        reviewed_at: new Date().toISOString(),
-      };
-      const updated = [...ctx.deadlinesList, entry];
-      ctx.setDeadlinesList(updated);
-      ctx.setCaseData({ ...matter, deadlines: updated });
-      await ctx.saveCaseUpdate({ deadlines: updated });
       await ctx.confirmSuggestedDeadline(item.index, true);
       addToast({ type: "success", title: "Frist übernommen" });
     } catch (err) {
@@ -346,6 +329,11 @@ export function MatterReviewInbox({
     try {
       await ctx.confirmSuggestedDeadline(item.index, false);
       addToast({ type: "success", title: "Fristvorschlag verworfen" });
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: err instanceof Error ? err.message : "Fristvorschlag konnte nicht verworfen werden",
+      });
     } finally {
       setUpdating(null);
     }

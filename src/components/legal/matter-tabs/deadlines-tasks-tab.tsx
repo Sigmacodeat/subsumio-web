@@ -418,8 +418,11 @@ export function DeadlinesTasksTab() {
               {t("casesdetail.ai_deadlines")}
             </div>
             {caseData.suggestedDeadlines
-              .filter((sd) => !sd.confirmed)
-              .map((sd, i) => (
+              .map((sd, i) => ({ sd, i }))
+              // Keep the ORIGINAL index: filtering first and mapping the
+              // filtered position confirmed the wrong suggestion.
+              .filter(({ sd }) => !sd.confirmed)
+              .map(({ sd, i }) => (
                 <div
                   key={i}
                   className="flex items-center justify-between rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2"
@@ -441,18 +444,15 @@ export function DeadlinesTasksTab() {
                       disabled={caseData?.status === "archived"}
                       className="border-[color:var(--ds-success-border)] text-xs text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
                       onClick={async () => {
-                        const entry: DeadlineEntry = {
-                          id: `dl-${Date.now()}`,
-                          title: sd.title,
-                          due_date: sd.due_date,
-                          type: "custom" as DeadlineEntry["type"],
-                          status: "pending",
-                          review_status: "unreviewed",
-                        };
-                        const updated = [...ctx.deadlinesList, entry];
-                        ctx.setDeadlinesList(updated);
-                        ctx.saveCaseUpdate({ deadlines: updated });
-                        await ctx.confirmSuggestedDeadline(i, true);
+                        try {
+                          await ctx.confirmSuggestedDeadline(i, true);
+                        } catch (err) {
+                          ctx.setSaveError(
+                            err instanceof Error
+                              ? err.message
+                              : "Frist konnte nicht übernommen werden."
+                          );
+                        }
                       }}
                     >
                       <Check size={12} /> {t("casesdetail.accept")}
@@ -462,7 +462,17 @@ export function DeadlinesTasksTab() {
                       size="sm"
                       disabled={caseData?.status === "archived"}
                       className="text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
-                      onClick={() => ctx.confirmSuggestedDeadline(i, false)}
+                      onClick={() =>
+                        ctx
+                          .confirmSuggestedDeadline(i, false)
+                          .catch((err: unknown) =>
+                            ctx.setSaveError(
+                              err instanceof Error
+                                ? err.message
+                                : "Fristvorschlag konnte nicht verworfen werden."
+                            )
+                          )
+                      }
                     >
                       <X size={12} /> {t("casesdetail.reject")}
                     </Button>

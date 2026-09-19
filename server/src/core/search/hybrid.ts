@@ -9,6 +9,7 @@
  * Cosine re-score: blend 0.7*rrf + 0.3*cosine for query-specific ranking
  */
 
+import { TIER_DEFAULTS } from "../model-config.ts";
 import type { BrainEngine } from "../engine.ts";
 import { MAX_SEARCH_LIMIT, clampSearchLimit } from "../engine.ts";
 import type { SearchResult, SearchOpts, HybridSearchMeta } from "../types.ts";
@@ -2167,7 +2168,7 @@ export async function embedQueryBounded(
   }
 }
 
-const DEFAULT_LLM_RERANK_MODEL = "openrouter:deepseek/deepseek-chat";
+const DEFAULT_LLM_RERANK_MODEL = TIER_DEFAULTS.utility;
 // v0.46: Fallback chain for LLM reranker. If primary model fails (credits,
 // rate-limit, network), try the next. All are OpenRouter models with the
 // same chat API — the reranker prompt works with any instruction-following LLM.

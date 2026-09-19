@@ -183,6 +183,12 @@ export function createCitationGateStream(
                 answerText += parsed.chunk;
               }
 
+              // The engine replaced the streamed draft after verification —
+              // ground the text the lawyer will actually read.
+              if (typeof parsed.final_answer === "string" && parsed.final_answer) {
+                answerText = parsed.final_answer;
+              }
+
               if (parsed.citations !== undefined) {
                 // Enrich each source citation with passage coordinates if the
                 // engine included them (page_number, char_offset_start/end,

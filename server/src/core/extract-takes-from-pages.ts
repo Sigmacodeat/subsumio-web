@@ -13,6 +13,7 @@
 // 100+-case eval suite. v0.42 ships the classifier + CLI; autopilot stays
 // blocked until eval coverage catches up.
 
+import { TIER_DEFAULTS } from "./model-config.ts";
 import type { BrainEngine } from "./engine.ts";
 import type { TakeBatchInput, TakeKind } from "./engine.ts";
 import { chat, isAvailable } from "./ai/gateway.ts";
@@ -181,7 +182,7 @@ export async function extractTakesFromPages(
     let response: { text: string };
     try {
       response = await chat({
-        model: opts.model ?? "openrouter:deepseek/deepseek-chat",
+        model: opts.model ?? TIER_DEFAULTS.utility,
         system: CLASSIFIER_SYSTEM,
         messages: [
           {

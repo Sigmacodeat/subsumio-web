@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { logger } from "@/lib/logger";
+import { engineThink } from "@/lib/engine-think";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import {
@@ -10,6 +12,8 @@ import {
   type PerspektivenRoleOutput,
   type PerspektivenSession,
 } from "@/lib/perspektivenraum-agent";
+
+const log = logger("api/legal/perspektiven-room");
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -38,26 +42,17 @@ async function runRole(
   role: PerspektivenRole,
   caseSlug: string,
   input: Parameters<typeof createPerspektivenPrompt>[0],
-  headers: HeadersInit
+  headers: Record<string, string>
 ): Promise<PerspektivenRoleOutput> {
   const prompt = createPerspektivenPrompt(input);
-  const res = await fetch(`${ENGINE_URL}/api/think`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...headers },
-    body: JSON.stringify({
-      prompt,
-      context: { type: "case", caseSlug },
-      grounding: true,
-      max_tokens: 2000,
-    }),
-    signal: AbortSignal.timeout(45_000),
+  // Throws on engine failure: an empty role output is not a valid perspective.
+  const { answer: rawOutput } = await engineThink(headers, {
+    query: prompt,
+    caseSlug,
+    mode: "balanced",
+    timeoutMs: 55_000,
   });
-
-  let rawOutput = "";
-  if (res.ok) {
-    const data = await res.json();
-    rawOutput = data.answer ?? data.output ?? data.text ?? "";
-  }
+  if (!rawOutput.trim()) throw new Error(`empty output for role ${role}`);
   return parsePerspektivenOutput(rawOutput, role);
 }
 
@@ -119,9 +114,13 @@ export const POST = createHandler(
         roles.map((role) => runRole(role, body.case_slug, { ...roleInput, role }, ctx.headers))
       );
     } catch (err) {
+      log.error(
+        "[perspektiven-room] role failed:",
+        err instanceof Error ? err.message : String(err)
+      );
       return apiError(
         "think_failed",
-        err instanceof Error ? err.message : "Perspektiven-Analyse fehlgeschlagen",
+        "Die Perspektiven-Analyse konnte nicht erstellt werden. Bitte erneut versuchen.",
         503
       );
     }
