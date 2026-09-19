@@ -1302,6 +1302,12 @@ export interface SearchOpts {
    */
   relationalRetrieval?: boolean;
   relationalRetrievalDepth?: number;
+  /**
+   * When the keyword arm joins the fusion: 'always' or 'citations' (only for
+   * queries citing a §, abbreviation or case number). Per-call wins over the
+   * `search.keyword_arm` config key wins over the mode bundle.
+   */
+  keywordArm?: "always" | "citations";
 
   /**
    * v0.48 — Legal metadata filters for court decisions. These filter on

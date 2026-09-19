@@ -36,6 +36,7 @@ import { expandAnchors, hydrateChunks } from "./two-pass.ts";
 import { enforceTokenBudget } from "./token-budget.ts";
 import { recordSearchTelemetry } from "./telemetry.ts";
 import { weightsForIntent, effectiveRrfK, applyExactMatchBoost } from "./intent-weights.ts";
+import { isCitationQuery } from "./citation-query.ts";
 import { SemanticQueryCache, loadCacheConfig } from "./query-cache.ts";
 import { foreignStatutePrefixes } from "./source-boost.ts";
 import { expandLegalQuery } from "../think/legal-query-expand.ts";
@@ -2350,6 +2351,7 @@ export async function hybridSearch(
       // would be a no-op (both branches resolve to the same mode default).
       relationalRetrieval: opts?.relationalRetrieval,
       relational_retrieval_depth: opts?.relationalRetrievalDepth,
+      keyword_arm: opts?.keywordArm,
     },
   });
 
@@ -3003,6 +3005,19 @@ export async function hybridSearch(
       ]
     : [...vectorLists.map((list) => ({ list, k: vectorK })), { list: keywordResults, k: keywordK }];
 
+  // Keyword-arm gating: with 'citations', a plain-language question ranks
+  // on the vector arm alone — its keyword hits are mostly texts sharing a
+  // word and push the right ones down. The keyword arm still decides when
+  // the query cites a source or the vector arm came back empty.
+  if (
+    resolvedMode.keyword_arm === "citations" &&
+    !isCitationQuery(query) &&
+    vectorLists.some((l) => l.length > 0)
+  ) {
+    const kwIndex = allLists.findIndex((l) => l.list === keywordResults);
+    if (kwIndex >= 0) allLists.splice(kwIndex, 1);
+  }
+
   // v0.43 — relational recall arm (fourth RRF arm), built above so it also
   // contributes on the keyword-only fallback path. Neutral weight (baseRrfK):
   // competes evenly with keyword/vector, not dominating. Empty for
@@ -3270,6 +3285,7 @@ export async function hybridSearchCached(
       // would be a no-op (both branches resolve to the same mode default).
       relationalRetrieval: opts?.relationalRetrieval,
       relational_retrieval_depth: opts?.relationalRetrievalDepth,
+      keyword_arm: opts?.keywordArm,
     },
   });
   // v0.36 (D8 / CDX-2 + codex /ship #4): resolve column for the cache
