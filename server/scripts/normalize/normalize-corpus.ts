@@ -17,7 +17,15 @@
  *   bun server/scripts/normalize/normalize-corpus.ts --corpus at-normen --batch 500 --resume
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, statSync } from "fs";
+import {
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  existsSync,
+  readdirSync,
+  renameSync,
+  statSync,
+} from "fs";
 import { join, dirname, relative } from "path";
 import { createHash } from "crypto";
 import {
@@ -666,7 +674,10 @@ function main() {
       if (!DRY) {
         const dest = join(outDir, rel);
         mkdirSync(dirname(dest), { recursive: true });
-        writeFileSync(dest, `${serializeCanonical(fm)}\n\n${newBody.replace(/^\n+/, "")}`, "utf8");
+        // Atomic: an import running in parallel must never read a half-written file.
+        const tmp = `${dest}.tmp-${process.pid}`;
+        writeFileSync(tmp, `${serializeCanonical(fm)}\n\n${newBody.replace(/^\n+/, "")}`, "utf8");
+        renameSync(tmp, dest);
       }
     }
 
