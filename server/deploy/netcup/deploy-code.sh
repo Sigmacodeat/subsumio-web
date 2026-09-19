@@ -4,6 +4,7 @@
 # Run from the repository root on the Mac:
 #   sh server/deploy/netcup/deploy-code.sh            # build and switch
 #   sh server/deploy/netcup/deploy-code.sh --build    # build only, no switch
+#   sh server/deploy/netcup/deploy-code.sh --web      # web app only, pipeline keeps running
 #
 # The server folder /opt/subsumio is always a clean copy of one commit — no git
 # checkout, no leftovers from earlier versions. What lives only on the server
@@ -23,6 +24,13 @@ H=server/deploy/hetzner
 # in /opt/caddy. Start only db, clamav and these.
 APP_SERVICES="engine web cron backup corpus-pipeline"
 BUILD="web engine corpus-pipeline"
+# --web: rebuild and replace only the web app. The corpus pipeline keeps
+# running (a full deploy interrupts multi-day RIS fetches). cron and backup
+# bind-mount files from the code folder, so they are recreated too.
+if [ "${1:-}" = "--web" ]; then
+  APP_SERVICES="web cron backup"
+  BUILD="web"
+fi
 
 build_only=0
 [ "${1:-}" = "--build" ] && build_only=1
