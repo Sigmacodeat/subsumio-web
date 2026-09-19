@@ -35,6 +35,15 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { RotateCcw, GitCompare } from "lucide-react";
 import dynamic from "next/dynamic";
+import { MoreVertical } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const ContractRedlineViewer = dynamic(() =>
   import("@/components/contract-redline-viewer").then((m) => m.ContractRedlineViewer)
@@ -74,12 +83,17 @@ const RISK_LABELS: Record<string, string> = {
 const STATUS_COLORS: Record<string, string> = {
   draft:
     "bg-[color:var(--ds-hover)] border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]",
-  reviewed: "brand-soft brand-border brand-text",
+  reviewed:
+    "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
   approved:
     "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
   signed:
-    "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
+    "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
 };
+
+/** Plain-language failure for the AI surfaces — never the raw provider text. */
+const AI_UNAVAILABLE =
+  "Der Assistent ist gerade nicht erreichbar. Bitte versuchen Sie es in einigen Minuten erneut.";
 
 const STATUS_LABELS: Record<string, (t: TFunc) => string> = {
   draft: (t) => t("contracts.status_draft"),
@@ -141,7 +155,8 @@ export default function ContractsPage() {
     Array<{ slug: string; title: string }>
   >([]);
   const [analysisGaps, setAnalysisGaps] = useState<string[]>([]);
-  const [_analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   const [showReview, setShowReview] = useState(false);
   const [redlineContract, setRedlineContract] = useState<ContractItem | null>(null);
@@ -172,13 +187,13 @@ export default function ContractsPage() {
       const nextContracts = pages.map(parseContract);
       setContracts(nextContracts);
       await setCache(OFFLINE_KEYS.contracts, nextContracts);
-    } catch (err) {
+    } catch {
       const cached = await getCache<ContractItem[]>(OFFLINE_KEYS.contracts);
       if (cached) {
         setContracts(cached);
         setLoadError(t("contracts.error_cloud_unreachable"));
       } else {
-        setLoadError(err instanceof Error ? err.message : t("contracts.error_load"));
+        setLoadError(t("contracts.error_load"));
       }
     } finally {
       setLoading(false);
@@ -209,6 +224,7 @@ export default function ContractsPage() {
   async function analyzeContract(contract: ContractItem) {
     setAnalyzingSlug(contract.slug);
     setAnalysisResult(null);
+    setAnalysisError(null);
     setAnalysisLoading(true);
     try {
       const prompt = `Analysiere den folgenden Vertrag nach österreichischem Recht (ABGB, KSchG, DSGVO). Erstelle eine strukturierte Analyse:\n\nVERTRAGSTEXT:\n${contract.content.slice(0, 12000)}\n\nGIB DEINE ANTWORT IN DIESER STRUKTUR:\n## Vertragsanalyse — ${contract.title}\n\n### Übersicht\n- **Vertragstyp:** [Typ]\n- **Parteien:** [Parteien]\n- **Gesamtrisiko:** 🟢 Niedrig / 🟡 Mittel / 🔴 Hoch / 🚨 Kritisch\n- **Risiko-Score:** [0-100]\n\n### Klauselmatrix\n| Klausel | Bewertung | Risiko | Empfehlung |\n|---------|-----------|--------|------------|\n| [Klausel 1] | [Zusammenfassung] | 🟢/🟡/🔴 | [Vorschlag] |\n\n### Rote Flaggen\n1. [Klausel]: [Problem] — [Rechtliche Grundlage]\n\n### Fehlende Standardklauseln\n- [ ] [Klausel]\n\n### Empfohlene Änderungen\n1. [Konkreter Textvorschlag]\n\nENDE DER ANALYSE.`;
@@ -245,8 +261,8 @@ export default function ContractsPage() {
       );
       setContracts(nextContracts);
       await setCache(OFFLINE_KEYS.contracts, nextContracts);
-    } catch (_err) {
-      /* analysis shown inline */
+    } catch {
+      setAnalysisError(AI_UNAVAILABLE);
     } finally {
       setAnalysisLoading(false);
     }
@@ -255,7 +271,7 @@ export default function ContractsPage() {
   async function runReview() {
     const qs = reviewQuestions.map((q) => q.trim()).filter(Boolean);
     if (qs.length === 0) {
-      setReviewError("Mindestens eine Frage angeben.");
+      setReviewError("Bitte geben Sie mindestens eine Frage ein.");
       return;
     }
     setReviewLoading(true);
@@ -269,8 +285,8 @@ export default function ContractsPage() {
       });
       setReviewResult(res);
       if (res.rows.length === 0) setReviewError(t("contracts.error_review_empty"));
-    } catch (e) {
-      setReviewError(e instanceof Error ? e.message : "Massen-Review fehlgeschlagen.");
+    } catch {
+      setReviewError(AI_UNAVAILABLE);
     } finally {
       setReviewLoading(false);
     }
@@ -293,8 +309,8 @@ export default function ContractsPage() {
       const nextContracts = contracts.filter((c) => c.slug !== slug);
       setContracts(nextContracts);
       await setCache(OFFLINE_KEYS.contracts, nextContracts);
-    } catch (err) {
-      setLoadError(err instanceof Error ? err.message : t("contracts.error_delete"));
+    } catch {
+      setLoadError(t("contracts.error_delete"));
     }
   }
 
@@ -310,7 +326,7 @@ export default function ContractsPage() {
 
   async function saveEdit() {
     if (!editTitle.trim()) {
-      setEditError("Titel ist erforderlich.");
+      setEditError("Bitte geben Sie einen Titel ein.");
       return;
     }
     try {
@@ -340,8 +356,8 @@ export default function ContractsPage() {
       setContracts(nextContracts);
       await setCache(OFFLINE_KEYS.contracts, nextContracts);
       setEditingSlug(null);
-    } catch (err) {
-      setEditError(err instanceof Error ? err.message : t("contracts.error_save"));
+    } catch {
+      setEditError(t("contracts.error_save"));
     }
   }
 
@@ -358,15 +374,12 @@ export default function ContractsPage() {
           <>
             <Button
               variant="secondary"
-              className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+              className="gap-2 whitespace-nowrap"
               onClick={() => setShowReview(!showReview)}
             >
-              <Table2 size={14} /> Massen-Review
+              <Table2 size={14} /> Massenprüfung
             </Button>
-            <Button
-              onClick={() => setQuickCreateOpen(true)}
-              className="brand-bg brand-bg gap-2 text-white"
-            >
+            <Button onClick={() => setQuickCreateOpen(true)} className="gap-2 whitespace-nowrap">
               <Plus size={14} /> Vertrag anlegen
             </Button>
           </>
@@ -399,6 +412,7 @@ export default function ContractsPage() {
             </h3>
             <button
               onClick={() => setShowReview(false)}
+              aria-label="Schließen"
               className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
             >
               <X size={16} />
@@ -415,10 +429,12 @@ export default function ContractsPage() {
                     )
                   }
                   placeholder={`Frage ${i + 1}`}
+                  aria-label={`Frage ${i + 1}`}
                   className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
                 <button
                   onClick={() => setReviewQuestions((qs) => qs.filter((_, idx) => idx !== i))}
+                  aria-label={`Frage ${i + 1} entfernen`}
                   className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                 >
                   <X size={14} />
@@ -435,22 +451,18 @@ export default function ContractsPage() {
             )}
           </div>
           <div className="flex items-center gap-3">
-            <Button
-              onClick={runReview}
-              disabled={reviewLoading}
-              className="brand-bg brand-bg gap-2 text-white"
-            >
+            <Button onClick={runReview} disabled={reviewLoading} className="gap-2 whitespace-nowrap">
               {reviewLoading ? (
                 <Loader2 size={14} className="animate-spin" />
               ) : (
                 <FileSearch size={14} />
               )}
-              {reviewLoading ? "Wird analysiert…" : "Massen-Review starten"}
+              {reviewLoading ? "Wird analysiert…" : "Massenprüfung starten"}
             </Button>
             {reviewResult && reviewResult.rows.length > 0 && (
               <Button
                 variant="secondary"
-                className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+                className="gap-2 whitespace-nowrap"
                 onClick={() => {
                   const csv = [
                     ["Vertrag", ...reviewResult.questions].join(";"),
@@ -462,12 +474,12 @@ export default function ContractsPage() {
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement("a");
                   a.href = url;
-                  a.download = `contract-review-${new Date().toISOString().slice(0, 10)}.csv`;
+                  a.download = `vertragspruefung-${new Date().toISOString().slice(0, 10)}.csv`;
                   a.click();
                   URL.revokeObjectURL(url);
                 }}
               >
-                <Download size={14} /> CSV Export
+                <Download size={14} /> CSV exportieren
               </Button>
             )}
           </div>
@@ -518,6 +530,12 @@ export default function ContractsPage() {
               </table>
             </div>
           )}
+          {reviewResult && reviewResult.rows.length > 0 && (
+            <GroundedOutputPanel
+              text={reviewResult.rows.flatMap((r) => r.cells.map((cell) => cell.answer)).join("\n\n")}
+              citations={reviewResult.rows.flatMap((r) => r.cells.flatMap((c) => c.citations))}
+            />
+          )}
         </div>
       )}
 
@@ -544,35 +562,35 @@ export default function ContractsPage() {
 
       {/* Summary stats */}
       {!loading && contracts.length > 0 && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-            <div className="brand-soft brand-border flex h-8 w-8 items-center justify-center rounded-lg border">
-              <BarChart3 size={14} className="brand-text" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]">
+              <BarChart3 size={14} className="text-[color:var(--ds-text-muted)]" />
             </div>
             <div>
-              <p className="text-lg font-bold text-[color:var(--ds-text)]">{contracts.length}</p>
+              <p className="text-lg font-bold text-[color:var(--ds-text)] tabular-nums">{contracts.length}</p>
               <p className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("contracts.count_label")}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]">
-              <ShieldCheck size={14} className="text-[color:var(--ds-success-text)]" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]">
+              <ShieldCheck size={14} className="text-[color:var(--ds-text-muted)]" />
             </div>
             <div>
-              <p className="text-lg font-bold text-[color:var(--ds-text)]">
+              <p className="text-lg font-bold text-[color:var(--ds-text)] tabular-nums">
                 {contracts.filter((c) => c.status === "approved" || c.status === "signed").length}
               </p>
               <p className="text-xs text-[color:var(--ds-text-muted)]">Freigegeben</p>
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]">
-              <AlertTriangle size={14} className="text-[color:var(--ds-warning-text)]" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]">
+              <AlertTriangle size={14} className="text-[color:var(--ds-text-muted)]" />
             </div>
             <div>
-              <p className="text-lg font-bold text-[color:var(--ds-text)]">
+              <p className="text-lg font-bold text-[color:var(--ds-text)] tabular-nums">
                 {
                   contracts.filter(
                     (c) =>
@@ -582,15 +600,28 @@ export default function ContractsPage() {
                   ).length
                 }
               </p>
-              <p className="text-xs text-[color:var(--ds-text-muted)]">Risiko</p>
+              <p className="text-xs text-[color:var(--ds-text-muted)]">Mit Risiko</p>
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]">
-              <AlertTriangle size={14} className="text-[color:var(--ds-danger-text)]" />
+            <div
+              className={`flex h-8 w-8 items-center justify-center rounded-lg border ${
+                contracts.some((c) => c.riskLevel === "critical")
+                  ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
+                  : "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]"
+              }`}
+            >
+              <AlertTriangle
+                size={14}
+                className={
+                  contracts.some((c) => c.riskLevel === "critical")
+                    ? "text-[color:var(--ds-danger-text)]"
+                    : "text-[color:var(--ds-text-muted)]"
+                }
+              />
             </div>
             <div>
-              <p className="text-lg font-bold text-[color:var(--ds-text)]">
+              <p className="text-lg font-bold text-[color:var(--ds-text)] tabular-nums">
                 {contracts.filter((c) => c.riskLevel === "critical").length}
               </p>
               <p className="text-xs text-[color:var(--ds-text-muted)]">Kritisch</p>
@@ -600,12 +631,10 @@ export default function ContractsPage() {
       )}
 
       {loading ? (
-        <div
-          className="flex items-center justify-center py-20"
-          role="status"
-          aria-label={t("aria.loading")}
-        >
-          <Loader2 size={24} className="brand-text animate-spin" aria-hidden="true" />
+        <div className="space-y-3" aria-busy="true" aria-label={t("aria.loading")}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full rounded-xl" />
+          ))}
         </div>
       ) : filtered.length === 0 ? (
         <EmptyState
@@ -628,7 +657,7 @@ export default function ContractsPage() {
               return (
                 <div
                   key={contract.slug}
-                  className="brand-border space-y-4 rounded-xl border bg-[color:var(--ds-surface)] p-5"
+                  className="space-y-4 rounded-xl border border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface)] p-5"
                 >
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
@@ -636,6 +665,7 @@ export default function ContractsPage() {
                     </h3>
                     <button
                       onClick={() => setEditingSlug(null)}
+                      aria-label="Bearbeitung abbrechen"
                       className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
                     >
                       <X size={16} />
@@ -646,12 +676,14 @@ export default function ContractsPage() {
                       value={editTitle}
                       onChange={(e) => setEditTitle(e.target.value)}
                       placeholder={t("contracts.ph_title")}
+                      aria-label={t("contracts.ph_title")}
                       className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                     />
                     <input
                       value={editParties}
                       onChange={(e) => setEditParties(e.target.value)}
                       placeholder={t("contracts.ph_parties")}
+                      aria-label={t("contracts.ph_parties")}
                       className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                     />
                   </div>
@@ -660,11 +692,13 @@ export default function ContractsPage() {
                       value={editType}
                       onChange={(e) => setEditType(e.target.value)}
                       placeholder={t("contracts.ph_type")}
+                      aria-label={t("contracts.ph_type")}
                       className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                     />
                     <select
                       value={editStatus}
                       onChange={(e) => setEditStatus(e.target.value as ContractItem["status"])}
+                      aria-label="Status"
                       className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                     >
                       {Object.entries(STATUS_LABELS).map(([key, labelFn]) => (
@@ -679,17 +713,14 @@ export default function ContractsPage() {
                     onChange={(e) => setEditContent(e.target.value)}
                     rows={6}
                     placeholder={t("contracts.ph_text")}
+                    aria-label={t("contracts.ph_text")}
                     className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                   />
                   {editError && (
                     <p className="text-xs text-[color:var(--ds-danger-text)]">{editError}</p>
                   )}
                   <div className="flex justify-end">
-                    <Button
-                      onClick={saveEdit}
-                      disabled={!editTitle.trim()}
-                      className="brand-bg brand-bg gap-2 text-white"
-                    >
+                    <Button onClick={saveEdit} disabled={!editTitle.trim()} className="gap-2">
                       <Save size={14} /> Speichern
                     </Button>
                   </div>
@@ -708,10 +739,7 @@ export default function ContractsPage() {
                         {contract.title}
                       </span>
                       {contract.contractType && (
-                        <Badge
-                          variant="default"
-                          className="brand-border brand-soft brand-text border text-xs"
-                        >
+                        <Badge variant="default" className="text-xs">
                           {contract.contractType}
                         </Badge>
                       )}
@@ -758,9 +786,8 @@ export default function ContractsPage() {
                           }`}
                         >
                           {contract.riskScore !== undefined
-                            ? `${contract.riskScore}/100`
-                            : RISK_LABELS[contract.riskLevel]}{" "}
-                          — {RISK_LABELS[contract.riskLevel]}
+                            ? `${contract.riskScore}/100 — ${RISK_LABELS[contract.riskLevel]}`
+                            : RISK_LABELS[contract.riskLevel]}
                         </span>
                       </div>
                     )}
@@ -768,69 +795,91 @@ export default function ContractsPage() {
                   <div className="flex shrink-0 items-center gap-1">
                     <button
                       onClick={() => analyzeContract(contract)}
-                      disabled={isAnalyzing}
-                      className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none"
+                      disabled={isAnalyzing && analysisLoading}
+                      className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                       title={t("contracts.aria_analysis")}
+                      aria-label={t("contracts.aria_analysis")}
                     >
-                      {isAnalyzing ? (
+                      {isAnalyzing && analysisLoading ? (
                         <Loader2 size={14} className="animate-spin" />
                       ) : (
                         <PenTool size={14} />
                       )}
                     </button>
                     <button
-                      onClick={() => setRedlineContract(contract)}
-                      className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none"
-                      title={t("contracts.aria_redline")}
-                    >
-                      <GitCompare size={14} />
-                    </button>
-                    <button
                       onClick={() => startEdit(contract)}
-                      className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] motion-reduce:transition-none"
+                      className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
                       title={t("contracts.btn_edit")}
+                      aria-label={t("contracts.btn_edit")}
                     >
                       <Pencil size={14} />
                     </button>
-                    <button
-                      onClick={() => deleteContract(contract.slug)}
-                      className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] active:scale-[0.97] motion-reduce:transition-none"
-                      title={t("contracts.btn_delete")}
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
+                          aria-label="Weitere Aktionen"
+                        >
+                          <MoreVertical size={14} />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem
+                          onClick={() => setRedlineContract(contract)}
+                          className="gap-2 text-xs"
+                        >
+                          <GitCompare size={13} />
+                          {t("contracts.aria_redline")}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => void deleteContract(contract.slug)}
+                          className="gap-2 text-xs text-[color:var(--ds-danger-text)] focus:text-[color:var(--ds-danger-text)]"
+                        >
+                          <Trash2 size={13} />
+                          {t("contracts.btn_delete")}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
                 <div className="line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
-                  {contract.content.slice(0, 200)}…
+                  {contract.content.slice(0, 200)}
+                  {contract.content.length > 200 ? "…" : ""}
                 </div>
-                {isAnalyzing && (
+                {isAnalyzing && analysisLoading && (
                   <div
-                    className="brand-text flex items-center gap-2 text-xs"
+                    className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]"
                     role="status"
                     aria-live="polite"
                   >
-                    <Loader2 size={14} className="animate-spin" /> KI analysiert Vertrag…
+                    <Loader2 size={14} className="animate-spin" /> Vertrag wird analysiert …
+                  </div>
+                )}
+                {isAnalyzing && analysisError && (
+                  <div className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2 text-xs text-[color:var(--ds-danger-text)]">
+                    {analysisError}
                   </div>
                 )}
                 {analyzingSlug === contract.slug && analysisResult && (
                   <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                        KI-Analyse
+                        Vertragsanalyse
                       </h4>
                       <button
                         onClick={() => {
                           setAnalysisResult(null);
                           setAnalyzingSlug(null);
                         }}
+                        aria-label="Analyse schließen"
                         className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
                       >
                         <X size={14} />
                       </button>
                     </div>
                     <div
-                      className="prose prose-invert prose-sm max-h-[400px] max-w-none overflow-auto text-[color:var(--ds-text-muted)]"
+                      className="prose prose-sm dark:prose-invert max-h-[400px] max-w-none overflow-auto text-[color:var(--ds-text-muted)]"
                       dangerouslySetInnerHTML={{ __html: renderMarkdown(analysisResult) }}
                     />
                     <GroundedOutputPanel

@@ -44,7 +44,7 @@ import { OFFLINE_KEYS, enqueueMutation, getCache, isOnline, setCache } from "@/l
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useLang } from "@/lib/use-lang";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { CitationPanel } from "@/components/legal/CitationPanel";
 
 interface ResearchSession {
   id: string;
@@ -57,41 +57,40 @@ interface ResearchSession {
 }
 
 import dynamic from "next/dynamic";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
+import { formatDate, formatDateTime } from "@/lib/utils";
+
+function TabSkeleton() {
+  return (
+    <div className="space-y-3" aria-hidden="true">
+      <Skeleton className="h-10 w-full rounded-lg" />
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Skeleton key={i} className="h-16 w-full rounded-xl" />
+      ))}
+    </div>
+  );
+}
+
+/** Research failures in plain language — never the job's raw error text. */
+const RESEARCH_UNAVAILABLE =
+  "Die Recherche ist gerade nicht verfügbar. Bitte versuchen Sie es in einigen Minuten erneut.";
 
 const RechtsprechungTab = dynamic(() => import("@/components/research/rechtsprechung-tab"), {
-  loading: () => (
-    <div className="flex items-center justify-center py-20 text-sm text-[color:var(--ds-text-muted)]">
-      Laden…
-    </div>
-  ),
+  loading: () => <TabSkeleton />,
 });
 const NormsTab = dynamic(() => import("@/components/research/norms-tab"), {
-  loading: () => (
-    <div className="flex items-center justify-center py-20 text-sm text-[color:var(--ds-text-muted)]">
-      Laden…
-    </div>
-  ),
+  loading: () => <TabSkeleton />,
 });
 const JudgementsDbTab = dynamic(() => import("@/components/research/judgements-db-tab"), {
-  loading: () => (
-    <div className="flex items-center justify-center py-20 text-sm text-[color:var(--ds-text-muted)]">
-      Laden…
-    </div>
-  ),
+  loading: () => <TabSkeleton />,
 });
 const PrecedentSearchTab = dynamic(() => import("@/components/research/precedent-search-tab"), {
-  loading: () => (
-    <div className="flex items-center justify-center py-20 text-sm text-[color:var(--ds-text-muted)]">
-      Laden…
-    </div>
-  ),
+  loading: () => <TabSkeleton />,
 });
 const CommentariesTab = dynamic(() => import("@/components/research/commentaries-tab"), {
-  loading: () => (
-    <div className="flex items-center justify-center py-20 text-sm text-[color:var(--ds-text-muted)]">
-      Laden…
-    </div>
-  ),
+  loading: () => <TabSkeleton />,
 });
 
 type ResearchTab =
@@ -106,7 +105,7 @@ const TABS: Array<{ id: ResearchTab; icon: typeof Search; labelDe: string; label
   { id: "recherche", icon: Brain, labelDe: "Recherche", labelEn: "Research" },
   { id: "rechtsprechung", icon: Landmark, labelDe: "Rechtsprechung", labelEn: "Case Law" },
   { id: "normen", icon: BookOpen, labelDe: "Normen", labelEn: "Statutes" },
-  { id: "judgements-db", icon: Scale, labelDe: "Urteils-DB", labelEn: "Judgements DB" },
+  { id: "judgements-db", icon: Scale, labelDe: "Urteilsdatenbank", labelEn: "Judgements DB" },
   { id: "precedent-search", icon: Search, labelDe: "Präzedenzfälle", labelEn: "Precedent Search" },
   {
     id: "commentaries",
@@ -132,7 +131,12 @@ function ResearchPageInner() {
     []
   );
   const [currentGaps, setCurrentGaps] = useState<string[]>([]);
-  const [currentGrounding, setCurrentGrounding] = useState<CitationPanelData["grounding"]>(null);
+  // Every AI text surface verifies its statute citations (CLAUDE.md invariant).
+  const {
+    grounding: currentGrounding,
+    groundAnswer,
+    reset: resetGrounding,
+  } = useGroundedAnswer();
   const [error, setError] = useState<string | null>(null);
   const [savedPages, setSavedPages] = useState<BrainPage[]>([]);
   const [savedLoading, setSavedLoading] = useState(true);
@@ -150,7 +154,6 @@ function ResearchPageInner() {
   const [subTab, setSubTab] = useState<"new" | "saved">("new");
   const [savedSearch, setSavedSearch] = useState("");
   // Supervisor job tracking
-  const [researchJobId, setResearchJobId] = useState<number | null>(null);
   const [researchPhase, setResearchPhase] = useState<string>("");
   const [savedJurisdiction, setSavedJurisdiction] = useState<"all" | "at" | "de" | "ch" | "eu">(
     "all"
@@ -180,7 +183,7 @@ function ResearchPageInner() {
       if (cached) {
         setSavedPages(cached);
         setError(
-          "Cloud-Brain gerade nicht erreichbar. Es werden zwischengespeicherte Recherchen angezeigt."
+          "Das Kanzleiwissen ist gerade nicht erreichbar. Es werden zwischengespeicherte Recherchen angezeigt."
         );
       }
     } finally {
@@ -195,8 +198,7 @@ function ResearchPageInner() {
     setCurrentAnswer("");
     setCurrentCitations([]);
     setCurrentGaps([]);
-    setCurrentGrounding(null);
-    setResearchJobId(null);
+    resetGrounding();
     setResearchPhase(t("research.phase_preparing"));
 
     try {
@@ -211,7 +213,6 @@ function ResearchPageInner() {
       if (!submitRes.ok) throw new Error(`submit failed: ${submitRes.status}`);
       const submitData = (await submitRes.json()) as { jobId: number };
       const jobId = submitData.jobId;
-      setResearchJobId(jobId);
       setResearchPhase(t("research.phase_planning"));
 
       // Variables to capture results from the polling closure
@@ -243,10 +244,6 @@ function ResearchPageInner() {
               error_text?: string;
             };
 
-            // Update phase label from progress
-            const phase = job.progress?.phase ?? job.progress?.message ?? job.progress?.step;
-            if (phase) setResearchPhase(phase);
-
             if (job.status === "completed") {
               // Extract answer from result
               const raw = job.result?.answer ?? job.result?.output ?? job.result?.text ?? "";
@@ -255,9 +252,8 @@ function ResearchPageInner() {
               setResearchPhase("");
 
               // Extract citations and grounding from the answer text
-              try {
-                const grounding = await api.legal.ground(answerText);
-                setCurrentGrounding(grounding);
+              const grounding = await groundAnswer(answerText);
+              if (grounding) {
                 // Extract structured citations from grounded citations
                 citations = grounding.grounded_citations
                   .filter((gc) => gc.verified)
@@ -266,27 +262,22 @@ function ResearchPageInner() {
                     title: `${gc.paragraph} ${gc.code}`,
                   }));
                 setCurrentCitations(citations);
-                // Extract gaps from answer text (look for "Offene Fragen" / "Widersprüche" sections)
-                const gapMatch = answerText.match(
-                  /(?:Offene Fragen|Widersprüche|Lücken)[:\s]*\n([\s\S]*?)(?=\n###|\n##|$)/i
-                );
-                if (gapMatch) {
-                  gaps = gapMatch[1]
-                    .split("\n")
-                    .map((l) => l.replace(/^[-*]\s*/, "").trim())
-                    .filter((l) => l.length > 5);
-                  setCurrentGaps(gaps);
-                }
-              } catch (groundErr) {
-                console.error(
-                  "[research] grounding failed:",
-                  groundErr instanceof Error ? groundErr.message : String(groundErr)
-                );
+              }
+              // Extract gaps from answer text (look for "Offene Fragen" / "Widersprüche" sections)
+              const gapMatch = answerText.match(
+                /(?:Offene Fragen|Widersprüche|Lücken)[:\s]*\n([\s\S]*?)(?=\n###|\n##|$)/i
+              );
+              if (gapMatch) {
+                gaps = gapMatch[1]
+                  .split("\n")
+                  .map((l) => l.replace(/^[-*]\s*/, "").trim())
+                  .filter((l) => l.length > 5);
+                setCurrentGaps(gaps);
               }
 
               resolve();
             } else if (job.status === "failed" || job.status === "dead") {
-              reject(new Error(job.error_text ?? t("research.error_failed")));
+              reject(new Error(RESEARCH_UNAVAILABLE));
             } else {
               setTimeout(poll, POLL_INTERVAL);
             }
@@ -309,7 +300,13 @@ function ResearchPageInner() {
       setSessions((s) => [session, ...s]);
     } catch (err) {
       setResearchPhase("");
-      setError(err instanceof Error ? err.message : t("research.error_failed"));
+      // Only our own timeout message is shown verbatim; anything else is a raw
+      // HTTP/engine text and gets the plain-language fallback.
+      setError(
+        err instanceof Error && err.message === t("research.error_timeout")
+          ? err.message
+          : RESEARCH_UNAVAILABLE
+      );
     } finally {
       setLoading(false);
     }
@@ -350,8 +347,7 @@ function ResearchPageInner() {
       setSavedPages(nextPages);
       await setCache(OFFLINE_KEYS.research, nextPages);
       addToast({ type: "success", description: "Recherche gespeichert" });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("research.error_save"));
+    } catch {
       addToast({ type: "error", description: t("research.error_save") });
     }
   }
@@ -384,9 +380,11 @@ function ResearchPageInner() {
       addToast({ type: "success", description: "Recherche an Akte angehängt" });
       setAttachOpen(false);
       setAttachCase("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("research.error_save"));
-      addToast({ type: "error", description: "Fehler beim Anhängen an Akte" });
+    } catch {
+      addToast({
+        type: "error",
+        description: "Die Recherche konnte nicht an die Akte angehängt werden.",
+      });
     } finally {
       setAttachSaving(false);
     }
@@ -398,8 +396,8 @@ function ResearchPageInner() {
     try {
       await api.legal.judgementsSync({ jurisdiction: jurisdiction as "at" | "de" | "all", query });
       setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("research.error_sync"));
+    } catch {
+      setError(t("research.error_sync"));
     } finally {
       setLoading(false);
     }
@@ -423,245 +421,97 @@ function ResearchPageInner() {
       setSavedPages(nextPages);
       await setCache(OFFLINE_KEYS.research, nextPages);
       addToast({ type: "success", description: "Recherche gelöscht" });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("research.error_delete"));
+    } catch {
       addToast({ type: "error", description: t("research.error_delete") });
     }
   }
 
-  // Non-recherche tabs: render embedded page content
-  if (activeTab === "rechtsprechung") {
-    return (
-      <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
-        <PageHeader
-          title={t("research.title")}
-          description={t("research.description")}
-          breadcrumbs={[
-            { label: t("nav.overview"), href: "/dashboard" },
-            { label: t("research.title") },
-          ]}
-        />
-        <div className="flex flex-wrap items-center gap-1 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1">
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none ${
-                  isActive
-                    ? "brand-solid text-white"
-                    : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                }`}
-              >
-                <Icon size={14} />
-                {lang === "en" ? tab.labelEn : tab.labelDe}
-              </button>
-            );
-          })}
-        </div>
-        <RechtsprechungTab />
-      </div>
-    );
-  }
+  const header = (
+    <PageHeader
+      title={t("research.title")}
+      description={t("research.description")}
+      breadcrumbs={[{ label: t("nav.overview"), href: "/dashboard" }, { label: t("research.title") }]}
+    />
+  );
 
-  if (activeTab === "normen") {
-    return (
-      <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
-        <PageHeader
-          title={t("research.title")}
-          description={t("research.description")}
-          breadcrumbs={[
-            { label: t("nav.overview"), href: "/dashboard" },
-            { label: t("research.title") },
-          ]}
-        />
-        <div className="flex flex-wrap items-center gap-1 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1">
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none ${
-                  isActive
-                    ? "brand-solid text-white"
-                    : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                }`}
-              >
-                <Icon size={14} />
-                {lang === "en" ? tab.labelEn : tab.labelDe}
-              </button>
-            );
-          })}
-        </div>
-        <NormsTab />
-      </div>
-    );
-  }
+  const tabBar = (
+    <div
+      role="tablist"
+      aria-label={t("research.title")}
+      className="flex items-center gap-1 overflow-x-auto rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1"
+    >
+      {TABS.map((tab) => {
+        const Icon = tab.icon;
+        const isActive = activeTab === tab.id;
+        return (
+          <button
+            key={tab.id}
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition-[background-color,color] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none ${
+              isActive
+                ? "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)] shadow-sm"
+                : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            }`}
+          >
+            <Icon size={14} aria-hidden="true" />
+            {lang === "en" ? tab.labelEn : tab.labelDe}
+          </button>
+        );
+      })}
+    </div>
+  );
 
-  if (activeTab === "judgements-db") {
-    return (
-      <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
-        <PageHeader
-          title={t("research.title")}
-          description={t("research.description")}
-          breadcrumbs={[
-            { label: t("nav.overview"), href: "/dashboard" },
-            { label: t("research.title") },
-          ]}
-        />
-        <div className="flex flex-wrap items-center gap-1 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1">
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none ${
-                  isActive
-                    ? "brand-solid text-white"
-                    : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                }`}
-              >
-                <Icon size={14} />
-                {lang === "en" ? tab.labelEn : tab.labelDe}
-              </button>
-            );
-          })}
-        </div>
-        <JudgementsDbTab />
-      </div>
-    );
-  }
+  // Non-recherche tabs: render embedded page content under the same header.
+  const embeddedTab =
+    activeTab === "rechtsprechung" ? (
+      <RechtsprechungTab />
+    ) : activeTab === "normen" ? (
+      <NormsTab />
+    ) : activeTab === "judgements-db" ? (
+      <JudgementsDbTab />
+    ) : activeTab === "precedent-search" ? (
+      <PrecedentSearchTab />
+    ) : activeTab === "commentaries" ? (
+      <CommentariesTab />
+    ) : null;
 
-  if (activeTab === "precedent-search") {
+  if (embeddedTab) {
     return (
       <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
-        <PageHeader
-          title={t("research.title")}
-          description={t("research.description")}
-          breadcrumbs={[
-            { label: t("nav.overview"), href: "/dashboard" },
-            { label: t("research.title") },
-          ]}
-        />
-        <div className="flex flex-wrap items-center gap-1 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1">
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none ${
-                  isActive
-                    ? "brand-solid text-white"
-                    : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                }`}
-              >
-                <Icon size={14} />
-                {lang === "en" ? tab.labelEn : tab.labelDe}
-              </button>
-            );
-          })}
-        </div>
-        <PrecedentSearchTab />
-      </div>
-    );
-  }
-
-  if (activeTab === "commentaries") {
-    return (
-      <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
-        <PageHeader
-          title={t("research.title")}
-          description={t("research.description")}
-          breadcrumbs={[
-            { label: t("nav.overview"), href: "/dashboard" },
-            { label: t("research.title") },
-          ]}
-        />
-        <div className="flex flex-wrap items-center gap-1 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1">
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none ${
-                  isActive
-                    ? "brand-solid text-white"
-                    : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                }`}
-              >
-                <Icon size={14} />
-                {lang === "en" ? tab.labelEn : tab.labelDe}
-              </button>
-            );
-          })}
-        </div>
-        <CommentariesTab />
+        {header}
+        {tabBar}
+        {embeddedTab}
       </div>
     );
   }
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
-      <PageHeader
-        title={t("research.title")}
-        description={t("research.description")}
-        breadcrumbs={[
-          { label: t("nav.overview"), href: "/dashboard" },
-          { label: t("research.title") },
-        ]}
-      />
-
-      {/* Tab Bar — 5 Screens als eine Route */}
-      <div className="flex flex-wrap items-center gap-1 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1">
-        {TABS.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,color,transform] duration-[var(--ds-duration-fast)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none ${
-                isActive
-                  ? "brand-solid text-white"
-                  : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-              }`}
-            >
-              <Icon size={14} />
-              {lang === "en" ? tab.labelEn : tab.labelDe}
-            </button>
-          );
-        })}
-      </div>
+      {header}
+      {tabBar}
 
       {/* Research Input */}
       <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <select
             value={jurisdiction}
             onChange={(e) => setJurisdiction(e.target.value)}
             aria-label="Rechtsordnung"
             className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           >
-            <option value="at">🇦🇹 Österreich</option>
-            <option value="eu">🇪🇺 EU-Recht</option>
+            <option value="at">Österreich</option>
+            <option value="eu">EU-Recht</option>
           </select>
-          <div className="relative flex-1">
+          <div className="relative min-w-[12rem] flex-1">
             <Search
               size={14}
               className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-muted)]"
             />
             <input
               value={query}
+              aria-label={t("research.ph_query")}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && runResearch()}
               placeholder={t("research.ph_query")}
@@ -671,7 +521,7 @@ function ResearchPageInner() {
           <Button
             onClick={runResearch}
             disabled={loading || !query.trim()}
-            className="brand-bg brand-bg gap-2 text-white"
+            className="gap-2 whitespace-nowrap"
           >
             {loading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
             {loading ? t("research.btn_searching") : t("research.btn_search")}
@@ -680,22 +530,19 @@ function ResearchPageInner() {
             variant="secondary"
             onClick={syncJudgements}
             disabled={loading}
-            className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+            className="gap-2 whitespace-nowrap"
           >
             <Landmark size={14} /> {t("research.btn_judgements_sync")}
           </Button>
         </div>
         {loading && researchPhase && (
           <div
-            className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-4 py-3 text-sm text-[color:var(--ds-muted)]"
+            className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-4 py-3 text-sm text-[color:var(--ds-text-muted)]"
             role="status"
             aria-live="polite"
           >
-            <Loader2 size={13} className="shrink-0 animate-spin text-[color:var(--brand)]" />
+            <Loader2 size={13} className="shrink-0 animate-spin text-[color:var(--brand-primary)]" />
             <span>{researchPhase}</span>
-            {researchJobId && (
-              <span className="ml-auto font-mono text-xs opacity-50">Job #{researchJobId}</span>
-            )}
           </div>
         )}
         {error && (
@@ -742,36 +589,38 @@ function ResearchPageInner() {
         <div className="space-y-4">
           {/* Current Result */}
           {currentAnswer && (
-            <div className="brand-border space-y-4 rounded-xl border bg-[color:var(--ds-surface)] p-5">
-              <div className="flex items-center justify-between">
+            <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <Scale size={16} className="brand-text" />
-                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                  <Scale size={16} className="text-[color:var(--ds-text-muted)]" />
+                  <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
                     {t("research.result_title")}
-                  </h3>
-                  <Badge
-                    variant="default"
-                    className="brand-border brand-soft brand-text border text-xs"
-                  >
+                  </h2>
+                  <Badge variant="default" className="text-xs">
                     {jurisdiction.toUpperCase()}
                   </Badge>
                 </div>
-                <Button
-                  onClick={() => setAttachOpen(true)}
-                  variant="outline"
-                  className="gap-2 text-xs"
-                >
-                  <FolderOpen size={14} /> An Akte anhängen
-                </Button>
-                <Button
-                  onClick={saveResearch}
-                  className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-xs text-white hover:bg-[color:var(--signal-success-800)]"
-                >
-                  <Save size={14} /> {t("research.btn_save_brain")}
-                </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    onClick={() => setAttachOpen(true)}
+                    variant="secondary"
+                    size="sm"
+                    className="gap-2 whitespace-nowrap"
+                  >
+                    <FolderOpen size={14} /> An Akte anhängen
+                  </Button>
+                  <Button
+                    onClick={saveResearch}
+                    variant="secondary"
+                    size="sm"
+                    className="gap-2 whitespace-nowrap"
+                  >
+                    <Save size={14} /> {t("research.btn_save_brain")}
+                  </Button>
+                </div>
               </div>
               <div
-                className="prose prose-invert prose-sm max-w-none leading-relaxed text-[color:var(--ds-text-muted)]"
+                className="prose prose-sm dark:prose-invert max-w-none leading-relaxed text-[color:var(--ds-text-muted)]"
                 dangerouslySetInnerHTML={{
                   __html: linkCitationsInHtml(
                     renderMarkdown(currentAnswer),
@@ -845,17 +694,18 @@ function ResearchPageInner() {
                       </span>
                       <Badge
                         variant="default"
-                        className="brand-border brand-soft brand-text border text-xs"
+                        className="text-xs"
                       >
                         {s.jurisdiction.toUpperCase()}
                       </Badge>
                     </div>
                     <div className="line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
-                      {s.answer.slice(0, 150)}…
+                      {s.answer.slice(0, 150)}
+                      {s.answer.length > 150 ? "…" : ""}
                     </div>
                     <div className="flex items-center justify-between text-xs text-[color:var(--ds-text-muted)]">
                       <span>
-                        {new Date(s.createdAt).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
+                        {formatDateTime(s.createdAt)}
                       </span>
                       {s.citations.length > 0 && <span>{s.citations.length} Quellen</span>}
                     </div>
@@ -898,26 +748,22 @@ function ResearchPageInner() {
                       : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
                   }`}
                 >
-                  {j === "all" ? "Alle" : j === "at" ? "🇦🇹 AT" : "🇪🇺 EU"}
+                  {j === "all" ? "Alle" : j === "at" ? "Österreich" : "EU-Recht"}
                 </button>
               ))}
             </div>
           </div>
 
           {savedLoading ? (
-            <div className="py-8 text-center text-[color:var(--ds-text-muted)]">
-              {t("research.saved_loading")}
-            </div>
+            <TabSkeleton />
           ) : savedPages.length === 0 ? (
-            <div className="space-y-3 py-16 text-center">
-              <FolderOpen size={40} className="mx-auto text-[color:var(--ds-border)]" />
-              <p className="text-sm text-[color:var(--ds-text-muted)]">
-                {t("research.saved_empty_title")}
-              </p>
-              <p className="text-xs text-[color:var(--ds-text-muted)]">
-                {t("research.saved_empty_desc")}
-              </p>
-            </div>
+            <EmptyState
+              icon={FolderOpen}
+              title={t("research.saved_empty_title")}
+              description={t("research.saved_empty_desc")}
+              actionLabel="Neue Recherche"
+              onAction={() => setSubTab("new")}
+            />
           ) : (
             <div className="space-y-3">
               {(() => {
@@ -960,18 +806,7 @@ function ResearchPageInner() {
                               {page.title}
                             </span>
                             {j && (
-                              <Badge
-                                variant="default"
-                                className={`border text-xs ${
-                                  j === "at"
-                                    ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
-                                    : j === "ch"
-                                      ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
-                                      : j === "eu"
-                                        ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
-                                        : "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
-                                }`}
-                              >
+                              <Badge variant="default" className="text-xs">
                                 {j.toUpperCase()}
                               </Badge>
                             )}
@@ -985,7 +820,7 @@ function ResearchPageInner() {
                         <div className="flex shrink-0 items-center gap-1">
                           <button
                             onClick={() => setExpandedSlug(isExpanded ? null : page.slug)}
-                            className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+                            className="rounded-lg p-1.5 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                             title={isExpanded ? "Zuklappen" : "Aufklappen"}
                             aria-label={isExpanded ? "Zuklappen" : "Aufklappen"}
                           >
@@ -993,7 +828,7 @@ function ResearchPageInner() {
                           </button>
                           <button
                             onClick={() => deleteResearch(page.slug)}
-                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] opacity-0 transition-[background-color,color,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:opacity-100 hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[color:var(--ds-danger-border)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
+                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[color:var(--ds-danger-border)] focus-visible:outline-none active:scale-[0.9] motion-reduce:transition-none"
                             title={t("research.btn_delete")}
                             aria-label={t("research.btn_delete")}
                           >
@@ -1003,27 +838,22 @@ function ResearchPageInner() {
                       </div>
                       {isExpanded ? (
                         <div
-                          className="prose prose-invert prose-sm max-w-none leading-relaxed text-[color:var(--ds-text-muted)]"
+                          className="prose prose-sm dark:prose-invert max-w-none leading-relaxed text-[color:var(--ds-text-muted)]"
                           dangerouslySetInnerHTML={{ __html: renderMarkdown(page.content || "") }}
                         />
                       ) : (
                         <div className="line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
-                          {page.content?.slice(0, 200)}…
+                          {page.content?.slice(0, 200)}
+                          {(page.content?.length ?? 0) > 200 ? "…" : ""}
                         </div>
                       )}
                       <div className="flex items-center justify-between text-xs text-[color:var(--ds-text-muted)]">
                         <span className="flex items-center gap-1">
                           <Clock size={9} />
-                          {new Date(
+                          {formatDate(
                             ((page as unknown as Record<string, unknown>).createdAt as string) ||
-                              ((page as unknown as Record<string, unknown>).created_at as string) ||
-                              page.created_at ||
-                              new Date().toISOString()
-                          ).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            year: "numeric",
-                          })}
+                              page.created_at
+                          )}
                         </span>
                         <div className="flex items-center gap-2">
                           {Array.isArray(fm.citations) && fm.citations.length > 0 && (
@@ -1052,12 +882,8 @@ export default function ResearchPage() {
   return (
     <Suspense
       fallback={
-        <div
-          className="flex items-center justify-center py-20 text-sm text-[color:var(--ds-text-muted)]"
-          role="status"
-          aria-live="polite"
-        >
-          <Loader2 className="h-6 w-6 animate-spin" />
+        <div className="mx-auto max-w-[1200px] p-4 md:p-6 lg:p-8">
+          <TabSkeleton />
         </div>
       }
     >

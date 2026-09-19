@@ -219,7 +219,7 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
         <li>Optional: Dienst zur verteilten Ratenbegrenzung</li>
       </ul>
       <p className="mt-2">
-        Aktuelle Anbieter: Hosting über EU-Rechenzentren (Hetzner, DE); KI-Sprachmodelle und
+        Aktuelle Anbieter: Hosting über ein EU-Rechenzentrum (netcup GmbH, Rechenzentrum Wien, AT); KI-Sprachmodelle und
         Suchfunktionen über OpenRouter (US, EU-Standardvertragsklauseln); Zahlung über Stripe (US,
         EU-Standardvertragsklauseln); E-Mail über Resend (US, EU-Standardvertragsklauseln). Alle
         Auftragsverarbeiter sind durch AVV gebunden.
@@ -451,7 +451,7 @@ export function DpaContent({ home, lang = "de" }: { home: string; lang?: Lang })
         ersetzender Unterauftragsverarbeiter und gibt ihm die Möglichkeit zum Widerspruch.
       </p>
       <p>
-        (2) Aktuelle Unterauftragsverarbeiter: Hosting (Hetzner, DE/EU); Anbieter von
+        (2) Aktuelle Unterauftragsverarbeiter: Hosting (netcup GmbH, Rechenzentrum Wien, AT/EU); Anbieter von
         KI-Sprachmodellen und Suchfunktionen (OpenRouter, US — EU-Standardvertragsklauseln); Zahlung
         (Stripe, US — EU-Standardvertragsklauseln); E-Mail (Resend, US —
         EU-Standardvertragsklauseln); optionaler Dienst zur Ratenbegrenzung (Upstash, US —
@@ -499,7 +499,7 @@ export function DpaContent({ home, lang = "de" }: { home: string; lang?: Lang })
         </li>
         <li>
           <strong className="[color:var(--mk-text)]">Verfügbarkeit:</strong> Health-Checks,
-          Auto-Restart, Hetzner EU-Rechenzentren.
+          Auto-Restart, EU-Rechenzentrum in Wien.
         </li>
         <li>
           <strong className="[color:var(--mk-text)]">Pseudonymisierung:</strong> Interne IDs wo

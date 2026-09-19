@@ -14,12 +14,32 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { api } from "@/lib/api";
+import { api, ApiRequestError } from "@/lib/api";
 import type { DocumentAnalysisResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { CitationPanel } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
+import { formatDate } from "@/lib/utils";
+
+const SEVERITY_LABELS: Record<string, string> = {
+  low: "Gering",
+  medium: "Mittel",
+  high: "Hoch",
+  critical: "Kritisch",
+};
+
+/** Plain-language failure text — never the raw engine/provider message. */
+function analyzeErrorMessage(e: unknown, fallback: string): string {
+  if (e instanceof ApiRequestError && e.status === 404) {
+    return "Das Dokument wurde nicht gefunden. Bitte prüfen Sie die Dokumentkennung.";
+  }
+  if (e instanceof ApiRequestError && e.status >= 500) {
+    return "Die Analyse ist gerade nicht verfügbar. Bitte versuchen Sie es in einigen Minuten erneut.";
+  }
+  return fallback;
+}
 
 const SEVERITY_STYLES: Record<string, string> = {
   low: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
@@ -38,18 +58,29 @@ export default function AnalyzePage() {
   const [result, setResult] = useState<DocumentAnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Every AI text surface verifies its statute citations (CLAUDE.md invariant).
+  // The analyze route usually grounds server-side; when it does not, the hook does.
+  const { grounding: clientGrounding, groundAnswer, reset: resetGrounding } = useGroundedAnswer();
 
   async function run() {
     setLoading(true);
     setError(null);
     setResult(null);
+    resetGrounding();
     try {
       const res = await api.legal.analyzeDocument(
         mode === "slug" ? { document_slug: slug.trim() } : { text: text.trim() }
       );
       setResult(res);
+      if (!res._grounding) {
+        void groundAnswer(
+          [res.summary, ...(res.issues ?? []).map((i) => `${i.issue}: ${i.rationale}`)].join(
+            "\n\n"
+          )
+        );
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : t("analyze.error_failed"));
+      setError(analyzeErrorMessage(e, t("analyze.error_failed")));
     } finally {
       setLoading(false);
     }
@@ -69,24 +100,28 @@ export default function AnalyzePage() {
       />
 
       {/* Mode toggle */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2" role="tablist">
         <button
+          role="tab"
+          aria-selected={mode === "slug"}
           onClick={() => setMode("slug")}
           className={cn(
             "rounded-lg px-4 py-2 text-sm font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
             mode === "slug"
-              ? "brand-soft brand-text brand-border border"
+              ? "border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] shadow-sm"
               : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
           )}
         >
           {t("analyze.mode_slug")}
         </button>
         <button
+          role="tab"
+          aria-selected={mode === "text"}
           onClick={() => setMode("text")}
           className={cn(
             "rounded-lg px-4 py-2 text-sm font-medium transition-[background-color,border-color,color] active:scale-[0.97] motion-reduce:transition-none",
             mode === "text"
-              ? "brand-soft brand-text brand-border border"
+              ? "border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] shadow-sm"
               : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
           )}
         >
@@ -128,14 +163,14 @@ export default function AnalyzePage() {
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder={t("analyze.text_placeholder")}
-              className="mt-1.5 h-48 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-success-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+              className="mt-1.5 h-48 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             />
           </div>
         )}
         <Button
           onClick={run}
           disabled={loading || !canRun}
-          className="gap-2 bg-[color:var(--ds-success-solid-hover)] text-white hover:bg-[color:var(--signal-success-800)]"
+          className="gap-2 whitespace-nowrap"
         >
           {loading ? <Loader2 size={15} className="animate-spin" /> : <FileSearch size={15} />}
           {t("analyze.run_btn")}
@@ -157,28 +192,18 @@ export default function AnalyzePage() {
             <div className="mb-3 flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <Badge
-                    variant="default"
-                    className="brand-soft brand-text brand-border border text-xs"
-                  >
+                  <Badge variant="default" className="text-xs">
                     {result.document_type}
                   </Badge>
                   {result.type_confidence !== undefined && (
                     <span className="text-xs text-[color:var(--ds-text-muted)]">
-                      {t("analyze.confidence")}: {Math.round(result.type_confidence * 100)}%
+                      {t("analyze.confidence")}: {Math.round(result.type_confidence * 100)} %
                     </span>
                   )}
                 </div>
                 <p className="mt-2 text-sm text-[color:var(--ds-text)]">{result.summary}</p>
               </div>
-              {result.attorney_review_required && (
-                <Badge
-                  variant="default"
-                  className="shrink-0 border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
-                >
-                  {t("analyze.review_required")}
-                </Badge>
-              )}
+              {/* The attorney-review notice lives once, in the CitationPanel below. */}
             </div>
           </div>
 
@@ -215,8 +240,8 @@ export default function AnalyzePage() {
                   const urgency = "urgency" in d ? d.urgency : undefined;
                   return (
                     <div key={i} className="flex items-center gap-3 text-sm">
-                      <span className="font-mono whitespace-nowrap text-[color:var(--ds-text)]">
-                        {d.date}
+                      <span className="whitespace-nowrap text-[color:var(--ds-text)] tabular-nums">
+                        {formatDate(d.date)}
                       </span>
                       <span className="text-[color:var(--ds-text-muted)]">{label}</span>
                       {urgency === "critical" && (
@@ -251,7 +276,7 @@ export default function AnalyzePage() {
                           SEVERITY_STYLES[issue.severity] ?? SEVERITY_STYLES.low
                         )}
                       >
-                        {issue.severity}
+                        {SEVERITY_LABELS[issue.severity] ?? issue.severity}
                       </Badge>
                       <span className="text-sm font-medium text-[color:var(--ds-text)]">
                         {issue.issue}
@@ -279,8 +304,8 @@ export default function AnalyzePage() {
                 <div className="space-y-1.5">
                   {result.cited_statutes.map((s, i) => (
                     <div key={i} className="flex items-center gap-2 text-sm">
-                      <span className="font-mono text-[color:var(--ds-text)]">
-                        § {s.paragraph} {s.code}
+                      <span className="whitespace-nowrap text-[color:var(--ds-text)] tabular-nums">
+                        {`§\u202F${String(s.paragraph).replace(/^§\s*/, "")} ${s.code}`}
                       </span>
                       {s.verified ? (
                         <CheckCircle2 size={13} className="text-[color:var(--ds-success-text)]" />
@@ -292,13 +317,6 @@ export default function AnalyzePage() {
                       </span>
                     </div>
                   ))}
-                  {result._grounding && (
-                    <p className="mt-2 text-xs text-[color:var(--ds-text-muted)]">
-                      {t("analyze.grounding_info")}: {result._grounding.citations_verified}{" "}
-                      {t("analyze.grounding_verified")}, {result._grounding.citations_unverified}{" "}
-                      {t("analyze.grounding_unverified")}
-                    </p>
-                  )}
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2">
@@ -333,7 +351,7 @@ export default function AnalyzePage() {
                     has_unverified: result._grounding.has_unverified,
                     warning: result._grounding.warning,
                   }
-                : null,
+                : clientGrounding,
               isStreaming: false,
             }}
           />
