@@ -45,8 +45,11 @@ generischen KI-Chatprodukts.
 - Schrift (seit 19.09.2026, nach Marktanalyse Harvey/Mercury/Attio): **Newsreader** (Serif, `font-display`)
   nur für Seitentitel h1, Website-Headlines h1/h2 und große Grüße; **Inter** mit optischer Größe für
   alles andere inkl. h2–h6 im Produkt und alle Zahlen; Space Grotesk ist gestrichen (gilt als
-  „KI-generisch“). Wortmarke bleibt Fraunces. Kennungen, Aktenzeichen,
-  Beträge und Datumsangaben mit `tnum` (tabellarische Ziffern).
+  „KI-generisch“). Auch die Wortmarke steht in Newsreader: eine Serifenfamilie für alles.
+  Ziffern sind standardmäßig proportional (`tnum` verbreitert in Inter auch den Bindestrich);
+  tabellarische Ziffern nur in Tabellen, `time`, Code und über `tabular-nums`.
+- Website-Kennzahlen in Newsreader (groß, Gewicht 400), Abschnitts-Dachzeilen als Kapitälchen
+  mit Haarlinie (`EYEBROW_CLASS`), keine Pillen-Badges; Symbolkacheln einfarbig Sapphire.
 - Datum: `TT.MM.JJJJ`; relative Angabe daneben („in 28 Tagen") nur bei Fristen.
 - Beträge: `€ 1.234,50` (österreichische Schreibweise über `formatEur`), immer mit Nachkommastellen.
 - Fristabstände: `formatDaysUntil` („heute“, „morgen“, „in 5 Tagen“, „seit 2 Tagen überfällig“) — nie „18T“ oder „in 5“.

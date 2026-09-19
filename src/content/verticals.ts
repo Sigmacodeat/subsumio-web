@@ -82,7 +82,7 @@ export const VERTICALS: Record<VerticalSlug, VerticalContent> = {
       {
         icon: "FolderOpen",
         title: "Dokumentenablage mit Herkunftsnachweis",
-        desc: "Aktendokumente, WhatsApp-Dateien und Beweismittel werden mit Prüfsumme, Quelle und Größe abgelegt — auf EU-Servern (Hetzner) oder On-Premise (Enterprise).",
+        desc: "Aktendokumente, WhatsApp-Dateien und Beweismittel werden mit Prüfsumme, Quelle und Größe abgelegt — auf EU-Servern oder On-Premise (Enterprise).",
       },
       {
         icon: "Mail",
@@ -107,7 +107,7 @@ export const VERTICALS: Record<VerticalSlug, VerticalContent> = {
       {
         icon: "Shield",
         title: "EU-Cloud oder On-Premise",
-        desc: "Standard ist die EU-Cloud (Hetzner) mit AVV; die Auftragsverarbeiter sind dort benannt. Im Enterprise-Tarif läuft Subsumio On-Premise auf Ihrer eigenen Hardware.",
+        desc: "Standard ist die EU-Cloud mit AVV; die Auftragsverarbeiter sind dort benannt. Im Enterprise-Tarif läuft Subsumio On-Premise auf Ihrer eigenen Hardware.",
       },
       {
         icon: "Zap",

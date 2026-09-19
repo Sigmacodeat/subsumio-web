@@ -20,7 +20,7 @@ import AudienceTabs from "./audience-tabs";
 import LandingHero from "./landing-hero";
 import StickyCta from "./sticky-cta";
 import { Section, SectionHeading, StatCard } from "./primitives";
-import { H2_CTA_CLASS, H3_CLASS } from "./typography";
+import { H2_CTA_CLASS, H3_CLASS, EYEBROW_CLASS } from "./typography";
 import { ICONS, accentTile } from "./icons";
 import { AnimatedFaqList } from "./animated-faq";
 import {
@@ -64,49 +64,55 @@ export default function LandingPage() {
             className="px-4 py-24 sm:px-6 lg:px-8"
             aria-label={ui.ariaCostOfInaction}
           >
-            <Reveal variant="upScale" className="mx-auto max-w-5xl">
-              <SectionHeading
-                title={(t as { painTitle: string }).painTitle}
-                sub={(t as { painSub: string }).painSub}
-              />
-              <StaggerContainer
-                className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2"
-                stagger={0.08}
-              >
+            <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20">
+              {/* Left: the question, held in place while the answers scroll by */}
+              <Reveal variant="upScale" className="lg:sticky lg:top-28 lg:self-start">
+                <p className={`mb-5 ${EYEBROW_CLASS}`}>Ausgangslage</p>
+                <h2 className={`mb-5 ${H2_CTA_CLASS}`}>
+                  {(t as { painTitle: string }).painTitle}
+                </h2>
+                <p className="max-w-md text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
+                  {(t as { painSub: string }).painSub}
+                </p>
+              </Reveal>
+              {/* Right: a numbered register — editorial, no card chrome */}
+              <StaggerContainer as="ol" className="border-t [border-color:var(--mk-border)]" stagger={0.08}>
                 {(t as { pains: { value: string; label: string }[] }).pains.map((pain, i) => {
                   const Icon = PAIN_ICONS[i];
                   return (
-                    <StaggerItem key={pain.label}>
-                      <div className="group relative h-full overflow-hidden rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[var(--ds-duration-normal)] [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl motion-reduce:transition-none">
-                        {/* Top accent — category-rose into brand-primary */}
-                        <div
-                          aria-hidden
-                          className="absolute inset-x-0 top-0 h-1"
-                          style={{
-                            background:
-                              "linear-gradient(90deg, var(--ds-category-rose-text), var(--brand-primary) 70%)",
-                          }}
-                        />
-                        <div
-                          className={`mb-5 flex h-12 w-12 items-center justify-center rounded-xl border ${accentTile("rose", "light")}`}
-                        >
-                          {Icon && <Icon size={22} />}
-                        </div>
-                        <p className="mb-2 text-3xl font-bold tracking-tight text-balance [color:var(--brand-text)] md:text-4xl">
+                    <StaggerItem
+                      as="li"
+                      key={pain.label}
+                      className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-5 border-b py-7 [border-color:var(--mk-border)] md:grid-cols-[3rem_minmax(0,1fr)_auto] md:py-8"
+                    >
+                      <span className="pt-1 font-mono text-sm tabular-nums [color:var(--mk-text-subtle)]">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <div>
+                        <h3 className="mb-2 text-xl leading-tight font-semibold tracking-[-0.012em] text-balance [color:var(--mk-text)] md:text-2xl">
                           {pain.value}
-                        </p>
-                        <p className="text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-base">
+                        </h3>
+                        <p className="max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
                           {pain.label}
                         </p>
                       </div>
+                      {Icon && (
+                        <Icon
+                          size={22}
+                          aria-hidden
+                          className="mt-1 hidden [color:var(--brand-text)] opacity-70 md:block"
+                        />
+                      )}
                     </StaggerItem>
                   );
                 })}
               </StaggerContainer>
+            </div>
 
+            <Reveal variant="upScale" className="mx-auto max-w-6xl">
               {/* Proof stats — directly below pain, same section */}
               <StaggerContainer
-                className="mt-14 grid grid-cols-2 gap-8 text-center md:grid-cols-4"
+                className="mt-20 grid grid-cols-2 gap-x-8 gap-y-12 text-center md:grid-cols-4"
                 stagger={0.09}
               >
                 {t.stats.map((stat, i) => (
@@ -142,7 +148,7 @@ export default function LandingPage() {
         >
           <div className="mx-auto max-w-7xl">
             <Reveal variant="upScale">
-              <SectionHeading badge="Features" title={t.featuresTitle} sub={t.featuresSub} />
+              <SectionHeading badge="Funktionen" title={t.featuresTitle} sub={t.featuresSub} />
             </Reveal>
             <StaggerContainer
               className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
@@ -302,7 +308,7 @@ export default function LandingPage() {
           aria-label={ui.ariaPricing}
         >
           <Reveal variant="upScale" className="mx-auto max-w-6xl">
-            <SectionHeading badge="Pricing" title={pricing.title} sub={pricing.sub} />
+            <SectionHeading badge="Preise" title={pricing.title} sub={pricing.sub} />
             <PricingGrid />
             <div className="mt-10 text-center">
               <Button size="lg" variant="secondary" asChild>

@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from "@/lib/use-safe-reduced-motion";
-import { H1_CLASS, H2_CTA_CLASS, H3_CLASS } from "./typography";
+import { H1_CLASS, H2_CTA_CLASS, H3_CLASS, EYEBROW_CLASS } from "./typography";
 import Link from "next/link";
 import { ArrowRight, ChevronDown, ChevronRight, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -97,38 +97,39 @@ export function SectionHeading({
   title,
   sub,
   tone,
+  align = "center",
 }: {
   badge?: string;
   title: string;
   sub?: string;
   tone?: Tone;
+  /** "left" inside split layouts, where a centred heading floats off its column. */
+  align?: "center" | "left";
 }) {
+  const left = align === "left";
   // `tone` is optional: when set it makes the heading self-contained (resolves
   // its own --mk-* tokens), otherwise it inherits the surrounding section tone.
   return (
     <motion.div
       data-tone={tone}
-      className="mb-14 text-center"
+      className={left ? "text-left" : "mb-14 text-center"}
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.15 }}
       transition={{ duration: 0.55, ease: EASE.out }}
     >
       {badge && (
-        <motion.span
-          className="brand-soft brand-text brand-border mb-5 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold"
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true, margin: "0px 0px 80px 0px" }}
-          transition={{ duration: 0.4, delay: 0.05, ease: EASE.out }}
+        <p
+          className={`mb-5 ${left ? "" : "justify-center after:h-px after:w-6 after:bg-current after:opacity-50 after:content-['']"} ${EYEBROW_CLASS}`}
         >
-          <span className="brand-bg h-1.5 w-1.5 rounded-full" />
           {badge}
-        </motion.span>
+        </p>
       )}
-      <h2 className={`mx-auto mb-4 max-w-3xl ${H2_CTA_CLASS}`}>{title}</h2>
+      <h2 className={`mb-4 max-w-3xl ${left ? "" : "mx-auto"} ${H2_CTA_CLASS}`}>{title}</h2>
       {sub && (
-        <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
+        <p
+          className={`max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg ${left ? "" : "mx-auto"}`}
+        >
           {sub}
         </p>
       )}
@@ -231,9 +232,9 @@ export function TypewriterText({ text, speed = 12 }: { text: string; speed?: num
 
 // Typography constants live in ./typography (pure module) so Server
 // Components can use them; re-exported here for existing client consumers.
-export { H1_CLASS, H2_CTA_CLASS, H3_CLASS } from "./typography";
+export { H1_CLASS, H2_CTA_CLASS, H3_CLASS, EYEBROW_CLASS } from "./typography";
 
-/** Standard badge pill — brand-soft, brand-text, brand-border. */
+/** Section eyebrow (name kept for existing callers) — small caps with a hairline. */
 export function BadgePill({
   children,
   className = "",
@@ -242,12 +243,7 @@ export function BadgePill({
   className?: string;
 }) {
   return (
-    <span
-      className={`brand-soft brand-text brand-border mb-6 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold ${className}`}
-    >
-      <span className="brand-bg h-1.5 w-1.5 rounded-full" />
-      {children}
-    </span>
+    <span className={`mb-6 ${EYEBROW_CLASS} ${className}`}>{children}</span>
   );
 }
 
@@ -315,7 +311,8 @@ export function ContentCard({
 }
 
 /** Standard page hero — badge, two-part H1 (title + accent claim), subtitle,
- *  optional CTA actions, optional badge icon, optional visual (right column).
+ *  optional CTA actions, optional visual (right column). `icon` is accepted for
+ *  older callers but no longer drawn: the eyebrow is text only.
  *  Uses ClipReveal for the H1 and motion for badge + subtitle + actions.
  *  All sub-pages should use this instead of rolling their own hero markup.
  *
@@ -328,7 +325,7 @@ export function PageHero({
   sub,
   tone = "light",
   accentVariant = "brand",
-  icon,
+  icon: _icon,
   actions,
   visual,
 }: {
@@ -347,7 +344,9 @@ export function PageHero({
       ? "gradient-text"
       : accentVariant === "gradient-premium"
         ? "gradient-text-premium"
-        : "brand-text";
+        : // The second headline line is always the serif italic accent —
+          // the same voice as the landing and features heroes.
+          "brand-text italic";
 
   const textCol = (
     <div className={visual ? "text-center lg:text-left" : "text-center"}>
@@ -358,13 +357,7 @@ export function PageHero({
           transition={{ duration: 0.4, ease: EASE.out }}
           className={visual ? "inline-flex lg:mx-0" : "inline-flex"}
         >
-          <BadgePill>
-            {(() => {
-              const BadgeIcon = icon ? resolveIcon(icon) : undefined;
-              return BadgeIcon ? <BadgeIcon size={14} className="brand-text" /> : null;
-            })()}
-            {badge}
-          </BadgePill>
+          <BadgePill>{badge}</BadgePill>
         </motion.span>
       )}
       <ClipReveal delay={0.1} duration={0.7} direction="up" lcp>
@@ -626,7 +619,7 @@ export function StatCard({
 
   return (
     <div className="text-center">
-      <p className="mb-1 text-4xl font-bold [color:var(--brand-text)] md:text-5xl">
+      <p className="mb-3 [font-family:var(--font-display)] text-5xl leading-none font-normal tracking-[-0.025em] tabular-nums [color:var(--mk-text)] md:text-6xl">
         {isNumeric ? (
           <AnimatedCounter
             to={num}
@@ -638,7 +631,9 @@ export function StatCard({
           value
         )}
       </p>
-      <p className="text-sm font-semibold [color:var(--mk-text)]">{label}</p>
+      <p className="mx-auto max-w-[16rem] text-sm leading-snug text-pretty [color:var(--mk-text-muted)]">
+        {label}
+      </p>
       {context && (
         <p className="mt-0.5 text-sm leading-relaxed [color:var(--mk-text-muted)]">{context}</p>
       )}

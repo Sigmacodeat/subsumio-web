@@ -181,7 +181,18 @@ const ACCENT_TILE = {
 
 export type Tone = "light" | "slate" | "dark" | "dashboard";
 
+// Marketing pages use one accent. A rainbow of tile colours (violet, amber,
+// emerald, rose …) read as a template and diluted the sapphire brand; the
+// icon shape carries the meaning, the colour stays constant.
+const MARKETING_TILE: Partial<Record<Tone, string>> = {
+  light: "brand-text bg-[color:var(--mk-bg)] border-[color:var(--mk-border)]",
+  slate: "brand-text bg-white/[0.04] border-white/10",
+  dark: "brand-text bg-white/[0.04] border-white/10",
+};
+
 export function accentTile(color: string, tone: Tone = "light"): string {
+  const uniform = MARKETING_TILE[tone];
+  if (uniform) return uniform;
   const map = ACCENT_TILE[tone];
   return map[color as keyof typeof map] ?? map.blue;
 }

@@ -9,29 +9,6 @@ import { ICONS, accentTile } from "./icons";
 import { AnimatedFaqList } from "./animated-faq";
 import { GlowCard, Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 
-/** Per-vertical hero motif: a small floating constellation built from this
- *  vertical's own first 3 feature icons, so each of the 4 /solutions/* pages
- *  reads visually distinct even though they share one layout component. */
-function HeroIconConstellation({ content }: { content: SolutionContent }) {
-  const icons = content.features.slice(0, 3);
-  return (
-    <div className="mt-10 flex items-center justify-center gap-6">
-      {icons.map((feat) => {
-        const Icon = ICONS[feat.icon] ?? ICONS.Layers;
-        return (
-          <div
-            key={feat.title}
-            className={`flex h-12 w-12 items-center justify-center rounded-2xl border ${accentTile("violet", "light")}`}
-            title={feat.title}
-          >
-            <Icon size={20} />
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 export function SolutionPage({ content }: { content: SolutionContent }) {
   return (
     <div data-tone="light" className="min-h-screen overflow-x-clip [background:var(--mk-bg)]">
@@ -65,9 +42,6 @@ export function SolutionPage({ content }: { content: SolutionContent }) {
           </>
         }
       />
-      <div className="mx-auto -mt-8 max-w-4xl text-center">
-        <HeroIconConstellation content={content} />
-      </div>
 
       {/* Pains */}
       <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">

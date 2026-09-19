@@ -101,7 +101,7 @@ export const SOLUTIONS: Record<SolutionSlug, SolutionContent> = {
       {
         icon: "ShieldCheck",
         title: "EU-Cloud oder On-Premise",
-        desc: "EU-Cloud (Hetzner) mit AVV, die Auftragsverarbeiter sind dort benannt. Im Enterprise-Tarif läuft Subsumio On-Premise auf Ihrer eigenen Hardware.",
+        desc: "EU-Cloud mit AVV, die Auftragsverarbeiter sind dort benannt. Im Enterprise-Tarif läuft Subsumio On-Premise auf Ihrer eigenen Hardware.",
       },
       {
         icon: "Search",

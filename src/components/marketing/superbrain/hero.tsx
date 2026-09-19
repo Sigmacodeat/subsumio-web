@@ -26,10 +26,7 @@ export function HeroSection({ t }: { t: SuperbrainCopyDe }) {
         className="brand-glow-bg absolute top-1/4 left-1/2 h-[500px] w-[800px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
       />
       <div className="relative z-10 mx-auto max-w-5xl text-center">
-        <BadgePill className="mb-8">
-          <Brain size={16} className="brand-text" />
-          {t.hero.eyebrow}
-        </BadgePill>
+        <BadgePill className="mb-8">{t.hero.eyebrow}</BadgePill>
 
         <SplitTextReveal
           as="h1"

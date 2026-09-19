@@ -159,19 +159,27 @@ const StaggerContext = createContext<Variants | undefined>(undefined);
 export function StaggerItem({
   children,
   className = "",
+  as = "div",
 }: {
   children: ReactNode;
   className?: string;
+  /** "li" when the parent StaggerContainer renders a list. */
+  as?: "div" | "li";
 }) {
   const variants = useContext(StaggerContext);
   if (!variants) {
     // Fallback: no parent StaggerContainer → just render
-    return <div className={className}>{children}</div>;
+    return as === "li" ? (
+      <li className={className}>{children}</li>
+    ) : (
+      <div className={className}>{children}</div>
+    );
   }
+  const MotionTag = as === "li" ? motion.li : motion.div;
   return (
-    <motion.div variants={variants} className={className}>
+    <MotionTag variants={variants} className={className}>
       {children}
-    </motion.div>
+    </MotionTag>
   );
 }
 

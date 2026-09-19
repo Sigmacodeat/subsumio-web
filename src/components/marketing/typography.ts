@@ -11,6 +11,11 @@ export const H1_CLASS =
 export const H2_CTA_CLASS =
   "text-3xl leading-[1.12] font-medium tracking-[-0.018em] text-balance [color:var(--mk-text)] md:text-[2.625rem]";
 
+/** Section eyebrow — small caps label with hairlines instead of a pill badge.
+ *  Editorial, quiet, and reads as a chapter mark rather than a sticker. */
+export const EYEBROW_CLASS =
+  "inline-flex items-center gap-3 text-[0.75rem] font-semibold tracking-[0.16em] uppercase [color:var(--brand-text)] before:h-px before:w-6 before:bg-current before:opacity-50 before:content-['']";
+
 /** Standard H3 class for card titles and feature headings. */
 export const H3_CLASS =
   "text-xl font-semibold tracking-tight text-balance [color:var(--mk-text)] md:text-2xl";

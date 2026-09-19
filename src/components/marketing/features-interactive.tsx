@@ -298,10 +298,9 @@ export function FeatureCommandCenter() {
           viewport={VIEWPORT.tight}
           transition={{ duration: 0.4 }}
         >
-          <p className="brand-text mb-3 text-sm font-semibold tracking-[0.16em] uppercase">
-            {UI_STRINGS.inDashboard}
-          </p>
           <SectionHeading
+            align="left"
+            badge={UI_STRINGS.inDashboard}
             title={UI_STRINGS.featuresWorkflowTitle}
             sub={UI_STRINGS.featuresWorkflowSub}
           />

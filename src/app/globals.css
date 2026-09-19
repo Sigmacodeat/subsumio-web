@@ -515,7 +515,10 @@
   --font-editorial: var(--font-fraunces), Georgia, serif;
 
   /* OpenType features for UI and display fonts */
-  --font-feature-ui: "tnum" on, "lnum" on, "cv11" on;
+  /* Proportional by default: Inter's "tnum" also widens the hyphen, which
+     spaced out every compound ("E - Mail"). Tabular figures are applied only
+     where numbers line up (tables, time, code, .tabular-nums). */
+  --font-feature-ui: "lnum" on, "cv11" on;
   --font-feature-display: "ss01" on, "cv11" on;
 
   /* ── Type scale — systematic font sizes (T1) ── */
@@ -2012,15 +2015,11 @@
 }
 
 [data-app="dashboard"] {
-  font-variant-numeric: tabular-nums;
   font-feature-settings: var(--font-feature-ui);
 }
 
-[data-app="dashboard"] .font-mono,
-[data-app="dashboard"] code,
-[data-app="dashboard"] pre {
+[data-app="dashboard"] :is(td, th, time, .font-mono, code, pre, input[type="number"]) {
   font-variant-numeric: tabular-nums;
-  font-feature-settings: var(--font-feature-ui);
 }
 
 [data-app="dashboard"] .font-bold {

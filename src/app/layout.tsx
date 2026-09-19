@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
-import { Inter, Newsreader, JetBrains_Mono, Fraunces } from "next/font/google";
+import { Inter, Newsreader, JetBrains_Mono } from "next/font/google";
 import ServiceWorkerRegister from "@/components/pwa/sw-register";
 import AppUpdateBanner from "@/components/pwa/app-update-banner";
 import { MonitoringProvider } from "@/components/providers/monitoring-provider";
@@ -33,14 +33,6 @@ const newsreader = Newsreader({
   axes: ["opsz"],
   style: ["normal", "italic"],
   variable: "--font-serif",
-  display: "swap",
-  preload: true,
-});
-// Brand serif — wordmark only (logo lockup). Never used for UI text.
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  weight: ["600"],
-  variable: "--font-brand",
   display: "swap",
   preload: true,
 });
@@ -159,7 +151,7 @@ export default async function RootLayout({
   return (
     <html
       lang="de-AT"
-      className={`h-full ${inter.variable} ${newsreader.variable} ${jetbrainsMono.variable} ${fraunces.variable}`}
+      className={`h-full ${inter.variable} ${newsreader.variable} ${jetbrainsMono.variable}`}
       style={{ colorScheme: "light dark" }}
       suppressHydrationWarning
     >

@@ -150,12 +150,13 @@ export function SubsumioLogo({
   );
 }
 
-/** "Subsum•io" — serif wordmark with the gold domain dot (subsum.io). */
+/** "Subsum•io" — serif wordmark with the gold domain dot (subsum.io). Set in
+ *  Newsreader, the same serif as the headlines: one serif family site-wide. */
 export function SubsumioWordmark({ className = "" }: { className?: string }) {
   return (
     <span
       className={`leading-none font-semibold tracking-[-0.015em] ${className}`}
-      style={{ fontFamily: "var(--font-brand), Georgia, 'Times New Roman', serif" }}
+      style={{ fontFamily: "var(--font-serif), Georgia, 'Times New Roman', serif" }}
     >
       Subsum
       <span
