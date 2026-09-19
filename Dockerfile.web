@@ -57,6 +57,10 @@ COPY --from=build --chown=bun:bun /app/next.config.ts ./next.config.ts
 COPY --from=build --chown=bun:bun /app/tsconfig.json ./tsconfig.json
 COPY --from=build --chown=bun:bun /app/components.json ./components.json
 COPY --from=build --chown=bun:bun /app/bun.lock ./bun.lock
+# Read at runtime by src/lib/corpus-meta.ts (join(cwd, "src/lib/corpus-meta.json")).
+# The image is not a Next standalone build, so outputFileTracingIncludes does not
+# ship it — without this line every citation check fails with ENOENT.
+COPY --from=build --chown=bun:bun /app/src/lib/corpus-meta.json ./src/lib/corpus-meta.json
 
 USER bun
 
