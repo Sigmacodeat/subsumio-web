@@ -42,33 +42,28 @@ describe("provisionBrain", () => {
     expect(result.ok).toBe(true);
   });
 
-  test("mounts skill pack when industry is legal", async () => {
+  test("seeds workflows, Kanzlei defaults and the demo matter for legal", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     fetchSpy.mockResolvedValueOnce(new Response("{}", { status: 200 })); // stats
-    fetchSpy.mockResolvedValueOnce(new Response("{}", { status: 200 })); // skillpack
-    // seedWorkflows: 3 workflow pages for legal; demo probe GET returns 404
-    // (nothing seeded yet) so the 4 demo seeds run afterwards.
+    // demo probe GET returns 404 (nothing seeded yet) so the demo seeds run.
     fetchSpy.mockImplementation((_url, init) => {
       const method = init?.method ?? "GET";
       return Promise.resolve(new Response("{}", { status: method === "GET" ? 404 : 200 }));
     });
     const result = await provisionBrain("brain-1", { industry: "legal" });
     expect(result.ok).toBe(true);
-    const skillpackCall = fetchSpy.mock.calls[1];
-    expect(skillpackCall[0]).toContain("/api/skillpack/apply");
-    // Verify seed calls were made: 3 workflow seeds + 1 Kanzlei defaults +
-    // 4 demo-matter seeds (plus one GET for the demo idempotency probe).
+    // The engine has no skill-pack route — provisioning must not call it.
+    expect(fetchSpy.mock.calls.some((c) => String(c[0]).includes("/api/skillpack"))).toBe(false);
+    // 3 workflow seeds + 1 Kanzlei defaults + 4 demo-matter seeds.
     const seedCalls = fetchSpy.mock.calls.filter(
       (c) => String(c[0]).includes("/api/pages") && c[1]?.method === "POST"
     );
     expect(seedCalls.length).toBe(8);
   });
 
-  test("does not mount skill pack for unknown industry", async () => {
+  test("unknown industry provisions the same legal defaults", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     fetchSpy.mockResolvedValueOnce(new Response("{}", { status: 200 })); // stats
-    // seedWorkflows still runs for unknown industry (defaults to legal templates);
-    // demo probe GET → 404 so demo seeds run.
     fetchSpy.mockImplementation((_url, init) => {
       const method = init?.method ?? "GET";
       return Promise.resolve(new Response("{}", { status: method === "GET" ? 404 : 200 }));
@@ -76,17 +71,8 @@ describe("provisionBrain", () => {
     const result = await provisionBrain("brain-1", { industry: "nonexistent" });
     expect(result.ok).toBe(true);
     // stats + 3 workflow seeds + 1 Kanzlei defaults + demo idempotency GET +
-    // 4 demo seeds = 10 total (no skillpack for unknown industry)
+    // 4 demo seeds = 10 total
     expect(fetchSpy).toHaveBeenCalledTimes(10);
-  });
-
-  test("succeeds even if skill pack mounting fails", async () => {
-    const fetchSpy = vi.spyOn(globalThis, "fetch");
-    fetchSpy.mockResolvedValueOnce(new Response("{}", { status: 200 })); // stats
-    fetchSpy.mockRejectedValueOnce(new Error("skillpack fail")); // skillpack error
-    fetchSpy.mockResolvedValue(new Response("{}", { status: 200 })); // seed workflow calls
-    const result = await provisionBrain("brain-1", { industry: "legal" });
-    expect(result.ok).toBe(true);
   });
 
   test("returns ok:false on non-200/non-404 after retries", async () => {

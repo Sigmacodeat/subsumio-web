@@ -305,12 +305,15 @@ const SIMPLE: SimpleSource[] = [
     key: "landesrecht",
     dir: "at-landesrecht",
     sourceId: "law-at-landesrecht",
+    // Same importer as the federal norms: a document already in the database
+    // (same RIS number) is updated under its slug, never inserted twice.
     importCmd: viaNormalized("at-landesrecht", [
-      "src/cli.ts",
-      "import",
-      "../law-corpus/_normalized/at-landesrecht",
-      "--source-id",
+      "scripts/batch-import-from-disk.ts",
+      "--source",
       "law-at-landesrecht",
+      "--disk-dir",
+      "law-corpus/_normalized/at-landesrecht",
+      "--slug-from-path",
       "--no-embed",
     ]),
   },

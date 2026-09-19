@@ -15,6 +15,7 @@ import {
   BRAIN_TOOL_ALLOWLIST,
   buildBrainTools,
   filterAllowedTools,
+  TENANT_UNSAFE_TOOLS,
   __testing,
 } from "../src/core/minions/tools/brain-allowlist.ts";
 import type { GBrainConfig } from "../src/core/config.ts";
@@ -76,8 +77,26 @@ describe("buildBrainTools", () => {
   test("produces one ToolDef per allow-listed op that exists in operations.ts", () => {
     const tools = buildBrainTools({ subagentId: 42, engine, config });
     const opNames = new Set(operations.map((o) => o.name));
-    const expected = [...BRAIN_TOOL_ALLOWLIST].filter((n) => opNames.has(n)).length;
+    const localOnly = new Set(operations.filter((o) => o.localOnly).map((o) => o.name));
+    // localOnly ops (file_list/file_url) are never advertised: subagent calls
+    // are remote and would always be refused.
+    const expected = [...BRAIN_TOOL_ALLOWLIST].filter(
+      (n) => opNames.has(n) && !localOnly.has(n)
+    ).length;
     expect(tools.length).toBe(expected);
+  });
+
+  test("tenant-stamped jobs never get source-unscoped tools", () => {
+    const tools = buildBrainTools({ subagentId: 5, engine, config, sourceId: "kanzlei-a" });
+    const names = new Set(tools.map((t) => t.name.replace(/^brain_/, "")));
+    for (const unsafe of TENANT_UNSAFE_TOOLS) expect(names.has(unsafe)).toBe(false);
+    expect(names.has("query")).toBe(true);
+    expect(names.has("find_contradictions")).toBe(true);
+  });
+
+  test("an empty allowed_tools list yields no tools", () => {
+    const tools = buildBrainTools({ subagentId: 5, engine, config, sourceId: "kanzlei-a" });
+    expect(filterAllowedTools(tools, [])).toEqual([]);
   });
 
   test("tool names are brain_<op> and match Anthropic constraint", () => {

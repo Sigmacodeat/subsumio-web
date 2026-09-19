@@ -92,6 +92,11 @@ Diese Information ersetzt keine anwaltliche Prüfung.`;
 export const POST = createHandler(
   {
     action: "legal.subsumption" as const,
+    // tokenmax retrieval + reasoning model: billed and rate-limited like the
+    // other deep legal analyses (was: default tier, no credits).
+    rateTier: "heavy",
+    quota: "queries",
+    credits: "subsumption",
     body: bodySchema,
     audit: (_ctx, body) => ({
       action: "legal.subsumption" as const,

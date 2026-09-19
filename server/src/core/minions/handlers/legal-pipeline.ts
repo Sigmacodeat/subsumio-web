@@ -56,6 +56,7 @@
  *   manual_overrides?: { client?: string; opponent?: string; focus?: string }
  */
 
+import { TIER_DEFAULTS } from "../../model-config.ts";
 import type { MinionJobContext } from "../types.ts";
 import type { BrainEngine } from "../../engine.ts";
 import type { Page } from "../../types.ts";
@@ -2495,17 +2496,24 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
                           ? ((tryParseJSON(rawUrgent) as unknown as unknown[]) ?? [])
                           : [];
                       if (urgentAnsprueche.length > 0) {
-                        await autoCreateWiedervorlage(
-                          engine,
-                          data.case_slug,
-                          limScore,
-                          urgentAnsprueche,
-                          sourceStamp
-                        );
-                        state.warnings = [
-                          ...(state.warnings ?? []),
-                          `Auto-Wiedervorlage erstellt: ${urgentAnsprueche.length} dringende Ansprüche (Score: ${limScore})`,
-                        ];
+                        try {
+                          const suggested = await autoCreateWiedervorlage(
+                            engine,
+                            data.case_slug,
+                            limScore,
+                            urgentAnsprueche,
+                            sourceStamp
+                          );
+                          state.warnings = [
+                            ...(state.warnings ?? []),
+                            `Verjährungs-Fristvorschläge zur Prüfung: ${suggested} (Score: ${limScore})`,
+                          ];
+                        } catch (e) {
+                          state.warnings = [
+                            ...(state.warnings ?? []),
+                            `VERJAEHRUNG_SUGGESTION_WRITE_FAILED: ${e instanceof Error ? e.message : String(e)}`,
+                          ];
+                        }
                       }
                     }
                   } catch (err) {
@@ -3241,7 +3249,10 @@ async function runMapReduceLayer(opts: {
         try {
           const tokens = (s.value.result as { tokens?: { in?: number; out?: number } } | null)
             ?.tokens;
-          const modelId = def.model ?? "";
+          const modelId =
+            (s.value.result as { model?: string } | null)?.model ??
+            def.model ??
+            (def.modelTier ? TIER_DEFAULTS[def.modelTier] : "");
           if (tokens && modelId) {
             budget.record({
               modelId,
@@ -3327,7 +3338,10 @@ async function runMapReduceLayer(opts: {
   if (budget) {
     try {
       const tokens = (reduceResult as { tokens?: { in?: number; out?: number } } | null)?.tokens;
-      const modelId = def.model ?? "";
+      const modelId =
+        (reduceResult as { model?: string } | null)?.model ??
+        def.model ??
+        (def.modelTier ? TIER_DEFAULTS[def.modelTier] : "");
       if (tokens && modelId) {
         budget.record({
           modelId,
@@ -6665,7 +6679,10 @@ async function runSpecialistLayer(opts: {
           tokens?: { in?: number; out?: number; cache_read?: number; cache_create?: number };
         } | null
       )?.tokens;
-      const modelId = def.model ?? "";
+      const modelId =
+        (result as { model?: string } | null)?.model ??
+        def.model ??
+        (def.modelTier ? TIER_DEFAULTS[def.modelTier] : "");
       if (tokens && modelId) {
         budget.record({
           modelId,
@@ -7991,6 +8008,48 @@ async function runLimitationScannerLayer(opts: {
 }
 
 // ── Auto-Wiedervorlage (auto-triggered after Layer 5l when score >= 75) ──
+//
+// The limitation scanner is an LLM estimate. Its output must NEVER land in
+// the Fristenbuch as a live deadline: it becomes a `suggested_deadlines`
+// entry on the case (confirmed: false), which the Review-Inbox surfaces for
+// a lawyer to approve, edit or discard — the same path mail-derived
+// deadlines take. No default date is invented: a claim without a numeric
+// `restzeit_tage` is suggested without a due date.
+
+export function buildWiedervorlageSuggestions(
+  urgentAnsprueche: unknown[],
+  verjaehrungScore: number,
+  now: Date = new Date()
+): Array<Record<string, unknown>> {
+  const out: Array<Record<string, unknown>> = [];
+  for (const entry of urgentAnsprueche) {
+    if (!entry || typeof entry !== "object") continue;
+    const r = entry as Record<string, unknown>;
+    const anspruch = String(r.anspruch ?? "Unbekannter Anspruch").slice(0, 200);
+    const paragraph = String(r.paragraph ?? "").slice(0, 120);
+    const handlungsbedarf = String(r.handlungsbedarf ?? "Prüfung erforderlich").slice(0, 300);
+    const restzeit =
+      typeof r.restzeit_tage === "number" && Number.isFinite(r.restzeit_tage)
+        ? Math.max(0, Math.ceil(r.restzeit_tage))
+        : null;
+    const dueDate =
+      restzeit !== null
+        ? new Date(now.getTime() + restzeit * 86_400_000).toISOString().split("T")[0]!
+        : "";
+    out.push({
+      title: `Verjährung prüfen: ${anspruch}${restzeit === null ? " (Restzeit unbekannt)" : ""}`,
+      due_date: dueDate,
+      urgency: restzeit !== null && restzeit <= 7 ? "critical" : "high",
+      source: "ai-verjaehrung",
+      source_quote: [paragraph, handlungsbedarf].filter(Boolean).join(" — "),
+      confirmed: false,
+      review_status: "unreviewed",
+      verjaehrung_score: verjaehrungScore,
+      suggested_at: now.toISOString(),
+    });
+  }
+  return out;
+}
 
 async function autoCreateWiedervorlage(
   engine: BrainEngine,
@@ -7998,100 +8057,37 @@ async function autoCreateWiedervorlage(
   verjaehrungScore: number,
   urgentAnsprueche: unknown[],
   sourceId?: string
-): Promise<string[]> {
+): Promise<number> {
   const now = new Date();
-  const createdSlugs: string[] = [];
+  const suggestions = buildWiedervorlageSuggestions(urgentAnsprueche, verjaehrungScore, now);
+  if (suggestions.length === 0) return 0;
 
-  for (const entry of urgentAnsprueche) {
-    const r = entry as Record<string, unknown>;
-    const anspruch = String(r.anspruch ?? "Unbekannter Anspruch");
-    const restzeitTage = typeof r.restzeit_tage === "number" ? r.restzeit_tage : 30;
-    const paragraph = String(r.paragraph ?? "");
-    const handlungsbedarf = String(r.handlungsbedarf ?? "Sofortige Prüfung erforderlich");
+  const casePage = await engine.getPage(caseSlug, { sourceId });
+  if (!casePage) return 0;
+  const caseFm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
+  const existing = Array.isArray(caseFm.suggested_deadlines)
+    ? (caseFm.suggested_deadlines as Array<Record<string, unknown>>)
+    : [];
+  // Re-runs of the pipeline must not stack duplicate suggestions.
+  const known = new Set(existing.map((sd) => `${sd.title}|${sd.due_date}`));
+  const fresh = suggestions.filter((sd) => !known.has(`${sd.title}|${sd.due_date}`));
+  if (fresh.length === 0) return 0;
 
-    const days = Math.max(1, Math.ceil(restzeitTage));
-    const dueDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
-    const dueIso = dueDate.toISOString().split("T")[0]!;
-
-    const safeName = anspruch
-      .replace(/[^a-z0-9]/gi, "-")
-      .toLowerCase()
-      .slice(0, 40);
-    const slug = `deadlines/wiedervorlage-${caseSlug}-${safeName}`;
-
-    const fmLines = [
-      "---",
-      `title: "Wiedervorlage: ${anspruch} — ${caseSlug}"`,
-      `type: deadline`,
-      `case_ref: ${caseSlug}`,
-      `deadline_type: wiedervorlage`,
-      `due_date: ${dueIso}`,
-      `status: ${days <= 7 ? "critical" : days <= 30 ? "warning" : "pending"}`,
-      `priority: high`,
-      `verjaehrung_score: ${verjaehrungScore}`,
-      `auto_generated: true`,
-      `created_at: ${now.toISOString()}`,
-      "---",
-    ];
-
-    const body = [
-      "## Wiedervorlage (auto-generiert)",
-      "",
-      `**Akte:** ${caseSlug}`,
-      `**Anspruch:** ${anspruch}`,
-      `**Restzeit:** ${days} Tage`,
-      `**§:** ${paragraph}`,
-      `**Handlungsbedarf:** ${handlungsbedarf}`,
-      `**Verjährungs-Score:** ${verjaehrungScore}/100`,
-      "",
-      "> ⚠️ Verjährung droht — sofortige Maßnahme erforderlich!",
-    ].join("\n");
-
-    const md = `${fmLines.join("\n")}\n\n${body}`;
-    const parsed = parseMarkdown(md);
-
-    try {
-      await engine.putPage(
-        slug,
-        {
-          type: "deadline",
-          title: parsed.title ?? `Wiedervorlage: ${anspruch} — ${caseSlug}`,
-          compiled_truth: md,
-          frontmatter: { ...(parsed.frontmatter ?? {}) },
-        },
-        { sourceId }
-      );
-      createdSlugs.push(slug);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      console.warn(`[legal-pipeline] Auto-Wiedervorlage create failed for "${anspruch}": ${msg}`);
-    }
-  }
-
-  // Update case frontmatter to flag wiedervorlage
-  try {
-    const casePage = await engine.getPage(caseSlug, { sourceId });
-    if (casePage) {
-      const caseFm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
-      await engine.putPage(
-        caseSlug,
-        {
-          ...casePage,
-          frontmatter: {
-            ...caseFm,
-            wiedervorlage_urgent: true,
-            wiedervorlage_count: createdSlugs.length,
-            wiedervorlage_created_at: now.toISOString(),
-          },
-        },
-        { sourceId }
-      );
-    }
-  } catch {
-    // best effort — don't fail the pipeline for this
-  }
-
-  return createdSlugs;
+  await engine.putPage(
+    caseSlug,
+    {
+      ...casePage,
+      frontmatter: {
+        ...caseFm,
+        suggested_deadlines: [...existing, ...fresh],
+        wiedervorlage_urgent: true,
+        wiedervorlage_count: fresh.length,
+        wiedervorlage_created_at: now.toISOString(),
+      },
+    },
+    { sourceId }
+  );
+  return fresh.length;
 }
 
 async function writeLimitationScannerPage(
@@ -9583,6 +9579,25 @@ async function runContradictionProbeAuto(opts: {
 
 // ── Child Result Collector ──────────────────────────────────
 
+/**
+ * readInbox() marks EVERY unread message of the parent job as read. With
+ * several waitForChild() calls running concurrently (map phase), a sibling's
+ * read consumed this child's `child_done` message and the waiter then sat out
+ * the full 60-min timeout. All child_done payloads read by any waiter are
+ * therefore parked here, keyed by parent job, until their own waiter picks
+ * them up.
+ */
+const childDoneBuffer = new Map<number, Map<number, ReturnType<typeof parseChildDone>>>();
+
+function takeBufferedChildDone(parentId: number, childId: number) {
+  const perParent = childDoneBuffer.get(parentId);
+  const hit = perParent?.get(childId);
+  if (!hit) return null;
+  perParent!.delete(childId);
+  if (perParent!.size === 0) childDoneBuffer.delete(parentId);
+  return hit;
+}
+
 async function waitForChild(ctx: MinionJobContext, childId: number): Promise<unknown> {
   const deadline = Date.now() + CHILD_TIMEOUT_MS;
   // G13 fix: exponential backoff instead of fixed 3s interval.
@@ -9596,10 +9611,18 @@ async function waitForChild(ctx: MinionJobContext, childId: number): Promise<unk
     const messages = await ctx.readInbox();
     for (const m of messages) {
       const payload = parseChildDone(m.payload);
-      if (payload && payload.child_id === childId) {
-        if (payload.outcome === "complete") return payload.result;
-        throw new Error(`Child ${childId} failed: ${payload.error ?? "unknown error"}`);
+      if (!payload) continue;
+      let perParent = childDoneBuffer.get(ctx.id);
+      if (!perParent) {
+        perParent = new Map();
+        childDoneBuffer.set(ctx.id, perParent);
       }
+      perParent.set(payload.child_id, payload);
+    }
+    const mine = takeBufferedChildDone(ctx.id, childId);
+    if (mine) {
+      if (mine.outcome === "complete") return mine.result;
+      throw new Error(`Child ${childId} failed: ${mine.error ?? "unknown error"}`);
     }
     // Log when approaching deadline for observability
     const remaining = deadline - Date.now();
@@ -10886,6 +10909,12 @@ async function writeDeadlineCalendarPage(
   lines.push(`type: deadline_calendar`);
   lines.push(`case_ref: ${caseSlug}`);
   lines.push(`critical_count: ${criticalCount}`);
+  // Approval gate: these dates are model-extracted. The Fristenbuch shows
+  // them flagged "KI · ungeprüft" until a lawyer approves each row (which
+  // creates an approved legal_deadline). A re-run is new AI output and
+  // therefore unreviewed again.
+  lines.push(`review_status: unreviewed`);
+  lines.push(`ai_generated: true`);
   lines.push("---");
   lines.push("");
   lines.push("| Datum | Ampel | Frist | Rechtsgrundlage | Folge | Beleg |");

@@ -30,6 +30,7 @@
  * loop and handles page-level fall-back.
  */
 
+import { TIER_DEFAULTS } from "./model-config.ts";
 import { chat, type ChatOpts, type ChatResult } from "./ai/gateway.ts";
 import { logSynopsisFailure, type SynopsisFailureKind } from "./audit-synopsis.ts";
 import { sanitizeSynopsis } from "./embedding-context.ts";
@@ -41,8 +42,14 @@ import { sanitizeSynopsis } from "./embedding-context.ts";
  */
 const HAIKU_MAX_TOKENS = 200;
 
-/** Default model when caller doesn't override. Resolves through the gateway. */
-const DEFAULT_SYNOPSIS_MODEL = "openrouter:deepseek/deepseek-chat";
+/**
+ * Default synopsis model. Synopses are generated from full document text —
+ * including client documents — so they follow the deployment's utility tier
+ * (model-config.ts), never a hardcoded third-party vendor. Also folded into
+ * corpus_generation (contextual-retrieval-service.ts); changing it only marks
+ * query-cache rows stale — it does NOT re-embed existing pages.
+ */
+export const DEFAULT_SYNOPSIS_MODEL = TIER_DEFAULTS.utility;
 
 /**
  * Synopsis prompt version. Folded into corpus_generation so prompt edits

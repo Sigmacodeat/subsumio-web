@@ -9,7 +9,8 @@ export const maxDuration = 300;
 /**
  * GET /api/cron/statute-currency — tägliches Check ob Gesetze veraltet sind.
  *
- * Ruft den Engine-Endpunkt /api/operations/statute_currency_check auf,
+ * Ruft den Engine-Endpunkt /api/admin/statute-currency auf (Operation
+ * statute_currency_check je Rechtsordnung),
  * der die version_date der DB-Seiten gegen law-corpus Referenzdaten
  * und Live-Quellen (RIS-OGD, buzer.de, OpenCaseLaw) vergleicht.
  *
@@ -23,10 +24,10 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   if (apiKey) headers["x-subsumio-api-key"] = apiKey;
 
   // Step 1: Run currency check
-  const checkRes = await fetch(`${ENGINE_URL}/api/operations`, {
+  const checkRes = await fetch(`${ENGINE_URL}/api/admin/statute-currency`, {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify({ operation: "statute_currency_check" }),
+    body: JSON.stringify({ jurisdictions: ["at", "de", "ch"] }),
     signal: AbortSignal.timeout(120_000),
   });
 

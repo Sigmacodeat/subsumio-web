@@ -398,17 +398,15 @@ export function StrategyTab() {
                       size="sm"
                       disabled={isArchived}
                       onClick={async () => {
-                        const entry = {
-                          title: sd.title,
-                          due_date: sd.due_date,
-                          status: "pending" as const,
-                          type: "deadline",
-                          source: sd.source,
-                        };
-                        const updated = [...ctx.deadlinesList, entry];
-                        ctx.setDeadlinesList(updated);
-                        await ctx.saveCaseUpdate({ deadlines: updated });
-                        await ctx.confirmSuggestedDeadline(originalIndex, true);
+                        try {
+                          await ctx.confirmSuggestedDeadline(originalIndex, true);
+                        } catch (err) {
+                          ctx.setSaveError(
+                            err instanceof Error
+                              ? err.message
+                              : "Frist konnte nicht übernommen werden."
+                          );
+                        }
                       }}
                       className="h-7 px-2 text-xs"
                     >
@@ -419,7 +417,17 @@ export function StrategyTab() {
                       variant="ghost"
                       size="sm"
                       disabled={isArchived}
-                      onClick={() => ctx.confirmSuggestedDeadline(originalIndex, false)}
+                      onClick={() =>
+                        ctx
+                          .confirmSuggestedDeadline(originalIndex, false)
+                          .catch((err: unknown) =>
+                            ctx.setSaveError(
+                              err instanceof Error
+                                ? err.message
+                                : "Fristvorschlag konnte nicht verworfen werden."
+                            )
+                          )
+                      }
                       className="h-7 px-2 text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                     >
                       <X size={12} />

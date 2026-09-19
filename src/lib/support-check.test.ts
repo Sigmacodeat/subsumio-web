@@ -31,6 +31,12 @@ describe("claimFor", () => {
     );
   });
 
+  test("'Art 7' without a dot is found for the cited 'Art. 7'", () => {
+    expect(claimFor("Vorweg. Nach Art 7 B-VG sind alle gleich. Danach.", "Art. 7 B-VG")).toBe(
+      "Nach Art 7 B-VG sind alle gleich."
+    );
+  });
+
   test("decisions are found in either spelling", () => {
     expect(claimFor("So OGH 1Ob49/01i zur Haftung.", "1 Ob 49/01i")).toBe(
       "So OGH 1Ob49/01i zur Haftung."

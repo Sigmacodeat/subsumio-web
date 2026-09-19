@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CorpusCommandCenter } from "@/components/dashboard/corpus-command-center";
+import { CorpusBestand } from "@/components/dashboard/corpus-bestand";
+import { CorpusProtokoll } from "@/components/dashboard/corpus-protokoll";
 import { ChunkInspector } from "@/components/dashboard/chunk-inspector";
 import { ChunkQuality } from "@/components/dashboard/chunk-quality";
 import { CorpusFileBrowser } from "@/components/dashboard/corpus-steward/CorpusFileBrowser";
@@ -11,10 +13,10 @@ import { CorpusFileViewer } from "@/components/dashboard/corpus-steward/CorpusFi
 import { PublishBanner } from "@/components/dashboard/corpus-steward/PublishBanner";
 import { CorpusAlertBanner } from "@/components/dashboard/corpus-steward/CorpusAlertBanner";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { Database, Search, ShieldCheck, FileText } from "lucide-react";
+import { Database, Search, ShieldCheck, FileText, Library, History } from "lucide-react";
 
 export default function CorpusPage() {
-  const [activeTab, setActiveTab] = useState("command-center");
+  const [activeTab, setActiveTab] = useState("bestand");
   const [selectedSource, setSelectedSource] = useState("all");
   const [stewardCorpus, setStewardCorpus] = useState("at-judikatur-vwgh");
   const [viewerPath, setViewerPath] = useState<string | null>(null);
@@ -43,13 +45,21 @@ export default function CorpusPage() {
   return (
     <div className="mx-0 w-full space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title="Corpus & Embeddings"
-        description="Chunking, Embedding-Coverage und Retrieval-Qualität überwachen"
+        title="Rechtskorpus"
+        description="Bestand, Eingang und Abgleich mit dem RIS — Stand der Datenbank auf dem Server"
       />
       <CorpusAlertBanner />
       <PublishBanner />
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-6">
+          <TabsTrigger value="bestand" className="flex items-center gap-2">
+            <Library className="h-4 w-4" />
+            <span className="hidden sm:inline">Bestand</span>
+          </TabsTrigger>
+          <TabsTrigger value="protokoll" className="flex items-center gap-2">
+            <History className="h-4 w-4" />
+            <span className="hidden sm:inline">Protokoll</span>
+          </TabsTrigger>
           <TabsTrigger value="command-center" className="flex items-center gap-2">
             <Database className="h-4 w-4" />
             <span className="hidden sm:inline">Übersicht</span>
@@ -75,6 +85,14 @@ export default function CorpusPage() {
             <span className="hidden sm:inline">Steward</span>
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="bestand" className="mt-4 space-y-6">
+          <CorpusBestand />
+        </TabsContent>
+
+        <TabsContent value="protokoll" className="mt-4 space-y-6">
+          <CorpusProtokoll />
+        </TabsContent>
 
         <TabsContent value="command-center" className="mt-4 space-y-6">
           <CorpusCommandCenter

@@ -46,6 +46,15 @@ import {
 } from "./ris-delta";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { proxyFetchOptions, getUserAgent } from "./ris-proxy";
+import { mapRisReference } from "../src/core/ingestion/connectors/legal-judgements.ts";
+import {
+  buildMarkdown as buildDecisionFile,
+  decisionFileName,
+  decisionTypeOf,
+  dokumentnummerOf,
+} from "./judikatur-file";
+import { landOfDocId } from "./normalize/normalize-corpus";
+import { buildTextMarkdown, politeDelayMs, textRefsOf } from "./fetch-entscheidungstexte";
 import {
   fetchWithRetry,
   risXmlToText,
@@ -130,7 +139,7 @@ function getCursor(stateKey: string): string | null {
     `SELECT last_cycle_at FROM pipeline_state WHERE source_key = '${stateKey}'`
   );
   if (Array.isArray(rows) && rows.length > 0 && rows[0].last_cycle_at) {
-    return rows[0].last_cycle_at;
+    return String(rows[0].last_cycle_at);
   }
   return null;
 }
@@ -204,6 +213,8 @@ function markiereZumImport(pfad: string, art: "edit" | "create" = "edit"): void 
 // ── XML Fetch + Markdown Build ─────────────────────────────────────────
 
 async function fetchXml(url: string): Promise<string | null> {
+  // One document per pause — the watcher fetched back to back before.
+  await new Promise((r) => setTimeout(r, politeDelayMs()));
   const proxyOpts = proxyFetchOptions();
   const res = await fetchWithRetry(url, {
     headers: RIS_UA,
@@ -264,6 +275,7 @@ export function buildStatuteMarkdown(doc: DeltaDocument, xmlText: string): strin
     `nor_id: "${doc.id}"`,
     `id: "ris-${doc.id}"`,
   ];
+  if (doc.abkuerzung) fm.push(`abbreviation: "${esc(doc.abkuerzung)}"`);
   if (apa) fm.push(`paragraph: "${esc(apa)}"`);
   if (doc.inkrafttreten) fm.push(`inkrafttretensdatum: "${doc.inkrafttreten}"`);
   if (doc.ausserkrafttreten) fm.push(`ausserkrafttretensdatum: "${doc.ausserkrafttreten}"`);
@@ -284,32 +296,51 @@ export function buildStatuteMarkdown(doc: DeltaDocument, xmlText: string): strin
  * Baut das Markdown für ein Judikatur-Dokument (Entscheidung).
  * Folgt demselben Frontmatter-Schema wie fetch-all-at-judikatur.ts.
  */
+/** RIS document number of a corpus file, from its source_url. */
+function dokNrOfFile(path: string): string | null {
+  const url = readFileSync(path, "utf8")
+    .slice(0, 2000)
+    .match(/^source_url:\s*["']?([^\s"']+)/m)?.[1];
+  return url ? dokumentnummerOf(url) : null;
+}
+
+/** RIS document numbers carry the decision date: JJR_20190326_… → 2019-03-26. */
+export function decisionDateOfDocNr(id: string): string | null {
+  const m = id.match(/^J[A-Z]{2}_(\d{4})(\d{2})(\d{2})_/);
+  return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
+}
+
+/** RIS application → court key used by the corpus directories. */
+const COURT_KEY: Record<string, string> = { Justiz: "ogh" };
+
+/**
+ * Baut das Markdown für ein Judikatur-Dokument — im selben Format wie der
+ * Vollabruf (judikatur-file.ts): echtes Entscheidungsdatum, ECLI, Gericht,
+ * zitierte Normen und Entscheidungsart aus den RIS-Metadaten. Vorher stand
+ * hier das RIS-Änderungsdatum als Entscheidungsdatum und die Normen fehlten.
+ */
 export function buildJudikaturMarkdown(doc: DeltaDocument, xmlText: string): string {
-  const text = risXmlToText(xmlText) || "*Volltext nicht abrufbar — siehe Quelle.*";
-  const az = doc.geschaeftszahl || doc.id;
-  const title = `${doc.applikation} — ${az}`;
-
-  const frontmatter = yamlDump(
+  const text = risXmlToText(xmlText) || "";
+  const item = doc.raw ? mapRisReference(doc.raw, new Date(doc.changedAt)) : null;
+  const courtKey = COURT_KEY[doc.applikation] ?? doc.applikation.toLowerCase();
+  const url = doc.dokumentUrl || doc.xmlUrl || item?.url || "";
+  return buildDecisionFile(
     {
-      type: "court_decision",
-      jurisdiction: "at",
-      court_type: doc.applikation.toLowerCase(),
-      title,
-      court: doc.applikation,
-      date: doc.changedAt,
-      decision_date: doc.changedAt,
-      ecli: "",
-      case_number: az,
-      source: "ris-ogd",
-      source_url: doc.dokumentUrl || doc.xmlUrl || "",
-      nor_id: doc.id,
-      id: `ris-${doc.id}`,
-      zuletzt_geaendert: doc.changedAt,
+      id: doc.id,
+      court: item?.court && item.court !== "Unbekannt" ? item.court : doc.applikation,
+      date: item?.date ?? decisionDateOfDocNr(doc.id) ?? "",
+      az: item?.az ?? doc.geschaeftszahl ?? doc.id,
+      ecli: item?.ecli,
+      legalArea: item?.legalArea ?? "Allgemein",
+      keywords: item?.keywords ?? [],
+      normen: item?.normen ?? [],
+      decisionType: doc.raw ? decisionTypeOf(doc.raw) : undefined,
+      text,
+      url,
+      title: item?.title ?? `${doc.applikation} — ${doc.geschaeftszahl ?? doc.id}`,
     },
-    { lineWidth: -1, noRefs: true }
-  ).trimEnd();
-
-  return `---\n${frontmatter}\n---\n\n# ${title}\n\n${text}\n\n---\n*Quelle: [RIS-OGD](${doc.dokumentUrl || doc.xmlUrl})*\n`;
+    courtKey
+  );
 }
 
 /**
@@ -328,6 +359,7 @@ export function buildLandesrechtMarkdown(doc: DeltaDocument, xmlText: string): s
     `nor_id: "${doc.id}"`,
     `id: "ris-${doc.id}"`,
   ];
+  if (doc.abkuerzung) fm.push(`abbreviation: "${esc(doc.abkuerzung)}"`);
   if (apa) fm.push(`paragraph: "${esc(apa)}"`);
   if (doc.inkrafttreten) fm.push(`inkrafttretensdatum: "${doc.inkrafttreten}"`);
   if (doc.ausserkrafttreten) fm.push(`ausserkrafttretensdatum: "${doc.ausserkrafttreten}"`);
@@ -354,19 +386,24 @@ export function docFilePath(app: DeltaApplikation, doc: DeltaDocument): string {
   const corpusDir = join(CORPUS_ROOT, app.corpusDir);
 
   if (app.endpoint === "Judikatur") {
-    // Pfad OHNE Datum — verhindert Duplikate wenn sich changedAt ändert.
-    // Bisherige Dateien mit Datum-Prefix müssen migriert werden (siehe migrate-judikatur-paths.ts).
-    const slug = slugify(doc.geschaeftszahl || doc.id);
-    return join(corpusDir, `${slug}.md`);
+    // Named by the RIS document number: several Rechtssätze share one
+    // Geschäftszahl, a name built from it let them overwrite each other.
+    // An older file of the same document keeps its name.
+    const legacy = join(corpusDir, `${slugify(doc.geschaeftszahl || doc.id)}.md`);
+    if (existsSync(legacy) && dokNrOfFile(legacy) === doc.id) return legacy;
+    return join(corpusDir, decisionFileName(doc.id));
   }
 
   // Bundesrecht / Landesrecht
   const apa = doc.artikelParagraphAnlage;
   const key = normKey(apa) || doc.id.toLowerCase();
-  const subDir = doc.gesetzesnummer
+  const gnrDir = doc.gesetzesnummer
     ? `gnr-${doc.gesetzesnummer}`
     : slugify(doc.kurztitel || doc.id);
-  return join(corpusDir, subDir, `${key}.md`);
+  // The states number their laws independently: the state is part of the path
+  // (same layout as fetch-at-landesrecht-xml.ts).
+  const land = app.endpoint === "Landesrecht" ? landOfDocId(doc.id) : null;
+  return join(corpusDir, ...(land ? [land] : []), gnrDir, `${key}.md`);
 }
 
 /**
@@ -437,6 +474,26 @@ async function processDocument(app: DeltaApplikation, doc: DeltaDocument): Promi
 
   // Für Import markieren (corpus-pipeline import stage wird es abholen)
   markiereZumImport(relPath, "edit");
+
+  // A new Rechtssatz of OGH/VwGH/VfGH names its decisions; fetch the ones not
+  // on disk yet, so the daily sync brings the decisions and not only the
+  // Rechtssätze (same files as fetch-entscheidungstexte.ts).
+  if (app.endpoint === "Judikatur" && doc.raw) {
+    for (const t of textRefsOf(doc.raw)) {
+      const target = join(dirname(filepath), `${t.dokNr.toLowerCase()}.md`);
+      if (existsSync(target)) continue;
+      const textXml = await fetchXml(
+        `https://www.ris.bka.gv.at/Dokumente/${app.applikation}/${t.dokNr}/${t.dokNr}.xml`
+      );
+      const body = textXml ? risXmlToText(textXml) : "";
+      if (body.length < 200 || (t.gz && !contentMatchesDocument(body, { case_number: t.gz })))
+        continue;
+      const ecli = textXml?.match(/ECLI:AT:[A-Z0-9]+:\d{4}:[A-Z0-9.]+/)?.[0] ?? null;
+      const courtKey = COURT_KEY[app.applikation] ?? app.applikation.toLowerCase();
+      atomicWrite(target, buildTextMarkdown(t, courtKey, app.applikation, body, ecli));
+      markiereZumImport(target.replace(CORPUS_ROOT + "/", ""), "edit");
+    }
+  }
 
   return true;
 }
@@ -664,7 +721,9 @@ async function main() {
   if (errors.length > 0 && !ONCE) process.exit(1);
 }
 
-main().catch((err) => {
-  console.error(`Fatal: ${err.message}`);
-  process.exit(1);
-});
+if (import.meta.main) {
+  main().catch((err) => {
+    console.error(`Fatal: ${err.message}`);
+    process.exit(1);
+  });
+}

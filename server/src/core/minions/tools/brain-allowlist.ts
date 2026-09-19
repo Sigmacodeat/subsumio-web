@@ -75,6 +75,23 @@ export const BRAIN_TOOL_ALLOWLIST: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Allow-listed ops whose handlers do NOT (or cannot) scope to the caller's
+ * source: file_list/file_url read the global `files` table and are
+ * localOnly admin ops; get_ingest_log / get_recent_salience /
+ * find_anomalies query without a source_id filter. They stay available to
+ * local, host-only subagent runs (no source stamp), but are REMOVED from
+ * the registry of any tenant-stamped job — otherwise a tenant's agent
+ * could read other firms' files and activity.
+ */
+export const TENANT_UNSAFE_TOOLS: ReadonlySet<string> = new Set([
+  "file_list",
+  "file_url",
+  "get_ingest_log",
+  "get_recent_salience",
+  "find_anomalies",
+]);
+
+/**
  * v0.41 Approach C: per-tool usage_hint surfaced verbatim in the subagent
  * system prompt's tool preamble. Each entry tells the model WHEN to reach
  * for the tool (the description tells the model HOW). One line per tool;
@@ -281,8 +298,17 @@ function buildOpContext(deps: OpContextDeps): OperationContext {
  */
 export function buildBrainTools(opts: BuildBrainToolsOpts): ToolDef[] {
   const filter = opts.allowedNames ?? BRAIN_TOOL_ALLOWLIST;
+  // A job carrying a source stamp (web-api `_source_id`, supervisor-propagated)
+  // is a tenant job — drop every tool that cannot honour source isolation.
+  const tenantJob = typeof opts.sourceId === "string" && opts.sourceId.length > 0;
   const picked: Operation[] = operations.filter(
-    (op) => BRAIN_TOOL_ALLOWLIST.has(op.name) && filter.has(op.name)
+    (op) =>
+      BRAIN_TOOL_ALLOWLIST.has(op.name) &&
+      filter.has(op.name) &&
+      // Subagent calls always run remote=true; a localOnly op would only
+      // ever be refused, so never advertise it to the model.
+      !op.localOnly &&
+      !(tenantJob && TENANT_UNSAFE_TOOLS.has(op.name))
   );
 
   return picked.map<ToolDef>((op) => {
@@ -318,6 +344,12 @@ export function buildBrainTools(opts: BuildBrainToolsOpts): ToolDef[] {
           sourceId: opts.sourceId,
           sourceIds: opts.sourceIds,
         });
+        // Same trust boundary as HTTP/MCP dispatch: subagent calls are
+        // remote, so localOnly ops are refused even if a registry was built
+        // without the tenant filter above.
+        if (op.localOnly && opCtx.remote !== false) {
+          throw new Error(`permission_denied: ${op.name} is local-only`);
+        }
         const params = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
         return op.handler(opCtx, params);
       },

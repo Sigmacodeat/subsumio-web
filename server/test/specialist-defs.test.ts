@@ -33,7 +33,7 @@ describe("resolveSpecialist", () => {
     // filterAllowedTools throw and crashes the specialist. It must stay out
     // until a real web/RIS tool is implemented. (Guarded broadly below.)
     expect(def!.allowedTools).not.toContain("perplexity_research");
-    expect(def!.maxTurns).toBe(25);
+    expect(def!.maxTurns).toBe(15);
   });
 
   it("no specialist references the unimplemented perplexity_research tool", () => {

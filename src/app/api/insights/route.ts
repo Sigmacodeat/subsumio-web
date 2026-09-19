@@ -5,8 +5,8 @@
  * Collects cases, judgements, and documents from the engine,
  * then runs the rule-based insights generator.
  */
+import { listEnginePages } from "@/lib/engine-pages";
 import { NextResponse } from "next/server";
-import { ENGINE_URL } from "@/lib/engine";
 import { createHandler } from "@/lib/api-handler";
 import { generateInsights, type InsightInput } from "@/lib/insights-engine";
 import type { BrainPage } from "@/lib/types";
@@ -30,27 +30,18 @@ export const GET = createHandler(
   },
   async (ctx, _body, query) => {
     try {
-      // Fetch cases, judgements, and documents in parallel
-      const [casesRes, judgementsRes, docsRes] = await Promise.all([
-        fetch(`${ENGINE_URL}/api/pages/batch-list?types=legal_case&limit=200`, {
-          headers: ctx.headers,
-          signal: AbortSignal.timeout(10_000),
-        }).catch(() => null),
-        fetch(`${ENGINE_URL}/api/pages?type=legal_judgement&limit=50`, {
-          headers: ctx.headers,
-          signal: AbortSignal.timeout(10_000),
-        }).catch(() => null),
-        fetch(`${ENGINE_URL}/api/pages/batch-list?types=legal_document,document&limit=100`, {
-          headers: ctx.headers,
-          signal: AbortSignal.timeout(10_000),
-        }).catch(() => null),
+      // Fetch cases, judgements, and documents in parallel. The engine has no
+      // /api/pages/batch-list and answers /api/pages with a bare array — the
+      // old calls silently produced an empty insights page.
+      const [casePages, judgementPages, legalDocs, plainDocs] = await Promise.all([
+        listEnginePages(ctx.headers, "legal_case", 200),
+        listEnginePages(ctx.headers, "legal_judgement", 50),
+        listEnginePages(ctx.headers, "legal_document", 100),
+        listEnginePages(ctx.headers, "document", 100),
       ]);
-
-      const casesData = casesRes?.ok ? await casesRes.json() : { results: { legal_case: [] } };
-      const judgementsData = judgementsRes?.ok ? await judgementsRes.json() : { pages: [] };
-      const docsData = docsRes?.ok
-        ? await docsRes.json()
-        : { results: { legal_document: [], document: [] } };
+      const casesData = { results: { legal_case: casePages } };
+      const judgementsData = { pages: judgementPages };
+      const docsData = { results: { legal_document: legalDocs, document: plainDocs } };
 
       const cases = ((casesData.results?.legal_case ?? []) as BrainPage[]).map((p) => ({
         slug: p.slug,

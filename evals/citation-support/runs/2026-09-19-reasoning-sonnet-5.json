@@ -1,0 +1,506 @@
+{
+  "eval": "citation-support",
+  "ts": "2026-09-19T10:34:46.710Z",
+  "gold_version": 2,
+  "gold_hash": "825972096c019a4d",
+  "code_sha": "4a75ef9295-dirty",
+  "models": [
+    "anthropic:claude-sonnet-5"
+  ],
+  "tier": "reasoning",
+  "all": {
+    "n": 46,
+    "metrics": {
+      "exact_accuracy": 0.8695652173913043,
+      "lenient_accuracy": 0.9347826086956522,
+      "misgrounding_recall": 1,
+      "misgrounding_precision": 0.8421052631578947,
+      "dangerous_miss_rate": 0,
+      "false_alarm_rate": 0,
+      "pipeline_failure_rate": 0
+    },
+    "confusion": {
+      "supported": {
+        "supported": 22,
+        "partial": 3,
+        "unsupported": 0,
+        "unchecked": 0,
+        "not_grounded": 0
+      },
+      "partial": {
+        "supported": 0,
+        "partial": 2,
+        "unsupported": 3,
+        "unchecked": 0,
+        "not_grounded": 0
+      },
+      "unsupported": {
+        "supported": 0,
+        "partial": 0,
+        "unsupported": 16,
+        "unchecked": 0,
+        "not_grounded": 0
+      }
+    }
+  },
+  "dev": {
+    "n": 31,
+    "metrics": {
+      "exact_accuracy": 0.9354838709677419,
+      "lenient_accuracy": 1,
+      "misgrounding_recall": 1,
+      "misgrounding_precision": 0.8461538461538461,
+      "dangerous_miss_rate": 0,
+      "false_alarm_rate": 0,
+      "pipeline_failure_rate": 0
+    },
+    "confusion": {
+      "supported": {
+        "supported": 16,
+        "partial": 0,
+        "unsupported": 0,
+        "unchecked": 0,
+        "not_grounded": 0
+      },
+      "partial": {
+        "supported": 0,
+        "partial": 2,
+        "unsupported": 2,
+        "unchecked": 0,
+        "not_grounded": 0
+      },
+      "unsupported": {
+        "supported": 0,
+        "partial": 0,
+        "unsupported": 11,
+        "unchecked": 0,
+        "not_grounded": 0
+      }
+    }
+  },
+  "holdout": {
+    "n": 15,
+    "metrics": {
+      "exact_accuracy": 0.7333333333333333,
+      "lenient_accuracy": 0.8,
+      "misgrounding_recall": 1,
+      "misgrounding_precision": 0.8333333333333334,
+      "dangerous_miss_rate": 0,
+      "false_alarm_rate": 0,
+      "pipeline_failure_rate": 0
+    },
+    "confusion": {
+      "supported": {
+        "supported": 6,
+        "partial": 3,
+        "unsupported": 0,
+        "unchecked": 0,
+        "not_grounded": 0
+      },
+      "partial": {
+        "supported": 0,
+        "partial": 0,
+        "unsupported": 1,
+        "unchecked": 0,
+        "not_grounded": 0
+      },
+      "unsupported": {
+        "supported": 0,
+        "partial": 0,
+        "unsupported": 5,
+        "unchecked": 0,
+        "not_grounded": 0
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "vj-1489-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext bestätigt die dreijährige Verjährungsfrist ab Kenntnis von Schaden und Schädiger für Entschädigungsklagen.",
+      "ms": 1481
+    },
+    {
+      "id": "vj-879-wrongnorm",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "§ 879 ABGB regelt die Nichtigkeit sittenwidriger Verträge, nicht die Verjährung von Schadenersatzansprüchen.",
+      "ms": 2220
+    },
+    {
+      "id": "vj-1489-overreach",
+      "split": "dev",
+      "expected": "partial",
+      "acceptable": [
+        "partial",
+        "unsupported"
+      ],
+      "predicted": "unsupported",
+      "reason": "Der Quelltext kennt keine Sonderregel von fünf Jahren für Verbraucher, sondern nur die Fristen von drei bzw. dreißig Jahren.",
+      "ms": 2553
+    },
+    {
+      "id": "sr-1295-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext gewährt dem Geschädigten genau diesen Anspruch auf Ersatz des schuldhaft zugefügten Schadens.",
+      "ms": 1766
+    },
+    {
+      "id": "sr-1295-strict",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "§ 1295 ABGB regelt Verschuldenshaftung, keine verschuldensunabhängige Gefährdungshaftung des Kfz-Halters.",
+      "ms": 1839
+    },
+    {
+      "id": "mi-1096-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt genau die Zinsbefreiung des Mieters für Dauer und Maß der Unbrauchbarkeit bei Mängeln, die den bedungenen Gebrauch verhindern.",
+      "ms": 2685
+    },
+    {
+      "id": "mi-1096-wrongnorm",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "§ 1096 ABGB regelt Erhaltungspflichten und Zinsminderung bei Mängeln, nicht die vorzeitige Auflösung wegen Zahlungsverzugs.",
+      "ms": 1708
+    },
+    {
+      "id": "mi-1096-overreach",
+      "split": "dev",
+      "expected": "partial",
+      "acceptable": [
+        "partial",
+        "unsupported"
+      ],
+      "predicted": "partial",
+      "reason": "Der Quelltext regelt nur die Zinsbefreiung bei Unbrauchbarkeit, nicht einen verschuldensunabhängigen Schadenersatzanspruch.",
+      "ms": 1466
+    },
+    {
+      "id": "mi-1117-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt genau diesen Fall: bei Gesundheitsschädlichkeit der Wohnräume besteht das Recht zum Abstehen ohne Kündigung auch bei Verzicht.",
+      "ms": 1904
+    },
+    {
+      "id": "mi-1118-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt genau diesen Fall des Zahlungsverzugs nach Mahnung als Grund für vorzeitige Vertragsauflösung.",
+      "ms": 1769
+    },
+    {
+      "id": "nb-364-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Abs 2 nennt Geräusch/Lärm ausdrücklich als untersagbare Einwirkung, wenn ortsübliches Maß überschritten und ortsübliche Nutzung wesentlich beeinträchtigt wird.",
+      "ms": 1856
+    },
+    {
+      "id": "nb-364-wrongnorm",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "§ 364 ABGB regelt nachbarrechtliche Immissionsabwehr, nicht das Recht des Mieters auf Mietzinsminderung wegen Baulärms.",
+      "ms": 1727
+    },
+    {
+      "id": "wh-1319a-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext bestätigt, dass der Wegehalter nur bei vorsätzlichem oder grob fahrlässigem Verschulden von ihm oder seinen Leuten haftet.",
+      "ms": 1743
+    },
+    {
+      "id": "wh-1319a-contra",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "Der Quelltext verlangt Vorsatz oder grobe Fahrlässigkeit, nicht bloß leichte Fahrlässigkeit.",
+      "ms": 2123
+    },
+    {
+      "id": "gw-933-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "§ 933 Abs. 1 ABGB nennt genau diese Fristen von zwei Jahren bei beweglichen und drei Jahren bei unbeweglichen Sachen.",
+      "ms": 1658
+    },
+    {
+      "id": "gw-933-contra",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "Die Frist für unbewegliche Sachen beträgt laut Quelltext drei Jahre, nicht fünf.",
+      "ms": 1491
+    },
+    {
+      "id": "gw-933-overreach",
+      "split": "dev",
+      "expected": "partial",
+      "acceptable": [
+        "partial",
+        "unsupported"
+      ],
+      "predicted": "partial",
+      "reason": "Die zweijährige Frist für bewegliche Sachen ist korrekt, aber eine 14-tägige Rügepflicht ist in § 933 ABGB nicht geregelt.",
+      "ms": 1802
+    },
+    {
+      "id": "gw-932-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "§ 932 Abs. 2 ABGB regelt, dass zunächst nur Verbesserung oder Austausch verlangt werden kann.",
+      "ms": 1576
+    },
+    {
+      "id": "gw-932-contra",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "Vertragsauflösung ist nur nachrangig möglich, wenn Verbesserung/Austausch unmöglich, unverhältnismäßig oder gescheitert sind, nicht bei jedem Mangel sofort.",
+      "ms": 1828
+    },
+    {
+      "id": "bl-1298-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt genau diese Beweislastumkehr für den Schuldner bezüglich fehlenden Verschuldens.",
+      "ms": 1576
+    },
+    {
+      "id": "kv-1325-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt genau Heilungskosten, Verdienstentgang und angemessenes Schmerzengeld bei Körperverletzung.",
+      "ms": 1323
+    },
+    {
+      "id": "kv-1325-contra",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "Die Norm nennt kein Höchstbetrag von 20.000 Euro, sondern verlangt ein den Umständen angemessenes Schmerzengeld ohne Deckelung.",
+      "ms": 1541
+    },
+    {
+      "id": "kv-1325-overreach",
+      "split": "dev",
+      "expected": "partial",
+      "acceptable": [
+        "partial",
+        "unsupported"
+      ],
+      "predicted": "unsupported",
+      "reason": "Der Quelltext verlangt für Schmerzengeld kein grobes Verschulden, sondern nur eine Körperverletzung und Verlangen des Verletzten.",
+      "ms": 4909
+    },
+    {
+      "id": "vf-bvg7-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext bestätigt wörtlich, dass alle Staatsbürger vor dem Gesetz gleich sind.",
+      "ms": 1649
+    },
+    {
+      "id": "vf-bvg7-wrongnorm",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "Art. 7 B-VG regelt den Gleichheitsgrundsatz, nicht das Grundrecht auf Datenschutz (dieses findet sich in § 1 DSG).",
+      "ms": 1930
+    },
+    {
+      "id": "mrg-1-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "§ 1 Abs 1 MRG regelt genau, dass das Gesetz für die Miete von Wohnungen und Geschäftsräumlichkeiten gilt.",
+      "ms": 1782
+    },
+    {
+      "id": "zpo-226-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "§226 Abs.1 ZPO verlangt ausdrücklich ein bestimmtes Begehren in der Klage.",
+      "ms": 1442
+    },
+    {
+      "id": "zpo-226-wrong",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "§ 226 ZPO regelt den notwendigen Inhalt der Klage, enthält aber keine Frist von vier Wochen ab Zustellung.",
+      "ms": 1869
+    },
+    {
+      "id": "stgb-5-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt genau diese Definition des Vorsatzes (dolus eventualis) in § 5 Abs. 1 StGB.",
+      "ms": 1556
+    },
+    {
+      "id": "eu-dsgvo6-ok",
+      "split": "dev",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Art. 6 Abs. 1 lit. a DSGVO nennt die Einwilligung der betroffenen Person ausdrücklich als Rechtmäßigkeitsgrundlage.",
+      "ms": 1956
+    },
+    {
+      "id": "eu-dsgvo6-wrongnorm",
+      "split": "dev",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "Art. 6 DSGVO regelt die Rechtmäßigkeit der Verarbeitung, nicht ein Löschungsrecht, das in Art. 17 DSGVO geregelt ist.",
+      "ms": 1824
+    },
+    {
+      "id": "h-1311-ok",
+      "split": "holdout",
+      "expected": "supported",
+      "predicted": "partial",
+      "reason": "Quelltext nennt Vermögen oder Person, Aussage erwähnt nur Vermögen und lässt Person aus.",
+      "ms": 1707
+    },
+    {
+      "id": "h-1311-wrongnorm",
+      "split": "holdout",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "§ 1311 ABGB regelt die Zufallshaftung bei Verschulden, Gesetzesübertretung oder unnötiger Einmischung, nicht die Tierhalterhaftung.",
+      "ms": 1582
+    },
+    {
+      "id": "h-1313a-ok",
+      "split": "holdout",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt genau die Haftung für Erfüllungsgehilfen wie für eigenes Verschulden.",
+      "ms": 1718
+    },
+    {
+      "id": "h-1313a-wrong",
+      "split": "holdout",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "Die Norm setzt ein Schuldverhältnis (Leistungspflicht) voraus und regelt keine deliktische Haftung außerhalb von Verträgen.",
+      "ms": 1532
+    },
+    {
+      "id": "h-1320-ok",
+      "split": "holdout",
+      "expected": "supported",
+      "predicted": "partial",
+      "reason": "Der Quelltext nennt zusätzlich die Beaufsichtigung als Entlastungsmöglichkeit, die in der Aussage fehlt, im Kern aber trifft die Aussage zu.",
+      "ms": 2360
+    },
+    {
+      "id": "h-1320-overreach",
+      "split": "holdout",
+      "expected": "partial",
+      "acceptable": [
+        "partial",
+        "unsupported"
+      ],
+      "predicted": "unsupported",
+      "reason": "Der Quelltext enthält keine Haftungshöchstgrenze von 50.000 Euro, diese Begrenzung ist frei erfunden.",
+      "ms": 1550
+    },
+    {
+      "id": "h-kschg1-ok",
+      "split": "holdout",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "§1 KSchG regelt genau den Geltungsbereich für Rechtsgeschäfte zwischen Unternehmern und Verbrauchern.",
+      "ms": 1626
+    },
+    {
+      "id": "h-dsgvo17-ok",
+      "split": "holdout",
+      "expected": "supported",
+      "predicted": "partial",
+      "reason": "Der Löschanspruch besteht laut Quelltext nur bei Vorliegen eines der in Abs.1 genannten Gründe, nicht unbedingt, was die Aussage nicht erwähnt.",
+      "ms": 2115
+    },
+    {
+      "id": "h-dsgvo17-wrongnorm",
+      "split": "holdout",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "Art. 17 DSGVO regelt das Recht auf Löschung, nicht die Pflicht zur Benennung eines Datenschutzbeauftragten (das regelt Art. 37 DSGVO).",
+      "ms": 1964
+    },
+    {
+      "id": "h-dsgvo82-ok",
+      "split": "holdout",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext deckt genau diese Aussage in Art. 82 Abs. 1 DSGVO ab.",
+      "ms": 1671
+    },
+    {
+      "id": "h-emrk8-ok",
+      "split": "holdout",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt genau das Recht auf Achtung des Privat- und Familienlebens und ist mit Verfassungsrang in Österreich geltend.",
+      "ms": 1684
+    },
+    {
+      "id": "h-emrk8-wrongnorm",
+      "split": "holdout",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "Art. 8 EMRK regelt das Recht auf Achtung des Privat- und Familienlebens, nicht das Recht auf ein faires Verfahren (das ist Art. 6 EMRK).",
+      "ms": 1577
+    },
+    {
+      "id": "h-1431-ok",
+      "split": "holdout",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt genau den Fall der irrtümlichen Leistung ohne Rechtsgrund und gewährt Rückforderung.",
+      "ms": 2320
+    },
+    {
+      "id": "h-ugb377-ok",
+      "split": "holdout",
+      "expected": "supported",
+      "predicted": "supported",
+      "reason": "Der Quelltext regelt genau diese Anzeigepflicht binnen angemessener Frist bei beiderseitigem Unternehmensgeschäft.",
+      "ms": 2192
+    },
+    {
+      "id": "h-ugb377-contra",
+      "split": "holdout",
+      "expected": "unsupported",
+      "predicted": "unsupported",
+      "reason": "§ 377 UGB gilt nur für beiderseitige Unternehmensgeschäfte, nicht für Verbraucher, und nennt keine starre 14-Tage-Frist, sondern eine angemessene Frist.",
+      "ms": 2097
+    }
+  ]
+}

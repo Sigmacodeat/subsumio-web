@@ -268,7 +268,7 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
     let criticReview: string | undefined;
     let revisedSynthesis: string | undefined;
     if (!data.skip_critic) {
-      const criticMsg = await runChild(queue, collector, ctx, {
+      const criticMsg = await runChild(engine, queue, collector, ctx, {
         prompt: `Review the following legal analysis for accuracy, completeness, and citation quality.\n\n${synthesis}`,
         subagent_def: "legal-critic",
         max_turns: 20,
@@ -286,7 +286,7 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
         // Aufgabenstellung des finalen Outputs am besten).
         if (criticRecommendsRevision(criticReview)) {
           const reviser = plan.steps[plan.steps.length - 1]?.specialist ?? "legal-researcher";
-          const reviseMsg = await runChild(queue, collector, ctx, {
+          const reviseMsg = await runChild(engine, queue, collector, ctx, {
             prompt: [
               "Überarbeite die folgende Analyse anhand des Critic-Feedbacks.",
               "Behebe jeden genannten Mangel. Behalte korrekte Teile bei.",
@@ -306,6 +306,14 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
               typeof reviseMsg.result === "string"
                 ? reviseMsg.result
                 : JSON.stringify(reviseMsg.result);
+          }
+          // A "reject" is not cured by one unreviewed revision round: the
+          // output stays visibly blocked for a lawyer's review.
+          if (parseCriticVerdict(criticReview) === "reject") {
+            const banner =
+              "> ⚠️ **Vom Prüf-Agenten abgelehnt.** Die Überarbeitung wurde nicht erneut geprüft. " +
+              "Nicht ohne anwaltliche Kontrolle verwenden.\n\n";
+            revisedSynthesis = banner + (revisedSynthesis ?? synthesis);
           }
         }
       }
@@ -523,12 +531,25 @@ export function withDependencyContext(
   return `${step.prompt}\n\n## Kontext: Ergebnis aus Schritt ${dep + 1} (${specialist})\n\n${resultText}`;
 }
 
+export type CriticVerdict = "publish" | "revise" | "reject";
+
+/**
+ * Read the critic's verdict. The critic ends with `VERDICT: publish|revise|reject`;
+ * a JSON `"recommendation"`/`"empfehlung"` field is accepted too. The old
+ * free-text regex fired on "no need to revise". Without a readable verdict the
+ * result is "revise" — fail-closed: an unreadable review is not an approval.
+ */
+export function parseCriticVerdict(review: string): CriticVerdict {
+  const line = [...review.matchAll(/VERDICT:\s*(publish|revise|reject)\b/gi)].pop();
+  if (line) return line[1]!.toLowerCase() as CriticVerdict;
+  const field = /"(?:recommendation|empfehlung)"\s*:\s*"(publish|revise|reject)"/i.exec(review);
+  if (field) return field[1]!.toLowerCase() as CriticVerdict;
+  return "revise";
+}
+
 /** Erkennen, ob ein Critic-Review eine Überarbeitung empfiehlt. */
 export function criticRecommendsRevision(review: string): boolean {
-  // Der Critic ist instruiert, eine Empfehlung "publish" | "revise" | "reject"
-  // auszugeben. Wir matchen tolerant (JSON-Feld ODER Fließtext), aber nur als
-  // ganzes Wort, damit "revised" o. ä. nicht falsch triggert.
-  return /\b(revise|reject)\b/i.test(review);
+  return parseCriticVerdict(review) !== "publish";
 }
 
 // ── Case Context Loader ─────────────────────────────────────
@@ -849,6 +870,7 @@ class InboxCollector {
 
 /** Submit ein einzelnes Child und warte auf sein Ergebnis (20 min). */
 async function runChild(
+  engine: BrainEngine,
   queue: MinionQueue,
   collector: InboxCollector,
   ctx: MinionJobContext,
@@ -864,6 +886,8 @@ async function runChild(
     },
     { allowProtectedSubmit: true }
   );
+  // Critic and revise children spend from the same cap as the specialists.
+  await inheritBudgetOwner(engine, child.id, ctx.id);
   const results = await collector.waitFor([child.id], 20 * 60 * 1000);
   return results.get(child.id) ?? null;
 }
