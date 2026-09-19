@@ -4,7 +4,7 @@ import { getStore, getOrgStore } from "@/lib/auth/store";
 import {
   AI_MODELS,
   isValidModelId,
-  DEFAULT_MODEL_ID,
+  AUTO_MODEL_ID,
   getModelById,
   isModelAllowedForPolicy,
   modelsForPolicy,
@@ -32,7 +32,9 @@ export const GET = createHandler(
     if (!user) return apiError("user_not_found", "User not found", 404);
 
     const policy = await resolveModelPolicy(user.orgId);
-    const preferredModelId = user.preferredModel ?? DEFAULT_MODEL_ID;
+    // A stored pick that is no longer offered (retired model) reads as "auto".
+    const stored = user.preferredModel ?? AUTO_MODEL_ID;
+    const preferredModelId = isValidModelId(stored) ? stored : AUTO_MODEL_ID;
     const preferredModel = getModelById(preferredModelId);
 
     return apiSuccess({
@@ -58,16 +60,27 @@ export const PATCH = createHandler(
     }),
   },
   async (ctx, body, _query, _req) => {
-    // "auto" means no explicit preference — use the default model
-    const modelId = body.modelId === "auto" ? DEFAULT_MODEL_ID : body.modelId;
+    const store = getStore();
 
-    if (!isValidModelId(modelId)) {
-      return apiError("invalid_model", `Unknown model ID: ${body.modelId}`, 400, {
-        availableModels: [...AI_MODELS.map((m) => m.id), "auto"],
+    // "auto" clears the pick: the engine then routes by question complexity.
+    if (body.modelId === AUTO_MODEL_ID) {
+      const cleared = await store.update(ctx.user.id, { preferredModel: null });
+      if (!cleared) return apiError("user_not_found", "User not found", 404);
+      return apiSuccess({
+        preferredModelId: AUTO_MODEL_ID,
+        preferredModel: null,
+        brainId: ctx.brainId,
       });
     }
 
-    const store = getStore();
+    const modelId = body.modelId;
+
+    if (!isValidModelId(modelId)) {
+      return apiError("invalid_model", `Unknown model ID: ${body.modelId}`, 400, {
+        availableModels: [...AI_MODELS.map((m) => m.id), AUTO_MODEL_ID],
+      });
+    }
+
     const user = await store.getById(ctx.user.id);
     if (!user) return apiError("user_not_found", "User not found", 404);
 

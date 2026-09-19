@@ -54,6 +54,7 @@ import type {
 } from "./types.ts";
 import { resolveRecipe, assertTouchpoint, parseModelId } from "./model-resolver.ts";
 import { resolveModel, TIER_DEFAULTS } from "../model-config.ts";
+import { recordAiSpend } from "./spend-log.ts";
 import type { BrainEngine } from "../engine.ts";
 import { dimsProviderOptions } from "./dims.ts";
 import { hasAnthropicKey } from "./anthropic-key.ts";
@@ -1173,6 +1174,24 @@ const zeroEntropyCompatFetch = (async (input: RequestInfo | URL, init?: RequestI
 }) as unknown as typeof fetch;
 
 /**
+ * Claude Opus 5 / Sonnet 5 / Fable 5.x think by default at high effort, and
+ * thinking is billed as output. SUBSUMIO_OPENROUTER_REASONING_EFFORT
+ * (low | medium | high) caps it for every OpenRouter call to those models that
+ * does not set its own `reasoning`. Unset = provider default (no change). Kept
+ * opt-in until verified live against OpenRouter's mapping for these models.
+ */
+const REASONING_EFFORT_MODELS = /^anthropic\/claude-(opus-5|sonnet-5|fable-5)/;
+
+export function applyReasoningEffort(body: Record<string, unknown>): boolean {
+  const effort = process.env.SUBSUMIO_OPENROUTER_REASONING_EFFORT?.trim().toLowerCase();
+  if (effort !== "low" && effort !== "medium" && effort !== "high") return false;
+  if (typeof body.model !== "string" || !REASONING_EFFORT_MODELS.test(body.model)) return false;
+  if (body.reasoning !== undefined) return false;
+  body.reasoning = { effort };
+  return true;
+}
+
+/**
  * OpenRouter fetch wrapper for DeepSeek thinking mode compatibility.
  *
  * DeepSeek via OpenRouter generates `reasoning_content` in thinking mode. When
@@ -1483,6 +1502,18 @@ export async function embed(texts: string[], opts?: EmbedOpts): Promise<Float32A
     _embedThrew = true;
     throw err;
   } finally {
+    {
+      const cpt = recipe.touchpoints?.embedding?.chars_per_token ?? DEFAULT_CHARS_PER_TOKEN;
+      const chars = truncated.reduce((sum, t) => sum + t.length, 0);
+      recordAiSpend({
+        kind: "embed",
+        model: `${recipe.id}:${modelId}`,
+        inputTokens: _embedThrew ? 0 : Math.ceil(chars / Math.max(cpt, 1)),
+        outputTokens: 0,
+        label: "gateway.embed",
+        failed: _embedThrew,
+      });
+    }
     if (tracker) {
       // Embed token usage is not surfaced by the AI SDK shape we use; charge
       // based on the truncated input character count using the recipe's
@@ -2736,6 +2767,7 @@ async function resolveChatProvider(
  * crashed on.
  */
 function openRouterTransformInner(body: Record<string, unknown>): Record<string, unknown> {
+  applyReasoningEffort(body);
   const messages = body.messages;
   const useCacheNow = _openRouterCacheEnabled;
 
@@ -3170,9 +3202,25 @@ export async function chat(opts: ChatOpts): Promise<ChatResult> {
       : opts.system;
 
   let _budgetRecorded = false;
-  const _recordBudget = (modelLabel: string, inputTokens: number, outputTokens: number): void => {
-    if (!tracker || _budgetRecorded) return;
+  const _recordBudget = (
+    modelLabel: string,
+    inputTokens: number,
+    outputTokens: number,
+    failed = false
+  ): void => {
+    if (_budgetRecorded) return;
     _budgetRecorded = true;
+    recordAiSpend({
+      kind: "chat",
+      model: modelLabel,
+      inputTokens,
+      // A failed call is billed for input only; the pessimistic output ceiling
+      // is for budget reservation, not for the spend ledger.
+      outputTokens: failed ? 0 : outputTokens,
+      label: "gateway.chat",
+      failed,
+    });
+    if (!tracker) return;
     try {
       tracker.record({
         modelId: modelLabel,
@@ -3310,7 +3358,7 @@ export async function chat(opts: ChatOpts): Promise<ChatResult> {
       inputTokens: estimatedInputTokens,
       outputTokens: maxOutputTokens,
     });
-    _recordBudget(`${recipe.id}:${modelId}`, fallback.inputTokens, fallback.outputTokens);
+    _recordBudget(`${recipe.id}:${modelId}`, fallback.inputTokens, fallback.outputTokens, true);
     throw normalizeAIError(err, `chat(${recipe.id}:${modelId})`);
   }
 }
@@ -3484,9 +3532,18 @@ export async function* chatStream(
       : opts.system;
 
   let _budgetRecorded = false;
-  const _recordBudget = (inputTokens: number, outputTokens: number): void => {
-    if (!tracker || _budgetRecorded) return;
+  const _recordBudget = (inputTokens: number, outputTokens: number, failed = false): void => {
+    if (_budgetRecorded) return;
     _budgetRecorded = true;
+    recordAiSpend({
+      kind: "chat",
+      model: `${recipe.id}:${modelId}`,
+      inputTokens,
+      outputTokens: failed ? 0 : outputTokens,
+      label: "gateway.chatStream",
+      failed,
+    });
+    if (!tracker) return;
     try {
       tracker.record({
         modelId: `${recipe.id}:${modelId}`,
@@ -3591,7 +3648,7 @@ export async function* chatStream(
       inputTokens: estimatedInputTokens,
       outputTokens: maxOutputTokens,
     });
-    _recordBudget(fallback.inputTokens, fallback.outputTokens);
+    _recordBudget(fallback.inputTokens, fallback.outputTokens, true);
     throw normalizeAIError(err, `chatStream(${recipe.id}:${modelId})`);
   }
 }
@@ -4236,10 +4293,19 @@ export async function rerank(input: RerankInput): Promise<RerankResult[]> {
 
   let _rerankRecorded = false;
   const _rerankRecord = (): void => {
-    if (!tracker || _rerankRecorded) return;
+    if (_rerankRecorded) return;
     _rerankRecorded = true;
+    const rerankChars = input.query.length + input.documents.reduce((s, d) => s + d.length, 0);
+    recordAiSpend({
+      kind: "rerank",
+      model: modelStr,
+      inputTokens: Math.ceil(rerankChars / 4),
+      outputTokens: 0,
+      label: "gateway.rerank",
+    });
+    if (!tracker) return;
     try {
-      const totalChars = input.query.length + input.documents.reduce((s, d) => s + d.length, 0);
+      const totalChars = rerankChars;
       tracker.record({
         modelId: modelStr,
         inputTokens: Math.ceil(totalChars / 4),

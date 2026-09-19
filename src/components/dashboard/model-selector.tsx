@@ -162,7 +162,7 @@ export function ModelSelector({
                     isCompact ? "text-xs" : "text-xs"
                   )}
                 >
-                  Engine wählt automatisch das optimale Modell
+                  Sonnet 5, bei komplexen Fragen Opus 5 — spart Kosten
                 </p>
               </div>
               {activeModelId === "auto" && (

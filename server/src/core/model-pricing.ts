@@ -79,6 +79,7 @@ export const CANONICAL_PRICING: Record<string, ModelPricing> = {
   "openrouter:anthropic/claude-sonnet-5": { input: 2.0, output: 10.0 },
   "openrouter:anthropic/claude-opus-5": { input: 5.0, output: 25.0 },
   "openrouter:anthropic/claude-fable-5.1": { input: 10.0, output: 50.0 },
+  "openrouter:mistralai/mistral-large": { input: 2.0, output: 6.0 },
   "anthropic:claude-haiku-4-5-20251001": { input: 1.0, output: 5.0 },
   "anthropic:claude-3-5-sonnet-20241022": { input: 3.0, output: 15.0 },
   "anthropic:claude-3-5-haiku-20241022": { input: 0.8, output: 4.0 },

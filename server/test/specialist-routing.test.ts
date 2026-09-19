@@ -186,3 +186,62 @@ describe("thinking-model output floor", () => {
     expect(effectiveMaxOutputTokens("anthropic:claude-sonnet-4-6", undefined)).toBe(4096);
   });
 });
+
+describe("user model choice from the web app", () => {
+  it("maps every offered catalogue id and nothing else", async () => {
+    const { resolveUserModelChoice } = await import("../src/core/model-config.ts");
+    for (const id of [
+      "claude-haiku-4-5",
+      "claude-sonnet-5",
+      "claude-opus-5",
+      "claude-fable-5-1",
+      "mistral-large-3",
+    ]) {
+      expect(resolveUserModelChoice(id), id).toBeTruthy();
+    }
+    expect(resolveUserModelChoice("auto")).toBeUndefined();
+    expect(resolveUserModelChoice("claude-sonnet-4-6")).toBeUndefined();
+    expect(resolveUserModelChoice("openrouter:x-ai/grok-4.3")).toBeUndefined();
+    expect(resolveUserModelChoice(undefined)).toBeUndefined();
+    expect(resolveUserModelChoice(42)).toBeUndefined();
+  });
+
+  it("every choice has a price, so budgets never fail closed on it", async () => {
+    const { resolveUserModelChoice } = await import("../src/core/model-config.ts");
+    const { canonicalLookup } = await import("../src/core/model-pricing.ts");
+    for (const id of ["claude-haiku-4-5", "claude-sonnet-5", "claude-opus-5", "claude-fable-5-1"]) {
+      expect(canonicalLookup(resolveUserModelChoice(id)), id).toBeDefined();
+    }
+  });
+});
+
+describe("OpenRouter reasoning effort cap", () => {
+  it("is off unless configured, and only touches Claude 5-class models", async () => {
+    const { applyReasoningEffort } = await import("../src/core/ai/gateway.ts");
+    const prev = process.env.SUBSUMIO_OPENROUTER_REASONING_EFFORT;
+    try {
+      delete process.env.SUBSUMIO_OPENROUTER_REASONING_EFFORT;
+      const off: Record<string, unknown> = { model: "anthropic/claude-sonnet-5" };
+      expect(applyReasoningEffort(off)).toBe(false);
+      expect(off.reasoning).toBeUndefined();
+
+      process.env.SUBSUMIO_OPENROUTER_REASONING_EFFORT = "medium";
+      const sonnet: Record<string, unknown> = { model: "anthropic/claude-sonnet-5" };
+      expect(applyReasoningEffort(sonnet)).toBe(true);
+      expect(sonnet.reasoning).toEqual({ effort: "medium" });
+
+      const haiku: Record<string, unknown> = { model: "anthropic/claude-haiku-4.5" };
+      expect(applyReasoningEffort(haiku)).toBe(false);
+
+      const explicit: Record<string, unknown> = {
+        model: "anthropic/claude-opus-5",
+        reasoning: { effort: "high" },
+      };
+      expect(applyReasoningEffort(explicit)).toBe(false);
+      expect(explicit.reasoning).toEqual({ effort: "high" });
+    } finally {
+      if (prev === undefined) delete process.env.SUBSUMIO_OPENROUTER_REASONING_EFFORT;
+      else process.env.SUBSUMIO_OPENROUTER_REASONING_EFFORT = prev;
+    }
+  });
+});

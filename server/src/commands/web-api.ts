@@ -3266,6 +3266,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       ? (rawMode as "conservative" | "balanced" | "tokenmax")
       : "balanced";
 
+    // The user's model pick from the web app (catalogue id). Unknown ids and
+    // "auto" resolve to undefined → runThink routes by question complexity.
+    const { resolveUserModelChoice } = await import("../core/model-config.ts");
+    const pickedModel = resolveUserModelChoice(body?.model);
+
     const sourceId = requestSourceId(req);
 
     // Start SSE immediately so the browser can render the streaming response.
@@ -3309,6 +3314,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const result = await runThink(engine, {
         question: query,
         ...(instructions ? { instructions } : {}),
+        ...(pickedModel ? { model: pickedModel } : {}),
         remote: false,
         sourceId,
         // Federate reads across the tenant's source + shared statute corpus so

@@ -138,6 +138,42 @@ export const TIER_DEFAULTS: Record<ModelTier, string> = isOpenRouterOnlyDeployme
   ? OPENROUTER_TIER_DEFAULTS
   : NATIVE_TIER_DEFAULTS;
 
+/**
+ * Models a user may pick for an answer in the web app (chat, research,
+ * Copilot). Keys are the web catalogue ids (`src/lib/model-config.ts`); values
+ * are the route per deployment mode. Anything not listed — including "auto" —
+ * resolves to undefined, and think routes by question complexity.
+ */
+const USER_MODEL_CHOICES: Record<string, { native: string; openrouter: string }> = {
+  "claude-haiku-4-5": {
+    native: "anthropic:claude-haiku-4-5",
+    openrouter: "openrouter:anthropic/claude-haiku-4.5",
+  },
+  "claude-sonnet-5": {
+    native: "anthropic:claude-sonnet-5",
+    openrouter: "openrouter:anthropic/claude-sonnet-5",
+  },
+  "claude-opus-5": {
+    native: "anthropic:claude-opus-5",
+    openrouter: "openrouter:anthropic/claude-opus-5",
+  },
+  "claude-fable-5-1": {
+    native: "anthropic:claude-fable-5-1",
+    openrouter: "openrouter:anthropic/claude-fable-5.1",
+  },
+  "mistral-large-3": {
+    native: "mistral:mistral-large-3",
+    openrouter: "openrouter:mistralai/mistral-large",
+  },
+};
+
+export function resolveUserModelChoice(choice: unknown): string | undefined {
+  if (typeof choice !== "string") return undefined;
+  const entry = USER_MODEL_CHOICES[choice];
+  if (!entry) return undefined;
+  return isOpenRouterOnlyDeployment() ? entry.openrouter : entry.native;
+}
+
 function enforceProviderMode(model: string): string {
   if (isOpenRouterOnlyDeployment() && !model.startsWith("openrouter:")) {
     throw new Error(

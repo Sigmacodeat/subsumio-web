@@ -314,8 +314,10 @@ services:
       PIPELINE_RECONCILE_GAP: ${PIPELINE_RECONCILE_GAP:-0.05}
       # Alert webhook (optional — set ALERT_WEBHOOK in .env to enable)
       ALERT_WEBHOOK: ${ALERT_WEBHOOK:-}
-      # OpenRouter (for embedding calls via auto-embed-pg.ts)
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      # OpenRouter (for embedding calls via auto-embed-pg.ts). Set
+      # OPENROUTER_API_KEY_PIPELINE in .env to give bulk embedding its own key
+      # with its own spend limit, separate from the engine's answers.
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY_PIPELINE:-${OPENROUTER_API_KEY:-}}
       OPENROUTER_API_KEY_FALLBACK: ${OPENROUTER_API_KEY_FALLBACK:-}
       SUBSUMIO_EMBEDDING_MODEL: ${SUBSUMIO_EMBEDDING_MODEL:-openrouter:openai/text-embedding-3-small}
       SUBSUMIO_EMBEDDING_DIMENSIONS: ${SUBSUMIO_EMBEDDING_DIMENSIONS:-1536}
@@ -331,6 +333,9 @@ services:
       LAW_CORPUS_ROOT: /law-corpus
       # Config home — must match engine so gbrain config.json is found
       GBRAIN_HOME: /data
+      # /data is mounted read-only here; the AI spend ledger (ai-spend-*.jsonl)
+      # goes to the writable log volume instead.
+      GBRAIN_AUDIT_DIR: /root/subsumio-pipeline-logs/audit
       # Anthropic + OpenAI (for LLM calls in pipeline scripts)
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
