@@ -217,6 +217,29 @@ export async function lookupCorpusParagraph(
     // We strip the frontmatter so header metadata doesn't match as a false positive.
     const bodyStart = text.indexOf("---", 3);
     const bodyText = bodyStart !== -1 ? text.slice(bodyStart + 3).trimStart() : text;
+
+    // An article is a heading line of its own ("Artikel 17"). Prefer it: the
+    // first loose mention can sit in the recitals ("… Artikel 17 AEUV …") and
+    // would verify — and show — the wrong text. Read up to the next heading.
+    // [^\\S\\n] = any whitespace except a line break — EUR-Lex puts a no-break
+    // space (U+00A0) between "Artikel" and the number.
+    const headingRx = new RegExp(
+      `(?:^|\\n)[^\\S\\n]*(?:Artikel|Art\\.?|Article)[^\\S\\n]*${escapedPara}[^\\S\\n]*(?=\\n)`,
+      "i"
+    );
+    const heading = headingRx.exec(bodyText);
+    if (heading) {
+      const start = heading.index + (heading[0].startsWith("\n") ? 1 : 0);
+      const rest = bodyText.slice(start + heading[0].length);
+      const nextRel = rest.search(
+        /\n[^\S\n]*(?:Artikel|Art\.?|Article)[^\S\n]*\d+[a-z]*[^\S\n]*(?=\n)/i
+      );
+      const body = bodyText
+        .slice(start, start + heading[0].length + (nextRel !== -1 ? nextRel : 6000))
+        .trim();
+      if (body.length > paraNum.length + 20) return body.slice(0, 6000);
+    }
+
     const articleIdx = bodyText.search(
       new RegExp(`(?:Art\\.?|Artikel|Article)\\s*${escapedPara}\\b`, "i")
     );

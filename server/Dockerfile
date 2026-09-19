@@ -50,3 +50,9 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=3 \
   CMD bun -e "fetch('http://127.0.0.1:'+(process.env.PORT||3131)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 ENTRYPOINT ["bash", "docker-entrypoint.sh"]
+
+# Last on purpose: a per-deploy value here keeps every layer above cached.
+# The commit this image was built from (set by server/deploy/netcup/deploy-code.sh).
+# Without it the label inherited from the base image named a foreign revision.
+ARG GIT_SHA=unknown
+LABEL org.opencontainers.image.revision=$GIT_SHA
