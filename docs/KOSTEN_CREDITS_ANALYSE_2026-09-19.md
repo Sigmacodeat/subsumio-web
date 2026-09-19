@@ -118,6 +118,20 @@ Fixkosten zusätzlich: netcup-Server ≈ 69 €/Monat netto für alles.
 4. **Website verspricht 17- bis 20-mal mehr inklusive Anfragen als der Code gewährt** (Abschnitt 4). Entweder
    Kunden werden enttäuscht (Code) oder es wird teuer (Versprechen). Muss vor dem Verkaufsstart entschieden werden.
 
+### Stand 2026-09-19 abends — behoben
+- Punkt 1: `agents`, `legal/subsumption`, `legal/analyze` ziehen jetzt ab (Analyse nur bei Nutzeraufruf; interne
+  Pipeline-Aufrufe rechnen weiter tokengenau ab).
+- Punkt 2: Fallstrategie, Gegnersimulation, Berufungsgründe (je 3 Credits), Tabellenfrage und E-Mail-Entwurf
+  (je 1 Credit) prüfen und ziehen Credits ab. Recherche-Agent, Agenten-Vorlagen und manueller Rundown (je 5 Credits)
+  ebenso. Portal-Chat: bewusst nicht der Kanzlei belastet, aber auf 30 Antworten pro Akte und Tag gedeckelt.
+- **Neu gefunden und behoben:** Der Rundown-Cron (täglich 5 Uhr) startete einen Agentenlauf für **jedes** Konto,
+  auch Gratis-, abgelaufene und deaktivierte. Läuft jetzt nur für Kanzleien mit bezahltem Tarif oder laufendem Test.
+- **Neu gefunden und behoben:** Das Cockpit-Briefing lief bei jedem Dashboard-Besuch durch die komplette
+  Chat-Pipeline (≈ 0,09 €); jetzt ein einzelner Utility-Aufruf (≈ 0,002 €).
+- Wächter-Test `src/app/api/credit-coverage.test.ts`: jede Route, die ein Modell aufruft, bucht Credits ab oder
+  steht mit Begründung auf der Ausnahmeliste.
+- Offen: Punkt 3 (Dokumentanalyse nach Größe) und Punkt 4 (Kontingente) — Entscheidung nötig.
+
 ## 6. Warum es keine gemessenen Zahlen gibt
 
 - Festpreis-Aktionen (System A) schreiben nur „1 Credit abgezogen“, **nicht** Modell und Tokens
@@ -143,6 +157,11 @@ SELECT model, count(*) AS aufrufe, sum(tokens_in) AS tin, sum(tokens_out) AS tou
  WHERE reported_at > now() - interval '30 days'
  GROUP BY model;
 ```
+
+**Token-Protokoll pro Aktion (offen):** Eine Chat-Frage besteht aus mehreren Modellaufrufen; die Engine summiert
+deren `usage` nirgends. Richtiger Ort ist der KI-Gateway (`server/src/core/ai/gateway.ts`): Verbrauch pro Anfrage
+aufsummieren, im Ergebnis mitliefern, in `subsumio_credit_transactions` (`model_id`, `input_tokens`, …) schreiben.
+Bis dahin: Monatsabgleich über die Anthropic Usage & Cost API.
 
 ## 7. Empfehlung
 

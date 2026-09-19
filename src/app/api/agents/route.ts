@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
-import { createHandler, apiError } from "@/lib/api-handler";
+import { createHandler, apiError, recordCreditConsumption } from "@/lib/api-handler";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/agents");
@@ -87,7 +87,9 @@ export const POST = createHandler(
         });
       }
 
-      return Response.json(await upstream.json());
+      const job = await upstream.json();
+      void recordCreditConsumption(ctx, "agent");
+      return Response.json(job);
     } catch (err) {
       log.error("[agents] supervisor failed:", err instanceof Error ? err.message : String(err));
       return apiError("engine_unavailable", "Engine nicht erreichbar", 503);

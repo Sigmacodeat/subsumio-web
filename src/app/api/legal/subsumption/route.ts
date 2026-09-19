@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { NextRequest } from "next/server";
 import { ENGINE_URL, engineHeadersWithCaseJurisdiction } from "@/lib/engine";
-import { createHandler } from "@/lib/api-handler";
+import { createHandler, recordCreditConsumption } from "@/lib/api-handler";
 import { trustedLegalJurisdiction } from "@/lib/legal-jurisdiction";
 import { getJurisdictionConfig, normalizeJurisdiction } from "@/lib/legal-jurisdiction-config";
 
@@ -163,6 +163,9 @@ export const POST = createHandler(
         { status: 502 }
       );
     }
+
+    // Charged once the engine has accepted the job (same point as /api/think).
+    void recordCreditConsumption(ctx, "subsumption", case_slug);
 
     // The engine returns SSE stream or JSON depending on Accept header
     const contentType = res.headers.get("content-type") ?? "";

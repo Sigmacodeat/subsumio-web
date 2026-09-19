@@ -7,6 +7,8 @@
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { getStore, getOrgStore, getSharedPgPool, type User } from "@/lib/auth/store";
 import { createSchemaInit } from "@/lib/schema-init";
+import { billingUserOf } from "@/lib/billing/billing-account";
+import { effectivePlan } from "@/lib/billing/trial";
 import { listEnginePages } from "@/lib/engine-pages";
 
 /**
@@ -101,6 +103,43 @@ export async function getRecipientsByBrain(): Promise<Map<string, User[]>> {
     recipientsByBrain.set(brainId, list);
   }
   return recipientsByBrain;
+}
+
+/**
+ * Brains whose firm currently pays or is on its free trial, with their active
+ * members. For jobs that spend model tokens on every firm each day (the
+ * morning rundown): a lapsed free account, a suspended firm or a deactivated
+ * member must not cost us an agent run per day.
+ */
+export async function billableRecipientsByBrain(): Promise<Map<string, User[]>> {
+  const store = getStore();
+  const orgStore = getOrgStore();
+  const users = (await store.list()).filter((u) => !u.deactivatedAt);
+  const byId = new Map(users.map((u) => [u.id, u]));
+  const result = new Map<string, User[]>();
+  const brainPaid = new Map<string, boolean>();
+
+  for (const user of users) {
+    let brainId = user.brainId;
+    let payer: User | undefined = user;
+    if (user.orgId) {
+      const org = await orgStore.getById(user.orgId);
+      if (!org || org.suspendedAt) continue;
+      brainId = org.brainId;
+      const payerId = billingUserOf(org);
+      payer = byId.get(payerId) ?? (await store.getById(payerId)) ?? undefined;
+    }
+    let paid = brainPaid.get(brainId);
+    if (paid === undefined) {
+      paid = Boolean(payer && !payer.deactivatedAt && effectivePlan(payer) !== "free");
+      brainPaid.set(brainId, paid);
+    }
+    if (!paid) continue;
+    const list = result.get(brainId) ?? [];
+    list.push(user);
+    result.set(brainId, list);
+  }
+  return result;
 }
 
 /**

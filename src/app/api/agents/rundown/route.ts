@@ -1,4 +1,4 @@
-import { createHandler, apiError } from "@/lib/api-handler";
+import { createHandler, recordCreditConsumption, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 
 import { logger } from "@/lib/logger";
@@ -50,6 +50,7 @@ export const POST = createHandler(
   {
     action: "agent.write",
     rateTier: "heavy",
+    credits: "agent",
     audit: () => ({
       action: "query.submit" as const,
       entityType: "agent_run",
@@ -78,6 +79,7 @@ export const POST = createHandler(
       }
 
       const data = await res.json();
+      void recordCreditConsumption(ctx, "agent");
       return Response.json({ jobId: data.jobId ?? null, success: true });
     } catch (err) {
       log.error(

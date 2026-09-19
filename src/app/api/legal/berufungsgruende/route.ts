@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { uiLanguageSchema } from "@/lib/api-validation";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
-import { createHandler, apiError } from "@/lib/api-handler";
+import { createHandler, apiError, recordCreditConsumption } from "@/lib/api-handler";
 
 export const maxDuration = 120;
 
@@ -60,6 +60,7 @@ export const POST = createHandler(
   {
     action: "legal.berufungsgruende",
     rateTier: "heavy",
+    credits: "subsumption",
     body: berufsgruendeSchema,
     audit: (_ctx, body) => ({
       action: "legal.berufungsgruende" as const,
@@ -154,6 +155,8 @@ Identifiziere 3-8 konkrete, unterscheidbare Gründe. Sortiere nach Erfolgsprogno
           thinkRes.status
         );
       }
+      // Charged once the engine accepted the job (same point as /api/think).
+      void recordCreditConsumption(ctx, "subsumption", body.case_slug);
 
       const contentType = thinkRes.headers.get("Content-Type") || "";
       if (contentType.includes("text/event-stream") && thinkRes.body) {

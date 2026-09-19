@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
-import { createHandler, apiError, apiNotFound } from "@/lib/api-handler";
+import { createHandler, recordCreditConsumption, apiError, apiNotFound } from "@/lib/api-handler";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
 
 import { logger } from "@/lib/logger";
@@ -23,6 +23,7 @@ export const POST = createHandler(
   {
     action: "agent.write",
     rateTier: "heavy",
+    credits: "agent",
     body: runSchema,
     audit: (_ctx, _body) => ({
       action: "query.submit" as const,
@@ -93,6 +94,7 @@ export const POST = createHandler(
       }
 
       const data = await res.json();
+      void recordCreditConsumption(ctx, "agent");
       return Response.json({ jobId: data.jobId ?? null, success: true });
     } catch (err) {
       log.error(

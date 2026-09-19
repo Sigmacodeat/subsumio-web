@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { NextRequest } from "next/server";
 import { ENGINE_URL, engineHeadersWithCaseJurisdiction } from "@/lib/engine";
-import { createHandler } from "@/lib/api-handler";
+import { createHandler, recordCreditConsumption } from "@/lib/api-handler";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/legal/research");
@@ -77,6 +77,8 @@ Diese Information ersetzt keine anwaltliche Prüfung.`;
 export const POST = createHandler(
   {
     action: "legal.research" as const,
+    rateTier: "heavy",
+    credits: "agent",
     body: bodySchema,
     audit: (_ctx, body) => ({
       action: "legal.research" as const,
@@ -126,6 +128,9 @@ export const POST = createHandler(
         { status: 502 }
       );
     }
+
+    // Charged once the supervisor accepted the research job.
+    void recordCreditConsumption(ctx, "agent");
 
     // Suppress unused warning — req is required by createHandler signature
     void req;
