@@ -86,9 +86,13 @@ export async function crossVerifyCitations(
   };
 
   try {
+    // Runs on EVERY legal answer with up to ~32k chars of input, so it sits on
+    // the reasoning tier: checking cited § against the supplied context is a
+    // comparison task, and deep-tier pricing here multiplies the cost of every
+    // question.
     const model = await resolveModel(engine ?? null, {
-      tier: "deep",
-      fallback: "x-ai:grok-4-3",
+      tier: "reasoning",
+      fallback: "sonnet",
     });
     if (!model) return verifierErrorFallback;
 

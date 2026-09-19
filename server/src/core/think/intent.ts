@@ -160,9 +160,9 @@ export function classifyLegalComplexity(question: string): LegalComplexity {
 
 /**
  * Map complexity to model tier for routing.
- * Complex → "deep" (Grok 4.3, Claude Opus)
- * Moderate → "reasoning" (DeepSeek V4 Flash)
- * Simple → "reasoning" (DeepSeek V4 Flash)
+ * Complex → "deep" (Claude Opus 5)
+ * Moderate → "reasoning" (Claude Sonnet 5)
+ * Simple → "reasoning" (Claude Sonnet 5)
  */
 export function complexityToTier(complexity: LegalComplexity): "deep" | "reasoning" {
   return complexity === "complex" ? "deep" : "reasoning";
