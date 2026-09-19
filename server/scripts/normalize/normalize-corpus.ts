@@ -689,7 +689,8 @@ function main() {
         const dest = join(outDir, rel);
         mkdirSync(dirname(dest), { recursive: true });
         // Atomic: an import running in parallel must never read a half-written file.
-        const tmp = `${dest}.tmp-${process.pid}`;
+        // Short temp name: some RIS file names are already near 255 bytes.
+        const tmp = join(dirname(dest), `.norm-${process.pid}-${Math.random().toString(36).slice(2, 8)}.tmp`);
         writeFileSync(tmp, `${serializeCanonical(fm)}\n\n${newBody.replace(/^\n+/, "")}`, "utf8");
         renameSync(tmp, dest);
       }

@@ -54,7 +54,7 @@ chmod 600 "$APP-new/$H/.env"
 REMOTE
 
 echo "[deploy] Abbilder bauen …"
-ssh "$HOST" "cd $APP-new/$H && docker compose -p subsumio-engine build $BUILD"
+ssh "$HOST" "cd $APP-new/$H && docker compose -p subsumio-engine build --build-arg GIT_SHA=$sha $BUILD"
 
 if [ "$build_only" = 1 ]; then
   echo "[deploy] Gebaut, nicht umgeschaltet. Umschalten: ohne --build erneut ausführen."

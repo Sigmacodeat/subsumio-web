@@ -70,3 +70,9 @@ HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=5 \
   CMD bun -e "fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 CMD ["bun", "run", "start"]
+
+# Last on purpose: a per-deploy value here keeps every layer above cached.
+# The commit this image was built from (set by server/deploy/netcup/deploy-code.sh).
+# Without it the label inherited from the base image named a foreign revision.
+ARG GIT_SHA=unknown
+LABEL org.opencontainers.image.revision=$GIT_SHA
