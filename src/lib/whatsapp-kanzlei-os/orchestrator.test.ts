@@ -118,6 +118,38 @@ describe("orchestrateWhatsAppMessage", () => {
     expect(approvalBody.frontmatter.payload.message).toContain("Kanzlei aufgenommen");
   });
 
+  it("keeps an unverified client's file out of the lawyer media handler", async () => {
+    const fetchImpl = okFetch();
+    const handleMedia = vi.fn(async () => "an Akte angehängt");
+    const downloadMedia = vi.fn(async () => ({ slug: "media/x", mimeType: "application/pdf" }));
+    const result = await orchestrateWhatsAppMessage(
+      { id: "wamid.UNVERIFIED", from: "+491701234567", type: "document", mediaId: "m-1" },
+      { ...identity("client"), verifiedAt: undefined },
+      {
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+        handleMedia,
+        downloadMedia: downloadMedia as never,
+      }
+    );
+
+    expect(handleMedia).not.toHaveBeenCalled();
+    expect(result.status).toBe("routed");
+    expect(result.reply).toContain("zuerst durch die Kanzlei bestaetigt");
+  });
+
+  it("never runs lawyer commands for a client's confirmation", async () => {
+    const fetchImpl = okFetch();
+    const handleText = vi.fn(async () => "Aktion ausgeführt");
+    const result = await orchestrateWhatsAppMessage(
+      { id: "wamid.CLIENTJA", from: "+491701234567", type: "text", text: "ja" },
+      identity("client"),
+      { fetchImpl: fetchImpl as unknown as typeof fetch, handleText }
+    );
+
+    expect(handleText).not.toHaveBeenCalled();
+    expect(result.reply).not.toBe("Aktion ausgeführt");
+  });
+
   it("routes verified client WhatsApp text directly into the scoped matter knowledge base", async () => {
     const fetchImpl = caseFetch();
     const handleText = vi.fn(async () => "should not happen");

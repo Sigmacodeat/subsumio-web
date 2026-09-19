@@ -22,7 +22,9 @@ import {
   AlertTriangle,
   Ban,
   Loader2,
+  Reply,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf";
 import { triageBatch, type TriageInput, type TriageCard } from "@/lib/triage";
@@ -63,6 +65,8 @@ interface UnifiedMessage {
   caseSlug?: string;
   createdAt: string;
   read?: boolean;
+  /** A client's portal message the firm can answer in the portal. */
+  portalReplyable?: boolean;
 }
 
 const CHANNEL_ICON: Record<UnifiedMessage["channel"], React.ElementType> = {
@@ -138,7 +142,13 @@ function extractMessages(pagesByType: Record<string, BrainPage[]>): UnifiedMessa
       title: page.title,
       channel: "portal",
       body: (page.content as string) || (fm.message as string) || "",
-      sender: (fm.sender as string) || (fm.author as string) || "Mandant",
+      sender:
+        fm.sender === "lawyer"
+          ? `Kanzlei${fm.author ? ` (${String(fm.author)})` : ""}`
+          : fm.sender === "client" || !fm.sender
+            ? "Mandant"
+            : String(fm.sender),
+      portalReplyable: fm.sender !== "lawyer" && typeof fm.case_slug === "string",
       caseSlug: fm.case_slug as string | undefined,
       createdAt: (fm.created_at as string) || "",
       read: fm.read as boolean | undefined,
@@ -248,6 +258,9 @@ export default function CommunicationsPage() {
   const [assignTarget, setAssignTarget] = useState<UnifiedMessage | null>(null);
   const [assignCase, setAssignCase] = useState("");
   const [assignBusy, setAssignBusy] = useState(false);
+  const [replyTarget, setReplyTarget] = useState<UnifiedMessage | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [replyBusy, setReplyBusy] = useState(false);
   const [view, setView] = useState<View>("messages");
   const [channel, setChannel] = useState<Channel>("all");
   const [search, setSearch] = useState("");
@@ -331,6 +344,36 @@ export default function CommunicationsPage() {
     queryKey: ["communications-cases"],
     queryFn: () => api.cases.list({ limit: 200 }),
   });
+
+  async function sendPortalReply() {
+    const text = replyText.trim();
+    if (!replyTarget?.caseSlug || !text) return;
+    setReplyBusy(true);
+    try {
+      const res = await csrfFetch("/api/portal/reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ case_slug: replyTarget.caseSlug, message: text }),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => null);
+        throw new Error(
+          json?.error?.message ?? json?.message ?? "Antwort konnte nicht gesendet werden"
+        );
+      }
+      addToast({ type: "success", title: "Antwort steht im Mandantenportal" });
+      setReplyTarget(null);
+      setReplyText("");
+      await batchQuery.refetch();
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: err instanceof Error ? err.message : "Antwort konnte nicht gesendet werden",
+      });
+    } finally {
+      setReplyBusy(false);
+    }
+  }
 
   async function assignToCase(msg: UnifiedMessage, caseSlug: string) {
     if (!caseSlug) return;
@@ -702,6 +745,19 @@ export default function CommunicationsPage() {
                             <ArrowUpRight size={11} />
                           </Link>
                         )}
+                        {msg.channel === "portal" && msg.portalReplyable && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReplyTarget(msg);
+                              setReplyText("");
+                            }}
+                            className="inline-flex items-center gap-1 text-[color:var(--brand-primary)] hover:underline"
+                          >
+                            <Reply size={11} aria-hidden="true" />
+                            {lang === "en" ? "Reply in portal" : "Im Portal antworten"}
+                          </button>
+                        )}
                       </div>
                       {/* Triage Actions */}
                       {card && (
@@ -796,6 +852,54 @@ export default function CommunicationsPage() {
           )}
         </>
       )}
+
+      {/* Reply in the client portal */}
+      <Dialog
+        open={!!replyTarget}
+        onOpenChange={(open) => !open && !replyBusy && setReplyTarget(null)}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {lang === "en" ? "Reply in the client portal" : "Im Mandantenportal antworten"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            {replyTarget?.body && (
+              <blockquote className="line-clamp-4 border-l-2 border-[color:var(--ds-border)] pl-3 text-xs text-[color:var(--ds-text-muted)]">
+                {replyTarget.body}
+              </blockquote>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="portal-reply">{lang === "en" ? "Your reply" : "Ihre Antwort"}</Label>
+              <Textarea
+                id="portal-reply"
+                rows={6}
+                maxLength={5000}
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+              />
+              <p className="text-xs text-[color:var(--ds-text-subtle)]">
+                {lang === "en"
+                  ? "The client sees this reply in the portal's message tab."
+                  : "Die Mandantin oder der Mandant sieht die Antwort im Nachrichten-Tab des Portals."}
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReplyTarget(null)} disabled={replyBusy}>
+              {lang === "en" ? "Cancel" : "Abbrechen"}
+            </Button>
+            <Button
+              onClick={() => void sendPortalReply()}
+              disabled={replyBusy || !replyText.trim()}
+            >
+              {replyBusy ? <Loader2 size={14} className="mr-2 animate-spin" /> : null}
+              {lang === "en" ? "Send" : "Senden"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Assign to Case Dialog */}
       <Dialog open={!!assignTarget} onOpenChange={(open) => !open && setAssignTarget(null)}>

@@ -411,7 +411,7 @@ export const FOOTER: {
       ],
     },
   ],
-  note: "Ihre Daten. Ihre Schlüssel. On-Premise auf eigener Hardware oder EU-Cloud mit AVV — DSGVO-konform, Ende-zu-Ende verschlüsselt, kein Training mit Ihren Daten.",
+  note: "Ihre Daten. Ihre Schlüssel. On-Premise auf eigener Hardware oder EU-Cloud mit AVV — DSGVO-konform, verschlüsselt übertragen, kein Training mit Ihren Daten.",
 };
 
 // ---------------------------------------------------------------------------
@@ -837,7 +837,7 @@ export const UI_STRINGS: Record<string, string> = {
   featuresGraphCaption: "Zusammenhänge, beim Speichern erkannt",
   featuresSecurityTitle: "Gebaut für vertrauliche Arbeit",
   featuresSecuritySub:
-    "EU-Hosting, On-Premise im Enterprise-Tarif, getrennte Zugriffe je Akte und Kennzeichnung nach Art. 50 KI-VO. Die vollständige Darstellung hat eine eigene Seite.",
+    "EU-Hosting, On-Premise im Enterprise-Tarif, getrennte Datenräume je Kanzlei und Kennzeichnung nach Art. 50 KI-VO. Die vollständige Darstellung hat eine eigene Seite.",
   featuresGlanceTitle: "Fünf Bereiche im Detail",
   featuresEmptyState:
     "Durch Tests erzwungen, nicht durch Policy-Dokumente — deterministisches, prüfbares Verhalten.",
