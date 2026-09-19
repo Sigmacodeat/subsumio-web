@@ -12,7 +12,7 @@ import {
   forwardRef,
   useImperativeHandle,
 } from "react";
-import { Reply, X, ArrowDown } from "lucide-react";
+import { Reply, X, ArrowDown, Quote } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
@@ -39,6 +39,7 @@ function describeChatError(err: unknown, t: (key: DashboardKey) => string): stri
   return t("chat.error_generic");
 }
 import { csrfFetch } from "@/lib/csrf";
+import { fetchServerSession, saveSessionToServer, shareSession } from "@/lib/chat-server-sync";
 import { buildChatExportMarkdown } from "@/components/chat/chat-export";
 import {
   buildPromptContext,
@@ -103,6 +104,8 @@ interface ChatPanelProps {
   initialQuery?: string;
   /** Load this session on mount instead of the latest one (panel → fullscreen handoff). */
   initialSessionId?: string;
+  /** Owner of `initialSessionId` when it is a colleague's shared conversation. */
+  initialSessionOwner?: string;
   placeholder?: string;
   onStreamingChange?: (isStreaming: boolean) => void;
   exampleQueries?: string[];
@@ -182,18 +185,9 @@ const TOOL_RULES: ToolDetectionRule[] = [
       tone: (m[4] as "formal" | "neutral" | "urgent") || "formal",
     }),
   },
-  {
-    pattern:
-      /\[TOOL:send_email\s+to="([^"]+)"\s+subject="([^"]+)"(?:\s+text="([^"]*)")?(?:\s+case_slug="([^"]+)")?\]/i,
-    tool: "send_email",
-    label: "chat.tool.send_email",
-    extractParams: (m) => ({
-      to: m[1],
-      subject: m[2],
-      text: m[3] || "",
-      case_slug: m[4] || undefined,
-    }),
-  },
+  // No send_email rule: the Copilot is never offered sending mail, so a
+  // send_email marker can only come from injected text. Mail goes out from
+  // the mailbox after a draft (email_draft).
   {
     pattern: /\[TOOL:deadline_extract\s+document_slug="([^"]+)"\]/i,
     tool: "deadline_extract",
@@ -425,7 +419,9 @@ async function executeToolCall(
   context?: { caseSlug?: string }
 ): Promise<ToolCall> {
   try {
-    const result = await api.copilot.executeTool(toolCall.type, toolCall.params);
+    const result = DESTRUCTIVE_TOOLS.has(toolCall.type)
+      ? await api.copilot.executeConfirmedTool(toolCall.type, toolCall.params)
+      : await api.copilot.executeTool(toolCall.type, toolCall.params);
     const executed: ToolCall = {
       ...toolCall,
       status: result.success ? "completed" : "error",
@@ -535,6 +531,8 @@ export interface ChatPanelHandle {
   /** Current session id — used to hand the conversation off to the fullscreen chat. */
   getActiveSessionId: () => string | undefined;
   loadSession: (id: string) => Promise<void>;
+  /** Pin a passage the person marked on the page; the next question is about it. */
+  quoteSelection: (text: string, source?: string) => void;
 }
 
 // AP4: Tool-type → specific follow-up suggestions
@@ -732,6 +730,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     title,
     initialQuery,
     initialSessionId,
+    initialSessionOwner,
     placeholder,
     onStreamingChange,
     exampleQueries: providedExampleQueries,
@@ -772,6 +771,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     []
   );
   const [isStreaming, setIsStreaming] = useState(false);
+  // A passage the person marked on the page ("Markieren & fragen").
+  const [quoted, setQuoted] = useState<{ text: string; source?: string } | null>(null);
   useEffect(() => {
     onStreamingChange?.(isStreaming);
   }, [isStreaming, onStreamingChange]);
@@ -958,6 +959,30 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           setSessionTokens(sanitized.reduce((sum, m) => sum + (m.tokensUsed ?? 0), 0));
           return;
         }
+        // Not in this browser: a conversation from another device or one a
+        // colleague shared. Load it from the server and keep a local copy.
+        const remote = await fetchServerSession(initialSessionId, initialSessionOwner);
+        if (remote?.messages?.length) {
+          const now = new Date().toISOString();
+          const imported: ChatSession = {
+            id: remote.id,
+            title:
+              remote.owner_name && initialSessionOwner
+                ? `${remote.title} · ${remote.owner_name}`
+                : remote.title,
+            contextType: remote.case_slug ? "case" : "global",
+            caseSlug: remote.case_slug,
+            createdAt: remote.messages[0]?.createdAt ?? now,
+            updatedAt: remote.updated_at || now,
+            messageCount: remote.messages.length,
+          };
+          const msgs: ChatMessage[] = remote.messages.map((m) => ({ ...m }));
+          await createSession(imported);
+          for (const m of msgs) await saveMessage(imported.id, m);
+          setActiveSessionId(imported.id);
+          setMessages((current) => (current.length > 0 ? current : msgs));
+          return;
+        }
       }
       const list = await listSessions({
         caseSlug: selectedCaseSlug || context.caseSlug,
@@ -1024,12 +1049,39 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     }
   }, [messages.length, updateSessionMeta, persistHistory]);
 
+  // Keep the server copy current once an answer is finished (chat-server-sync.ts).
+  useEffect(() => {
+    if (!persistHistory || !activeSessionId || isStreaming || messages.length === 0) return;
+    const timer = window.setTimeout(() => {
+      const msgs = messagesRef.current;
+      void saveSessionToServer({
+        id: activeSessionId,
+        title:
+          msgs[0]?.role === "user"
+            ? autoTitleFromQuery(msgs[0].content)
+            : (title ?? "Unterhaltung"),
+        caseSlug: selectedCaseSlug || context.caseSlug,
+        messages: msgs,
+      });
+    }, 1_500);
+    return () => window.clearTimeout(timer);
+  }, [
+    persistHistory,
+    activeSessionId,
+    isStreaming,
+    messages.length,
+    title,
+    selectedCaseSlug,
+    context.caseSlug,
+  ]);
+
   // Send message
   const handleSend = useCallback(
     async (
       text: string,
       attachments?: Array<{ name: string; slug: string }>,
-      replyTo?: { id: string; role: "user" | "assistant"; preview: string } | null
+      replyTo?: { id: string; role: "user" | "assistant"; preview: string } | null,
+      selection?: { text: string; source?: string } | null
     ) => {
       if (!text.trim() && !attachments?.length) return;
       if (isStreaming) return; // Prevent concurrent streams
@@ -1037,7 +1089,10 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       const userMsg: ChatMessage = {
         id: generateMessageId(),
         role: "user",
-        content: text,
+        // The marked passage stays visible in the conversation it was asked in.
+        content: selection?.text.trim()
+          ? `> ${selection.text.trim().slice(0, 300).replace(/\s+/g, " ")}${selection.text.trim().length > 300 ? " …" : ""}\n\n${text}`
+          : text,
         createdAt: new Date().toISOString(),
         attachments,
       };
@@ -1088,6 +1143,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         pageLabel: context.pageLabel,
         attachments,
         replyTo,
+        selection,
         userText: text,
         attachmentFetcher: async (slug) => {
           const page = await api.brain.getPage(slug);
@@ -1595,6 +1651,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       ) => handleSend(text, options?.attachments, options?.replyTo ?? undefined),
       getActiveSessionId: () => activeSessionId,
       loadSession: handleSelectSession,
+      quoteSelection: (text: string, source?: string) => setQuoted({ text, source }),
     }),
     [handleSend, activeSessionId, handleSelectSession]
   );
@@ -2037,26 +2094,34 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   }, [messages, title, t, lang]);
 
   // Share chat (read-only link via base64 encoding)
+  // Share: the conversation is saved on the server and shared with colleagues
+  // who may see its matter; the link opens it for them.
   const handleShare = useCallback(async () => {
-    if (messages.length === 0) return;
-    const shareData = {
-      title: title ?? t("chat.title"),
-      messages: messages.map((m) => ({
-        r: m.role,
-        c: m.content,
-        ts: m.createdAt,
-      })),
-      createdAt: new Date().toISOString(),
-    };
-    const encoded = btoa(encodeURIComponent(JSON.stringify(shareData)));
-    const url = `${window.location.origin}/dashboard/chat?shared=${encoded}`;
+    if (messages.length === 0 || !activeSessionId) return;
+    const saved = await saveSessionToServer({
+      id: activeSessionId,
+      title:
+        messages[0]?.role === "user"
+          ? autoTitleFromQuery(messages[0].content)
+          : (title ?? t("chat.title")),
+      caseSlug: selectedCaseSlug || context.caseSlug,
+      messages,
+    });
+    const url = saved ? await shareSession(activeSessionId) : null;
+    if (!url) {
+      setError(
+        lang === "en"
+          ? "The conversation could not be shared."
+          : "Die Unterhaltung konnte nicht geteilt werden."
+      );
+      return;
+    }
     try {
       await navigator.clipboard.writeText(url);
     } catch {
-      // Fallback: open in new tab
-      window.open(url, "_blank");
+      window.prompt(lang === "en" ? "Link to the conversation" : "Link zur Unterhaltung", url);
     }
-  }, [messages, title, t]);
+  }, [messages, activeSessionId, title, t, selectedCaseSlug, context.caseSlug, lang]);
 
   // Stable callback wrappers for memoized ChatMessageBubble (avoid inline closures)
   const handleRegenerateById = useCallback(
@@ -2354,11 +2419,40 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
             </div>
           )}
 
+          {/* Marked passage the next question is about */}
+          {quoted && (
+            <div className="flex items-start gap-2 border-t border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-2 text-xs">
+              <Quote
+                size={12}
+                className="mt-0.5 shrink-0 text-[color:var(--brand-primary)]"
+                aria-hidden="true"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block text-[color:var(--ds-text-subtle)]">
+                  {lang === "en" ? "Asking about" : "Frage zu"}
+                  {quoted.source ? ` · ${quoted.source}` : ""}
+                </span>
+                <span className="line-clamp-3 text-[color:var(--ds-text-muted)]">
+                  „{quoted.text}“
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setQuoted(null)}
+                className="shrink-0 rounded p-1 text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+                aria-label={lang === "en" ? "Remove marked passage" : "Markierung entfernen"}
+              >
+                <X size={12} aria-hidden="true" />
+              </button>
+            </div>
+          )}
+
           {/* Input area - only in copilot mode */}
           <ChatInput
             onSend={(text, atts) => {
-              handleSend(text, atts, replyTo);
+              handleSend(text, atts, replyTo, quoted);
               setReplyTo(null);
+              setQuoted(null);
             }}
             onStop={handleStop}
             isStreaming={isStreaming}

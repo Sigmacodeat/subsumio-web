@@ -2929,9 +2929,25 @@ export const api = {
   },
 
   copilot: {
+    /**
+     * Runs a Copilot tool. Tools that change data or send something need the
+     * person's confirmation first: the server issues a token for exactly
+     * these parameters (lib/copilot-confirmation.ts). Call this only once the
+     * person confirmed — the click is the confirmation.
+     */
+    async executeConfirmedTool(tool: string, params: Record<string, unknown>) {
+      const prepared = await request<{ confirmation: string } | { data: { confirmation: string } }>(
+        "/api/copilot/tools",
+        { method: "POST", body: JSON.stringify({ tool, params, mode: "prepare" }) }
+      );
+      const confirmation =
+        "confirmation" in prepared ? prepared.confirmation : prepared.data.confirmation;
+      return api.copilot.executeTool(tool, params, confirmation);
+    },
     executeTool(
       tool: string,
-      params: Record<string, unknown>
+      params: Record<string, unknown>,
+      confirmation?: string
     ): Promise<{
       success: boolean;
       data?: unknown;
@@ -2976,7 +2992,7 @@ export const api = {
     }> {
       return request("/api/copilot/tools", {
         method: "POST",
-        body: JSON.stringify({ tool, params }),
+        body: JSON.stringify({ tool, params, ...(confirmation ? { confirmation } : {}) }),
       });
     },
   },

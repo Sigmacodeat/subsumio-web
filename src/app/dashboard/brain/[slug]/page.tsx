@@ -37,6 +37,7 @@ const ChatPanel = lazy(() =>
 );
 import { MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
+import { useProvideCopilotFocus } from "@/lib/copilot-focus";
 
 // Erweiterte Felder, die die Detail-API zusätzlich zur BrainPage liefert.
 interface PageGraphExtras {
@@ -102,6 +103,10 @@ export default function BrainDetailPage() {
   const fm = (page?.frontmatter ?? {}) as Record<string, unknown>;
   const isDocument = pageType === "document" || pageType === "legal_document";
   const caseSlug = typeof fm.case_slug === "string" ? fm.case_slug : "";
+  // The Copilot answers about the page that is open here.
+  useProvideCopilotFocus(
+    page ? { slug, title: page.title, caseSlug: caseSlug || undefined, kind: "document" } : null
+  );
   const sourceFormat = typeof fm.source_format === "string" ? fm.source_format.toLowerCase() : "";
   const fileHref = `/api/files/${encodeSlugPath(slug)}`;
   const canPreview = isDocument && sourceFormat === "pdf";
