@@ -483,6 +483,12 @@ async function detectAndExecuteTools(
   return results;
 }
 
+/** The matter's jurisdiction for the prompt; Austrian law when the matter names none. */
+function matterJurisdiction(value: unknown): Jurisdiction {
+  const code = typeof value === "string" ? value.toLowerCase() : "";
+  return code === "de" || code === "ch" || code === "eu" ? code : "at";
+}
+
 function sanitizeSessionMessages(msgs: ChatMessage[]): ChatMessage[] {
   return msgs.map((msg) => {
     let changed = false;
@@ -844,7 +850,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           const casePage = pages.find((p) => p.slug === ctxSlug);
           if (casePage) {
             const fm = caseFrontmatter(casePage);
-            setJurisdiction(fm.jurisdiction === "eu" ? "eu" : "at");
+            setJurisdiction(matterJurisdiction(fm.jurisdiction));
             // Extract matter vitals for copilot context
             const deadlines = fm.deadlines || [];
             const tasks = fm.tasks || [];
@@ -2280,7 +2286,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
               .getPage(slug)
               .then((page) => {
                 const fm = caseFrontmatter(page as BrainPage);
-                setJurisdiction(fm.jurisdiction === "eu" ? "eu" : "at");
+                setJurisdiction(matterJurisdiction(fm.jurisdiction));
               })
               .catch((err) =>
                 console.warn(

@@ -4,6 +4,7 @@ import { createHandler, apiError } from "@/lib/api-handler";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { portalMessageSlugPrefix } from "@/lib/portal-messages";
 import { notifyPortalClients } from "@/lib/portal-push";
+import { mailPortalClients } from "@/lib/portal-notify";
 
 const replySchema = z.object({
   case_slug: z.string().min(1).max(300),
@@ -69,6 +70,7 @@ export const POST = createHandler(
       title: "Neue Nachricht Ihrer Kanzlei",
       body: "Ihre Kanzlei hat Ihnen im Mandantenportal geantwortet.",
     }).catch(() => 0);
-    return Response.json({ ok: true, created_at: now, notified });
+    const mailed = await mailPortalClients(ctx.headers, body.case_slug).catch(() => 0);
+    return Response.json({ ok: true, created_at: now, notified, mailed });
   }
 );

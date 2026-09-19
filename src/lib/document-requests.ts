@@ -27,6 +27,8 @@ export interface DocumentRequestFrontmatter {
   items: DocumentRequestItem[];
   portal_token_id?: string;
   portal_url?: string;
+  /** The client's WhatsApp number reminders go to (E.164); none → no WhatsApp reminder. */
+  recipient_phone?: string;
   source_event_slug?: string;
   message_draft?: string;
   created_at: string;
@@ -46,6 +48,8 @@ export interface DocumentRequestInput {
   sourceEventSlug?: string;
   messageDraft?: string;
   includePortalLink?: boolean;
+  /** E.164 number of the recipient, for WhatsApp reminders. */
+  recipientPhone?: string;
 }
 
 function safeSlugPart(input: string): string {
@@ -132,6 +136,7 @@ export async function buildDocumentRequest(
       items,
       portal_token_id: portalTokenId,
       portal_url: portalUrl,
+      ...(input.recipientPhone ? { recipient_phone: input.recipientPhone } : {}),
       source_event_slug: input.sourceEventSlug,
       message_draft: messageDraft,
       created_at: created,

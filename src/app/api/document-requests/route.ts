@@ -38,6 +38,11 @@ const docRequestPostSchema = z.object({
   text: z.string().max(2_000).optional(),
   channel: z.enum(["whatsapp", "portal", "email", "manual"]).default("whatsapp"),
   recipient_role: z.enum(["client", "lawyer", "assistant", "other"]).default("client"),
+  /** The client's WhatsApp number (E.164) for reminders. */
+  recipient_phone: z
+    .string()
+    .regex(/^\+[1-9]\d{6,14}$/, "recipient_phone_e164")
+    .optional(),
   status: z.enum(["draft", "sent", "partially_fulfilled", "fulfilled", "expired"]).default("draft"),
   source_event_slug: z.string().optional(),
   message_draft: z.string().max(5_000).optional(),
@@ -126,6 +131,7 @@ export const POST = createHandler(
       sourceEventSlug: body.source_event_slug,
       messageDraft: body.message_draft,
       includePortalLink: body.include_portal_link,
+      recipientPhone: body.recipient_phone,
     });
 
     const res = await fetch(`${ENGINE_URL}/api/pages`, {

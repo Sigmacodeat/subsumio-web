@@ -3,7 +3,8 @@
 /**
  * The client portal as an app: installs with its own manifest (opens straight
  * into this matter), explains "add to home screen" on iPhone, and lets the
- * client turn on notifications for replies from the firm (lib/portal-push.ts).
+ * client be told when the firm replied — by push (lib/portal-push.ts) or by
+ * e-mail with double opt-in (lib/portal-notify.ts).
  */
 import { useEffect, useState } from "react";
 import { Bell, BellOff, Loader2, Smartphone } from "lucide-react";
@@ -23,6 +24,25 @@ export function PortalAppBar({ token }: { token: string }) {
   const [push, setPush] = useState<PushState>("unsupported");
   const [iosHint, setIosHint] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [mailState, setMailState] = useState<"idle" | "busy" | "pending" | "confirmed" | "invalid">(
+    "idle"
+  );
+
+  useEffect(() => {
+    const notify = new URLSearchParams(window.location.search).get("notify");
+    if (notify === "confirmed" || notify === "invalid") setMailState(notify);
+  }, []);
+
+  async function requestMail() {
+    setMailState("busy");
+    const res = await fetch("/api/portal/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, email }),
+    }).catch(() => null);
+    setMailState(res?.ok ? "pending" : "invalid");
+  }
 
   // Install as this client's app, not the lawyers' dashboard.
   useEffect(() => {
@@ -113,10 +133,50 @@ export function PortalAppBar({ token }: { token: string }) {
     }
   }
 
-  if (push === "unsupported" && !iosHint) return null;
-
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-xl border [border-color:var(--mk-border)] px-4 py-3 text-sm [background:var(--mk-surface)]">
+      {mailState === "confirmed" ? (
+        <span className="[color:var(--mk-text-muted)]">
+          E-Mail-Benachrichtigungen sind bestätigt.
+        </span>
+      ) : mailState === "pending" ? (
+        <span className="[color:var(--mk-text-muted)]">
+          Bitte bestätigen Sie den Link, den wir Ihnen gerade per E-Mail geschickt haben.
+        </span>
+      ) : (
+        <form
+          className="flex flex-wrap items-center gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void requestMail();
+          }}
+        >
+          <label htmlFor="portal-notify-email" className="[color:var(--mk-text-muted)]">
+            Per E-Mail benachrichtigen:
+          </label>
+          <input
+            id="portal-notify-email"
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="ihre@adresse.at"
+            className="rounded-lg border [border-color:var(--mk-border)] bg-transparent px-2 py-1 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+          />
+          <button
+            type="submit"
+            disabled={mailState === "busy" || !email}
+            className="rounded-lg border border-[color:var(--brand-primary)] px-3 py-1 font-medium text-[color:var(--brand-text)] disabled:opacity-50"
+          >
+            Anmelden
+          </button>
+          {mailState === "invalid" && (
+            <span role="alert" className="text-[color:var(--ds-danger-text)]">
+              Das hat nicht geklappt.
+            </span>
+          )}
+        </form>
+      )}
       {iosHint && (
         <p className="flex items-center gap-2 [color:var(--mk-text-muted)]">
           <Smartphone size={15} aria-hidden="true" />

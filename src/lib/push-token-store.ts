@@ -12,7 +12,7 @@ export interface PushTokenEntry {
   id: string;
   userId: string;
   token: string;
-  platform: "ios" | "android";
+  platform: "ios" | "android" | "web";
   deviceId: string | null;
   createdAt: string;
   lastUsedAt: string | null;
@@ -43,7 +43,7 @@ function genId(): string {
 export async function registerPushToken(
   userId: string,
   token: string,
-  platform: "ios" | "android",
+  platform: "ios" | "android" | "web",
   deviceId?: string
 ): Promise<void> {
   const pool = getSharedPgPool();

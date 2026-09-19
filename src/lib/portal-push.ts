@@ -9,10 +9,9 @@
  * the web app's Postgres (subsumio_portal_push), in memory without a database.
  */
 import { createHash } from "node:crypto";
-import webpush from "web-push";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { createSchemaInit } from "@/lib/schema-init";
-import { env } from "@/lib/env";
+import { isPushServiceEndpoint, sendWebPush, webPushPublicKey } from "@/lib/web-push-core";
 import { logger } from "@/lib/logger";
 
 const log = logger("portal-push");
@@ -29,43 +28,10 @@ interface StoredSubscription extends PortalPushSubscription {
   portalPath: string;
 }
 
-/**
- * The push services browsers use. A subscription's endpoint comes from the
- * client and the server later POSTs to it, so only these hosts are accepted —
- * anything else would let a portal link make the server call arbitrary URLs.
- */
-const PUSH_HOSTS = [
-  /^fcm\.googleapis\.com$/,
-  /^updates\.push\.services\.mozilla\.com$/,
-  /^web\.push\.apple\.com$/,
-  /^[a-z0-9-]+\.push\.apple\.com$/,
-  /^[a-z0-9-]+\.notify\.windows\.com$/,
-];
-
-export function isPushServiceEndpoint(endpoint: string): boolean {
-  try {
-    const url = new URL(endpoint);
-    return url.protocol === "https:" && !url.port && PUSH_HOSTS.some((re) => re.test(url.hostname));
-  } catch {
-    return false;
-  }
-}
+export { isPushServiceEndpoint } from "@/lib/web-push-core";
 
 export function portalPushPublicKey(): string | null {
-  const pub = env("WEB_PUSH_PUBLIC_KEY");
-  return pub && env("WEB_PUSH_PRIVATE_KEY") ? pub : null;
-}
-
-let configured = false;
-function configure(): boolean {
-  const pub = env("WEB_PUSH_PUBLIC_KEY");
-  const priv = env("WEB_PUSH_PRIVATE_KEY");
-  if (!pub || !priv) return false;
-  if (!configured) {
-    webpush.setVapidDetails(env("WEB_PUSH_SUBJECT") || "mailto:hello@subsum.io", pub, priv);
-    configured = true;
-  }
-  return true;
+  return webPushPublicKey();
 }
 
 const ensureSchema = createSchemaInit([
@@ -153,22 +119,16 @@ export async function notifyPortalClients(
   caseSlug: string,
   message: { title: string; body: string }
 ): Promise<number> {
-  if (!configure()) return 0;
+  if (!webPushPublicKey()) return 0;
   let reached = 0;
   for (const sub of await subscriptionsFor(brainId, caseSlug)) {
-    if (!isPushServiceEndpoint(sub.endpoint)) continue;
-    try {
-      await webpush.sendNotification(
-        { endpoint: sub.endpoint, keys: sub.keys },
-        JSON.stringify({ ...message, data: { url: sub.portalPath } }),
-        { TTL: 60 * 60 * 24 }
-      );
-      reached++;
-    } catch (err) {
-      const status = (err as { statusCode?: number }).statusCode;
-      if (status === 404 || status === 410) await removePortalSubscription(sub.endpoint);
-      else log.warn("portal push failed", { status });
-    }
+    const result = await sendWebPush(
+      { endpoint: sub.endpoint, keys: sub.keys },
+      { ...message, data: { url: sub.portalPath } }
+    );
+    if (result === "sent") reached++;
+    else if (result === "gone") await removePortalSubscription(sub.endpoint);
+    else if (result === "failed") log.warn("portal push failed");
   }
   return reached;
 }

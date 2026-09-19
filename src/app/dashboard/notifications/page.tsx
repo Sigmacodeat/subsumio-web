@@ -24,6 +24,7 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { RowSkeleton } from "@/components/dashboard/skeleton";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { WebPushToggle } from "@/components/pwa/web-push-toggle";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import { useRealtime } from "@/lib/realtime";
@@ -287,6 +288,7 @@ export default function NotificationCenterPage() {
         ]}
         actions={
           <div className="flex items-center gap-2">
+            <WebPushToggle />
             <Button
               variant="outline"
               size="sm"

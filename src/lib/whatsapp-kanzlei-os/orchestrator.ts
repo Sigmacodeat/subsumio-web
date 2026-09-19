@@ -359,6 +359,7 @@ export async function orchestrateWhatsAppMessage(
           status: "draft",
           sourceEventSlug: event.slug,
           includePortalLink: true,
+          recipientPhone: phoneFromText(normalizedText),
         });
         const written = await writeDocumentRequest(sender.brainId, request, deps.fetchImpl);
         targetSlug = written.slug;
