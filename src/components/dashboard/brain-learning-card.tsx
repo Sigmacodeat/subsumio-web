@@ -115,8 +115,8 @@ export function BrainLearningCard() {
               </dt>
               <dd className="mt-1 text-[color:var(--ds-text-muted)]">
                 {L(
-                  "Aus Ihren Dokumenten und Notizen werden automatisch Fakten, Einschätzungen und Querverweise abgeleitet, der Assistent merkt sich Vorgaben aus Gesprächen, und für Ihre Prüfleitfäden werden Ergänzungen aus unterzeichneten Verträgen vorgeschlagen.",
-                  "Facts, assessments and cross-references are derived automatically from your documents and notes, the assistant remembers instructions from conversations, and additions to your contract playbooks are suggested from signed contracts."
+                  "Aus Ihren Dokumenten und Notizen werden automatisch Tatsachen und Einschätzungen abgeleitet, der Assistent merkt sich Vorgaben aus Gesprächen, und für Ihre Prüfleitfäden werden Ergänzungen aus unterzeichneten Verträgen vorgeschlagen.",
+                  "Facts and assessments are derived automatically from your documents and notes, the assistant remembers instructions from conversations, and additions to your contract playbooks are suggested from signed contracts."
                 )}
               </dd>
             </div>
@@ -135,7 +135,10 @@ export function BrainLearningCard() {
 
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <Link href="/dashboard/settings/memory" className="brand-text hover:underline">
-              {L("Gelerntes ansehen und löschen", "View and delete what was learned")}
+              {L(
+                "Gedächtnis des Assistenten ansehen und löschen",
+                "View and delete the assistant's memory"
+              )}
             </Link>
             {!state.canEdit && (
               <span className="text-xs text-[color:var(--ds-text-muted)]">

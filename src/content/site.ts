@@ -500,7 +500,8 @@ export const LANDING = {
     },
     {
       value: "Wochen der Einarbeitung",
-      label: "Neue Kolleginnen und Kollegen brauchen lange, bis sie das Kanzleiwissen selbst finden.",
+      label:
+        "Neue Kolleginnen und Kollegen brauchen lange, bis sie das Kanzleiwissen selbst finden.",
     },
   ],
   ctaPrimary: "14 Tage kostenlos testen",
@@ -684,7 +685,7 @@ export const LANDING = {
     },
     {
       q: "Trainiert Subsumio auf meinen Daten?",
-      a: "Niemals. Ihr Kanzleiwissen gehört Ihnen. On-Premise bleibt alles auf Ihrer Infrastruktur. In der EU-Cloud wird es verschlüsselt und mandantensepariert verarbeitet — keine andere Kanzlei hat Zugriff.",
+      a: "Nein. Mit Ihren Daten wird kein KI-Modell trainiert. Was Subsumio aus Ihren Akten lernt, bleibt in Ihrem Kanzlei-Gehirn: Es hilft beim nächsten Mandat, fließt aber nicht in das Wissen anderer Kanzleien ein — und Sie können das Mitlernen in den Einstellungen abschalten. On-Premise bleibt alles auf Ihrer Infrastruktur; in der EU-Cloud wird es verschlüsselt und getrennt je Kanzlei verarbeitet.",
     },
     {
       q: "Funktioniert das mit unserer bestehenden Software?",

@@ -6,6 +6,7 @@ import { HeroSection } from "./superbrain/hero";
 import { StatsBand, OthersSection, OursSection } from "./superbrain/story";
 import { ArchitectureSection, DreamCycleSection, FineTuneSection } from "./superbrain/architecture";
 import { CompareSection } from "./superbrain/compare";
+import { LearningSection } from "./superbrain/learning";
 import { PrivacySection, UseCasesSection, TrustSection, FAQSection } from "./superbrain/proof";
 import { StickyCTA, CTASection } from "./superbrain/cta";
 
@@ -24,6 +25,7 @@ export default function SuperbrainPage() {
       <OursSection t={t} />
       <ArchitectureSection t={t} />
       <DreamCycleSection t={t} />
+      <LearningSection t={t} />
       <CompareSection t={t} />
       <FineTuneSection t={t} />
       <UseCasesSection t={t} />
