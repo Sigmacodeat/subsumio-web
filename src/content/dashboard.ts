@@ -7419,7 +7419,7 @@ export const D = {
     de: "3. Menschliche Aufsicht (Art. 14)",
     en: "3. Human Oversight (Art. 14)",
   },
-  "aiact.section_transparency": { de: "4. Transparenz (Art. 52)", en: "4. Transparency (Art. 52)" },
+  "aiact.section_transparency": { de: "4. Transparenz (Art. 50)", en: "4. Transparency (Art. 50)" },
   "aiact.section_detail": {
     de: "5. Anforderungs-Status im Detail",
     en: "5. Requirement Status in Detail",
@@ -7490,8 +7490,8 @@ export const D = {
   },
   "aiact.implemented": { de: "✅ Implementiert", en: "✅ Implemented" },
   "aiact.transparency_intro": {
-    de: "Art. 52 EU AI Act verpflichtet zu eindeutiger Kennzeichnung KI-generierter Inhalte. Subsumio implementiert dies durch:",
-    en: "Art. 52 EU AI Act requires clear labelling of AI-generated content. Subsumio implements this through:",
+    de: "Art. 50 EU AI Act verpflichtet zu eindeutiger Kennzeichnung KI-generierter Inhalte. Subsumio implementiert dies durch:",
+    en: "Art. 50 EU AI Act requires clear labelling of AI-generated content. Subsumio implements this through:",
   },
   "aiact.banner_example": {
     de: "Beispiel-Banner (alle Legal-AI-Outputs):",

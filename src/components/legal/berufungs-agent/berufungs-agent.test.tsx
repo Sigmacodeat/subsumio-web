@@ -181,7 +181,7 @@ describe("Berufungs-Agent Steps", () => {
           canProceed={true}
         />
       );
-      expect(screen.getByText(/EU AI Act Art\. 52/)).toBeDefined();
+      expect(screen.getByText(/EU AI Act Art\. 50/)).toBeDefined();
     });
 
     test("shows success probability percentage", () => {
@@ -242,7 +242,7 @@ describe("Berufungs-Agent Steps", () => {
           canProceed={true}
         />
       );
-      expect(screen.getByText(/EU AI Act Art\. 52/)).toBeDefined();
+      expect(screen.getByText(/EU AI Act Art\. 50/)).toBeDefined();
     });
 
     test("uses correct singular form for 1 grund", () => {
@@ -547,7 +547,7 @@ describe("Berufungs-Agent Steps", () => {
           onBack={vi.fn()}
         />
       );
-      expect(screen.getByText(/EU AI Act Art\. 52/)).toBeDefined();
+      expect(screen.getByText(/EU AI Act Art\. 50/)).toBeDefined();
     });
 
     test("renders severity badge for kritisch finding", () => {

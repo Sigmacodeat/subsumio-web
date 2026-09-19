@@ -209,7 +209,7 @@ export function ChatInput({
               ? "border-[color:var(--ds-danger-solid)]"
               : nearLimit
                 ? "border-amber-400/60"
-                : "border-[color:var(--ds-border)] focus-within:border-[color:var(--ds-ring)]"
+                : "border-[color:var(--ds-border)] focus-within:border-[color:var(--ds-ring)] focus-within:ring-2 focus-within:ring-[color:var(--ds-ring)]/40"
           )}
         >
           {/* Textarea */}

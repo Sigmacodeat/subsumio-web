@@ -16,7 +16,7 @@ export interface AIActConformityBannerProps {
 
 /**
  * EU AI Act Conformity Notice
- * Gemäß Art. 52 EU AI Act (Transparenzpflicht für bestimmte KI-Systeme)
+ * Gemäß Art. 50 EU AI Act (Transparenzpflicht für bestimmte KI-Systeme)
  * und Art. 13 (Transparenz bei Hochrisiko-KI-Systemen nach Annex III Nr. 8).
  */
 export function AIActConformityBanner({
@@ -38,7 +38,7 @@ export function AIActConformityBanner({
     return (
       <div className="ai-act-compact inline-flex items-center gap-1 rounded border border-[color:var(--ds-control-border)] bg-[color:var(--ds-surface-2)] px-1.5 py-0.5 text-[11px] text-[color:var(--ds-text-muted)]">
         <ShieldCheck size={11} className="shrink-0 text-[color:var(--brand-text)]" />
-        <span>KI-generiert · EU AI Act Art. 52</span>
+        <span>KI-generiert · EU AI Act Art. 50</span>
       </div>
     );
   }
@@ -73,7 +73,7 @@ export function AIActConformityBanner({
             <InfoRow icon={<ShieldCheck size={13} />} label="Regulierungsrahmen">
               Dieses System fällt gemäß EU AI Act Annex III Nr. 8 (Rechtspflege) potenziell unter
               Hochrisiko-KI. Subsumio implementiert Art. 14 (menschliche Aufsicht), Art. 13
-              (Transparenz) und Art. 52 (Nutzerkennzeichnung).
+              (Transparenz) und Art. 50 (Kennzeichnung KI-generierter Inhalte).
             </InfoRow>
 
             <InfoRow icon={<ShieldCheck size={13} />} label="Menschliche Überprüfung">
