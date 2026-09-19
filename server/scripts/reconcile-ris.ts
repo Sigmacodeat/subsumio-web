@@ -6,8 +6,9 @@
  * - Federal norms: document-level. The inventory of every norm in force
  *   (ris-inforce-crawl.ts → _state/ris-inforce.jsonl) is compared with the
  *   active law-at-normen pages by NOR number: missing = in force at RIS but
- *   not in the database; extra = active in the database but not in force
- *   at RIS (repealed or superseded — still searchable, ranked down).
+ *   not in the database; extra = active in the database, not in force at
+ *   RIS, and without an in_force_to date explaining why. Dated older
+ *   versions are expected and reported separately.
  * - Courts and state law: count-level against RIS hit totals, one request
  *   per application. For OGH/VwGH/VfGH RIS counts Rechtssätze, so the
  *   database side counts Rechtssätze too (decision texts are reported in the
@@ -110,25 +111,29 @@ async function main() {
   const rows: Row[] = [];
 
   // Federal norms — document level.
-  const dbNor = new Set<string>(
-    (await q(
-      `SELECT frontmatter->>'doc_id' AS id FROM pages
-       WHERE source_id = 'law-at-normen' AND deleted_at IS NULL AND frontmatter->>'doc_id' LIKE 'NOR%'`
-    )).map((r) => r.id)
+  const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Vienna" });
+  const normRows = await q(
+    `SELECT frontmatter->>'doc_id' AS id, (frontmatter->>'in_force_to') < $1 AS historisch FROM pages
+     WHERE source_id = 'law-at-normen' AND deleted_at IS NULL AND frontmatter->>'doc_id' LIKE 'NOR%'`,
+    [today]
   );
+  const dbNor = new Set<string>(normRows.map((r) => r.id));
+  const historicalNor = new Set<string>(normRows.filter((r) => r.historisch).map((r) => r.id));
   if (existsSync(INVENTORY)) {
     const ris = inventoryNorIds(readFileSync(INVENTORY, "utf8"));
     const { missing, extra } = diff(ris, dbNor);
+    // Older versions carry their in_force_to and are expected, not surplus.
+    const unexplained = extra.filter((id) => !historicalNor.has(id));
     rows.push({
       source_id: "law-at-normen",
       method: "doc-ids",
       ris_total: ris.size,
-      db_total: dbNor.size,
+      db_total: dbNor.size - historicalNor.size,
       missing: missing.length,
-      extra: extra.length,
+      extra: unexplained.length,
       sample_missing: missing.slice(0, 50),
-      sample_extra: extra.slice(0, 50),
-      note: "extra = in der DB aktiv, im RIS nicht (mehr) in Kraft",
+      sample_extra: unexplained.slice(0, 50),
+      note: `${historicalNor.size} ältere Fassungen (außer Kraft, datiert) zusätzlich in der DB`,
     });
   } else {
     console.error(`Inventar fehlt: ${INVENTORY} (ris-inforce-crawl.ts zuerst)`);
@@ -163,23 +168,26 @@ async function main() {
       });
     }
 
-    // State law — count level. RIS includes "§ 0" metadata records the
-    // database leaves out, so RIS is expected to be higher.
-    const today = new Date().toISOString().slice(0, 10);
+    // State law — count level, versions in force only: every consolidated
+    // version has its own document number, and the database keeps the older
+    // ones (dated, ranked down) for "which version applied" questions.
     const lr = await hits(`${API}/Landesrecht?Applikation=LrKons&DokumenteProSeite=Ten&Fassung.FassungVom=${today}`);
     const [lrDb] = await q(
-      `SELECT count(*)::int AS n FROM pages WHERE source_id = 'law-at-landesrecht' AND deleted_at IS NULL`
+      `SELECT count(*) FILTER (WHERE coalesce(frontmatter->>'in_force_to', '9999') >= $1)::int AS geltend,
+              count(*) FILTER (WHERE (frontmatter->>'in_force_to') < $1)::int AS historisch
+       FROM pages WHERE source_id = 'law-at-landesrecht' AND deleted_at IS NULL`,
+      [today]
     );
     rows.push({
       source_id: "law-at-landesrecht",
       method: "counts",
       ris_total: lr,
-      db_total: lrDb.n,
-      missing: lr === null ? null : Math.max(0, lr - lrDb.n),
-      extra: lr === null ? null : Math.max(0, lrDb.n - lr),
+      db_total: lrDb.geltend,
+      missing: lr === null ? null : Math.max(0, lr - lrDb.geltend),
+      extra: lr === null ? null : Math.max(0, lrDb.geltend - lr),
       sample_missing: [],
       sample_extra: [],
-      note: "RIS enthält §-0-Metadatensätze ohne Normtext; die DB nicht",
+      note: `verglichen: geltende Fassungen; ${lrDb.historisch} ältere Fassungen zusätzlich in der DB`,
     });
   } finally {
     releaseRisLock();
