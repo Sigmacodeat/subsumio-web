@@ -5,7 +5,9 @@
  *   dense   — exact nearest neighbours over the sample
  *   hybrid  — dense fused with the production keyword ranking exactly as
  *             search/hybrid.ts does it (RRF, then 0.7·RRF + 0.3·cosine),
- *             i.e. what a lawyer actually gets from search
+ *             i.e. what a lawyer actually gets from search today
+ *   gated   — proposed fix: keyword arm only when the question cites a
+ *             source (§, abbreviation, case number), vector only otherwise
  * Metrics per page: Recall@1/5/10, MRR@10, nDCG@10, overall and per question
  * category, plus a paired bootstrap of hybrid nDCG@10 against the current
  * production model (te3-small) so "better" means better beyond sample luck.
@@ -21,6 +23,7 @@ import { BAKEOFF_MODELS } from "./models.ts";
 import {
   meanMetrics,
   pagesFromChunks,
+  isCitationQuery,
   pairedBootstrap,
   productionHybrid,
   scoreRanking,
@@ -88,6 +91,7 @@ function main() {
     openWeights: boolean;
     dense: RankingMetrics[];
     hybrid: RankingMetrics[];
+    gated: RankingMetrics[];
   }
   const results: ModelResult[] = [];
   const vecRoot = join(OUT, "vectors");
@@ -114,6 +118,7 @@ function main() {
     console.log(`bewerte ${dir} (${dims} Dim.) …`);
     const dense: RankingMetrics[] = [];
     const hybrid: RankingMetrics[] = [];
+    const gated: RankingMetrics[] = [];
     queries.forEach((q, i) => {
       const query = qv.subarray(i * dims, (i + 1) * dims);
       const denseChunks = topKDot(query, docs, dims, TOP_CHUNKS).map((r) => chunkIdOfRow[r]!);
@@ -127,7 +132,9 @@ function main() {
         return s;
       };
       const fused = productionHybrid(denseChunks, keyword.get(q.qid) ?? [], cosineOf);
-      hybrid.push(scoreRanking(pagesFromChunks(fused, pageOfChunk), golds[i]!));
+      const hybridMetrics = scoreRanking(pagesFromChunks(fused, pageOfChunk), golds[i]!);
+      hybrid.push(hybridMetrics);
+      gated.push(isCitationQuery(q.question) ? hybridMetrics : dense[dense.length - 1]!);
     });
     results.push({
       dir,
@@ -139,10 +146,11 @@ function main() {
       openWeights: model?.openWeights ?? false,
       dense,
       hybrid,
+      gated,
     });
   }
 
-  results.sort((a, b) => meanMetrics(b.hybrid).ndcg10 - meanMetrics(a.hybrid).ndcg10);
+  results.sort((a, b) => meanMetrics(b.gated).ndcg10 - meanMetrics(a.gated).ndcg10);
   const base = results.find((r) => r.dir === String(values.baseline));
   const categories = [...new Set(queries.map((q) => q.category))];
 
@@ -153,45 +161,51 @@ function main() {
     `${queries.length} Fragen (${categories.map((c) => `${c}: ${queries.filter((q) => q.category === c).length}`).join(", ")}), ${corpus.length.toLocaleString("de-AT")} Chunks in der Stichprobe. Relevanz pro Seite (§ bzw. Entscheidung).`
   );
   lines.push("");
-  lines.push(`## Gesamt (hybrid = Vektor + Stichwortsuche, wie in Produktion)`);
+  const citing = queries.filter((q) => isCitationQuery(q.question)).length;
+  lines.push(`## Gesamt`);
   lines.push("");
   lines.push(
-    `| Modell | nDCG@10 hybrid | Recall@10 hybrid | Recall@1 hybrid | nDCG@10 nur Vektor | Δ nDCG@10 zu ${values.baseline} (95 %-KI) | Dim. | Kosten Stichprobe | Datenstandort |`
+    `nDCG@10 in drei Varianten: **nur Vektor**; **Produktion heute** (Vektor + Stichwortsuche, gemischt wie search/hybrid.ts); **Vorschlag** (Stichwortsuche nur bei Fragen mit Zitat — ${citing} von ${queries.length} Fragen —, sonst nur Vektor). Δ und Konfidenzintervall beziehen sich auf den Vorschlag.`
   );
-  lines.push(`|---|---|---|---|---|---|---|---|---|`);
+  lines.push("");
+  lines.push(
+    `| Modell | Vorschlag nDCG@10 | Vorschlag Recall@10 | Vorschlag Recall@1 | nur Vektor | Produktion heute | Δ Vorschlag zu ${values.baseline} (95 %-KI) | Dim. | Kosten Stichprobe | Datenstandort |`
+  );
+  lines.push(`|---|---|---|---|---|---|---|---|---|---|`);
   for (const r of results) {
+    const g = meanMetrics(r.gated);
     const h = meanMetrics(r.hybrid);
     const d = meanMetrics(r.dense);
     let delta = "—";
     if (base && r !== base) {
       const bs = pairedBootstrap(
-        r.hybrid.map((x) => x.ndcg10),
-        base.hybrid.map((x) => x.ndcg10)
+        r.gated.map((x) => x.ndcg10),
+        base.gated.map((x) => x.ndcg10)
       );
       const sig = bs.lo > 0 || bs.hi < 0 ? " **" : "";
       delta = `${bs.diff >= 0 ? "+" : ""}${pct(bs.diff)} (${pct(bs.lo)} … ${pct(bs.hi)})${sig}`;
     }
     lines.push(
-      `| ${r.label} | ${pct(h.ndcg10)} | ${pct(h.recall10)} | ${pct(h.recall1)} | ${pct(d.ndcg10)} | ${delta} | ${r.dims} | ${r.usd.toFixed(2)} $ | ${r.residency}${r.openWeights ? ", offene Gewichte" : ""} |`
+      `| ${r.label} | ${pct(g.ndcg10)} | ${pct(g.recall10)} | ${pct(g.recall1)} | ${pct(d.ndcg10)} | ${pct(h.ndcg10)} | ${delta} | ${r.dims} | ${r.usd.toFixed(2)} $ | ${r.residency}${r.openWeights ? ", offene Gewichte" : ""} |`
     );
   }
   const kw = meanMetrics(keywordRows);
   lines.push(
-    `| *nur Stichwortsuche* | ${pct(kw.ndcg10)} | ${pct(kw.recall10)} | ${pct(kw.recall1)} | — | — | — | — | — |`
+    `| *nur Stichwortsuche* | ${pct(kw.ndcg10)} | ${pct(kw.recall10)} | ${pct(kw.recall1)} | — | — | — | — | — | — |`
   );
   lines.push("");
   lines.push(
     `** = Unterschied zur Basis liegt außerhalb des Zufallsbereichs (95 %-Intervall schließt 0 aus).`
   );
   lines.push("");
-  lines.push(`## Nach Fragetyp (nDCG@10 hybrid)`);
+  lines.push(`## Nach Fragetyp (nDCG@10, Vorschlag / Produktion heute)`);
   lines.push("");
   lines.push(`| Modell | ${categories.join(" | ")} |`);
   lines.push(`|---|${categories.map(() => "---").join("|")}|`);
   for (const r of results) {
     const cells = categories.map((c) => {
-      const rows = r.hybrid.filter((_, i) => queries[i]!.category === c);
-      return pct(meanMetrics(rows).ndcg10);
+      const inCat = (_: unknown, i: number) => queries[i]!.category === c;
+      return `${pct(meanMetrics(r.gated.filter(inCat)).ndcg10)} / ${pct(meanMetrics(r.hybrid.filter(inCat)).ndcg10)}`;
     });
     lines.push(`| ${r.label} | ${cells.join(" | ")} |`);
   }
@@ -212,6 +226,7 @@ function main() {
         dims: r.dims,
         tokens: r.tokens,
         usd: r.usd,
+        gated: meanMetrics(r.gated),
         hybrid: meanMetrics(r.hybrid),
         dense: meanMetrics(r.dense),
         per_query_hybrid_ndcg10: r.hybrid.map((x) => x.ndcg10),
