@@ -2,7 +2,7 @@ import { describe, it, expect } from "bun:test";
 import {
   pagesFromChunks,
   pairedBootstrap,
-  rrfFuse,
+  productionHybrid,
   scoreRanking,
   topKDot,
   truncateAndNormalize,
@@ -32,10 +32,6 @@ describe("embedding bake-off metrics", () => {
     expect(m).toEqual({ recall1: 0, recall5: 0, recall10: 0, mrr10: 0, ndcg10: 0 });
   });
 
-  it("RRF puts an item ranked high in both lists first", () => {
-    expect(rrfFuse([[1, 2, 3], [3, 2, 1], [2]])[0]).toBe(2);
-  });
-
   it("truncates and re-normalizes", () => {
     const v = truncateAndNormalize([3, 4, 100], 2);
     expect(v.length).toBe(2);
@@ -62,5 +58,17 @@ describe("embedding bake-off metrics", () => {
     const r = pairedBootstrap(a, b);
     expect(r.lo).toBeLessThan(0);
     expect(r.hi).toBeGreaterThan(0);
+  });
+  it("production hybrid lets a strong vector hit beat keyword noise", () => {
+    // Chunk 1 is the vector's top hit with high cosine; 9 tops the keyword
+    // list but is semantically far off.
+    const cos = new Map([
+      [1, 0.8],
+      [2, 0.5],
+      [9, 0.1],
+    ]);
+    const ranked = productionHybrid([1, 2], [9, 2], (id) => cos.get(id) ?? 0);
+    expect(ranked[0]).toBe(2); // in both lists → highest RRF
+    expect(ranked.indexOf(1)).toBeLessThan(ranked.indexOf(9));
   });
 });

@@ -3,7 +3,8 @@
  *
  * For each model directory under <out>/vectors with complete docs + queries:
  *   dense   — exact nearest neighbours over the sample
- *   hybrid  — dense fused with the production keyword ranking (RRF, k = 60),
+ *   hybrid  — dense fused with the production keyword ranking exactly as
+ *             search/hybrid.ts does it (RRF, then 0.7·RRF + 0.3·cosine),
  *             i.e. what a lawyer actually gets from search
  * Metrics per page: Recall@1/5/10, MRR@10, nDCG@10, overall and per question
  * category, plus a paired bootstrap of hybrid nDCG@10 against the current
@@ -21,7 +22,7 @@ import {
   meanMetrics,
   pagesFromChunks,
   pairedBootstrap,
-  rrfFuse,
+  productionHybrid,
   scoreRanking,
   topKDot,
   type RankingMetrics,
@@ -64,6 +65,7 @@ function main() {
   const corpus = readJsonl<{ id: number; page_id: number }>(join(OUT, "corpus.jsonl"));
   const chunkIdOfRow = corpus.map((c) => c.id);
   const pageOfChunk = new Map(corpus.map((c) => [c.id, c.page_id]));
+  const rowOfChunk = new Map(corpus.map((c, i) => [c.id, i]));
   const keyword = new Map(
     readJsonl<{ qid: string; chunk_ids: number[] }>(join(OUT, "keyword.jsonl")).map((k) => [
       k.qid,
@@ -113,13 +115,19 @@ function main() {
     const dense: RankingMetrics[] = [];
     const hybrid: RankingMetrics[] = [];
     queries.forEach((q, i) => {
-      const rowsTop = topKDot(qv.subarray(i * dims, (i + 1) * dims), docs, dims, TOP_CHUNKS);
-      const densePages = pagesFromChunks(
-        rowsTop.map((r) => chunkIdOfRow[r]!),
-        pageOfChunk
-      );
-      dense.push(scoreRanking(densePages, golds[i]!));
-      hybrid.push(scoreRanking(rrfFuse([densePages, keywordPages[i]!]), golds[i]!));
+      const query = qv.subarray(i * dims, (i + 1) * dims);
+      const denseChunks = topKDot(query, docs, dims, TOP_CHUNKS).map((r) => chunkIdOfRow[r]!);
+      dense.push(scoreRanking(pagesFromChunks(denseChunks, pageOfChunk), golds[i]!));
+      const cosineOf = (chunkId: number) => {
+        const row = rowOfChunk.get(chunkId);
+        if (row === undefined) return 0;
+        let s = 0;
+        const off = row * dims;
+        for (let j = 0; j < dims; j++) s += query[j]! * docs[off + j]!;
+        return s;
+      };
+      const fused = productionHybrid(denseChunks, keyword.get(q.qid) ?? [], cosineOf);
+      hybrid.push(scoreRanking(pagesFromChunks(fused, pageOfChunk), golds[i]!));
     });
     results.push({
       dir,

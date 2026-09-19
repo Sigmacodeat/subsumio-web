@@ -29,13 +29,26 @@ export function pagesFromChunks(
   return pages;
 }
 
-/** Reciprocal rank fusion (k = 60, as in the production hybrid search). */
-export function rrfFuse(lists: readonly (readonly number[])[], k = 60): number[] {
-  const score = new Map<number, number>();
-  for (const list of lists) {
-    list.forEach((id, rank) => score.set(id, (score.get(id) ?? 0) + 1 / (k + rank + 1)));
+/**
+ * The production hybrid ranking (search/hybrid.ts): chunk-level RRF with
+ * 1/(k + rank), scores normalized to the best one, then blended
+ * 0.7 · RRF + 0.3 · cosine (cosineReScore). Returns chunk ids, best first.
+ */
+export function productionHybrid(
+  denseChunkIds: readonly number[],
+  keywordChunkIds: readonly number[],
+  cosineOf: (chunkId: number) => number,
+  k = 60
+): number[] {
+  const rrf = new Map<number, number>();
+  for (const list of [denseChunkIds, keywordChunkIds]) {
+    list.forEach((id, rank) => rrf.set(id, (rrf.get(id) ?? 0) + 1 / (k + rank)));
   }
-  return [...score.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0]).map(([id]) => id);
+  const max = Math.max(0, ...rrf.values());
+  return [...rrf.entries()]
+    .map(([id, score]) => [id, 0.7 * (max > 0 ? score / max : 0) + 0.3 * cosineOf(id)] as const)
+    .sort((a, b) => b[1] - a[1] || a[0] - b[0])
+    .map(([id]) => id);
 }
 
 /** Recall@k, MRR@10 and nDCG@10 with binary relevance. */
