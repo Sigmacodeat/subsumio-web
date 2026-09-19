@@ -723,11 +723,15 @@ function dirStats(dir: string): { files: number; placeholders: number } {
 /** True when any corpus file in `dir` changed since `sinceIso` (or none recorded). */
 function needsImport(dir: string, sinceIso: string | undefined): boolean {
   if (!sinceIso) return true;
-  const abs = join(CORPUS, dir);
-  const newer = sh(
-    `find ${JSON.stringify(abs)} -name '*.md' -newermt ${JSON.stringify(sinceIso)} 2>/dev/null | head -1`
-  );
-  return newer !== "";
+  // Imports read _normalized/<dir>; a metadata backfill may change only the
+  // canonical copy, so both trees count as "changed since the last import".
+  for (const abs of [join(CORPUS, dir), join(CORPUS, "_normalized", dir)]) {
+    const newer = sh(
+      `find ${JSON.stringify(abs)} -name '*.md' -newermt ${JSON.stringify(sinceIso)} 2>/dev/null | head -1`
+    );
+    if (newer !== "") return true;
+  }
+  return false;
 }
 
 function dbUrl(): string {

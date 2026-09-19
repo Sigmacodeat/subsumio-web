@@ -162,3 +162,53 @@ export function rememberOnDisk(
   existing.fileKeys.add(fileKey);
   existing.undatedKeys.add(slugAz);
 }
+
+// ---------------------------------------------------------------------------
+// Metadata backfill: add cited norms / decision type to files written before
+// the fetcher kept them. Body text is never touched.
+// ---------------------------------------------------------------------------
+
+const FM_RE = /^---\r?\n([\s\S]*?)\r?\n---/;
+
+/** True when a raw or canonical file already carries at least one cited norm. */
+export function hasCitedNorms(content: string): boolean {
+  const fm = content.match(FM_RE)?.[1] ?? "";
+  if (/^normen:\s*\S/m.test(fm)) return true;
+  if (/^cited_norms:\s*\n\s+-\s/m.test(fm)) return true;
+  return false;
+}
+
+/** Raw fetch output: add `normen` and `entscheidungsart` lines to the frontmatter. */
+export function patchRawNormen(content: string, normen: string[], decisionType?: string): string {
+  const m = content.match(FM_RE);
+  if (!m || normen.length === 0) return content;
+  let fm = m[1];
+  const add: string[] = [];
+  if (!/^normen:\s*\S/m.test(fm)) {
+    fm = fm.replace(/^normen:.*$/m, "").replace(/\n{2,}/g, "\n");
+    add.push(`normen: ${JSON.stringify(normen.join("; "))}`);
+  }
+  if (decisionType && !/^entscheidungsart:\s*\S/m.test(fm)) {
+    add.push(`entscheidungsart: ${JSON.stringify(decisionType)}`);
+  }
+  if (add.length === 0) return content;
+  return content.replace(FM_RE, () => `---\n${fm.trimEnd()}\n${add.join("\n")}\n---`);
+}
+
+/** Canonical schema v1 file: fill `cited_norms: []` and `decision_type: null` in place. */
+export function patchCanonicalNormen(
+  content: string,
+  normen: string[],
+  decisionType?: string
+): string {
+  const m = content.match(FM_RE);
+  if (!m || normen.length === 0) return content;
+  let fm = m[1];
+  fm = fm.replace(
+    /^cited_norms: \[\]$/m,
+    `cited_norms:\n${normen.map((n) => `  - ${JSON.stringify(n)}`).join("\n")}`
+  );
+  if (decisionType)
+    fm = fm.replace(/^decision_type: null$/m, `decision_type: ${JSON.stringify(decisionType)}`);
+  return content.replace(FM_RE, () => `---\n${fm}\n---`);
+}

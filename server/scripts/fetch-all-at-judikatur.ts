@@ -410,9 +410,12 @@ async function fullScanCourt(
   const outDir = join(CORPUS_ROOT, court.outDir);
   mkdirSync(outDir, { recursive: true });
 
-  // Recognises every naming generation on disk (see judikatur-file.ts), so a
-  // full scan never fetches a decision a second time under a new file name.
-  const existing = loadExistingDocs(outDir);
+  // "Already have it" means: passed the normalizer's validator and sits in
+  // _normalized/. A raw file the gate rejected (navigation HTML, screenreader
+  // copy, placeholder) counts as missing and is fetched again from XML —
+  // otherwise it would block its own repair forever. Every naming generation
+  // is recognised (see judikatur-file.ts), so nothing valid is fetched twice.
+  const existing = loadExistingDocs(join(CORPUS_ROOT, "_normalized", court.outDir));
   const existingCount = existing.fileKeys.size;
   const toYear = new Date().getFullYear();
   const years: number[] = [];

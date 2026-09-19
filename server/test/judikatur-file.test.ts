@@ -127,3 +127,58 @@ describe("validateBody: screenreader copies", () => {
     expect(validateBody(clean, "decision").map((i) => i.code)).not.toContain("screenreader_copy");
   });
 });
+
+describe("metadata backfill", () => {
+  const NORMEN = ["VwGG §34 Abs1", "B-VG Art133 Abs4"];
+  const RAW_OLD = `---
+type: court_decision
+court: Verwaltungsgerichtshof
+case_number: Ra 2019/12/0005
+source: ris-ogd
+source_url: "https://www.ris.bka.gv.at/Dokument.wxe?Abfrage=Vwgh&Dokumentnummer=JWT_2019120005_20190101X00"
+---
+
+# VwGH — Ra 2019/12/0005
+
+Die Revision wird zurückgewiesen. Kosten: $ 0.
+`;
+  const CANON_OLD = `---
+schema_version: 1
+doc_id: JWT_2019120005_20190101X00
+doc_class: decision
+decision_type: null
+cited_norms: []
+legal_area: []
+---
+
+# VwGH — Ra 2019/12/0005
+
+Die Revision wird zurückgewiesen.
+`;
+
+  test("raw file gains normen and decision type; the body stays byte-identical", async () => {
+    const { patchRawNormen, hasCitedNorms } = await import("../scripts/judikatur-file.ts");
+    const out = patchRawNormen(RAW_OLD, NORMEN, "Beschluss");
+    expect(hasCitedNorms(RAW_OLD)).toBe(false);
+    expect(hasCitedNorms(out)).toBe(true);
+    expect(out.split("\n---\n")[1]).toBe(RAW_OLD.split("\n---\n")[1]);
+    const canon = mapToCanonical(parseRaw(out), "x");
+    expect(canon.cited_norms).toEqual(NORMEN);
+    expect(canon.decision_type).toBe("Beschluss");
+    // Idempotent: a second run changes nothing.
+    expect(patchRawNormen(out, NORMEN, "Beschluss")).toBe(out);
+  });
+
+  test("canonical file gets a YAML list and stays valid", async () => {
+    const { patchCanonicalNormen, hasCitedNorms } = await import("../scripts/judikatur-file.ts");
+    const { load } = await import("js-yaml");
+    const out = patchCanonicalNormen(CANON_OLD, NORMEN, "Beschluss");
+    expect(hasCitedNorms(CANON_OLD)).toBe(false);
+    expect(hasCitedNorms(out)).toBe(true);
+    const fm = load(out.split("---")[1]) as Record<string, unknown>;
+    expect(fm.cited_norms).toEqual(NORMEN);
+    expect(fm.decision_type).toBe("Beschluss");
+    expect(out.endsWith("Die Revision wird zurückgewiesen.\n")).toBe(true);
+    expect(patchCanonicalNormen(out, NORMEN, "Beschluss")).toBe(out);
+  });
+});
