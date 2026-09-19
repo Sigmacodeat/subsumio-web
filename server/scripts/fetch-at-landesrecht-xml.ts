@@ -29,18 +29,21 @@
  *   bun scripts/fetch-at-landesrecht-xml.ts --page 50      # Resume ab Seite 50
  */
 
-import { mkdirSync, writeFileSync, existsSync, readdirSync } from "fs";
+import { mkdirSync, writeFileSync, existsSync, readdirSync, readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { createHash } from "crypto";
+import { acquireRisLock, releaseRisLock } from "./ris-lock";
 
 const RIS_API = "https://data.bka.gv.at/ris/api/v2.6/Landesrecht";
 /** Vorhandene Dateien überschreiben — nötig nach jeder Extraktor-Korrektur. */
 const FORCE = process.argv.includes("--force");
 const XML_BASE = "https://www.ris.bka.gv.at/Dokumente/Landesnormen";
 
-const CONCURRENCY = Number(arg("concurrency", "5"));
-const THROTTLE_MS = Number(arg("throttle-ms", "200"));
+// RIS OGD: one connection, ~1 s between requests. Was 5 parallel workers
+// without the shared lock.
+const CONCURRENCY = Number(arg("concurrency", "1"));
+const THROTTLE_MS = Number(arg("throttle-ms", "1000"));
 const REQUEST_TIMEOUT_MS = Number(arg("timeout-ms", "20000"));
 const MAX_CONSECUTIVE_503 = Number(arg("max-503", "25"));
 const PAGE_SIZE = "OneHundred";
@@ -63,7 +66,7 @@ const OUT_DIR = join(_corpusRoot, "at-landesrecht");
 
 function arg(name: string, fb?: string): string {
   const i = process.argv.indexOf(`--${name}`);
-  return i > -1 ? process.argv[i + 1] : fb ?? "";
+  return i > -1 ? process.argv[i + 1] : (fb ?? "");
 }
 
 const LIMIT = Number(arg("limit", "0"));
@@ -72,7 +75,10 @@ const START_PAGE = Number(arg("page", "1"));
 function slugify(s: string): string {
   return s
     .toLowerCase()
-    .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 80);
@@ -108,8 +114,12 @@ function extractText(xml: string): { text: string; meta: Record<string, string> 
     const plain = inner
       .replace(/<[^>]+>/g, " ")
       .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(Number(d)))
-      .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-      .replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'")
+      .replace(/&nbsp;/g, " ")
       .replace(/\s+/g, " ")
       .trim();
     if (!plain) continue;
@@ -244,7 +254,7 @@ function buildMarkdown(
   meta: Record<string, string>,
   lrMeta: Record<string, string>,
   eli: string,
-  gn: string,
+  gn: string
 ): string {
   const fm: string[] = [
     `title: "${esc(title)}"`,
@@ -272,14 +282,41 @@ function buildMarkdown(
   fm.push(`source_url: "${XML_BASE}/${docId}/${docId}.xml"`);
   fm.push(`source_format: xml`);
   fm.push(`retrieved_at: "${new Date().toISOString().slice(0, 10)}"`);
-  fm.push(`license: "Quelle: RIS OGD (data.bka.gv.at), Bundeskanzleramt Österreich — Open Government Data, Namensnennung."`);
+  fm.push(
+    `license: "Quelle: RIS OGD (data.bka.gv.at), Bundeskanzleramt Österreich — Open Government Data, Namensnennung."`
+  );
   fm.push(`content_hash: "${createHash("sha256").update(text.trim()).digest("hex").slice(0, 16)}"`);
 
   return `---\n${fm.join("\n")}\n---\n\n# ${title}\n\n${text}\n`;
 }
 
+/** Landesrecht document ids that passed the normalizer (_normalized/at-landesrecht). */
+function loadValidatedIds(root: string): Set<string> {
+  const out = new Set<string>();
+  const walk = (dir: string) => {
+    if (!existsSync(dir)) return;
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (e.name.endsWith(".md")) {
+        const id = readFileSync(p, "utf8")
+          .slice(0, 800)
+          .match(/^doc_id:\s*["']?([^"'\s]+)/m)?.[1];
+        if (id) out.add(id);
+      }
+    }
+  };
+  walk(root);
+  return out;
+}
+
 async function main() {
+  await acquireRisLock();
   mkdirSync(OUT_DIR, { recursive: true });
+  // Present = passed the normalizer. Older generations (state folders, HTML
+  // fetches) that the gate rejected count as missing and are fetched as XML.
+  const validated = loadValidatedIds(join(_corpusRoot, "_normalized", "at-landesrecht"));
+  console.log(`  ${validated.size} Landesnormen bereits geprüft vorhanden (_normalized)`);
 
   // Load existing files for resume (check all subfolders)
   // Store full relative path (folder/key) to avoid collisions between laws
@@ -338,7 +375,16 @@ async function main() {
     }
 
     // Filter: Only Paragraph docs (skip Norm docs)
-    const pageDocs: { docId: string; title: string; xmlUrl: string; lrMeta: Record<string, string>; eli: string; gn: string; apa: string; fileKey: string }[] = [];
+    const pageDocs: {
+      docId: string;
+      title: string;
+      xmlUrl: string;
+      lrMeta: Record<string, string>;
+      eli: string;
+      gn: string;
+      apa: string;
+      fileKey: string;
+    }[] = [];
 
     for (const ref of refs) {
       const meta = ref?.Data?.Metadaten ?? {};
@@ -384,87 +430,101 @@ async function main() {
     const workers: Promise<void>[] = [];
 
     for (let w = 0; w < CONCURRENCY; w++) {
-      workers.push((async () => {
-        while (queue.length > 0 && !aborted) {
-          if (LIMIT > 0 && totalWritten >= LIMIT) break;
-          const doc = queue.shift()!;
+      workers.push(
+        (async () => {
+          while (queue.length > 0 && !aborted) {
+            if (LIMIT > 0 && totalWritten >= LIMIT) break;
+            const doc = queue.shift()!;
 
-          // Build file key: gn-folder/key.md (like at-normen)
-          const folderName = doc.gn ? `gnr-${doc.gn}` : "no-gn";
-          const fullKey = `${folderName}/${doc.fileKey}`;
+            // Build file key: gn-folder/key.md (like at-normen)
+            const folderName = doc.gn ? `gnr-${doc.gn}` : "no-gn";
+            const fullKey = `${folderName}/${doc.fileKey}`;
 
-          // BUG FIX: Use fullKey (folder/key) not just fileKey —
-          // different laws can have the same § number (p-1, p-2, etc.)
-          // --force überschreibt vorhandene Dateien. Ohne diesen Schalter
-          // ist der Lauf nach einer Extraktor-Korrektur wirkungslos: er
-          // meldet für jede der 108.297 Dateien "skipped" und repariert
-          // keine einzige. Derselbe Blocker steckte in ris-xml-fetch-normen.ts.
-          if (existing.has(fullKey) && !FORCE) {
-            totalSkipped++;
-            continue;
+            // BUG FIX: Use fullKey (folder/key) not just fileKey —
+            // different laws can have the same § number (p-1, p-2, etc.)
+            // --force überschreibt vorhandene Dateien. Ohne diesen Schalter
+            // ist der Lauf nach einer Extraktor-Korrektur wirkungslos: er
+            // meldet für jede der 108.297 Dateien "skipped" und repariert
+            // keine einzige. Derselbe Blocker steckte in ris-xml-fetch-normen.ts.
+            if (!FORCE && validated.has(doc.docId)) {
+              totalSkipped++;
+              continue;
+            }
+
+            totalProcessed++;
+
+            // Fetch XML — use API URL or construct fallback
+            let xmlUrl = doc.xmlUrl;
+            if (!xmlUrl) {
+              xmlUrl = `${XML_BASE}/${doc.docId}/${doc.docId}.xml`;
+            }
+
+            const xml = await fetchXmlFromUrl(xmlUrl);
+
+            if (!xml) {
+              totalFailed++;
+              continue;
+            }
+
+            // Parse XML
+            const { text, meta: xmlMeta } = extractText(xml);
+
+            // Skip docs with too little text
+            if (text.length < MIN_TEXT_LENGTH) {
+              totalFailed++;
+              continue;
+            }
+
+            // Build markdown
+            const md = buildMarkdown(
+              doc.docId,
+              doc.title,
+              text,
+              xmlMeta,
+              doc.lrMeta,
+              doc.eli,
+              doc.gn
+            );
+
+            // Write file in subfolder
+            const outFolder = join(OUT_DIR, folderName);
+            mkdirSync(outFolder, { recursive: true });
+            // Roh-XML ablegen, BEVOR der Text daraus gewonnen wird.
+            //
+            // Ohne Ablage erzwingt jede Extraktor-Korrektur einen vollständigen
+            // Neuabruf. Beim Bundesrecht hat die abgelegte Kopie den
+            // Beachte/Anmerkung-Fix auf 2 Minuten gedrückt statt 9 Stunden —
+            // und sie ist die Voraussetzung dafür, den Textbestand überhaupt
+            // gegen die Quelle prüfen zu können (Stufe „textidentisch"), ohne
+            // 110.000 Anfragen an RIS zu stellen. Kostet ~1 GB.
+            if (KEEP_XML) {
+              const xmlDir = join(KEEP_XML, folderName);
+              mkdirSync(xmlDir, { recursive: true });
+              writeFileSync(join(xmlDir, `${doc.docId}.xml`), xml);
+            }
+            const outPath = join(outFolder, `${doc.fileKey}.md`);
+            writeFileSync(outPath, md);
+            existing.add(fullKey);
+            totalWritten++;
+
+            if (totalWritten % 200 === 0) {
+              console.log(
+                `  [page ${page}] Written: ${totalWritten} | Skipped: ${totalSkipped} | Norm skipped: ${totalSkippedNorm} | Failed: ${totalFailed} | Total: ${totalProcessed}`
+              );
+            }
+
+            await new Promise((r) => setTimeout(r, THROTTLE_MS));
           }
-
-          totalProcessed++;
-
-          // Fetch XML — use API URL or construct fallback
-          let xmlUrl = doc.xmlUrl;
-          if (!xmlUrl) {
-            xmlUrl = `${XML_BASE}/${doc.docId}/${doc.docId}.xml`;
-          }
-
-          const xml = await fetchXmlFromUrl(xmlUrl);
-
-          if (!xml) {
-            totalFailed++;
-            continue;
-          }
-
-          // Parse XML
-          const { text, meta: xmlMeta } = extractText(xml);
-
-          // Skip docs with too little text
-          if (text.length < MIN_TEXT_LENGTH) {
-            totalFailed++;
-            continue;
-          }
-
-          // Build markdown
-          const md = buildMarkdown(doc.docId, doc.title, text, xmlMeta, doc.lrMeta, doc.eli, doc.gn);
-
-          // Write file in subfolder
-          const outFolder = join(OUT_DIR, folderName);
-          mkdirSync(outFolder, { recursive: true });
-          // Roh-XML ablegen, BEVOR der Text daraus gewonnen wird.
-          //
-          // Ohne Ablage erzwingt jede Extraktor-Korrektur einen vollständigen
-          // Neuabruf. Beim Bundesrecht hat die abgelegte Kopie den
-          // Beachte/Anmerkung-Fix auf 2 Minuten gedrückt statt 9 Stunden —
-          // und sie ist die Voraussetzung dafür, den Textbestand überhaupt
-          // gegen die Quelle prüfen zu können (Stufe „textidentisch"), ohne
-          // 110.000 Anfragen an RIS zu stellen. Kostet ~1 GB.
-          if (KEEP_XML) {
-            const xmlDir = join(KEEP_XML, folderName);
-            mkdirSync(xmlDir, { recursive: true });
-            writeFileSync(join(xmlDir, `${doc.docId}.xml`), xml);
-          }
-          const outPath = join(outFolder, `${doc.fileKey}.md`);
-          writeFileSync(outPath, md);
-          existing.add(fullKey);
-          totalWritten++;
-
-          if (totalWritten % 200 === 0) {
-            console.log(`  [page ${page}] Written: ${totalWritten} | Skipped: ${totalSkipped} | Norm skipped: ${totalSkippedNorm} | Failed: ${totalFailed} | Total: ${totalProcessed}`);
-          }
-
-          await new Promise((r) => setTimeout(r, THROTTLE_MS));
-        }
-      })());
+        })()
+      );
     }
 
     await Promise.all(workers);
 
     if (page % 10 === 0) {
-      console.log(`\nPage ${page} done. Written: ${totalWritten} | Skipped: ${totalSkipped} | Norm skipped: ${totalSkippedNorm} | Failed: ${totalFailed} | Total: ${totalProcessed}\n`);
+      console.log(
+        `\nPage ${page} done. Written: ${totalWritten} | Skipped: ${totalSkipped} | Norm skipped: ${totalSkippedNorm} | Failed: ${totalFailed} | Total: ${totalProcessed}\n`
+      );
     }
 
     // Small delay between pages
@@ -482,7 +542,10 @@ async function main() {
   console.log(`═══════════════════════════════════════════════════════════`);
 }
 
-main().catch((err) => {
-  console.error("Fatal error:", err);
-  process.exit(1);
-});
+main()
+  .then(() => releaseRisLock())
+  .catch((err) => {
+    console.error("Fatal error:", err);
+    releaseRisLock();
+    process.exit(1);
+  });

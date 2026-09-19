@@ -13,7 +13,8 @@
 # Order = value per RIS request:
 #   1. cited norms for decisions already on disk (100 decisions per request)
 #   2. inventory of all federal norms in force, then fetch missing ones as XML
-#   3. missing decisions per court, largest gaps first
+#   3. consolidated state law as XML (missing or rejected)
+#   4. missing decisions per court, largest gaps first
 # The corpus pipeline normalizes and imports whatever lands on disk.
 set -u
 cd /app || exit 1
@@ -33,6 +34,10 @@ step bun scripts/backfill-judikatur-normen.ts \
 step bun scripts/ris-inforce-crawl.ts --out "$STATE/ris-inforce.jsonl"
 step bun scripts/ris-xml-fetch-normen.ts --ris "$STATE/ris-inforce.jsonl" \
   --keep-xml /law-corpus/_xml/at-normen
+
+# Consolidated state law as XML; replaces the older state-folder/HTML files
+# the validator rejected.
+step bun scripts/fetch-at-landesrecht-xml.ts --keep-xml /law-corpus/_xml/at-landesrecht
 
 for court in bvwg vwgh ogh lvwg dok vfgh gbk umse uvs dsk asylgh pvak ubas; do
   step bun scripts/fetch-all-at-judikatur.ts --court "$court" --from 1900
