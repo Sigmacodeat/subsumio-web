@@ -2434,6 +2434,11 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
                         onToolRetry={handleToolRetry}
                         onFollowUp={handleFollowUp}
                         onFeedback={msg.role === "assistant" ? handleFeedback : undefined}
+                        saveToMatterCase={
+                          msg.role === "assistant" && !msg.isStreaming
+                            ? selectedCaseSlug || context.caseSlug || ""
+                            : undefined
+                        }
                       />
                     </div>
                   );
