@@ -57,6 +57,7 @@ const { values } = parseArgs({
     random: { type: "string", default: "50000" },
     "gen-model": { type: "string", default: "anthropic:claude-opus-5" },
     concurrency: { type: "string", default: "6" },
+    "keyword-concurrency": { type: "string", default: "4" },
     seed: { type: "string", default: "7" },
     "skip-generation": { type: "boolean", default: false },
   },
@@ -431,8 +432,9 @@ async function keywordRanking(engine: Engine, question: string, limit = 200): Pr
       [q, limit]
     );
   const strict = (await run(question)).map((r) => r.id);
-  if (strict.length >= 20) return strict;
-  // Production falls back to a bounded OR query when the strict arm is thin.
+  // Production falls back to a bounded OR query when the strict arm returns
+  // fewer than 3 hits (search/hybrid.ts).
+  if (strict.length >= 3) return strict;
   const relaxed = buildRelaxedLegalKeywordQuery(question);
   if (!relaxed) return strict;
   const seen = new Set(strict);
@@ -444,6 +446,16 @@ async function keywordRanking(engine: Engine, question: string, limit = 200): Pr
     }
   }
   return merged;
+}
+
+/** Core noun of a state law title: "Tiroler Bauordnung 2022" → "Bauordnung". */
+function lawStem(title: string): string | null {
+  const words = title.match(/[\p{L}-]+/gu) ?? [];
+  const law = words.filter((w) => /(gesetz|ordnung|verordnung)$/i.test(w));
+  const pick = (law.length ? law : words.filter((w) => w.length >= 8)).sort(
+    (a, b) => b.length - a.length
+  )[0];
+  return pick && pick.length >= 6 ? pick : null;
 }
 
 // ─── Corpus sample ────────────────────────────────────────────────────────
@@ -478,26 +490,30 @@ async function buildSample(engine: Engine, queries: Query[], keyword: Map<string
   );
   log(`Stichprobe: ${ids.size} nach ganzen Gold-Gesetzen`);
 
-  // 3. State law: the other states' laws on the same subject.
-  addIds(
-    await rows(
-      engine,
-      `WITH gold AS (
-         SELECT DISTINCT p.frontmatter->'legal_area'->>0 AS area, p.frontmatter->>'region' AS region
-           FROM pages p WHERE p.id = ANY($1::int[]) AND p.source_id = 'law-at-landesrecht'
-            AND p.frontmatter->'legal_area'->>0 IS NOT NULL
-       ), ranked AS (
-         SELECT c.id, row_number() OVER (PARTITION BY g.area ORDER BY md5(c.id::text)) AS rn
-           FROM gold g
-           JOIN pages p ON p.source_id = 'law-at-landesrecht' AND p.deleted_at IS NULL
-                       AND p.frontmatter->'legal_area'->>0 = g.area
-                       AND p.frontmatter->>'region' IS DISTINCT FROM g.region
-           JOIN content_chunks c ON c.page_id = p.id
-       )
-       SELECT id FROM ranked WHERE rn <= 1500`,
-      [goldPages]
-    )
+  // 3. State law: the same law of the other eight states. legal_area is
+  // mostly empty for state law, so match on the law's core noun
+  // ("Steiermärkisches Feuerwehrgesetz" → every "…Feuerwehrgesetz").
+  const statePages = await rows<{ title: string; region: string | null }>(
+    engine,
+    `SELECT DISTINCT title, frontmatter->>'region' AS region FROM pages
+      WHERE id = ANY($1::int[]) AND source_id = 'law-at-landesrecht'`,
+    [goldPages]
   );
+  for (const sp of statePages) {
+    const stem = lawStem(sp.title);
+    if (!stem) continue;
+    addIds(
+      await rows(
+        engine,
+        `SELECT c.id FROM pages p JOIN content_chunks c ON c.page_id = p.id
+          WHERE p.source_id = 'law-at-landesrecht' AND p.deleted_at IS NULL
+            AND p.title ILIKE '%' || $1 || '%'
+            AND p.frontmatter->>'region' IS DISTINCT FROM $2
+          ORDER BY md5(c.id::text) LIMIT 1500`,
+        [stem, sp.region]
+      )
+    );
+  }
   log(`Stichprobe: ${ids.size} nach Landesrecht-Nachbarn`);
 
   // 4. Keyword top 200 per question (lexically confusable distractors).
@@ -589,7 +605,9 @@ async function main() {
   mkdirSync(OUT, { recursive: true });
   const cfg = loadConfig();
   if (!cfg) throw new Error("No engine configured");
-  configureGateway(buildGatewayConfig(cfg));
+  // Registering the generator as chat model lets the gateway accept it even
+  // when the Anthropic recipe's model list predates it.
+  configureGateway({ ...buildGatewayConfig(cfg), chat_model: GEN_MODEL });
   const engine = await createEngine(toEngineConfig(cfg));
   await engine.connect(toEngineConfig(cfg));
 
@@ -600,12 +618,15 @@ async function main() {
   const keyword = new Map(
     readJsonl<{ qid: string; chunk_ids: number[] }>(keywordPath).map((k) => [k.qid, k.chunk_ids])
   );
-  for (const q of queries) {
-    if (keyword.has(q.qid)) continue;
+  // Relaxed OR queries scan large parts of the corpus; run a few at once.
+  const pending = queries.filter((q) => !keyword.has(q.qid));
+  let kwDone = 0;
+  await mapLimit(pending, Number(values["keyword-concurrency"]), async (q) => {
     const ids = await keywordRanking(engine, q.question);
     keyword.set(q.qid, ids);
     appendFileSync(keywordPath, JSON.stringify({ qid: q.qid, chunk_ids: ids }) + "\n");
-  }
+    if (++kwDone % 20 === 0) log(`  Keyword-Arm: ${kwDone}/${pending.length}`);
+  });
   log(`Keyword-Arm: ${keyword.size} Fragen`);
 
   const sample = await buildSample(engine, queries, keyword);
